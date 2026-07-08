@@ -26,6 +26,11 @@ catalog:
   eslint: ^10.6.0
   "@eslint/css": ^1.4.0
   "@html-eslint/parser": ^0.63.0
+  # Language server + editor
+  vscode-languageserver: ^10.1.0
+  vscode-languageserver-textdocument: ^1.0.12
+  vscode-languageclient: ^10.1.0
+  "@types/vscode": ^1.125.0
   # Quality gates
   "@vitest/coverage-v8": 4.1.9
   publint: ^0.3.21
