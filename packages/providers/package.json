@@ -1,12 +1,12 @@
 {
-  "name": "@cssdoc/lint-core",
+  "name": "@cssdoc/providers",
   "version": "0.0.0",
-  "description": "Shared doc-comment-hygiene rules for CSS, consumed by @cssdoc/stylelint-plugin and @cssdoc/eslint-plugin.",
+  "description": "Host-agnostic aspect providers over the @cssdoc/index — diagnostics, completions, hover, and definitions for modifiers, custom properties, structure, functions, states, and conditions.",
   "keywords": [
     "css",
     "cssdoc",
     "documentation",
-    "lint"
+    "language-service"
   ],
   "license": "MIT",
   "files": [
@@ -29,8 +29,7 @@
   },
   "dependencies": {
     "@cssdoc/core": "workspace:*",
-    "@cssdoc/index": "workspace:*",
-    "@cssdoc/providers": "workspace:*"
+    "@cssdoc/index": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",

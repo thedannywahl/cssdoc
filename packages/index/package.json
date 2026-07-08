@@ -1,12 +1,12 @@
 {
-  "name": "@cssdoc/lint-core",
+  "name": "@cssdoc/index",
   "version": "0.0.0",
-  "description": "Shared doc-comment-hygiene rules for CSS, consumed by @cssdoc/stylelint-plugin and @cssdoc/eslint-plugin.",
+  "description": "A queryable semantic index over the @cssdoc/core model, plus a host-agnostic Usage abstraction and source spans — the shared data layer for cssdoc's linters and language server.",
   "keywords": [
     "css",
     "cssdoc",
     "documentation",
-    "lint"
+    "index"
   ],
   "license": "MIT",
   "files": [
@@ -29,8 +29,7 @@
   },
   "dependencies": {
     "@cssdoc/core": "workspace:*",
-    "@cssdoc/index": "workspace:*",
-    "@cssdoc/providers": "workspace:*"
+    "postcss": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",

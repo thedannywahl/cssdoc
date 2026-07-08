@@ -5,7 +5,7 @@
 Today cssdoc is an author-side toolchain: it parses a CSS doc-comment grammar plus the CSS AST into a
 model (`@cssdoc/core`), emits docs (`@cssdoc/markdown`, `@cssdoc/typedoc`), and lints the CSS's own
 documentation hygiene (`@cssdoc/lint-core` + the Stylelint/ESLint adapters). It says nothing about how
-consumers *use* the CSS.
+consumers _use_ the CSS.
 
 The next step is consumer-side: validate that class usage, custom-property references, and component
 structure match the documented CSS surface, and surface that same knowledge in the editor as
@@ -63,8 +63,8 @@ class CssDocIndex {
   isModifier(base: string, modifier: string): boolean;
   deprecationOf(base: string, modifier: string): { canonical?: string; note?: string } | undefined;
   allCustomProperties(): CssPropertyDeclared[]; // for var(...) completion
-  allFunctions(): CssFunction[];                // for @function completion
-  toManifest(): CssDocManifest;                 // stable, serializable snapshot
+  allFunctions(): CssFunction[]; // for @function completion
+  toManifest(): CssDocManifest; // stable, serializable snapshot
 }
 ```
 
@@ -73,8 +73,16 @@ Two cross-cutting concerns live here:
 - **The `Usage` abstraction** — the neutral shape every producer (HTML, JSX, template literal, CSS
   selector) emits, so the providers never care about the host:
   ```ts
-  interface ClassUsage { base?: string; tokens: string[]; token: string; loc: SourceSpan; }
-  interface PropertyUsage { name: string; loc: SourceSpan; }
+  interface ClassUsage {
+    base?: string;
+    tokens: string[];
+    token: string;
+    loc: SourceSpan;
+  }
+  interface PropertyUsage {
+    name: string;
+    loc: SourceSpan;
+  }
   ```
   `class="instui-button -color-secondary"` (space-separated) and `.instui-button.-color-secondary`
   (chained selector) are just two producers of the same `ClassUsage`.
@@ -189,7 +197,7 @@ Peers: `@html-eslint/parser` (HTML usage rule), `vscode-languageserver` / `vscod
 3. **DTCG for custom properties.** Custom properties export as W3C Design Tokens via `@cssdoc/dtcg`
    (`$value` / `$type` / `$description`), so properties that double as design tokens interchange with
    token tooling. The index maps `syntax → $type`, `defaultValue → $value`, and `description →
-   $description`.
+$description`.
 4. **Naming confirmed.** New `@cssdoc/index` and `@cssdoc/providers`; refactor `@cssdoc/lint-core` into
    a thin diagnostics façade over the providers so the Stylelint and ESLint adapters keep working
    through the rename.
