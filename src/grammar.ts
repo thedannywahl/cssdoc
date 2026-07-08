@@ -18,6 +18,19 @@
  *
  * @module
  */
+import type { CssRecordKind, StructureNode } from "./model.ts";
+
+/**
+ * The record-opening tags and the {@link CssRecordKind} each selects. A doc comment carrying one of
+ * these opens a new record; `@name` is an alias for `@component`. Order is irrelevant.
+ */
+export const RECORD_TAGS: Record<string, CssRecordKind> = {
+  component: "component",
+  name: "component",
+  utility: "utility",
+  rule: "rule",
+  declaration: "declaration",
+};
 
 /** A custom property documented by a `@cssproperty` tag. */
 export interface DocCssProperty {
@@ -26,16 +39,25 @@ export interface DocCssProperty {
   description?: string;
 }
 
+/** The prose a `@modifier` tag contributes: a description and/or an inline deprecation replacement note. */
+export interface DocModifier {
+  description?: string;
+  /** Free-text replacement guidance from an inline `deprecated` tag on the modifier line. */
+  deprecated?: string;
+}
+
 /** The structured content extracted from one doc-comment block. */
 export interface ParsedDoc {
-  /** `@component`/`@name` — the record name. Presence marks a record boundary. */
+  /** `@component`/`@utility`/`@rule`/`@declaration`/`@name` — the record name. Marks a record boundary. */
   component?: string;
+  /** The record kind chosen by the opening tag (`component` unless `@utility`/`@rule`/`@declaration`). */
+  kind?: CssRecordKind;
   /** `@class` — an explicit base class selector (otherwise inferred from the CSS). */
   className?: string;
   /** `@summary` — one-line intro. */
   summary?: string;
-  /** `@modifier` descriptions, keyed by the modifier class without its dot (e.g. `-color-secondary`). */
-  modifiers: Map<string, string>;
+  /** `@modifier` prose, keyed by the modifier class without its dot (e.g. `-color-secondary`). */
+  modifiers: Map<string, DocModifier>;
   /** `@part`/`@csspart` descriptions, keyed by the part name without its dot (e.g. `item`). */
   parts: Map<string, string>;
   /** `@cssproperty` declarations. */
@@ -44,7 +66,9 @@ export interface ParsedDoc {
   cssStates: Map<string, string>;
   /** `@example` blocks. */
   examples: string[];
-  /** `@deprecated <replacement>`. */
+  /** `@structure` — the raw (indented) HTML-tree body, parsed into nodes by {@link parseStructure}. */
+  structure?: StructureNode[];
+  /** The `<replacement>` argument from a `deprecated` tag. */
   deprecated?: string;
   /** `@demo <spec>`. */
   demo?: string;
@@ -106,7 +130,14 @@ export function parseDocComment(raw: string): ParsedDoc {
     switch (tag) {
       case "component":
       case "name":
+      case "utility":
+      case "rule":
+      case "declaration":
         doc.component = rest.split(/\s/u)[0];
+        doc.kind = RECORD_TAGS[tag];
+        break;
+      case "structure":
+        doc.structure = parseStructure(rest);
         break;
       case "class":
         doc.className = rest.split(/\s/u)[0];
@@ -116,7 +147,13 @@ export function parseDocComment(raw: string): ParsedDoc {
         break;
       case "modifier": {
         const { head, description } = splitDesc(rest);
-        doc.modifiers.set(head.replace(/^\./u, ""), description ?? "");
+        // A description beginning `@deprecated …` marks the modifier deprecated; the remainder is the
+        // free-text replacement note (which need not be another modifier class).
+        const dep = description?.match(/^@deprecated\b\s*([\s\S]*)$/u);
+        doc.modifiers.set(
+          head.replace(/^\./u, ""),
+          dep ? { deprecated: dep[1].trim() } : { description: description ?? "" },
+        );
         break;
       }
       case "part":
@@ -161,8 +198,37 @@ export function parseDocComment(raw: string): ParsedDoc {
   return doc;
 }
 
-/** Whether a comment's text opens a record — i.e. carries an `@component`/`@name` tag. */
+/** Whether a comment's text opens a record — i.e. carries one of the {@link RECORD_TAGS}. */
 export function recordNameOf(commentText: string): string | undefined {
-  const m = commentText.match(/@(?:component|name)\s+(\S+)/u);
+  const tags = Object.keys(RECORD_TAGS).join("|");
+  const m = commentText.match(new RegExp(`@(?:${tags})\\s+(\\S+)`, "u"));
   return m?.[1];
+}
+
+/**
+ * Parse a `@structure` body — an indentation-nested list of element selectors — into a
+ * {@link StructureNode} tree. Indentation depth (any consistent width) sets nesting; blank lines are
+ * ignored.
+ *
+ * @example
+ * ```
+ * .instui-tabs
+ *   .list
+ *     .tab
+ *   .panel
+ * ```
+ */
+export function parseStructure(raw: string): StructureNode[] {
+  const roots: StructureNode[] = [];
+  const stack: { indent: number; node: StructureNode }[] = [];
+  for (const line of raw.split("\n")) {
+    if (!line.trim()) continue;
+    const indent = line.length - line.trimStart().length;
+    const node: StructureNode = { selector: line.trim(), children: [] };
+    while (stack.length && stack[stack.length - 1].indent >= indent) stack.pop();
+    if (stack.length) stack[stack.length - 1].node.children.push(node);
+    else roots.push(node);
+    stack.push({ indent, node });
+  }
+  return roots;
 }

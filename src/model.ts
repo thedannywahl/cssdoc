@@ -16,8 +16,12 @@ export interface CssModifier {
   value?: string;
   /** Prose from a `@modifier` doc tag, when authored. */
   description?: string;
-  /** Set when the modifier is a deprecated alias; `canonical` is the modifier to use instead. */
-  deprecated?: { canonical: string };
+  /**
+   * Set when the modifier is deprecated. `canonical` (from an AST alias marker) is the modifier class
+   * to use instead; `note` (from an authored inline deprecation tag on the `@modifier` line) is
+   * free-text replacement guidance for cases where the replacement isn't itself a modifier.
+   */
+  deprecated?: { canonical?: string; note?: string };
 }
 
 /** A sub-element ("part") of a component — a scoped child class like `.item` or `.tip`. */
@@ -38,10 +42,31 @@ export interface CssPropertyDeclared {
   description?: string;
 }
 
-/** One documented CSS component: its base class plus everything derived from the CSS + doc comments. */
+/**
+ * What kind of CSS surface a record documents. `component` is a namespaced component class with
+ * `-modifier`s and parts; `utility` a single-purpose class family; `rule` bare-element/reset styling;
+ * `declaration` a custom-property / `@property` registration layer. The record-opening tag chooses it
+ * (`@component`/`@utility`/`@rule`/`@declaration`); `@name` is an alias for `component`.
+ */
+export type CssRecordKind = "component" | "utility" | "rule" | "declaration";
+
+/**
+ * A node in an authored HTML-structure tree (`@structure`): a selector for the element and its
+ * children. Emitters render it as an indented tree and, via {@link toMermaid}, as a diagram.
+ */
+export interface StructureNode {
+  /** The node's selector/label, e.g. `.instui-tabs` or `.tab.-selected` or `button`. */
+  selector: string;
+  /** Child nodes (one indentation level deeper). */
+  children: StructureNode[];
+}
+
+/** One documented CSS record: its base class plus everything derived from the CSS + doc comments. */
 export interface CssDocEntry {
-  /** The record name from `@component`/`@name`, e.g. `button`. */
+  /** The record name from `@component`/`@utility`/`@rule`/`@declaration`/`@name`, e.g. `button`. */
   name: string;
+  /** Which kind of CSS surface this documents (defaults to `component`). */
+  kind: CssRecordKind;
   /** The base class selector, e.g. `.instui-button` (inferred from the first bare-class rule). */
   className: string;
   /** One-line summary from `@summary`. */
@@ -56,9 +81,11 @@ export interface CssDocEntry {
   cssPropertiesDeclared: CssPropertyDeclared[];
   /** `@example` blocks, verbatim. */
   examples: string[];
+  /** The authored `@structure` HTML tree (top-level nodes), when present. */
+  structure?: StructureNode[];
   /** `@demo <spec>` (e.g. `self:button`), when authored. */
   demo?: string;
-  /** Component-level `@deprecated <replacement>` text, when authored. */
+  /** Component-level deprecation replacement text, when authored (the argument to a `deprecated` tag). */
   deprecated?: string;
   /** `@see <ref>` cross-references. */
   see: string[];

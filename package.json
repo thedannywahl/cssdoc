@@ -4,9 +4,9 @@
   "description": "A generic CSS documentation extractor: parse doc-comments + the CSS AST into a serializable model (TSDoc, for CSS).",
   "keywords": [
     "css",
-    "documentation",
-    "doc-comments",
     "design-system",
+    "doc-comments",
+    "documentation",
     "postcss",
     "tsdoc"
   ],

@@ -136,12 +136,21 @@ function buildEntry(name: string, doc: ParsedDoc, nodes: ChildNode[]): CssDocEnt
   collect(nodes, acc, baseEsc, prefixNoDot, false);
 
   // Merge in authored prose; authored @modifier/@part entries also appear even if extraction missed.
-  for (const [modName, description] of doc.modifiers) {
+  for (const [modName, mdoc] of doc.modifiers) {
     const existing = acc.modifiers.get(modName);
-    if (existing) existing.description = description || existing.description;
-    else {
+    const dep = mdoc.deprecated ? { note: mdoc.deprecated } : undefined;
+    if (existing) {
+      if (mdoc.description) existing.description = mdoc.description;
+      if (dep) existing.deprecated = { ...existing.deprecated, ...dep };
+    } else {
       const { prop, value } = splitModifier(modName);
-      acc.modifiers.set(modName, { name: modName, prop, value, description });
+      acc.modifiers.set(modName, {
+        name: modName,
+        prop,
+        value,
+        description: mdoc.description,
+        deprecated: dep,
+      });
     }
   }
   for (const [part, description] of doc.parts) {
@@ -165,6 +174,7 @@ function buildEntry(name: string, doc: ParsedDoc, nodes: ChildNode[]): CssDocEnt
 
   return {
     name,
+    kind: doc.kind ?? "component",
     className,
     summary: doc.summary,
     modifiers,
@@ -172,6 +182,7 @@ function buildEntry(name: string, doc: ParsedDoc, nodes: ChildNode[]): CssDocEnt
     cssPropertiesConsumed: [...acc.consumed].sort(),
     cssPropertiesDeclared: [...acc.declared.values()].sort((a, b) => a.name.localeCompare(b.name)),
     examples: doc.examples,
+    structure: doc.structure,
     demo: doc.demo,
     deprecated: doc.deprecated,
     see: doc.see,

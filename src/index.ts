@@ -5,8 +5,8 @@
  *
  * The core makes no assumptions about any project, class prefix, or framework. It:
  * - reads `/** … *\/` doc comments in the {@link parseDocComment | grammar} (`@component`, `@summary`,
- *   `@modifier`, `@part`, `@cssproperty`/`@csspart`/`@cssstate`, `@example`, `@deprecated`, `@demo`,
- *   `@see`), adopting the Custom Elements Manifest tag names where they exist;
+ *   `@modifier`, `@part`, `@cssproperty`/`@csspart`/`@cssstate`, `@example`, `@demo`, `@see`, and a
+ *   `deprecated` tag), adopting the Custom Elements Manifest tag names where they exist;
  * - AST-extracts the machine facts (base class, `-modifier` families, sub-element parts, consumed and
  *   declared custom properties, deprecated-alias links) from the actual selectors — so they can't drift;
  * - returns a {@link CssDocEntry}[] model (one record per `@component`), plus a {@link toJson} helper.
@@ -25,14 +25,23 @@
  * @module
  */
 export { parseCssDocs } from "./parse.ts";
-export { parseDocComment, recordNameOf, stripCommentFraming } from "./grammar.ts";
+export {
+  parseDocComment,
+  parseStructure,
+  recordNameOf,
+  RECORD_TAGS,
+  stripCommentFraming,
+} from "./grammar.ts";
 export type { ParsedDoc, DocCssProperty } from "./grammar.ts";
+export { toMermaid } from "./mermaid.ts";
 export type {
   CssDocEntry,
   CssModifier,
   CssPart,
   CssPropertyDeclared,
+  CssRecordKind,
   ParseOptions,
+  StructureNode,
 } from "./model.ts";
 
 import type { CssDocEntry } from "./model.ts";

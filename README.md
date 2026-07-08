@@ -45,20 +45,24 @@ they exist, so it's standards-aligned:
  * @deprecated Use the button utility instead.
  * @demo self:button
  */
-.instui-button { /* … */ }
-.instui-button.-color-secondary { /* … */ }
+.instui-button {
+  /* … */
+}
+.instui-button.-color-secondary {
+  /* … */
+}
 ```
 
-| Tag | Meaning |
-| --- | --- |
-| `@component` / `@name <id>` | Names the record (required; marks a boundary). |
-| `@class <selector>` | An explicit base class (otherwise inferred from the first bare-class rule). |
-| `@summary <text>` | One-line intro. |
-| `@modifier -<x> — <desc>` | Prose for a modifier (the list itself is AST-derived). |
-| `@part` / `@csspart .<x> — <desc>` | Prose for a sub-element part. |
-| `@cssproperty --<x> [<syntax>] — <desc>` | A declared custom property. |
-| `@cssstate <x> — <desc>` | A component state. |
-| `@example`, `@deprecated`, `@demo`, `@see` | As in TSDoc. |
+| Tag                                        | Meaning                                                                     |
+| ------------------------------------------ | --------------------------------------------------------------------------- |
+| `@component` / `@name <id>`                | Names the record (required; marks a boundary).                              |
+| `@class <selector>`                        | An explicit base class (otherwise inferred from the first bare-class rule). |
+| `@summary <text>`                          | One-line intro.                                                             |
+| `@modifier -<x> — <desc>`                  | Prose for a modifier (the list itself is AST-derived).                      |
+| `@part` / `@csspart .<x> — <desc>`         | Prose for a sub-element part.                                               |
+| `@cssproperty --<x> [<syntax>] — <desc>`   | A declared custom property.                                                 |
+| `@cssstate <x> — <desc>`                   | A component state.                                                          |
+| `@example`, `@deprecated`, `@demo`, `@see` | As in TSDoc.                                                                |
 
 Unknown tags are ignored, so the grammar degrades gracefully.
 
@@ -71,8 +75,13 @@ interface CssDocEntry {
   name: string;
   className: string;
   summary?: string;
-  modifiers: { name: string; prop: string; value?: string; description?: string;
-               deprecated?: { canonical: string } }[];
+  modifiers: {
+    name: string;
+    prop: string;
+    value?: string;
+    description?: string;
+    deprecated?: { canonical: string };
+  }[];
   parts: { name: string; description?: string }[];
   cssPropertiesConsumed: string[];
   cssPropertiesDeclared: { name: string; syntax?: string; description?: string }[];

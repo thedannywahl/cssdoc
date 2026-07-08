@@ -1,6 +1,6 @@
 import { expect, test } from "vite-plus/test";
-import { parseCssDocs } from "../src/index.ts";
-import { parseDocComment } from "../src/grammar.ts";
+import { parseCssDocs, toMermaid } from "../src/index.ts";
+import { parseDocComment, parseStructure } from "../src/grammar.ts";
 
 // A fixture mirroring the real generated output: authored @component doc comments delimit records; the
 // modifiers / parts / tokens / deprecations are all things the parser must derive from the CSS itself.
@@ -98,15 +98,47 @@ test("parseDocComment reads the grammar, ignoring unknown tags and comment frami
  * @component alert
  * @summary An inline message.
  * @modifier -color-info — Informational.
+ * @modifier -render-icon — @deprecated Use the \`-icon-<name>\` glyph form.
  * @cssproperty --pantoken-alert-icon-bg <color> — The glyph fill.
  * @bogus this tag is ignored
  */`);
   expect(doc.component).toBe("alert");
   expect(doc.summary).toBe("An inline message.");
-  expect(doc.modifiers.get("-color-info")).toBe("Informational.");
+  expect(doc.modifiers.get("-color-info")).toEqual({ description: "Informational." });
+  expect(doc.modifiers.get("-render-icon")).toEqual({
+    deprecated: "Use the `-icon-<name>` glyph form.",
+  });
   expect(doc.cssProperties[0]).toEqual({
     name: "--pantoken-alert-icon-bg",
     syntax: "<color>",
     description: "The glyph fill.",
   });
+});
+
+test("record-opening tags set the kind; @component defaults to component", () => {
+  const [comp] = parseCssDocs(`/**\n * @component button\n */\n.instui-button { color: red; }`);
+  expect(comp.kind).toBe("component");
+  const [util] = parseCssDocs(`/**\n * @utility spacing\n */\n.instui-m-sm { margin: 0.5rem; }`);
+  expect(util.kind).toBe("utility");
+  const [rule] = parseCssDocs(`/**\n * @rule base\n */\nbody { margin: 0; }`);
+  expect(rule.kind).toBe("rule");
+  const [decl] = parseCssDocs(`/**\n * @declaration tokens\n */\n:root { --x: 1; }`);
+  expect(decl.kind).toBe("declaration");
+});
+
+test("@structure parses an indented tree, and toMermaid renders it", () => {
+  const tree = parseStructure(".instui-tabs\n  .list\n    .tab\n  .panel");
+  expect(tree).toEqual([
+    {
+      selector: ".instui-tabs",
+      children: [
+        { selector: ".list", children: [{ selector: ".tab", children: [] }] },
+        { selector: ".panel", children: [] },
+      ],
+    },
+  ]);
+  const mermaid = toMermaid(tree);
+  expect(mermaid.startsWith("flowchart TD")).toBe(true);
+  expect(mermaid).toContain(`n0[".instui-tabs"]`);
+  expect(mermaid).toContain("n0 --> n1"); // tabs → list
 });
