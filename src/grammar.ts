@@ -44,6 +44,12 @@ export interface DocModifier {
   description?: string;
   /** Free-text replacement guidance from an inline `deprecated` tag on the modifier line. */
   deprecated?: string;
+  /**
+   * The canonical modifier this one deprecates, from a `{@link -canonical}` in the deprecation note
+   * (e.g. `@deprecated {@link -color-danger}`). Stored without its leading dot, matching the AST-derived
+   * `deprecated.canonical`, so an authored alias and a generated one resolve to the same reference.
+   */
+  deprecatedCanonical?: string;
 }
 
 /** The structured content extracted from one doc-comment block. */
@@ -147,13 +153,20 @@ export function parseDocComment(raw: string): ParsedDoc {
         break;
       case "modifier": {
         const { head, description } = splitDesc(rest);
-        // A description beginning `@deprecated …` marks the modifier deprecated; the remainder is the
-        // free-text replacement note (which need not be another modifier class).
+        // A description beginning `@deprecated …` marks the modifier deprecated. A `{@link -canonical}`
+        // in the remainder names the modifier to use instead; any other text is the free-text note.
         const dep = description?.match(/^@deprecated\b\s*([\s\S]*)$/u);
-        doc.modifiers.set(
-          head.replace(/^\./u, ""),
-          dep ? { deprecated: dep[1].trim() } : { description: description ?? "" },
-        );
+        if (dep) {
+          const raw = dep[1].trim();
+          const link = raw.match(/\{@link\s+\.?(-[\w-]+)\s*\}/u);
+          const note = raw.replace(/\{@link\s+[^}]*\}/u, "").trim();
+          doc.modifiers.set(head.replace(/^\./u, ""), {
+            deprecated: note || undefined,
+            deprecatedCanonical: link?.[1],
+          });
+        } else {
+          doc.modifiers.set(head.replace(/^\./u, ""), { description: description ?? "" });
+        }
         break;
       }
       case "part":

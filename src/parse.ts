@@ -138,7 +138,15 @@ function buildEntry(name: string, doc: ParsedDoc, nodes: ChildNode[]): CssDocEnt
   // Merge in authored prose; authored @modifier/@part entries also appear even if extraction missed.
   for (const [modName, mdoc] of doc.modifiers) {
     const existing = acc.modifiers.get(modName);
-    const dep = mdoc.deprecated ? { note: mdoc.deprecated } : undefined;
+    // An authored `@deprecated {@link -x}` contributes a canonical; plain text contributes a note. Build
+    // with only the defined keys so merging onto an AST-derived deprecation never clobbers with undefined.
+    const dep =
+      mdoc.deprecated || mdoc.deprecatedCanonical
+        ? {
+            ...(mdoc.deprecated ? { note: mdoc.deprecated } : {}),
+            ...(mdoc.deprecatedCanonical ? { canonical: mdoc.deprecatedCanonical } : {}),
+          }
+        : undefined;
     if (existing) {
       if (mdoc.description) existing.description = mdoc.description;
       if (dep) existing.deprecated = { ...existing.deprecated, ...dep };

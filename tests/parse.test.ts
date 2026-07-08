@@ -79,6 +79,15 @@ test("deprecated-alias comment links the alias modifier to its canonical", () =>
   expect(alias.deprecated?.canonical).toBe("-color-danger");
 });
 
+test("an authored `@deprecated {@link -x}` sets the modifier's canonical", () => {
+  const [comp] = parseCssDocs(
+    `/**\n * @component alert\n * @modifier -variant-error — @deprecated {@link -color-danger}\n */\n` +
+      `.instui-alert.-variant-error { color: red; }`,
+  );
+  const alias = comp.modifiers.find((m) => m.name === "-variant-error")!;
+  expect(alias.deprecated?.canonical).toBe("-color-danger");
+});
+
 test("parts come from scoped child selectors; consumed + declared custom properties are captured", () => {
   const model = parseCssDocs(FIXTURE);
   const menu = model.find((e) => e.name === "menu")!;
