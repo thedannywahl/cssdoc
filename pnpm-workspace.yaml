@@ -1,7 +1,9 @@
 packages:
   - packages/*
   - emitters/*
+  - generators/*
   - plugins/*
+  - servers/*
 
 catalogMode: prefer
 

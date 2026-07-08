@@ -278,6 +278,72 @@ importers:
         specifier: 'catalog:'
         version: 0.2.2(@types/node@24.13.2)(@vitest/coverage-v8@4.1.9)(@voidzero-dev/vite-plus-core@0.2.2(@types/node@24.13.2)(publint@0.3.21)(typescript@6.0.3)(yaml@2.9.0))(publint@0.3.21)(typescript@6.0.3)(yaml@2.9.0)
 
+  generators/cem:
+    dependencies:
+      '@cssdoc/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@cssdoc/index':
+        specifier: workspace:*
+        version: link:../../packages/index
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.2
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vite:
+        specifier: npm:@voidzero-dev/vite-plus-core@0.2.2
+        version: '@voidzero-dev/vite-plus-core@0.2.2(@types/node@24.13.2)(publint@0.3.21)(typescript@6.0.3)(yaml@2.9.0)'
+      vite-plus:
+        specifier: 'catalog:'
+        version: 0.2.2(@types/node@24.13.2)(@vitest/coverage-v8@4.1.9)(@voidzero-dev/vite-plus-core@0.2.2(@types/node@24.13.2)(publint@0.3.21)(typescript@6.0.3)(yaml@2.9.0))(publint@0.3.21)(typescript@6.0.3)(yaml@2.9.0)
+
+  generators/dtcg:
+    dependencies:
+      '@cssdoc/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@cssdoc/index':
+        specifier: workspace:*
+        version: link:../../packages/index
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.2
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vite:
+        specifier: npm:@voidzero-dev/vite-plus-core@0.2.2
+        version: '@voidzero-dev/vite-plus-core@0.2.2(@types/node@24.13.2)(publint@0.3.21)(typescript@6.0.3)(yaml@2.9.0)'
+      vite-plus:
+        specifier: 'catalog:'
+        version: 0.2.2(@types/node@24.13.2)(@vitest/coverage-v8@4.1.9)(@voidzero-dev/vite-plus-core@0.2.2(@types/node@24.13.2)(publint@0.3.21)(typescript@6.0.3)(yaml@2.9.0))(publint@0.3.21)(typescript@6.0.3)(yaml@2.9.0)
+
+  generators/vscode-custom-data:
+    dependencies:
+      '@cssdoc/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@cssdoc/index':
+        specifier: workspace:*
+        version: link:../../packages/index
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.2
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vite:
+        specifier: npm:@voidzero-dev/vite-plus-core@0.2.2
+        version: '@voidzero-dev/vite-plus-core@0.2.2(@types/node@24.13.2)(publint@0.3.21)(typescript@6.0.3)(yaml@2.9.0)'
+      vite-plus:
+        specifier: 'catalog:'
+        version: 0.2.2(@types/node@24.13.2)(@vitest/coverage-v8@4.1.9)(@voidzero-dev/vite-plus-core@0.2.2(@types/node@24.13.2)(publint@0.3.21)(typescript@6.0.3)(yaml@2.9.0))(publint@0.3.21)(typescript@6.0.3)(yaml@2.9.0)
+
   packages/config:
     dependencies:
       '@cssdoc/core':

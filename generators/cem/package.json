@@ -1,0 +1,40 @@
+{
+  "name": "@cssdoc/cem",
+  "version": "0.0.0",
+  "description": "Generate a Custom Elements Manifest (cssProperties, cssParts, cssStates) from the cssdoc model.",
+  "keywords": [
+    "cem",
+    "css",
+    "cssdoc",
+    "custom-elements-manifest"
+  ],
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vp pack",
+    "dev": "vp pack --watch",
+    "test": "vp test",
+    "check": "vp check",
+    "prepublishOnly": "vp run build"
+  },
+  "dependencies": {
+    "@cssdoc/core": "workspace:*",
+    "@cssdoc/index": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.2",
+    "vite-plus": "catalog:"
+  }
+}
