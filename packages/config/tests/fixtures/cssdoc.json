@@ -1,0 +1,6 @@
+{
+  "$schema": "https://cssdoc.dev/cssdoc.schema.json",
+  "extends": ["./base.cssdoc.json"],
+  "tagDefinitions": [{ "tagName": "@pattern", "syntaxKind": "record", "recordKind": "component" }],
+  "supportForTags": { "@privateRemarks": false }
+}

@@ -1,0 +1,45 @@
+{
+  "name": "@cssdoc/typedoc",
+  "version": "0.0.0",
+  "description": "A TypeDoc plugin that emits CSS reference pages (via @cssdoc/markdown) alongside a TS API-docs build and merges them into the TypeDoc sidebar.",
+  "keywords": [
+    "css",
+    "cssdoc",
+    "documentation",
+    "typedoc",
+    "typedoc-plugin"
+  ],
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vp pack",
+    "dev": "vp pack --watch",
+    "test": "vp test",
+    "check": "vp check",
+    "prepublishOnly": "vp run build"
+  },
+  "dependencies": {
+    "@cssdoc/core": "workspace:*",
+    "@cssdoc/markdown": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typedoc": "catalog:",
+    "typescript": "catalog:",
+    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.2",
+    "vite-plus": "catalog:"
+  },
+  "peerDependencies": {
+    "typedoc": ">=0.28"
+  }
+}

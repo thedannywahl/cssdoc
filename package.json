@@ -1,41 +1,29 @@
 {
-  "name": "@cssdoc/core",
+  "name": "cssdoc",
   "version": "0.0.0",
-  "description": "A generic CSS documentation extractor: parse doc-comments + the CSS AST into a serializable model (TSDoc, for CSS).",
-  "keywords": [
-    "css",
-    "design-system",
-    "doc-comments",
-    "documentation",
-    "postcss",
-    "tsdoc"
-  ],
-  "license": "MIT",
-  "files": [
-    "dist"
-  ],
+  "private": true,
+  "description": "TSDoc, for CSS — a Vite+ monorepo: parser, config, emitters, and lint/TypeDoc plugins.",
   "type": "module",
-  "exports": {
-    ".": "./dist/index.mjs",
-    "./package.json": "./package.json"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
   "scripts": {
-    "build": "vp pack",
-    "dev": "vp pack --watch",
-    "test": "vp test",
+    "build": "vp run -r build",
     "check": "vp check",
-    "prepublishOnly": "vp run build"
-  },
-  "dependencies": {
-    "postcss": "^8.5.16"
+    "test": "vp run -r test",
+    "ready": "vp run -r build && vp check && vp run -r test",
+    "check:publish": "pnpm -r --filter \"./packages/**\" --filter \"./emitters/**\" --filter \"./plugins/**\" exec publint"
   },
   "devDependencies": {
-    "@types/node": "^24.13.2",
-    "typescript": "^6.0.3",
+    "publint": "catalog:",
     "vite": "npm:@voidzero-dev/vite-plus-core@0.2.2",
-    "vite-plus": "0.2.2"
+    "vite-plus": "catalog:"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.9.0",
+      "onFail": "download"
+    }
+  },
+  "engines": {
+    "node": ">=22.18.0"
   }
 }

@@ -2,20 +2,26 @@
  * The PostCSS-based parser: turn a CSS string into a {@link CssDocEntry}[] documentation model.
  *
  * It is AST-first — the machine facts (base class, modifiers, parts, consumed/declared custom
- * properties, deprecated-alias links) are derived from the actual selectors and declarations, so they
- * can't drift from the shipping CSS. Authored `/** … *\/` doc comments (parsed by
- * {@link parseDocComment}) supply only prose (summaries, descriptions) and demo/see links, and delimit
- * one component from the next.
+ * properties, custom functions, animations, cascade layers, conditional-support blocks, states, and
+ * deprecated-alias links) are derived from the actual selectors and at-rules, so they can't drift from
+ * the shipping CSS. Authored `/** … *\/` doc comments (parsed by {@link parseDocComment}) supply only
+ * prose (summaries, descriptions) and demo/see links, and delimit one component from the next.
  *
  * @module
  */
 import postcss, { type ChildNode } from "postcss";
+import { CssDocConfiguration } from "./configuration.ts";
 import { parseDocComment, recordNameOf, type ParsedDoc } from "./grammar.ts";
 import type {
+  CssAnimation,
+  CssCondition,
   CssDocEntry,
+  CssFunction,
+  CssLayer,
   CssModifier,
   CssPart,
   CssPropertyDeclared,
+  CssState,
   ParseOptions,
 } from "./model.ts";
 
@@ -37,8 +43,37 @@ interface Collected {
   className: string;
   modifiers: Map<string, CssModifier>;
   parts: Map<string, CssPart>;
+  states: Map<string, CssState>;
   consumed: Set<string>;
   declared: Map<string, CssPropertyDeclared>;
+  functions: Map<string, CssFunction>;
+  animations: Map<string, CssAnimation>;
+  layers: Map<string, CssLayer>;
+  conditions: CssCondition[];
+}
+
+/** Record a conditional-support block, de-duplicating by type + query. */
+function addCondition(acc: Collected, condition: CssCondition): void {
+  const exists = acc.conditions.some(
+    (c) => c.type === condition.type && c.query === condition.query,
+  );
+  if (!exists) acc.conditions.push(condition);
+}
+
+/** Derive a CSS custom function from an `@function` at-rule. */
+function collectFunction(node: Extract<ChildNode, { type: "atrule" }>, acc: Collected): void {
+  const params = node.params.trim();
+  const nameMatch = params.match(/^(--[\w-]+)/u);
+  if (!nameMatch) return;
+  const paren = params.match(/\(([^)]*)\)/u);
+  const parameters = paren ? [...paren[1].matchAll(/(--[\w-]+)/gu)].map((m) => m[1]) : [];
+  const returns = params.match(/\breturns\b\s+(.+)$/iu);
+  let result = returns?.[1]?.trim();
+  if (!result) {
+    const resultDecl = node.nodes?.find((n) => n.type === "decl" && n.prop === "result");
+    if (resultDecl && "value" in resultDecl) result = resultDecl.value.trim();
+  }
+  acc.functions.set(nameMatch[1], { name: nameMatch[1], parameters, result });
 }
 
 /** Extract every fact from one record's nodes into `acc`. */
@@ -65,11 +100,45 @@ function collect(
     if (node.type === "atrule") {
       if (node.name === "property") {
         const name = node.params.trim();
-        const syntaxDecl = node.nodes?.find((n) => n.type === "decl" && n.prop === "syntax");
+        const decl = (prop: string): string | undefined => {
+          const d = node.nodes?.find((n) => n.type === "decl" && n.prop === prop);
+          return d && "value" in d ? d.value : undefined;
+        };
+        const inherits = decl("inherits");
+        const initial = decl("initial-value");
+        const syntax = decl("syntax");
         acc.declared.set(name, {
           name,
-          syntax: syntaxDecl && "value" in syntaxDecl ? unquote(syntaxDecl.value) : undefined,
+          syntax: syntax === undefined ? undefined : unquote(syntax),
+          inherits: inherits === undefined ? undefined : /^true$/iu.test(inherits.trim()),
+          defaultValue: initial === undefined ? undefined : initial.trim(),
         });
+      } else if (node.name === "function") {
+        collectFunction(node, acc);
+      } else if (node.name === "keyframes") {
+        const animName = node.params.trim();
+        if (animName) acc.animations.set(animName, { name: animName });
+      } else if (node.name === "layer") {
+        for (const raw of node.params.split(",")) {
+          const layerName = raw.trim();
+          if (layerName) acc.layers.set(layerName, { name: layerName });
+        }
+      } else if (node.name === "container") {
+        const params = node.params.trim();
+        let containerName: string | undefined;
+        let query = params;
+        if (params && !params.startsWith("(")) {
+          const sp = params.indexOf(" ");
+          if (sp > 0) {
+            containerName = params.slice(0, sp);
+            query = params.slice(sp + 1).trim();
+          }
+        }
+        addCondition(acc, { type: "container", query, containerName });
+      } else if (node.name === "supports") {
+        addCondition(acc, { type: "supports", query: node.params.trim() });
+      } else if (node.name === "media") {
+        addCondition(acc, { type: "media", query: node.params.trim() });
       }
       if (node.nodes)
         collect(node.nodes, acc, baseEsc, prefixNoDot, inScope || node.name === "scope");
@@ -77,6 +146,10 @@ function collect(
     }
     if (node.type === "rule") {
       for (const selector of node.selector.split(",")) {
+        // Custom states via the CSSOM `:state()` pseudo-class.
+        for (const s of selector.matchAll(/:state\(\s*([\w-]+)\s*\)/gu)) {
+          if (!acc.states.has(s[1])) acc.states.set(s[1], { name: s[1] });
+        }
         const bare = selector.replace(/::?[\w-]+(\([^)]*\))?/gu, ""); // drop pseudos
         for (const m of bare.matchAll(modRe)) {
           for (const mod of m[1].matchAll(/\.(-[\w-]+)/gu)) {
@@ -105,6 +178,8 @@ function collect(
   }
 }
 
+const byName = (a: { name: string }, b: { name: string }): number => a.name.localeCompare(b.name);
+
 /** Build one entry from its record name, doc comment, and nodes. */
 function buildEntry(name: string, doc: ParsedDoc, nodes: ChildNode[]): CssDocEntry {
   // Base class: an explicit @class, else a bare single-class rule — preferring the one whose name ends
@@ -126,8 +201,13 @@ function buildEntry(name: string, doc: ParsedDoc, nodes: ChildNode[]): CssDocEnt
     className,
     modifiers: new Map(),
     parts: new Map(),
+    states: new Map(),
     consumed: new Set(),
     declared: new Map(),
+    functions: new Map(),
+    animations: new Map(),
+    layers: new Map(),
+    conditions: [],
   };
   const baseEsc = className.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
   const prefixNoDot = className.endsWith(name)
@@ -140,8 +220,10 @@ function buildEntry(name: string, doc: ParsedDoc, nodes: ChildNode[]): CssDocEnt
     const existing = acc.modifiers.get(modName);
     // An authored `@deprecated {@link -x}` contributes a canonical; plain text contributes a note. Build
     // with only the defined keys so merging onto an AST-derived deprecation never clobbers with undefined.
+    // A bare `@deprecated` (no note, no link) still marks the modifier deprecated — as an empty object —
+    // so lint can flag that it lacks a replacement.
     const dep =
-      mdoc.deprecated || mdoc.deprecatedCanonical
+      mdoc.deprecated || mdoc.deprecatedCanonical || mdoc.deprecatedFlag
         ? {
             ...(mdoc.deprecated ? { note: mdoc.deprecated } : {}),
             ...(mdoc.deprecatedCanonical ? { canonical: mdoc.deprecatedCanonical } : {}),
@@ -166,41 +248,90 @@ function buildEntry(name: string, doc: ParsedDoc, nodes: ChildNode[]): CssDocEnt
     if (existing) existing.description = description || existing.description;
     else acc.parts.set(part, { name: part, description });
   }
+  for (const [state, description] of doc.cssStates) {
+    const existing = acc.states.get(state);
+    if (existing) existing.description = description || existing.description;
+    else acc.states.set(state, { name: state, description: description || undefined });
+  }
   for (const prop of doc.cssProperties) {
     const existing = acc.declared.get(prop.name);
     acc.declared.set(prop.name, {
       name: prop.name,
       syntax: prop.syntax ?? existing?.syntax,
+      inherits: existing?.inherits,
+      defaultValue: prop.defaultValue ?? existing?.defaultValue,
       description: prop.description ?? existing?.description,
     });
+  }
+  for (const [fnName, description] of doc.functions) {
+    const existing = acc.functions.get(fnName);
+    if (existing) existing.description = description || existing.description;
+    else
+      acc.functions.set(fnName, {
+        name: fnName,
+        parameters: [],
+        description: description || undefined,
+      });
+  }
+  for (const [animName, description] of doc.animations) {
+    const existing = acc.animations.get(animName);
+    if (existing) existing.description = description || existing.description;
+    else acc.animations.set(animName, { name: animName, description: description || undefined });
+  }
+  for (const [layerName, description] of doc.layers) {
+    const existing = acc.layers.get(layerName);
+    if (existing) existing.description = description || existing.description;
+    else acc.layers.set(layerName, { name: layerName, description: description || undefined });
+  }
+  for (const cond of doc.conditions) {
+    const existing = acc.conditions.find((c) => c.type === cond.type && c.query === cond.query);
+    if (existing) existing.description = cond.description || existing.description;
+    else acc.conditions.push({ type: cond.type, query: cond.query, description: cond.description });
   }
 
   const modifiers = [...acc.modifiers.values()].sort(
     (a, b) => a.prop.localeCompare(b.prop) || (a.value ?? "").localeCompare(b.value ?? ""),
   );
-  const parts = [...acc.parts.values()].sort((a, b) => a.name.localeCompare(b.name));
 
   return {
     name,
     kind: doc.kind ?? "component",
     className,
     summary: doc.summary,
+    remarks: doc.remarks,
+    privateRemarks: doc.privateRemarks,
+    releaseStage: doc.releaseStage,
+    since: doc.since,
+    group: doc.group,
+    accessibility: doc.accessibility,
     modifiers,
-    parts,
+    parts: [...acc.parts.values()].sort(byName),
+    states: [...acc.states.values()].sort(byName),
+    slots: [...doc.slots]
+      .map(([slotName, description]) => ({
+        name: slotName,
+        description: description || undefined,
+      }))
+      .sort(byName),
     cssPropertiesConsumed: [...acc.consumed].sort(),
-    cssPropertiesDeclared: [...acc.declared.values()].sort((a, b) => a.name.localeCompare(b.name)),
+    cssPropertiesDeclared: [...acc.declared.values()].sort(byName),
+    functions: [...acc.functions.values()].sort(byName),
+    animations: [...acc.animations.values()].sort(byName),
+    layers: [...acc.layers.values()].sort(byName),
+    conditions: acc.conditions,
     examples: doc.examples,
     structure: doc.structure,
     demo: doc.demo,
     deprecated: doc.deprecated,
     see: doc.see,
+    ...(doc.customBlocks.size > 0 ? { customBlocks: Object.fromEntries(doc.customBlocks) } : {}),
   };
 }
 
 /**
- * Parse a CSS string into a documentation model. Records are delimited by doc comments carrying an
- * `@component`/`@name` tag (override via {@link ParseOptions.isRecordBoundary}); everything from one
- * boundary comment to the next belongs to that record.
+ * Parse a CSS string into a documentation model. Records are delimited by doc comments carrying a
+ * record tag (`@component`/`@name` by default; override via {@link ParseOptions.isRecordBoundary});
+ * everything from one boundary comment to the next belongs to that record.
  *
  * @param css - The CSS source (a generated stylesheet, with authored doc comments).
  * @param options - {@link ParseOptions}.
@@ -215,7 +346,9 @@ function buildEntry(name: string, doc: ParsedDoc, nodes: ChildNode[]): CssDocEnt
  * ```
  */
 export function parseCssDocs(css: string, options: ParseOptions = {}): CssDocEntry[] {
-  const boundary = options.isRecordBoundary ?? recordNameOf;
+  const configuration = options.configuration ?? new CssDocConfiguration();
+  const boundary =
+    options.isRecordBoundary ?? ((text: string) => recordNameOf(text, configuration));
   const root = postcss.parse(css);
   const records: { name: string; doc: ParsedDoc; nodes: ChildNode[] }[] = [];
   let current: { name: string; doc: ParsedDoc; nodes: ChildNode[] } | null = null;
@@ -224,7 +357,7 @@ export function parseCssDocs(css: string, options: ParseOptions = {}): CssDocEnt
     if (node.type === "comment") {
       const name = boundary(node.text);
       if (name) {
-        current = { name, doc: parseDocComment(node.text), nodes: [] };
+        current = { name, doc: parseDocComment(node.text, configuration), nodes: [] };
         records.push(current);
         continue;
       }

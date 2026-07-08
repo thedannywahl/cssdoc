@@ -1,0 +1,58 @@
+/**
+ * The JSON Schema for a `cssdoc.json` file — the single source of truth used to validate config files
+ * via ajv. A byte-identical copy is shipped at the package root as `cssdoc.schema.json` for editor
+ * `$schema` references.
+ *
+ * @module
+ */
+
+/** The JSON Schema (draft-07) describing a valid `cssdoc.json`. */
+export const cssDocSchema = {
+  $schema: "http://json-schema.org/draft-07/schema#",
+  $id: "https://cssdoc.dev/cssdoc.schema.json",
+  title: "cssdoc.json",
+  description: "Configuration for @cssdoc/core: custom tags and inherited configs.",
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    $schema: { type: "string" },
+    extends: {
+      description:
+        "Paths to other cssdoc.json files (or packages) to inherit tag definitions from.",
+      type: "array",
+      items: { type: "string" },
+    },
+    noStandardTags: {
+      description: "Disable every built-in standard tag; only tagDefinitions remain supported.",
+      type: "boolean",
+    },
+    tagDefinitions: {
+      description: "Custom tags to register.",
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["tagName", "syntaxKind"],
+        properties: {
+          tagName: {
+            type: "string",
+            pattern: "^@?[a-zA-Z][a-zA-Z0-9-]*$",
+          },
+          syntaxKind: {
+            enum: ["record", "block", "modifier", "inline"],
+          },
+          allowMultiple: { type: "boolean" },
+          recordKind: {
+            enum: ["component", "utility", "rule", "declaration"],
+          },
+          aliasFor: { type: "string" },
+        },
+      },
+    },
+    supportForTags: {
+      description: "Enable or disable specific tags by name.",
+      type: "object",
+      additionalProperties: { type: "boolean" },
+    },
+  },
+} as const;

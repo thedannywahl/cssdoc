@@ -1,0 +1,4 @@
+{
+  "$schema": "https://cssdoc.dev/cssdoc.schema.json",
+  "tagDefinitions": [{ "tagName": "@token", "syntaxKind": "block", "allowMultiple": true }]
+}

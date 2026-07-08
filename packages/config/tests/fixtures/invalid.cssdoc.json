@@ -1,0 +1,3 @@
+{
+  "tagDefinitions": [{ "tagName": "@bad", "syntaxKind": "not-a-kind" }]
+}

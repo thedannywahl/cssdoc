@@ -32,14 +32,23 @@ export {
   RECORD_TAGS,
   stripCommentFraming,
 } from "./grammar.ts";
-export type { ParsedDoc, DocCssProperty } from "./grammar.ts";
+export type { ParsedDoc, DocCssProperty, DocModifier, DocCondition } from "./grammar.ts";
+export { CssDocConfiguration, CssDocTagDefinition } from "./configuration.ts";
+export type { CssDocSyntaxKind, CssDocTagDefinitionOptions } from "./configuration.ts";
 export { toMermaid } from "./mermaid.ts";
 export type {
+  CssAnimation,
+  CssCondition,
   CssDocEntry,
+  CssFunction,
+  CssLayer,
   CssModifier,
   CssPart,
   CssPropertyDeclared,
   CssRecordKind,
+  CssReleaseStage,
+  CssSlot,
+  CssState,
   ParseOptions,
   StructureNode,
 } from "./model.ts";

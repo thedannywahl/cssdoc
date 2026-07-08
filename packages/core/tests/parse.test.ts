@@ -1,5 +1,5 @@
 import { expect, test } from "vite-plus/test";
-import { parseCssDocs, toMermaid } from "../src/index.ts";
+import { CssDocConfiguration, CssDocTagDefinition, parseCssDocs, toMermaid } from "../src/index.ts";
 import { parseDocComment, parseStructure } from "../src/grammar.ts";
 
 // A fixture mirroring the real generated output: authored @component doc comments delimit records; the
@@ -99,7 +99,10 @@ test("parts come from scoped child selectors; consumed + declared custom propert
   );
 
   const circle = model.find((e) => e.name === "progress-circle")!;
-  expect(circle.cssPropertiesDeclared).toEqual([{ name: "--value", syntax: "<number>" }]);
+  // Declared custom properties now carry the full @property registration (syntax, inherits, default).
+  expect(circle.cssPropertiesDeclared).toEqual([
+    { name: "--value", syntax: "<number>", inherits: true, defaultValue: "0" },
+  ]);
 });
 
 test("parseDocComment reads the grammar, ignoring unknown tags and comment framing", () => {
@@ -150,4 +153,77 @@ test("@structure parses an indented tree, and toMermaid renders it", () => {
   expect(mermaid.startsWith("flowchart TD")).toBe(true);
   expect(mermaid).toContain(`n0[".instui-tabs"]`);
   expect(mermaid).toContain("n0 --> n1"); // tabs → list
+});
+
+test("expansive prose tags surface on the entry (remarks, since, group, a11y, release stage)", () => {
+  const [entry] = parseCssDocs(
+    `/**\n * @component switch\n * @remarks A longer explanation.\n * @since 2.1.0\n` +
+      ` * @group Forms\n * @a11y Announce state changes with aria-checked.\n * @beta\n */\n` +
+      `.instui-switch { display: inline-flex; }`,
+  );
+  expect(entry.remarks).toBe("A longer explanation.");
+  expect(entry.since).toBe("2.1.0");
+  expect(entry.group).toBe("Forms");
+  expect(entry.accessibility).toBe("Announce state changes with aria-checked.");
+  expect(entry.releaseStage).toBe("beta");
+});
+
+test("CSSOM at-rule surfaces are AST-derived (function, keyframes, layer, media, state)", () => {
+  const [entry] = parseCssDocs(
+    `/**\n * @component spinner\n * @function --spin — Rotation helper.\n */\n` +
+      `@layer components;\n` +
+      `@function --spin(--turns <number>) returns <angle> { result: calc(var(--turns) * 360deg); }\n` +
+      `@keyframes instui-spin { from { rotate: 0deg; } to { rotate: 360deg; } }\n` +
+      `@media (prefers-reduced-motion: reduce) {\n  .instui-spinner { animation: none; }\n}\n` +
+      `.instui-spinner:state(paused) { animation-play-state: paused; }`,
+  );
+  const fn = entry.functions.find((f) => f.name === "--spin")!;
+  expect(fn.parameters).toEqual(["--turns"]);
+  expect(fn.result).toBe("<angle>");
+  expect(fn.description).toBe("Rotation helper.");
+  expect(entry.animations.map((a) => a.name)).toContain("instui-spin");
+  expect(entry.layers.map((l) => l.name)).toContain("components");
+  expect(entry.conditions).toContainEqual({
+    type: "media",
+    query: "(prefers-reduced-motion: reduce)",
+    description: undefined,
+  });
+  expect(entry.states.map((s) => s.name)).toContain("paused");
+});
+
+test("a custom tag is captured only when registered in the configuration", () => {
+  const configuration = new CssDocConfiguration();
+  const token = new CssDocTagDefinition({ tagName: "@token", syntaxKind: "block" });
+  configuration.addTagDefinition(token);
+  const css = `/**\n * @component chip\n * @token --instui-chip-bg\n */\n.instui-chip { color: red; }`;
+
+  // Unregistered: the tag is ignored (graceful degradation).
+  expect(parseCssDocs(css)[0].customBlocks).toBeUndefined();
+  // Registered: captured under customBlocks, keyed by tag name.
+  expect(parseCssDocs(css, { configuration })[0].customBlocks).toEqual({
+    token: ["--instui-chip-bg"],
+  });
+});
+
+test("setSupportForTag(false) disables a standard tag", () => {
+  const configuration = new CssDocConfiguration();
+  const summary = configuration.tryGetTagDefinition("summary")!;
+  configuration.setSupportForTag(summary, false);
+  const [entry] = parseCssDocs(
+    `/**\n * @component note\n * @summary Ignored now.\n */\n.instui-note { color: red; }`,
+    { configuration },
+  );
+  expect(entry.summary).toBeUndefined();
+});
+
+test("a record tag added via configuration opens a record", () => {
+  const configuration = new CssDocConfiguration();
+  configuration.addTagDefinition(
+    new CssDocTagDefinition({ tagName: "@pattern", syntaxKind: "record", recordKind: "component" }),
+  );
+  const [entry] = parseCssDocs(`/**\n * @pattern card\n */\n.instui-card { display: block; }`, {
+    configuration,
+  });
+  expect(entry?.name).toBe("card");
+  expect(entry?.kind).toBe("component");
 });
