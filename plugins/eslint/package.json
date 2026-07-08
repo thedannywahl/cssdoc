@@ -30,10 +30,13 @@
   },
   "dependencies": {
     "@cssdoc/core": "workspace:*",
-    "@cssdoc/lint-core": "workspace:*"
+    "@cssdoc/index": "workspace:*",
+    "@cssdoc/lint-core": "workspace:*",
+    "@cssdoc/providers": "workspace:*"
   },
   "devDependencies": {
     "@eslint/css": "catalog:",
+    "@html-eslint/parser": "catalog:",
     "@types/node": "catalog:",
     "eslint": "catalog:",
     "typescript": "catalog:",
@@ -42,6 +45,15 @@
   },
   "peerDependencies": {
     "@eslint/css": ">=1",
+    "@html-eslint/parser": ">=0.63",
     "eslint": ">=9"
+  },
+  "peerDependenciesMeta": {
+    "@eslint/css": {
+      "optional": true
+    },
+    "@html-eslint/parser": {
+      "optional": true
+    }
   }
 }
