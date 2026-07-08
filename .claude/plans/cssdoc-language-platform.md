@@ -32,7 +32,8 @@ every tool a thin adapter.** Build a capability once; every surface gets it.
                                     │
    providers     ┌─────────────────────────────────────────────┐
                  │ @cssdoc/providers → aspect modules:          │  (new; absorbs
-                 │   modifier · custom-property · structure     │   lint-core checks)
+                 │   modifier · custom-property · structure ·   │   lint-core checks)
+                 │   function · state · condition               │
                  │   each: diagnostics · completion · hover ·   │
                  │         definition                           │
                  └─────────────────────────────────────────────┘
@@ -56,9 +57,13 @@ class CssDocIndex {
   partsFor(name: string): CssPart[];
   customPropertiesFor(name: string): CssPropertyDeclared[];
   structureFor(name: string): StructureNode[] | undefined;
+  functionsFor(name: string): CssFunction[];
+  statesFor(name: string): CssState[];
+  conditionsFor(name: string): CssCondition[];
   isModifier(base: string, modifier: string): boolean;
   deprecationOf(base: string, modifier: string): { canonical?: string; note?: string } | undefined;
   allCustomProperties(): CssPropertyDeclared[]; // for var(...) completion
+  allFunctions(): CssFunction[];                // for @function completion
   toManifest(): CssDocManifest;                 // stable, serializable snapshot
 }
 ```
@@ -85,7 +90,7 @@ project needs lives.
 
 ```ts
 interface CssDocAspect {
-  name: "modifier" | "custom-property" | "structure";
+  name: "modifier" | "custom-property" | "structure" | "function" | "state" | "condition";
   diagnostics(usage: Usage[], index: CssDocIndex): Diagnostic[];
   completions(ctx: CompletionContext, index: CssDocIndex): Completion[];
   hover(ctx: PositionContext, index: CssDocIndex): Hover | undefined;
@@ -93,10 +98,12 @@ interface CssDocAspect {
 }
 ```
 
-Ship three to start: `modifier`, `custom-property`, `structure`. Add `function`, `state`, and
-`condition` later by dropping in a module — no adapter changes. The existing `@cssdoc/lint-core` checks
-become the diagnostics half of the author-side aspects; refactor `lint-core` into a thin diagnostics
-façade over `@cssdoc/providers` so the Stylelint/ESLint adapters keep working unchanged.
+Ship all six aspects from the start: `modifier`, `custom-property`, `structure`, `function`, `state`,
+and `condition` — the model already carries every one, so the index and providers cover the full
+surface rather than trailing behind. The aspect interface stays the extension point: a seventh aspect
+later drops in as a module with no adapter changes. The existing `@cssdoc/lint-core` checks become the
+diagnostics half of the author-side aspects; refactor `lint-core` into a thin diagnostics façade over
+`@cssdoc/providers` so the Stylelint/ESLint adapters keep working unchanged.
 
 Deprecation is already first-class in the model (`canonical`), so it maps straight to a code action —
 "replace `.-variant-error` with `.-color-danger`" — one of the most valuable IntelliSense features,
