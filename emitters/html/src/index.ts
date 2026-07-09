@@ -37,7 +37,7 @@ const code = (text: string | undefined): string => (text ? `<code>${esc(text)}</
 
 // The cssdoc mark (see icon.svg at the repo root), embedded as a favicon data URI so pages stay
 // self-contained. Braces are vector paths, so it renders identically everywhere.
-const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><mask id="cut"><rect x="8" y="8" width="112" height="112" rx="24" fill="white"/><g fill="none" stroke="black" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M 86 50 q -8 0 -8 8 l 0 14 q 0 8 -8 8 q 8 0 8 8 l 0 14 q 0 8 8 8"/><path d="M 94 50 q 8 0 8 8 l 0 14 q 0 8 8 8 q -8 0 -8 8 l 0 14 q 0 8 -8 8"/></g></mask><rect x="8" y="8" width="112" height="112" rx="24" fill="#6ba7a5" mask="url(#cut)"/></svg>`;
+const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><mask id="cut"><rect x="8" y="8" width="112" height="112" rx="24" fill="white"/><g fill="none" stroke="black" stroke-linecap="round" stroke-linejoin="round"><g stroke-width="7"><path d="M 84 64 q -6 0 -6 6 l 0 11 q 0 6 -6 6 q 6 0 6 6 l 0 11 q 0 6 6 6"/><path d="M 100 64 q 6 0 6 6 l 0 11 q 0 6 6 6 q -6 0 -6 6 l 0 11 q 0 6 -6 6"/></g><g stroke-width="5"><path d="M 92 80 L 92 94"/><path d="M 86 83.5 L 98 90.5"/><path d="M 86 90.5 L 98 83.5"/></g></g></mask><rect x="8" y="8" width="112" height="112" rx="24" fill="#6ba7a5" mask="url(#cut)"/></svg>`;
 const FAVICON = `data:image/svg+xml;base64,${Buffer.from(ICON_SVG).toString("base64")}`;
 
 const STYLE = `
