@@ -4,7 +4,7 @@
  * extension. `html.customData` lists the component classes and modifiers as `class`-attribute values;
  * `css.customData` lists the declared custom properties.
  *
- * @module
+ * @module @cssdoc/vscode-custom-data
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

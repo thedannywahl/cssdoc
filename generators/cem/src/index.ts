@@ -4,7 +4,7 @@
  * carrying `cssProperties`, `cssParts`, and `cssStates` — making the model interoperable with the CEM
  * tooling ecosystem.
  *
- * @module
+ * @module @cssdoc/cem
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";

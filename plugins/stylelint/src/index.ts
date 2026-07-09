@@ -12,7 +12,7 @@
  * };
  * ```
  *
- * @module
+ * @module @cssdoc/stylelint-plugin
  */
 import { type RuleName, lintCssDocs } from "@cssdoc/lint-core";
 import stylelint, { type Rule } from "stylelint";

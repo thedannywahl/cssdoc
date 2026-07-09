@@ -3,7 +3,7 @@
  * with a lightweight index, and the JSON Schema of the model (for validating/typing the output). The
  * TypeDoc `--json` analog.
  *
- * @module
+ * @module @cssdoc/json
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

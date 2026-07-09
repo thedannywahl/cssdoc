@@ -22,7 +22,7 @@
  * writeFileSync("css-docs.json", toJson(model));
  * ```
  *
- * @module
+ * @module @cssdoc/core
  */
 export { parseCssDocs } from "./parse.ts";
 export {

@@ -4,7 +4,7 @@
  * `$description`, grouped by the record that declares it — so properties that double as design tokens
  * interchange with the token ecosystem.
  *
- * @module
+ * @module @cssdoc/dtcg
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";

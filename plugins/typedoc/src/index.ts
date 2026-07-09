@@ -20,7 +20,7 @@
  *
  * (The generic `@demo` block-tag rewriter is a separate TypeDoc plugin, unrelated to CSS.)
  *
- * @module
+ * @module @cssdoc/typedoc
  */
 import { type Application, ParameterType, RendererEvent } from "typedoc";
 import { emitCssApi } from "./emit.ts";

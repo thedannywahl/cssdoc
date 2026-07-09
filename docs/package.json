@@ -11,11 +11,17 @@
   },
   "type": "module",
   "scripts": {
-    "docs:dev": "vitepress dev",
-    "docs:build": "vitepress build",
+    "docs:api": "typedoc",
+    "docs:dev": "typedoc && vitepress dev",
+    "docs:build": "typedoc && vitepress build",
     "docs:preview": "vitepress preview"
   },
   "devDependencies": {
+    "@cssdoc/typedoc": "workspace:*",
+    "@types/node": "catalog:",
+    "typedoc": "catalog:",
+    "typedoc-plugin-markdown": "catalog:",
+    "typedoc-vitepress-theme": "catalog:",
     "vitepress": "catalog:"
   }
 }

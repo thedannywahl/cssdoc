@@ -2,7 +2,7 @@
  * `@cssdoc/html` — render the `@cssdoc/core` model to standalone, self-contained HTML: one page per
  * record plus an index, each with inline styles and no build step. The TypeDoc default-theme analog.
  *
- * @module
+ * @module @cssdoc/html
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

@@ -8,7 +8,7 @@
  * carried alongside the model. Build with {@link createIndex} (from CSS, with spans) or
  * {@link indexFromEntries} (from a model snapshot, without spans).
  *
- * @module
+ * @module @cssdoc/index
  */
 import {
   type CssAnimation,

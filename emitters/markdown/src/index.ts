@@ -5,7 +5,7 @@
  * reference directory. The pantoken-specific token resolution is injected via the `resolveToken` hook —
  * cssdoc never hard-codes any project's tokens.
  *
- * @module
+ * @module @cssdoc/markdown
  */
 export {
   KIND_GROUPS,

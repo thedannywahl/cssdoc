@@ -4,7 +4,7 @@
  * Code, Neovim, JetBrains, Zed) spawn the `cssdoc-language-server` bin; importing the package gives you
  * the pure {@link CssDocLanguageService} to embed or `startLanguageServer()` to run it yourself.
  *
- * @module
+ * @module @cssdoc/language-server
  */
 export { CssDocLanguageService } from "./service.ts";
 export type {

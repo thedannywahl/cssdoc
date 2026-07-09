@@ -3,7 +3,7 @@
  * token-efficient Markdown summary of every documented component's surface, sized for dropping into an
  * LLM's context window. One compact block per record; empty facets are omitted.
  *
- * @module
+ * @module @cssdoc/llms
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";

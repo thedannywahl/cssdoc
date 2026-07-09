@@ -4,7 +4,7 @@
  * from modular aspect modules. Every adapter — the Stylelint and ESLint plugins, and the language
  * server — is a thin translation of these into its host's API.
  *
- * @module
+ * @module @cssdoc/providers
  */
 import type { ClassUsage, CssDocIndex, Location, PropertyUsage } from "@cssdoc/index";
 import { customProperty, func, modifier, part, record } from "./aspects.ts";

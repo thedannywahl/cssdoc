@@ -1,0 +1,25 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme", "@cssdoc/typedoc"],
+  "entryPointStrategy": "resolve",
+  "entryPoints": [
+    "../packages/*/src/index.ts",
+    "../emitters/*/src/index.ts",
+    "../generators/*/src/index.ts",
+    "../plugins/*/src/index.ts",
+    "../servers/language-server/src/index.ts"
+  ],
+  "tsconfig": "tsconfig.typedoc.json",
+  "out": "reference",
+  "docsRoot": ".",
+  "readme": "none",
+  "githubPages": false,
+  "entryFileName": "index",
+  "hidePageHeader": true,
+  "hideBreadcrumbs": true,
+  "useCodeBlocks": true,
+  "cssdocCss": ["../servers/vscode/examples/components.css"],
+  "cssdocOut": "css",
+  "cssdocLabel": "CSS reference",
+  "cssdocBaseHref": "/reference/css/"
+}

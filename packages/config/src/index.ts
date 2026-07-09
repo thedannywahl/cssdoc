@@ -12,7 +12,7 @@
  * const model = parseCssDocs(css, { configuration: configFile.toConfiguration() });
  * ```
  *
- * @module
+ * @module @cssdoc/config
  */
 export { CssDocConfigFile, CSSDOC_CONFIG_FILENAME } from "./CssDocConfigFile.ts";
 export { cssDocSchema } from "./schema.ts";

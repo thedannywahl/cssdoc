@@ -9,6 +9,12 @@ on:
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - ".github/workflows/docs.yml"
+      # The API reference is generated from package sources, so redeploy when they change.
+      - "packages/**"
+      - "emitters/**"
+      - "generators/**"
+      - "plugins/**"
+      - "servers/**"
   workflow_dispatch:
 
 permissions:
@@ -33,6 +39,10 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Build the packages first: the API reference extracts them, and `docs:build` loads the built
+      # @cssdoc/typedoc plugin from its dist.
+      - name: Build packages
+        run: pnpm run build
       - name: Build docs
         run: pnpm run docs:build
         # GitHub Pages serves the project site under /<repo>/; match VitePress's base to it.

@@ -2,5 +2,8 @@ node_modules
 dist
 *.tsbuildinfo
 *.vsix
-.vitepress/cache
+# Anchored patterns match only the repo root, so match the nested docs/.vitepress too.
+**/.vitepress/cache
+**/.vitepress/dist
+docs/reference
 .DS_Store
