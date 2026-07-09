@@ -10,7 +10,14 @@
     "postcss",
     "tsdoc"
   ],
+  "homepage": "https://thedannywahl.github.io/cssdoc/",
+  "bugs": "https://github.com/thedannywahl/cssdoc/issues",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thedannywahl/cssdoc.git",
+    "directory": "packages/core"
+  },
   "files": [
     "dist",
     "grammar"

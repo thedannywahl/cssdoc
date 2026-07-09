@@ -39,5 +39,10 @@ export default defineConfig({
     ],
     outline: "deep",
     search: { provider: "local" },
+    editLink: {
+      pattern: "https://github.com/thedannywahl/cssdoc/edit/main/docs/:path",
+      text: "Edit this page on GitHub",
+    },
+    socialLinks: [{ icon: "github", link: "https://github.com/thedannywahl/cssdoc" }],
   },
 });

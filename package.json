@@ -3,6 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "TSDoc, for CSS — a Vite+ monorepo: parser, config, emitters, and lint/TypeDoc plugins.",
+  "homepage": "https://thedannywahl.github.io/cssdoc/",
+  "bugs": "https://github.com/thedannywahl/cssdoc/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thedannywahl/cssdoc.git"
+  },
   "type": "module",
   "scripts": {
     "build": "vp run -r build",

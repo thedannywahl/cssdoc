@@ -2,6 +2,13 @@
   "name": "@cssdoc/docs",
   "version": "0.0.0",
   "private": true,
+  "homepage": "https://thedannywahl.github.io/cssdoc/",
+  "bugs": "https://github.com/thedannywahl/cssdoc/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thedannywahl/cssdoc.git",
+    "directory": "docs"
+  },
   "type": "module",
   "scripts": {
     "docs:dev": "vitepress dev",
