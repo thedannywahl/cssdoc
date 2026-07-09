@@ -1,0 +1,51 @@
+{
+  "name": "@cssdoc/tmlanguage",
+  "version": "0.0.0",
+  "description": "A TextMate injection grammar that highlights cssdoc doc-comment tags inside CSS comments, the way TSDoc highlights JSDoc tags. Ships as a Shiki language.",
+  "keywords": [
+    "css",
+    "cssdoc",
+    "injection",
+    "shiki",
+    "syntax-highlighting",
+    "textmate",
+    "tmlanguage"
+  ],
+  "homepage": "https://thedannywahl.github.io/cssdoc/",
+  "bugs": "https://github.com/thedannywahl/cssdoc/issues",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thedannywahl/cssdoc.git",
+    "directory": "syntaxes/cssdoc"
+  },
+  "files": [
+    "dist",
+    "cssdoc.injection.tmLanguage.json"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./cssdoc.injection.tmLanguage.json": "./cssdoc.injection.tmLanguage.json",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vp pack",
+    "dev": "vp pack --watch",
+    "test": "vp test",
+    "check": "vp check",
+    "prepublishOnly": "vp run build",
+    "publint": "publint"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "publint": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

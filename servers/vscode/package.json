@@ -42,6 +42,15 @@
     "vite-plus": "catalog:"
   },
   "contributes": {
+    "grammars": [
+      {
+        "scopeName": "documentation.cssdoc",
+        "path": "./syntaxes/cssdoc.injection.tmLanguage.json",
+        "injectTo": [
+          "source.css"
+        ]
+      }
+    ],
     "configuration": {
       "title": "cssdoc",
       "properties": {

@@ -6,4 +6,6 @@ dist
 **/.vitepress/cache
 **/.vitepress/dist
 docs/reference
+# Vendored into the extension at build time from @cssdoc/tmlanguage.
+servers/vscode/syntaxes
 .DS_Store
