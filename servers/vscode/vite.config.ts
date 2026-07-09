@@ -1,18 +1,14 @@
 import { defineConfig } from "vite-plus";
 
+// This package is bundled with esbuild (see the `build` script), not `vp pack`, because a VS Code
+// extension must ship as a self-contained CommonJS bundle. Vite+ still handles format, lint, and
+// typecheck via `vp check`.
 export default defineConfig({
-  pack: {
-    dts: true,
-    exports: true,
-    // `vscode` is provided by the extension host at runtime (only @types/vscode exists), so keep it
-    // external rather than trying to bundle the types package.
-    deps: { neverBundle: ["vscode"] },
-  },
+  fmt: {},
   lint: {
     options: {
       typeAware: true,
       typeCheck: true,
     },
   },
-  fmt: {},
 });

@@ -9,7 +9,7 @@
     "check": "vp check",
     "test": "vp run -r test",
     "ready": "vp run -r build && vp check && vp run -r test",
-    "check:publish": "pnpm -r --filter \"./packages/**\" --filter \"./emitters/**\" --filter \"./generators/**\" --filter \"./plugins/**\" --filter \"./servers/**\" --filter \"!@cssdoc/vscode\" exec publint"
+    "check:publish": "pnpm -r --filter \"./packages/**\" --filter \"./emitters/**\" --filter \"./generators/**\" --filter \"./plugins/**\" --filter \"./servers/**\" --filter \"!cssdoc-vscode\" exec publint"
   },
   "devDependencies": {
     "publint": "catalog:",

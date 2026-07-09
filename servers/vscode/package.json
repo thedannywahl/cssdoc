@@ -1,19 +1,21 @@
 {
-  "name": "@cssdoc/vscode",
+  "name": "cssdoc-vscode",
   "displayName": "cssdoc",
   "version": "0.0.0",
   "private": true,
   "description": "VS Code support for cssdoc: completions, hover, go-to-definition, and deprecation quick-fixes for documented CSS classes, modifiers, and custom properties.",
+  "categories": [
+    "Linters",
+    "Programming Languages"
+  ],
+  "publisher": "cssdoc",
   "type": "module",
-  "exports": {
-    ".": "./dist/index.mjs",
-    "./package.json": "./package.json"
-  },
+  "main": "./dist/extension.cjs",
   "scripts": {
-    "build": "vp pack",
-    "dev": "vp pack --watch",
+    "build": "node scripts/build.mjs",
+    "check": "vp check",
     "test": "vp test",
-    "check": "vp check"
+    "package": "pnpm run build && vsce package --no-dependencies -o cssdoc.vsix"
   },
   "dependencies": {
     "@cssdoc/language-server": "workspace:*",
@@ -21,7 +23,9 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "@types/vscode": "catalog:",
+    "@types/vscode": "^1.125.0",
+    "@vscode/vsce": "catalog:",
+    "esbuild": "catalog:",
     "typescript": "catalog:",
     "vite": "npm:@voidzero-dev/vite-plus-core@0.2.2",
     "vite-plus": "catalog:"

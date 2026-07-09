@@ -11,10 +11,11 @@
   ],
   "license": "MIT",
   "bin": {
-    "language-server": "./dist/index.mjs"
+    "cssdoc-language-server": "./bin/cssdoc-language-server.mjs"
   },
   "files": [
-    "dist"
+    "dist",
+    "bin"
   ],
   "type": "module",
   "exports": {

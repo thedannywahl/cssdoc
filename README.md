@@ -43,7 +43,7 @@ and the CSS/HTML language services share one core.
 | [`@cssdoc/stylelint-plugin`](plugins/stylelint)      | `plugins/stylelint`       | Stylelint rules for doc-comment hygiene.                                                      |
 | [`@cssdoc/eslint-plugin`](plugins/eslint)            | `plugins/eslint`          | ESLint rules: doc-comment hygiene (`@eslint/css`) and consumer-side class-usage (JSX + HTML). |
 | [`@cssdoc/language-server`](servers/language-server) | `servers/language-server` | An editor-agnostic LSP: completion, hover, definition, and deprecation quick-fixes.           |
-| [`@cssdoc/vscode`](servers/vscode)                   | `servers/vscode`          | A thin VS Code extension that runs the language server.                                       |
+| [`cssdoc-vscode`](servers/vscode)                    | `servers/vscode`          | A thin VS Code extension that runs the language server.                                       |
 
 ## Develop
 
