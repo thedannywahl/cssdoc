@@ -1,5 +1,6 @@
 .vscode/**
 examples/**
+icon-dark.png
 src/**
 scripts/**
 tests/**
