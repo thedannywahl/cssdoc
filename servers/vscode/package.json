@@ -31,7 +31,7 @@
     "esbuild": "catalog:",
     "ovsx": "catalog:",
     "typescript": "catalog:",
-    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.2",
+    "vite": "catalog:",
     "vite-plus": "catalog:"
   },
   "contributes": {

@@ -25,7 +25,7 @@
     "bumpp": "catalog:",
     "changelogen": "catalog:",
     "publint": "catalog:",
-    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.2",
+    "vite": "catalog:",
     "vite-plus": "catalog:"
   },
   "devEngines": {

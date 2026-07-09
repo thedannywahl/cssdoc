@@ -37,7 +37,7 @@
     "@types/node": "catalog:",
     "publint": "catalog:",
     "typescript": "catalog:",
-    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.2",
+    "vite": "catalog:",
     "vite-plus": "catalog:"
   }
 }
