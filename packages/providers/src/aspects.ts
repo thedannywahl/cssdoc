@@ -10,10 +10,12 @@ import {
   type ClassUsage,
   type CssDocIndex,
   type Location,
+  type PropertyAssignment,
   type PropertyUsage,
   type RecordInfo,
   memberKey,
 } from "@cssdoc/index";
+import { matchesSyntax } from "./syntax.ts";
 import type { Completion, Diagnostic, Hover, UsageOptions } from "./types.ts";
 
 const stripDot = (name: string): string => name.replace(/^\./u, "");
@@ -243,17 +245,81 @@ function findProperty(
 }
 
 export const customProperty = {
-  propertyUsage(usage: PropertyUsage, index: CssDocIndex, options: UsageOptions): Diagnostic[] {
-    if (!options.propertyPrefix || !usage.name.startsWith(options.propertyPrefix)) return [];
-    if (findProperty(index, usage.name)) return [];
+  /** Author-side: a registered property's default (`initial-value`/`@defaultValue`) must match its syntax. */
+  model(index: CssDocIndex): Diagnostic[] {
+    const out: Diagnostic[] = [];
+    for (const { property, record } of index.allCustomProperties()) {
+      if (!property.syntax || property.defaultValue === undefined) continue;
+      const m = matchesSyntax(property.syntax, property.defaultValue);
+      if (m.skipped || m.ok) continue;
+      out.push(
+        warn({
+          aspect: "custom-property",
+          rule: "invalid-default-value",
+          message: `Default \`${property.defaultValue}\` of \`${property.name}\` doesn't match its syntax \`${property.syntax}\`.`,
+          record,
+          span: index.location(record, memberKey("property", property.name))?.span,
+        }),
+      );
+    }
+    return out;
+  },
+
+  /** Consumer-side: an assignment `--name: value` must match the property's declared syntax. */
+  assignment(a: PropertyAssignment, index: CssDocIndex): Diagnostic[] {
+    const found = findProperty(index, a.name);
+    if (!found) return [];
+    const property = found.record.entry.cssPropertiesDeclared[found.index];
+    if (!property.syntax) return [];
+    const m = matchesSyntax(property.syntax, a.value);
+    if (m.skipped || m.ok) return [];
     return [
       warn({
         aspect: "custom-property",
-        rule: "unknown-custom-property",
-        message: `\`${usage.name}\` is not a documented custom property.`,
-        span: usage.loc,
+        rule: "invalid-property-value",
+        message: `\`${a.value}\` doesn't match the declared syntax \`${property.syntax}\` of \`${a.name}\`.`,
+        record: found.record.entry.name,
+        span: a.loc,
       }),
     ];
+  },
+
+  propertyUsage(usage: PropertyUsage, index: CssDocIndex, options: UsageOptions): Diagnostic[] {
+    const out: Diagnostic[] = [];
+    // A `var(--x, fallback)` fallback must match --x's declared syntax.
+    if (usage.fallback) {
+      const found = findProperty(index, usage.name);
+      const property = found?.record.entry.cssPropertiesDeclared[found.index];
+      if (property?.syntax) {
+        const m = matchesSyntax(property.syntax, usage.fallback);
+        if (!m.skipped && !m.ok) {
+          out.push(
+            warn({
+              aspect: "custom-property",
+              rule: "invalid-fallback-value",
+              message: `\`var(${usage.name}, …)\` fallback \`${usage.fallback}\` doesn't match the declared syntax \`${property.syntax}\`.`,
+              span: usage.loc,
+            }),
+          );
+        }
+      }
+    }
+    // Unknown custom property (opt-in via prefix).
+    if (
+      options.propertyPrefix &&
+      usage.name.startsWith(options.propertyPrefix) &&
+      !findProperty(index, usage.name)
+    ) {
+      out.push(
+        warn({
+          aspect: "custom-property",
+          rule: "unknown-custom-property",
+          message: `\`${usage.name}\` is not a documented custom property.`,
+          span: usage.loc,
+        }),
+      );
+    }
+    return out;
   },
 
   completions(index: CssDocIndex): Completion[] {

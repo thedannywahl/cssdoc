@@ -37,7 +37,8 @@
   },
   "dependencies": {
     "@cssdoc/core": "workspace:*",
-    "postcss": "catalog:"
+    "postcss": "catalog:",
+    "postcss-value-parser": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",

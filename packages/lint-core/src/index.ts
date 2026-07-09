@@ -7,16 +7,19 @@
  * @module @cssdoc/lint-core
  */
 import type { CssDocConfiguration } from "@cssdoc/core";
-import { createIndex } from "@cssdoc/index";
-import { lintModel } from "@cssdoc/providers";
+import { createIndex, cssValueSites } from "@cssdoc/index";
+import { checkPropertyAssignments, checkPropertyUsage, lintModel } from "@cssdoc/providers";
 
-/** The author-side rules this package surfaces. */
+/** The rules this package surfaces (doc-comment hygiene plus registered-property value checks). */
 export type RuleName =
   | "missing-summary"
   | "undocumented-modifier"
   | "undocumented-part"
   | "deprecated-requires-canonical"
-  | "name-not-in-css";
+  | "name-not-in-css"
+  | "invalid-default-value"
+  | "invalid-property-value"
+  | "invalid-fallback-value";
 
 /** Every rule name, in a stable order. */
 export const RULE_NAMES: readonly RuleName[] = [
@@ -25,6 +28,9 @@ export const RULE_NAMES: readonly RuleName[] = [
   "undocumented-part",
   "deprecated-requires-canonical",
   "name-not-in-css",
+  "invalid-default-value",
+  "invalid-property-value",
+  "invalid-fallback-value",
 ];
 
 /** One rule violation. */
@@ -57,7 +63,13 @@ export interface LintOptions {
 export function lintCssDocs(css: string, options: LintOptions = {}): Violation[] {
   const index = createIndex(css, { configuration: options.configuration });
   const enabled = (rule: RuleName): boolean => options.rules?.[rule] !== false;
-  return lintModel(index)
+  const { assignments, usages } = cssValueSites(css);
+  const diagnostics = [
+    ...lintModel(index), // hygiene + invalid-default-value
+    ...checkPropertyAssignments(assignments, index), // invalid-property-value
+    ...checkPropertyUsage(usages, index), // invalid-fallback-value (unknown-property is opt-in, off here)
+  ];
+  return diagnostics
     .filter((d) => enabled(d.rule as RuleName))
     .map((d) => ({
       rule: d.rule as RuleName,

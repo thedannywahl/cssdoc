@@ -1,7 +1,8 @@
 # Linting
 
-cssdoc ships two kinds of lint checks over the same rule core: **author-side** hygiene (is the CSS
-documented?) and **consumer-side** usage (do the classes you apply exist?).
+cssdoc ships three kinds of lint checks over the same rule core: **author-side** hygiene (is the CSS
+documented?), **registered-property value** checks (do values match a property's `@property` syntax?),
+and **consumer-side** usage (do the classes you apply exist?).
 
 ## Stylelint — doc-comment hygiene
 
@@ -24,9 +25,9 @@ export default {
 };
 ```
 
-It reports: `missing-summary`, `undocumented-modifier`, `undocumented-part`,
+It reports the hygiene rules — `missing-summary`, `undocumented-modifier`, `undocumented-part`,
 `deprecated-requires-canonical`, and `name-not-in-css` (a documented modifier/part that no selector
-defines — drift).
+defines — drift) — plus the registered-property value rules below.
 
 ## ESLint — doc hygiene and class usage
 
@@ -69,8 +70,38 @@ utility classes never trip the rule.
 
 ```jsx
 // ✗ "-bogus" is not a documented modifier of "button"
-<button className="instui-button -bogus" />
+<button className="button -bogus" />
 
 // ✗ "-variant-old" is deprecated — use ".-color-secondary"
-<button className="instui-button -variant-old" />
+<button className="button -variant-old" />
 ```
+
+## Registered-property value checks
+
+When a custom property is registered with an [`@property`](https://developer.mozilla.org/en-US/docs/Web/CSS/@property)
+rule, its `syntax` descriptor is a real grammar. cssdoc matches values against it and flags mismatches
+via three rules, all part of `cssdoc/valid-doc-comments` (Stylelint and ESLint) and surfaced live for
+CSS files by the editor extension:
+
+- **`invalid-default-value`** — the `initial-value` (or an authored `@defaultValue`) doesn't match the
+  declared `syntax`.
+- **`invalid-property-value`** — an assignment `--name: value` doesn't match the property's `syntax`.
+- **`invalid-fallback-value`** — a `var(--name, fallback)` fallback doesn't match the property's `syntax`.
+
+```css
+@property --gap {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 4px;
+}
+
+.card {
+  --gap: 8px; /* ✓ */
+  --gap: red; /* ✗ invalid-property-value — expected <length> */
+  padding: var(--gap, 1rem); /* ✓ */
+  margin: var(--gap, teal); /* ✗ invalid-fallback-value — expected <length> */
+}
+```
+
+Values that can't be checked statically are never flagged: universal syntax (`*`), runtime
+substitutions (`var()`, `env()`), and the CSS-wide keywords (`inherit`, `initial`, `unset`, `revert`).

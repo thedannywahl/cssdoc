@@ -6,11 +6,18 @@
  *
  * @module @cssdoc/providers
  */
-import type { ClassUsage, CssDocIndex, Location, PropertyUsage } from "@cssdoc/index";
+import type {
+  ClassUsage,
+  CssDocIndex,
+  Location,
+  PropertyAssignment,
+  PropertyUsage,
+} from "@cssdoc/index";
 import { customProperty, func, modifier, part, record } from "./aspects.ts";
 import type { Completion, Diagnostic, Hover, UsageOptions } from "./types.ts";
 
 export * from "./types.ts";
+export * from "./syntax.ts";
 export { customProperty, func, modifier, part, record } from "./aspects.ts";
 
 /** The aspect names covered, in a stable order (the extension point for future aspects). */
@@ -25,9 +32,22 @@ export const ASPECTS = [
   "condition",
 ] as const;
 
-/** Author-side hygiene diagnostics over the whole model (missing summaries, undocumented members, drift). */
+/** Author-side hygiene diagnostics over the whole model (missing summaries, undocumented members, drift, invalid defaults). */
 export function lintModel(index: CssDocIndex): Diagnostic[] {
-  return [...record.model(index), ...modifier.model(index), ...part.model(index)];
+  return [
+    ...record.model(index),
+    ...modifier.model(index),
+    ...part.model(index),
+    ...customProperty.model(index),
+  ];
+}
+
+/** Consumer-side diagnostics for custom-property assignments (`--x: value` must match its `@property` syntax). */
+export function checkPropertyAssignments(
+  assignments: readonly PropertyAssignment[],
+  index: CssDocIndex,
+): Diagnostic[] {
+  return assignments.flatMap((a) => customProperty.assignment(a, index));
 }
 
 /** Consumer-side diagnostics for class-attribute usage (unknown or deprecated modifiers). */

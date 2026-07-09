@@ -55,7 +55,7 @@ export function startLanguageServer(): void {
   });
 
   const validate = (doc: TextDocument): void => {
-    const diagnostics = service.diagnostics(doc.getText()).map((d) => ({
+    const diagnostics = service.diagnostics(doc.getText(), doc.languageId).map((d) => ({
       range: d.range,
       message: d.message,
       severity: d.severity === 1 ? DiagnosticSeverity.Error : DiagnosticSeverity.Warning,

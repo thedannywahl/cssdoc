@@ -26,6 +26,7 @@ import {
   recordNameOf,
 } from "@cssdoc/core";
 import postcss, { type ChildNode } from "postcss";
+import valueParser from "postcss-value-parser";
 
 /** A 1-based line/column position (matching PostCSS). */
 export interface Position {
@@ -51,7 +52,7 @@ export interface Location {
  * HTML, JSX, and CSS selectors all emit this shape.
  */
 export interface ClassUsage {
-  /** The base component class among the tokens, if any (e.g. `.instui-button` → `instui-button`). */
+  /** The base component class among the tokens, if any (e.g. `.button` → `button`). */
   base?: string;
   /** Every class token on the element. */
   tokens: string[];
@@ -64,7 +65,22 @@ export interface ClassUsage {
 /** A `var(--name)` custom-property reference. */
 export interface PropertyUsage {
   name: string;
+  /** The fallback in `var(--name, fallback)`, when present. */
+  fallback?: string;
   loc?: SourceSpan;
+}
+
+/** A custom-property assignment: `--name: value`. */
+export interface PropertyAssignment {
+  name: string;
+  value: string;
+  loc?: SourceSpan;
+}
+
+/** The value sites a stylesheet contains: custom-property assignments and `var(--…)` references. */
+export interface CssValueSites {
+  assignments: PropertyAssignment[];
+  usages: PropertyUsage[];
 }
 
 /** The kinds of record member a span can be keyed to. */
@@ -338,4 +354,36 @@ export function createIndex(
       },
   );
   return new CssDocIndex(records, options.file);
+}
+
+/**
+ * Extract custom-property assignments (`--name: value`) and `var(--name, fallback)` references from
+ * CSS. Parsing lives here — the CSS-parsing package — so the linters and the language server share one
+ * extractor for the value-validation rules.
+ *
+ * @param css - The CSS source.
+ * @returns The assignments and `var(…)` usages found.
+ */
+export function cssValueSites(css: string): CssValueSites {
+  const assignments: PropertyAssignment[] = [];
+  const usages: PropertyUsage[] = [];
+  const root = postcss.parse(css);
+  root.walkDecls((decl) => {
+    const loc = spanOf(decl);
+    if (decl.prop.startsWith("--")) {
+      assignments.push({ name: decl.prop, value: decl.value, loc });
+    }
+    if (decl.value.includes("var(")) {
+      valueParser(decl.value).walk((node) => {
+        if (node.type !== "function" || node.value !== "var") return;
+        const name = node.nodes.find((n) => n.type === "word")?.value;
+        if (!name?.startsWith("--")) return;
+        const comma = node.nodes.findIndex((n) => n.type === "div" && n.value === ",");
+        const fallback =
+          comma >= 0 ? valueParser.stringify(node.nodes.slice(comma + 1)).trim() : undefined;
+        usages.push({ name, fallback: fallback || undefined, loc });
+      });
+    }
+  });
+  return { assignments, usages };
 }

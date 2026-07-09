@@ -6,16 +6,22 @@
  *
  * @module
  */
-import type { CssDocIndex } from "@cssdoc/index";
+import { type CssDocIndex, type SourceSpan, createIndex, cssValueSites } from "@cssdoc/index";
 import {
   checkClassUsage,
+  checkPropertyAssignments,
+  checkPropertyUsage,
   completeClasses,
   completeCustomProperties,
   definitionForClass,
   definitionForCustomProperty,
   hoverForClass,
   hoverForCustomProperty,
+  lintModel,
 } from "@cssdoc/providers";
+
+/** Language ids handled as CSS (the value/hygiene checks run on these). */
+const CSS_LANGUAGES = new Set(["css", "scss", "less", "postcss"]);
 
 /** A 0-based LSP position. */
 export interface LspPosition {
@@ -71,6 +77,17 @@ function positionAt(text: string, offset: number): LspPosition {
 
 function rangeOf(text: string, start: number, end: number): LspRange {
   return { start: positionAt(text, start), end: positionAt(text, end) };
+}
+
+/** Convert a 1-based PostCSS {@link SourceSpan} to a 0-based LSP range. */
+function spanToRange(span: SourceSpan): LspRange {
+  return {
+    start: {
+      line: Math.max(0, span.start.line - 1),
+      character: Math.max(0, span.start.column - 1),
+    },
+    end: { line: Math.max(0, span.end.line - 1), character: Math.max(0, span.end.column - 1) },
+  };
 }
 
 interface AttrToken {
@@ -180,8 +197,13 @@ export class CssDocLanguageService {
     return undefined;
   }
 
-  /** Diagnostics for a document's class usage (unknown/deprecated modifiers), with quick-fix data. */
-  diagnostics(text: string): LspDiagnostic[] {
+  /**
+   * Diagnostics for a document. For CSS the stylesheet is linted in place (doc-comment hygiene plus the
+   * registered-property value checks); for other languages, class-attribute usage is checked against
+   * the configured index.
+   */
+  diagnostics(text: string, languageId?: string): LspDiagnostic[] {
+    if (languageId && CSS_LANGUAGES.has(languageId)) return this.cssDiagnostics(text);
     const out: LspDiagnostic[] = [];
     for (const attr of classAttributes(text)) {
       const base = attr.tokens.find((t) => this.index.componentForClass(t));
@@ -206,6 +228,28 @@ export class CssDocLanguageService {
           });
         }
       }
+    }
+    return out;
+  }
+
+  /** Lint an open stylesheet: doc-comment hygiene and the registered-property value checks. */
+  private cssDiagnostics(text: string): LspDiagnostic[] {
+    const index = createIndex(text);
+    const { assignments, usages } = cssValueSites(text);
+    const diags = [
+      ...lintModel(index),
+      ...checkPropertyAssignments(assignments, index),
+      ...checkPropertyUsage(usages, index),
+    ];
+    const out: LspDiagnostic[] = [];
+    for (const d of diags) {
+      if (!d.span) continue;
+      out.push({
+        range: spanToRange(d.span),
+        message: d.message,
+        severity: d.severity === "error" ? 1 : 2,
+        code: d.rule,
+      });
     }
     return out;
   }

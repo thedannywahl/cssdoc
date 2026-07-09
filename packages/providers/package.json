@@ -37,9 +37,11 @@
   },
   "dependencies": {
     "@cssdoc/core": "workspace:*",
-    "@cssdoc/index": "workspace:*"
+    "@cssdoc/index": "workspace:*",
+    "css-tree": "catalog:"
   },
   "devDependencies": {
+    "@types/css-tree": "catalog:",
     "@types/node": "catalog:",
     "publint": "catalog:",
     "typescript": "catalog:",
