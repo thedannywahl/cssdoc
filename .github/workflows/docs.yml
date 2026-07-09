@@ -44,11 +44,9 @@ jobs:
       # @cssdoc/typedoc plugin from its dist.
       - name: Build packages
         run: pnpm run build
+      # Served at the apex domain cssdoc.dev, so the default base (/) is correct — no DOCS_BASE override.
       - name: Build docs
         run: pnpm run docs:build
-        # GitHub Pages serves the project site under /<repo>/; match VitePress's base to it.
-        env:
-          DOCS_BASE: /${{ github.event.repository.name }}/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
