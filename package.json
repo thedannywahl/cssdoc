@@ -9,7 +9,9 @@
     "check": "vp check",
     "test": "vp run -r test",
     "ready": "vp run -r build && vp check && vp run -r test",
-    "check:publish": "vp run -r publint"
+    "check:publish": "vp run -r publint",
+    "release": "vp pm publish -r --access public",
+    "release:dry": "vp pm publish -r --dry-run --no-git-checks"
   },
   "devDependencies": {
     "publint": "catalog:",
