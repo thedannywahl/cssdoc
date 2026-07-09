@@ -36,3 +36,23 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
+
+  publish-extension:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Bundles the extension, then publishes to the VS Code Marketplace (vsce) and Open VSX (ovsx).
+      # The Marketplace has no OIDC — both need stored PATs (VSCE_PAT, OVSX_PAT repo secrets).
+      - name: Publish extension (Marketplace + Open VSX)
+        run: pnpm run ext:publish
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}

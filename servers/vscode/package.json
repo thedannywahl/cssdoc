@@ -16,7 +16,8 @@
     "check": "vp check",
     "test": "vp test",
     "icon": "node scripts/gen-icon.mjs",
-    "package": "vp run -t build && vsce package --no-dependencies -o cssdoc.vsix"
+    "package": "vp run -t build && vsce package --no-dependencies -o cssdoc.vsix",
+    "publish:marketplace": "vp run -t build && vsce package --no-dependencies -o cssdoc.vsix && vsce publish --no-dependencies --packagePath cssdoc.vsix && ovsx publish cssdoc.vsix"
   },
   "dependencies": {
     "@cssdoc/language-server": "workspace:*",
@@ -28,6 +29,7 @@
     "@types/vscode": "^1.125.0",
     "@vscode/vsce": "catalog:",
     "esbuild": "catalog:",
+    "ovsx": "catalog:",
     "typescript": "catalog:",
     "vite": "npm:@voidzero-dev/vite-plus-core@0.2.2",
     "vite-plus": "catalog:"

@@ -29,8 +29,11 @@ Review the commit and `CHANGELOG.md`, then push to ship:
 git push --follow-tags
 ```
 
-Pushing the `v*` tag triggers `.github/workflows/release.yml`, which re-runs the gate and publishes all
-public packages with `vp pm publish -r --provenance` and creates a GitHub Release.
+Pushing the `v*` tag triggers `.github/workflows/release.yml`, which re-runs the gate and, in parallel:
+
+- publishes all public npm packages with `vp pm publish -r --provenance` and creates a GitHub Release;
+- builds the VS Code extension and publishes it to the **VS Code Marketplace** (`vsce`) and **Open VSX**
+  (`ovsx`). `bumpp -r` already bumped the extension to the same version, so it stays in sync.
 
 ## One-time setup
 
@@ -38,6 +41,9 @@ public packages with `vp pm publish -r --provenance` and creates a GitHub Releas
   `release.yml` workflow). This lets CI publish over OIDC with provenance and no stored token. If your
   npm/pnpm version can't use OIDC yet, add an `NPM_TOKEN` repo secret and uncomment `NODE_AUTH_TOKEN`
   in `release.yml`.
+- **VS Code extension tokens** — the Marketplace has no OIDC, so publishing needs stored PATs. Add repo
+  secrets `VSCE_PAT` (an Azure DevOps token for the `cssdoc` publisher) and `OVSX_PAT` (an Open VSX
+  token). The `cssdoc` publisher must exist on both marketplaces.
 - **Branch protection** — require the CI `verify` and `commitlint` checks on `main`.
 - **GitHub Pages** — Settings → Pages → Source: GitHub Actions (for the docs deploy).
 - **Local commit hook (optional)** — to catch bad commit messages before pushing, add a `commit-msg`
@@ -45,6 +51,7 @@ public packages with `vp pm publish -r --provenance` and creates a GitHub Releas
 
 ## Notes
 
-- The private `cssdoc-vscode` extension is skipped by `publish` (no `publishConfig`); it ships to the VS
-  Code Marketplace separately via `vp run --filter cssdoc-vscode package`.
+- The private `cssdoc-vscode` extension is skipped by the npm `publish` (no `publishConfig`); it goes to
+  the VS Code Marketplace + Open VSX via the `publish-extension` job. Build/publish it by hand with
+  `vp run ext:package` / `vp run ext:publish`.
 - `vp run publish:dry` does a full dry-run publish without touching the registry.
