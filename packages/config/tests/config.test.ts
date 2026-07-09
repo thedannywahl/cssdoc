@@ -26,12 +26,12 @@ test("the resulting configuration drives parseCssDocs (custom tag captured, cust
   const configuration = CssDocConfigFile.loadFile(fixture("cssdoc.json")).toConfiguration();
 
   const chip = parseCssDocs(
-    `/**\n * @component chip\n * @token --instui-chip-bg\n */\n.instui-chip { color: red; }`,
+    `/**\n * @component chip\n * @token --chip-bg\n */\n.chip { color: red; }`,
     { configuration },
   );
-  expect(chip[0].customBlocks).toEqual({ token: ["--instui-chip-bg"] });
+  expect(chip[0].customBlocks).toEqual({ token: ["--chip-bg"] });
 
-  const [card] = parseCssDocs(`/**\n * @pattern card\n */\n.instui-card { display: block; }`, {
+  const [card] = parseCssDocs(`/**\n * @pattern card\n */\n.card { display: block; }`, {
     configuration,
   });
   expect(card?.name).toBe("card");

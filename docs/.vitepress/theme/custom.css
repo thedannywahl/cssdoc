@@ -17,3 +17,27 @@
 
   --vp-home-hero-name-color: #1dc4b6;
 }
+
+/* Change placement of icons on the home page */
+.VPHomeFeatures {
+  .box:has(.VPImage) {
+    display: grid;
+    grid-template-columns: 1.25rem 1fr;
+    gap: 0.5rem 0.75rem;
+    align-items: start;
+
+    .VPImage {
+      grid-area: 1 / 1;
+      width: 1.25rem;
+      margin: 0;
+    }
+    .title {
+      grid-area: 1 / 2;
+      margin: 0;
+    }
+    .details {
+      grid-column: 1 / -1;
+      margin: 0;
+    }
+  }
+}

@@ -12,9 +12,9 @@ const CSS = `
  * @summary The primary action control.
  * @modifier -color-secondary — A lower-emphasis action.
  */
-.instui-button { color: red; }
-.instui-button.-color-secondary { color: blue; }
-@property --instui-button-radius { syntax: "<length>"; inherits: false; initial-value: 4px; }
+.button { color: red; }
+.button.-color-secondary { color: blue; }
+@property --button-radius { syntax: "<length>"; inherits: false; initial-value: 4px; }
 `;
 
 const index = createIndex(CSS);
@@ -23,7 +23,7 @@ test("cssCustomData lists declared custom properties", () => {
   const data = cssCustomData(index);
   expect(data.version).toBe(1.1);
   expect(data.properties).toContainEqual({
-    name: "--instui-button-radius",
+    name: "--button-radius",
     description: "syntax: `<length>`",
   });
 });
@@ -32,7 +32,7 @@ test("htmlCustomData exposes component classes and modifiers as class values", (
   const data = htmlCustomData(index);
   const values = data.globalAttributes[0].values.map((v) => v.name);
   expect(data.globalAttributes[0].name).toBe("class");
-  expect(values).toEqual(expect.arrayContaining(["instui-button", "-color-secondary"]));
+  expect(values).toEqual(expect.arrayContaining(["button", "-color-secondary"]));
 });
 
 test("writeVscodeCustomData writes both files", () => {

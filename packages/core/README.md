@@ -45,10 +45,10 @@ they exist, so it's standards-aligned:
  * @deprecated Use the button utility instead.
  * @demo self:button
  */
-.instui-button {
+.button {
   /* … */
 }
-.instui-button.-color-secondary {
+.button.-color-secondary {
   /* … */
 }
 ```

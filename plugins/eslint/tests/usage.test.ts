@@ -13,9 +13,9 @@ const CSS = `
  * @modifier -color-secondary — A lower-emphasis action.
  * @modifier -variant-old — @deprecated {@link -color-secondary}
  */
-.instui-button { color: red; }
-.instui-button.-color-secondary { color: blue; }
-.instui-button.-variant-old { color: gray; }
+.button { color: red; }
+.button.-color-secondary { color: blue; }
+.button.-variant-old { color: gray; }
 `;
 
 const dir = mkdtempSync(join(tmpdir(), "cssdoc-usage-"));
@@ -65,9 +65,7 @@ const lintHtml = (code: string): string[] => {
 };
 
 test("JSX className: flags an unknown modifier and a deprecated one on the component", () => {
-  const messages = lintJsx(
-    `export const x = <button className="instui-button -bogus -variant-old" />;`,
-  );
+  const messages = lintJsx(`export const x = <button className="button -bogus -variant-old" />;`);
   expect(messages.some((m) => m.includes("unknown-modifier") && m.includes("-bogus"))).toBe(true);
   expect(
     messages.some((m) => m.includes("deprecated-modifier") && m.includes("-color-secondary")),
@@ -75,9 +73,7 @@ test("JSX className: flags an unknown modifier and a deprecated one on the compo
 });
 
 test("JSX className: a valid modifier chain produces no messages", () => {
-  expect(
-    lintJsx(`export const x = <button className="instui-button -color-secondary" />;`),
-  ).toEqual([]);
+  expect(lintJsx(`export const x = <button className="button -color-secondary" />;`)).toEqual([]);
 });
 
 test("JSX: a `-modifier` on a non-cssdoc element is not flagged", () => {
@@ -86,10 +82,10 @@ test("JSX: a `-modifier` on a non-cssdoc element is not flagged", () => {
 });
 
 test("HTML class: flags an unknown modifier on the component", () => {
-  const messages = lintHtml(`<button class="instui-button -bogus">x</button>`);
+  const messages = lintHtml(`<button class="button -bogus">x</button>`);
   expect(messages.some((m) => m.includes("unknown-modifier") && m.includes("-bogus"))).toBe(true);
 });
 
 test("HTML class: a valid modifier chain produces no messages", () => {
-  expect(lintHtml(`<button class="instui-button -color-secondary">x</button>`)).toEqual([]);
+  expect(lintHtml(`<button class="button -color-secondary">x</button>`)).toEqual([]);
 });

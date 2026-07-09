@@ -29,7 +29,7 @@ filesystem, use `renderEntry(entry)` and `renderIndex(entries)`.
 ## The `resolveToken` hook
 
 `@cssdoc/markdown` never hard-codes any project's tokens. To show a Type/Value for each consumed custom
-property (the "Tokens consumed" table), pass `resolveToken` — e.g. resolve `--instui-*` against a design
+property (the "Tokens consumed" table), pass `resolveToken` — e.g. resolve `--mycss-*` against a design
 token IR:
 
 ```ts

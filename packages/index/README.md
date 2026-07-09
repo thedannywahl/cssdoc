@@ -14,9 +14,9 @@ cssdoc linter and the language server query. It adds the two cross-cutting conce
 import { createIndex } from "@cssdoc/index";
 
 const index = createIndex(css, { file: "components.css" });
-index.componentForClass(".instui-button"); // → the button record
-index.isModifier(".instui-button", "-color-x"); // → boolean
-index.deprecationOf(".instui-button", "-old"); // → { canonical } | undefined
+index.componentForClass(".button"); // → the button record
+index.isModifier(".button", "-color-x"); // → boolean
+index.deprecationOf(".button", "-old"); // → { canonical } | undefined
 index.location("button", "modifier:-color-secondary"); // → { file, span } | undefined
 ```
 

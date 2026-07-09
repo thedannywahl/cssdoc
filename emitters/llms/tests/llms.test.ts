@@ -11,25 +11,25 @@ const CSS = `
  * @part .icon — A leading glyph.
  * @cssstate loading — Awaiting a response.
  */
-.instui-button { color: red; }
-.instui-button.-color-secondary { color: blue; }
-.instui-button.-variant-old { color: gray; }
-@scope (.instui-button) { :scope > .icon { width: 1em; } }
-.instui-button:state(loading) { opacity: 0.5; }
-@property --instui-button-radius { syntax: "<length>"; inherits: false; }
+.button { color: red; }
+.button.-color-secondary { color: blue; }
+.button.-variant-old { color: gray; }
+@scope (.button) { :scope > .icon { width: 1em; } }
+.button:state(loading) { opacity: 0.5; }
+@property --button-radius { syntax: "<length>"; inherits: false; }
 
 /**
  * @utility spacing
  * @summary Margin helpers.
  */
-.instui-m-sm { margin: 0.5rem; }
+.m-sm { margin: 0.5rem; }
 `;
 
 test("renders a compact per-component digest with a title and blockquote", () => {
   const out = renderLlms(parseCssDocs(CSS), { title: "InstUI CSS", intro: "Class-based styles." });
   expect(out.startsWith("# InstUI CSS\n")).toBe(true);
   expect(out).toContain("> Class-based styles.");
-  expect(out).toContain("## button — `.instui-button`");
+  expect(out).toContain("## button — `.button`");
   expect(out).toContain("The primary action control.");
 });
 
@@ -40,6 +40,6 @@ test("summarizes each facet on one line and marks the utility kind", () => {
   );
   expect(out).toContain("- Parts: `.icon` (A leading glyph.)");
   expect(out).toContain("- States: `loading`");
-  expect(out).toContain("- Custom properties: `--instui-button-radius` <length>");
-  expect(out).toContain("## spacing (utility) — `.instui-m-sm`");
+  expect(out).toContain("- Custom properties: `--button-radius` <length>");
+  expect(out).toContain("## spacing (utility) — `.m-sm`");
 });

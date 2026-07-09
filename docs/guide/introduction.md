@@ -19,15 +19,15 @@ and at-rules. Because those facts come from the CSS, your docs can't drift from 
  * @summary The primary action control.
  * @modifier -color-secondary — A lower-emphasis action.
  */
-.instui-button {
-  background: var(--instui-color-bg);
+.button {
+  background: var(--color-bg);
 }
-.instui-button.-color-secondary {
-  background: var(--instui-color-bg-secondary);
+.button.-color-secondary {
+  background: var(--color-bg-secondary);
 }
 ```
 
-From that, cssdoc knows the component `button`, its class `.instui-button`, the modifier
+From that, cssdoc knows the component `button`, its class `.button`, the modifier
 `-color-secondary` (documented) — and, from the selectors alone, any other modifiers you defined.
 
 ## What you can do with it

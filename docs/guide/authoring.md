@@ -71,10 +71,10 @@ Mark a modifier deprecated inline and point at its replacement with `{@link}`:
  * @component alert
  * @modifier -variant-error — @deprecated {@link -color-danger}
  */
-.instui-alert.-color-danger {
+.alert.-color-danger {
   color: red;
 }
-.instui-alert.-variant-error {
+.alert.-variant-error {
   color: red;
 }
 ```
@@ -93,14 +93,14 @@ editor's replace-with-canonical quick-fix.
  * @part .tab — A single tab.
  * @cssstate selected — The active tab.
  * @structure
- *   .instui-tabs
+ *   .tabs
  *     .list
  *       .tab
  *     .panel
  * @a11y Tabs use roving tabindex; panels are labelled by their tab.
  * @beta
  */
-.instui-tabs {
+.tabs {
   display: grid;
 }
 ```

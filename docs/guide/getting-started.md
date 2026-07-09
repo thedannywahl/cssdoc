@@ -20,13 +20,13 @@ Put a `/** … */` comment above a component's rules. A record begins at a `@com
  * @component button
  * @summary The primary action control.
  * @modifier -color-secondary — A lower-emphasis action.
- * @cssproperty --instui-button-radius — The corner radius.
+ * @cssproperty --button-radius — The corner radius.
  */
-.instui-button {
-  border-radius: var(--instui-button-radius);
+.button {
+  border-radius: var(--button-radius);
 }
-.instui-button.-color-secondary {
-  background: #eee;
+.button.-color-secondary {
+  background: light-dark(#eee, #111);
 }
 ```
 
@@ -41,7 +41,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 const model = parseCssDocs(readFileSync("dist/components.css", "utf8"));
 
 model[0].name; // "button"
-model[0].className; // ".instui-button"
+model[0].className; // ".button"
 model[0].modifiers; // [{ name: "-color-secondary", prop: "color", value: "secondary", description: … }]
 
 writeFileSync("css-docs.json", toJson(model)); // the raw model as JSON

@@ -20,9 +20,9 @@ const label = (selector: string): string => `"${selector.replace(/"/gu, "&quot;"
  *
  * @example
  * ```ts
- * toMermaid([{ selector: ".instui-tabs", children: [{ selector: ".panel", children: [] }] }]);
+ * toMermaid([{ selector: ".tabs", children: [{ selector: ".panel", children: [] }] }]);
  * // flowchart TD
- * //   n0[".instui-tabs"]
+ * //   n0[".tabs"]
  * //   n1[".panel"]
  * //   n0 --> n1
  * ```

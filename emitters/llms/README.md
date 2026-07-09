@@ -13,7 +13,7 @@ import { readFileSync } from "node:fs";
 writeLlms({
   css: readFileSync("dist/components.css", "utf8"),
   outFile: "llms.txt",
-  title: "InstUI CSS",
+  title: "My CSS",
   intro: "Class-based component styles.",
 });
 ```
@@ -21,7 +21,7 @@ writeLlms({
 `renderLlms(entries, opts)` returns the string. Example block:
 
 ```md
-## button — `.instui-button`
+## button — `.button`
 
 The primary action control.
 

@@ -366,7 +366,7 @@ export function recordNameOf(
  *
  * @example
  * ```
- * .instui-tabs
+ * .tabs
  *   .list
  *     .tab
  *   .panel

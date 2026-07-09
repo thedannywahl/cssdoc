@@ -53,7 +53,7 @@ component's surface, sized for an LLM's context window.
 
 ```ts
 import { writeLlms } from "@cssdoc/llms";
-writeLlms({ css, outFile: "llms.txt", title: "InstUI CSS" });
+writeLlms({ css, outFile: "llms.txt", title: "My CSS" });
 ```
 
 ## Alongside a TypeDoc site

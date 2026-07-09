@@ -7,8 +7,8 @@ const CSS = `
  * @component button
  * @modifier -color-secondary — A lower-emphasis action.
  */
-.instui-button { color: red; }
-.instui-button.-size-sm { font-size: small; }
+.button { color: red; }
+.button.-size-sm { font-size: small; }
 `;
 
 const lint = (code: string): Promise<{ text: string; rule: string | undefined }[]> =>
@@ -34,8 +34,8 @@ test("a fully documented stylesheet produces no warnings", async () => {
  * @summary A small labelled tag.
  * @modifier -color-info — Informational.
  */
-.instui-chip { color: red; }
-.instui-chip.-color-info { color: blue; }
+.chip { color: red; }
+.chip.-color-info { color: blue; }
 `;
   expect(await lint(clean)).toEqual([]);
 });

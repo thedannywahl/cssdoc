@@ -11,10 +11,10 @@ const CSS = `
  * @part .ghost — A part no selector defines.
  * @modifier -variant-old — @deprecated
  */
-.instui-button { color: red; }
-.instui-button.-color-secondary { color: blue; }
-.instui-button.-size-sm { font-size: small; }
-.instui-button.-variant-old { color: gray; }
+.button { color: red; }
+.button.-color-secondary { color: blue; }
+.button.-size-sm { font-size: small; }
+.button.-variant-old { color: gray; }
 `;
 
 test("flags a missing summary", () => {
@@ -42,8 +42,8 @@ test("flags an undocumented part", () => {
  * @component menu
  * @summary A menu.
  */
-.instui-menu { min-width: 10rem; }
-@scope (.instui-menu) {
+.menu { min-width: 10rem; }
+@scope (.menu) {
   :scope > .item { padding: 0.5rem; }
 }
 `;

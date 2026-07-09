@@ -11,8 +11,8 @@ const CSS = `
  * @summary The primary action control.
  * @modifier -color-secondary — A lower-emphasis action.
  */
-.instui-button { color: red; }
-.instui-button.-color-secondary { color: blue; }
+.button { color: red; }
+.button.-color-secondary { color: blue; }
 `;
 
 test("renderPage produces a standalone, escaped HTML document", () => {
@@ -21,7 +21,7 @@ test("renderPage produces a standalone, escaped HTML document", () => {
   expect(html.startsWith("<!doctype html>")).toBe(true);
   expect(html).toContain("<style>"); // self-contained styling
   expect(html).toContain('<link rel="icon" href="data:image/svg+xml;base64,'); // embedded favicon
-  expect(html).toContain("<code>.instui-button</code>");
+  expect(html).toContain("<code>.button</code>");
   expect(html).toContain("<h2>Modifiers</h2>");
   expect(html).toContain(".-color-secondary");
 });

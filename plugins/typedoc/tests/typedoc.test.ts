@@ -9,7 +9,7 @@ const CSS = `
  * @component button
  * @summary The primary action control.
  */
-.instui-button { color: red; }
+.button { color: red; }
 `;
 
 test("mergeCssSidebar appends a CSS section and replaces a prior one with the same label", () => {

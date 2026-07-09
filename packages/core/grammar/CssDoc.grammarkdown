@@ -97,7 +97,7 @@ Value ::
 PartName ::
     `.` Identifier
 
-// A base-class selector, e.g. `.instui-button`.
+// A base-class selector, e.g. `.button`.
 ClassSelector ::
     `.` Identifier
 

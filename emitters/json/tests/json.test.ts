@@ -13,11 +13,11 @@ const CSS = `
  * @modifier -color-secondary — A lower-emphasis action.
  * @cssstate loading — Awaiting a response.
  */
-.instui-button { border-radius: var(--r); }
-.instui-button.-color-secondary { color: blue; }
-.instui-button:state(loading) { opacity: 0.5; }
-@property --instui-button-radius { syntax: "<length>"; inherits: false; initial-value: 4px; }
-@keyframes instui-spin { to { rotate: 360deg; } }
+.button { border-radius: var(--r); }
+.button.-color-secondary { color: blue; }
+.button:state(loading) { opacity: 0.5; }
+@property --button-radius { syntax: "<length>"; inherits: false; initial-value: 4px; }
+@keyframes spin { to { rotate: 360deg; } }
 `;
 
 test("renderJson produces valid JSON of the model", () => {

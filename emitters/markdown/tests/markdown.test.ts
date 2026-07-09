@@ -12,21 +12,21 @@ const CSS = `
  * @modifier -color-secondary — A lower-emphasis action.
  * @demo self:button
  */
-.instui-button { background: var(--instui-color-bg); }
-.instui-button.-color-secondary { background: var(--instui-color-bg-secondary); }
+.button { background: var(--color-bg); }
+.button.-color-secondary { background: var(--color-bg-secondary); }
 
 /**
  * @utility spacing
  * @summary Margin helpers.
  */
-.instui-m-sm { margin: var(--instui-spacing-sm); }
+.m-sm { margin: var(--spacing-sm); }
 `;
 
 test("renderEntry renders a title, summary, demo fence, and a modifiers table", () => {
   const [button] = parseCssDocs(CSS);
   const md = renderEntry(button!);
   expect(md).toContain("# button");
-  expect(md).toContain("`.instui-button`");
+  expect(md).toContain("`.button`");
   expect(md).toContain("The primary action control.");
   expect(md).toContain("```demo\nself:button\n```");
   expect(md).toContain("## Modifiers");
@@ -37,11 +37,11 @@ test("renderEntry uses the resolveToken hook for the Tokens consumed table", () 
   const [button] = parseCssDocs(CSS);
   const md = renderEntry(button!, {
     resolveToken: (name) =>
-      name === "--instui-color-bg" ? { syntax: "<color>", value: "#fff" } : undefined,
+      name === "--color-bg" ? { syntax: "<color>", value: "#fff" } : undefined,
   });
   expect(md).toContain("## Tokens consumed");
   expect(md).toContain("| Token | Type | Value |");
-  expect(md).toContain("`--instui-color-bg`");
+  expect(md).toContain("`--color-bg`");
   expect(md).toContain("`<color>`");
   expect(md).toContain("`#fff`");
 });

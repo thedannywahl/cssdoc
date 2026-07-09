@@ -183,7 +183,7 @@ const byName = (a: { name: string }, b: { name: string }): number => a.name.loca
 /** Build one entry from its record name, doc comment, and nodes. */
 function buildEntry(name: string, doc: ParsedDoc, nodes: ChildNode[]): CssDocEntry {
   // Base class: an explicit @class, else a bare single-class rule — preferring the one whose name ends
-  // with the record name (`.instui-badge`, not a sibling like `.instui-badge-wrapper` that happens to
+  // with the record name (`.badge`, not a sibling like `.badge-wrapper` that happens to
   // appear first).
   let className = doc.className ?? "";
   if (!className) {
@@ -211,7 +211,7 @@ function buildEntry(name: string, doc: ParsedDoc, nodes: ChildNode[]): CssDocEnt
   };
   const baseEsc = className.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
   const prefixNoDot = className.endsWith(name)
-    ? className.slice(1, className.length - name.length) // ".instui-button" − "button" → "instui-"
+    ? className.slice(1, className.length - name.length) // ".button" − "button" → ""
     : "";
   collect(nodes, acc, baseEsc, prefixNoDot, false);
 

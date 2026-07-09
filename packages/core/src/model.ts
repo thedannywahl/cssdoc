@@ -127,7 +127,7 @@ export type CssReleaseStage = "alpha" | "beta" | "experimental" | "internal" | "
  * children. Emitters render it as an indented tree and, via {@link toMermaid}, as a diagram.
  */
 export interface StructureNode {
-  /** The node's selector/label, e.g. `.instui-tabs` or `.tab.-selected` or `button`. */
+  /** The node's selector/label, e.g. `.tabs` or `.tab.-selected` or `button`. */
   selector: string;
   /** Child nodes (one indentation level deeper). */
   children: StructureNode[];
@@ -139,7 +139,7 @@ export interface CssDocEntry {
   name: string;
   /** Which kind of CSS surface this documents (defaults to `component`). */
   kind: CssRecordKind;
-  /** The base class selector, e.g. `.instui-button` (inferred from the first bare-class rule). */
+  /** The base class selector, e.g. `.button` (inferred from the first bare-class rule). */
   className: string;
   /** One-line summary from `@summary`. */
   summary?: string;
