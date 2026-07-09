@@ -9,6 +9,9 @@
     "check": "vp check",
     "test": "vp run -r test",
     "ready": "vp run -r build && vp check && vp run -r test",
+    "docs:dev": "vp run @cssdoc/docs#docs:dev",
+    "docs:build": "vp run @cssdoc/docs#docs:build",
+    "docs:preview": "vp run @cssdoc/docs#docs:preview",
     "check:publish": "vp run -r publint",
     "release": "vp pm publish -r --access public",
     "release:dry": "vp pm publish -r --dry-run --no-git-checks"

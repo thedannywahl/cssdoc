@@ -4,6 +4,7 @@ packages:
   - generators/*
   - plugins/*
   - servers/*
+  - docs
 
 catalogMode: prefer
 
@@ -34,6 +35,8 @@ catalog:
   esbuild: ^0.28.1
   "@vscode/vsce": ^3.9.2
   "@resvg/resvg-js": ^2.6.2
+  # Docs site
+  vitepress: ^1.6.4
   # Quality gates
   "@vitest/coverage-v8": 4.1.9
   publint: ^0.3.21
