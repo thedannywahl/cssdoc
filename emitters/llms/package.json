@@ -1,0 +1,42 @@
+{
+  "name": "@cssdoc/llms",
+  "version": "0.0.0",
+  "description": "Emit an llms.txt-style, token-efficient digest of the cssdoc model for LLM context windows.",
+  "keywords": [
+    "css",
+    "cssdoc",
+    "documentation",
+    "emitter",
+    "llms"
+  ],
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vp pack",
+    "dev": "vp pack --watch",
+    "test": "vp test",
+    "check": "vp check",
+    "publint": "publint",
+    "prepublishOnly": "vp run build"
+  },
+  "dependencies": {
+    "@cssdoc/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "publint": "catalog:",
+    "typescript": "catalog:",
+    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.2",
+    "vite-plus": "catalog:"
+  }
+}

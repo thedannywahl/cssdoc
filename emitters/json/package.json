@@ -1,0 +1,43 @@
+{
+  "name": "@cssdoc/json",
+  "version": "0.0.0",
+  "description": "Emit the cssdoc model as JSON — a whole-model file, optional per-record files, and a JSON Schema of the model.",
+  "keywords": [
+    "css",
+    "cssdoc",
+    "documentation",
+    "emitter",
+    "json"
+  ],
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vp pack",
+    "dev": "vp pack --watch",
+    "test": "vp test",
+    "check": "vp check",
+    "publint": "publint",
+    "prepublishOnly": "vp run build"
+  },
+  "dependencies": {
+    "@cssdoc/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "ajv": "catalog:",
+    "publint": "catalog:",
+    "typescript": "catalog:",
+    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.2",
+    "vite-plus": "catalog:"
+  }
+}
