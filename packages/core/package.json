@@ -1,6 +1,6 @@
 {
   "name": "@cssdoc/core",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "A generic CSS documentation extractor: parse doc-comments + the CSS AST into a serializable model (TSDoc, for CSS).",
   "keywords": [
     "css",
