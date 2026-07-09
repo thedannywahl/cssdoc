@@ -1,0 +1,19 @@
+/* cssdoc brand colors, chosen for WCAG contrast on each theme's background.
+   Light-mode teal #388080 (on white); dark-mode teal #1DC4B6 (on the dark surface). */
+:root {
+  --vp-c-brand-1: #388080;
+  --vp-c-brand-2: #2f6d6d;
+  --vp-c-brand-3: #388080;
+  --vp-c-brand-soft: rgba(56, 128, 128, 0.14);
+
+  --vp-home-hero-name-color: #388080;
+}
+
+.dark {
+  --vp-c-brand-1: #1dc4b6;
+  --vp-c-brand-2: #4bd4c8;
+  --vp-c-brand-3: #1dc4b6;
+  --vp-c-brand-soft: rgba(29, 196, 182, 0.16);
+
+  --vp-home-hero-name-color: #1dc4b6;
+}

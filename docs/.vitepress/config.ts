@@ -9,7 +9,10 @@ export default defineConfig({
   title: "cssdoc",
   description: "TSDoc, for CSS — document CSS with structured comments.",
   cleanUrls: true,
-  head: [["link", { rel: "icon", href: `${base}icon.svg` }]],
+  head: [
+    ["link", { rel: "icon", href: `${base}icon.svg` }],
+    ["link", { rel: "icon", media: "(prefers-color-scheme: dark)", href: `${base}icon-dark.svg` }],
+  ],
   themeConfig: {
     nav: [
       { text: "Guide", link: "/guide/getting-started" },
