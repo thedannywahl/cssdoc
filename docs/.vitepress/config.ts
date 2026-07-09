@@ -51,6 +51,7 @@ export default defineConfig({
           text: "Reference",
           items: [
             { text: "Packages", link: "/guide/packages" },
+            { text: "Grammar", link: "/guide/grammar" },
             { text: "API Reference", link: "/reference/" },
           ],
         },
