@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import grammarkdown from "@cssdoc/grammarkdown-tmlanguage";
 import type { DefaultTheme } from "vitepress";
 import { defineConfig } from "vitepress";
 
@@ -20,12 +21,17 @@ export default defineConfig({
   title: "cssdoc",
   description: "TSDoc, for CSS — document CSS with structured comments.",
   cleanUrls: true,
+  // Register the grammarkdown TextMate grammar so the Grammar page highlights the spec.
+  markdown: {
+    languages: [grammarkdown],
+  },
   head: [
     ["link", { rel: "icon", href: `${base}icon.svg` }],
     ["link", { rel: "icon", media: "(prefers-color-scheme: dark)", href: `${base}icon-dark.svg` }],
   ],
   themeConfig: {
-    logo: { light: `${base}icon.svg`, dark: `${base}icon-dark.svg` },
+    footer: { message: "Released under the MIT License", copyright: "Copyright © 2026-present [iyWahl](https://iywahl.com)" },
+    logo: { light: "/icon.svg", dark: "/icon-dark.svg" },
     nav: [
       { text: "Guide", link: "/guide/getting-started" },
       { text: "Packages", link: "/guide/packages" },

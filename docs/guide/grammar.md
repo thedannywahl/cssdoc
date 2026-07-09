@@ -15,4 +15,4 @@ In the notation, `::` marks a lexical production and `:` a syntactic one. Termin
 `> …` lines are prose used for character classes and layout-sensitive constructs that sit outside
 context-free notation.
 
-<<< @/../packages/core/grammar/CssDoc.grammarkdown{text}
+<<< @/../packages/core/grammar/CssDoc.grammarkdown{grammarkdown}

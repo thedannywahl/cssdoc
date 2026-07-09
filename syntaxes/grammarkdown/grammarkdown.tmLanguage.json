@@ -1,0 +1,84 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "grammarkdown",
+  "scopeName": "source.grammarkdown",
+  "fileTypes": ["grammarkdown"],
+  "patterns": [
+    { "include": "#comment" },
+    { "include": "#prose" },
+    { "include": "#directive" },
+    { "include": "#production" },
+    { "include": "#constraint" },
+    { "include": "#terminal" },
+    { "include": "#characterClass" },
+    { "include": "#codepoint" },
+    { "include": "#keywords" },
+    { "include": "#optional" },
+    { "include": "#nonterminal" }
+  ],
+  "repository": {
+    "comment": {
+      "match": "//.*$",
+      "name": "comment.line.double-slash.grammarkdown"
+    },
+    "prose": {
+      "match": "^\\s*>.*$",
+      "name": "string.unquoted.prose.grammarkdown"
+    },
+    "directive": {
+      "match": "@(import|define|line|augments|noStrictParametricRedeclaration|noSyntacticPredicates)\\b",
+      "name": "keyword.control.directive.grammarkdown"
+    },
+    "production": {
+      "match": "^\\s*([A-Za-z][A-Za-z0-9]*)\\s*(\\[[^\\]]*\\])?\\s*(:::|::|:)",
+      "captures": {
+        "1": { "name": "entity.name.type.production.grammarkdown" },
+        "2": {
+          "name": "meta.parameter-list.grammarkdown",
+          "patterns": [{ "include": "#parameters" }]
+        },
+        "3": { "name": "keyword.operator.definition.grammarkdown" }
+      }
+    },
+    "constraint": {
+      "begin": "\\[",
+      "end": "\\]",
+      "name": "meta.annotation.grammarkdown",
+      "patterns": [
+        { "include": "#keywords" },
+        { "include": "#terminal" },
+        { "match": "[+~?]", "name": "keyword.operator.parameter.grammarkdown" },
+        { "match": "[∈∉≠]|!=", "name": "keyword.operator.assertion.grammarkdown" },
+        { "match": "\\b[A-Za-z][A-Za-z0-9]*\\b", "name": "variable.parameter.grammarkdown" }
+      ]
+    },
+    "terminal": {
+      "match": "`[^`]*`",
+      "name": "constant.character.terminal.grammarkdown"
+    },
+    "characterClass": {
+      "match": "<[^>\\n]+>",
+      "name": "constant.language.character-class.grammarkdown"
+    },
+    "codepoint": {
+      "match": "\\bU\\+[0-9A-Fa-f]{2,6}\\b",
+      "name": "constant.numeric.codepoint.grammarkdown"
+    },
+    "keywords": {
+      "match": "\\b(but\\s+not|one\\s+of|lookahead|empty|here|but|not|or|of|no)\\b",
+      "name": "keyword.control.grammarkdown"
+    },
+    "optional": {
+      "match": "\\?",
+      "name": "keyword.operator.optional.grammarkdown"
+    },
+    "nonterminal": {
+      "match": "\\b[A-Z][A-Za-z0-9]*\\b",
+      "name": "variable.other.nonterminal.grammarkdown"
+    },
+    "parameters": {
+      "match": "\\b[A-Za-z][A-Za-z0-9]*\\b",
+      "name": "variable.parameter.grammarkdown"
+    }
+  }
+}

@@ -15,6 +15,7 @@ on:
       - "generators/**"
       - "plugins/**"
       - "servers/**"
+      - "syntaxes/**"
   workflow_dispatch:
 
 permissions:

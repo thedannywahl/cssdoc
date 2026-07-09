@@ -17,6 +17,7 @@
     "docs:preview": "vitepress preview"
   },
   "devDependencies": {
+    "@cssdoc/grammarkdown-tmlanguage": "workspace:*",
     "@cssdoc/typedoc": "workspace:*",
     "@types/node": "catalog:",
     "typedoc": "catalog:",
