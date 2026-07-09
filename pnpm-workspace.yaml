@@ -33,6 +33,7 @@ catalog:
   "@types/vscode": ^1.125.0
   esbuild: ^0.28.1
   "@vscode/vsce": ^3.9.2
+  "@resvg/resvg-js": ^2.6.2
   # Quality gates
   "@vitest/coverage-v8": 4.1.9
   publint: ^0.3.21

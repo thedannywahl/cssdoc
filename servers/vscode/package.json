@@ -15,6 +15,7 @@
     "build": "node scripts/build.mjs",
     "check": "vp check",
     "test": "vp test",
+    "icon": "node scripts/gen-icon.mjs",
     "package": "vp run -t build && vsce package --no-dependencies -o cssdoc.vsix"
   },
   "dependencies": {
@@ -22,6 +23,7 @@
     "vscode-languageclient": "catalog:"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "catalog:",
     "@types/node": "catalog:",
     "@types/vscode": "^1.125.0",
     "@vscode/vsce": "catalog:",
@@ -51,6 +53,7 @@
     "onLanguage:javascriptreact",
     "onLanguage:typescriptreact"
   ],
+  "icon": "icon.png",
   "engines": {
     "vscode": "^1.125.0"
   }

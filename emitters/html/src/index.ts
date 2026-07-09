@@ -35,6 +35,11 @@ const esc = (text: string | undefined): string =>
 
 const code = (text: string | undefined): string => (text ? `<code>${esc(text)}</code>` : "—");
 
+// The cssdoc mark (see icon.svg at the repo root), embedded as a favicon data URI so pages stay
+// self-contained. Braces are vector paths, so it renders identically everywhere.
+const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><mask id="cut"><rect x="8" y="8" width="112" height="112" rx="24" fill="white"/><g fill="none" stroke="black" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M 86 50 q -8 0 -8 8 l 0 14 q 0 8 -8 8 q 8 0 8 8 l 0 14 q 0 8 8 8"/><path d="M 94 50 q 8 0 8 8 l 0 14 q 0 8 8 8 q -8 0 -8 8 l 0 14 q 0 8 -8 8"/></g></mask><rect x="8" y="8" width="112" height="112" rx="24" fill="#6ba7a5" mask="url(#cut)"/></svg>`;
+const FAVICON = `data:image/svg+xml;base64,${Buffer.from(ICON_SVG).toString("base64")}`;
+
 const STYLE = `
 :root { color-scheme: light dark; }
 body { font: 16px/1.5 system-ui, sans-serif; max-width: 60rem; margin: 2rem auto; padding: 0 1rem; }
@@ -52,7 +57,7 @@ function doc(title: string, body: string): string {
   return `<!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(title)}</title><style>${STYLE}</style></head>
+<title>${esc(title)}</title><link rel="icon" href="${FAVICON}"><style>${STYLE}</style></head>
 <body>
 ${body}
 </body>
