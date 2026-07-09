@@ -1,0 +1,38 @@
+name: Release
+
+# Tag-driven: `vp run release` bumps + tags locally; pushing the `v*` tag triggers this.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # create the GitHub Release
+  id-token: write # OIDC for npm provenance / trusted publishing
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: "https://registry.npmjs.org"
+      - run: pnpm install --frozen-lockfile
+      - name: Gate
+        run: pnpm run build && pnpm run check && pnpm run test && pnpm run check:publish
+      - name: Publish to npm
+        run: pnpm run publish # vp pm publish -r --provenance --access public
+        env:
+          NPM_CONFIG_PROVENANCE: "true"
+          # Trusted publishing (OIDC) needs no token. If your publisher can't use OIDC yet, set a
+          # repo secret NPM_TOKEN and uncomment the next line.
+          # NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true

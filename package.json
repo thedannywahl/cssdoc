@@ -13,10 +13,15 @@
     "docs:build": "vp run @cssdoc/docs#docs:build",
     "docs:preview": "vp run @cssdoc/docs#docs:preview",
     "check:publish": "vp run -r publint",
-    "release": "vp pm publish -r --access public",
-    "release:dry": "vp pm publish -r --dry-run --no-git-checks"
+    "release": "vp run -r build && vp check && vp run -r test && vp run -r publint && bumpp -r --all --print-commits --execute \"changelogen --output\" --commit \"chore(release): v%s\" --tag \"v%s\" --no-push",
+    "publish": "vp pm publish -r --provenance --access public",
+    "publish:dry": "vp pm publish -r --dry-run --no-git-checks"
   },
   "devDependencies": {
+    "@commitlint/cli": "catalog:",
+    "@commitlint/config-conventional": "catalog:",
+    "bumpp": "catalog:",
+    "changelogen": "catalog:",
     "publint": "catalog:",
     "vite": "npm:@voidzero-dev/vite-plus-core@0.2.2",
     "vite-plus": "catalog:"
