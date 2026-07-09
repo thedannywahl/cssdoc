@@ -31,7 +31,7 @@ jobs:
           NPM_CONFIG_PROVENANCE: "true"
           # Trusted publishing (OIDC) needs no token. If your publisher can't use OIDC yet, set a
           # repo secret NPM_TOKEN and uncomment the next line.
-          # NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: GitHub Release
         uses: softprops/action-gh-release@v2
         with:
