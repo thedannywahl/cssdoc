@@ -1,6 +1,6 @@
 /**
  * `@cssdoc/index` — a queryable semantic index over the `@cssdoc/core` model, plus the two
- * cross-cutting concerns every downstream tool shares: a host-agnostic {@link Usage} abstraction (so
+ * cross-cutting concerns every downstream tool shares: a host-agnostic usage abstraction (so
  * HTML, JSX, template literals, and CSS selectors all feed the same providers) and optional source
  * spans (so diagnostics, hover ranges, and go-to-definition can point back into the CSS).
  *

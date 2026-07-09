@@ -12,7 +12,7 @@ const named = {
   properties: { name: { type: "string" }, description: { type: "string" } },
 } as const;
 
-/** JSON Schema for a single {@link CssDocEntry}. */
+/** JSON Schema for a single {@link @cssdoc/core!CssDocEntry | CssDocEntry}. */
 export const cssDocEntrySchema = {
   type: "object",
   required: [

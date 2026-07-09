@@ -1,5 +1,5 @@
 {
-  "//": "Compiler options for the TypeDoc API-reference build only (not used by vp check). Mirrors the packages' settings and enables skipLibCheck so third-party .d.ts (e.g. vite-plus) don't fail the run.",
+  "//": "Compiler options for the TypeDoc API-reference build only (not used by vp check). Mirrors the packages' settings and enables skipLibCheck so third-party .d.ts (e.g. vite-plus) don't fail the run. The paths map resolves @cssdoc/* imports to source so cross-package {@link}s share one symbol identity with the documented reflections (otherwise they resolve to the built .d.ts and can't cross-link).",
   "compilerOptions": {
     "target": "esnext",
     "lib": ["es2023"],
@@ -10,7 +10,25 @@
     "allowImportingTsExtensions": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "noEmit": true
+    "noEmit": true,
+    "paths": {
+      "@cssdoc/core": ["../packages/core/src/index.ts"],
+      "@cssdoc/config": ["../packages/config/src/index.ts"],
+      "@cssdoc/index": ["../packages/index/src/index.ts"],
+      "@cssdoc/lint-core": ["../packages/lint-core/src/index.ts"],
+      "@cssdoc/providers": ["../packages/providers/src/index.ts"],
+      "@cssdoc/html": ["../emitters/html/src/index.ts"],
+      "@cssdoc/json": ["../emitters/json/src/index.ts"],
+      "@cssdoc/llms": ["../emitters/llms/src/index.ts"],
+      "@cssdoc/markdown": ["../emitters/markdown/src/index.ts"],
+      "@cssdoc/cem": ["../generators/cem/src/index.ts"],
+      "@cssdoc/dtcg": ["../generators/dtcg/src/index.ts"],
+      "@cssdoc/vscode-custom-data": ["../generators/vscode-custom-data/src/index.ts"],
+      "@cssdoc/eslint-plugin": ["../plugins/eslint/src/index.ts"],
+      "@cssdoc/stylelint-plugin": ["../plugins/stylelint/src/index.ts"],
+      "@cssdoc/typedoc": ["../plugins/typedoc/src/index.ts"],
+      "@cssdoc/language-server": ["../servers/language-server/src/index.ts"]
+    }
   },
   "include": [
     "../packages/*/src/index.ts",
