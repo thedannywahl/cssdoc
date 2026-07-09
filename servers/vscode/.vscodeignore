@@ -1,3 +1,5 @@
+.vscode/**
+examples/**
 src/**
 scripts/**
 tests/**

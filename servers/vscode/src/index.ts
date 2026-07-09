@@ -5,6 +5,7 @@
  *
  * @module
  */
+import { isAbsolute, join } from "node:path";
 import { type ExtensionContext, workspace } from "vscode";
 import {
   LanguageClient,
@@ -25,7 +26,12 @@ export function activate(context: ExtensionContext): void {
     run: { module: serverModule, transport: TransportKind.ipc },
     debug: { module: serverModule, transport: TransportKind.ipc },
   };
-  const cssPaths = workspace.getConfiguration("cssdoc").get<string[]>("css", []);
+  // Resolve relative `cssdoc.css` paths against the workspace root so the server can read them.
+  const root = workspace.workspaceFolders?.[0]?.uri.fsPath;
+  const cssPaths = workspace
+    .getConfiguration("cssdoc")
+    .get<string[]>("css", [])
+    .map((p) => (root && !isAbsolute(p) ? join(root, p) : p));
   const clientOptions: LanguageClientOptions = {
     documentSelector: [...DOCUMENT_SELECTOR],
     initializationOptions: initializationOptions(cssPaths),

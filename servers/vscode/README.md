@@ -18,6 +18,13 @@ just the client wiring. The extension and the server are bundled into two self-c
 (`dist/extension.cjs` and `dist/server.cjs`) with esbuild, and packaged to a `.vsix` with `@vscode/vsce`
 via `pnpm run package`.
 
+## Develop
+
+Open this folder (`servers/vscode`) in VS Code and press **F5**. The `Run cssdoc extension` launch config
+builds the bundles and opens an Extension Development Host on the bundled `examples/` project (a
+documented `components.css` + `index.html`). In that window, open `index.html` to see the unknown- and
+deprecated-modifier diagnostics, hover a modifier, or go to its definition.
+
 ## License
 
 MIT

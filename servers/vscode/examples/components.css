@@ -1,0 +1,27 @@
+/**
+ * @component button
+ * @summary The primary action control.
+ * @modifier -color-secondary — A lower-emphasis action.
+ * @modifier -variant-old — @deprecated {@link -color-secondary}
+ * @part .icon — A leading glyph.
+ * @cssproperty --instui-button-radius — The corner radius.
+ */
+.instui-button {
+  border-radius: var(--instui-button-radius);
+}
+.instui-button.-color-secondary {
+  background: #eee;
+}
+.instui-button.-variant-old {
+  background: #eee;
+}
+@scope (.instui-button) {
+  :scope > .icon {
+    width: 1em;
+  }
+}
+@property --instui-button-radius {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 4px;
+}
