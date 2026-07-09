@@ -16,7 +16,7 @@ documented classes, modifiers, and custom properties to `.css`, `.html`, and JSX
 All the intelligence lives in the `cssdoc-language-server` and the cssdoc providers; this package is
 just the client wiring. The extension and the server are bundled into two self-contained CommonJS files
 (`dist/extension.cjs` and `dist/server.cjs`) with esbuild, and packaged to a `.vsix` with `@vscode/vsce`
-via `pnpm run package`.
+via `vp run package`.
 
 ## Develop
 
