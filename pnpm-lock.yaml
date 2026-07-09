@@ -283,6 +283,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.2
+      publint:
+        specifier: 'catalog:'
+        version: 0.3.21
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -305,6 +308,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.2
+      publint:
+        specifier: 'catalog:'
+        version: 0.3.21
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -327,6 +333,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.2
+      publint:
+        specifier: 'catalog:'
+        version: 0.3.21
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -349,6 +358,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.2
+      publint:
+        specifier: 'catalog:'
+        version: 0.3.21
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -371,6 +383,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.2
+      publint:
+        specifier: 'catalog:'
+        version: 0.3.21
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -396,6 +411,9 @@ importers:
       grammarkdown:
         specifier: 'catalog:'
         version: 3.3.2
+      publint:
+        specifier: 'catalog:'
+        version: 0.3.21
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -418,6 +436,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.2
+      publint:
+        specifier: 'catalog:'
+        version: 0.3.21
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -443,6 +464,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.2
+      publint:
+        specifier: 'catalog:'
+        version: 0.3.21
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -465,6 +489,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.2
+      publint:
+        specifier: 'catalog:'
+        version: 0.3.21
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -502,6 +529,9 @@ importers:
       eslint:
         specifier: 'catalog:'
         version: 10.6.0
+      publint:
+        specifier: 'catalog:'
+        version: 0.3.21
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -524,6 +554,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.2
+      publint:
+        specifier: 'catalog:'
+        version: 0.3.21
       stylelint:
         specifier: 'catalog:'
         version: 17.14.0(typescript@6.0.3)
@@ -549,6 +582,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.2
+      publint:
+        specifier: 'catalog:'
+        version: 0.3.21
       typedoc:
         specifier: 'catalog:'
         version: 0.28.20(typescript@6.0.3)
@@ -583,6 +619,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.2
+      publint:
+        specifier: 'catalog:'
+        version: 0.3.21
       typescript:
         specifier: 'catalog:'
         version: 6.0.3

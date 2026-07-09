@@ -28,7 +28,8 @@
     "dev": "vp pack --watch",
     "test": "vp test",
     "check": "vp check",
-    "prepublishOnly": "vp run build"
+    "prepublishOnly": "vp run build",
+    "publint": "publint"
   },
   "dependencies": {
     "postcss": "catalog:"
@@ -37,6 +38,7 @@
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "grammarkdown": "catalog:",
+    "publint": "catalog:",
     "typescript": "catalog:",
     "vite": "npm:@voidzero-dev/vite-plus-core@0.2.2",
     "vite-plus": "catalog:"
