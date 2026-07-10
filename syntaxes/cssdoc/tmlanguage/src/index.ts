@@ -142,8 +142,27 @@ export function buildInjectionGrammar(): InjectionGrammar {
   };
 }
 
-/** The scopes the injection layers onto (CSS, plus SCSS/Less and CSS embedded in HTML `<style>`). */
-export const injectTo = ["source.css", "source.scss", "source.less"];
+/**
+ * The host scopes the injection layers onto. It fires only where `comment.block.css` (etc.) appears —
+ * see {@link InjectionGrammar.injectionSelector} — so listing the JS/HTML/Markdown/framework hosts is
+ * safe: cssdoc lights up embedded CSS wherever another grammar embeds it, not just in `.css` files.
+ */
+export const injectTo = [
+  "source.css",
+  "source.scss",
+  "source.less",
+  "source.css.styled",
+  "source.ts",
+  "source.tsx",
+  "source.js",
+  "source.jsx",
+  "source.vue",
+  "source.svelte",
+  "source.astro",
+  "text.html.markdown",
+  "text.html.basic",
+  "text.html.derivative",
+];
 
 /** The cssdoc doc-comment injection grammar, shaped as a Shiki `LanguageRegistration`. */
 export const cssdoc = { ...buildInjectionGrammar(), injectTo };

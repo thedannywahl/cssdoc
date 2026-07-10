@@ -79,6 +79,7 @@ The rule ids:
 | `invalid-property-value`        | `warn`  | an assignment doesn't match a property's declared syntax.                    |
 | `invalid-fallback-value`        | `warn`  | a `var(--x, …)` fallback doesn't match the declared syntax.                  |
 | `unknown-custom-property`       | `off`   | a `var(--x)` isn't documented (opt-in via a property prefix).                |
+| `cssdoc-directive`              | `warn`  | a `cssdoc-expect-error` directive matched no problem (unused expectation).   |
 
 `unknown-modifier` defaults to `warn` because BEM's `--` is an unambiguous signal — only `base--…`
 tokens are candidates. Under weak-signal conventions (`bare`/OOCSS), where every chained class is a

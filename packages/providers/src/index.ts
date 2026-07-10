@@ -36,6 +36,7 @@ import {
 
 export * from "./types.ts";
 export * from "./syntax.ts";
+export { applyDirectives, parseDirectives } from "./directives.ts";
 export {
   cssPart,
   customProperty,

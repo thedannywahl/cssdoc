@@ -48,7 +48,20 @@
         "scopeName": "documentation.cssdoc",
         "path": "./syntaxes/cssdoc.injection.tmLanguage.json",
         "injectTo": [
-          "source.css"
+          "source.css",
+          "source.scss",
+          "source.less",
+          "source.css.styled",
+          "source.ts",
+          "source.tsx",
+          "source.js",
+          "source.jsx",
+          "source.vue",
+          "source.svelte",
+          "source.astro",
+          "text.html.markdown",
+          "text.html.basic",
+          "text.html.derivative"
         ]
       }
     ],

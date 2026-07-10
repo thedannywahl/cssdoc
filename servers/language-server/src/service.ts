@@ -27,6 +27,7 @@ import {
   type NamingRules,
   type ResolvedNaming,
   type RuleSeverities,
+  applyDirectives,
   checkClassUsage,
   checkPropertyAssignments,
   checkPropertyUsage,
@@ -406,11 +407,14 @@ export class CssDocLanguageService {
     const scope = this.scopeForPath(path);
     const index = createIndex(text, { configuration: scope.configuration, parse });
     const { assignments, usages } = cssValueSites(text, { parse });
-    const diags = [
-      ...lintModel(index, scope.severities, scope.naming, scope.structureIgnore),
-      ...checkPropertyAssignments(assignments, index, scope.severities),
-      ...checkPropertyUsage(usages, index, {}, scope.severities),
-    ];
+    const diags = applyDirectives(
+      [
+        ...lintModel(index, scope.severities, scope.naming, scope.structureIgnore),
+        ...checkPropertyAssignments(assignments, index, scope.severities),
+        ...checkPropertyUsage(usages, index, {}, scope.severities),
+      ],
+      text, // honor `/* cssdoc-disable … */` directives in the source
+    );
     const out: LspDiagnostic[] = [];
     for (const d of diags) {
       if (!d.span) continue;

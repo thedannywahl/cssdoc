@@ -9,6 +9,7 @@
 import type { CssDocConfiguration, CssParse, ModifierConventionInput } from "@cssdoc/core";
 import { createIndex, cssValueSites } from "@cssdoc/index";
 import {
+  applyDirectives,
   checkPropertyAssignments,
   checkPropertyUsage,
   lintModel,
@@ -104,11 +105,14 @@ export function lintCssDocs(css: string, options: LintOptions = {}): Violation[]
   const naming = resolveNaming(options.naming);
   const { assignments, usages } = cssValueSites(css, { parse: options.parse });
   // The providers drop `off` rules and stamp the resolved severity — no separate filter here.
-  const diagnostics = [
-    ...lintModel(index, severities, naming, options.structureIgnore), // hygiene + invalid-default-value + name-case
-    ...checkPropertyAssignments(assignments, index, severities), // invalid-property-value
-    ...checkPropertyUsage(usages, index, {}, severities), // invalid-fallback-value (unknown-property opt-in, off here)
-  ];
+  const diagnostics = applyDirectives(
+    [
+      ...lintModel(index, severities, naming, options.structureIgnore), // hygiene + invalid-default-value + name-case
+      ...checkPropertyAssignments(assignments, index, severities), // invalid-property-value
+      ...checkPropertyUsage(usages, index, {}, severities), // invalid-fallback-value (unknown-property opt-in, off here)
+    ],
+    css, // honor `/* cssdoc-disable … */` and friends
+  );
   return diagnostics.map((d) => ({
     rule: d.rule as RuleName,
     message: d.message,

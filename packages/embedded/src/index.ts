@@ -322,6 +322,21 @@ const VUE_BOUND_RE = /(?::class|v-bind:class)\s*=\s*("([^"]*)"|'([^']*)')/gu;
 const SVELTE_CLASS_RE = /\bclass:([\w-]+)/gu;
 const STRING_LITERAL_RE = /(["'`])((?:(?!\1)[\s\S])*)\1/gu;
 const WORD_RE = /\S+/gu;
+// Comment forms to blank before scanning, so commented-out markup isn't read as a usage. The `//`
+// form guards against `://` (URLs) so a `href="http://…"` isn't mistaken for a line comment.
+const COMMENT_RES = [/<!--[\s\S]*?-->/gu, /\/\*[\s\S]*?\*\//gu, /(?<![:/])\/\/[^\n]*/gu];
+
+/** Blank every comment's characters to spaces (newlines kept), preserving length and offsets. */
+function maskComments(source: string): string {
+  const ranges: Array<[number, number]> = [];
+  for (const re of COMMENT_RES)
+    for (const m of source.matchAll(re)) ranges.push([m.index ?? 0, (m.index ?? 0) + m[0].length]);
+  if (ranges.length === 0) return source;
+  const out = Array.from({ length: source.length }, (_, i) => source[i]);
+  for (const [s, e] of ranges)
+    for (let i = s; i < e && i < source.length; i++) if (out[i] !== "\n") out[i] = " ";
+  return out.join("");
+}
 
 /**
  * Scan a host document (HTML, JSX, Vue, Svelte, …) for the places component classes are **used**, so
@@ -332,7 +347,10 @@ const WORD_RE = /\S+/gu;
  */
 export function scanClassUsages(source: string): ClassUsageSite[] {
   const sites: ClassUsageSite[] = [];
-  for (const tag of source.matchAll(TAG_RE)) {
+  // Blank comments first (same length, so offsets still map to `source`) — commented-out markup like
+  // `<!-- <div class="tabs tabs--boxed"></div> -->` must not be read as a real usage.
+  const scanned = maskComments(source);
+  for (const tag of scanned.matchAll(TAG_RE)) {
     const attrs = tag[1];
     if (!attrs) continue;
     const base = (tag.index ?? 0) + tag[0].length - 1 - attrs.length; // absolute start of the attrs

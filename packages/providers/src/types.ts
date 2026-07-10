@@ -36,7 +36,8 @@ export type RuleId =
   | "invalid-default-value"
   | "invalid-property-value"
   | "invalid-fallback-value"
-  | "unknown-custom-property";
+  | "unknown-custom-property"
+  | "cssdoc-directive";
 
 /** A resolved severity for every rule. */
 export type RuleSeverities = Record<RuleId, RuleSeverity>;
@@ -65,6 +66,8 @@ export const DEFAULT_RULE_SEVERITIES: RuleSeverities = {
   "invalid-property-value": "warn",
   "invalid-fallback-value": "warn",
   "unknown-custom-property": "off",
+  // Fires when a `cssdoc-expect-error` directive matched no problem (like an unused ts-expect-error).
+  "cssdoc-directive": "warn",
 };
 
 /**

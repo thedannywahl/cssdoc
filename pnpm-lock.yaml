@@ -335,6 +335,10 @@ importers:
         version: 0.2.4(@types/node@24.13.3)(@voidzero-dev/vite-plus-core@0.2.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(publint@0.3.21)(typescript@6.0.3)(yaml@2.9.0))(esbuild@0.28.1)(jiti@2.7.0)(publint@0.3.21)(typescript@6.0.3)(yaml@2.9.0)
 
   docs:
+    dependencies:
+      '@cssdoc/embedded':
+        specifier: workspace:*
+        version: link:../packages/embedded
     devDependencies:
       '@codemirror/lang-css':
         specifier: ^6.3.1

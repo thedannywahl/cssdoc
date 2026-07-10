@@ -27,6 +27,27 @@ test("flags a missing summary", () => {
   expect(v[0].record).toBe("button");
 });
 
+test("directives: disable, disable-next-line, and expect-error suppress and verify", () => {
+  const missing = "/**\n * @component chip\n */\n.chip { color: red; }"; // no @summary → missing-summary
+  expect(byRule(lintCssDocs(missing), "missing-summary")).toHaveLength(1); // baseline
+
+  // Whole-file block disable.
+  expect(byRule(lintCssDocs(`/* cssdoc-disable */\n${missing}`), "missing-summary")).toHaveLength(
+    0,
+  );
+
+  // disable-next-line on the line above the doc comment (where missing-summary anchors).
+  const nextLine = `/* cssdoc-disable-next-line missing-summary */\n${missing}`;
+  expect(byRule(lintCssDocs(nextLine), "missing-summary")).toHaveLength(0);
+
+  // A matched expect-error is silent; an unmatched one raises cssdoc-directive.
+  const met = `/* cssdoc-expect-error missing-summary */\n${missing}`;
+  expect(byRule(lintCssDocs(met), "missing-summary")).toHaveLength(0);
+  expect(byRule(lintCssDocs(met), "cssdoc-directive")).toHaveLength(0);
+  const unmet = "/* cssdoc-expect-error */\n.plain { color: red; }";
+  expect(byRule(lintCssDocs(unmet), "cssdoc-directive")).toHaveLength(1);
+});
+
 test("flags an AST modifier without a @modifier description", () => {
   const v = byRule(lintCssDocs(CSS), "undocumented-modifier");
   // -size-sm has no description; -color-secondary is documented; -variant-old is deprecated.

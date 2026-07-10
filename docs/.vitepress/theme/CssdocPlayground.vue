@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { parseCssDocs, toMermaid } from "@cssdoc/core";
+import { scanClassUsages } from "@cssdoc/embedded";
 import { createIndex, cssValueSites } from "@cssdoc/index";
 import {
   checkClassUsage,
@@ -135,13 +136,16 @@ const usage = computed(() => {
     const { matcher } = index;
     const bases = new Set<string>();
     const usages: { base?: string; tokens: string[]; token: string }[] = [];
-    for (const m of html.value.matchAll(/\bclass(?:Name)?\s*=\s*["']([^"']*)["']/gu)) {
-      const tokens = m[1].split(/\s+/u).filter(Boolean);
+    // Shared, comment-aware scanner: reads class/className/:class/class:name per element and skips
+    // commented-out markup, so `<!-- <div class="tabs--gone"> -->` examples don't get flagged.
+    for (const site of scanClassUsages(html.value)) {
+      const tokens = site.tokens.map((t) => t.token);
       const base = tokens.find((t) => index.componentForClass(t));
       if (!base) continue;
       bases.add(base);
-      for (const token of tokens) {
-        if (matcher.usageKind(token, base) !== undefined) usages.push({ base, tokens, token });
+      for (const t of site.tokens) {
+        if (matcher.usageKind(t.token, base) !== undefined)
+          usages.push({ base, tokens, token: t.token });
       }
     }
     return { bases: [...bases], diagnostics: checkClassUsage(usages, index, cfg.value.severities) };

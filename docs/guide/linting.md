@@ -105,3 +105,24 @@ CSS files by the editor extension:
 
 Values that can't be checked statically are never flagged: universal syntax (`*`), runtime
 substitutions (`var()`, `env()`), and the CSS-wide keywords (`inherit`, `initial`, `unset`, `revert`).
+
+## Suppressing diagnostics
+
+Silence a cssdoc diagnostic inline with a CSS comment directive — the same idea as
+`eslint-disable` / `stylelint-disable`. Because they're CSS comments, they ride along in embedded CSS
+too (a `<style>` block, a tagged template).
+
+```css
+/* cssdoc-disable */ /* off from here to the end of the file (or the next enable) */
+/* cssdoc-enable */ /* back on */
+/* cssdoc-disable undocumented-modifier */ /* just one rule (space- or comma-separated for several) */
+
+.button {
+  /* cssdoc-disable-line unknown-modifier */
+  /* cssdoc-disable-next-line */
+}
+```
+
+With no rule names a directive covers every rule; name one or more to scope it. A
+`/* cssdoc-expect-error [rules] */` asserts a problem on the next line — if none is reported, cssdoc
+raises `cssdoc-directive` (an unused expectation, like an unused `@ts-expect-error`).

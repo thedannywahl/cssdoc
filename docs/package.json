@@ -16,6 +16,9 @@
     "docs:build": "node scripts/copy-schema.mjs && typedoc && vitepress build",
     "docs:preview": "vitepress preview"
   },
+  "dependencies": {
+    "@cssdoc/embedded": "workspace:*"
+  },
   "devDependencies": {
     "@codemirror/lang-css": "^6.3.1",
     "@codemirror/lang-html": "^6.4.9",

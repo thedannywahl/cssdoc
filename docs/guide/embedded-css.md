@@ -202,6 +202,30 @@ the language server resolves it from the file extension and the `lang` attribute
 comments, class selectors, `@property` at-rules, and custom properties; dialect-only constructs
 (`$vars`, `@mixin`, `@include`) are parsed but ignored.
 
+## Coexisting with JSDoc / TSDoc
+
+A cssdoc comment above a `const Button = styled…` is a `/** … */` block — which JSDoc and TSDoc tools
+also read. They'll flag cssdoc's tags (`@component`, `@modifier`, …) as unknown unless you allowlist
+them. The tag vocabulary is exported for exactly this, from
+[`@cssdoc/spec`](https://www.npmjs.com/package/@cssdoc/spec):
+
+```ts
+import { CSSDOC_TAG_NAMES } from "@cssdoc/spec"; // ["component", "modifier", "part", …]
+```
+
+- **eslint-plugin-jsdoc** — add them to `check-tag-names`:
+
+  ```js
+  import { CSSDOC_TAG_NAMES } from "@cssdoc/spec";
+  // rules: { "jsdoc/check-tag-names": ["warn", { definedTags: CSSDOC_TAG_NAMES }] }
+  ```
+
+- **TSDoc / TypeDoc** — declare them in `tsdoc.json` as `tagDefinitions` (block tags), or set
+  TypeDoc's `blockTags`, so the parser stops warning.
+
+Placing the comment inside the template (where the custom syntax and TSDoc don't reach it) avoids the
+clash entirely, at the cost of the less-natural position.
+
 ## What's covered
 
 | Source                                                           | Authoring doc comments     |

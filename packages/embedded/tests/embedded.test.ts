@@ -126,6 +126,16 @@ test("scanClassUsages reads class tokens from HTML, JSX, Vue, and Svelte, per el
   expect(toks(`<button class="btn" class:btn--active={on} />`)).toEqual(["btn", "btn--active"]);
 });
 
+test("scanClassUsages ignores commented-out markup (HTML and JS comments)", () => {
+  const toks = (src: string) => scanClassUsages(src).flatMap((s) => s.tokens.map((t) => t.token));
+  expect(toks(`<!-- <div class="tabs tabs--boxed"></div> -->`)).toEqual([]);
+  expect(toks(`{/* <button className="btn btn--x" /> */}`)).toEqual([]);
+  // A real element beside a commented one is still read; a URL with // isn't mistaken for a comment.
+  expect(toks(`<a href="http://x" class="tabs" /> <!-- <b class="tabs--gone"/> -->`)).toEqual([
+    "tabs",
+  ]);
+});
+
 test("scanClassUsages reports accurate offsets", () => {
   const src = `<div class="btn btn--x"></div>`;
   const [site] = scanClassUsages(src);
