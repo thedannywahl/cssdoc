@@ -9,9 +9,7 @@
  * link is the clean `v<last>...v<version>`. Mirrors the coe-mcp release scheme.
  */
 import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
-
-const CHANGELOG = new URL("../CHANGELOG.md", import.meta.url);
+import { readFileSync } from "node:fs";
 
 const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 if (!pkg.version) {
@@ -21,8 +19,3 @@ if (!pkg.version) {
 
 // `--output` (no filename) writes CHANGELOG.md; `-r` sets the release version for the heading.
 execFileSync("changelogen", ["--output", "-r", pkg.version], { stdio: "inherit" });
-
-// Drop changelogen's `[compare changes](…)` line (and the blank line after it) so each section reads
-// `## vX.Y.Z` straight into its entries. Global so re-runs keep the whole file consistent.
-const cleaned = readFileSync(CHANGELOG, "utf8").replace(/^\[compare changes\]\([^\n]*\)\n\n/gm, "");
-writeFileSync(CHANGELOG, cleaned);
