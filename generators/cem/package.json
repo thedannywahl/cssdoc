@@ -1,6 +1,6 @@
 {
   "name": "@cssdoc/cem",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Generate a Custom Elements Manifest (cssProperties, cssParts, cssStates) from the cssdoc model.",
   "keywords": [
     "cem",

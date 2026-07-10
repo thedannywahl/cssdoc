@@ -4,6 +4,32 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.1.0...main
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.1.0...main)
+
+### 🚀 Enhancements
+
+- **vscode:** Auto-detect documented CSS with include/exclude globs ([a562183](https://github.com/thedannywahl/cssdoc/commit/a562183))
+- **core:** ⚠️ Configurable modifier convention ([a705fd3](https://github.com/thedannywahl/cssdoc/commit/a705fd3))
+
+### 📖 Documentation
+
+- Rewrite the VS Code extension README for consumers + add install links ([d40d528](https://github.com/thedannywahl/cssdoc/commit/d40d528))
+
+### 🤖 CI
+
+- **release:** Make extension publishing resilient ([05bf62c](https://github.com/thedannywahl/cssdoc/commit/05bf62c))
+- **release:** Switch npm publish to OIDC trusted publishing ([8fe9e9d](https://github.com/thedannywahl/cssdoc/commit/8fe9e9d))
+
+#### ⚠️ Breaking Changes
+
+- **core:** ⚠️ Configurable modifier convention ([a705fd3](https://github.com/thedannywahl/cssdoc/commit/a705fd3))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.1.0
 
 The first public release of cssdoc — TSDoc, for CSS. You write structured `/** … */` doc comments above

@@ -1,6 +1,6 @@
 {
   "name": "@cssdoc/stylelint-plugin",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Stylelint rules that check CSS doc-comment hygiene (undocumented modifiers/parts, deprecations, drift).",
   "keywords": [
     "css",

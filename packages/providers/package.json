@@ -1,6 +1,6 @@
 {
   "name": "@cssdoc/providers",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Host-agnostic aspect providers over the @cssdoc/index — diagnostics, completions, hover, and definitions for modifiers, custom properties, structure, functions, states, and conditions.",
   "keywords": [
     "css",
