@@ -346,7 +346,7 @@ export class CssDocLanguageService {
       const base = attr.tokens.find((t) => scope.index.componentForClass(t));
       if (!base) continue; // only check elements that carry a documented component of this scope
       for (const member of attr.members) {
-        if (!matcher.looksLikeUsage(member.token, base)) continue;
+        if (matcher.usageKind(member.token, base) === undefined) continue;
         results.push({
           usage: { base, tokens: attr.tokens, token: member.token },
           start: member.start,

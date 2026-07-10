@@ -13,7 +13,16 @@ import type {
   PropertyAssignment,
   PropertyUsage,
 } from "@cssdoc/index";
-import { cssPart, customProperty, func, modifier, part, record } from "./aspects.ts";
+import {
+  cssPart,
+  customProperty,
+  func,
+  modifier,
+  part,
+  partUsage,
+  record,
+  stateUsage,
+} from "./aspects.ts";
 import {
   DEFAULT_RULE_SEVERITIES,
   type Completion,
@@ -27,7 +36,16 @@ import {
 
 export * from "./types.ts";
 export * from "./syntax.ts";
-export { cssPart, customProperty, func, modifier, part, record } from "./aspects.ts";
+export {
+  cssPart,
+  customProperty,
+  func,
+  modifier,
+  part,
+  partUsage,
+  record,
+  stateUsage,
+} from "./aspects.ts";
 
 /**
  * Apply resolved rule severities to a batch of diagnostics: drop `off` rules, and stamp the configured
@@ -87,14 +105,22 @@ export function checkPropertyAssignments(
   );
 }
 
-/** Consumer-side diagnostics for class-attribute usage (unknown or deprecated modifiers). */
+/**
+ * Consumer-side diagnostics for class-attribute usage: unknown/deprecated modifiers, plus unknown
+ * state classes (`statePrefixes`) and unknown BEM element classes, routed by the token's kind.
+ */
 export function checkClassUsage(
   usages: readonly ClassUsage[],
   index: CssDocIndex,
   severities: RuleSeverities = DEFAULT_RULE_SEVERITIES,
 ): Diagnostic[] {
   return applySeverities(
-    usages.flatMap((usage) => modifier.classUsage(usage, index)),
+    usages.flatMap((usage) => {
+      const kind = usage.base ? index.matcher.usageKind(usage.token, usage.base) : undefined;
+      if (kind === "state") return stateUsage(usage, index);
+      if (kind === "element") return partUsage(usage, index);
+      return modifier.classUsage(usage, index); // modifier (self-guards for anything else)
+    }),
     severities,
   );
 }

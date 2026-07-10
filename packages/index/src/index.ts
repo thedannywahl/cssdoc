@@ -309,6 +309,7 @@ function scanNodes(nodes: ChildNode[], build: Build, base: string, matcher: Modi
         }
         for (const el of matcher.elementsIn(bare, baseNoDot)) {
           set(memberKey("part", el.name), node);
+          for (const m of el.modifiers) set(memberKey("modifier", m.name), node);
         }
         for (const st of matcher.statesIn(bare, baseNoDot)) {
           set(memberKey("state", st.name), node);

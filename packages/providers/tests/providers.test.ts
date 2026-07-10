@@ -109,6 +109,31 @@ test("checkClassUsage flags an unknown modifier and a deprecated one", () => {
   expect(deprecated.message).toContain("-color-secondary"); // suggests the canonical
 });
 
+test("checkClassUsage flags unknown element and state classes, not documented ones", () => {
+  const css = `/**
+ * @component card
+ * @summary A surface.
+ */
+.card {}
+.card__title {}
+.card__title--active {}
+.card.is-open {}`;
+  const conv = {
+    structure: "suffix" as const,
+    separator: "--",
+    elementSeparator: "__",
+    statePrefixes: ["is-"],
+  };
+  const idx = createIndex(css, { modifierConvention: conv });
+  const rules = (token: string) =>
+    checkClassUsage([{ base: "card", tokens: ["card", token], token }], idx).map((d) => d.rule);
+  expect(rules("card__title")).toEqual([]); // documented element part
+  expect(rules("card__title--active")).toEqual([]); // documented element modifier
+  expect(rules("card__bogus")).toEqual(["unknown-part"]);
+  expect(rules("is-open")).toEqual([]); // documented state
+  expect(rules("is-frobbed")).toEqual(["unknown-state"]);
+});
+
 test("completions: components with no base, modifiers with a base", () => {
   const components = completeClasses(undefined, index).map((c) => c.label);
   expect(components).toEqual(expect.arrayContaining(["button", "chip"]));

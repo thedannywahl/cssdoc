@@ -321,6 +321,47 @@ export const cssPart = {
   },
 };
 
+// ── consumer-side state / element usage ───────────────────────────────────────────────────────
+
+/** A host-document class that looks like a state (via `statePrefixes`) but isn't a documented state. */
+export function stateUsage(usage: ClassUsage, index: CssDocIndex): Diagnostic[] {
+  if (!usage.base) return [];
+  const entry = index.componentForClass(usage.base);
+  if (!entry) return [];
+  const name = usage.token.replace(/^\./u, "");
+  if (entry.states.some((s) => s.name === name)) return [];
+  return [
+    warn({
+      aspect: "state",
+      rule: "unknown-state",
+      message: `".${name}" is not a documented state of "${entry.name}".`,
+      record: entry.name,
+      span: usage.loc,
+    }),
+  ];
+}
+
+/** A host-document class that looks like a BEM element (`base<sep>…`) but isn't a documented part. */
+export function partUsage(usage: ClassUsage, index: CssDocIndex): Diagnostic[] {
+  if (!usage.base) return [];
+  const entry = index.componentForClass(usage.base);
+  if (!entry) return [];
+  const name = usage.token.replace(/^\./u, "");
+  const known = entry.parts.some(
+    (p) => p.name === name || p.modifiers?.some((m) => m.name === name),
+  );
+  if (known) return [];
+  return [
+    warn({
+      aspect: "part",
+      rule: "unknown-part",
+      message: `".${name}" is not a documented part of "${entry.name}".`,
+      record: entry.name,
+      span: usage.loc,
+    }),
+  ];
+}
+
 // ── custom-property ─────────────────────────────────────────────────────────────────────────────
 
 function findProperty(

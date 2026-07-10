@@ -26,6 +26,8 @@ export type RuleId =
   | "name-not-in-css"
   | "unknown-modifier"
   | "deprecated-modifier"
+  | "unknown-state"
+  | "unknown-part"
   | "undocumented-part"
   | "undocumented-css-part"
   | "component-name-case"
@@ -51,6 +53,8 @@ export const DEFAULT_RULE_SEVERITIES: RuleSeverities = {
   "name-not-in-css": "warn",
   "unknown-modifier": "warn",
   "deprecated-modifier": "warn",
+  "unknown-state": "warn",
+  "unknown-part": "warn",
   "undocumented-part": "warn",
   "undocumented-css-part": "warn",
   // The name-case rules only fire when a `naming` convention is configured, so `warn` is safe.

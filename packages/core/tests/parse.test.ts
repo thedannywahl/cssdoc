@@ -169,6 +169,18 @@ test("BEM elements (.block__element) are recorded as parts, distinct from modifi
   expect(tabs.parts.map((p) => p.name).sort()).toEqual(["tabs__list", "tabs__tab"]);
 });
 
+test("a BEM element's own modifier (.block__element--mod) nests on the part", () => {
+  const [tabs] = parseCssDocs(
+    `/**\n * @component tabs\n */\n.tabs {}\n.tabs__tab {}\n.tabs__tab--active { font-weight: 700; }`,
+  );
+  const tab = tabs.parts.find((p) => p.name === "tabs__tab")!;
+  expect(tab.modifiers?.map((m) => ({ name: m.name, prop: m.prop }))).toEqual([
+    { name: "tabs__tab--active", prop: "active" },
+  ]);
+  // The element name is not polluted by the modifier tail.
+  expect(tabs.parts.map((p) => p.name)).not.toContain("tabs__tab--active");
+});
+
 test("statePrefixes route chained classes to states, excluding them from modifiers", () => {
   const card = parseCssDocs(CONVENTION_FIXTURE, {
     modifierConvention: { structure: "chained", separator: "", statePrefixes: ["is-"] },

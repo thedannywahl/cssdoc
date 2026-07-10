@@ -43,6 +43,8 @@ export interface CssPart {
   name: string;
   /** Prose from a `@part` doc tag, when authored. */
   description?: string;
+  /** The part's own modifiers, e.g. `.block__element--active` on a BEM element. Present when non-empty. */
+  modifiers?: CssModifier[];
 }
 
 /**

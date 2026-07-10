@@ -138,7 +138,7 @@ const usage = computed(() => {
       if (!base) continue;
       bases.add(base);
       for (const token of tokens) {
-        if (matcher.looksLikeUsage(token, base)) usages.push({ base, tokens, token });
+        if (matcher.usageKind(token, base) !== undefined) usages.push({ base, tokens, token });
       }
     }
     return { bases: [...bases], diagnostics: checkClassUsage(usages, index, cfg.value.severities) };

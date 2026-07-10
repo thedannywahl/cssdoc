@@ -103,11 +103,10 @@ A convention can also name two roles that aren't modifiers, so they land in the 
 }
 ```
 
-::: tip Known limit
-An element's own modifiers (`.card__title--active`) are captured as part of the element name for now,
-not as a separate modifier of the part. Consumer-side linting of convention-derived state and element
-classes is a follow-up; today they're extracted into the model but not yet usage-checked.
-:::
+An element's own modifiers attach to the part: `.card__title--active` gives the part `card__title` a
+modifier `active` (in its `modifiers`), rather than inventing a part named `card__title--active`.
+Consumer-side usage is checked too — a class that looks like a state (`statePrefixes`) or an element
+(`elementSeparator`) but isn't documented raises `unknown-state` / `unknown-part`.
 
 ## Name-case conventions
 

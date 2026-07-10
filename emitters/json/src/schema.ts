@@ -23,6 +23,34 @@ const state = {
   },
 } as const;
 
+const modifier = {
+  type: "object",
+  required: ["name", "prop"],
+  additionalProperties: false,
+  properties: {
+    name: { type: "string" },
+    prop: { type: "string" },
+    value: { type: "string" },
+    description: { type: "string" },
+    deprecated: {
+      type: "object",
+      additionalProperties: false,
+      properties: { canonical: { type: "string" }, note: { type: "string" } },
+    },
+  },
+} as const;
+
+const part = {
+  type: "object",
+  required: ["name"],
+  additionalProperties: false,
+  properties: {
+    name: { type: "string" },
+    description: { type: "string" },
+    modifiers: { type: "array", items: modifier },
+  },
+} as const;
+
 /** JSON Schema for a single {@link @cssdoc/core!CssDocEntry | CssDocEntry}. */
 export const cssDocEntrySchema = {
   type: "object",
@@ -56,26 +84,8 @@ export const cssDocEntrySchema = {
     since: { type: "string" },
     group: { type: "string" },
     accessibility: { type: "string" },
-    modifiers: {
-      type: "array",
-      items: {
-        type: "object",
-        required: ["name", "prop"],
-        additionalProperties: false,
-        properties: {
-          name: { type: "string" },
-          prop: { type: "string" },
-          value: { type: "string" },
-          description: { type: "string" },
-          deprecated: {
-            type: "object",
-            additionalProperties: false,
-            properties: { canonical: { type: "string" }, note: { type: "string" } },
-          },
-        },
-      },
-    },
-    parts: { type: "array", items: named },
+    modifiers: { type: "array", items: modifier },
+    parts: { type: "array", items: part },
     shadowParts: { type: "array", items: named },
     states: { type: "array", items: state },
     slots: { type: "array", items: named },

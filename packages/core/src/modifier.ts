@@ -244,22 +244,42 @@ export class ModifierMatcher {
 
   /**
    * Every BEM-style element attached to `baseNoDot` within one selector (`.base<elementSep><name>`),
-   * as parts. Only meaningful for `suffix` conventions that set an `elementSeparator`; empty otherwise.
-   * The element name is the full class token (e.g. `card__title`), matching how it's authored in HTML.
+   * as parts, each with any element-scoped modifiers (`.base__element--mod` → element `base__element`
+   * with modifier `mod`). Only meaningful for `suffix` conventions with an `elementSeparator`.
    */
-  elementsIn(selector: string, baseNoDot: string): { name: string }[] {
+  elementsIn(selector: string, baseNoDot: string): { name: string; modifiers: ModifierHit[] }[] {
     if (this.convention.structure !== "suffix" || this.elementSepAlt === "") return [];
     const baseEsc = escapeRe(baseNoDot);
     const re = new RegExp(`\\.(${baseEsc}${this.elementSepAlt}[\\w-]+)`, "gu");
-    const seen = new Set<string>();
-    const out: { name: string }[] = [];
+    const byName = new Map<string, ModifierHit[]>();
     for (const m of selector.matchAll(re)) {
-      if (!seen.has(m[1])) {
-        seen.add(m[1]);
-        out.push({ name: m[1] });
-      }
+      const { element, modifier } = this.splitElementModifier(m[1], baseNoDot);
+      const mods = byName.get(element) ?? [];
+      if (modifier && !mods.some((x) => x.name === modifier.name)) mods.push(modifier);
+      byName.set(element, mods);
     }
-    return out;
+    return [...byName].map(([name, modifiers]) => ({ name, modifiers }));
+  }
+
+  /**
+   * Split `.base__element--mod`-style tokens into the element class (`base__element`) and, if a
+   * modifier separator follows the element name, the element-scoped modifier.
+   */
+  private splitElementModifier(
+    token: string,
+    baseNoDot: string,
+  ): { element: string; modifier?: ModifierHit } {
+    const elsep = this.elementSeparators.find((s) => token.startsWith(baseNoDot + s));
+    if (!elsep) return { element: token };
+    const afterElement = baseNoDot.length + elsep.length;
+    let at = -1;
+    for (const sep of this.separators) {
+      if (sep === "") continue;
+      const i = token.indexOf(sep, afterElement);
+      if (i !== -1 && (at === -1 || i < at)) at = i;
+    }
+    if (at === -1) return { element: token };
+    return { element: token.slice(0, at), modifier: { name: token, ...this.analyze(token) } };
   }
 
   /**
@@ -359,6 +379,27 @@ export class ModifierMatcher {
     // chained
     if (baseNoDot && name === baseNoDot) return false;
     return this.separators.some((s) => name.startsWith(s));
+  }
+
+  /**
+   * Classify a host-document class token relative to `baseNoDot`: a `modifier` usage, a `state` class
+   * (a `statePrefixes` prefix), a BEM `element` class (`base<elementSep>…`), or `undefined` if it's
+   * none of those. Consumer-side linting routes each kind to the right "unknown-…" check.
+   */
+  usageKind(token: string, baseNoDot?: string): "modifier" | "state" | "element" | undefined {
+    if (this.convention.structure === "attribute") {
+      return this.looksLikeUsage(token, baseNoDot) ? "modifier" : undefined;
+    }
+    const name = token.replace(/^\./u, "");
+    if (this.isStateClass(name)) return "state";
+    if (
+      baseNoDot &&
+      this.convention.structure === "suffix" &&
+      this.elementSeparators.some((s) => name.startsWith(`${baseNoDot}${s}`))
+    ) {
+      return "element";
+    }
+    return this.looksLikeUsage(token, baseNoDot) ? "modifier" : undefined;
   }
 
   /** Canonicalize an attribute expression (bracket-inner): normalize quotes to double, trim. */

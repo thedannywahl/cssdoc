@@ -67,6 +67,8 @@ The rule ids:
 | `name-not-in-css`               | `warn`  | a documented modifier/part isn't in any selector.                            |
 | `unknown-modifier`              | `warn`  | a consumer uses a modifier candidate that isn't documented.                  |
 | `deprecated-modifier`           | `warn`  | a consumer uses a deprecated modifier.                                       |
+| `unknown-state`                 | `warn`  | a consumer uses a state class (`statePrefixes`) that isn't documented.       |
+| `unknown-part`                  | `warn`  | a consumer uses an element class (`elementSeparator`) that isn't documented. |
 | `undocumented-part`             | `warn`  | a part has no `@part` description.                                           |
 | `undocumented-css-part`         | `warn`  | a shadow part (`@csspart`) has no description.                               |
 | `component-name-case`           | `warn`  | a component class breaks the configured `naming.component` case (see below). |

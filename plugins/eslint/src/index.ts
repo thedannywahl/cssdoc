@@ -143,7 +143,7 @@ function checkClassValue(value: string, index: CssDocIndex): string[] {
   const tokens = value.split(/\s+/u).filter(Boolean);
   const base = tokens.find((t) => index.componentForClass(t));
   const usages = tokens
-    .filter((t) => index.matcher.looksLikeUsage(t, base))
+    .filter((t) => index.matcher.usageKind(t, base) !== undefined)
     .map((token) => ({ base, tokens, token }));
   return checkClassUsage(usages, index).map((d) => `[${d.rule}] ${d.message}`);
 }

@@ -164,9 +164,16 @@ function collect(
           if (pendingCanonical) entry.deprecated = { canonical: pendingCanonical };
           acc.modifiers.set(mod.name, entry);
         }
-        // BEM-style elements (`.base__x`) are parts; state classes (`.base.is-x`) are states.
+        // BEM-style elements (`.base__x`) are parts; `.base__x--mod` gives the element a modifier.
         for (const el of matcher.elementsIn(bare, baseNoDot)) {
-          if (!acc.parts.has(el.name)) acc.parts.set(el.name, { name: el.name });
+          const part = acc.parts.get(el.name) ?? { name: el.name };
+          for (const m of el.modifiers) {
+            part.modifiers ??= [];
+            if (!part.modifiers.some((x) => x.name === m.name)) {
+              part.modifiers.push({ name: m.name, prop: m.prop, value: m.value });
+            }
+          }
+          acc.parts.set(el.name, part);
         }
         for (const st of matcher.statesIn(bare, baseNoDot)) {
           if (!acc.states.has(st.name)) acc.states.set(st.name, { name: st.name, kind: "class" });
@@ -335,7 +342,9 @@ function buildEntry(
     group: doc.group,
     accessibility: doc.accessibility,
     modifiers,
-    parts: [...acc.parts.values()].sort(byName),
+    parts: [...acc.parts.values()]
+      .sort(byName)
+      .map((p) => (p.modifiers ? { ...p, modifiers: [...p.modifiers].sort(byName) } : p)),
     shadowParts: [...acc.shadowParts.values()].sort(byName),
     states: [...acc.states.values()].sort(byName),
     slots: [...doc.slots]
