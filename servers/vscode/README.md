@@ -14,21 +14,21 @@ Or open the Extensions view and search **cssdoc**.
 
 ## Setup
 
-Point the extension at your documented CSS with the **`cssdoc.css`** setting — the path(s) to the
-stylesheet(s) whose doc comments describe your components. **This is required**: without it the extension
-has nothing to read, so you'll see no completions or diagnostics.
+**Zero-config by default.** The extension auto-detects the CSS in your workspace and reads its doc
+comments — no setting required.
 
-Add it to your workspace settings (`.vscode/settings.json`):
+To narrow or widen what it scans, set globs in your workspace settings (`.vscode/settings.json`) or the
+Settings UI:
 
 ```jsonc
 {
-  // Paths to your documented CSS, relative to the workspace root. List as many as you like.
-  "cssdoc.css": ["dist/components.css"],
+  "cssdoc.include": ["dist/**/*.css"], // default: ["**/*.css"]
+  "cssdoc.exclude": ["**/node_modules/**"], // default: ["**/node_modules/**"]
 }
 ```
 
-You can also set it through the Settings UI (search **cssdoc: Css**). Changes take effect after a window
-reload.
+Prefer an exact list? `cssdoc.css` takes explicit paths and overrides auto-detection. Either way, the set
+updates automatically when files or settings change — no reload needed.
 
 ## What you get
 

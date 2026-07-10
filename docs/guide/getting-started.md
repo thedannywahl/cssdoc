@@ -62,8 +62,8 @@ Install the cssdoc extension for completion, hover, go-to-definition, and diagno
 - [Open VSX](https://open-vsx.org/extension/cssdoc/cssdoc-vscode) — Cursor, VSCodium, Windsurf, Gitpod,
   and other non-Microsoft editors
 
-Then point it at your CSS with the `cssdoc.css` setting — see [Editor support](/guide/editor) for the
-details, and for using any other LSP editor.
+It auto-detects the CSS in your workspace out of the box — see [Editor support](/guide/editor) to narrow
+it with globs, or to use any other LSP editor.
 
 ## Learn the grammar
 

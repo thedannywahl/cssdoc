@@ -11,16 +11,19 @@ Install the extension — it bundles the language server:
 - [Open VSX](https://open-vsx.org/extension/cssdoc/cssdoc-vscode) — for Cursor, VSCodium, Windsurf,
   Gitpod, and other non-Microsoft editors
 
-Then point it at your documented CSS with the `cssdoc.css` setting. This is **required** — it's the list
-of stylesheets the server reads, so nothing works until you set it:
+It's **zero-config** — the extension auto-detects the CSS in your workspace. To narrow or widen what it
+scans, set globs (in `.vscode/settings.json` or the Settings UI):
 
 ```jsonc
 // .vscode/settings.json
 {
-  // Paths relative to the workspace root; list as many as you like.
-  "cssdoc.css": ["dist/components.css"],
+  "cssdoc.include": ["dist/**/*.css"], // default: ["**/*.css"]
+  "cssdoc.exclude": ["**/node_modules/**"], // default: ["**/node_modules/**"]
 }
 ```
+
+For an exact list instead, `cssdoc.css` takes explicit paths and overrides auto-detection. The set
+refreshes automatically when files or settings change.
 
 In `.css`, `.html`, and JSX/TSX files you get:
 
