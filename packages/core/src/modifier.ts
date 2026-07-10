@@ -45,6 +45,12 @@ export interface ModifierConvention {
    */
   statePrefixes?: string[];
   /**
+   * Native pseudo-classes (without the `:`) to recognize as states when they appear on the base,
+   * e.g. `["disabled", "checked"]`. Defaults to {@link DEFAULT_STATE_PSEUDO_CLASSES} — a curated set
+   * of form/UI states, deliberately excluding ubiquitous interaction pseudos (`:hover`, `:focus`).
+   */
+  statePseudoClasses?: string[];
+  /**
    * Split the modifier body into `prop`/`value` on {@link ModifierConvention.propValueSeparator}?
    * Defaults to `false`. Ignored for `attribute` (which always derives `prop` from the attribute name
    * and `value` from the attribute value).
@@ -53,6 +59,29 @@ export interface ModifierConvention {
   /** The separator for the `prop`/`value` split. Defaults to `-`. */
   propValueSeparator?: string;
 }
+
+/**
+ * The pseudo-classes cssdoc treats as component states by default — form and UI states a component
+ * meaningfully declares. Ubiquitous interaction pseudos (`:hover`, `:focus`, `:active`) are omitted so
+ * incidental rules don't become documented states; add them via `statePseudoClasses` if you want them.
+ */
+export const DEFAULT_STATE_PSEUDO_CLASSES: readonly string[] = [
+  "checked",
+  "disabled",
+  "enabled",
+  "indeterminate",
+  "default",
+  "open",
+  "placeholder-shown",
+  "read-only",
+  "read-write",
+  "required",
+  "optional",
+  "valid",
+  "invalid",
+  "in-range",
+  "out-of-range",
+];
 
 /** The built-in convention presets. Other schemes use the custom object (see the docs). */
 export const MODIFIER_PRESETS = {
@@ -87,6 +116,7 @@ export function resolveModifierConvention(input?: ModifierConventionInput): Modi
     separator: base.separator,
     ...(base.elementSeparator !== undefined ? { elementSeparator: base.elementSeparator } : {}),
     ...(base.statePrefixes !== undefined ? { statePrefixes: base.statePrefixes } : {}),
+    statePseudoClasses: base.statePseudoClasses ?? [...DEFAULT_STATE_PSEUDO_CLASSES],
     propValue: base.propValue ?? false,
     propValueSeparator: base.propValueSeparator ?? "-",
   };
@@ -126,6 +156,8 @@ export class ModifierMatcher {
   private readonly elementSepAlt: string;
   /** State-class prefixes (longest-first), or empty when the convention has none. */
   private readonly statePrefixes: string[];
+  /** Native pseudo-classes (no `:`) recognized as states. */
+  private readonly statePseudoClasses: Set<string>;
 
   constructor(convention: ModifierConvention) {
     this.convention = convention;
@@ -143,6 +175,7 @@ export class ModifierMatcher {
       .filter((p) => p !== "")
       .slice()
       .sort((a, b) => b.length - a.length);
+    this.statePseudoClasses = new Set(convention.statePseudoClasses ?? []);
   }
 
   /** Does a class name (no leading dot) start with one of the convention's state prefixes? */
@@ -248,6 +281,25 @@ export class ModifierMatcher {
           seen.add(c[1]);
           out.push({ name: c[1] });
         }
+      }
+    }
+    return out;
+  }
+
+  /**
+   * Every native pseudo-class on the selector recognized as a state — a `:name` whose `name` is in the
+   * convention's {@link ModifierConvention.statePseudoClasses} (e.g. `.tab:disabled` → `disabled`).
+   * Pseudo-elements (`::part`) and pseudos not in the set are ignored.
+   */
+  pseudoStatesIn(selector: string): { name: string }[] {
+    if (this.statePseudoClasses.size === 0) return [];
+    const seen = new Set<string>();
+    const out: { name: string }[] = [];
+    for (const m of selector.matchAll(/(?<!:):([\w-]+)/gu)) {
+      const name = m[1];
+      if (this.statePseudoClasses.has(name) && !seen.has(name)) {
+        seen.add(name);
+        out.push({ name });
       }
     }
     return out;

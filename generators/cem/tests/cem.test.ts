@@ -6,12 +6,15 @@ const CSS = `
 /**
  * @component button
  * @summary The primary action control.
- * @part .icon — A leading glyph.
+ * @part .icon — A leading glyph (class-based sub-element).
+ * @csspart label — The exposed label part.
  * @cssstate loading — Awaiting a response.
  */
 .button { color: red; }
 @scope (.button) { :scope > .icon { width: 1em; } }
 .button:state(loading) { opacity: 0.5; }
+.button:disabled { opacity: 0.4; }
+.button::part(label) { font-weight: 600; }
 @property --button-radius { syntax: "<length>"; inherits: false; initial-value: 4px; }
 `;
 
@@ -27,6 +30,8 @@ test("toCem maps each record to a declaration with cssProperties, cssParts, and 
     default: "4px",
     description: undefined,
   });
-  expect(decl.cssParts.map((p) => p.name)).toContain("icon");
-  expect(decl.cssStates.map((s) => s.name)).toContain("loading");
+  // CEM `cssParts` are shadow `::part()` only — the class-based `.icon` sub-element is excluded.
+  expect(decl.cssParts.map((p) => p.name)).toEqual(["label"]);
+  // CEM `cssStates` are custom `:state()` only — the `:disabled` pseudo-class is excluded.
+  expect(decl.cssStates.map((s) => s.name)).toEqual(["loading"]);
 });

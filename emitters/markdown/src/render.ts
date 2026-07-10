@@ -145,13 +145,27 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
     );
   }
 
+  if (entry.shadowParts.length) {
+    lines.push(
+      "## Shadow parts",
+      "",
+      ...table(
+        ["Part", "Description"],
+        entry.shadowParts.map((p) => [`\`::part(${p.name})\``, cell(p.description)]),
+      ),
+    );
+  }
+
   if (entry.states.length) {
     lines.push(
       "## States",
       "",
       ...table(
         ["State", "Description"],
-        entry.states.map((s) => [`\`${s.name}\``, cell(s.description)]),
+        entry.states.map((s) => [
+          `\`${s.kind === "custom" ? `:state(${s.name})` : s.kind === "pseudo-class" ? `:${s.name}` : `.${s.name}`}\``,
+          cell(s.description),
+        ]),
       ),
     );
   }

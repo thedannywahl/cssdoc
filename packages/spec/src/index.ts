@@ -65,7 +65,8 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
   // CSS surface (existing + Custom Elements Manifest).
   { name: "modifier", kind: "block", allowMultiple: true, argument: "modifier-name" },
   { name: "part", kind: "block", allowMultiple: true, argument: "part-name" },
-  { name: "csspart", kind: "block", allowMultiple: true, aliasFor: "part", argument: "part-name" },
+  // Distinct from `part`: a shadow-DOM exposed part (`::part(name)`), named by a bare identifier.
+  { name: "csspart", kind: "block", allowMultiple: true, argument: "part-name" },
   { name: "cssproperty", kind: "block", allowMultiple: true, argument: "custom-property" },
   {
     name: "property",

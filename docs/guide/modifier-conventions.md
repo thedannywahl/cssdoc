@@ -35,6 +35,7 @@ interface ModifierConvention {
   separator: string | string[]; // interpreted per structure (see below)
   elementSeparator?: string | string[]; // BEM element delimiter, e.g. "__" → parts
   statePrefixes?: string[]; // state-class prefixes, e.g. ["is-","has-"] → states
+  statePseudoClasses?: string[]; // native pseudo-classes as states, e.g. ["disabled"]; overrides the default set
   propValue?: boolean; // split the body into prop/value? (default false)
   propValueSeparator?: string; // default "-"
 }
@@ -74,6 +75,10 @@ A convention can also name two roles that aren't modifiers, so they land in the 
 - **`statePrefixes`** — class prefixes that mark a **state**. A class chained to the base whose name
   starts with one of these is recorded as a state and is never treated as a modifier. It's opt-in — no
   preset sets it.
+- **`statePseudoClasses`** — native pseudo-classes recognized as states. cssdoc ships a curated default
+  set of form/UI states (`:disabled`, `:checked`, `:open`, `:required`, `:valid`, …) — deliberately not
+  `:hover`/`:focus` — so `.tab:disabled` is a `pseudo-class` state. Set this to override the default.
+  (Custom `:state(x)` states and authored `@cssstate :x` are always captured regardless.)
 
 ```jsonc
 {

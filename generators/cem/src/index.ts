@@ -61,8 +61,12 @@ export function toCem(index: CssDocIndex, options: { path?: string } = {}): Cust
       default: p.defaultValue,
       description: p.description,
     })),
-    cssParts: entry.parts.map((p) => ({ name: p.name, description: p.description })),
-    cssStates: entry.states.map((s) => ({ name: s.name, description: s.description })),
+    // CEM `cssParts` are shadow-DOM `::part()` parts; class-based `parts` have no CEM slot.
+    cssParts: entry.shadowParts.map((p) => ({ name: p.name, description: p.description })),
+    // CEM `cssStates` are custom `:state()` states only — not native pseudo-classes or state classes.
+    cssStates: entry.states
+      .filter((s) => s.kind === "custom")
+      .map((s) => ({ name: s.name, description: s.description })),
   }));
   return { schemaVersion: "2.1.0", modules: [{ kind: "javascript-module", path, declarations }] };
 }

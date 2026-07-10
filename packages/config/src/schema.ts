@@ -77,6 +77,12 @@ export const cssDocSchema = {
               type: "array",
               items: { type: "string" },
             },
+            statePseudoClasses: {
+              description:
+                'Native pseudo-classes (without the colon) recognized as states, e.g. ["disabled","checked"]. Overrides the built-in default set.',
+              type: "array",
+              items: { type: "string" },
+            },
             propValue: { type: "boolean" },
             propValueSeparator: { type: "string" },
           },

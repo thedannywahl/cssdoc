@@ -13,7 +13,7 @@ import type {
   PropertyAssignment,
   PropertyUsage,
 } from "@cssdoc/index";
-import { customProperty, func, modifier, part, record } from "./aspects.ts";
+import { cssPart, customProperty, func, modifier, part, record } from "./aspects.ts";
 import {
   DEFAULT_RULE_SEVERITIES,
   type Completion,
@@ -27,7 +27,7 @@ import {
 
 export * from "./types.ts";
 export * from "./syntax.ts";
-export { customProperty, func, modifier, part, record } from "./aspects.ts";
+export { cssPart, customProperty, func, modifier, part, record } from "./aspects.ts";
 
 /**
  * Apply resolved rule severities to a batch of diagnostics: drop `off` rules, and stamp the configured
@@ -49,6 +49,7 @@ export const ASPECTS = [
   "record",
   "modifier",
   "part",
+  "css-part",
   "custom-property",
   "structure",
   "function",
@@ -67,6 +68,7 @@ export function lintModel(
       ...record.model(index, naming),
       ...modifier.model(index),
       ...part.model(index, naming),
+      ...cssPart.model(index),
       ...customProperty.model(index),
     ],
     severities,

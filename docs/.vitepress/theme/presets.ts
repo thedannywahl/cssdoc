@@ -29,6 +29,12 @@ const CSS_SANDBOX = `
 /* Extend → a new state, read straight from the selector, shows under "States". */
 /* .tabs:state(loading) { opacity: 0.5; } */
 
+/* Extend → a native pseudo-class state (kind "pseudo-class") shows under "States". */
+/* .tabs:disabled { opacity: 0.4; } */
+
+/* Extend → a shadow-DOM exposed part shows under "Shadow parts". */
+/* .tabs::part(indicator) { height: 2px; } */
+
 /* Break → "invalid-property-value": #F00 isn't a <length>. */
 /* .tabs { --tabs-gap: #F00; } */
 `;

@@ -30,15 +30,15 @@ npm i -D @cssdoc/config @cssdoc/core
 }
 ```
 
-| Field                | Meaning                                                                                                                                                                                                                            |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `extends`            | Paths (local `./…` or package specifiers) to other `cssdoc.json` files to inherit from.                                                                                                                                            |
-| `noStandardTags`     | Disable every built-in standard tag; only `tagDefinitions` remain.                                                                                                                                                                 |
-| `tagDefinitions`     | Custom tags: `tagName`, `syntaxKind` (`record`/`block`/`modifier`/`inline`), `allowMultiple?`, `recordKind?`, `aliasFor?`.                                                                                                         |
-| `supportForTags`     | Enable or disable specific tags by name.                                                                                                                                                                                           |
-| `modifierConvention` | How modifier classes are spelled — a preset (`bem`, `rscss`, `bare`) or a custom object. A custom object can also map BEM elements to parts (`elementSeparator`) and state classes to states (`statePrefixes`). Defaults to `bem`. |
-| `rules`              | Per-rule severity overrides (`off`/`warn`/`error`).                                                                                                                                                                                |
-| `naming`             | Name-case to enforce on `component`/`part` class names — a preset (`pascalCase`/`camelCase`/`lowercase`) or a custom regex.                                                                                                        |
+| Field                | Meaning                                                                                                                                                                                                                                                                                     |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `extends`            | Paths (local `./…` or package specifiers) to other `cssdoc.json` files to inherit from.                                                                                                                                                                                                     |
+| `noStandardTags`     | Disable every built-in standard tag; only `tagDefinitions` remain.                                                                                                                                                                                                                          |
+| `tagDefinitions`     | Custom tags: `tagName`, `syntaxKind` (`record`/`block`/`modifier`/`inline`), `allowMultiple?`, `recordKind?`, `aliasFor?`.                                                                                                                                                                  |
+| `supportForTags`     | Enable or disable specific tags by name.                                                                                                                                                                                                                                                    |
+| `modifierConvention` | How modifier classes are spelled — a preset (`bem`, `rscss`, `bare`) or a custom object. A custom object can also map BEM elements to parts (`elementSeparator`), state classes to states (`statePrefixes`), and native pseudo-classes to states (`statePseudoClasses`). Defaults to `bem`. |
+| `rules`              | Per-rule severity overrides (`off`/`warn`/`error`).                                                                                                                                                                                                                                         |
+| `naming`             | Name-case to enforce on `component`/`part` class names — a preset (`pascalCase`/`camelCase`/`lowercase`) or a custom regex.                                                                                                                                                                 |
 
 See [Modifier conventions](/guide/modifier-conventions) for the convention forms and the full rule list.
 
@@ -68,6 +68,7 @@ The rule ids:
 | `unknown-modifier`              | `warn`  | a consumer uses a modifier candidate that isn't documented.                  |
 | `deprecated-modifier`           | `warn`  | a consumer uses a deprecated modifier.                                       |
 | `undocumented-part`             | `warn`  | a part has no `@part` description.                                           |
+| `undocumented-css-part`         | `warn`  | a shadow part (`@csspart`) has no description.                               |
 | `component-name-case`           | `warn`  | a component class breaks the configured `naming.component` case (see below). |
 | `part-name-case`                | `warn`  | a part class breaks the configured `naming.part` case.                       |
 | `structure-unknown-selector`    | `warn`  | an `@structure` selector isn't the component class or a documented part.     |

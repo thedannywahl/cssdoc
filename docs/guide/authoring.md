@@ -43,8 +43,10 @@ modifier conventions (rscss, CUBE, OOCSS, and more) — see [Modifier convention
 | Tag                                                    | Documents                                                 | Derived from           |
 | ------------------------------------------------------ | --------------------------------------------------------- | ---------------------- |
 | `@modifier <x> — <desc>`                               | A modifier on the base class                              | modifier selectors     |
-| `@part` / `@csspart .<x> — <desc>`                     | A sub-element part                                        | scoped child selectors |
-| `@cssstate <x> — <desc>`                               | A component state                                         | `:state(x)` selectors  |
+| `@part .<x> — <desc>`                                  | A class-based sub-element part                            | scoped child selectors |
+| `@csspart <x> — <desc>`                                | A shadow-DOM exposed part (`::part(x)`)                   | `::part(x)` / authored |
+| `@cssstate <x> — <desc>`                               | A custom `:state(x)` state                                | `:state(x)` selectors  |
+| `@cssstate :<x> — <desc>`                              | A native pseudo-class state (`:disabled`)                 | pseudo-class selectors |
 | `@slot <x> — <desc>`                                   | A named slot                                              | authored (CEM)         |
 | `@cssproperty` / `@property --<x> [<syntax>] — <desc>` | A registered custom property                              | `@property` at-rules   |
 | `@function --<x> — <desc>`                             | A CSS custom function                                     | `@function` at-rules   |

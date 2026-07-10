@@ -249,13 +249,18 @@ ModifierTag :
     `@modifier` WhiteSpace ModifierName
     `@modifier` WhiteSpace ModifierName Separator ModifierBody
 
-PartKeyword :
-    `@part`
-    `@csspart`
-
+// A class-based sub-element, e.g. `@part .list`.
 PartTag :
-    PartKeyword WhiteSpace PartName
-    PartKeyword WhiteSpace PartName Separator Description
+    `@part` WhiteSpace PartName
+    `@part` WhiteSpace PartName Separator Description
+
+// A shadow-DOM exposed part (`::part(name)`), named by a bare identifier, e.g. `@csspart header`.
+ShadowPartName :
+    Identifier
+
+CssPartTag :
+    `@csspart` WhiteSpace ShadowPartName
+    `@csspart` WhiteSpace ShadowPartName Separator Description
 
 CssPropertyKeyword :
     `@cssproperty`
@@ -268,8 +273,11 @@ CssPropertyTag :
     CssPropertyKeyword WhiteSpace CustomPropertyName Separator Description
     CssPropertyKeyword WhiteSpace CustomPropertyName SyntaxDescriptor Separator Description
 
+// A state name: a bare identifier (a custom `:state(name)` state) or a `:`-prefixed native
+// pseudo-class state, e.g. `:disabled`.
 StateName :
     Identifier
+    `:` Identifier
 
 CssStateTag :
     `@cssstate` WhiteSpace StateName
@@ -388,6 +396,7 @@ BlockTag :
     PrivateRemarksTag
     ModifierTag
     PartTag
+    CssPartTag
     CssPropertyTag
     CssStateTag
     CssFunctionTag

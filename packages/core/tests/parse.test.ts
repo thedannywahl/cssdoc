@@ -271,6 +271,21 @@ test("expansive prose tags surface on the entry (remarks, since, group, a11y, re
   expect(entry.releaseStage).toBe("beta");
 });
 
+test("shadow parts and pseudo-class states are captured distinctly from class parts and :state()", () => {
+  const [sw] = parseCssDocs(
+    `/**\n * @component switch\n * @part .track — The rail.\n * @csspart thumb — The knob.\n */\n` +
+      `.switch {}\n@scope (.switch) { :scope .track {} }\n` +
+      `.switch::part(thumb) {}\n.switch:disabled {}\n.switch:state(on) {}`,
+  );
+  // Class-based `@part` → parts; shadow `@csspart` / `::part()` → shadowParts (no longer aliased).
+  expect(sw.parts.map((p) => p.name)).toEqual(["track"]);
+  expect(sw.shadowParts.map((p) => p.name)).toEqual(["thumb"]);
+  expect(sw.shadowParts[0].description).toBe("The knob.");
+  // `:disabled` is a pseudo-class state; `:state(on)` is a custom state.
+  expect(sw.states.find((s) => s.name === "disabled")?.kind).toBe("pseudo-class");
+  expect(sw.states.find((s) => s.name === "on")?.kind).toBe("custom");
+});
+
 test("CSSOM at-rule surfaces are AST-derived (function, keyframes, layer, media, state)", () => {
   const [entry] = parseCssDocs(
     `/**\n * @component spinner\n * @function --spin — Rotation helper.\n */\n` +

@@ -126,10 +126,26 @@ export function renderPage(entry: CssDocEntry, options: { indexHref?: string } =
     ),
   );
   section(
+    "Shadow parts",
+    table(
+      ["Part", "Description"],
+      entry.shadowParts.map((p) => [code(`::part(${p.name})`), esc(p.description) || "—"]),
+    ),
+  );
+  section(
     "States",
     table(
       ["State", "Description"],
-      entry.states.map((s) => [code(s.name), esc(s.description) || "—"]),
+      entry.states.map((s) => [
+        code(
+          s.kind === "custom"
+            ? `:state(${s.name})`
+            : s.kind === "pseudo-class"
+              ? `:${s.name}`
+              : `.${s.name}`,
+        ),
+        esc(s.description) || "—",
+      ]),
     ),
   );
   section(

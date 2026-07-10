@@ -94,6 +94,7 @@ export type MemberKind =
   | "record"
   | "modifier"
   | "part"
+  | "shadow-part"
   | "property"
   | "function"
   | "animation"
@@ -115,8 +116,10 @@ export interface RecordInfo {
   memberSpans: Map<string, SourceSpan>;
   /** Modifier names authored via `@modifier` (used for drift detection). */
   authoredModifiers: Set<string>;
-  /** Part names authored via `@part`/`@csspart` (used for drift detection). */
+  /** Part names authored via `@part` (used for drift detection). */
   authoredParts: Set<string>;
+  /** Shadow-part names authored via `@csspart` (used for drift detection). */
+  authoredShadowParts: Set<string>;
   /** The concatenated selector text of the record's rules (used for drift detection). */
   selectorText: string;
 }
@@ -180,6 +183,10 @@ export class CssDocIndex {
 
   partsFor(name: string): CssPart[] {
     return this.byName.get(name)?.entry.parts ?? [];
+  }
+
+  shadowPartsFor(name: string): CssPart[] {
+    return this.byName.get(name)?.entry.shadowParts ?? [];
   }
 
   customPropertiesFor(name: string): CssPropertyDeclared[] {
@@ -256,6 +263,7 @@ export function indexFromEntries(entries: CssDocEntry[], file?: string): CssDocI
     memberSpans: new Map(),
     authoredModifiers: new Set(),
     authoredParts: new Set(),
+    authoredShadowParts: new Set(),
     selectorText: "",
   }));
   return new CssDocIndex(records, file);
@@ -267,6 +275,7 @@ interface Build {
   memberSpans: Map<string, SourceSpan>;
   authoredModifiers: Set<string>;
   authoredParts: Set<string>;
+  authoredShadowParts: Set<string>;
   selectorText: string;
 }
 
@@ -285,6 +294,12 @@ function scanNodes(nodes: ChildNode[], build: Build, base: string, matcher: Modi
       for (const selector of node.selector.split(",")) {
         for (const s of selector.matchAll(/:state\(\s*([\w-]+)\s*\)/gu)) {
           set(memberKey("state", s[1]), node);
+        }
+        for (const ps of matcher.pseudoStatesIn(selector)) {
+          set(memberKey("state", ps.name), node);
+        }
+        for (const sp of selector.matchAll(/::part\(\s*([\w-]+)\s*\)/gu)) {
+          set(memberKey("shadow-part", sp[1]), node);
         }
         const bare = selector.replace(/::?[\w-]+(\([^)]*\))?/gu, "");
         const modNames = new Set<string>();
@@ -364,6 +379,7 @@ export function createIndex(
           memberSpans: new Map(),
           authoredModifiers: new Set(doc.modifiers.keys()),
           authoredParts: new Set(doc.parts.keys()),
+          authoredShadowParts: new Set(doc.cssParts.keys()),
           selectorText: "",
         };
         builds.set(name, current);
@@ -380,6 +396,7 @@ export function createIndex(
         memberSpans: new Map(),
         authoredModifiers: new Set(),
         authoredParts: new Set(),
+        authoredShadowParts: new Set(),
         selectorText: "",
       },
   );

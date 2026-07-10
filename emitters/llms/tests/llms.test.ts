@@ -39,7 +39,7 @@ test("summarizes each facet on one line and marks the utility kind", () => {
     "- Modifiers: `-color-secondary` (A lower-emphasis action.), `-variant-old` (deprecated → `-color-secondary`)",
   );
   expect(out).toContain("- Parts: `.icon` (A leading glyph.)");
-  expect(out).toContain("- States: `loading`");
+  expect(out).toContain("- States: `:state(loading)`");
   expect(out).toContain("- Custom properties: `--button-radius` <length>");
   expect(out).toContain("## spacing (utility) — `.m-sm`");
 });

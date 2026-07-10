@@ -67,6 +67,27 @@ test("structure-unknown-selector flags a @structure reference that isn't the cla
   );
 });
 
+test("undocumented-css-part flags a @csspart without a description", () => {
+  const css = `/**
+ * @component switch
+ * @summary A toggle.
+ * @csspart thumb
+ */
+.switch {}
+.switch::part(thumb) {}`;
+  const rules = lintModel(createIndex(css)).map((d) => d.rule);
+  expect(rules).toContain("undocumented-css-part");
+  // A described shadow part does not flag.
+  const ok = `/**
+ * @component switch
+ * @summary A toggle.
+ * @csspart thumb — The knob.
+ */
+.switch {}
+.switch::part(thumb) {}`;
+  expect(lintModel(createIndex(ok)).map((d) => d.rule)).not.toContain("undocumented-css-part");
+});
+
 test("checkClassUsage flags an unknown modifier and a deprecated one", () => {
   const diagnostics = checkClassUsage(
     [

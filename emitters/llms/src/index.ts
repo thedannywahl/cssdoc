@@ -75,8 +75,19 @@ export function renderLlms(
       ),
     );
     facet(
+      "Shadow parts",
+      e.shadowParts.map((p) =>
+        clean(p.description)
+          ? `\`::part(${p.name})\` (${clean(p.description)})`
+          : `\`::part(${p.name})\``,
+      ),
+    );
+    facet(
       "States",
-      e.states.map((s) => `\`${s.name}\``),
+      e.states.map(
+        (s) =>
+          `\`${s.kind === "custom" ? `:state(${s.name})` : s.kind === "pseudo-class" ? `:${s.name}` : `.${s.name}`}\``,
+      ),
     );
     facet(
       "Slots",

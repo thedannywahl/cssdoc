@@ -41,14 +41,23 @@ export interface CssModifier {
 export interface CssPart {
   /** The part class without the leading dot, e.g. `item`. */
   name: string;
-  /** Prose from a `@part` / `@csspart` doc tag, when authored. */
+  /** Prose from a `@part` doc tag, when authored. */
   description?: string;
 }
 
-/** A component state — a `:state()` / state-class the component reacts to (`@cssstate`). */
+/**
+ * How a component state is spelled — the CSSOM custom state `:state(x)`, a native pseudo-class
+ * (`:disabled`), or a state class from the convention's `statePrefixes` (`.is-open`). Only `custom`
+ * maps to a Custom Elements Manifest `cssStates` entry.
+ */
+export type CssStateKind = "custom" | "pseudo-class" | "class";
+
+/** A component state — from `:state()`, a native pseudo-class, or a state class (`@cssstate`). */
 export interface CssState {
-  /** The state name, e.g. `open` or `selected`. */
+  /** The state name without its punctuation, e.g. `open`, `selected`, or `disabled`. */
   name: string;
+  /** How the state is expressed in CSS. */
+  kind: CssStateKind;
   /** Prose from a `@cssstate` doc tag, when authored. */
   description?: string;
 }
@@ -164,9 +173,11 @@ export interface CssDocEntry {
   accessibility?: string;
   /** AST-extracted modifiers, annotated with `@modifier` prose where authored. */
   modifiers: CssModifier[];
-  /** AST-extracted sub-element parts, annotated with `@part`/`@csspart` prose where authored. */
+  /** AST-extracted sub-element parts (class-based), annotated with `@part` prose where authored. */
   parts: CssPart[];
-  /** States the component reacts to, from `@cssstate`. */
+  /** Shadow-DOM exposed parts (`::part(name)`), from `@csspart` or a `::part()` selector. */
+  shadowParts: CssPart[];
+  /** States the component reacts to, from `@cssstate`, `:state()`, pseudo-classes, or state classes. */
   states: CssState[];
   /** Named slots the component shell exposes, from `@slot`. */
   slots: CssSlot[];

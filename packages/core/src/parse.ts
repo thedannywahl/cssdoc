@@ -35,6 +35,7 @@ interface Collected {
   className: string;
   modifiers: Map<string, CssModifier>;
   parts: Map<string, CssPart>;
+  shadowParts: Map<string, CssPart>;
   states: Map<string, CssState>;
   consumed: Set<string>;
   declared: Map<string, CssPropertyDeclared>;
@@ -138,9 +139,17 @@ function collect(
     }
     if (node.type === "rule") {
       for (const selector of node.selector.split(",")) {
-        // Custom states via the CSSOM `:state()` pseudo-class.
+        // States, before pseudos are stripped: custom `:state(x)`, native pseudo-classes, and
+        // shadow `::part(x)` parts are all read off the raw selector.
         for (const s of selector.matchAll(/:state\(\s*([\w-]+)\s*\)/gu)) {
-          if (!acc.states.has(s[1])) acc.states.set(s[1], { name: s[1] });
+          if (!acc.states.has(s[1])) acc.states.set(s[1], { name: s[1], kind: "custom" });
+        }
+        for (const ps of matcher.pseudoStatesIn(selector)) {
+          if (!acc.states.has(ps.name))
+            acc.states.set(ps.name, { name: ps.name, kind: "pseudo-class" });
+        }
+        for (const sp of selector.matchAll(/::part\(\s*([\w-]+)\s*\)/gu)) {
+          if (!acc.shadowParts.has(sp[1])) acc.shadowParts.set(sp[1], { name: sp[1] });
         }
         const bare = selector.replace(/::?[\w-]+(\([^)]*\))?/gu, ""); // drop pseudos
         const mods = matcher.modifiersIn(bare, baseNoDot);
@@ -160,7 +169,7 @@ function collect(
           if (!acc.parts.has(el.name)) acc.parts.set(el.name, { name: el.name });
         }
         for (const st of matcher.statesIn(bare, baseNoDot)) {
-          if (!acc.states.has(st.name)) acc.states.set(st.name, { name: st.name });
+          if (!acc.states.has(st.name)) acc.states.set(st.name, { name: st.name, kind: "class" });
         }
         if (inScope) {
           for (const m of bare.matchAll(/\.([a-z][\w-]*)/gu)) {
@@ -208,6 +217,7 @@ function buildEntry(
     className,
     modifiers: new Map(),
     parts: new Map(),
+    shadowParts: new Map(),
     states: new Map(),
     consumed: new Set(),
     declared: new Map(),
@@ -255,10 +265,23 @@ function buildEntry(
     if (existing) existing.description = description || existing.description;
     else acc.parts.set(part, { name: part, description });
   }
-  for (const [state, description] of doc.cssStates) {
+  for (const [part, description] of doc.cssParts) {
+    const existing = acc.shadowParts.get(part);
+    if (existing) existing.description = description || existing.description;
+    else acc.shadowParts.set(part, { name: part, description: description || undefined });
+  }
+  for (const [rawState, description] of doc.cssStates) {
+    // A `:`-prefixed authored name (`@cssstate :disabled`) is a native pseudo-class state.
+    const isPseudo = rawState.startsWith(":");
+    const state = isPseudo ? rawState.slice(1) : rawState;
     const existing = acc.states.get(state);
     if (existing) existing.description = description || existing.description;
-    else acc.states.set(state, { name: state, description: description || undefined });
+    else
+      acc.states.set(state, {
+        name: state,
+        kind: isPseudo ? "pseudo-class" : "custom",
+        description: description || undefined,
+      });
   }
   for (const prop of doc.cssProperties) {
     const existing = acc.declared.get(prop.name);
@@ -313,6 +336,7 @@ function buildEntry(
     accessibility: doc.accessibility,
     modifiers,
     parts: [...acc.parts.values()].sort(byName),
+    shadowParts: [...acc.shadowParts.values()].sort(byName),
     states: [...acc.states.values()].sort(byName),
     slots: [...doc.slots]
       .map(([slotName, description]) => ({

@@ -108,6 +108,7 @@ export const record = {
     const facets = [
       entry.modifiers.length && `${entry.modifiers.length} modifiers`,
       entry.parts.length && `${entry.parts.length} parts`,
+      entry.shadowParts.length && `${entry.shadowParts.length} shadow parts`,
       entry.states.length && `${entry.states.length} states`,
       entry.cssPropertiesDeclared.length &&
         `${entry.cssPropertiesDeclared.length} custom properties`,
@@ -286,6 +287,31 @@ export const part = {
               message: `Documented part ".${authored}" of "${name}" is not defined by any selector.`,
               record: name,
               span: info.span,
+            }),
+          );
+        }
+      }
+    }
+    return out;
+  },
+};
+
+// ── shadow parts (`::part()`) ─────────────────────────────────────────────────────────────────────
+
+export const cssPart = {
+  model(index: CssDocIndex): Diagnostic[] {
+    const out: Diagnostic[] = [];
+    for (const info of index.records) {
+      const name = info.entry.name;
+      for (const p of info.entry.shadowParts) {
+        if (!p.description?.trim()) {
+          out.push(
+            warn({
+              aspect: "css-part",
+              rule: "undocumented-css-part",
+              message: `Shadow part "::part(${p.name})" of "${name}" has no @csspart description.`,
+              record: name,
+              span: info.memberSpans.get(memberKey("shadow-part", p.name)) ?? info.span,
             }),
           );
         }

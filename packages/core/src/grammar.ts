@@ -94,8 +94,10 @@ export interface ParsedDoc {
   releaseStage?: CssReleaseStage;
   /** `@modifier` prose, keyed by the modifier class without its dot (e.g. `-color-secondary`). */
   modifiers: Map<string, DocModifier>;
-  /** `@part`/`@csspart` descriptions, keyed by the part name without its dot (e.g. `item`). */
+  /** `@part` descriptions, keyed by the class part name without its dot (e.g. `item`). */
   parts: Map<string, string>;
+  /** `@csspart` descriptions (shadow-DOM `::part()`), keyed by the bare part name (e.g. `header`). */
+  cssParts: Map<string, string>;
   /** `@cssproperty` declarations. */
   cssProperties: DocCssProperty[];
   /** `@cssstate` descriptions, keyed by state name. */
@@ -186,6 +188,7 @@ export function parseDocComment(
   const doc: ParsedDoc = {
     modifiers: new Map(),
     parts: new Map(),
+    cssParts: new Map(),
     cssProperties: [],
     cssStates: new Map(),
     slots: new Map(),
@@ -265,6 +268,12 @@ function applyBlockTag(doc: ParsedDoc, canonical: string, tagName: string, rest:
     case "part": {
       const { head, description } = splitDesc(rest);
       doc.parts.set(head.replace(/^\./u, ""), description ?? "");
+      break;
+    }
+    case "csspart": {
+      // A shadow-DOM `::part()` name — a bare identifier (tolerate a stray leading dot).
+      const { head, description } = splitDesc(rest);
+      doc.cssParts.set(head.replace(/^\./u, ""), description ?? "");
       break;
     }
     case "cssproperty": {

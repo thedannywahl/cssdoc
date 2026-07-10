@@ -12,6 +12,17 @@ const named = {
   properties: { name: { type: "string" }, description: { type: "string" } },
 } as const;
 
+const state = {
+  type: "object",
+  required: ["name", "kind"],
+  additionalProperties: false,
+  properties: {
+    name: { type: "string" },
+    kind: { enum: ["custom", "pseudo-class", "class"] },
+    description: { type: "string" },
+  },
+} as const;
+
 /** JSON Schema for a single {@link @cssdoc/core!CssDocEntry | CssDocEntry}. */
 export const cssDocEntrySchema = {
   type: "object",
@@ -21,6 +32,7 @@ export const cssDocEntrySchema = {
     "className",
     "modifiers",
     "parts",
+    "shadowParts",
     "states",
     "slots",
     "cssPropertiesConsumed",
@@ -64,7 +76,8 @@ export const cssDocEntrySchema = {
       },
     },
     parts: { type: "array", items: named },
-    states: { type: "array", items: named },
+    shadowParts: { type: "array", items: named },
+    states: { type: "array", items: state },
     slots: { type: "array", items: named },
     cssPropertiesConsumed: { type: "array", items: { type: "string" } },
     cssPropertiesDeclared: {
