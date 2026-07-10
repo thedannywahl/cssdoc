@@ -52,6 +52,8 @@ Pushing the `v*` tag triggers `.github/workflows/release.yml`, which re-runs the
 ## Notes
 
 - The private `cssdoc-vscode` extension is skipped by the npm `publish` (no `publishConfig`); it goes to
-  the VS Code Marketplace + Open VSX via the `publish-extension` job. Build/publish it by hand with
-  `vp run ext:package` / `vp run ext:publish`.
+  the VS Code Marketplace + Open VSX via the `publish-extension` job. The job packages the `.vsix` once,
+  attaches it to the GitHub Release, then publishes to each marketplace independently — the Marketplace
+  (`vsce`) is best-effort, so a failing PAT there doesn't skip Open VSX. Build/publish by hand with
+  `vp run ext:package`, then `vp run ext:publish:vsce` and/or `vp run ext:publish:ovsx`.
 - `vp run publish:dry` does a full dry-run publish without touching the registry.

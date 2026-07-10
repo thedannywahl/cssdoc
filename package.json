@@ -23,7 +23,8 @@
     "publish": "vp pm publish -r --access public --no-git-checks",
     "publish:dry": "vp pm publish -r --dry-run --no-git-checks",
     "ext:package": "vp run --filter cssdoc-vscode package",
-    "ext:publish": "vp run --filter cssdoc-vscode publish:marketplace"
+    "ext:publish:vsce": "vp run --filter cssdoc-vscode publish:vsce",
+    "ext:publish:ovsx": "vp run --filter cssdoc-vscode publish:ovsx"
   },
   "devDependencies": {
     "@commitlint/cli": "catalog:",

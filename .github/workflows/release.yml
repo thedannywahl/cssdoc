@@ -38,6 +38,7 @@ jobs:
           generate_release_notes: true
 
   publish-extension:
+    needs: publish
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -49,10 +50,21 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # Bundles the extension, then publishes to the VS Code Marketplace (vsce) and Open VSX (ovsx).
-      # The Marketplace has no OIDC — both need stored PATs (VSCE_PAT, OVSX_PAT repo secrets).
-      - name: Publish extension (Marketplace + Open VSX)
-        run: pnpm run ext:publish
+      # Package once, then publish to each marketplace independently. The Marketplace (vsce) is
+      # best-effort — a failing PAT there must not skip the Open VSX publish — and the .vsix is
+      # attached to the Release so it can be uploaded to the Marketplace by hand / sideloaded.
+      - name: Package extension
+        run: pnpm run ext:package
+      - name: Attach .vsix to the release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: servers/vscode/cssdoc.vsix
+      - name: Publish to VS Code Marketplace (best-effort)
+        continue-on-error: true
+        run: pnpm run ext:publish:vsce
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      - name: Publish to Open VSX
+        run: pnpm run ext:publish:ovsx
+        env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
