@@ -5,11 +5,19 @@ go-to-definition, and quick-fixes work anywhere — driven by the same model eve
 
 ## VS Code
 
-Install the extension (which bundles the language server) and point it at your compiled CSS:
+Install the extension — it bundles the language server:
+
+- [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=cssdoc.cssdoc-vscode)
+- [Open VSX](https://open-vsx.org/extension/cssdoc/cssdoc-vscode) — for Cursor, VSCodium, Windsurf,
+  Gitpod, and other non-Microsoft editors
+
+Then point it at your documented CSS with the `cssdoc.css` setting. This is **required** — it's the list
+of stylesheets the server reads, so nothing works until you set it:
 
 ```jsonc
 // .vscode/settings.json
 {
+  // Paths relative to the workspace root; list as many as you like.
   "cssdoc.css": ["dist/components.css"],
 }
 ```

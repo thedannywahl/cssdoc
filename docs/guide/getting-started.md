@@ -54,6 +54,17 @@ The model is output-neutral. From here you can:
 - lint it and its usage — see [Linting](/guide/linting);
 - power your editor — see [Editor support](/guide/editor).
 
+## Use it in your editor
+
+Install the cssdoc extension for completion, hover, go-to-definition, and diagnostics as you write:
+
+- [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=cssdoc.cssdoc-vscode)
+- [Open VSX](https://open-vsx.org/extension/cssdoc/cssdoc-vscode) — Cursor, VSCodium, Windsurf, Gitpod,
+  and other non-Microsoft editors
+
+Then point it at your CSS with the `cssdoc.css` setting — see [Editor support](/guide/editor) for the
+details, and for using any other LSP editor.
+
 ## Learn the grammar
 
 The full tag vocabulary — modifiers, parts, custom properties, functions, states, structure, release
