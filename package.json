@@ -20,7 +20,7 @@
     "docs:preview": "vp run @cssdoc/docs#docs:preview",
     "check:publish": "vp run -r publint",
     "release": "vp run -r build && vp check && vp run -r test && vp run -r publint && bumpp -r --all --print-commits --execute \"changelogen --output\" --commit \"chore(release): v%s\" --tag \"v%s\" --no-push",
-    "publish": "vp pm publish -r --access public --no-git-checks",
+    "publish": "vp pm publish -r --provenance --access public --no-git-checks",
     "publish:dry": "vp pm publish -r --dry-run --no-git-checks",
     "ext:package": "vp run --filter cssdoc-vscode package",
     "ext:publish:vsce": "vp run --filter cssdoc-vscode publish:vsce",

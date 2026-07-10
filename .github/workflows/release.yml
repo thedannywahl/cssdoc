@@ -25,13 +25,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Gate
         run: pnpm run build && pnpm run check && pnpm run test && pnpm run check:publish
+      # Tokenless OIDC trusted publishing (no NODE_AUTH_TOKEN). Requires a trusted publisher configured
+      # on npm for each @cssdoc/* package (repo thedannywahl/cssdoc, workflow release.yml). pnpm exchanges
+      # the id-token for a short-lived publish token; provenance is attested from the same identity.
       - name: Publish to npm
-        run: pnpm run publish # vp pm publish -r --access public --no-git-checks
+        run: pnpm run publish # vp pm publish -r --provenance --access public --no-git-checks
         env:
-          # First release is token-bootstrapped (OIDC trusted publishing can't be configured for
-          # packages that don't exist yet). Provenance returns once we switch to OIDC for 0.2.0.
-          # NODE_AUTH_TOKEN must be an npm *automation* token so CI isn't prompted for a 2FA OTP.
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
       - name: GitHub Release
         uses: softprops/action-gh-release@v3
         with:

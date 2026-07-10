@@ -37,10 +37,12 @@ Pushing the `v*` tag triggers `.github/workflows/release.yml`, which re-runs the
 
 ## One-time setup
 
-- **npm trusted publishing** — configure each `@cssdoc/*` package as a trusted publisher on npm (repo +
-  `release.yml` workflow). This lets CI publish over OIDC with provenance and no stored token. If your
-  npm/pnpm version can't use OIDC yet, add an `NPM_TOKEN` repo secret and uncomment `NODE_AUTH_TOKEN`
-  in `release.yml`.
+- **npm trusted publishing (OIDC)** — configure each `@cssdoc/*` package as a trusted publisher on npm:
+  its page → Settings → Trusted Publisher → GitHub Actions, org `thedannywahl`, repo `cssdoc`, workflow
+  `release.yml` (leave environment blank). CI then publishes over OIDC with provenance and no stored
+  token. A package must already exist before it can be configured, so `0.1.0` was published once with a
+  temporary `NPM_TOKEN` (an npm automation token, since the registry can't prompt for a 2FA OTP in CI);
+  that token and secret were removed once the trusted publishers were in place.
 - **VS Code extension tokens** — the Marketplace has no OIDC, so publishing needs stored PATs. Add repo
   secrets `VSCE_PAT` (an Azure DevOps token for the `cssdoc` publisher) and `OVSX_PAT` (an Open VSX
   token). The `cssdoc` publisher must exist on both marketplaces.
