@@ -6,6 +6,8 @@ dist
 **/.vitepress/cache
 **/.vitepress/dist
 docs/reference
+# Published to the docs site at build time from packages/config/cssdoc.schema.json.
+docs/public/cssdoc.schema.json
 # Vendored into the extension at build time from @cssdoc/tmlanguage.
 servers/vscode/syntaxes
 .DS_Store

@@ -1,7 +1,9 @@
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { parseCssDocs } from "@cssdoc/core";
 import { expect, test } from "vite-plus/test";
 import { CssDocConfigFile } from "../src/index.ts";
+import { cssDocSchema } from "../src/schema.ts";
 
 const fixture = (name: string): string =>
   fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
@@ -78,4 +80,11 @@ test("an invalid modifierConvention value is a collected schema error", () => {
   const configFile = CssDocConfigFile.loadFile(fixture("invalid-convention.cssdoc.json"));
   expect(configFile.hasErrors).toBe(true);
   expect(configFile.getErrorSummary()).toContain("Schema error");
+});
+
+test("the shipped cssdoc.schema.json mirrors the source schema (no drift)", () => {
+  // The JSON file is validated against at runtime, shipped in the npm tarball, and published to the
+  // docs site — it must stay byte-identical (structurally) to the `cssDocSchema` source of truth.
+  const json = JSON.parse(readFileSync(new URL("../cssdoc.schema.json", import.meta.url), "utf8"));
+  expect(json).toEqual(cssDocSchema);
 });

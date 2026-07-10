@@ -12,8 +12,8 @@
   "type": "module",
   "scripts": {
     "docs:api": "typedoc",
-    "docs:dev": "typedoc && vitepress dev",
-    "docs:build": "typedoc && vitepress build",
+    "docs:dev": "node scripts/copy-schema.mjs && typedoc && vitepress dev",
+    "docs:build": "node scripts/copy-schema.mjs && typedoc && vitepress build",
     "docs:preview": "vitepress preview"
   },
   "devDependencies": {
