@@ -24,12 +24,12 @@ jobs:
           registry-url: "https://registry.npmjs.org"
       - run: pnpm install --frozen-lockfile
       - name: Gate
-        run: pnpm run build && pnpm run check && pnpm run test && pnpm run check:publish
+        run: pnpm exec vp run ready && pnpm exec vp run check:publish
       # Tokenless OIDC trusted publishing (no NODE_AUTH_TOKEN). Requires a trusted publisher configured
       # on npm for each @cssdoc/* package (repo thedannywahl/cssdoc, workflow release.yml). pnpm exchanges
       # the id-token for a short-lived publish token; provenance is attested from the same identity.
       - name: Publish to npm
-        run: pnpm run publish # vp pm publish -r --provenance --access public --no-git-checks
+        run: pnpm exec vp run publish # vp pm publish -r --provenance --access public --no-git-checks
         env:
           NPM_CONFIG_PROVENANCE: "true"
       - name: GitHub Release
@@ -54,17 +54,17 @@ jobs:
       # best-effort — a failing PAT there must not skip the Open VSX publish — and the .vsix is
       # attached to the Release so it can be uploaded to the Marketplace by hand / sideloaded.
       - name: Package extension
-        run: pnpm run ext:package
+        run: pnpm exec vp run ext:package
       - name: Attach .vsix to the release
         uses: softprops/action-gh-release@v3
         with:
           files: servers/vscode/cssdoc.vsix
       - name: Publish to VS Code Marketplace (best-effort)
         continue-on-error: true
-        run: pnpm run ext:publish:vsce
+        run: pnpm exec vp run ext:publish:vsce
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
       - name: Publish to Open VSX
-        run: pnpm run ext:publish:ovsx
+        run: pnpm exec vp run ext:publish:ovsx
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}

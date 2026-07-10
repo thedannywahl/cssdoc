@@ -2,7 +2,7 @@
   "name": "cssdoc",
   "version": "0.2.0",
   "private": true,
-  "description": "TSDoc, for CSS — a Vite+ monorepo: parser, config, emitters, and lint/TypeDoc plugins.",
+  "description": "A documentation toolchain for plain CSS — TSDoc, for CSS.",
   "homepage": "https://cssdoc.dev",
   "bugs": "https://github.com/thedannywahl/cssdoc/issues",
   "repository": {
@@ -10,22 +10,6 @@
     "url": "git+https://github.com/thedannywahl/cssdoc.git"
   },
   "type": "module",
-  "scripts": {
-    "build": "vp run -r build",
-    "check": "vp check",
-    "test": "vp run -r test",
-    "ready": "vp run -r build && vp check && vp run -r test",
-    "docs:dev": "vp run @cssdoc/docs#docs:dev",
-    "docs:build": "vp run @cssdoc/docs#docs:build",
-    "docs:preview": "vp run @cssdoc/docs#docs:preview",
-    "check:publish": "vp run -r publint",
-    "release": "vp run -r build && vp check && vp run -r test && vp run -r publint && bumpp -r --all --print-commits --execute \"node scripts/release-changelog.mjs\" --commit \"chore(release): v%s\" --tag \"v%s\" --no-push",
-    "publish": "vp pm publish -r --provenance --access public --no-git-checks",
-    "publish:dry": "vp pm publish -r --dry-run --no-git-checks",
-    "ext:package": "vp run --filter cssdoc-vscode package",
-    "ext:publish:vsce": "vp run --filter cssdoc-vscode publish:vsce",
-    "ext:publish:ovsx": "vp run --filter cssdoc-vscode publish:ovsx"
-  },
   "devDependencies": {
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",

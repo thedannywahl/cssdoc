@@ -10,7 +10,33 @@ export default defineConfig({
     rules: { "vite-plus/prefer-vite-plus-imports": "error" },
     options: { typeAware: true, typeCheck: true },
   },
+  // Repo orchestration lives here as `vp run <task>` tasks (invoked by CI and locally) rather than in
+  // package.json scripts. The root isn't a workspace member, so a task named `build` running
+  // `vp run -r build` recurses over the member packages only — no self-recursion.
   run: {
     cache: true,
+    tasks: {
+      build: { cache: false, command: "vp run -r build" },
+      check: { cache: false, command: "vp check" },
+      test: { cache: false, command: "vp run -r test" },
+      "check:publish": { cache: false, command: "vp run -r publint" },
+      ready: { cache: false, command: "vp run build && vp run check && vp run test" },
+      "docs:dev": { cache: false, command: "vp run @cssdoc/docs#docs:dev" },
+      "docs:build": { cache: false, command: "vp run @cssdoc/docs#docs:build" },
+      "docs:preview": { cache: false, command: "vp run @cssdoc/docs#docs:preview" },
+      release: {
+        cache: false,
+        command:
+          'vp run ready && vp run check:publish && bumpp -r --all --print-commits --execute "node scripts/release-changelog.mjs" --commit "chore(release): v%s" --tag "v%s" --no-push',
+      },
+      publish: {
+        cache: false,
+        command: "vp pm publish -r --provenance --access public --no-git-checks",
+      },
+      "publish:dry": { cache: false, command: "vp pm publish -r --dry-run --no-git-checks" },
+      "ext:package": { cache: false, command: "vp run --filter cssdoc-vscode package" },
+      "ext:publish:vsce": { cache: false, command: "vp run --filter cssdoc-vscode publish:vsce" },
+      "ext:publish:ovsx": { cache: false, command: "vp run --filter cssdoc-vscode publish:ovsx" },
+    },
   },
 });

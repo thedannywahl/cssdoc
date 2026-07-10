@@ -25,10 +25,10 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm run build # vp run -r build
-      - run: pnpm run check # vp check (format + lint + typecheck)
-      - run: pnpm run test # vp run -r test
-      - run: pnpm run check:publish # vp run -r publint
+      - run: pnpm exec vp run build
+      - run: pnpm exec vp run check # format + lint + typecheck
+      - run: pnpm exec vp run test
+      - run: pnpm exec vp run check:publish # publint
 
   commitlint:
     if: github.event_name == 'pull_request'
