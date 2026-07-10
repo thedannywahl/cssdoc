@@ -55,13 +55,34 @@
     "configuration": {
       "title": "cssdoc",
       "properties": {
+        "cssdoc.include": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "**/*.css"
+          ],
+          "markdownDescription": "Globs for the documented CSS the language server reads. Auto-detects all CSS in the workspace by default."
+        },
+        "cssdoc.exclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "**/node_modules/**"
+          ],
+          "markdownDescription": "Globs excluded from `#cssdoc.include#` auto-detection."
+        },
         "cssdoc.css": {
           "type": "array",
           "items": {
             "type": "string"
           },
           "default": [],
-          "description": "Paths to the documented CSS files the language server reads."
+          "markdownDescription": "Explicit paths to documented CSS files. When set, this overrides `#cssdoc.include#` / `#cssdoc.exclude#` auto-detection.",
+          "markdownDeprecationMessage": "Prefer `#cssdoc.include#` / `#cssdoc.exclude#`. This explicit list still works and takes precedence when non-empty."
         }
       }
     }

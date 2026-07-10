@@ -5,14 +5,25 @@ go-to-definition, and quick-fixes work anywhere — driven by the same model eve
 
 ## VS Code
 
-Install the extension (which bundles the language server) and point it at your compiled CSS:
+Install the extension — it bundles the language server:
+
+- [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=cssdoc.cssdoc-vscode)
+- [Open VSX](https://open-vsx.org/extension/cssdoc/cssdoc-vscode) — for Cursor, VSCodium, Windsurf,
+  Gitpod, and other non-Microsoft editors
+
+It's **zero-config** — the extension auto-detects the CSS in your workspace. To narrow or widen what it
+scans, set globs (in `.vscode/settings.json` or the Settings UI):
 
 ```jsonc
 // .vscode/settings.json
 {
-  "cssdoc.css": ["dist/components.css"],
+  "cssdoc.include": ["dist/**/*.css"], // default: ["**/*.css"]
+  "cssdoc.exclude": ["**/node_modules/**"], // default: ["**/node_modules/**"]
 }
 ```
+
+For an exact list instead, `cssdoc.css` takes explicit paths and overrides auto-detection. The set
+refreshes automatically when files or settings change.
 
 In `.css`, `.html`, and JSX/TSX files you get:
 
