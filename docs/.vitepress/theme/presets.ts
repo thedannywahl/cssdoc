@@ -51,46 +51,11 @@ const htmlSandbox = (
 <!-- <div class="tabs ${deprecated}"></div> -->
 `;
 
-const bemHtml = `<div class="tabs tabs--vertical">
+const tabsHtml = (modifier: string): string => `<div class="tabs ${modifier}">
   <ul class="list">
     <li class="tab">One</li>
   </ul>
   <div class="panel">Panel one</div>
-</div>
-
-<div class="tabs tabs--jumbo tabs--boxed">
-  <ul class="list">
-    <li class="tab">A</li>
-  </ul>
-  <div class="panel">Panel A</div>
-</div>`;
-
-const rscssHtml = `<div class="tabs -orientation-vertical">
-  <ul class="list">
-    <li class="tab">One</li>
-  </ul>
-  <div class="panel">Panel one</div>
-</div>
-
-<div class="tabs -orientation-jumbo -variant-boxed">
-  <ul class="list">
-    <li class="tab">A</li>
-  </ul>
-  <div class="panel">Panel A</div>
-</div>`;
-
-const bareHtml = `<div class="tabs vertical">
-  <ul class="list">
-    <li class="tab">One</li>
-  </ul>
-  <div class="panel">Panel one</div>
-</div>
-
-<div class="tabs boxed">
-  <ul class="list">
-    <li class="tab">A</li>
-  </ul>
-  <div class="panel">Panel A</div>
 </div>`;
 
 export const presets: Record<string, Preset> = {
@@ -98,20 +63,22 @@ export const presets: Record<string, Preset> = {
     label: "BEM",
     css: bemCss + CSS_SANDBOX,
     config: bemConfig,
-    html: bemHtml + htmlSandbox("tabs--vertical", "tabs--huge", "tabs--boxed"),
+    html: tabsHtml("tabs--vertical") + htmlSandbox("tabs--vertical", "tabs--huge", "tabs--boxed"),
   },
   rscss: {
     label: "rscss",
     css: rscssCss + CSS_SANDBOX,
     config: rscssConfig,
-    html: rscssHtml + htmlSandbox("-orientation-vertical", "-orientation-huge", "-variant-boxed"),
+    html:
+      tabsHtml("-orientation-vertical") +
+      htmlSandbox("-orientation-vertical", "-orientation-huge", "-variant-boxed"),
   },
   bare: {
     label: "bare",
     css: bareCss + CSS_SANDBOX,
     config: bareConfig,
     html:
-      bareHtml +
+      tabsHtml("vertical") +
       htmlSandbox(
         "vertical",
         "huge",
