@@ -15,7 +15,9 @@ const CSS = `
 @property --button-radius { syntax: "<length>"; inherits: false; initial-value: 4px; }
 `;
 
-const service = new CssDocLanguageService(createIndex(CSS, { file: "components.css" }));
+const service = new CssDocLanguageService(
+  createIndex(CSS, { file: "components.css", modifierConvention: "rscss" }),
+);
 
 // Single-line helper: cursor at `character` on line 0.
 const at = (character: number) => ({ line: 0, character });
@@ -54,4 +56,45 @@ test("diagnostics flag unknown and deprecated modifiers, with a quick-fix for th
   const actions = service.codeActions(diags);
   expect(actions[0].title).toBe("Replace with .-color-secondary");
   expect(actions[0].edit.newText).toBe("-color-secondary");
+});
+
+const BEM_CSS = `
+/**
+ * @component card
+ * @summary A surface.
+ * @modifier card--featured — A promoted card.
+ */
+.card { color: red; }
+.card--featured { color: blue; }
+`;
+
+test("BEM (default): diagnostics flag an undocumented suffix modifier at Warning", () => {
+  const svc = new CssDocLanguageService(createIndex(BEM_CSS));
+  const diags = svc.diagnostics(`<div class="card card--bogus">x</div>`);
+  const unknown = diags.find((d) => d.code === "unknown-modifier");
+  expect(unknown?.severity).toBe(2); // Warning
+  expect(unknown?.message).toContain(".card--bogus");
+});
+
+test("attribute (CUBE): a data-attribute modifier on the base element is checked", () => {
+  const cubeCss = `
+/**
+ * @component card
+ * @summary A surface.
+ */
+.card { color: red; }
+.card[data-variant="ghost"] { background: none; }
+`;
+  const svc = new CssDocLanguageService(
+    createIndex(cubeCss, { modifierConvention: { structure: "attribute", separator: "data-" } }),
+  );
+  const diags = svc.diagnostics(`<div class="card" data-variant="bogus"></div>`);
+  const unknown = diags.find((d) => d.code === "unknown-modifier");
+  expect(unknown?.message).toContain(`[data-variant="bogus"]`);
+  // A known attribute value is fine.
+  expect(
+    svc
+      .diagnostics(`<div class="card" data-variant="ghost"></div>`)
+      .some((d) => d.code === "unknown-modifier"),
+  ).toBe(false);
 });

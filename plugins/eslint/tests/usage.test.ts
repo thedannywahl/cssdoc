@@ -22,7 +22,9 @@ const dir = mkdtempSync(join(tmpdir(), "cssdoc-usage-"));
 const cssPath = join(dir, "components.css");
 writeFileSync(cssPath, CSS);
 
-const rules = { "cssdoc/valid-class-usage": ["warn", { css: [cssPath] }] } as const;
+const rules = {
+  "cssdoc/valid-class-usage": ["warn", { css: [cssPath], modifierConvention: "rscss" }],
+} as const;
 
 const lintJsx = (code: string): string[] => {
   const linter = new Linter();
@@ -88,4 +90,55 @@ test("HTML class: flags an unknown modifier on the component", () => {
 
 test("HTML class: a valid modifier chain produces no messages", () => {
   expect(lintHtml(`<button class="button -color-secondary">x</button>`)).toEqual([]);
+});
+
+// ── CUBE (attribute) convention on JSX ────────────────────────────────────────────────────────────
+
+const CUBE_CSS = `
+/**
+ * @component card
+ * @summary A surface.
+ */
+.card { color: red; }
+.card[data-variant="ghost"] { background: none; }
+`;
+const cubeDir = mkdtempSync(join(tmpdir(), "cssdoc-cube-"));
+const cubeCssPath = join(cubeDir, "cube.css");
+writeFileSync(cubeCssPath, CUBE_CSS);
+
+const cubeRules = {
+  "cssdoc/valid-class-usage": [
+    "warn",
+    { css: [cubeCssPath], modifierConvention: { structure: "attribute", separator: "data-" } },
+  ],
+} as const;
+
+const lintJsxCube = (code: string): string[] => {
+  const linter = new Linter();
+  return linter
+    .verify(
+      code,
+      [
+        {
+          files: ["**/*.jsx"],
+          languageOptions: {
+            ecmaVersion: "latest",
+            sourceType: "module",
+            parserOptions: { ecmaFeatures: { jsx: true } },
+          },
+          plugins: { cssdoc: plugin },
+          rules: cubeRules,
+        },
+      ] as Parameters<Linter["verify"]>[1],
+      "test.jsx",
+    )
+    .map((m) => m.message);
+};
+
+test("JSX attribute (CUBE): an unknown data-attribute value is flagged; a known one is not", () => {
+  const bad = lintJsxCube(`export const x = <div className="card" data-variant="bogus" />;`);
+  expect(bad.some((m) => m.includes("unknown-modifier") && m.includes("data-variant"))).toBe(true);
+  expect(lintJsxCube(`export const x = <div className="card" data-variant="ghost" />;`)).toEqual(
+    [],
+  );
 });

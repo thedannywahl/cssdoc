@@ -23,15 +23,23 @@ npm i -D @cssdoc/config @cssdoc/core
   "supportForTags": {
     "@privateRemarks": false,
   },
+  "modifierConvention": "bem",
+  "rules": {
+    "unknown-modifier": "warn",
+  },
 }
 ```
 
-| Field            | Meaning                                                                                                                    |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `extends`        | Paths (local `./…` or package specifiers) to other `cssdoc.json` files to inherit from.                                    |
-| `noStandardTags` | Disable every built-in standard tag; only `tagDefinitions` remain.                                                         |
-| `tagDefinitions` | Custom tags: `tagName`, `syntaxKind` (`record`/`block`/`modifier`/`inline`), `allowMultiple?`, `recordKind?`, `aliasFor?`. |
-| `supportForTags` | Enable or disable specific tags by name.                                                                                   |
+| Field                | Meaning                                                                                                                    |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `extends`            | Paths (local `./…` or package specifiers) to other `cssdoc.json` files to inherit from.                                    |
+| `noStandardTags`     | Disable every built-in standard tag; only `tagDefinitions` remain.                                                         |
+| `tagDefinitions`     | Custom tags: `tagName`, `syntaxKind` (`record`/`block`/`modifier`/`inline`), `allowMultiple?`, `recordKind?`, `aliasFor?`. |
+| `supportForTags`     | Enable or disable specific tags by name.                                                                                   |
+| `modifierConvention` | How modifier classes are spelled — a preset (`bem`, `rscss`, `bare`) or a custom object. Defaults to `bem`.                |
+| `rules`              | Per-rule severity overrides (`off`/`warn`/`error`).                                                                        |
+
+See [Modifier conventions](/guide/modifier-conventions) for the convention forms and the full rule list.
 
 ## Loading it
 

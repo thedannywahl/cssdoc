@@ -41,6 +41,7 @@
     "publint": "publint"
   },
   "dependencies": {
+    "@cssdoc/config": "workspace:*",
     "@cssdoc/core": "workspace:*",
     "@cssdoc/index": "workspace:*",
     "@cssdoc/providers": "workspace:*",

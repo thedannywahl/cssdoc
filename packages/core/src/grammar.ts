@@ -156,10 +156,13 @@ function parseModifierBody(description: string | undefined): DocModifier {
   const dep = description?.match(/^@deprecated\b\s*([\s\S]*)$/u);
   if (dep) {
     const rawNote = dep[1].trim();
-    const link = rawNote.match(/\{@link\s+\.?(-[\w-]+)\s*\}/u);
+    // A `{@link …}` canonical may be any modifier member: a class (`.card--danger`, `.-color-danger`,
+    // `card--danger`) or an attribute selector (`[data-variant="ok"]`) — convention-agnostic here.
+    const link = rawNote.match(/\{@link\s+(\.?[\w-]+|\[[^\]]*\])\s*\}/u);
+    const canonical = link?.[1].replace(/^\./u, "").replace(/^\[/u, "").replace(/\]$/u, "");
     const note = rawNote.replace(/\{@link\s+[^}]*\}/u, "").trim();
     if (!note && !link) return { deprecatedFlag: true };
-    return { deprecated: note || undefined, deprecatedCanonical: link?.[1] };
+    return { deprecated: note || undefined, deprecatedCanonical: canonical };
   }
   return { description: description ?? "" };
 }

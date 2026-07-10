@@ -6,8 +6,16 @@
  *
  * @module
  */
-import { type CssDocIndex, type SourceSpan, createIndex, cssValueSites } from "@cssdoc/index";
 import {
+  type ClassUsage,
+  type CssDocIndex,
+  type SourceSpan,
+  createIndex,
+  cssValueSites,
+} from "@cssdoc/index";
+import {
+  DEFAULT_RULE_SEVERITIES,
+  type RuleSeverities,
   checkClassUsage,
   checkPropertyAssignments,
   checkPropertyUsage,
@@ -145,11 +153,19 @@ function classAttrAt(text: string, offset: number): ClassAttr | undefined {
 
 /** The language service. Construct with the component index (rebuild it when the CSS changes). */
 export class CssDocLanguageService {
-  constructor(private index: CssDocIndex) {}
+  constructor(
+    private index: CssDocIndex,
+    private severities: RuleSeverities = DEFAULT_RULE_SEVERITIES,
+  ) {}
 
   /** Replace the component index (e.g. after the CSS files change). */
   setIndex(index: CssDocIndex): void {
     this.index = index;
+  }
+
+  /** Set the per-rule severities (e.g. loaded from a `cssdoc.json`). */
+  setRuleSeverities(severities: RuleSeverities): void {
+    this.severities = severities;
   }
 
   /** Completions at a position: `var(--…)` custom properties, or classes/modifiers in a class attribute. */
@@ -205,31 +221,70 @@ export class CssDocLanguageService {
   diagnostics(text: string, languageId?: string): LspDiagnostic[] {
     if (languageId && CSS_LANGUAGES.has(languageId)) return this.cssDiagnostics(text);
     const out: LspDiagnostic[] = [];
-    for (const attr of classAttributes(text)) {
-      const base = attr.tokens.find((t) => this.index.componentForClass(t));
-      for (const member of attr.members) {
-        if (!member.token.startsWith("-")) continue;
-        const diags = checkClassUsage(
-          [{ base, tokens: attr.tokens, token: member.token }],
-          this.index,
-        );
-        for (const d of diags) {
-          const canonical = base
-            ? this.index.deprecationOf(base, member.token)?.canonical
-            : undefined;
-          out.push({
-            range: rangeOf(text, member.start, member.end),
-            message: d.message,
-            severity: 2,
-            code: d.rule,
-            ...(d.rule === "deprecated-modifier" && canonical
-              ? { data: { replace: `-${canonical.replace(/^-/u, "")}` } }
-              : {}),
-          });
-        }
+    for (const { usage, start, end } of this.modifierUsages(text)) {
+      const diags = checkClassUsage([usage], this.index, this.severities);
+      for (const d of diags) {
+        const canonical = usage.base
+          ? this.index.deprecationOf(usage.base, usage.token)?.canonical
+          : undefined;
+        out.push({
+          range: rangeOf(text, start, end),
+          message: d.message,
+          severity: d.severity === "error" ? 1 : 2,
+          code: d.rule,
+          ...(d.rule === "deprecated-modifier" && canonical
+            ? { data: { replace: canonical } }
+            : {}),
+        });
       }
     }
     return out;
+  }
+
+  /**
+   * The modifier-usage candidates in a host document, each with its source span. For class conventions
+   * these are class tokens inside `class`/`className`; for the `attribute` convention they are
+   * convention-matching attributes on an element that also carries a documented component class.
+   */
+  private modifierUsages(text: string): { usage: ClassUsage; start: number; end: number }[] {
+    const matcher = this.index.matcher;
+    const results: { usage: ClassUsage; start: number; end: number }[] = [];
+
+    if (matcher.convention.structure === "attribute") {
+      for (const tag of text.matchAll(/<[a-zA-Z][\w-]*(?:\s[^<>]*?)?\/?>/gu)) {
+        const tagStart = tag.index ?? 0;
+        const attrs = [...tag[0].matchAll(/([:\w-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/gu)];
+        const tokens: string[] = [];
+        for (const a of attrs) {
+          if (a[1] === "class" || a[1] === "className") {
+            tokens.push(...(a[2] ?? a[3] ?? "").split(/\s+/u).filter(Boolean));
+          }
+        }
+        const base = tokens.find((t) => this.index.componentForClass(t));
+        if (!base) continue;
+        for (const a of attrs) {
+          if (a[1] === "class" || a[1] === "className") continue;
+          const token = `${a[1]}="${a[2] ?? a[3] ?? ""}"`;
+          if (!matcher.looksLikeUsage(token, base)) continue;
+          const start = tagStart + (a.index ?? 0);
+          results.push({ usage: { base, tokens, token }, start, end: start + a[0].length });
+        }
+      }
+      return results;
+    }
+
+    for (const attr of classAttributes(text)) {
+      const base = attr.tokens.find((t) => this.index.componentForClass(t));
+      for (const member of attr.members) {
+        if (!matcher.looksLikeUsage(member.token, base)) continue;
+        results.push({
+          usage: { base, tokens: attr.tokens, token: member.token },
+          start: member.start,
+          end: member.end,
+        });
+      }
+    }
+    return results;
   }
 
   /** Lint an open stylesheet: doc-comment hygiene and the registered-property value checks. */
@@ -237,9 +292,9 @@ export class CssDocLanguageService {
     const index = createIndex(text);
     const { assignments, usages } = cssValueSites(text);
     const diags = [
-      ...lintModel(index),
-      ...checkPropertyAssignments(assignments, index),
-      ...checkPropertyUsage(usages, index),
+      ...lintModel(index, this.severities),
+      ...checkPropertyAssignments(assignments, index, this.severities),
+      ...checkPropertyUsage(usages, index, {}, this.severities),
     ];
     const out: LspDiagnostic[] = [];
     for (const d of diags) {
@@ -260,7 +315,7 @@ export class CssDocLanguageService {
     for (const d of diagnostics) {
       if (d.data?.replace) {
         actions.push({
-          title: `Replace with .${d.data.replace}`,
+          title: `Replace with ${this.index.matcher.selectorFor(d.data.replace)}`,
           edit: { range: d.range, newText: d.data.replace },
         });
       }

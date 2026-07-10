@@ -7,6 +7,7 @@ import {
   definitionForClass,
   hoverForClass,
   lintModel,
+  resolveRuleSeverities,
 } from "../src/index.ts";
 
 const CSS = `
@@ -28,7 +29,7 @@ const CSS = `
 @property --chip-bg { syntax: "<color>"; inherits: false; }
 `;
 
-const index = createIndex(CSS, { file: "components.css" });
+const index = createIndex(CSS, { file: "components.css", modifierConvention: "rscss" });
 
 test("lintModel reports author-side hygiene (chip missing summary, -size-sm undocumented)", () => {
   const rules = lintModel(index).map((d) => `${d.record}:${d.rule}`);
@@ -80,4 +81,31 @@ test("hover and definition resolve a modifier to its docs and its rule location"
 test("var(--…) completions include declared custom properties", () => {
   const props = completeCustomProperties(index).map((c) => c.label);
   expect(props).toContain("--chip-bg");
+});
+
+test("rule severities: unknown-modifier defaults to warn (BEM), and is off/error configurable", () => {
+  const bem = createIndex(
+    `/**\n * @component card\n * @summary A surface.\n */\n.card { color: red; }\n.card--featured { color: blue; }`,
+  );
+  const usage = [{ base: "card", tokens: ["card", "card--danger"], token: "card--danger" }];
+
+  // Default: the undocumented BEM modifier warns.
+  const def = checkClassUsage(usage, bem);
+  expect(def.find((d) => d.rule === "unknown-modifier")?.severity).toBe("warning");
+
+  // off → silenced entirely.
+  expect(checkClassUsage(usage, bem, resolveRuleSeverities({ "unknown-modifier": "off" }))).toEqual(
+    [],
+  );
+
+  // error → upgraded.
+  const errored = checkClassUsage(
+    usage,
+    bem,
+    resolveRuleSeverities({ "unknown-modifier": "error" }),
+  );
+  expect(errored.find((d) => d.rule === "unknown-modifier")?.severity).toBe("error");
+
+  // An unrelated class on an unknown base is never a candidate.
+  expect(checkClassUsage([{ base: undefined, tokens: ["mt-4"], token: "mt-4" }], bem)).toEqual([]);
 });

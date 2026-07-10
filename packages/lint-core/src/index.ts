@@ -6,9 +6,18 @@
  *
  * @module @cssdoc/lint-core
  */
-import type { CssDocConfiguration } from "@cssdoc/core";
+import type { CssDocConfiguration, ModifierConventionInput } from "@cssdoc/core";
 import { createIndex, cssValueSites } from "@cssdoc/index";
-import { checkPropertyAssignments, checkPropertyUsage, lintModel } from "@cssdoc/providers";
+import {
+  checkPropertyAssignments,
+  checkPropertyUsage,
+  lintModel,
+  resolveRuleSeverities,
+  type RuleSeverity,
+  type Severity,
+} from "@cssdoc/providers";
+
+export type { RuleId, RuleSeverities, RuleSeverity, Severity } from "@cssdoc/providers";
 
 /** The rules this package surfaces (doc-comment hygiene plus registered-property value checks). */
 export type RuleName =
@@ -43,14 +52,21 @@ export interface Violation {
   record: string;
   /** The 1-based source line of the violation. */
   line: number;
+  /** The resolved severity (`error` or `warning`). */
+  severity: Severity;
 }
 
 /** Options for {@link lintCssDocs}. */
 export interface LintOptions {
   /** The tag configuration to parse with (custom tags, etc.). */
   configuration?: CssDocConfiguration;
-  /** Enable/disable individual rules (all enabled by default). */
-  rules?: Partial<Record<RuleName, boolean>>;
+  /** The modifier convention (BEM by default; `rscss`, `bare`, or a custom object). */
+  modifierConvention?: ModifierConventionInput;
+  /**
+   * Per-rule severity (`off`/`warn`/`error`). A `boolean` is accepted for back-compat (`false` → off,
+   * `true` → the rule's default). All rules default to `warn`.
+   */
+  rules?: Partial<Record<RuleName, RuleSeverity | boolean>>;
 }
 
 /**
@@ -61,20 +77,23 @@ export interface LintOptions {
  * @returns The violations found.
  */
 export function lintCssDocs(css: string, options: LintOptions = {}): Violation[] {
-  const index = createIndex(css, { configuration: options.configuration });
-  const enabled = (rule: RuleName): boolean => options.rules?.[rule] !== false;
+  const index = createIndex(css, {
+    configuration: options.configuration,
+    modifierConvention: options.modifierConvention,
+  });
+  const severities = resolveRuleSeverities(options.rules);
   const { assignments, usages } = cssValueSites(css);
+  // The providers drop `off` rules and stamp the resolved severity — no separate filter here.
   const diagnostics = [
-    ...lintModel(index), // hygiene + invalid-default-value
-    ...checkPropertyAssignments(assignments, index), // invalid-property-value
-    ...checkPropertyUsage(usages, index), // invalid-fallback-value (unknown-property is opt-in, off here)
+    ...lintModel(index, severities), // hygiene + invalid-default-value
+    ...checkPropertyAssignments(assignments, index, severities), // invalid-property-value
+    ...checkPropertyUsage(usages, index, {}, severities), // invalid-fallback-value (unknown-property opt-in, off here)
   ];
-  return diagnostics
-    .filter((d) => enabled(d.rule as RuleName))
-    .map((d) => ({
-      rule: d.rule as RuleName,
-      message: d.message,
-      record: d.record ?? "",
-      line: d.span?.start.line ?? 1,
-    }));
+  return diagnostics.map((d) => ({
+    rule: d.rule as RuleName,
+    message: d.message,
+    record: d.record ?? "",
+    line: d.span?.start.line ?? 1,
+    severity: d.severity,
+  }));
 }

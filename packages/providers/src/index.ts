@@ -14,11 +14,34 @@ import type {
   PropertyUsage,
 } from "@cssdoc/index";
 import { customProperty, func, modifier, part, record } from "./aspects.ts";
-import type { Completion, Diagnostic, Hover, UsageOptions } from "./types.ts";
+import {
+  DEFAULT_RULE_SEVERITIES,
+  type Completion,
+  type Diagnostic,
+  type Hover,
+  type RuleId,
+  type RuleSeverities,
+  type UsageOptions,
+} from "./types.ts";
 
 export * from "./types.ts";
 export * from "./syntax.ts";
 export { customProperty, func, modifier, part, record } from "./aspects.ts";
+
+/**
+ * Apply resolved rule severities to a batch of diagnostics: drop `off` rules, and stamp the configured
+ * severity onto the rest. This is the single place severity/enablement is decided — every host inherits
+ * it. Aspects emit a placeholder `warning`; this overrides it.
+ */
+function applySeverities(diagnostics: Diagnostic[], severities: RuleSeverities): Diagnostic[] {
+  const out: Diagnostic[] = [];
+  for (const d of diagnostics) {
+    const severity = severities[d.rule as RuleId] ?? "warn";
+    if (severity === "off") continue;
+    out.push({ ...d, severity: severity === "error" ? "error" : "warning" });
+  }
+  return out;
+}
 
 /** The aspect names covered, in a stable order (the extension point for future aspects). */
 export const ASPECTS = [
@@ -33,26 +56,43 @@ export const ASPECTS = [
 ] as const;
 
 /** Author-side hygiene diagnostics over the whole model (missing summaries, undocumented members, drift, invalid defaults). */
-export function lintModel(index: CssDocIndex): Diagnostic[] {
-  return [
-    ...record.model(index),
-    ...modifier.model(index),
-    ...part.model(index),
-    ...customProperty.model(index),
-  ];
+export function lintModel(
+  index: CssDocIndex,
+  severities: RuleSeverities = DEFAULT_RULE_SEVERITIES,
+): Diagnostic[] {
+  return applySeverities(
+    [
+      ...record.model(index),
+      ...modifier.model(index),
+      ...part.model(index),
+      ...customProperty.model(index),
+    ],
+    severities,
+  );
 }
 
 /** Consumer-side diagnostics for custom-property assignments (`--x: value` must match its `@property` syntax). */
 export function checkPropertyAssignments(
   assignments: readonly PropertyAssignment[],
   index: CssDocIndex,
+  severities: RuleSeverities = DEFAULT_RULE_SEVERITIES,
 ): Diagnostic[] {
-  return assignments.flatMap((a) => customProperty.assignment(a, index));
+  return applySeverities(
+    assignments.flatMap((a) => customProperty.assignment(a, index)),
+    severities,
+  );
 }
 
 /** Consumer-side diagnostics for class-attribute usage (unknown or deprecated modifiers). */
-export function checkClassUsage(usages: readonly ClassUsage[], index: CssDocIndex): Diagnostic[] {
-  return usages.flatMap((usage) => modifier.classUsage(usage, index));
+export function checkClassUsage(
+  usages: readonly ClassUsage[],
+  index: CssDocIndex,
+  severities: RuleSeverities = DEFAULT_RULE_SEVERITIES,
+): Diagnostic[] {
+  return applySeverities(
+    usages.flatMap((usage) => modifier.classUsage(usage, index)),
+    severities,
+  );
 }
 
 /** Consumer-side diagnostics for `var(--…)` references (unknown custom properties; opt-in via prefix). */
@@ -60,8 +100,12 @@ export function checkPropertyUsage(
   usages: readonly PropertyUsage[],
   index: CssDocIndex,
   options: UsageOptions = {},
+  severities: RuleSeverities = DEFAULT_RULE_SEVERITIES,
 ): Diagnostic[] {
-  return usages.flatMap((usage) => customProperty.propertyUsage(usage, index, options));
+  return applySeverities(
+    usages.flatMap((usage) => customProperty.propertyUsage(usage, index, options)),
+    severities,
+  );
 }
 
 /** Completions for a class attribute: modifiers of `base` when given, else the component classes. */

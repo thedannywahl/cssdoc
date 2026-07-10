@@ -11,6 +11,66 @@ export type { Location, SourceSpan } from "@cssdoc/index";
 /** Diagnostic severity. */
 export type Severity = "error" | "warning";
 
+/** A configurable per-rule severity — `off` suppresses the rule entirely. */
+export type RuleSeverity = "off" | "warn" | "error";
+
+/**
+ * Every rule id an aspect can emit, author-side and consumer-side. A superset of `@cssdoc/lint-core`'s
+ * author-side `RuleName` (which omits the consumer-side `unknown-modifier`/`deprecated-modifier` and
+ * the opt-in `unknown-custom-property`).
+ */
+export type RuleId =
+  | "missing-summary"
+  | "undocumented-modifier"
+  | "deprecated-requires-canonical"
+  | "name-not-in-css"
+  | "unknown-modifier"
+  | "deprecated-modifier"
+  | "undocumented-part"
+  | "invalid-default-value"
+  | "invalid-property-value"
+  | "invalid-fallback-value"
+  | "unknown-custom-property";
+
+/** A resolved severity for every rule. */
+export type RuleSeverities = Record<RuleId, RuleSeverity>;
+
+/**
+ * The default rule severities. `unknown-modifier` defaults to `warn` — safe under the BEM default's
+ * strong `--` signal; lower it to `off` for weak-signal conventions (bare/OOCSS) where every chained
+ * class is a candidate. `unknown-custom-property` stays `off` (it needs an opt-in `propertyPrefix`).
+ */
+export const DEFAULT_RULE_SEVERITIES: RuleSeverities = {
+  "missing-summary": "warn",
+  "undocumented-modifier": "warn",
+  "deprecated-requires-canonical": "warn",
+  "name-not-in-css": "warn",
+  "unknown-modifier": "warn",
+  "deprecated-modifier": "warn",
+  "undocumented-part": "warn",
+  "invalid-default-value": "warn",
+  "invalid-property-value": "warn",
+  "invalid-fallback-value": "warn",
+  "unknown-custom-property": "off",
+};
+
+/**
+ * Merge per-rule overrides over {@link DEFAULT_RULE_SEVERITIES}. A `boolean` override is accepted for
+ * back-compat: `false` → `off`, `true` → the rule's default.
+ */
+export function resolveRuleSeverities(
+  overrides?: Partial<Record<RuleId, RuleSeverity | boolean>>,
+): RuleSeverities {
+  const resolved = { ...DEFAULT_RULE_SEVERITIES };
+  if (!overrides) return resolved;
+  for (const [rule, value] of Object.entries(overrides) as [RuleId, RuleSeverity | boolean][]) {
+    if (value === undefined) continue;
+    if (typeof value === "boolean") resolved[rule] = value ? DEFAULT_RULE_SEVERITIES[rule] : "off";
+    else resolved[rule] = value;
+  }
+  return resolved;
+}
+
 /** One diagnostic from an aspect. */
 export interface Diagnostic {
   /** The aspect that produced it (e.g. `modifier`). */

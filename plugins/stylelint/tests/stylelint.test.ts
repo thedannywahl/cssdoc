@@ -11,9 +11,13 @@ const CSS = `
 .button.-size-sm { font-size: small; }
 `;
 
+// The fixtures use the rscss convention; pass it as a secondary option (the parser defaults to BEM).
 const lint = (code: string): Promise<{ text: string; rule: string | undefined }[]> =>
   stylelint
-    .lint({ code, config: { plugins: [plugin], rules: { [ruleName]: true } } })
+    .lint({
+      code,
+      config: { plugins: [plugin], rules: { [ruleName]: [true, { modifierConvention: "rscss" }] } },
+    })
     .then((r) => r.results[0].warnings.map((w) => ({ text: w.text, rule: w.rule })));
 
 test("the rule reports doc-hygiene violations from lint-core", async () => {

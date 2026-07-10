@@ -1,5 +1,9 @@
 import { expect, test } from "vite-plus/test";
-import { type Violation, lintCssDocs } from "../src/index.ts";
+import { type LintOptions, type Violation, lintCssDocs as lintRaw } from "../src/index.ts";
+
+// The fixtures below use the rscss convention; the parser now defaults to BEM.
+const lintCssDocs = (css: string, opts: LintOptions = {}): Violation[] =>
+  lintRaw(css, { modifierConvention: "rscss", ...opts });
 
 const byRule = (violations: Violation[], rule: string): Violation[] =>
   violations.filter((v) => v.rule === rule);

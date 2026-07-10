@@ -14,7 +14,8 @@
  *
  * @module @cssdoc/stylelint-plugin
  */
-import { type RuleName, lintCssDocs } from "@cssdoc/lint-core";
+import type { ModifierConventionInput } from "@cssdoc/core";
+import { type RuleName, type RuleSeverity, lintCssDocs } from "@cssdoc/lint-core";
 import stylelint, { type Rule } from "stylelint";
 
 const { createPlugin, utils } = stylelint;
@@ -28,9 +29,13 @@ export const messages = utils.ruleMessages(ruleName, {
 
 export const meta = { url: "https://cssdoc.dev" };
 
-/** Secondary options: per-rule enable/disable, e.g. `{ rules: { "missing-summary": false } }`. */
+/**
+ * Secondary options: per-rule severity (`off`/`warn`/`error`, or a boolean) and the modifier
+ * convention, e.g. `{ rules: { "missing-summary": "off" }, modifierConvention: "rscss" }`.
+ */
 interface SecondaryOptions {
-  rules?: Partial<Record<RuleName, boolean>>;
+  rules?: Partial<Record<RuleName, RuleSeverity | boolean>>;
+  modifierConvention?: ModifierConventionInput;
 }
 
 const rule: Rule<boolean, SecondaryOptions> = (primary, secondaryOptions) => (root, result) => {
@@ -40,14 +45,21 @@ const rule: Rule<boolean, SecondaryOptions> = (primary, secondaryOptions) => (ro
     { actual: primary, possible: [true, false] },
     {
       actual: secondaryOptions,
-      possible: { rules: [(value) => typeof value === "object"] },
+      possible: {
+        rules: [(value) => typeof value === "object"],
+        modifierConvention: [(value) => typeof value === "string" || typeof value === "object"],
+      },
       optional: true,
     },
   );
   if (!valid || !primary) return;
 
   const css = root.toString();
-  for (const violation of lintCssDocs(css, { rules: secondaryOptions?.rules })) {
+  const violations = lintCssDocs(css, {
+    rules: secondaryOptions?.rules,
+    modifierConvention: secondaryOptions?.modifierConvention,
+  });
+  for (const violation of violations) {
     utils.report({
       result,
       ruleName,

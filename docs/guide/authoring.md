@@ -37,9 +37,12 @@ One of these opens a record and picks its kind. `@name` is an alias for `@compon
 Most of these are **derived from the CSS** — the tag only adds prose. cssdoc reads the selectors and
 at-rules; you don't have to list what's already there.
 
+The `@modifier` example below uses the default **BEM** convention (`.base--x`). cssdoc supports other
+modifier conventions (rscss, CUBE, OOCSS, and more) — see [Modifier conventions](/guide/modifier-conventions).
+
 | Tag                                                    | Documents                                                 | Derived from           |
 | ------------------------------------------------------ | --------------------------------------------------------- | ---------------------- |
-| `@modifier -<x> — <desc>`                              | A `-modifier` on the base class                           | `.base.-x` selectors   |
+| `@modifier <x> — <desc>`                               | A modifier on the base class                              | modifier selectors     |
 | `@part` / `@csspart .<x> — <desc>`                     | A sub-element part                                        | scoped child selectors |
 | `@cssstate <x> — <desc>`                               | A component state                                         | `:state(x)` selectors  |
 | `@slot <x> — <desc>`                                   | A named slot                                              | authored (CEM)         |
