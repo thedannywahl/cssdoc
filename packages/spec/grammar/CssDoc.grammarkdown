@@ -1,20 +1,8 @@
-// CssDoc — the doc-comment grammar for @cssdoc/core.
-//
-// A formal, RFC-style specification of the tag vocabulary parsed out of `/** … */` block comments,
-// modeled on TSDoc's DeclarationReference.grammarkdown. It is organized as a lexical grammar
-// (characters, comment framing, tokens, names) building toward a syntactic grammar (the doc comment,
-// its block tags, and the CssReference used inside inline `{@link}` / `{@inheritDoc}` tags).
-//
-// The grammar is the source of truth for the shape of a doc comment; the runtime parser in
-// grammar.ts is hand-written to conform to these productions. It is deliberately expansive — modeled
-// on TSDoc's full Block / Modifier / Inline taxonomy plus cssdoc's own Record kind — and documents the
-// modern CSSOM surface (registered properties, custom functions, keyframes, cascade layers, container
-// / supports / media conditions, states, parts, slots). Where a feature is a real CSS at-rule, core
-// derives the facts from the CSS AST; the tags below supply the authored prose.
+// CssDoc — the cssdoc doc-comment grammar.
 //
 // Notation: `::` marks a lexical production, `:` a syntactic one. Terminals are in backticks; `> …`
-// lines are prose (used for character classes and layout-sensitive constructs that sit outside
-// context-free notation).
+// lines are prose (character classes and layout-sensitive constructs outside context-free notation).
+// Productions read bottom-up: primitives first, building to the DocComment goal symbol last.
 
 // ============================================================================================
 // Lexical Grammar
@@ -30,7 +18,7 @@ LineTerminator ::
     > a line feed or a carriage return
 
 // --- Comment framing ---------------------------------------------------------------------------
-// PostCSS hands the parser the comment's inner text; the framing is stripped either way.
+// The comment framing is stripped before the tags are parsed.
 
 CommentOpen ::
     `/**`
@@ -81,27 +69,52 @@ Identifier ::
 RecordName ::
     Identifier
 
-// How a modifier is spelled is configurable (see the `ModifierConvention` in `@cssdoc/core`); the
-// DEFAULT is BEM — the modifier is conjoined onto the base class with `--`, e.g. `.button--primary`.
-// Other conventions:
-//   rscss       — `.button.-color-secondary` (a chained `-`-prefixed class, split into Prop/Value)
-//   bare / OOCSS — `.button.primary`          (any class chained to the base)
-//   CUBE        — `.card[data-variant="ghost"]` (a data-attribute exception on the base)
-// The default (BEM) form:
+// How a modifier is spelled is configurable. Three structural forms are recognized,
+// shown with their default separators and a neutral `.base` component class;
+// every separator and prefix below is configurable:
+//   suffix    — joined into the base class name:            `.base--name`  (the default, below)
+//   chained   — a separate prefixed class on the base:      `.base.-name`  (optionally split prop/value)
+//   attribute — an attribute selector on the base:          `.base[name="value"]`
+
+// The suffix form (the default): the modifier joined into the base class name with a separator.
 ModifierName ::
     Identifier `--` Identifier
 
-// The rscss form: a `-<prop>` boolean modifier, or a `-<prop>-<value>` modifier. `Prop` is the segment
-// up to the first interior hyphen; `Value` is the remainder (which may itself contain hyphens).
-RscssModifierName ::
+// The chained form: a separate prefixed class on the base — a `-<prop>` boolean modifier, or a
+// `-<prop>-<value>` modifier split into prop and value. `Prop` is the segment up to the first interior
+// hyphen; `Value` is the remainder (which may itself contain hyphens).
+ChainedModifierName ::
     `-` Prop
     `-` Prop `-` Value
 
-// The CUBE form: an attribute-selector exception on the base, e.g. `[data-variant="ghost"]`. The
-// value is a quoted string; shown here as an identifier for brevity.
+// The attribute form: an attribute selector on the base, e.g. `.base[name="value"]`.
 AttributeModifier ::
-    `[` Identifier `]`
-    `[` Identifier `=` Identifier `]`
+    `[` AttributeName `]`
+    `[` AttributeName `=` AttributeValue `]`
+
+AttributeName ::
+    Identifier
+
+AttributeValue ::
+    QuotedString
+    Identifier
+
+QuotedString ::
+    `"` StringCharacters `"`
+    `'` StringCharacters `'`
+
+StringCharacters ::
+    > one or more SourceCharacters other than the enclosing quote
+
+// Two non-modifier roles a convention may name. An element is joined into the base class with `__`,
+// e.g. `.base__part`, and is recorded as a PART. A state class is a class chained to the base whose
+// name starts with a state prefix, e.g. `.base.is-open`, and is recorded as a STATE. Neither is a
+// modifier.
+ElementName ::
+    Identifier `__` Identifier
+
+StateClass ::
+    > a class chained to the base whose name starts with a state prefix
 
 Prop ::
     > an identifier segment of letters and digits, containing no hyphen
@@ -109,11 +122,11 @@ Prop ::
 Value ::
     Identifier
 
-// A `.`-prefixed sub-element class, e.g. `.item`.
+// A `.`-prefixed sub-element class, e.g. `.part`.
 PartName ::
     `.` Identifier
 
-// A base-class selector, e.g. `.button`.
+// A base-class selector, e.g. `.base`.
 ClassSelector ::
     `.` Identifier
 
@@ -125,21 +138,247 @@ CustomPropertyName ::
 SyntaxDescriptor ::
     `<` SyntaxBody `>`
 
-SyntaxBody ::
-    > one or more SourceCharacters other than a greater-than sign
+// A syntax component name from the CSS Properties and Values API supported-names list.
+SyntaxBody :: one of
+    `angle` `color` `custom-ident` `image` `integer` `length` `length-percentage` `number`
+    `percentage` `resolution` `string` `time` `transform-function` `transform-list` `url`
 
 // ============================================================================================
 // Syntactic Grammar
 // ============================================================================================
 
-// A doc comment is a sequence of block tags. Leading untagged prose is ignored; each `@tag` opens a
-// block that runs until the next `@tag` (so multi-line @example / @summary bodies are captured).
-DocComment :
-    CommentOpen TagList CommentClose
+// --- Descriptions & inline tags ----------------------------------------------------------------
 
-TagList :
-    [empty]
-    TagList BlockTag
+// The target of an inline reference: a modifier, a part, or a record.
+CssReference :
+    ModifierName
+    PartName
+    RecordName
+
+LinkTag :
+    InlineOpen `link` WhiteSpace CssReference InlineClose
+
+InheritDocTag :
+    InlineOpen `inheritDoc` WhiteSpace CssReference InlineClose
+
+LabelTag :
+    InlineOpen `label` WhiteSpace Identifier InlineClose
+
+InlineTag :
+    LinkTag
+    InheritDocTag
+    LabelTag
+
+TextRun ::
+    > a run of prose containing no inline tag
+
+DescriptionAtom :
+    TextRun
+    InlineTag
+
+// Free-text prose that may interleave inline tags.
+Description :
+    DescriptionAtom
+    Description DescriptionAtom
+
+// --- Record-opening tags (choose the CssRecordKind; `@name` is an alias for `@component`) --------
+
+RecordKeyword :
+    `@component`
+    `@name`
+    `@utility`
+    `@rule`
+    `@declaration`
+
+RecordTag :
+    RecordKeyword WhiteSpace RecordName
+
+// --- Prose tags --------------------------------------------------------------------------------
+
+ClassTag :
+    `@class` WhiteSpace ClassSelector
+
+SummaryTag :
+    `@summary` WhiteSpace Description
+
+RemarksTag :
+    `@remarks` WhiteSpace Description
+
+PrivateRemarksTag :
+    `@privateRemarks` WhiteSpace Description
+
+SeeTag :
+    `@see` WhiteSpace Description
+
+SinceTag :
+    `@since` WhiteSpace Description
+
+GroupKeyword :
+    `@group`
+    `@category`
+
+GroupTag :
+    GroupKeyword WhiteSpace Description
+
+DefaultValueTag :
+    `@defaultValue` WhiteSpace Description
+
+DeprecatedTag :
+    `@deprecated`
+    `@deprecated` WhiteSpace Description
+
+ExampleBody :
+    > verbatim example text, which may span multiple lines
+
+ExampleTag :
+    `@example` ExampleBody
+
+// --- CSS-surface tags (existing + Custom Elements Manifest) ------------------------------------
+
+// `@deprecated` on a modifier line: free-text guidance and/or a `{@link -canonical}` replacement.
+InlineDeprecation :
+    `@deprecated`
+    `@deprecated` WhiteSpace Description
+
+ModifierBody :
+    Description
+    InlineDeprecation
+
+// A modifier; the list itself is derived from the CSS, this supplies prose (or an inline deprecation).
+ModifierTag :
+    `@modifier` WhiteSpace ModifierName
+    `@modifier` WhiteSpace ModifierName Separator ModifierBody
+
+PartKeyword :
+    `@part`
+    `@csspart`
+
+PartTag :
+    PartKeyword WhiteSpace PartName
+    PartKeyword WhiteSpace PartName Separator Description
+
+CssPropertyKeyword :
+    `@cssproperty`
+    `@property`
+
+// A registered custom property; the registration is derived from the `@property` at-rule, this adds prose.
+CssPropertyTag :
+    CssPropertyKeyword WhiteSpace CustomPropertyName
+    CssPropertyKeyword WhiteSpace CustomPropertyName SyntaxDescriptor
+    CssPropertyKeyword WhiteSpace CustomPropertyName Separator Description
+    CssPropertyKeyword WhiteSpace CustomPropertyName SyntaxDescriptor Separator Description
+
+StateName :
+    Identifier
+
+CssStateTag :
+    `@cssstate` WhiteSpace StateName
+    `@cssstate` WhiteSpace StateName Separator Description
+
+SlotName :
+    Identifier
+
+SlotTag :
+    `@slot` WhiteSpace SlotName
+    `@slot` WhiteSpace SlotName Separator Description
+
+// --- CSSOM at-rule surfaces (derived from the CSS; prose optional) -----------------------------
+
+// A CSS custom function (`@function --name`), derived from the `@function` at-rule.
+CssFunctionTag :
+    `@function` WhiteSpace CustomPropertyName
+    `@function` WhiteSpace CustomPropertyName Separator Description
+
+AnimationName :
+    Identifier
+
+KeyframesKeyword :
+    `@keyframes`
+    `@animation`
+
+// An animation the component exposes (`@keyframes`/`@animation`), derived from the `@keyframes` at-rule.
+KeyframesTag :
+    KeyframesKeyword WhiteSpace AnimationName
+    KeyframesKeyword WhiteSpace AnimationName Separator Description
+
+LayerName ::
+    > a cascade-layer name, optionally dotted, e.g. theme.dark
+
+// A cascade layer (`@layer`), derived from `@layer` names.
+LayerTag :
+    `@layer` WhiteSpace LayerName
+    `@layer` WhiteSpace LayerName Separator Description
+
+// A container-query surface (`@container`), derived from `@container` / `container-name`.
+ContainerTag :
+    `@container` WhiteSpace Description
+
+// A feature-query dependency (`@supports`), derived from `@supports` conditions.
+SupportsTag :
+    `@supports` WhiteSpace Description
+
+MediaKeyword :
+    `@media`
+    `@responsive`
+
+// Responsive behavior (`@media`/`@responsive`), derived from `@media` conditions.
+MediaTag :
+    MediaKeyword WhiteSpace Description
+
+AccessibilityKeyword :
+    `@a11y`
+    `@accessibility`
+
+// Accessibility guidance.
+AccessibilityTag :
+    AccessibilityKeyword WhiteSpace Description
+
+// --- Structure & demo --------------------------------------------------------------------------
+
+// Indentation-nested selectors: each deeper indent level is a child of the line above. Layout
+// sensitivity (INDENT / DEDENT) sits outside pure context-free notation, so it is given as prose.
+StructureTree ::
+    > one selector per line; a greater indent than the preceding line makes the node its child
+
+StructureTag :
+    `@structure` LineTerminator StructureTree
+
+Provider ::
+    Identifier
+
+Ref ::
+    > a provider-specific reference token
+
+Url ::
+    > an absolute URL
+
+DemoSpec :
+    Url
+    Provider `:` Ref
+    `self` `:` RecordName
+
+DemoTag :
+    `@demo` WhiteSpace DemoSpec
+
+// --- Modifier (flag) tags: release stage / traits; presence means true ------------------------
+
+ModifierFlagTag :
+    `@alpha`
+    `@beta`
+    `@experimental`
+    `@internal`
+    `@public`
+
+// --- Custom tags: registered by the host tooling; unregistered tags are ignored ---------------
+
+CustomTagContent ::
+    > tag-specific content, interpreted per the tag's configured syntax kind
+
+CustomTag :
+    BlockSigil Identifier
+    BlockSigil Identifier WhiteSpace CustomTagContent
+
+// --- The doc comment ---------------------------------------------------------------------------
 
 BlockTag :
     RecordTag
@@ -170,237 +409,11 @@ BlockTag :
     ModifierFlagTag
     CustomTag
 
-// --- Record-opening tags (choose the CssRecordKind; `@name` is an alias for `@component`) --------
+TagList :
+    [empty]
+    TagList BlockTag
 
-RecordTag :
-    RecordKeyword WhiteSpace RecordName
-
-RecordKeyword :
-    `@component`
-    `@name`
-    `@utility`
-    `@rule`
-    `@declaration`
-
-// --- Prose tags (TSDoc-adopted) ----------------------------------------------------------------
-
-ClassTag :
-    `@class` WhiteSpace ClassSelector
-
-SummaryTag :
-    `@summary` WhiteSpace Description
-
-RemarksTag :
-    `@remarks` WhiteSpace Description
-
-PrivateRemarksTag :
-    `@privateRemarks` WhiteSpace Description
-
-SeeTag :
-    `@see` WhiteSpace Description
-
-SinceTag :
-    `@since` WhiteSpace Description
-
-GroupTag :
-    GroupKeyword WhiteSpace Description
-
-GroupKeyword :
-    `@group`
-    `@category`
-
-DefaultValueTag :
-    `@defaultValue` WhiteSpace Description
-
-DeprecatedTag :
-    `@deprecated`
-    `@deprecated` WhiteSpace Description
-
-ExampleTag :
-    `@example` ExampleBody
-
-ExampleBody :
-    > verbatim example text, which may span multiple lines
-
-// --- CSS-surface tags (existing + Custom Elements Manifest) ------------------------------------
-
-// A `-modifier`; the list itself is AST-derived, this supplies prose (or an inline deprecation).
-ModifierTag :
-    `@modifier` WhiteSpace ModifierName
-    `@modifier` WhiteSpace ModifierName Separator ModifierBody
-
-ModifierBody :
-    Description
-    InlineDeprecation
-
-// `@deprecated` on a modifier line: free-text guidance and/or a `{@link -canonical}` replacement.
-InlineDeprecation :
-    `@deprecated`
-    `@deprecated` WhiteSpace Description
-
-PartTag :
-    PartKeyword WhiteSpace PartName
-    PartKeyword WhiteSpace PartName Separator Description
-
-PartKeyword :
-    `@part`
-    `@csspart`
-
-// A registered custom property. Core reads the `@property` at-rule AST-first; this supplies prose.
-CssPropertyTag :
-    CssPropertyKeyword WhiteSpace CustomPropertyName
-    CssPropertyKeyword WhiteSpace CustomPropertyName SyntaxDescriptor
-    CssPropertyKeyword WhiteSpace CustomPropertyName Separator Description
-    CssPropertyKeyword WhiteSpace CustomPropertyName SyntaxDescriptor Separator Description
-
-CssPropertyKeyword :
-    `@cssproperty`
-    `@property`
-
-CssStateTag :
-    `@cssstate` WhiteSpace StateName
-    `@cssstate` WhiteSpace StateName Separator Description
-
-StateName :
-    Identifier
-
-SlotTag :
-    `@slot` WhiteSpace SlotName
-    `@slot` WhiteSpace SlotName Separator Description
-
-SlotName :
-    Identifier
-
-// --- CSSOM at-rule surfaces (AST-derived; prose optional) --------------------------------------
-
-// A CSS custom function (`@function --name`). Core reads the `@function` at-rule AST-first.
-CssFunctionTag :
-    `@function` WhiteSpace CustomPropertyName
-    `@function` WhiteSpace CustomPropertyName Separator Description
-
-// An animation the component exposes (`@keyframes`/`@animation`). AST-derived from `@keyframes`.
-KeyframesTag :
-    KeyframesKeyword WhiteSpace AnimationName
-    KeyframesKeyword WhiteSpace AnimationName Separator Description
-
-KeyframesKeyword :
-    `@keyframes`
-    `@animation`
-
-AnimationName :
-    Identifier
-
-// A cascade layer (`@layer`). AST-derived from `@layer` names.
-LayerTag :
-    `@layer` WhiteSpace LayerName
-    `@layer` WhiteSpace LayerName Separator Description
-
-LayerName ::
-    > a cascade-layer name, optionally dotted, e.g. theme.dark
-
-// A container-query surface (`@container`). AST-derived from `@container` / `container-name`.
-ContainerTag :
-    `@container` WhiteSpace Description
-
-// A feature-query dependency (`@supports`). AST-derived from `@supports` conditions.
-SupportsTag :
-    `@supports` WhiteSpace Description
-
-// Responsive behavior (`@media`/`@responsive`). AST-derived from `@media` conditions.
-MediaTag :
-    MediaKeyword WhiteSpace Description
-
-MediaKeyword :
-    `@media`
-    `@responsive`
-
-// Accessibility guidance.
-AccessibilityTag :
-    AccessibilityKeyword WhiteSpace Description
-
-AccessibilityKeyword :
-    `@a11y`
-    `@accessibility`
-
-// --- Structure & demo --------------------------------------------------------------------------
-
-StructureTag :
-    `@structure` LineTerminator StructureTree
-
-// Indentation-nested selectors: each deeper indent level is a child of the line above. Layout
-// sensitivity (INDENT / DEDENT) sits outside pure context-free notation, so it is given as prose.
-StructureTree ::
-    > one selector per line; a greater indent than the preceding line makes the node its child
-
-DemoTag :
-    `@demo` WhiteSpace DemoSpec
-
-DemoSpec :
-    Url
-    Provider `:` Ref
-    `self` `:` RecordName
-
-Provider ::
-    Identifier
-
-Ref ::
-    > a provider-specific reference token
-
-Url ::
-    > an absolute URL
-
-// --- Modifier (flag) tags: release stage / traits; presence means true ------------------------
-
-ModifierFlagTag :
-    `@alpha`
-    `@beta`
-    `@experimental`
-    `@internal`
-    `@public`
-
-// --- Custom tags: registered via @cssdoc/config; unregistered tags are ignored ----------------
-
-CustomTag :
-    BlockSigil Identifier
-    BlockSigil Identifier WhiteSpace CustomTagContent
-
-CustomTagContent ::
-    > tag-specific content, interpreted per the tag's configured syntax kind
-
-// ============================================================================================
-// Descriptions & inline tags
-// ============================================================================================
-
-// Free-text prose that may interleave inline tags. This is where the CssReference — cssdoc's analog
-// to TSDoc's DeclarationReference — is used.
-Description :
-    DescriptionAtom
-    Description DescriptionAtom
-
-DescriptionAtom :
-    TextRun
-    InlineTag
-
-TextRun ::
-    > a run of prose containing no inline tag
-
-InlineTag :
-    LinkTag
-    InheritDocTag
-    LabelTag
-
-LinkTag :
-    InlineOpen `link` WhiteSpace CssReference InlineClose
-
-InheritDocTag :
-    InlineOpen `inheritDoc` WhiteSpace CssReference InlineClose
-
-LabelTag :
-    InlineOpen `label` WhiteSpace Identifier InlineClose
-
-// The target of an inline reference: a modifier, a part, or a record — the CSS analog of TSDoc's
-// DeclarationReference top-level production.
-CssReference :
-    ModifierName
-    PartName
-    RecordName
+// A doc comment is a sequence of block tags. Leading untagged prose is ignored; each `@tag` opens a
+// block that runs until the next `@tag` (so multi-line @example / @summary bodies are captured).
+DocComment :
+    CommentOpen TagList CommentClose
