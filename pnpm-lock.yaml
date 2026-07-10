@@ -253,6 +253,9 @@ catalogs:
     grammarkdown:
       specifier: ^3.3.2
       version: 3.3.2
+    jsonc-parser:
+      specifier: ^3.3.1
+      version: 3.3.1
     ovsx:
       specifier: ^1.0.2
       version: 1.0.2
@@ -372,6 +375,9 @@ importers:
       codemirror:
         specifier: ^6.0.1
         version: 6.0.2
+      jsonc-parser:
+        specifier: 'catalog:'
+        version: 3.3.1
       markdown-it:
         specifier: ^14.1.0
         version: 14.3.0
@@ -568,6 +574,9 @@ importers:
       ajv:
         specifier: 'catalog:'
         version: 8.20.0
+      jsonc-parser:
+        specifier: 'catalog:'
+        version: 3.3.1
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -600,9 +609,37 @@ importers:
       '@vitest/coverage-v8':
         specifier: 'catalog:'
         version: 4.1.9(@vitest/browser@4.1.9)(vitest@4.1.9)
-      grammarkdown:
+      publint:
         specifier: 'catalog:'
-        version: 3.3.2
+        version: 0.3.21
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vite:
+        specifier: 'catalog:'
+        version: '@voidzero-dev/vite-plus-core@0.2.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(publint@0.3.21)(typescript@6.0.3)(yaml@2.9.0)'
+      vite-plus:
+        specifier: 'catalog:'
+        version: 0.2.4(@types/node@24.13.3)(@vitest/coverage-v8@4.1.9)(@voidzero-dev/vite-plus-core@0.2.4(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(publint@0.3.21)(typescript@6.0.3)(yaml@2.9.0))(esbuild@0.28.1)(jiti@2.7.0)(publint@0.3.21)(typescript@6.0.3)(yaml@2.9.0)
+
+  packages/cssdoc:
+    dependencies:
+      '@cssdoc/core':
+        specifier: workspace:*
+        version: link:../core
+      '@cssdoc/index':
+        specifier: workspace:*
+        version: link:../index
+      '@cssdoc/providers':
+        specifier: workspace:*
+        version: link:../providers
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      '@vitest/coverage-v8':
+        specifier: 'catalog:'
+        version: 4.1.9(@vitest/browser@4.1.9)(vitest@4.1.9)
       publint:
         specifier: 'catalog:'
         version: 0.3.21
@@ -711,6 +748,9 @@ importers:
       '@vitest/coverage-v8':
         specifier: 'catalog:'
         version: 4.1.9(@vitest/browser@4.1.9)(vitest@4.1.9)
+      grammarkdown:
+        specifier: 'catalog:'
+        version: 3.3.2
       publint:
         specifier: 'catalog:'
         version: 0.3.21

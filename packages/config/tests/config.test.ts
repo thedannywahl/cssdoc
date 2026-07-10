@@ -45,6 +45,14 @@ test("loadForFolder finds the nearest cssdoc.json", () => {
   expect(configFile.filePath).toBe(fixture("cssdoc.json"));
 });
 
+test("loads a cssdoc.jsonc with comments and a trailing comma", () => {
+  const configFile = CssDocConfigFile.loadFile(fixture("comments.cssdoc.jsonc"));
+  expect(configFile.fileNotFound).toBe(false);
+  expect(configFile.hasErrors).toBe(false);
+  expect(configFile.modifierConvention).toBe("rscss");
+  expect(configFile.ruleSeverities["unknown-modifier"]).toBe("off");
+});
+
 test("an invalid cssdoc.json reports schema errors instead of throwing", () => {
   const configFile = CssDocConfigFile.loadFile(fixture("invalid.cssdoc.json"));
   expect(configFile.hasErrors).toBe(true);

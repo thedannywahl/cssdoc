@@ -11,6 +11,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, parse as parsePath, resolve } from "node:path";
 import { Ajv } from "ajv";
+import { type ParseError, parse as parseJsonc, printParseErrorCode } from "jsonc-parser";
 import { CssDocConfiguration, CssDocTagDefinition } from "@cssdoc/core";
 import type { CssDocSyntaxKind, CssRecordKind, ModifierConventionInput } from "@cssdoc/core";
 import { cssDocSchema } from "./schema.ts";
@@ -46,8 +47,14 @@ interface RawConfig {
 const ajv = new Ajv({ allErrors: true });
 const validateSchema = ajv.compile<RawConfig>(cssDocSchema);
 
-/** The conventional file name loaders look for. */
-export const CSSDOC_CONFIG_FILENAME = "cssdoc.json";
+/**
+ * The conventional file names loaders look for, in preference order. Both are parsed the same way
+ * (JSON with comments); `.jsonc` just makes the comments explicit.
+ */
+export const CSSDOC_CONFIG_FILENAMES = ["cssdoc.json", "cssdoc.jsonc"] as const;
+
+/** The primary config file name (`cssdoc.json`). See {@link CSSDOC_CONFIG_FILENAMES} for all names. */
+export const CSSDOC_CONFIG_FILENAME = CSSDOC_CONFIG_FILENAMES[0];
 
 interface ConfigFileInit {
   filePath: string;
@@ -179,8 +186,10 @@ export class CssDocConfigFile {
     let current = resolve(folderPath);
     const root = parsePath(current).root;
     for (;;) {
-      const candidate = resolve(current, CSSDOC_CONFIG_FILENAME);
-      if (existsSync(candidate)) return CssDocConfigFile._loadFile(candidate, new Set());
+      for (const name of CSSDOC_CONFIG_FILENAMES) {
+        const candidate = resolve(current, name);
+        if (existsSync(candidate)) return CssDocConfigFile._loadFile(candidate, new Set());
+      }
       if (current === root) break;
       current = dirname(current);
     }
@@ -220,11 +229,17 @@ export class CssDocConfigFile {
 
     if (!existsSync(filePath)) return empty(true);
 
-    let raw: RawConfig;
-    try {
-      raw = JSON.parse(readFileSync(filePath, "utf8")) as RawConfig;
-    } catch (error) {
-      messages.push(`Invalid JSON: ${(error as Error).message}`);
+    // Parse as JSON-with-comments (a superset of JSON), so both cssdoc.json and cssdoc.jsonc accept
+    // comments and trailing commas. Syntax errors are collected, not thrown.
+    const parseErrors: ParseError[] = [];
+    const raw = parseJsonc(readFileSync(filePath, "utf8"), parseErrors, {
+      allowTrailingComma: true,
+    }) as RawConfig | undefined;
+    if (parseErrors.length > 0 || raw === undefined) {
+      for (const err of parseErrors) {
+        messages.push(`Invalid JSON at offset ${err.offset}: ${printParseErrorCode(err.error)}`);
+      }
+      if (parseErrors.length === 0) messages.push("Invalid JSON: empty or unparseable config.");
       return empty(false);
     }
 

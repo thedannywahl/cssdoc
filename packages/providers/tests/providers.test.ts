@@ -37,6 +37,36 @@ test("lintModel reports author-side hygiene (chip missing summary, -size-sm undo
   expect(rules).toContain("button:undocumented-modifier"); // -size-sm
 });
 
+test("structure-unknown-selector flags a @structure reference that isn't the class or a part", () => {
+  // `.tablet` is renamed but @structure still says `.tabs`; `.list` is a real part, so it's fine.
+  const css = `/**
+ * @component tabs
+ * @summary Tabs.
+ * @part .list — The row.
+ * @structure
+ *   .tabs
+ *     .list
+ */
+.tablet {}
+@scope (.tablet) { :scope .list {} }`;
+  const rules = lintModel(createIndex(css)).map((d) => d.rule);
+  expect(rules).toContain("structure-unknown-selector");
+  // The intact example (class matches structure root) does not flag it.
+  const clean = `/**
+ * @component tabs
+ * @summary Tabs.
+ * @part .list — The row.
+ * @structure
+ *   .tabs
+ *     .list
+ */
+.tabs {}
+@scope (.tabs) { :scope .list {} }`;
+  expect(lintModel(createIndex(clean)).map((d) => d.rule)).not.toContain(
+    "structure-unknown-selector",
+  );
+});
+
 test("checkClassUsage flags an unknown modifier and a deprecated one", () => {
   const diagnostics = checkClassUsage(
     [

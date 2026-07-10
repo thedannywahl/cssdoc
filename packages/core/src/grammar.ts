@@ -5,9 +5,9 @@
  * Manifest names (`@cssproperty`, `@csspart`, `@cssstate`) where they exist, so the vocabulary is
  * standards-aligned.
  *
- * The grammar is specified formally in `grammar/CssDoc.grammarkdown` (RFC-style, modeling TSDoc's
- * `DeclarationReference.grammarkdown`); the functions here are hand-written to conform to those
- * productions, and `tests/grammar.test.ts` keeps the spec valid. Which tags are active — and which
+ * The grammar is specified formally in `@cssdoc/spec`'s `grammar/CssDoc.grammarkdown` (RFC-style,
+ * modeling TSDoc's `DeclarationReference.grammarkdown`); the functions here are hand-written to conform
+ * to those productions, and a test in `@cssdoc/spec` keeps the spec valid. Which tags are active — and which
  * custom tags to capture — is governed by a {@link CssDocConfiguration}.
  *
  * A block looks like:

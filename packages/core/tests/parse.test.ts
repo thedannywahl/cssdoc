@@ -160,6 +160,25 @@ test("a custom is- convention picks up state classes", () => {
   expect(card.modifiers[0].prop).toBe("loading");
 });
 
+test("BEM elements (.block__element) are recorded as parts, distinct from modifiers", () => {
+  const [tabs] = parseCssDocs(
+    `/**\n * @component tabs\n */\n` +
+      `.tabs {}\n.tabs__list {}\n.tabs__tab {}\n.tabs--vertical {}`,
+  );
+  expect(tabs.modifiers.map((m) => m.name)).toEqual(["tabs--vertical"]);
+  expect(tabs.parts.map((p) => p.name).sort()).toEqual(["tabs__list", "tabs__tab"]);
+});
+
+test("statePrefixes route chained classes to states, excluding them from modifiers", () => {
+  const card = parseCssDocs(CONVENTION_FIXTURE, {
+    modifierConvention: { structure: "chained", separator: "", statePrefixes: ["is-"] },
+  }).find((e) => e.name === "card")!;
+  expect(card.states.map((s) => s.name)).toContain("is-loading");
+  expect(card.modifiers.map((m) => m.name)).not.toContain("is-loading");
+  // A non-state chained class is still a modifier.
+  expect(card.modifiers.map((m) => m.name)).toContain("featured");
+});
+
 test("BEM: authored @modifier merges, and {@link} canonical needs no dash", () => {
   const [card] = parseCssDocs(
     `/**\n * @component card\n * @modifier card--featured — A promoted card.\n` +

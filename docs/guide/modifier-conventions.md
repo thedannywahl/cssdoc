@@ -33,6 +33,8 @@ splitting. Every well-known scheme is one of three structures:
 interface ModifierConvention {
   structure: "chained" | "suffix" | "attribute";
   separator: string | string[]; // interpreted per structure (see below)
+  elementSeparator?: string | string[]; // BEM element delimiter, e.g. "__" → parts
+  statePrefixes?: string[]; // state-class prefixes, e.g. ["is-","has-"] → states
   propValue?: boolean; // split the body into prop/value? (default false)
   propValueSeparator?: string; // default "-"
 }
@@ -60,6 +62,47 @@ like `is-`/`has-`. Values are matched literally (never as a regex):
   /* → modifier "has-icon" */
 }
 ```
+
+## Elements and states
+
+A convention can also name two roles that aren't modifiers, so they land in the model's `parts` and
+`states` instead of being flattened into `modifiers`:
+
+- **`elementSeparator`** — a BEM-style element delimiter inside the base class name. A matching class
+  is recorded as a **part**. The default BEM preset sets `"__"`, so `.card__title` is a part named
+  `card__title`.
+- **`statePrefixes`** — class prefixes that mark a **state**. A class chained to the base whose name
+  starts with one of these is recorded as a state and is never treated as a modifier. It's opt-in — no
+  preset sets it.
+
+```jsonc
+{
+  "modifierConvention": {
+    "structure": "suffix",
+    "separator": "--",
+    "elementSeparator": "__",
+    "statePrefixes": ["is-", "has-"],
+  },
+}
+```
+
+```css
+.card__title {
+  /* → part "card__title" */
+}
+.card--featured {
+  /* → modifier "card--featured" */
+}
+.card.is-loading {
+  /* → state "is-loading" (not a modifier) */
+}
+```
+
+::: tip Known limit
+An element's own modifiers (`.card__title--active`) are captured as part of the element name for now,
+not as a separate modifier of the part. Consumer-side linting of convention-derived state and element
+classes is a follow-up; today they're extracted into the model but not yet usage-checked.
+:::
 
 ## Name-case conventions
 

@@ -1,12 +1,12 @@
 {
-  "name": "@cssdoc/config",
+  "name": "cssdoc",
   "version": "0.2.0",
-  "description": "Load a cssdoc.json configuration file (custom tags, extends) into an @cssdoc/core CssDocConfiguration — TSDoc-config, for CSS.",
+  "description": "The cssdoc programmatic API in one install — re-exports @cssdoc/core, @cssdoc/index, and @cssdoc/providers. TSDoc, for CSS.",
   "keywords": [
-    "config",
     "css",
     "cssdoc",
     "documentation",
+    "linter",
     "tsdoc"
   ],
   "homepage": "https://cssdoc.dev",
@@ -15,11 +15,10 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/thedannywahl/cssdoc.git",
-    "directory": "packages/config"
+    "directory": "packages/cssdoc"
   },
   "files": [
-    "dist",
-    "cssdoc.schema.json"
+    "dist"
   ],
   "type": "module",
   "exports": {
@@ -39,11 +38,12 @@
   },
   "dependencies": {
     "@cssdoc/core": "workspace:*",
-    "ajv": "catalog:",
-    "jsonc-parser": "catalog:"
+    "@cssdoc/index": "workspace:*",
+    "@cssdoc/providers": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
     "publint": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",

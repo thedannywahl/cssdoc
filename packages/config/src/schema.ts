@@ -68,6 +68,15 @@ export const cssDocSchema = {
             separator: {
               oneOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
             },
+            elementSeparator: {
+              description: 'BEM-style element delimiter (e.g. "__"); matched classes become parts.',
+              oneOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+            },
+            statePrefixes: {
+              description: 'Class prefixes that mark a state (e.g. ["is-","has-"]).',
+              type: "array",
+              items: { type: "string" },
+            },
             propValue: { type: "boolean" },
             propValueSeparator: { type: "string" },
           },

@@ -68,7 +68,6 @@ export default defineConfig({
         {
           text: "Reference",
           items: [
-            { text: "Example", link: "/guide/example" },
             { text: "Playground", link: "/guide/playground" },
             { text: "Packages", link: "/guide/packages" },
             { text: "Grammar", link: "/guide/grammar" },

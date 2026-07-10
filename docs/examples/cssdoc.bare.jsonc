@@ -2,10 +2,11 @@
   "$schema": "https://cssdoc.dev/cssdoc.schema.json",
   "modifierConvention": "bare",
   "rules": {
-    "unknown-modifier": "off"
+    // Off: avoid lint warnings for every chained class.
+    "unknown-modifier": "off",
   },
   "naming": {
     "component": "lowercase",
-    "part": "lowercase"
-  }
+    "part": "lowercase",
+  },
 }

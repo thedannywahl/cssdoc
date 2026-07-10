@@ -1,7 +1,7 @@
 {
   "name": "@cssdoc/spec",
   "version": "0.2.0",
-  "description": "The canonical cssdoc tag vocabulary — the single source of truth for the doc-comment tags, shared by the parser and every syntax grammar. Zero dependencies.",
+  "description": "The canonical cssdoc spec: the tag vocabulary and the formal grammar (CssDoc.grammarkdown), the single source of truth shared by the parser and every syntax grammar. Zero runtime dependencies.",
   "keywords": [
     "cssdoc",
     "doc-comments",
@@ -19,7 +19,8 @@
     "directory": "packages/spec"
   },
   "files": [
-    "dist"
+    "dist",
+    "grammar"
   ],
   "type": "module",
   "exports": {
@@ -40,6 +41,7 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
+    "grammarkdown": "catalog:",
     "publint": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",

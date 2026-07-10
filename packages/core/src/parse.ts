@@ -155,6 +155,13 @@ function collect(
           if (pendingCanonical) entry.deprecated = { canonical: pendingCanonical };
           acc.modifiers.set(mod.name, entry);
         }
+        // BEM-style elements (`.base__x`) are parts; state classes (`.base.is-x`) are states.
+        for (const el of matcher.elementsIn(bare, baseNoDot)) {
+          if (!acc.parts.has(el.name)) acc.parts.set(el.name, { name: el.name });
+        }
+        for (const st of matcher.statesIn(bare, baseNoDot)) {
+          if (!acc.states.has(st.name)) acc.states.set(st.name, { name: st.name });
+        }
         if (inScope) {
           for (const m of bare.matchAll(/\.([a-z][\w-]*)/gu)) {
             const part = m[1];

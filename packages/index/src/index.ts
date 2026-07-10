@@ -292,6 +292,12 @@ function scanNodes(nodes: ChildNode[], build: Build, base: string, matcher: Modi
           modNames.add(mod.name);
           set(memberKey("modifier", mod.name), node);
         }
+        for (const el of matcher.elementsIn(bare, baseNoDot)) {
+          set(memberKey("part", el.name), node);
+        }
+        for (const st of matcher.statesIn(bare, baseNoDot)) {
+          set(memberKey("state", st.name), node);
+        }
         for (const p of bare.matchAll(/\.([a-z][\w-]*)/gu)) {
           if (modNames.has(p[1])) continue; // a modifier, not a part
           set(memberKey("part", p[1]), node);

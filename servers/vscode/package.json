@@ -52,6 +52,15 @@
         ]
       }
     ],
+    "jsonValidation": [
+      {
+        "fileMatch": [
+          "cssdoc.json",
+          "cssdoc.jsonc"
+        ],
+        "url": "./schemas/cssdoc.schema.json"
+      }
+    ],
     "configuration": {
       "title": "cssdoc",
       "properties": {

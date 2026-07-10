@@ -19,8 +19,7 @@
     "directory": "packages/core"
   },
   "files": [
-    "dist",
-    "grammar"
+    "dist"
   ],
   "type": "module",
   "exports": {
@@ -45,7 +44,6 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
-    "grammarkdown": "catalog:",
     "publint": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",

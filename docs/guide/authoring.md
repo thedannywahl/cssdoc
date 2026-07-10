@@ -5,7 +5,7 @@ Block / Modifier / Inline kinds, plus a **record** kind that opens a documented 
 Custom Elements Manifest names (`@cssproperty`, `@csspart`, `@cssstate`) where they exist.
 
 Unknown tags are ignored, so the grammar degrades gracefully. The formal grammar lives in
-`@cssdoc/core`'s `grammar/CssDoc.grammarkdown`.
+`@cssdoc/spec`'s `grammar/CssDoc.grammarkdown`.
 
 ## Record tags
 

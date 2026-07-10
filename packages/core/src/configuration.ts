@@ -7,8 +7,8 @@
  * blocks rather than ignore.
  *
  * The vocabulary is expansive and modeled on TSDoc's kind taxonomy — `record` / `block` / `modifier` /
- * `inline` — and covers the modern CSSOM surface. See `grammar/CssDoc.grammarkdown` for the formal
- * shape of each tag.
+ * `inline` — and covers the modern CSSOM surface. See `@cssdoc/spec`'s `grammar/CssDoc.grammarkdown`
+ * for the formal shape of each tag.
  *
  * @module
  */

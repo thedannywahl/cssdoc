@@ -5,7 +5,11 @@ import type { EditorView } from "codemirror";
 import type { Compartment, Extension } from "@codemirror/state";
 import { cssdocHighlight } from "@cssdoc/codemirror";
 
-const props = defineProps<{ modelValue: string; lang: "css" | "html" | "json" }>();
+const props = defineProps<{
+  modelValue: string;
+  lang: "css" | "html" | "json";
+  readonly?: boolean;
+}>();
 const emit = defineEmits<{ "update:modelValue": [value: string] }>();
 
 const { isDark } = useData();
@@ -30,7 +34,7 @@ onMounted(async () => {
   const chrome = EditorView.theme({
     "&": {
       minHeight: "8rem",
-      maxHeight: "21rem",
+      maxHeight: "30rem",
       fontSize: "0.8rem",
       border: "1px solid var(--vp-c-divider)",
       borderRadius: "8px",
@@ -53,6 +57,8 @@ onMounted(async () => {
         basicSetup,
         await langExtension(props.lang),
         themeCompartment.of(isDark.value ? darkTheme : []),
+        EditorState.readOnly.of(props.readonly ?? false),
+        EditorView.editable.of(!props.readonly),
         chrome,
         sync,
       ],

@@ -14,6 +14,13 @@ copyFileSync(
   "syntaxes/cssdoc.injection.tmLanguage.json",
 );
 
+// Vendor the config JSON schema so the editor validates/completes cssdoc.json + cssdoc.jsonc.
+mkdirSync("schemas", { recursive: true });
+copyFileSync(
+  new URL("../../../packages/config/cssdoc.schema.json", import.meta.url),
+  "schemas/cssdoc.schema.json",
+);
+
 const common = {
   bundle: true,
   platform: "node",

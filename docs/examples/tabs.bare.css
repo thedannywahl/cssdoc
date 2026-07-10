@@ -2,6 +2,7 @@
  * @component tabs
  * @summary A tabbed interface — a labelled list of tabs, each revealing a panel.
  * @remarks Roving focus: only the selected tab is in the tab order.
+ * @since 1.2.0
  * @part .list — The tablist row.
  * @part .tab — A single tab control.
  * @part .panel — The content panel for the selected tab.
@@ -9,6 +10,13 @@
  * @cssproperty --tabs-gap — Space between the tabs.
  * @cssstate selected — The active tab (its panel is shown).
  * @a11y The list is `role="tablist"`; each `.tab` is `role="tab"` and each `.panel` `role="tabpanel"`.
+ * @example
+ * ```html
+ * <div class="tabs">
+ *   <ul class="list" role="tablist"><li class="tab" role="tab">Overview</li></ul>
+ *   <div class="panel" role="tabpanel">…</div>
+ * </div>
+ * ```
  * @structure
  *   .tabs
  *     .list
@@ -21,6 +29,13 @@
   syntax: "<length>";
   inherits: false;
   initial-value: 0.5rem;
+}
+
+/* No @cssproperty tag: cssdoc still registers this from the @property at-rule, syntax and all. */
+@property --tabs-active-color {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: currentColor;
 }
 
 .tabs {
@@ -45,6 +60,11 @@
   }
   :scope .tab:state(selected) {
     font-weight: 700;
+    color: var(--tabs-active-color);
+  }
+  /* No @cssstate tag: cssdoc picks up `:state(disabled)` as a state straight from the selector. */
+  :scope .tab:state(disabled) {
+    opacity: 0.4;
   }
   :scope .panel {
     padding: 1rem;

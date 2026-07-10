@@ -95,8 +95,8 @@ export async function activate(context: ExtensionContext): Promise<void> {
     context.subscriptions.push(watcher);
   }
 
-  // ...and when any cssdoc.json changes, so edited conventions/severities/naming reload live.
-  const configWatcher = workspace.createFileSystemWatcher("**/cssdoc.json");
+  // ...and when any cssdoc.json / cssdoc.jsonc changes, so edited conventions/severities/naming reload live.
+  const configWatcher = workspace.createFileSystemWatcher("**/cssdoc.{json,jsonc}");
   configWatcher.onDidCreate(() => void restart(context));
   configWatcher.onDidChange(() => void restart(context));
   configWatcher.onDidDelete(() => void restart(context));

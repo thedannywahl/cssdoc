@@ -28,10 +28,22 @@ export interface ModifierConvention {
   structure: "chained" | "suffix" | "attribute";
   /**
    * The prefix/delimiter, interpreted per {@link ModifierConvention.structure}. May be a single
-   * string or several — any one of which marks a modifier (e.g. `["is-", "has-"]` for state
-   * classes, or `["--", "__"]`). Separators are matched literally (never as a regex).
+   * string or several — any one of which marks a modifier. Separators are matched literally.
    */
   separator: string | string[];
+  /**
+   * The delimiter that marks a **BEM-style element** inside the base class name (e.g. `"__"` in
+   * `.block__element`). When set (`suffix` structure only), a matching class is recorded as a
+   * {@link https://cssdoc.dev part} rather than a modifier. Its own modifiers
+   * (`.block__element--mod`) are captured as part of the element name for now.
+   */
+  elementSeparator?: string | string[];
+  /**
+   * Class prefixes that mark a **state** rather than a modifier (e.g. `["is-", "has-"]`). A class
+   * chained to the base whose name starts with one of these is recorded as a state, and is never
+   * treated as a modifier. Opt-in; no preset sets it by default.
+   */
+  statePrefixes?: string[];
   /**
    * Split the modifier body into `prop`/`value` on {@link ModifierConvention.propValueSeparator}?
    * Defaults to `false`. Ignored for `attribute` (which always derives `prop` from the attribute name
@@ -44,8 +56,8 @@ export interface ModifierConvention {
 
 /** The built-in convention presets. Other schemes use the custom object (see the docs). */
 export const MODIFIER_PRESETS = {
-  /** BEM / SUIT — `.button--primary`. The default. */
-  bem: { structure: "suffix", separator: "--", propValue: false },
+  /** BEM / SUIT — `.button--primary`, with `.button__element` sub-elements. The default. */
+  bem: { structure: "suffix", separator: "--", elementSeparator: "__", propValue: false },
   /** rscss — `.button.-color-secondary`, split into `prop`/`value`. */
   rscss: { structure: "chained", separator: "-", propValue: true, propValueSeparator: "-" },
   /** OOCSS / bare chained classes — `.button.primary` (any class chained to the base). */
@@ -73,6 +85,8 @@ export function resolveModifierConvention(input?: ModifierConventionInput): Modi
   return {
     structure: base.structure,
     separator: base.separator,
+    ...(base.elementSeparator !== undefined ? { elementSeparator: base.elementSeparator } : {}),
+    ...(base.statePrefixes !== undefined ? { statePrefixes: base.statePrefixes } : {}),
     propValue: base.propValue ?? false,
     propValueSeparator: base.propValueSeparator ?? "-",
   };
@@ -106,15 +120,34 @@ export class ModifierMatcher {
   private readonly separators: string[];
   /** The separators as a non-capturing regex alternation, e.g. `(?:is-|has-)` (or `(?:)` when empty). */
   private readonly sepAlt: string;
+  /** BEM-style element separators (longest-first), or empty when the convention has none. */
+  private readonly elementSeparators: string[];
+  /** The element separators as a non-capturing alternation, or `""` when there are none. */
+  private readonly elementSepAlt: string;
+  /** State-class prefixes (longest-first), or empty when the convention has none. */
+  private readonly statePrefixes: string[];
 
   constructor(convention: ModifierConvention) {
     this.convention = convention;
-    this.separators = (
-      Array.isArray(convention.separator) ? convention.separator : [convention.separator]
-    )
+    const longestFirst = (value: string | string[]): string[] =>
+      (Array.isArray(value) ? value : [value]).slice().sort((a, b) => b.length - a.length);
+    this.separators = longestFirst(convention.separator);
+    this.sepAlt = `(?:${this.separators.map(escapeRe).join("|")})`;
+    this.elementSeparators = convention.elementSeparator
+      ? longestFirst(convention.elementSeparator).filter((s) => s !== "")
+      : [];
+    this.elementSepAlt = this.elementSeparators.length
+      ? `(?:${this.elementSeparators.map(escapeRe).join("|")})`
+      : "";
+    this.statePrefixes = (convention.statePrefixes ?? [])
+      .filter((p) => p !== "")
       .slice()
       .sort((a, b) => b.length - a.length);
-    this.sepAlt = `(?:${this.separators.map(escapeRe).join("|")})`;
+  }
+
+  /** Does a class name (no leading dot) start with one of the convention's state prefixes? */
+  private isStateClass(name: string): boolean {
+    return this.statePrefixes.some((p) => name.startsWith(p));
   }
 
   /** Strip a leading chained-class separator from `name` (the longest that matches), else return it. */
@@ -171,9 +204,53 @@ export class ModifierMatcher {
     const chain = new RegExp(`(?:\\.${baseEsc}|:scope)((?:${cls})+)`, "gu");
     const inner = new RegExp(`\\.(${this.sepAlt}[\\w-]+)`, "gu");
     for (const m of selector.matchAll(chain)) {
-      for (const c of m[1].matchAll(inner)) push(c[1]);
+      for (const c of m[1].matchAll(inner)) if (!this.isStateClass(c[1])) push(c[1]);
     }
     return hits;
+  }
+
+  /**
+   * Every BEM-style element attached to `baseNoDot` within one selector (`.base<elementSep><name>`),
+   * as parts. Only meaningful for `suffix` conventions that set an `elementSeparator`; empty otherwise.
+   * The element name is the full class token (e.g. `card__title`), matching how it's authored in HTML.
+   */
+  elementsIn(selector: string, baseNoDot: string): { name: string }[] {
+    if (this.convention.structure !== "suffix" || this.elementSepAlt === "") return [];
+    const baseEsc = escapeRe(baseNoDot);
+    const re = new RegExp(`\\.(${baseEsc}${this.elementSepAlt}[\\w-]+)`, "gu");
+    const seen = new Set<string>();
+    const out: { name: string }[] = [];
+    for (const m of selector.matchAll(re)) {
+      if (!seen.has(m[1])) {
+        seen.add(m[1]);
+        out.push({ name: m[1] });
+      }
+    }
+    return out;
+  }
+
+  /**
+   * Every state class chained to `baseNoDot` within one selector — a class whose name starts with one
+   * of the convention's {@link ModifierConvention.statePrefixes} (e.g. `.tabs.is-open` → `is-open`).
+   * Empty when the convention sets no state prefixes.
+   */
+  statesIn(selector: string, baseNoDot: string): { name: string }[] {
+    if (this.statePrefixes.length === 0) return [];
+    const baseEsc = escapeRe(baseNoDot);
+    const prefixAlt = `(?:${this.statePrefixes.map(escapeRe).join("|")})`;
+    const chain = new RegExp(`(?:\\.${baseEsc}|:scope)((?:\\.[\\w-]+)+)`, "gu");
+    const inner = new RegExp(`\\.(${prefixAlt}[\\w-]+)`, "gu");
+    const seen = new Set<string>();
+    const out: { name: string }[] = [];
+    for (const m of selector.matchAll(chain)) {
+      for (const c of m[1].matchAll(inner)) {
+        if (!seen.has(c[1])) {
+          seen.add(c[1]);
+          out.push({ name: c[1] });
+        }
+      }
+    }
+    return out;
   }
 
   /** Derive `prop`/`value` for a modifier `name` (as returned by {@link modifiersIn} or authored). */
@@ -221,6 +298,8 @@ export class ModifierMatcher {
       return this.attributeMatches(this.normalizeMember(token));
     }
     const name = token.replace(/^\./u, "");
+    // A state class is a state, not a modifier usage.
+    if (this.isStateClass(name)) return false;
     if (this.convention.structure === "suffix") {
       if (baseNoDot) return this.separators.some((s) => name.startsWith(`${baseNoDot}${s}`));
       return this.separators.some((s) => s !== "" && name.includes(s));

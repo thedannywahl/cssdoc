@@ -1,0 +1,8 @@
+{
+  // A JSON-with-comments config. Comments and the trailing comma below must parse cleanly.
+  "$schema": "https://cssdoc.dev/cssdoc.schema.json",
+  "modifierConvention": "rscss", // rscss uses .base.-prop-value
+  "rules": {
+    "unknown-modifier": "off",
+  },
+}

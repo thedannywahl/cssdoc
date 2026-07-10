@@ -29,6 +29,7 @@ export type RuleId =
   | "undocumented-part"
   | "component-name-case"
   | "part-name-case"
+  | "structure-unknown-selector"
   | "invalid-default-value"
   | "invalid-property-value"
   | "invalid-fallback-value"
@@ -53,6 +54,7 @@ export const DEFAULT_RULE_SEVERITIES: RuleSeverities = {
   // The name-case rules only fire when a `naming` convention is configured, so `warn` is safe.
   "component-name-case": "warn",
   "part-name-case": "warn",
+  "structure-unknown-selector": "warn",
   "invalid-default-value": "warn",
   "invalid-property-value": "warn",
   "invalid-fallback-value": "warn",

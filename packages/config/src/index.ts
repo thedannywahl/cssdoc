@@ -14,5 +14,9 @@
  *
  * @module @cssdoc/config
  */
-export { CssDocConfigFile, CSSDOC_CONFIG_FILENAME } from "./CssDocConfigFile.ts";
+export {
+  CssDocConfigFile,
+  CSSDOC_CONFIG_FILENAME,
+  CSSDOC_CONFIG_FILENAMES,
+} from "./CssDocConfigFile.ts";
 export { cssDocSchema } from "./schema.ts";

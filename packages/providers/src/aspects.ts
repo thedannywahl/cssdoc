@@ -6,6 +6,7 @@
  *
  * @module
  */
+import type { StructureNode } from "@cssdoc/core";
 import {
   type ClassUsage,
   type CssDocIndex,
@@ -46,6 +47,38 @@ export const record = {
               aspect: "record",
               rule: "component-name-case",
               message: `Component class "${info.entry.className}" doesn't match the configured name case.`,
+              record: info.entry.name,
+              span: info.span,
+            }),
+          );
+        }
+      }
+      // Every simple class selector named in @structure should resolve to the component class or a
+      // documented member — catches drift when a selector is renamed but the doc comment isn't.
+      if (info.entry.structure?.length) {
+        const known = new Set<string>([
+          stripDot(info.entry.className),
+          ...info.entry.parts.map((p) => stripDot(p.name)),
+          ...info.entry.states.map((s) => s.name),
+          ...info.entry.modifiers.map((m) => m.name),
+        ]);
+        const flat: StructureNode[] = [];
+        const walk = (nodes: StructureNode[]): void => {
+          for (const node of nodes) {
+            flat.push(node);
+            walk(node.children);
+          }
+        };
+        walk(info.entry.structure);
+        for (const node of flat) {
+          const sel = node.selector.trim();
+          // Only a single, simple class selector is checkable; skip compound/complex ones.
+          if (!/^\.[\w-]+$/u.test(sel) || known.has(stripDot(sel))) continue;
+          out.push(
+            warn({
+              aspect: "record",
+              rule: "structure-unknown-selector",
+              message: `@structure references "${sel}", which isn't the component class or a documented part.`,
               record: info.entry.name,
               span: info.span,
             }),
