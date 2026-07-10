@@ -32,6 +32,16 @@ jobs:
         with:
           generate_release_notes: true
 
+  # Deploy the docs once the packages are on npm. Depends only on `publish`, so a flaky extension
+  # publish (below) never blocks it.
+  docs:
+    needs: publish
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/docs.yml
+
   publish-extension:
     needs: publish
     runs-on: ubuntu-latest

@@ -1,21 +1,9 @@
 name: Deploy docs
 
+# Deployed on a successful release (called by release.yml after the npm publish), or on demand — not
+# on every push.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "docs/**"
-      - "icon.svg"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - ".github/workflows/docs.yml"
-      # The API reference is generated from package sources, so redeploy when they change.
-      - "packages/**"
-      - "emitters/**"
-      - "generators/**"
-      - "plugins/**"
-      - "servers/**"
-      - "syntaxes/**"
+  workflow_call:
   workflow_dispatch:
 
 permissions:
