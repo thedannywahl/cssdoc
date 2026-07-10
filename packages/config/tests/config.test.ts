@@ -57,3 +57,25 @@ test("a missing file yields fileNotFound, not an error", () => {
   expect(configFile.fileNotFound).toBe(true);
   expect(configFile.hasErrors).toBe(false);
 });
+
+test("modifierConvention and rules load onto the configuration and config file", () => {
+  const configFile = CssDocConfigFile.loadFile(fixture("convention.cssdoc.json"));
+  expect(configFile.hasErrors).toBe(false);
+
+  const configuration = configFile.toConfiguration();
+  expect(configuration.modifierConvention.structure).toBe("chained");
+  expect(configuration.modifierConvention.separator).toBe("-");
+  expect(configFile.ruleSeverities["unknown-modifier"]).toBe("off");
+
+  // And it drives parsing: an rscss modifier is extracted under this configuration.
+  const [button] = parseCssDocs(`/**\n * @component button\n */\n.button {}\n.button.-color-x {}`, {
+    configuration,
+  });
+  expect(button.modifiers.map((m) => m.name)).toEqual(["-color-x"]);
+});
+
+test("an invalid modifierConvention value is a collected schema error", () => {
+  const configFile = CssDocConfigFile.loadFile(fixture("invalid-convention.cssdoc.json"));
+  expect(configFile.hasErrors).toBe(true);
+  expect(configFile.getErrorSummary()).toContain("Schema error");
+});

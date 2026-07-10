@@ -86,13 +86,14 @@ export const modifier = {
     for (const info of index.records) {
       const name = info.entry.name;
       for (const m of info.entry.modifiers) {
+        const sel = index.matcher.selectorFor(m.name);
         const span = info.memberSpans.get(memberKey("modifier", m.name)) ?? info.span;
         if (!m.description?.trim() && !m.deprecated) {
           out.push(
             warn({
               aspect: "modifier",
               rule: "undocumented-modifier",
-              message: `Modifier ".${m.name}" of "${name}" has no @modifier description.`,
+              message: `Modifier "${sel}" of "${name}" has no @modifier description.`,
               record: name,
               span,
             }),
@@ -103,7 +104,7 @@ export const modifier = {
             warn({
               aspect: "modifier",
               rule: "deprecated-requires-canonical",
-              message: `Deprecated modifier ".${m.name}" of "${name}" needs a canonical replacement ({@link -x}) or a note.`,
+              message: `Deprecated modifier "${sel}" of "${name}" needs a canonical replacement ({@link}) or a note.`,
               record: name,
               span,
             }),
@@ -111,12 +112,12 @@ export const modifier = {
         }
       }
       for (const authored of info.authoredModifiers) {
-        if (!info.selectorText.includes(`.${authored}`)) {
+        if (!info.selectorText.includes(index.matcher.selectorFor(authored))) {
           out.push(
             warn({
               aspect: "modifier",
               rule: "name-not-in-css",
-              message: `Documented modifier ".${authored}" of "${name}" is not defined by any selector.`,
+              message: `Documented modifier "${index.matcher.selectorFor(authored)}" of "${name}" is not defined by any selector.`,
               record: name,
               span: info.span,
             }),
@@ -128,15 +129,16 @@ export const modifier = {
   },
 
   classUsage(usage: ClassUsage, index: CssDocIndex): Diagnostic[] {
-    if (!usage.base || !usage.token.startsWith("-")) return [];
+    if (!usage.base || !index.matcher.looksLikeUsage(usage.token, usage.base)) return [];
     const entry = index.componentForClass(usage.base);
     if (!entry) return [];
+    const sel = index.matcher.selectorFor(index.matcher.normalizeMember(usage.token));
     if (!index.isModifier(usage.base, usage.token)) {
       return [
         warn({
           aspect: "modifier",
           rule: "unknown-modifier",
-          message: `".${usage.token}" is not a documented modifier of "${entry.name}".`,
+          message: `"${sel}" is not a documented modifier of "${entry.name}".`,
           record: entry.name,
           span: usage.loc,
         }),
@@ -145,13 +147,13 @@ export const modifier = {
     const dep = index.deprecationOf(usage.base, usage.token);
     if (dep) {
       const advice = dep.canonical
-        ? `use ".${dep.canonical}"`
+        ? `use "${index.matcher.selectorFor(dep.canonical)}"`
         : (dep.note ?? "no replacement given");
       return [
         warn({
           aspect: "modifier",
           rule: "deprecated-modifier",
-          message: `Modifier ".${usage.token}" of "${entry.name}" is deprecated — ${advice}.`,
+          message: `Modifier "${sel}" of "${entry.name}" is deprecated — ${advice}.`,
           record: entry.name,
           span: usage.loc,
         }),
@@ -164,7 +166,7 @@ export const modifier = {
     const entry = index.componentForClass(base);
     if (!entry) return [];
     return entry.modifiers.map((m) => ({
-      label: `-${m.name.replace(/^-/u, "")}`,
+      label: m.name,
       kind: "modifier" as const,
       detail: m.prop,
       documentation: m.description,
@@ -174,13 +176,15 @@ export const modifier = {
 
   hover(base: string, token: string, index: CssDocIndex): Hover | undefined {
     const entry = index.componentForClass(base);
-    const m = entry?.modifiers.find((x) => x.name === stripDot(token));
+    const m = entry?.modifiers.find((x) => x.name === index.matcher.normalizeMember(token));
     if (!m) return undefined;
-    const lines = [`\`.${m.name}\` — modifier of \`${entry!.className}\``];
+    const lines = [
+      `\`${index.matcher.selectorFor(m.name)}\` — modifier of \`${entry!.className}\``,
+    ];
     if (m.description) lines.push("", m.description);
     if (m.deprecated) {
       const advice = m.deprecated.canonical
-        ? `use \`.${m.deprecated.canonical}\``
+        ? `use \`${index.matcher.selectorFor(m.deprecated.canonical)}\``
         : (m.deprecated.note ?? "");
       lines.push("", `**Deprecated** — ${advice}`);
     }
@@ -189,7 +193,9 @@ export const modifier = {
 
   definition(base: string, token: string, index: CssDocIndex): Location | undefined {
     const entry = index.componentForClass(base);
-    return entry ? index.location(entry.name, memberKey("modifier", stripDot(token))) : undefined;
+    return entry
+      ? index.location(entry.name, memberKey("modifier", index.matcher.normalizeMember(token)))
+      : undefined;
   },
 };
 

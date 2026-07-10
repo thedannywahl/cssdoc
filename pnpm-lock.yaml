@@ -756,6 +756,9 @@ importers:
 
   servers/language-server:
     dependencies:
+      '@cssdoc/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@cssdoc/core':
         specifier: workspace:*
         version: link:../../packages/core

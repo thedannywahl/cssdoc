@@ -13,6 +13,12 @@
  * @module
  */
 import type { CssRecordKind } from "./model.ts";
+import {
+  DEFAULT_MODIFIER_CONVENTION,
+  resolveModifierConvention,
+  type ModifierConvention,
+  type ModifierConventionInput,
+} from "./modifier.ts";
 
 /**
  * The syntactic kind of a tag, mirroring TSDoc's Block/Modifier/Inline split, plus cssdoc's own
@@ -88,9 +94,20 @@ export class CssDocConfiguration {
   private readonly _tagDefinitions: CssDocTagDefinition[] = [];
   private readonly _byName = new Map<string, CssDocTagDefinition>();
   private readonly _supported = new Set<CssDocTagDefinition>();
+  private _modifierConvention: ModifierConvention = DEFAULT_MODIFIER_CONVENTION;
 
   constructor() {
     this.addTagDefinitions(CssDocConfiguration.standardTags(), true);
+  }
+
+  /** The resolved modifier convention this configuration parses with (defaults to BEM). */
+  get modifierConvention(): ModifierConvention {
+    return this._modifierConvention;
+  }
+
+  /** Set the modifier convention from a preset name or a custom {@link ModifierConvention}. */
+  setModifierConvention(input: ModifierConventionInput): void {
+    this._modifierConvention = resolveModifierConvention(input);
   }
 
   /** Every registered tag definition, in registration order. */

@@ -12,8 +12,11 @@ import { createRequire } from "node:module";
 import { dirname, parse as parsePath, resolve } from "node:path";
 import { Ajv } from "ajv";
 import { CssDocConfiguration, CssDocTagDefinition } from "@cssdoc/core";
-import type { CssDocSyntaxKind, CssRecordKind } from "@cssdoc/core";
+import type { CssDocSyntaxKind, CssRecordKind, ModifierConventionInput } from "@cssdoc/core";
 import { cssDocSchema } from "./schema.ts";
+
+/** A per-rule severity override, as spelled in `cssdoc.json`. */
+export type RuleSeverityOverride = "off" | "warn" | "error";
 
 interface RawTagDefinition {
   tagName: string;
@@ -29,6 +32,8 @@ interface RawConfig {
   noStandardTags?: boolean;
   tagDefinitions?: RawTagDefinition[];
   supportForTags?: Record<string, boolean>;
+  modifierConvention?: ModifierConventionInput;
+  rules?: Record<string, RuleSeverityOverride>;
 }
 
 const ajv = new Ajv({ allErrors: true });
@@ -45,6 +50,8 @@ interface ConfigFileInit {
   tagDefinitions: CssDocTagDefinition[];
   supportForTags: Map<string, boolean>;
   extendsFiles: CssDocConfigFile[];
+  modifierConvention?: ModifierConventionInput;
+  rules: Record<string, RuleSeverityOverride>;
 }
 
 /** A loaded `cssdoc.json` (plus the files it `extends`), ready to configure a parser. */
@@ -63,6 +70,13 @@ export class CssDocConfigFile {
   readonly supportForTags: ReadonlyMap<string, boolean>;
   /** The resolved files this one `extends`, in declaration order. */
   readonly extendsFiles: readonly CssDocConfigFile[];
+  /** The modifier convention declared by this file, if any. */
+  readonly modifierConvention?: ModifierConventionInput;
+  /**
+   * The per-rule severity overrides, merged across the `extends` chain (this file wins). Not the
+   * resolved severities — pass these to `resolveRuleSeverities` in `@cssdoc/providers`.
+   */
+  readonly ruleSeverities: Readonly<Record<string, RuleSeverityOverride>>;
 
   private constructor(init: ConfigFileInit) {
     this.filePath = init.filePath;
@@ -72,6 +86,11 @@ export class CssDocConfigFile {
     this.tagDefinitions = init.tagDefinitions;
     this.supportForTags = init.supportForTags;
     this.extendsFiles = init.extendsFiles;
+    this.modifierConvention = init.modifierConvention;
+    const severities: Record<string, RuleSeverityOverride> = {};
+    for (const extended of init.extendsFiles) Object.assign(severities, extended.ruleSeverities);
+    Object.assign(severities, init.rules);
+    this.ruleSeverities = severities;
   }
 
   /** Whether this file — or any file it extends — reported an error. */
@@ -102,6 +121,10 @@ export class CssDocConfigFile {
     for (const [tagName, supported] of this.supportForTags) {
       const definition = configuration.tryGetTagDefinition(tagName);
       if (definition) configuration.setSupportForTag(definition, supported);
+    }
+    // Extended files applied their convention first; this file's (if any) wins.
+    if (this.modifierConvention !== undefined) {
+      configuration.setModifierConvention(this.modifierConvention);
     }
   }
 
@@ -150,6 +173,7 @@ export class CssDocConfigFile {
       tagDefinitions: [],
       supportForTags: new Map(),
       extendsFiles: [],
+      rules: {},
     });
   }
 
@@ -164,6 +188,7 @@ export class CssDocConfigFile {
         tagDefinitions: [],
         supportForTags: new Map(),
         extendsFiles: [],
+        rules: {},
       });
 
     if (visited.has(filePath)) {
@@ -220,6 +245,8 @@ export class CssDocConfigFile {
       tagDefinitions,
       supportForTags: new Map(Object.entries(raw.supportForTags ?? {})),
       extendsFiles,
+      modifierConvention: raw.modifierConvention,
+      rules: raw.rules ?? {},
     });
   }
 }

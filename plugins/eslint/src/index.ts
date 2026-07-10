@@ -34,9 +34,10 @@
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import type { ModifierConventionInput } from "@cssdoc/core";
 import { type RuleName, lintCssDocs } from "@cssdoc/lint-core";
 import { type CssDocIndex, createIndex } from "@cssdoc/index";
-import { checkClassUsage } from "@cssdoc/providers";
+import { type RuleSeverity, checkClassUsage } from "@cssdoc/providers";
 import css from "@eslint/css";
 
 interface ReportDescriptor {
@@ -70,7 +71,8 @@ interface Plugin {
 // ── cssdoc/valid-doc-comments (author-side, @eslint/css) ─────────────────────────────────────────
 
 interface DocCommentsOptions {
-  rules?: Partial<Record<RuleName, boolean>>;
+  rules?: Partial<Record<RuleName, RuleSeverity | boolean>>;
+  modifierConvention?: ModifierConventionInput;
 }
 
 const validDocComments: RuleModule = {
@@ -78,14 +80,25 @@ const validDocComments: RuleModule = {
     type: "problem",
     docs: { description: "Enforce CSS doc-comment hygiene (@cssdoc/lint-core rules)." },
     schema: [
-      { type: "object", properties: { rules: { type: "object" } }, additionalProperties: false },
+      {
+        type: "object",
+        properties: {
+          rules: { type: "object" },
+          modifierConvention: { type: ["string", "object"] },
+        },
+        additionalProperties: false,
+      },
     ],
   },
   create(context) {
     const options = (context.options[0] ?? {}) as DocCommentsOptions;
     return {
       StyleSheet(): void {
-        for (const violation of lintCssDocs(context.sourceCode.text, { rules: options.rules })) {
+        const violations = lintCssDocs(context.sourceCode.text, {
+          rules: options.rules,
+          modifierConvention: options.modifierConvention,
+        });
+        for (const violation of violations) {
           context.report({
             loc: { line: violation.line, column: 0 },
             message: `[${violation.rule}] ${violation.message}`,
@@ -100,28 +113,35 @@ const validDocComments: RuleModule = {
 
 interface ClassUsageOptions {
   css?: string[];
+  modifierConvention?: ModifierConventionInput;
 }
 
-/** Per-css-set index cache, so the model is parsed once per lint run rather than once per file. */
+/** Per-(css-set + convention) index cache, so the model is parsed once per lint run, not once per file. */
 const indexCache = new Map<string, CssDocIndex>();
 
-function indexFor(cssPaths: string[], cwd: string): CssDocIndex {
+function indexFor(
+  cssPaths: string[],
+  cwd: string,
+  modifierConvention?: ModifierConventionInput,
+): CssDocIndex {
   const resolved = cssPaths.map((p) => resolve(cwd, p)).sort();
-  const key = resolved.join("|");
+  const key = `${JSON.stringify(modifierConvention ?? null)}|${resolved.join("|")}`;
   let index = indexCache.get(key);
   if (!index) {
     const source = resolved.map((p) => readFileSync(p, "utf8")).join("\n");
-    index = createIndex(source);
+    index = createIndex(source, { modifierConvention });
     indexCache.set(key, index);
   }
   return index;
 }
 
-/** Diagnostics for one `class`/`className` value string. */
+/** Diagnostics for one `class`/`className` value string (class conventions). */
 function checkClassValue(value: string, index: CssDocIndex): string[] {
   const tokens = value.split(/\s+/u).filter(Boolean);
   const base = tokens.find((t) => index.componentForClass(t));
-  const usages = tokens.filter((t) => t.startsWith("-")).map((token) => ({ base, tokens, token }));
+  const usages = tokens
+    .filter((t) => index.matcher.looksLikeUsage(t, base))
+    .map((token) => ({ base, tokens, token }));
   return checkClassUsage(usages, index).map((d) => `[${d.rule}] ${d.message}`);
 }
 
@@ -130,9 +150,20 @@ interface JsxAttribute {
   value?: { type?: string; value?: unknown };
 }
 
+interface JsxOpeningElement {
+  attributes?: JsxAttribute[];
+}
+
 interface HtmlAttribute {
   key?: { value?: string };
   value?: { value?: string };
+}
+
+/** The string literal value of a JSX attribute, if it is one. */
+function jsxLiteral(attr: JsxAttribute): string | undefined {
+  return attr.value?.type === "Literal" && typeof attr.value.value === "string"
+    ? attr.value.value
+    : undefined;
 }
 
 const validClassUsage: RuleModule = {
@@ -142,7 +173,10 @@ const validClassUsage: RuleModule = {
     schema: [
       {
         type: "object",
-        properties: { css: { type: "array", items: { type: "string" } } },
+        properties: {
+          css: { type: "array", items: { type: "string" } },
+          modifierConvention: { type: ["string", "object"] },
+        },
         required: ["css"],
         additionalProperties: false,
       },
@@ -151,28 +185,48 @@ const validClassUsage: RuleModule = {
   create(context) {
     const options = (context.options[0] ?? {}) as ClassUsageOptions;
     if (!options.css?.length) return {} as Record<string, (node: never) => void>;
-    const index = indexFor(options.css, context.cwd ?? process.cwd());
+    const index = indexFor(options.css, context.cwd ?? process.cwd(), options.modifierConvention);
+    const isAttribute = index.matcher.convention.structure === "attribute";
     const report = (value: string, node: unknown): void => {
       for (const message of checkClassValue(value, index)) context.report({ node, message });
     };
     return {
-      // JSX: className="…" / class="…" with a string literal.
+      // JSX: className="…" / class="…" with a string literal (class conventions).
       JSXAttribute(node: never): void {
+        if (isAttribute) return;
         const attr = node as JsxAttribute;
         const name = attr.name?.name;
-        if (
-          (name === "className" || name === "class") &&
-          attr.value?.type === "Literal" &&
-          typeof attr.value.value === "string"
-        ) {
-          report(attr.value.value, attr.value);
+        const value = jsxLiteral(attr);
+        if ((name === "className" || name === "class") && value !== undefined) {
+          report(value, attr.value);
         }
       },
-      // HTML (@html-eslint): class="…".
+      // HTML (@html-eslint): class="…" (class conventions).
       Attribute(node: never): void {
+        if (isAttribute) return;
         const attr = node as HtmlAttribute;
         if (attr.key?.value === "class" && typeof attr.value?.value === "string") {
           report(attr.value.value, attr.value);
+        }
+      },
+      // JSX element (attribute conventions, e.g. CUBE `data-variant="ghost"`): inspect every attribute.
+      JSXOpeningElement(node: never): void {
+        if (!isAttribute) return;
+        const attrs = (node as JsxOpeningElement).attributes ?? [];
+        const tokens = attrs
+          .filter((a) => a.name?.name === "class" || a.name?.name === "className")
+          .flatMap((a) => (jsxLiteral(a) ?? "").split(/\s+/u).filter(Boolean));
+        const base = tokens.find((t) => index.componentForClass(t));
+        if (!base) return;
+        for (const a of attrs) {
+          const name = a.name?.name;
+          const value = jsxLiteral(a);
+          if (!name || name === "class" || name === "className" || value === undefined) continue;
+          const token = `${name}="${value}"`;
+          if (!index.matcher.looksLikeUsage(token, base)) continue;
+          for (const d of checkClassUsage([{ base, tokens, token }], index)) {
+            context.report({ node: a.value ?? a, message: `[${d.rule}] ${d.message}` });
+          }
         }
       },
     };

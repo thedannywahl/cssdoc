@@ -19,7 +19,7 @@ const CSS = `
 
 let index: CssDocIndex;
 test("createIndex parses the model and resolves class lookups", () => {
-  index = createIndex(CSS, { file: "components.css" });
+  index = createIndex(CSS, { file: "components.css", modifierConvention: "rscss" });
   expect(index.componentForClass(".button")?.name).toBe("button");
   expect(index.componentForClass("button")?.name).toBe("button"); // dot optional
   expect(index.isModifier(".button", "-color-secondary")).toBe(true);
@@ -56,4 +56,26 @@ test("indexFromEntries works without spans (from a model snapshot)", () => {
   const rebuilt = indexFromEntries(snapshot.entries);
   expect(rebuilt.componentForClass(".button")?.name).toBe("button");
   expect(rebuilt.location("button")).toBeUndefined(); // no spans in a snapshot
+});
+
+test("spans and lookups work for suffix (BEM) and attribute (CUBE) modifiers", () => {
+  const bem = createIndex(
+    `/**\n * @component card\n */\n.card {}\n.card--featured { color: red; }`,
+  );
+  expect(
+    bem.recordInfo("card")?.memberSpans.get(memberKey("modifier", "card--featured"))?.start.line,
+  ).toBe(5);
+  expect(bem.isModifier("card", "card--featured")).toBe(true);
+
+  const cube = createIndex(
+    `/**\n * @component card\n */\n.card {}\n.card[data-variant="ghost"] { color: red; }`,
+    {
+      modifierConvention: { structure: "attribute", separator: "data-" },
+    },
+  );
+  // Single quotes in the lookup still resolve to the double-quoted canonical name.
+  expect(cube.isModifier("card", `[data-variant='ghost']`)).toBe(true);
+  expect(
+    cube.recordInfo("card")?.memberSpans.has(memberKey("modifier", 'data-variant="ghost"')),
+  ).toBe(true);
 });

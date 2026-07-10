@@ -5,10 +5,10 @@ import plugin from "../src/index.ts";
 const CSS = `
 /**
  * @component button
- * @modifier -color-secondary — A lower-emphasis action.
+ * @modifier button--color-secondary — A lower-emphasis action.
  */
 .button { color: red; }
-.button.-size-sm { font-size: small; }
+.button--size-sm { font-size: small; }
 `;
 
 const lint = (code: string): { ruleId: string | null; message: string }[] => {
@@ -25,7 +25,7 @@ test("the recommended config reports doc-hygiene violations on a .css file", () 
   expect(messages.some((m) => m.message.includes("missing-summary"))).toBe(true);
   expect(
     messages.some(
-      (m) => m.message.includes("undocumented-modifier") && m.message.includes("-size-sm"),
+      (m) => m.message.includes("undocumented-modifier") && m.message.includes("button--size-sm"),
     ),
   ).toBe(true);
 });
@@ -35,10 +35,10 @@ test("a fully documented stylesheet produces no messages", () => {
 /**
  * @component chip
  * @summary A small labelled tag.
- * @modifier -color-info — Informational.
+ * @modifier chip--color-info — Informational.
  */
 .chip { color: red; }
-.chip.-color-info { color: blue; }
+.chip--color-info { color: blue; }
 `;
   expect(lint(clean)).toEqual([]);
 });

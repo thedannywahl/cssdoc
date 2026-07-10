@@ -12,6 +12,7 @@
 import postcss, { type ChildNode } from "postcss";
 import { CssDocConfiguration } from "./configuration.ts";
 import { parseDocComment, recordNameOf, type ParsedDoc } from "./grammar.ts";
+import { ModifierMatcher, resolveModifierConvention } from "./modifier.ts";
 import type {
   CssAnimation,
   CssCondition,
@@ -29,15 +30,6 @@ import type {
 const VAR_RE = /var\(\s*(--[\w-]+)/gu;
 
 const unquote = (value: string): string => value.trim().replace(/^["']|["']$/gu, "");
-
-/** Split a `-<prop>-<value>` (or boolean `-<flag>`) modifier into its prop/value segments. */
-function splitModifier(name: string): { prop: string; value?: string } {
-  // name like "-color-secondary" → prop "color", value "secondary"; "-condensed" → prop "condensed".
-  const body = name.replace(/^-/u, "");
-  const dash = body.indexOf("-");
-  if (dash === -1) return { prop: body };
-  return { prop: body.slice(0, dash), value: body.slice(dash + 1) };
-}
 
 interface Collected {
   className: string;
@@ -80,17 +72,17 @@ function collectFunction(node: Extract<ChildNode, { type: "atrule" }>, acc: Coll
 function collect(
   nodes: ChildNode[],
   acc: Collected,
-  baseEsc: string,
+  matcher: ModifierMatcher,
+  baseNoDot: string,
   prefixNoDot: string,
   inScope: boolean,
 ): void {
-  const modRe = new RegExp(`(?:${baseEsc}|:scope)((?:\\.-[\\w-]+)+)`, "gu");
   let pendingCanonical: string | undefined;
 
   for (const node of nodes) {
     if (node.type === "comment") {
-      const dep = node.text.match(/@deprecated.*?use\s+\.(-[\w-]+)/u);
-      if (dep) pendingCanonical = dep[1];
+      const dep = node.text.match(/@deprecated.*?use\s+(\.[\w-]+|\[[^\]]*\])/u);
+      if (dep) pendingCanonical = matcher.normalizeMember(dep[1]);
       continue;
     }
     if (node.type === "decl") {
@@ -141,7 +133,7 @@ function collect(
         addCondition(acc, { type: "media", query: node.params.trim() });
       }
       if (node.nodes)
-        collect(node.nodes, acc, baseEsc, prefixNoDot, inScope || node.name === "scope");
+        collect(node.nodes, acc, matcher, baseNoDot, prefixNoDot, inScope || node.name === "scope");
       continue;
     }
     if (node.type === "rule") {
@@ -151,19 +143,22 @@ function collect(
           if (!acc.states.has(s[1])) acc.states.set(s[1], { name: s[1] });
         }
         const bare = selector.replace(/::?[\w-]+(\([^)]*\))?/gu, ""); // drop pseudos
-        for (const m of bare.matchAll(modRe)) {
-          for (const mod of m[1].matchAll(/\.(-[\w-]+)/gu)) {
-            const modName = mod[1];
-            const existing = acc.modifiers.get(modName);
-            const { prop, value } = splitModifier(modName);
-            const entry: CssModifier = existing ?? { name: modName, prop, value };
-            if (pendingCanonical) entry.deprecated = { canonical: pendingCanonical };
-            acc.modifiers.set(modName, entry);
-          }
+        const mods = matcher.modifiersIn(bare, baseNoDot);
+        const modNames = new Set(mods.map((mod) => mod.name));
+        for (const mod of mods) {
+          const existing = acc.modifiers.get(mod.name);
+          const entry: CssModifier = existing ?? {
+            name: mod.name,
+            prop: mod.prop,
+            value: mod.value,
+          };
+          if (pendingCanonical) entry.deprecated = { canonical: pendingCanonical };
+          acc.modifiers.set(mod.name, entry);
         }
         if (inScope) {
           for (const m of bare.matchAll(/\.([a-z][\w-]*)/gu)) {
             const part = m[1];
+            if (modNames.has(part)) continue; // a modifier, not a part
             if (prefixNoDot && part.startsWith(prefixNoDot)) continue; // a component ref, not a part
             if (!acc.parts.has(part)) acc.parts.set(part, { name: part });
           }
@@ -181,7 +176,12 @@ function collect(
 const byName = (a: { name: string }, b: { name: string }): number => a.name.localeCompare(b.name);
 
 /** Build one entry from its record name, doc comment, and nodes. */
-function buildEntry(name: string, doc: ParsedDoc, nodes: ChildNode[]): CssDocEntry {
+function buildEntry(
+  name: string,
+  doc: ParsedDoc,
+  nodes: ChildNode[],
+  matcher: ModifierMatcher,
+): CssDocEntry {
   // Base class: an explicit @class, else a bare single-class rule — preferring the one whose name ends
   // with the record name (`.badge`, not a sibling like `.badge-wrapper` that happens to
   // appear first).
@@ -209,11 +209,11 @@ function buildEntry(name: string, doc: ParsedDoc, nodes: ChildNode[]): CssDocEnt
     layers: new Map(),
     conditions: [],
   };
-  const baseEsc = className.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  const baseNoDot = className.replace(/^\./u, "");
   const prefixNoDot = className.endsWith(name)
     ? className.slice(1, className.length - name.length) // ".button" − "button" → ""
     : "";
-  collect(nodes, acc, baseEsc, prefixNoDot, false);
+  collect(nodes, acc, matcher, baseNoDot, prefixNoDot, false);
 
   // Merge in authored prose; authored @modifier/@part entries also appear even if extraction missed.
   for (const [modName, mdoc] of doc.modifiers) {
@@ -233,7 +233,7 @@ function buildEntry(name: string, doc: ParsedDoc, nodes: ChildNode[]): CssDocEnt
       if (mdoc.description) existing.description = mdoc.description;
       if (dep) existing.deprecated = { ...existing.deprecated, ...dep };
     } else {
-      const { prop, value } = splitModifier(modName);
+      const { prop, value } = matcher.analyze(modName);
       acc.modifiers.set(modName, {
         name: modName,
         prop,
@@ -347,6 +347,9 @@ function buildEntry(name: string, doc: ParsedDoc, nodes: ChildNode[]): CssDocEnt
  */
 export function parseCssDocs(css: string, options: ParseOptions = {}): CssDocEntry[] {
   const configuration = options.configuration ?? new CssDocConfiguration();
+  const matcher = new ModifierMatcher(
+    resolveModifierConvention(options.modifierConvention ?? configuration.modifierConvention),
+  );
   const boundary =
     options.isRecordBoundary ?? ((text: string) => recordNameOf(text, configuration));
   const root = postcss.parse(css);
@@ -365,5 +368,5 @@ export function parseCssDocs(css: string, options: ParseOptions = {}): CssDocEnt
     if (current) current.nodes.push(node);
   }
 
-  return records.map((r) => buildEntry(r.name, r.doc, r.nodes));
+  return records.map((r) => buildEntry(r.name, r.doc, r.nodes, matcher));
 }

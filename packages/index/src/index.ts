@@ -20,10 +20,14 @@ import {
   type CssPart,
   type CssPropertyDeclared,
   type CssState,
+  type ModifierConventionInput,
   type StructureNode,
+  DEFAULT_MODIFIER_CONVENTION,
+  ModifierMatcher,
   parseCssDocs,
   parseDocComment,
   recordNameOf,
+  resolveModifierConvention,
 } from "@cssdoc/core";
 import postcss, { type ChildNode } from "postcss";
 import valueParser from "postcss-value-parser";
@@ -47,16 +51,18 @@ export interface Location {
 }
 
 /**
- * A class-attribute usage: the classes on one element, the specific `token` under inspection, and the
- * resolved `base` component class (when one of the tokens names a documented component). Producers for
- * HTML, JSX, and CSS selectors all emit this shape.
+ * A member usage on one element: the classes on the element, the specific `token` under inspection,
+ * and the resolved `base` component class (when one of the tokens names a documented component).
+ * `token` is normally a class token, but for attribute conventions (CUBE) it may be an attribute
+ * expression like `data-variant="ghost"`. Producers for HTML, JSX, and CSS selectors all emit this
+ * shape.
  */
 export interface ClassUsage {
   /** The base component class among the tokens, if any (e.g. `.button` → `button`). */
   base?: string;
   /** Every class token on the element. */
   tokens: string[];
-  /** The specific token this usage is about (e.g. a `-modifier`). */
+  /** The specific token/expression this usage is about (a modifier candidate). */
   token: string;
   /** Where the token sits in the host document. */
   loc?: SourceSpan;
@@ -122,7 +128,6 @@ export interface CssDocManifest {
   entries: CssDocEntry[];
 }
 
-const escapeRe = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 const stripDot = (name: string): string => name.replace(/^\./u, "");
 
 const spanOf = (node: ChildNode): SourceSpan | undefined => {
@@ -139,12 +144,15 @@ const spanOf = (node: ChildNode): SourceSpan | undefined => {
 export class CssDocIndex {
   readonly file?: string;
   readonly records: readonly RecordInfo[];
+  /** The modifier matcher for this index's convention — how members are matched and rendered. */
+  readonly matcher: ModifierMatcher;
   private readonly byName = new Map<string, RecordInfo>();
   private readonly byClass = new Map<string, RecordInfo>();
 
-  constructor(records: RecordInfo[], file?: string) {
+  constructor(records: RecordInfo[], file?: string, matcher?: ModifierMatcher) {
     this.records = records;
     this.file = file;
+    this.matcher = matcher ?? new ModifierMatcher(DEFAULT_MODIFIER_CONVENTION);
     for (const record of records) {
       this.byName.set(record.entry.name, record);
       this.byClass.set(stripDot(record.entry.className), record);
@@ -198,9 +206,9 @@ export class CssDocIndex {
     return this.byName.get(name)?.entry.structure;
   }
 
-  /** Whether `modifier` (with or without a leading dot) is a documented modifier of `base`. */
+  /** Whether `modifier` (a class token or attribute expression) is a documented modifier of `base`. */
   isModifier(base: string, modifier: string): boolean {
-    const wanted = stripDot(modifier);
+    const wanted = this.matcher.normalizeMember(modifier);
     return (
       this.byClass.get(stripDot(base))?.entry.modifiers.some((m) => m.name === wanted) ?? false
     );
@@ -208,7 +216,7 @@ export class CssDocIndex {
 
   /** The deprecation of a modifier on `base`, if it is deprecated. */
   deprecationOf(base: string, modifier: string): { canonical?: string; note?: string } | undefined {
-    const wanted = stripDot(modifier);
+    const wanted = this.matcher.normalizeMember(modifier);
     return this.byClass.get(stripDot(base))?.entry.modifiers.find((m) => m.name === wanted)
       ?.deprecated;
   }
@@ -263,8 +271,8 @@ interface Build {
 }
 
 /** Scan a record's nodes for member spans, recording each member's first occurrence. */
-function scanNodes(nodes: ChildNode[], build: Build, base: string): void {
-  const modRe = new RegExp(`(?:${escapeRe(base)}|:scope)((?:\\.-[\\w-]+)+)`, "gu");
+function scanNodes(nodes: ChildNode[], build: Build, base: string, matcher: ModifierMatcher): void {
+  const baseNoDot = stripDot(base);
   const set = (key: string, node: ChildNode): void => {
     const span = spanOf(node);
     if (span && !build.memberSpans.has(key)) build.memberSpans.set(key, span);
@@ -275,15 +283,19 @@ function scanNodes(nodes: ChildNode[], build: Build, base: string): void {
       build.selectorText += ` ${node.selector}`;
       if (`.${stripDot(node.selector.trim())}` === base && !build.span) build.span = spanOf(node);
       for (const selector of node.selector.split(",")) {
-        for (const m of selector.matchAll(modRe)) {
-          for (const mod of m[1].matchAll(/\.(-[\w-]+)/gu))
-            set(memberKey("modifier", mod[1]), node);
-        }
         for (const s of selector.matchAll(/:state\(\s*([\w-]+)\s*\)/gu)) {
           set(memberKey("state", s[1]), node);
         }
         const bare = selector.replace(/::?[\w-]+(\([^)]*\))?/gu, "");
-        for (const p of bare.matchAll(/\.([a-z][\w-]*)/gu)) set(memberKey("part", p[1]), node);
+        const modNames = new Set<string>();
+        for (const mod of matcher.modifiersIn(bare, baseNoDot)) {
+          modNames.add(mod.name);
+          set(memberKey("modifier", mod.name), node);
+        }
+        for (const p of bare.matchAll(/\.([a-z][\w-]*)/gu)) {
+          if (modNames.has(p[1])) continue; // a modifier, not a part
+          set(memberKey("part", p[1]), node);
+        }
       }
     } else if (node.type === "atrule") {
       if (node.name === "property") set(memberKey("property", node.params.trim()), node);
@@ -299,7 +311,7 @@ function scanNodes(nodes: ChildNode[], build: Build, base: string): void {
       } else if (node.name === "container" || node.name === "supports" || node.name === "media") {
         set(memberKey("condition", `${node.name}:${node.params.trim()}`), node);
       }
-      if (node.nodes) scanNodes(node.nodes, build, base);
+      if (node.nodes) scanNodes(node.nodes, build, base, matcher);
     }
   }
 }
@@ -314,9 +326,21 @@ function scanNodes(nodes: ChildNode[], build: Build, base: string): void {
  */
 export function createIndex(
   css: string,
-  options: { file?: string; configuration?: CssDocConfiguration } = {},
+  options: {
+    file?: string;
+    configuration?: CssDocConfiguration;
+    modifierConvention?: ModifierConventionInput;
+  } = {},
 ): CssDocIndex {
-  const entries = parseCssDocs(css, { configuration: options.configuration });
+  const matcher = new ModifierMatcher(
+    resolveModifierConvention(
+      options.modifierConvention ?? options.configuration?.modifierConvention,
+    ),
+  );
+  const entries = parseCssDocs(css, {
+    configuration: options.configuration,
+    modifierConvention: options.modifierConvention,
+  });
   const byName = new Map(entries.map((e) => [e.name, e]));
   const builds = new Map<string, Build>();
 
@@ -340,7 +364,7 @@ export function createIndex(
         continue;
       }
     }
-    if (current) scanNodes([node], current, current.entry.className);
+    if (current) scanNodes([node], current, current.entry.className, matcher);
   }
 
   const records: RecordInfo[] = entries.map(
@@ -353,7 +377,7 @@ export function createIndex(
         selectorText: "",
       },
   );
-  return new CssDocIndex(records, options.file);
+  return new CssDocIndex(records, options.file, matcher);
 }
 
 /**

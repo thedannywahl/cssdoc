@@ -35,6 +35,13 @@ export {
 export type { ParsedDoc, DocCssProperty, DocModifier, DocCondition } from "./grammar.ts";
 export { CssDocConfiguration, CssDocTagDefinition } from "./configuration.ts";
 export type { CssDocSyntaxKind, CssDocTagDefinitionOptions } from "./configuration.ts";
+export {
+  DEFAULT_MODIFIER_CONVENTION,
+  MODIFIER_PRESETS,
+  ModifierMatcher,
+  resolveModifierConvention,
+} from "./modifier.ts";
+export type { ModifierConvention, ModifierConventionInput, ModifierHit } from "./modifier.ts";
 export { toMermaid } from "./mermaid.ts";
 export type {
   CssAnimation,

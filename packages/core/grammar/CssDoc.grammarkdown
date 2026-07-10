@@ -81,11 +81,27 @@ Identifier ::
 RecordName ::
     Identifier
 
-// A `-<prop>` boolean modifier, or a `-<prop>-<value>` modifier. `Prop` is the segment up to the
-// first interior hyphen; `Value` is the remainder (which may itself contain hyphens).
+// How a modifier is spelled is configurable (see the `ModifierConvention` in `@cssdoc/core`); the
+// DEFAULT is BEM — the modifier is conjoined onto the base class with `--`, e.g. `.button--primary`.
+// Other conventions:
+//   rscss       — `.button.-color-secondary` (a chained `-`-prefixed class, split into Prop/Value)
+//   bare / OOCSS — `.button.primary`          (any class chained to the base)
+//   CUBE        — `.card[data-variant="ghost"]` (a data-attribute exception on the base)
+// The default (BEM) form:
 ModifierName ::
+    Identifier `--` Identifier
+
+// The rscss form: a `-<prop>` boolean modifier, or a `-<prop>-<value>` modifier. `Prop` is the segment
+// up to the first interior hyphen; `Value` is the remainder (which may itself contain hyphens).
+RscssModifierName ::
     `-` Prop
     `-` Prop `-` Value
+
+// The CUBE form: an attribute-selector exception on the base, e.g. `[data-variant="ghost"]`. The
+// value is a quoted string; shown here as an identifier for brevity.
+AttributeModifier ::
+    `[` Identifier `]`
+    `[` Identifier `=` Identifier `]`
 
 Prop ::
     > an identifier segment of letters and digits, containing no hyphen

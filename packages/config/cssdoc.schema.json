@@ -36,6 +36,28 @@
       "description": "Enable or disable specific tags by name.",
       "type": "object",
       "additionalProperties": { "type": "boolean" }
+    },
+    "modifierConvention": {
+      "description": "How modifier classes are spelled: a preset name (bem, rscss, bare) or a custom convention.",
+      "oneOf": [
+        { "enum": ["bem", "rscss", "bare"] },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["structure", "separator"],
+          "properties": {
+            "structure": { "enum": ["chained", "suffix", "attribute"] },
+            "separator": { "type": "string" },
+            "propValue": { "type": "boolean" },
+            "propValueSeparator": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "rules": {
+      "description": "Per-rule severity overrides (off/warn/error).",
+      "type": "object",
+      "additionalProperties": { "enum": ["off", "warn", "error"] }
     }
   }
 }

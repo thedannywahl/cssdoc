@@ -6,8 +6,11 @@
  * @module
  */
 import { readFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { pathToFileURL } from "node:url";
+import { CssDocConfigFile } from "@cssdoc/config";
 import { createIndex } from "@cssdoc/index";
+import { resolveRuleSeverities } from "@cssdoc/providers";
 import {
   CompletionItemTag,
   DiagnosticSeverity,
@@ -36,7 +39,22 @@ export function startLanguageServer(): void {
         }
       })
       .join("\n");
-    service.setIndex(createIndex(css, { file: cssPaths.length === 1 ? cssPaths[0] : undefined }));
+    // Honor a cssdoc.json near the CSS (custom tags + modifier convention + rule severities).
+    const configFile = CssDocConfigFile.loadForFolder(
+      cssPaths[0] ? dirname(cssPaths[0]) : process.cwd(),
+    );
+    const configuration = configFile.toConfiguration();
+    service.setIndex(
+      createIndex(css, {
+        file: cssPaths.length === 1 ? cssPaths[0] : undefined,
+        configuration,
+      }),
+    );
+    service.setRuleSeverities(
+      resolveRuleSeverities(
+        configFile.ruleSeverities as Parameters<typeof resolveRuleSeverities>[0],
+      ),
+    );
   };
 
   connection.onInitialize((params) => {

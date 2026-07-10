@@ -12,13 +12,20 @@
  * @module
  */
 
-/** A `-<prop>-<value>` (or boolean `-<flag>`) modifier on a component's base class. */
+/**
+ * A modifier variation on a component's base class. How modifiers are spelled is configurable (see
+ * {@link ParseOptions.modifierConvention}); the default is BEM (`.button--primary`).
+ */
 export interface CssModifier {
-  /** The modifier class without the leading dot, e.g. `-color-secondary` or `-condensed`. */
+  /**
+   * The modifier as written, minus its outer punctuation — its exact spelling depends on the
+   * convention: `button--primary` (BEM, the default), `-color-secondary` (rscss), `primary`
+   * (bare/OOCSS), or `data-variant="ghost"` (CUBE attribute).
+   */
   name: string;
-  /** The property segment, e.g. `color` (the text after the first `-`, up to the next `-`). */
+  /** The property segment — a grouping key derived from the modifier (e.g. `color`, `variant`, `primary`). */
   prop: string;
-  /** The value segment, e.g. `secondary`; absent for boolean modifiers. */
+  /** The value segment, e.g. `secondary` or `ghost`; absent for boolean/flag modifiers. */
   value?: string;
   /** Prose from a `@modifier` doc tag, when authored. */
   description?: string;
@@ -206,4 +213,10 @@ export interface ParseOptions {
    * Supply one (e.g. from `@cssdoc/config`) to register custom tags or disable standard ones.
    */
   configuration?: import("./configuration.ts").CssDocConfiguration;
+  /**
+   * The modifier convention — how modifier classes are spelled (BEM `.button--primary` by default;
+   * `rscss`, `bare`, or a custom {@link import("./modifier.ts").ModifierConvention} for SUIT/CUBE/etc.).
+   * Overrides the `configuration`'s convention when both are given.
+   */
+  modifierConvention?: import("./modifier.ts").ModifierConventionInput;
 }

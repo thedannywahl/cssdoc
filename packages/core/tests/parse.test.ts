@@ -59,8 +59,10 @@ test("splits records on @component and extracts the base class + summary + demo"
   expect(button.demo).toBe("self:button");
 });
 
-test("modifiers are AST-extracted, prop/value split, and annotated with @modifier prose", () => {
-  const button = parseCssDocs(FIXTURE).find((e) => e.name === "button")!;
+test("modifiers are AST-extracted, prop/value split, and annotated with @modifier prose (rscss)", () => {
+  const button = parseCssDocs(FIXTURE, { modifierConvention: "rscss" }).find(
+    (e) => e.name === "button",
+  )!;
   const secondary = button.modifiers.find((m) => m.name === "-color-secondary")!;
   expect(secondary.prop).toBe("color");
   expect(secondary.value).toBe("secondary");
@@ -71,8 +73,10 @@ test("modifiers are AST-extracted, prop/value split, and annotated with @modifie
   );
 });
 
-test("deprecated-alias comment links the alias modifier to its canonical", () => {
-  const badge = parseCssDocs(FIXTURE).find((e) => e.name === "badge")!;
+test("deprecated-alias comment links the alias modifier to its canonical (rscss)", () => {
+  const badge = parseCssDocs(FIXTURE, { modifierConvention: "rscss" }).find(
+    (e) => e.name === "badge",
+  )!;
   // The base class is the one ending in the record name, not the first bare sibling (.badge-wrapper).
   expect(badge.className).toBe(".badge");
   const alias = badge.modifiers.find((m) => m.name === "-variant-error")!;
@@ -83,9 +87,77 @@ test("an authored `@deprecated {@link -x}` sets the modifier's canonical", () =>
   const [comp] = parseCssDocs(
     `/**\n * @component alert\n * @modifier -variant-error — @deprecated {@link -color-danger}\n */\n` +
       `.alert.-variant-error { color: red; }`,
+    { modifierConvention: "rscss" },
   );
   const alias = comp.modifiers.find((m) => m.name === "-variant-error")!;
   expect(alias.deprecated?.canonical).toBe("-color-danger");
+});
+
+const CONVENTION_FIXTURE = `
+/**
+ * @component card
+ * @summary A surface.
+ */
+.card { display: block; }
+.card--featured { box-shadow: 0 0 1px; }
+.card.is-loading { opacity: 0.5; }
+.card.featured { border: 1px solid; }
+.card[data-variant="ghost"] { background: none; }
+.card[data-loading] { opacity: 0.5; }
+@scope (.card) {
+  :scope .title { font-weight: 700; }
+}
+`;
+
+test("the default convention is BEM (suffix --), and parts never overlap modifiers", () => {
+  const card = parseCssDocs(CONVENTION_FIXTURE).find((e) => e.name === "card")!;
+  const featured = card.modifiers.find((m) => m.name === "card--featured")!;
+  expect(featured.prop).toBe("featured");
+  expect(featured.value).toBeUndefined();
+  // Only the BEM modifier is extracted; the chained/attribute ones are not, under the default.
+  expect(card.modifiers.map((m) => m.name)).toEqual(["card--featured"]);
+  expect(card.parts.map((p) => p.name)).toEqual(["title"]);
+});
+
+test("bare/OOCSS convention: any chained class is a modifier, distinct from descendant parts", () => {
+  const card = parseCssDocs(CONVENTION_FIXTURE, { modifierConvention: "bare" }).find(
+    (e) => e.name === "card",
+  )!;
+  expect(card.modifiers.map((m) => m.name).sort()).toEqual(["featured", "is-loading"]);
+  expect(card.parts.map((p) => p.name)).toEqual(["title"]);
+});
+
+test("attribute (CUBE) convention: data attributes map to prop/value; parts unaffected", () => {
+  const card = parseCssDocs(CONVENTION_FIXTURE, {
+    modifierConvention: { structure: "attribute", separator: "data-" },
+  }).find((e) => e.name === "card")!;
+  const variant = card.modifiers.find((m) => m.name === 'data-variant="ghost"')!;
+  expect(variant.prop).toBe("variant");
+  expect(variant.value).toBe("ghost");
+  const loading = card.modifiers.find((m) => m.name === "data-loading")!;
+  expect(loading.prop).toBe("loading");
+  expect(loading.value).toBeUndefined();
+  expect(card.parts.map((p) => p.name)).toEqual(["title"]);
+});
+
+test("a custom is- convention picks up state classes", () => {
+  const card = parseCssDocs(CONVENTION_FIXTURE, {
+    modifierConvention: { structure: "chained", separator: "is-" },
+  }).find((e) => e.name === "card")!;
+  expect(card.modifiers.map((m) => m.name)).toEqual(["is-loading"]);
+  expect(card.modifiers[0].prop).toBe("loading");
+});
+
+test("BEM: authored @modifier merges, and {@link} canonical needs no dash", () => {
+  const [card] = parseCssDocs(
+    `/**\n * @component card\n * @modifier card--featured — A promoted card.\n` +
+      ` * @modifier card--old — @deprecated {@link card--featured}\n */\n` +
+      `.card { color: red; }\n.card--featured { color: blue; }\n.card--old { color: green; }`,
+  );
+  const featured = card.modifiers.find((m) => m.name === "card--featured")!;
+  expect(featured.description).toBe("A promoted card.");
+  const old = card.modifiers.find((m) => m.name === "card--old")!;
+  expect(old.deprecated?.canonical).toBe("card--featured");
 });
 
 test("parts come from scoped child selectors; consumed + declared custom properties are captured", () => {

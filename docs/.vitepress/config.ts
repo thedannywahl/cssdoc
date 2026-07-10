@@ -53,6 +53,7 @@ export default defineConfig({
             { text: "Introduction", link: "/guide/introduction" },
             { text: "Getting started", link: "/guide/getting-started" },
             { text: "Authoring doc comments", link: "/guide/authoring" },
+            { text: "Modifier conventions", link: "/guide/modifier-conventions" },
             { text: "Configuration", link: "/guide/config" },
             { text: "Emitting docs", link: "/guide/emitters" },
             { text: "Standard formats", link: "/guide/generators" },
