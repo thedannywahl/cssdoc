@@ -137,6 +137,7 @@ export const cssDocEntrySchema = {
     },
     examples: { type: "array", items: { type: "string" } },
     structure: { type: "array", items: { $ref: "#/$defs/StructureNode" } },
+    structureDescription: { type: "string" },
     demo: { type: "string" },
     deprecated: { type: "string" },
     see: { type: "array", items: { type: "string" } },

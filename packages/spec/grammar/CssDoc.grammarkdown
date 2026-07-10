@@ -343,13 +343,22 @@ AccessibilityTag :
 
 // --- Structure & demo --------------------------------------------------------------------------
 
-// Indentation-nested selectors: each deeper indent level is a child of the line above. Layout
-// sensitivity (INDENT / DEDENT) sits outside pure context-free notation, so it is given as prose.
-StructureTree ::
-    > one selector per line; a greater indent than the preceding line makes the node its child
+// Nested CSS: each rule's selector is a node, and the rules nested inside it are its children. A
+// node's selector is a full compound/complex selector, so `:has()` (contains), `:is()` or a selector
+// list (one-of), and `:not()` (not) express relationships between the related parts.
+Selector ::
+    > a CSS compound or complex selector
+
+StructureNode :
+    Selector `{` StructureNodeList? `}`
+
+StructureNodeList :
+    StructureNode
+    StructureNodeList StructureNode
 
 StructureTag :
-    `@structure` LineTerminator StructureTree
+    `@structure` StructureNodeList
+    `@structure` Description StructureNodeList
 
 Provider ::
     Identifier

@@ -39,6 +39,7 @@ npm i -D @cssdoc/config @cssdoc/core
 | `modifierConvention` | How modifier classes are spelled — a preset (`bem`, `rscss`, `bare`) or a custom object. A custom object can also map BEM elements to parts (`elementSeparator`), state classes to states (`statePrefixes`), and native pseudo-classes to states (`statePseudoClasses`). Defaults to `bem`. |
 | `rules`              | Per-rule severity overrides (`off`/`warn`/`error`).                                                                                                                                                                                                                                         |
 | `naming`             | Name-case to enforce on `component`/`part` class names — a preset (`pascalCase`/`camelCase`/`lowercase`) or a custom regex.                                                                                                                                                                 |
+| `structureIgnore`    | Class names exempt from `structure-unknown-selector` — external classes (utilities, cross-component refs) named in `@structure`. Literal names or simple `*` globs (e.g. `util-*`).                                                                                                         |
 
 See [Modifier conventions](/guide/modifier-conventions) for the convention forms and the full rule list.
 
@@ -73,7 +74,7 @@ The rule ids:
 | `undocumented-css-part`         | `warn`  | a shadow part (`@csspart`) has no description.                               |
 | `component-name-case`           | `warn`  | a component class breaks the configured `naming.component` case (see below). |
 | `part-name-case`                | `warn`  | a part class breaks the configured `naming.part` case.                       |
-| `structure-unknown-selector`    | `warn`  | an `@structure` selector isn't the component class or a documented part.     |
+| `structure-unknown-selector`    | `warn`  | an `@structure` selector names a class that isn't a documented member.       |
 | `invalid-default-value`         | `warn`  | a registered property's default doesn't match its syntax.                    |
 | `invalid-property-value`        | `warn`  | an assignment doesn't match a property's declared syntax.                    |
 | `invalid-fallback-value`        | `warn`  | a `var(--x, …)` fallback doesn't match the declared syntax.                  |

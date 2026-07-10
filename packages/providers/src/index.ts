@@ -80,10 +80,11 @@ export function lintModel(
   index: CssDocIndex,
   severities: RuleSeverities = DEFAULT_RULE_SEVERITIES,
   naming?: ResolvedNaming,
+  structureIgnore?: readonly string[],
 ): Diagnostic[] {
   return applySeverities(
     [
-      ...record.model(index, naming),
+      ...record.model(index, naming, structureIgnore),
       ...modifier.model(index),
       ...part.model(index, naming),
       ...cssPart.model(index),

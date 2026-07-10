@@ -74,6 +74,7 @@ interface DocCommentsOptions {
   rules?: Partial<Record<RuleName, RuleSeverity | boolean>>;
   modifierConvention?: ModifierConventionInput;
   naming?: NamingRules;
+  structureIgnore?: string[];
 }
 
 const validDocComments: RuleModule = {
@@ -87,6 +88,7 @@ const validDocComments: RuleModule = {
           rules: { type: "object" },
           modifierConvention: { type: ["string", "object"] },
           naming: { type: "object" },
+          structureIgnore: { type: "array", items: { type: "string" } },
         },
         additionalProperties: false,
       },
@@ -100,6 +102,7 @@ const validDocComments: RuleModule = {
           rules: options.rules,
           modifierConvention: options.modifierConvention,
           naming: options.naming,
+          structureIgnore: options.structureIgnore,
         });
         for (const violation of violations) {
           context.report({

@@ -207,7 +207,12 @@ export function renderPage(entry: CssDocEntry, options: { indexHref?: string } =
       ]),
     ),
   );
-  if (entry.structure?.length) section("Structure", structureList(entry.structure));
+  if (entry.structure?.length)
+    section(
+      "Structure",
+      (entry.structureDescription ? `<p>${esc(entry.structureDescription)}</p>` : "") +
+        structureList(entry.structure),
+    );
   if (entry.examples.length)
     section(
       "Examples",

@@ -37,6 +37,7 @@ interface SecondaryOptions {
   rules?: Partial<Record<RuleName, RuleSeverity | boolean>>;
   modifierConvention?: ModifierConventionInput;
   naming?: NamingRules;
+  structureIgnore?: string[];
 }
 
 const rule: Rule<boolean, SecondaryOptions> = (primary, secondaryOptions) => (root, result) => {
@@ -50,6 +51,7 @@ const rule: Rule<boolean, SecondaryOptions> = (primary, secondaryOptions) => (ro
         rules: [(value) => typeof value === "object"],
         modifierConvention: [(value) => typeof value === "string" || typeof value === "object"],
         naming: [(value) => typeof value === "object"],
+        structureIgnore: [(value) => Array.isArray(value)],
       },
       optional: true,
     },
@@ -61,6 +63,7 @@ const rule: Rule<boolean, SecondaryOptions> = (primary, secondaryOptions) => (ro
     rules: secondaryOptions?.rules,
     modifierConvention: secondaryOptions?.modifierConvention,
     naming: secondaryOptions?.naming,
+    structureIgnore: secondaryOptions?.structureIgnore,
   });
   for (const violation of violations) {
     utils.report({

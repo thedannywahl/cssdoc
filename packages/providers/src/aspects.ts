@@ -22,10 +22,27 @@ import type { Completion, Diagnostic, Hover, ResolvedNaming, UsageOptions } from
 const stripDot = (name: string): string => name.replace(/^\./u, "");
 const warn = (d: Omit<Diagnostic, "severity">): Diagnostic => ({ ...d, severity: "warning" });
 
+/**
+ * Match a class name against a `structureIgnore` pattern — a literal name or a simple glob where `*`
+ * stands for any run of characters (e.g. `util-*`, `*--legacy`, `*`). Matched literally otherwise.
+ */
+const globMatch = (pattern: string, value: string): boolean => {
+  if (!pattern.includes("*")) return pattern === value;
+  const re = new RegExp(
+    `^${pattern.replace(/[.+?^${}()|[\]\\]/gu, "\\$&").replace(/\*/gu, ".*")}$`,
+    "u",
+  );
+  return re.test(value);
+};
+
 // ── record ──────────────────────────────────────────────────────────────────────────────────────
 
 export const record = {
-  model(index: CssDocIndex, naming?: ResolvedNaming): Diagnostic[] {
+  model(
+    index: CssDocIndex,
+    naming?: ResolvedNaming,
+    structureIgnore: readonly string[] = [],
+  ): Diagnostic[] {
     const out: Diagnostic[] = [];
     for (const info of index.records) {
       if (!info.entry.summary?.trim()) {
@@ -53,37 +70,45 @@ export const record = {
           );
         }
       }
-      // Every simple class selector named in @structure should resolve to the component class or a
-      // documented member — catches drift when a selector is renamed but the doc comment isn't.
+      // Every class named anywhere in an @structure selector should resolve to the component class or
+      // a documented member — catches drift when a selector is renamed but the doc comment isn't. We
+      // validate *every* class token (the node's own compound classes and any inside `:has()`/`:is()`/
+      // `:not()`), so class order never matters and inner targets are covered too. Legitimately-external
+      // classes (utilities, cross-component refs) are exempted via `structureIgnore`.
       if (info.entry.structure?.length) {
         const known = new Set<string>([
           stripDot(info.entry.className),
-          ...info.entry.parts.map((p) => stripDot(p.name)),
+          ...info.entry.parts.flatMap((p) => [
+            stripDot(p.name),
+            ...(p.modifiers ?? []).map((m) => m.name),
+          ]),
+          ...info.entry.shadowParts.map((p) => stripDot(p.name)),
           ...info.entry.states.map((s) => s.name),
           ...info.entry.modifiers.map((m) => m.name),
+          ...info.entry.slots.map((s) => s.name),
         ]);
-        const flat: StructureNode[] = [];
+        const seen = new Set<string>();
         const walk = (nodes: StructureNode[]): void => {
           for (const node of nodes) {
-            flat.push(node);
+            for (const m of node.selector.matchAll(/\.([\w-]+)/gu)) {
+              const cls = m[1];
+              if (seen.has(cls) || known.has(cls) || structureIgnore.some((g) => globMatch(g, cls)))
+                continue;
+              seen.add(cls);
+              out.push(
+                warn({
+                  aspect: "record",
+                  rule: "structure-unknown-selector",
+                  message: `@structure references ".${cls}", which isn't the component class or a documented member (add it, or list it under structureIgnore).`,
+                  record: info.entry.name,
+                  span: info.span,
+                }),
+              );
+            }
             walk(node.children);
           }
         };
         walk(info.entry.structure);
-        for (const node of flat) {
-          const sel = node.selector.trim();
-          // Only a single, simple class selector is checkable; skip compound/complex ones.
-          if (!/^\.[\w-]+$/u.test(sel) || known.has(stripDot(sel))) continue;
-          out.push(
-            warn({
-              aspect: "record",
-              rule: "structure-unknown-selector",
-              message: `@structure references "${sel}", which isn't the component class or a documented part.`,
-              record: info.entry.name,
-              span: info.span,
-            }),
-          );
-        }
       }
     }
     return out;

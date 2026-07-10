@@ -253,8 +253,8 @@ test("record-opening tags set the kind; @component defaults to component", () =>
   expect(decl.kind).toBe("declaration");
 });
 
-test("@structure parses an indented tree, and toMermaid renders it", () => {
-  const tree = parseStructure(".tabs\n  .list\n    .tab\n  .panel");
+test("@structure parses nested CSS into a tree, and toMermaid renders it", () => {
+  const tree = parseStructure(".tabs {\n  .list {\n    .tab {}\n  }\n  .panel {}\n}");
   expect(tree).toEqual([
     {
       selector: ".tabs",
@@ -268,6 +268,36 @@ test("@structure parses an indented tree, and toMermaid renders it", () => {
   expect(mermaid.startsWith("flowchart TD")).toBe(true);
   expect(mermaid).toContain(`n0[".tabs"]`);
   expect(mermaid).toContain("n0 --> n1"); // tabs → list
+});
+
+test("@structure captures an optional leading description without disturbing the tree", () => {
+  const [withDesc] = parseCssDocs(
+    `/**\n * @component tabs\n * @summary Tabs.\n` +
+      ` * @structure How the parts nest.\n * .tabs {\n *   .panel {}\n * }\n */\n.tabs {}`,
+  );
+  expect(withDesc.structureDescription).toBe("How the parts nest.");
+  expect(withDesc.structure).toEqual([
+    { selector: ".tabs", children: [{ selector: ".panel", children: [] }] },
+  ]);
+  // A body that opens with a selector has no description.
+  const [noDesc] = parseCssDocs(
+    `/**\n * @component tabs\n * @summary Tabs.\n * @structure\n * .tabs {\n *   .panel {}\n * }\n */\n.tabs {}`,
+  );
+  expect(noDesc.structureDescription).toBeUndefined();
+  expect(noDesc.structure).toHaveLength(1);
+});
+
+test("@structure keeps compound selectors verbatim and never throws on a malformed body", () => {
+  // A compound node — `:has()`/`:is()`/`:not()` express relationships between parts.
+  const compound = parseStructure(".tabs {\n  .list:has(.tab) {}\n}");
+  expect(compound).toEqual([
+    {
+      selector: ".tabs",
+      children: [{ selector: ".list:has(.tab)", children: [] }],
+    },
+  ]);
+  // A malformed (unclosed) body parses to an empty tree rather than throwing.
+  expect(parseStructure(".tabs {\n  .list {")).toEqual([]);
 });
 
 test("expansive prose tags surface on the entry (remarks, since, group, a11y, release stage)", () => {

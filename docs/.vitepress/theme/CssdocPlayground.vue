@@ -63,6 +63,7 @@ const cfg = computed(() => {
         modifierConvention?: unknown;
         rules?: Record<string, "off" | "warn" | "error">;
         naming?: { component?: string; part?: string };
+        structureIgnore?: string[];
       }
     | undefined;
   if (errors.length > 0 || raw === undefined) {
@@ -71,6 +72,7 @@ const cfg = computed(() => {
       convention: undefined as never,
       severities: resolveRuleSeverities(),
       naming: resolveNaming(),
+      structureIgnore: [] as string[],
       error: first
         ? `${printParseErrorCode(first.error)} at offset ${first.offset}`
         : "empty or unparseable config",
@@ -80,6 +82,7 @@ const cfg = computed(() => {
     convention: raw.modifierConvention as never,
     severities: resolveRuleSeverities(raw.rules),
     naming: resolveNaming(raw.naming),
+    structureIgnore: raw.structureIgnore ?? [],
     error: undefined as string | undefined,
   };
 });
@@ -93,7 +96,7 @@ const model = computed(() => {
       entries,
       diagnostics: [
         // Model hygiene (missing summaries, drift, @structure references, …).
-        ...lintModel(index, cfg.value.severities, cfg.value.naming),
+        ...lintModel(index, cfg.value.severities, cfg.value.naming, cfg.value.structureIgnore),
         // `--x: value` assignments must match their `@property` syntax (e.g. --tabs-gap: #F00).
         ...checkPropertyAssignments(
           cssValueSites(css.value).assignments,
@@ -198,6 +201,9 @@ const usage = computed(() => {
 
           <section v-if="entry.structure && entry.structure.length" class="pg__facet">
             <h5 class="pg__facet-label">Structure</h5>
+            <p v-if="entry.structureDescription" class="pg__summary">
+              {{ entry.structureDescription }}
+            </p>
             <vitepress-mermaid :graph="encodeURIComponent(toMermaid(entry.structure ?? []))" />
           </section>
 
@@ -333,13 +339,18 @@ const usage = computed(() => {
  * @cssstate is-active — The selected preset toggle.
  * @a11y The preset switcher is a `role="group"`; each toggle is a real `<button>`.
  * @structure
- *   .pg
- *     .pg__presets
- *       .pg__preset
- *     .pg__row
- *       .pg__resolved
- *         .pg__facet
- *           .pg__member
+ * .pg {
+ *   .pg__presets {
+ *     .pg__preset {}
+ *   }
+ *   .pg__row {
+ *     .pg__resolved {
+ *       .pg__facet {
+ *         .pg__member {}
+ *       }
+ *     }
+ *   }
+ * }
  */
 @property --pg-gap {
   syntax: "<length>";

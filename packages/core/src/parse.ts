@@ -361,6 +361,7 @@ function buildEntry(
     conditions: acc.conditions,
     examples: doc.examples,
     structure: doc.structure,
+    structureDescription: doc.structureDescription,
     demo: doc.demo,
     deprecated: doc.deprecated,
     see: doc.see,

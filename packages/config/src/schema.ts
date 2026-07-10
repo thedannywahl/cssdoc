@@ -104,5 +104,11 @@ export const cssDocSchema = {
         part: { type: "string" },
       },
     },
+    structureIgnore: {
+      description:
+        "Class names to exempt from the structure-unknown-selector rule — legitimately-external classes (utilities, cross-component refs) referenced in @structure. Literal names or simple globs where * matches any run of characters (e.g. util-*).",
+      type: "array",
+      items: { type: "string" },
+    },
   },
 } as const;

@@ -77,6 +77,7 @@ test("modifierConvention and rules load onto the configuration and config file",
   expect(configuration.modifierConvention.separator).toBe("-");
   expect(configFile.ruleSeverities["unknown-modifier"]).toBe("off");
   expect(configFile.naming.component).toBe("pascalCase");
+  expect(configFile.structureIgnore).toEqual(["util-*", "sr-only"]);
 
   // And it drives parsing: an rscss modifier is extracted under this configuration.
   const [button] = parseCssDocs(`/**\n * @component button\n */\n.button {}\n.button.-color-x {}`, {

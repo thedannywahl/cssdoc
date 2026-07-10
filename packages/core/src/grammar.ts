@@ -24,6 +24,7 @@
  *
  * @module
  */
+import postcss, { type ChildNode, type Rule } from "postcss";
 import { CssDocConfiguration } from "./configuration.ts";
 import type { CssRecordKind, CssReleaseStage, StructureNode } from "./model.ts";
 
@@ -114,8 +115,10 @@ export interface ParsedDoc {
   conditions: DocCondition[];
   /** `@example` blocks. */
   examples: string[];
-  /** `@structure` — the raw (indented) HTML-tree body, parsed into nodes by {@link parseStructure}. */
+  /** `@structure` — the nested-CSS body, parsed into a selector tree by {@link parseStructure}. */
   structure?: StructureNode[];
+  /** An optional prose description leading the `@structure` body. */
+  structureDescription?: string;
   /** The `<replacement>` argument from a `@deprecated` tag. */
   deprecated?: string;
   /** `@demo <spec>`. */
@@ -257,9 +260,12 @@ function applyBlockTag(doc: ParsedDoc, canonical: string, tagName: string, rest:
     case "a11y":
       doc.accessibility = rest.trim();
       break;
-    case "structure":
-      doc.structure = parseStructure(rest);
+    case "structure": {
+      const { description, css } = splitStructureBody(rest);
+      doc.structure = parseStructure(css);
+      if (description) doc.structureDescription = description;
       break;
+    }
     case "modifier": {
       const { head, description } = splitDesc(rest);
       doc.modifiers.set(head.replace(/^\./u, ""), parseModifierBody(description));
@@ -372,29 +378,48 @@ export function recordNameOf(
 }
 
 /**
- * Parse a `@structure` body — an indentation-nested list of element selectors — into a
- * {@link StructureNode} tree. Indentation depth (any consistent width) sets nesting; blank lines are
- * ignored.
+ * Peel an optional leading prose description off a `@structure` body. The nested CSS begins at the
+ * first line that opens a rule (contains `{`); any prose before it is the description. If the body
+ * begins with a selector — including a multi-line selector like `.a,\n.b {` — there is no description
+ * and the whole body is CSS.
+ *
+ * @param raw - The `@structure` body (description and/or nested CSS).
+ * @returns The split `description` (when present) and the `css` to parse.
+ */
+function splitStructureBody(raw: string): { description?: string; css: string } {
+  const lines = raw.split("\n");
+  const braceLine = lines.findIndex((l) => l.includes("{"));
+  if (braceLine <= 0) return { css: raw }; // no rule, or the first line already opens one
+  const lead = lines.slice(0, braceLine);
+  // A lead that itself begins a selector is part of a multi-line selector, not a description.
+  if (/^\s*[.#:[*&>+~]/u.test(lead[0])) return { css: raw };
+  const description = lead.join("\n").trim();
+  return description ? { description, css: lines.slice(braceLine).join("\n") } : { css: raw };
+}
+
+/**
+ * Parse a `@structure` body — nested CSS (brace-delimited rules) — into a {@link StructureNode} tree.
+ * Each rule's selector becomes a node; nested rules become its children. Because a node is a real
+ * compound selector, `:has()` (contains), `:is()` / selector-lists (one-of), and `:not()` (not) express
+ * relationships natively. Leaf nodes are written as empty rules (`.tab {}`). A malformed body parses to
+ * an empty tree rather than throwing.
  *
  * @example
  * ```
- * .tabs
- *   .list
- *     .tab
- *   .panel
+ * .tabs {
+ *   .list { .tab {} }
+ *   .panel {}
+ * }
  * ```
  */
 export function parseStructure(raw: string): StructureNode[] {
-  const roots: StructureNode[] = [];
-  const stack: { indent: number; node: StructureNode }[] = [];
-  for (const line of raw.split("\n")) {
-    if (!line.trim()) continue;
-    const indent = line.length - line.trimStart().length;
-    const node: StructureNode = { selector: line.trim(), children: [] };
-    while (stack.length && stack[stack.length - 1].indent >= indent) stack.pop();
-    if (stack.length) stack[stack.length - 1].node.children.push(node);
-    else roots.push(node);
-    stack.push({ indent, node });
+  const build = (nodes: readonly ChildNode[]): StructureNode[] =>
+    nodes
+      .filter((n): n is Rule => n.type === "rule")
+      .map((rule) => ({ selector: rule.selector.trim(), children: build(rule.nodes ?? []) }));
+  try {
+    return build(postcss.parse(raw).nodes);
+  } catch {
+    return []; // malformed structure → empty, never throws
   }
-  return roots;
 }

@@ -17,11 +17,13 @@
  *   <div class="panel" role="tabpanel">…</div>
  * </div>
  * ```
- * @structure
- *   .tabs
- *     .list
- *       .tab
- *     .panel
+ * @structure How the parts nest in the DOM.
+ * .tabs {
+ *   .list {
+ *     .tab {}
+ *   }
+ *   .panel {}
+ * }
  * @modifier -orientation-vertical — Stacks the tabs down the side.
  * @modifier -variant-boxed — @deprecated {@link -orientation-vertical}
  */

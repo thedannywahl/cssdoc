@@ -2,5 +2,6 @@
   "$schema": "https://cssdoc.dev/cssdoc.schema.json",
   "modifierConvention": "rscss",
   "rules": { "unknown-modifier": "off" },
-  "naming": { "component": "pascalCase" }
+  "naming": { "component": "pascalCase" },
+  "structureIgnore": ["util-*", "sr-only"]
 }

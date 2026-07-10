@@ -167,6 +167,8 @@ export interface ConfigScope {
   index: CssDocIndex;
   severities: RuleSeverities;
   naming: ResolvedNaming;
+  /** Class names exempt from the `structure-unknown-selector` rule. */
+  structureIgnore?: readonly string[];
 }
 
 /** The language service. Construct with the component index (rebuild it when the CSS changes). */
@@ -363,7 +365,7 @@ export class CssDocLanguageService {
     const index = createIndex(text, { configuration: scope.configuration });
     const { assignments, usages } = cssValueSites(text);
     const diags = [
-      ...lintModel(index, scope.severities, scope.naming),
+      ...lintModel(index, scope.severities, scope.naming, scope.structureIgnore),
       ...checkPropertyAssignments(assignments, index, scope.severities),
       ...checkPropertyUsage(usages, index, {}, scope.severities),
     ];

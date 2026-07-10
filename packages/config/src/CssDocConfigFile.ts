@@ -42,6 +42,7 @@ interface RawConfig {
   modifierConvention?: ModifierConventionInput;
   rules?: Record<string, RuleSeverityOverride>;
   naming?: NamingOverride;
+  structureIgnore?: string[];
 }
 
 const ajv = new Ajv({ allErrors: true });
@@ -67,6 +68,7 @@ interface ConfigFileInit {
   modifierConvention?: ModifierConventionInput;
   rules: Record<string, RuleSeverityOverride>;
   naming: NamingOverride;
+  structureIgnore: string[];
 }
 
 /** A loaded `cssdoc.json` (plus the files it `extends`), ready to configure a parser. */
@@ -97,6 +99,11 @@ export class CssDocConfigFile {
    * `resolveNaming` in `@cssdoc/providers`.
    */
   readonly naming: Readonly<NamingOverride>;
+  /**
+   * Class names exempt from the `structure-unknown-selector` rule, merged (union) across the `extends`
+   * chain. Pass to `lintModel` in `@cssdoc/providers`.
+   */
+  readonly structureIgnore: readonly string[];
 
   private constructor(init: ConfigFileInit) {
     this.filePath = init.filePath;
@@ -109,14 +116,18 @@ export class CssDocConfigFile {
     this.modifierConvention = init.modifierConvention;
     const severities: Record<string, RuleSeverityOverride> = {};
     const naming: NamingOverride = {};
+    const structureIgnore = new Set<string>();
     for (const extended of init.extendsFiles) {
       Object.assign(severities, extended.ruleSeverities);
       Object.assign(naming, extended.naming);
+      for (const g of extended.structureIgnore) structureIgnore.add(g);
     }
     Object.assign(severities, init.rules);
     Object.assign(naming, init.naming);
+    for (const g of init.structureIgnore) structureIgnore.add(g);
     this.ruleSeverities = severities;
     this.naming = naming;
+    this.structureIgnore = [...structureIgnore];
   }
 
   /** Whether this file — or any file it extends — reported an error. */
@@ -203,6 +214,7 @@ export class CssDocConfigFile {
       extendsFiles: [],
       rules: {},
       naming: {},
+      structureIgnore: [],
     });
   }
 
@@ -219,6 +231,7 @@ export class CssDocConfigFile {
         extendsFiles: [],
         rules: {},
         naming: {},
+        structureIgnore: [],
       });
 
     if (visited.has(filePath)) {
@@ -284,6 +297,7 @@ export class CssDocConfigFile {
       modifierConvention: raw.modifierConvention,
       rules: raw.rules ?? {},
       naming: raw.naming ?? {},
+      structureIgnore: raw.structureIgnore ?? [],
     });
   }
 }

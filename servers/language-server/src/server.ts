@@ -75,6 +75,7 @@ export function startLanguageServer(): void {
           g.configFile.ruleSeverities as Parameters<typeof resolveRuleSeverities>[0],
         ),
         naming: resolveNaming(g.configFile.naming),
+        structureIgnore: g.configFile.structureIgnore,
       };
     });
     service.setScopes(scopes);

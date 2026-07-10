@@ -37,34 +37,63 @@ test("lintModel reports author-side hygiene (chip missing summary, -size-sm undo
   expect(rules).toContain("button:undocumented-modifier"); // -size-sm
 });
 
-test("structure-unknown-selector flags a @structure reference that isn't the class or a part", () => {
-  // `.tablet` is renamed but @structure still says `.tabs`; `.list` is a real part, so it's fine.
+test("structure-unknown-selector flags a @structure class that isn't a documented member", () => {
+  // `.bogus` chained on `.list` is neither the class nor a part; the whole compound is validated.
   const css = `/**
  * @component tabs
  * @summary Tabs.
  * @part .list — The row.
  * @structure
- *   .tabs
- *     .list
+ * .tabs {
+ *   .list.bogus {}
+ * }
  */
-.tablet {}
-@scope (.tablet) { :scope .list {} }`;
-  const rules = lintModel(createIndex(css)).map((d) => d.rule);
-  expect(rules).toContain("structure-unknown-selector");
-  // The intact example (class matches structure root) does not flag it.
+.tabs {}
+@scope (.tabs) { :scope .list {} }`;
+  expect(lintModel(createIndex(css)).map((d) => d.rule)).toContain("structure-unknown-selector");
+  // The intact tree (every class is the component or a documented part) does not flag it.
   const clean = `/**
  * @component tabs
  * @summary Tabs.
  * @part .list — The row.
  * @structure
- *   .tabs
- *     .list
+ * .tabs {
+ *   .list {}
+ * }
  */
 .tabs {}
 @scope (.tabs) { :scope .list {} }`;
   expect(lintModel(createIndex(clean)).map((d) => d.rule)).not.toContain(
     "structure-unknown-selector",
   );
+});
+
+test("structure-unknown-selector is order-independent, checks inner :has() targets, and honors structureIgnore", () => {
+  const doc = (nodeSelector: string) => `/**
+ * @component tabs
+ * @summary Tabs.
+ * @part .list — The row.
+ * @part .tab — A tab.
+ * @structure
+ * .tabs {
+ *   ${nodeSelector} {}
+ * }
+ */
+.tabs {}
+@scope (.tabs) { :scope .list, :scope .tab {} }`;
+  const flags = (nodeSelector: string, structureIgnore?: string[]) =>
+    lintModel(createIndex(doc(nodeSelector)), undefined, undefined, structureIgnore)
+      .map((d) => d.rule)
+      .filter((r) => r === "structure-unknown-selector");
+
+  // A documented compound is clean regardless of class order (a sorter may reorder them).
+  expect(flags(".list.tab")).toEqual([]);
+  expect(flags(".tab.list")).toEqual([]);
+  // An inner :has() target is validated too.
+  expect(flags(".list:has(.bogus)")).toEqual(["structure-unknown-selector"]);
+  // structureIgnore exempts an external class (literal or glob).
+  expect(flags(".list.util-grid")).toEqual(["structure-unknown-selector"]);
+  expect(flags(".list.util-grid", ["util-*"])).toEqual([]);
 });
 
 test("undocumented-css-part flags a @csspart without a description", () => {

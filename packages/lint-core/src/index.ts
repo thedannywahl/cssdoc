@@ -81,6 +81,8 @@ export interface LintOptions {
   rules?: Partial<Record<RuleName, RuleSeverity | boolean>>;
   /** Name-case conventions to enforce (`component`/`part`); drives the `*-name-case` rules. */
   naming?: NamingRules;
+  /** Class names exempt from the `structure-unknown-selector` rule (literal names or `*` globs). */
+  structureIgnore?: readonly string[];
 }
 
 /**
@@ -100,7 +102,7 @@ export function lintCssDocs(css: string, options: LintOptions = {}): Violation[]
   const { assignments, usages } = cssValueSites(css);
   // The providers drop `off` rules and stamp the resolved severity — no separate filter here.
   const diagnostics = [
-    ...lintModel(index, severities, naming), // hygiene + invalid-default-value + name-case
+    ...lintModel(index, severities, naming, options.structureIgnore), // hygiene + invalid-default-value + name-case
     ...checkPropertyAssignments(assignments, index, severities), // invalid-property-value
     ...checkPropertyUsage(usages, index, {}, severities), // invalid-fallback-value (unknown-property opt-in, off here)
   ];

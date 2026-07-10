@@ -182,7 +182,9 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   }
 
   if (entry.structure?.length) {
-    lines.push("## Structure", "", "```text", ...renderTree(entry.structure), "```", "");
+    lines.push("## Structure", "");
+    if (entry.structureDescription) lines.push(entry.structureDescription, "");
+    lines.push("```text", ...renderTree(entry.structure), "```", "");
     const mermaid = toMermaid(entry.structure);
     if (mermaid) lines.push("```mermaid", mermaid, "```", "");
   }

@@ -54,7 +54,7 @@ modifier conventions (rscss, CUBE, OOCSS, and more) — see [Modifier convention
 | `@layer <x> — <desc>`                                  | A cascade layer                                           | `@layer` at-rules      |
 | `@container` / `@supports` / `@media <query> — <desc>` | A conditional block                                       | those at-rules         |
 | `@a11y` / `@accessibility <text>`                      | Accessibility guidance                                    | authored               |
-| `@structure`                                           | An indentation-nested HTML tree                           | authored               |
+| `@structure`                                           | A nested-CSS element tree                                 | authored               |
 | `@demo <spec>`                                         | An embeddable demo (`self:button`, `stackblitz:…`, a URL) | authored               |
 | `@defaultValue <value>`                                | The default of the preceding `@cssproperty`               | authored               |
 
@@ -98,10 +98,12 @@ editor's replace-with-canonical quick-fix.
  * @part .tab — A single tab.
  * @cssstate selected — The active tab.
  * @structure
- *   .tabs
- *     .list
- *       .tab
- *     .panel
+ * .tabs {
+ *   .list {
+ *     .tab {}
+ *   }
+ *   .panel {}
+ * }
  * @a11y Tabs use roving tabindex; panels are labelled by their tab.
  * @beta
  */
@@ -109,3 +111,33 @@ editor's replace-with-canonical quick-fix.
   display: grid;
 }
 ```
+
+`@structure` is written as **nested CSS**: each rule's selector is an element, and the rules nested
+inside it are its children. Because a node is a real selector, you can express relationships between
+parts — `:has()` for "contains", `:is()` or a selector list for "one of", and `:not()` for "not":
+
+```css
+/**
+ * @structure
+ * .tabs {
+ *   .list:has(.tab) {}
+ *   .panel {}
+ * }
+ */
+```
+
+You can caption the tree with a leading one-line description before the CSS begins — the prose up to
+the first rule is the description, and everything from the first selector on is the tree:
+
+```css
+/**
+ * @structure How the parts nest in the DOM.
+ * .tabs {
+ *   .list { .tab {} }
+ * }
+ */
+```
+
+Every class named in an `@structure` selector should resolve to the component class or a documented
+member; otherwise `structure-unknown-selector` warns. Exempt legitimately-external classes (utilities,
+cross-component refs) with `structureIgnore` in `cssdoc.json`.

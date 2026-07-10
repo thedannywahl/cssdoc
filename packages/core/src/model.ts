@@ -141,13 +141,14 @@ export type CssRecordKind = "component" | "utility" | "rule" | "declaration";
 export type CssReleaseStage = "alpha" | "beta" | "experimental" | "internal" | "public";
 
 /**
- * A node in an authored HTML-structure tree (`@structure`): a selector for the element and its
- * children. Emitters render it as an indented tree and, via {@link toMermaid}, as a diagram.
+ * A node in an authored structure tree (`@structure`), written as nested CSS: a compound selector for
+ * the element and its children (the rules nested inside it). Emitters render the tree and, via
+ * {@link toMermaid}, a diagram.
  */
 export interface StructureNode {
-  /** The node's selector/label, e.g. `.tabs` or `.tab.-selected` or `button`. */
+  /** The node's compound selector, e.g. `.tabs`, `.tab.-selected`, or `.list:has(.tab)`. */
   selector: string;
-  /** Child nodes (one indentation level deeper). */
+  /** Child nodes (rules nested one brace level deeper). */
   children: StructureNode[];
 }
 
@@ -197,8 +198,10 @@ export interface CssDocEntry {
   conditions: CssCondition[];
   /** `@example` blocks, verbatim. */
   examples: string[];
-  /** The authored `@structure` HTML tree (top-level nodes), when present. */
+  /** The authored `@structure` element tree (top-level nodes), when present. */
   structure?: StructureNode[];
+  /** An optional prose description leading the `@structure` body, when authored. */
+  structureDescription?: string;
   /** `@demo <spec>` (e.g. `self:button`), when authored. */
   demo?: string;
   /** Component-level deprecation replacement text, when authored (the argument to a `@deprecated` tag). */
