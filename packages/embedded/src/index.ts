@@ -296,3 +296,74 @@ export function lintCssDocsFromSource(
     return [];
   }
 }
+
+// ── consumer class-usage scanning (where component classes are *used* in templates) ───────────────
+
+/** One class token used on an element, with its offset span in the source. */
+export interface ClassToken {
+  token: string;
+  start: number;
+  end: number;
+}
+
+/** Every class token found on one element — across `class`/`className`/`:class`/`class:name`. */
+export interface ClassUsageSite {
+  tokens: ClassToken[];
+}
+
+const TAG_RE = /<[A-Za-z][\w.-]*\b([^>]*)>/gu;
+// Static `class="…"` / `className="…"` — not `:class` / `v-bind:class` (excluded by the lookbehind).
+const STATIC_CLASS_RE = /(?<![:\w-])(?:className|class)\s*=\s*("([^"]*)"|'([^']*)')/gu;
+// JSX brace value: `className={ … }` / `class={ … }` (string/template literals inside are class names).
+const JSX_CLASS_RE = /(?<![:\w-])(?:className|class)\s*=\s*\{([^{}]*)\}/gu;
+// Vue bound value: `:class="…"` / `v-bind:class="…"` (string literals inside the expression).
+const VUE_BOUND_RE = /(?::class|v-bind:class)\s*=\s*("([^"]*)"|'([^']*)')/gu;
+// Svelte directive: `class:name` toggles the class `name`.
+const SVELTE_CLASS_RE = /\bclass:([\w-]+)/gu;
+const STRING_LITERAL_RE = /(["'`])((?:(?!\1)[\s\S])*)\1/gu;
+const WORD_RE = /\S+/gu;
+
+/**
+ * Scan a host document (HTML, JSX, Vue, Svelte, …) for the places component classes are **used**, so
+ * the consumer-usage rules (unknown-modifier/part/state) can run in templates. Returns one site per
+ * element with every class token and its source offset. Dynamic expressions are best-effort — only
+ * string/template **literals** are read (a `:class="{ active: x }"` object key or a computed name is
+ * not), which is enough for the common `class="…"`, `:class="[ '…' ]"`, and `class:name` forms.
+ */
+export function scanClassUsages(source: string): ClassUsageSite[] {
+  const sites: ClassUsageSite[] = [];
+  for (const tag of source.matchAll(TAG_RE)) {
+    const attrs = tag[1];
+    if (!attrs) continue;
+    const base = (tag.index ?? 0) + tag[0].length - 1 - attrs.length; // absolute start of the attrs
+    const tokens: ClassToken[] = [];
+    const pushWords = (raw: string, rawBase: number): void => {
+      for (const w of raw.matchAll(WORD_RE)) {
+        const start = rawBase + (w.index ?? 0);
+        tokens.push({ token: w[0], start, end: start + w[0].length });
+      }
+    };
+    const pushLiterals = (expr: string, exprBase: number): void => {
+      for (const s of expr.matchAll(STRING_LITERAL_RE)) {
+        pushWords(s[2], exprBase + (s.index ?? 0) + 1); // +1 skips the opening quote
+      }
+    };
+    for (const a of attrs.matchAll(STATIC_CLASS_RE)) {
+      const raw = a[2] ?? a[3] ?? "";
+      pushWords(raw, base + (a.index ?? 0) + a[0].length - 1 - raw.length);
+    }
+    for (const a of attrs.matchAll(JSX_CLASS_RE)) {
+      pushLiterals(a[1], base + (a.index ?? 0) + a[0].length - 1 - a[1].length);
+    }
+    for (const a of attrs.matchAll(VUE_BOUND_RE)) {
+      const raw = a[2] ?? a[3] ?? "";
+      pushLiterals(raw, base + (a.index ?? 0) + a[0].length - 1 - raw.length);
+    }
+    for (const a of attrs.matchAll(SVELTE_CLASS_RE)) {
+      const start = base + (a.index ?? 0) + a[0].length - a[1].length;
+      tokens.push({ token: a[1], start, end: start + a[1].length });
+    }
+    if (tokens.length) sites.push({ tokens });
+  }
+  return sites;
+}

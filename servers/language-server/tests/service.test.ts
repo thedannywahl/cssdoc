@@ -77,6 +77,34 @@ test("BEM (default): diagnostics flag an undocumented suffix modifier at Warning
   expect(unknown?.message).toContain(".card--bogus");
 });
 
+test("class usage is checked in JSX className, Vue :class, and Svelte class:name", () => {
+  const svc = new CssDocLanguageService(createIndex(BEM_CSS));
+  // JSX className brace with a string literal.
+  expect(
+    svc
+      .diagnostics(`<button className={clsx("card", "card--bogus")} />`, "typescriptreact")
+      .some((d) => d.code === "unknown-modifier" && d.message.includes(".card--bogus")),
+  ).toBe(true);
+  // Vue :class array literal (static class carries the base).
+  expect(
+    svc
+      .diagnostics(`<div class="card" :class="['card--bogus']" />`, "vue")
+      .some((d) => d.code === "unknown-modifier"),
+  ).toBe(true);
+  // Svelte class:name directive.
+  expect(
+    svc
+      .diagnostics(`<div class="card" class:card--bogus={on} />`, "svelte")
+      .some((d) => d.code === "unknown-modifier"),
+  ).toBe(true);
+  // A documented modifier stays clean.
+  expect(
+    svc
+      .diagnostics(`<div class="card card--featured" />`, "html")
+      .some((d) => d.code === "unknown-modifier"),
+  ).toBe(false);
+});
+
 test("attribute (CUBE): a data-attribute modifier on the base element is checked", () => {
   const cubeCss = `
 /**

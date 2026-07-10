@@ -165,6 +165,23 @@ Point the language server at your host files (the VS Code extension's include gl
 `.vue`, `.ts`, and friends). Diagnostics, hover, completion, and go-to-definition then work in embedded
 CSS, and — unlike stylelint — a doc comment above a styled-component `const` is picked up too.
 
+## Checking class usage in templates
+
+cssdoc also checks where a component's classes are **used**. In a host document the language server
+scans each element's classes — HTML `class`, JSX `className`, Vue `:class`, and Svelte `class:name` —
+and flags an undocumented modifier, part, or state (`unknown-modifier` / `unknown-part` /
+`unknown-state`) on an element that carries a documented component:
+
+```jsx
+<button className="card card--typo" /> // → unknown-modifier: .card--typo
+```
+
+Dynamic bindings are read best-effort: string and template **literals** are scanned (a
+`:class="['card--x']"` array, a `class:card--x` toggle, a ``className={`card--x`}`` template, and a
+quoted object key like `:class="{ 'card--x': on }"`), but a computed name or an unquoted object key
+(`:class="{ cardX: on }"`) isn't. (An ESLint rule for JSX usage is a possible follow-up; today this runs
+in the editor via the language server.)
+
 ## Preprocessor dialects
 
 SCSS and Less aren't plain CSS — `postcss.parse` can't read `$vars`, `@mixin`, or `//` comments. The

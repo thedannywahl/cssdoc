@@ -4,6 +4,7 @@ import {
   lintCssDocsFromSource,
   parseCssDocsFromSource,
   projectCss,
+  scanClassUsages,
 } from "../src/index.ts";
 
 const JS = `import styled from "styled-components";
@@ -106,6 +107,30 @@ test("lint violations carry absolute source lines", () => {
 
 test("a malformed source yields [] rather than throwing", () => {
   expect(parseCssDocsFromSource("<style>.a { color:", { host: "html" })).toEqual([]);
+});
+
+test("scanClassUsages reads class tokens from HTML, JSX, Vue, and Svelte, per element", () => {
+  const toks = (src: string) => scanClassUsages(src).flatMap((s) => s.tokens.map((t) => t.token));
+  // HTML / static
+  expect(toks(`<div class="btn btn--primary"></div>`)).toEqual(["btn", "btn--primary"]);
+  // JSX className string + brace-with-literal
+  expect(toks(`<button className="btn btn--lg" />`)).toEqual(["btn", "btn--lg"]);
+  expect(toks(`<button className={clsx("btn", "btn--lg")} />`)).toEqual(["btn", "btn--lg"]);
+  // Vue :class array of string literals
+  expect(toks(`<button class="btn" :class="['btn--primary', x && 'btn--lg']" />`)).toEqual([
+    "btn",
+    "btn--primary",
+    "btn--lg",
+  ]);
+  // Svelte class:name toggles a class, alongside the static class
+  expect(toks(`<button class="btn" class:btn--active={on} />`)).toEqual(["btn", "btn--active"]);
+});
+
+test("scanClassUsages reports accurate offsets", () => {
+  const src = `<div class="btn btn--x"></div>`;
+  const [site] = scanClassUsages(src);
+  const mod = site.tokens.find((t) => t.token === "btn--x")!;
+  expect(src.slice(mod.start, mod.end)).toBe("btn--x");
 });
 
 test('a <style lang="scss"> block parses through the SCSS dialect', () => {

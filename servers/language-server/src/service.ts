@@ -12,6 +12,7 @@ import {
   detectEmbeddedHost,
   projectCss,
   projectionDialect,
+  scanClassUsages,
 } from "@cssdoc/embedded";
 import { type CssParse, dialectForFilename, resolveParser } from "@cssdoc/dialects";
 import {
@@ -382,13 +383,16 @@ export class CssDocLanguageService {
       return results;
     }
 
-    for (const attr of classAttributes(text)) {
-      const base = attr.tokens.find((t) => scope.index.componentForClass(t));
+    // One site per element — class tokens across `class`/`className`/`:class`/`class:name` (JSX, Vue,
+    // Svelte, HTML). A documented component among the tokens turns the element into a checkable usage.
+    for (const site of scanClassUsages(text)) {
+      const tokens = site.tokens.map((t) => t.token);
+      const base = tokens.find((t) => scope.index.componentForClass(t));
       if (!base) continue; // only check elements that carry a documented component of this scope
-      for (const member of attr.members) {
+      for (const member of site.tokens) {
         if (matcher.usageKind(member.token, base) === undefined) continue;
         results.push({
-          usage: { base, tokens: attr.tokens, token: member.token },
+          usage: { base, tokens, token: member.token },
           start: member.start,
           end: member.end,
         });
