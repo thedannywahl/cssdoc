@@ -66,3 +66,24 @@ test("rules can be disabled", () => {
   const v = lintCssDocs(CSS, { rules: { "missing-summary": false } });
   expect(byRule(v, "missing-summary")).toHaveLength(0);
 });
+
+test("naming: component-name-case flags a component that violates the configured case", () => {
+  const lower = `/**\n * @component card\n * @summary A surface.\n */\n.card { color: red; }`;
+  const pascal = `/**\n * @component Card\n * @summary A surface.\n */\n.Card { color: red; }`;
+  // PascalCase (SUIT): the lowercase `.card` is flagged; `.Card` is fine.
+  expect(
+    byRule(lintCssDocs(lower, { naming: { component: "pascalCase" } }), "component-name-case"),
+  ).toHaveLength(1);
+  expect(
+    byRule(lintCssDocs(pascal, { naming: { component: "pascalCase" } }), "component-name-case"),
+  ).toHaveLength(0);
+  // Off by default (no naming configured).
+  expect(byRule(lintCssDocs(lower), "component-name-case")).toHaveLength(0);
+});
+
+test("naming: a custom regex is honored for the name case", () => {
+  const css = `/**\n * @component widget\n * @summary A thing.\n */\n.widget { color: red; }`;
+  // Require a `c-` prefix; `.widget` doesn't match.
+  const v = byRule(lintCssDocs(css, { naming: { component: "^c-" } }), "component-name-case");
+  expect(v).toHaveLength(1);
+});

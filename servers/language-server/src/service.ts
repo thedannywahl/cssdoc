@@ -15,6 +15,8 @@ import {
 } from "@cssdoc/index";
 import {
   DEFAULT_RULE_SEVERITIES,
+  type NamingRules,
+  type ResolvedNaming,
   type RuleSeverities,
   checkClassUsage,
   checkPropertyAssignments,
@@ -26,6 +28,7 @@ import {
   hoverForClass,
   hoverForCustomProperty,
   lintModel,
+  resolveNaming,
 } from "@cssdoc/providers";
 
 /** Language ids handled as CSS (the value/hygiene checks run on these). */
@@ -153,6 +156,8 @@ function classAttrAt(text: string, offset: number): ClassAttr | undefined {
 
 /** The language service. Construct with the component index (rebuild it when the CSS changes). */
 export class CssDocLanguageService {
+  private naming: ResolvedNaming = {};
+
   constructor(
     private index: CssDocIndex,
     private severities: RuleSeverities = DEFAULT_RULE_SEVERITIES,
@@ -166,6 +171,11 @@ export class CssDocLanguageService {
   /** Set the per-rule severities (e.g. loaded from a `cssdoc.json`). */
   setRuleSeverities(severities: RuleSeverities): void {
     this.severities = severities;
+  }
+
+  /** Set the name-case conventions (e.g. loaded from a `cssdoc.json`). */
+  setNaming(naming: NamingRules): void {
+    this.naming = resolveNaming(naming);
   }
 
   /** Completions at a position: `var(--…)` custom properties, or classes/modifiers in a class attribute. */
@@ -292,7 +302,7 @@ export class CssDocLanguageService {
     const index = createIndex(text);
     const { assignments, usages } = cssValueSites(text);
     const diags = [
-      ...lintModel(index, this.severities),
+      ...lintModel(index, this.severities, this.naming),
       ...checkPropertyAssignments(assignments, index, this.severities),
       ...checkPropertyUsage(usages, index, {}, this.severities),
     ];

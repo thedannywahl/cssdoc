@@ -27,6 +27,8 @@ export type RuleId =
   | "unknown-modifier"
   | "deprecated-modifier"
   | "undocumented-part"
+  | "component-name-case"
+  | "part-name-case"
   | "invalid-default-value"
   | "invalid-property-value"
   | "invalid-fallback-value"
@@ -48,6 +50,9 @@ export const DEFAULT_RULE_SEVERITIES: RuleSeverities = {
   "unknown-modifier": "warn",
   "deprecated-modifier": "warn",
   "undocumented-part": "warn",
+  // The name-case rules only fire when a `naming` convention is configured, so `warn` is safe.
+  "component-name-case": "warn",
+  "part-name-case": "warn",
   "invalid-default-value": "warn",
   "invalid-property-value": "warn",
   "invalid-fallback-value": "warn",
@@ -115,4 +120,49 @@ export interface UsageOptions {
    * is flagged as unknown. Off by default, since consumed properties are often external tokens.
    */
   propertyPrefix?: string;
+}
+
+/**
+ * A required name case: a built-in preset, or a custom regular-expression source string tested
+ * against the class name. `(string & {})` keeps preset autocomplete while accepting any pattern.
+ */
+export type NameCase = "pascalCase" | "camelCase" | "lowercase" | (string & {});
+
+/** Which class names a `naming` convention enforces. Absent members aren't checked. */
+export interface NamingRules {
+  /** The component base-class name (e.g. SUIT `Card` → `pascalCase`). */
+  component?: NameCase;
+  /** Sub-element part class names. */
+  part?: NameCase;
+}
+
+/** The built-in name-case patterns, tested against a class name without its leading dot. */
+export const NAME_CASE_PRESETS: Record<string, RegExp> = {
+  pascalCase: /^[A-Z][A-Za-z0-9]*$/u,
+  camelCase: /^[a-z][A-Za-z0-9]*$/u,
+  // Lowercase letters, digits, and hyphens — the common CSS/kebab class shape.
+  lowercase: /^[a-z][a-z0-9-]*$/u,
+};
+
+/** A {@link NamingRules} compiled to regexes (custom patterns compiled from their source). */
+export interface ResolvedNaming {
+  component?: RegExp;
+  part?: RegExp;
+}
+
+/** Compile one {@link NameCase} to a regex: a preset, else the string as a custom pattern. */
+function compileNameCase(spec: NameCase | undefined): RegExp | undefined {
+  if (!spec) return undefined;
+  if (spec in NAME_CASE_PRESETS) return NAME_CASE_PRESETS[spec];
+  try {
+    // Custom user pattern. Tested only against short class names; still the user's own config.
+    return new RegExp(spec, "u");
+  } catch {
+    return undefined; // an invalid pattern disables the check rather than throwing
+  }
+}
+
+/** Compile {@link NamingRules} to regexes once, for the record/part name-case checks. */
+export function resolveNaming(naming?: NamingRules): ResolvedNaming {
+  return { component: compileNameCase(naming?.component), part: compileNameCase(naming?.part) };
 }

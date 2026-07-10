@@ -15,7 +15,7 @@
  * @module @cssdoc/stylelint-plugin
  */
 import type { ModifierConventionInput } from "@cssdoc/core";
-import { type RuleName, type RuleSeverity, lintCssDocs } from "@cssdoc/lint-core";
+import { type NamingRules, type RuleName, type RuleSeverity, lintCssDocs } from "@cssdoc/lint-core";
 import stylelint, { type Rule } from "stylelint";
 
 const { createPlugin, utils } = stylelint;
@@ -36,6 +36,7 @@ export const meta = { url: "https://cssdoc.dev" };
 interface SecondaryOptions {
   rules?: Partial<Record<RuleName, RuleSeverity | boolean>>;
   modifierConvention?: ModifierConventionInput;
+  naming?: NamingRules;
 }
 
 const rule: Rule<boolean, SecondaryOptions> = (primary, secondaryOptions) => (root, result) => {
@@ -48,6 +49,7 @@ const rule: Rule<boolean, SecondaryOptions> = (primary, secondaryOptions) => (ro
       possible: {
         rules: [(value) => typeof value === "object"],
         modifierConvention: [(value) => typeof value === "string" || typeof value === "object"],
+        naming: [(value) => typeof value === "object"],
       },
       optional: true,
     },
@@ -58,6 +60,7 @@ const rule: Rule<boolean, SecondaryOptions> = (primary, secondaryOptions) => (ro
   const violations = lintCssDocs(css, {
     rules: secondaryOptions?.rules,
     modifierConvention: secondaryOptions?.modifierConvention,
+    naming: secondaryOptions?.naming,
   });
   for (const violation of violations) {
     utils.report({

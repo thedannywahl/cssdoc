@@ -55,6 +55,7 @@ export function startLanguageServer(): void {
         configFile.ruleSeverities as Parameters<typeof resolveRuleSeverities>[0],
       ),
     );
+    service.setNaming(configFile.naming);
   };
 
   connection.onInitialize((params) => {

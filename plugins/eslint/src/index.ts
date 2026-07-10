@@ -35,7 +35,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { ModifierConventionInput } from "@cssdoc/core";
-import { type RuleName, lintCssDocs } from "@cssdoc/lint-core";
+import { type NamingRules, type RuleName, lintCssDocs } from "@cssdoc/lint-core";
 import { type CssDocIndex, createIndex } from "@cssdoc/index";
 import { type RuleSeverity, checkClassUsage } from "@cssdoc/providers";
 import css from "@eslint/css";
@@ -73,6 +73,7 @@ interface Plugin {
 interface DocCommentsOptions {
   rules?: Partial<Record<RuleName, RuleSeverity | boolean>>;
   modifierConvention?: ModifierConventionInput;
+  naming?: NamingRules;
 }
 
 const validDocComments: RuleModule = {
@@ -85,6 +86,7 @@ const validDocComments: RuleModule = {
         properties: {
           rules: { type: "object" },
           modifierConvention: { type: ["string", "object"] },
+          naming: { type: "object" },
         },
         additionalProperties: false,
       },
@@ -97,6 +99,7 @@ const validDocComments: RuleModule = {
         const violations = lintCssDocs(context.sourceCode.text, {
           rules: options.rules,
           modifierConvention: options.modifierConvention,
+          naming: options.naming,
         });
         for (const violation of violations) {
           context.report({

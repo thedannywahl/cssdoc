@@ -19,6 +19,7 @@ import {
   type Completion,
   type Diagnostic,
   type Hover,
+  type ResolvedNaming,
   type RuleId,
   type RuleSeverities,
   type UsageOptions,
@@ -59,12 +60,13 @@ export const ASPECTS = [
 export function lintModel(
   index: CssDocIndex,
   severities: RuleSeverities = DEFAULT_RULE_SEVERITIES,
+  naming?: ResolvedNaming,
 ): Diagnostic[] {
   return applySeverities(
     [
-      ...record.model(index),
+      ...record.model(index, naming),
       ...modifier.model(index),
-      ...part.model(index),
+      ...part.model(index, naming),
       ...customProperty.model(index),
     ],
     severities,

@@ -16,7 +16,7 @@ import {
   memberKey,
 } from "@cssdoc/index";
 import { matchesSyntax } from "./syntax.ts";
-import type { Completion, Diagnostic, Hover, UsageOptions } from "./types.ts";
+import type { Completion, Diagnostic, Hover, ResolvedNaming, UsageOptions } from "./types.ts";
 
 const stripDot = (name: string): string => name.replace(/^\./u, "");
 const warn = (d: Omit<Diagnostic, "severity">): Diagnostic => ({ ...d, severity: "warning" });
@@ -24,7 +24,7 @@ const warn = (d: Omit<Diagnostic, "severity">): Diagnostic => ({ ...d, severity:
 // ── record ──────────────────────────────────────────────────────────────────────────────────────
 
 export const record = {
-  model(index: CssDocIndex): Diagnostic[] {
+  model(index: CssDocIndex, naming?: ResolvedNaming): Diagnostic[] {
     const out: Diagnostic[] = [];
     for (const info of index.records) {
       if (!info.entry.summary?.trim()) {
@@ -37,6 +37,20 @@ export const record = {
             span: info.span,
           }),
         );
+      }
+      // Component base-class name case (e.g. SUIT PascalCase). Only components carry this convention.
+      if (naming?.component && info.entry.kind === "component" && info.entry.className) {
+        if (!naming.component.test(stripDot(info.entry.className))) {
+          out.push(
+            warn({
+              aspect: "record",
+              rule: "component-name-case",
+              message: `Component class "${info.entry.className}" doesn't match the configured name case.`,
+              record: info.entry.name,
+              span: info.span,
+            }),
+          );
+        }
       }
     }
     return out;
@@ -202,7 +216,7 @@ export const modifier = {
 // ── part ────────────────────────────────────────────────────────────────────────────────────────
 
 export const part = {
-  model(index: CssDocIndex): Diagnostic[] {
+  model(index: CssDocIndex, naming?: ResolvedNaming): Diagnostic[] {
     const out: Diagnostic[] = [];
     for (const info of index.records) {
       const name = info.entry.name;
@@ -213,6 +227,17 @@ export const part = {
               aspect: "part",
               rule: "undocumented-part",
               message: `Part ".${p.name}" of "${name}" has no @part description.`,
+              record: name,
+              span: info.memberSpans.get(memberKey("part", p.name)) ?? info.span,
+            }),
+          );
+        }
+        if (naming?.part && !naming.part.test(p.name)) {
+          out.push(
+            warn({
+              aspect: "part",
+              rule: "part-name-case",
+              message: `Part ".${p.name}" of "${name}" doesn't match the configured name case.`,
               record: name,
               span: info.memberSpans.get(memberKey("part", p.name)) ?? info.span,
             }),

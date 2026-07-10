@@ -79,5 +79,15 @@ export const cssDocSchema = {
       type: "object",
       additionalProperties: { enum: ["off", "warn", "error"] },
     },
+    naming: {
+      description:
+        "Enforce a name case on class names: a preset (pascalCase, camelCase, lowercase) or a custom regex.",
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        component: { type: "string" },
+        part: { type: "string" },
+      },
+    },
   },
 } as const;

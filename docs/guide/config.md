@@ -30,14 +30,15 @@ npm i -D @cssdoc/config @cssdoc/core
 }
 ```
 
-| Field                | Meaning                                                                                                                    |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `extends`            | Paths (local `./…` or package specifiers) to other `cssdoc.json` files to inherit from.                                    |
-| `noStandardTags`     | Disable every built-in standard tag; only `tagDefinitions` remain.                                                         |
-| `tagDefinitions`     | Custom tags: `tagName`, `syntaxKind` (`record`/`block`/`modifier`/`inline`), `allowMultiple?`, `recordKind?`, `aliasFor?`. |
-| `supportForTags`     | Enable or disable specific tags by name.                                                                                   |
-| `modifierConvention` | How modifier classes are spelled — a preset (`bem`, `rscss`, `bare`) or a custom object. Defaults to `bem`.                |
-| `rules`              | Per-rule severity overrides (`off`/`warn`/`error`).                                                                        |
+| Field                | Meaning                                                                                                                     |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `extends`            | Paths (local `./…` or package specifiers) to other `cssdoc.json` files to inherit from.                                     |
+| `noStandardTags`     | Disable every built-in standard tag; only `tagDefinitions` remain.                                                          |
+| `tagDefinitions`     | Custom tags: `tagName`, `syntaxKind` (`record`/`block`/`modifier`/`inline`), `allowMultiple?`, `recordKind?`, `aliasFor?`.  |
+| `supportForTags`     | Enable or disable specific tags by name.                                                                                    |
+| `modifierConvention` | How modifier classes are spelled — a preset (`bem`, `rscss`, `bare`) or a custom object. Defaults to `bem`.                 |
+| `rules`              | Per-rule severity overrides (`off`/`warn`/`error`).                                                                         |
+| `naming`             | Name-case to enforce on `component`/`part` class names — a preset (`pascalCase`/`camelCase`/`lowercase`) or a custom regex. |
 
 See [Modifier conventions](/guide/modifier-conventions) for the convention forms and the full rule list.
 

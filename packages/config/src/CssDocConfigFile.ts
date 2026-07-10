@@ -18,6 +18,12 @@ import { cssDocSchema } from "./schema.ts";
 /** A per-rule severity override, as spelled in `cssdoc.json`. */
 export type RuleSeverityOverride = "off" | "warn" | "error";
 
+/** The `naming` block: a name case (preset or custom regex) per class kind, as spelled in `cssdoc.json`. */
+export interface NamingOverride {
+  component?: string;
+  part?: string;
+}
+
 interface RawTagDefinition {
   tagName: string;
   syntaxKind: CssDocSyntaxKind;
@@ -34,6 +40,7 @@ interface RawConfig {
   supportForTags?: Record<string, boolean>;
   modifierConvention?: ModifierConventionInput;
   rules?: Record<string, RuleSeverityOverride>;
+  naming?: NamingOverride;
 }
 
 const ajv = new Ajv({ allErrors: true });
@@ -52,6 +59,7 @@ interface ConfigFileInit {
   extendsFiles: CssDocConfigFile[];
   modifierConvention?: ModifierConventionInput;
   rules: Record<string, RuleSeverityOverride>;
+  naming: NamingOverride;
 }
 
 /** A loaded `cssdoc.json` (plus the files it `extends`), ready to configure a parser. */
@@ -77,6 +85,11 @@ export class CssDocConfigFile {
    * resolved severities — pass these to `resolveRuleSeverities` in `@cssdoc/providers`.
    */
   readonly ruleSeverities: Readonly<Record<string, RuleSeverityOverride>>;
+  /**
+   * The name-case conventions, merged across the `extends` chain (this file wins). Pass to
+   * `resolveNaming` in `@cssdoc/providers`.
+   */
+  readonly naming: Readonly<NamingOverride>;
 
   private constructor(init: ConfigFileInit) {
     this.filePath = init.filePath;
@@ -88,9 +101,15 @@ export class CssDocConfigFile {
     this.extendsFiles = init.extendsFiles;
     this.modifierConvention = init.modifierConvention;
     const severities: Record<string, RuleSeverityOverride> = {};
-    for (const extended of init.extendsFiles) Object.assign(severities, extended.ruleSeverities);
+    const naming: NamingOverride = {};
+    for (const extended of init.extendsFiles) {
+      Object.assign(severities, extended.ruleSeverities);
+      Object.assign(naming, extended.naming);
+    }
     Object.assign(severities, init.rules);
+    Object.assign(naming, init.naming);
     this.ruleSeverities = severities;
+    this.naming = naming;
   }
 
   /** Whether this file — or any file it extends — reported an error. */
@@ -174,6 +193,7 @@ export class CssDocConfigFile {
       supportForTags: new Map(),
       extendsFiles: [],
       rules: {},
+      naming: {},
     });
   }
 
@@ -189,6 +209,7 @@ export class CssDocConfigFile {
         supportForTags: new Map(),
         extendsFiles: [],
         rules: {},
+        naming: {},
       });
 
     if (visited.has(filePath)) {
@@ -247,6 +268,7 @@ export class CssDocConfigFile {
       extendsFiles,
       modifierConvention: raw.modifierConvention,
       rules: raw.rules ?? {},
+      naming: raw.naming ?? {},
     });
   }
 }

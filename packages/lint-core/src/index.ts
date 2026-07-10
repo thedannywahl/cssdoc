@@ -12,18 +12,28 @@ import {
   checkPropertyAssignments,
   checkPropertyUsage,
   lintModel,
+  resolveNaming,
   resolveRuleSeverities,
+  type NamingRules,
   type RuleSeverity,
   type Severity,
 } from "@cssdoc/providers";
 
-export type { RuleId, RuleSeverities, RuleSeverity, Severity } from "@cssdoc/providers";
+export type {
+  NamingRules,
+  RuleId,
+  RuleSeverities,
+  RuleSeverity,
+  Severity,
+} from "@cssdoc/providers";
 
 /** The rules this package surfaces (doc-comment hygiene plus registered-property value checks). */
 export type RuleName =
   | "missing-summary"
   | "undocumented-modifier"
   | "undocumented-part"
+  | "component-name-case"
+  | "part-name-case"
   | "deprecated-requires-canonical"
   | "name-not-in-css"
   | "invalid-default-value"
@@ -35,6 +45,8 @@ export const RULE_NAMES: readonly RuleName[] = [
   "missing-summary",
   "undocumented-modifier",
   "undocumented-part",
+  "component-name-case",
+  "part-name-case",
   "deprecated-requires-canonical",
   "name-not-in-css",
   "invalid-default-value",
@@ -67,6 +79,8 @@ export interface LintOptions {
    * `true` → the rule's default). All rules default to `warn`.
    */
   rules?: Partial<Record<RuleName, RuleSeverity | boolean>>;
+  /** Name-case conventions to enforce (`component`/`part`); drives the `*-name-case` rules. */
+  naming?: NamingRules;
 }
 
 /**
@@ -82,10 +96,11 @@ export function lintCssDocs(css: string, options: LintOptions = {}): Violation[]
     modifierConvention: options.modifierConvention,
   });
   const severities = resolveRuleSeverities(options.rules);
+  const naming = resolveNaming(options.naming);
   const { assignments, usages } = cssValueSites(css);
   // The providers drop `off` rules and stamp the resolved severity — no separate filter here.
   const diagnostics = [
-    ...lintModel(index, severities), // hygiene + invalid-default-value
+    ...lintModel(index, severities, naming), // hygiene + invalid-default-value + name-case
     ...checkPropertyAssignments(assignments, index, severities), // invalid-property-value
     ...checkPropertyUsage(usages, index, {}, severities), // invalid-fallback-value (unknown-property opt-in, off here)
   ];
