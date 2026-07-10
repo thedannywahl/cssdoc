@@ -12,6 +12,7 @@
  * @module @cssdoc/embedded
  */
 import { type CssDocEntry, type ParseOptions, parseCssDocs } from "@cssdoc/core";
+import { type CssDialect as ParserDialect, resolveParser } from "@cssdoc/dialects";
 import { type LintOptions, type Violation, lintCssDocs } from "@cssdoc/lint-core";
 
 /** A host language cssdoc can pull embedded CSS out of. */
@@ -262,13 +263,22 @@ export function extractCssBlocks(source: string, opts: EmbeddedOptions = {}): Cs
   });
 }
 
+/** The dialect to parse a source's projection with — `scss` wins over `less` wins over `css`. */
+export const projectionDialect = (source: string, opts: EmbeddedOptions = {}): ParserDialect => {
+  const dialects = scan(source, opts).regions.map((r) => r.dialect);
+  if (dialects.includes("scss") || dialects.includes("sass")) return "scss";
+  if (dialects.includes("less")) return "less";
+  return "css";
+};
+
 /** Parse cssdoc records out of a host source (projects first). Returns `[]` if the projection can't parse. */
 export function parseCssDocsFromSource(
   source: string,
   opts: EmbeddedOptions & ParseOptions = {},
 ): CssDocEntry[] {
   try {
-    return parseCssDocs(projectCss(source, opts), opts);
+    const parse = opts.parse ?? resolveParser(projectionDialect(source, opts));
+    return parseCssDocs(projectCss(source, opts), { ...opts, parse });
   } catch {
     return [];
   }
@@ -280,7 +290,8 @@ export function lintCssDocsFromSource(
   opts: EmbeddedOptions & LintOptions = {},
 ): Violation[] {
   try {
-    return lintCssDocs(projectCss(source, opts), opts);
+    const parse = opts.parse ?? resolveParser(projectionDialect(source, opts));
+    return lintCssDocs(projectCss(source, opts), { ...opts, parse });
   } catch {
     return [];
   }

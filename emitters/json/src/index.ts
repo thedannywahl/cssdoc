@@ -8,6 +8,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { type CssDocConfiguration, type CssDocEntry, parseCssDocs } from "@cssdoc/core";
+import { type CssDialect, resolveParser } from "@cssdoc/dialects";
 import { parseCssDocsFromSource } from "@cssdoc/embedded";
 import { cssDocSchema } from "./schema.ts";
 
@@ -23,14 +24,17 @@ export interface ModelInput {
   configuration?: CssDocConfiguration;
   /** The host language `css` is written in. Non-`css` values extract embedded CSS first. Default `css`. */
   lang?: "css" | "js" | "html" | "markdown";
+  /** The stylesheet dialect of `css` (`scss`/`less` pick a dialect parser). Default `css`. */
+  dialect?: CssDialect;
 }
 
 function resolveEntries(input: ModelInput): CssDocEntry[] {
   if (input.entries) return input.entries;
   const css = Array.isArray(input.css) ? input.css.join("\n") : (input.css ?? "");
+  const parse = input.dialect && input.dialect !== "css" ? resolveParser(input.dialect) : undefined;
   return input.lang && input.lang !== "css"
-    ? parseCssDocsFromSource(css, { host: input.lang, configuration: input.configuration })
-    : parseCssDocs(css, { configuration: input.configuration });
+    ? parseCssDocsFromSource(css, { host: input.lang, configuration: input.configuration, parse })
+    : parseCssDocs(css, { configuration: input.configuration, parse });
 }
 
 /** Serialize the model to a pretty JSON string. */

@@ -161,6 +161,18 @@ const Button = styled.button\`
   expect(diags.some((d) => d.code === "missing-summary")).toBe(true);
 });
 
+test("diagnostics parse a .scss document through the SCSS dialect", () => {
+  const scss = `$brand: #06c;
+// a scss line comment
+/**
+ * @component card
+ */
+.card { color: $brand; }`;
+  const diags = new CssDocLanguageService(createIndex("")).diagnostics(scss, "scss", "card.scss");
+  // Parses past $vars and // without throwing; card has no @summary.
+  expect(diags.some((d) => d.code === "missing-summary")).toBe(true);
+});
+
 test("css diagnostics honor the configured name case", () => {
   const svc = new CssDocLanguageService(
     createIndex(`/**\n * @component card\n * @summary s\n */\n.card {}`),

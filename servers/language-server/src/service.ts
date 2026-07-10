@@ -7,7 +7,13 @@
  * @module
  */
 import type { CssDocConfiguration } from "@cssdoc/core";
-import { type EmbeddedHost, detectEmbeddedHost, projectCss } from "@cssdoc/embedded";
+import {
+  type EmbeddedHost,
+  detectEmbeddedHost,
+  projectCss,
+  projectionDialect,
+} from "@cssdoc/embedded";
+import { type CssParse, dialectForFilename, resolveParser } from "@cssdoc/dialects";
 import {
   type ClassUsage,
   type CssDocIndex,
@@ -302,12 +308,18 @@ export class CssDocLanguageService {
    * the configured index.
    */
   diagnostics(text: string, languageId?: string, path?: string): LspDiagnostic[] {
-    if (languageId && CSS_LANGUAGES.has(languageId)) return this.cssDiagnostics(text, path);
+    if (languageId && CSS_LANGUAGES.has(languageId)) {
+      // Direct stylesheet: pick the parser from the extension (`.scss`/`.less` → dialect parser).
+      return this.cssDiagnostics(text, path, resolveParser(dialectForFilename(path)));
+    }
     const out: LspDiagnostic[] = [];
     // Host documents (`.vue`/`.ts`/`.md` …) carry embedded CSS: lint the doc comments in place by
     // projecting to CSS first. The projection shares the source's offsets, so ranges land correctly.
     const host = detectEmbeddedHost(path) ?? hostForLanguageId(languageId);
-    if (host) out.push(...this.cssDiagnostics(projectCss(text, { host }), path));
+    if (host) {
+      const parse = resolveParser(projectionDialect(text, { host }));
+      out.push(...this.cssDiagnostics(projectCss(text, { host }), path, parse));
+    }
     // Consumer usage: check against every scope's index (a base class resolves in exactly the scope
     // that documents it), deduping identical diagnostics from any overlap.
     const seen = new Set<string>();
@@ -386,10 +398,10 @@ export class CssDocLanguageService {
   }
 
   /** Lint an open stylesheet against its governing scope: doc hygiene + registered-property checks. */
-  private cssDiagnostics(text: string, path?: string): LspDiagnostic[] {
+  private cssDiagnostics(text: string, path?: string, parse?: CssParse): LspDiagnostic[] {
     const scope = this.scopeForPath(path);
-    const index = createIndex(text, { configuration: scope.configuration });
-    const { assignments, usages } = cssValueSites(text);
+    const index = createIndex(text, { configuration: scope.configuration, parse });
+    const { assignments, usages } = cssValueSites(text, { parse });
     const diags = [
       ...lintModel(index, scope.severities, scope.naming, scope.structureIgnore),
       ...checkPropertyAssignments(assignments, index, scope.severities),

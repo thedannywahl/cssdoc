@@ -165,18 +165,40 @@ Point the language server at your host files (the VS Code extension's include gl
 `.vue`, `.ts`, and friends). Diagnostics, hover, completion, and go-to-definition then work in embedded
 CSS, and — unlike stylelint — a doc comment above a styled-component `const` is picked up too.
 
+## Preprocessor dialects
+
+SCSS and Less aren't plain CSS — `postcss.parse` can't read `$vars`, `@mixin`, or `//` comments. The
+[`@cssdoc/dialects`](https://www.npmjs.com/package/@cssdoc/dialects) package resolves the right PostCSS
+parser, which every entry point accepts as a `parse` option:
+
+```ts
+import { resolveParser, dialectForFilename } from "@cssdoc/dialects";
+import { lintCssDocs } from "@cssdoc/lint-core";
+
+const parse = resolveParser(dialectForFilename("Button.scss"));
+lintCssDocs(scssSource, { parse });
+```
+
+This works for a plain `.scss`/`.less` file and for a `<style lang="scss">` block (`@cssdoc/embedded`
+picks the dialect from the `lang` attribute automatically). The emitters take a `dialect` shortcut, and
+the language server resolves it from the file extension and the `lang` attribute. cssdoc reads the doc
+comments, class selectors, `@property` at-rules, and custom properties; dialect-only constructs
+(`$vars`, `@mixin`, `@include`) are parsed but ignored.
+
 ## What's covered
 
-| Source                                                           | Authoring doc comments |
-| ---------------------------------------------------------------- | ---------------------- |
-| Tagged templates (`styled`, `css`, Lit)                          | Yes                    |
-| `<style>` blocks (HTML, Vue, Svelte, Astro)                      | Yes                    |
-| Markdown/MDX ` ```css ` fences                                   | Yes                    |
-| Object styles (Emotion object, JSS, vanilla-extract `style({})`) | No — not CSS text      |
+| Source                                                           | Authoring doc comments     |
+| ---------------------------------------------------------------- | -------------------------- |
+| Tagged templates (`styled`, `css`, Lit)                          | Yes                        |
+| `<style>` blocks (HTML, Vue, Svelte, Astro)                      | Yes                        |
+| Markdown/MDX ` ```css ` fences                                   | Yes                        |
+| SCSS / Sass / Less (files, `<style lang>`, templates)            | Yes — via a dialect parser |
+| Object styles (Emotion object, JSS, vanilla-extract `style({})`) | No — not CSS text          |
 
 ## Limitations
 
 - **Object-syntax CSS-in-JS** isn't CSS text and carries no `/** */` comments, so it's out of scope.
+- **Sass's indented syntax** and **Stylus** aren't supported; write SCSS or Less.
 - In **styled-components** the base class is generated rather than written as a selector, so
   selector-derived facts (parts, modifiers found in the CSS) are thin — the authored tags
   (`@component`, `@modifier`, `@part`, and the rest) carry the model. It's richer for Lit-style

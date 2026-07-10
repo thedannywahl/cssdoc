@@ -6,7 +6,7 @@
  *
  * @module @cssdoc/lint-core
  */
-import type { CssDocConfiguration, ModifierConventionInput } from "@cssdoc/core";
+import type { CssDocConfiguration, CssParse, ModifierConventionInput } from "@cssdoc/core";
 import { createIndex, cssValueSites } from "@cssdoc/index";
 import {
   checkPropertyAssignments,
@@ -83,6 +83,8 @@ export interface LintOptions {
   naming?: NamingRules;
   /** Class names exempt from the `structure-unknown-selector` rule (literal names or `*` globs). */
   structureIgnore?: readonly string[];
+  /** The PostCSS parser (inject a dialect parser for `.scss`/`.less`; default `postcss.parse`). */
+  parse?: CssParse;
 }
 
 /**
@@ -96,10 +98,11 @@ export function lintCssDocs(css: string, options: LintOptions = {}): Violation[]
   const index = createIndex(css, {
     configuration: options.configuration,
     modifierConvention: options.modifierConvention,
+    parse: options.parse,
   });
   const severities = resolveRuleSeverities(options.rules);
   const naming = resolveNaming(options.naming);
-  const { assignments, usages } = cssValueSites(css);
+  const { assignments, usages } = cssValueSites(css, { parse: options.parse });
   // The providers drop `off` rules and stamp the resolved severity — no separate filter here.
   const diagnostics = [
     ...lintModel(index, severities, naming, options.structureIgnore), // hygiene + invalid-default-value + name-case

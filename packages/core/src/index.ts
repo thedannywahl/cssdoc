@@ -51,6 +51,7 @@ export type {
   CssFunction,
   CssLayer,
   CssModifier,
+  CssParse,
   CssPart,
   CssPropertyDeclared,
   CssRecordKind,

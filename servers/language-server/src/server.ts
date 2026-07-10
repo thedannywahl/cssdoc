@@ -9,6 +9,7 @@ import { readFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { CssDocConfigFile } from "@cssdoc/config";
+import { dialectForFilename, resolveParser } from "@cssdoc/dialects";
 import { detectEmbeddedHost, projectCss } from "@cssdoc/embedded";
 import { createIndex } from "@cssdoc/index";
 import { resolveNaming, resolveRuleSeverities } from "@cssdoc/providers";
@@ -79,6 +80,15 @@ export function startLanguageServer(): void {
         index: createIndex(g.files.map(readIndexable).join("\n"), {
           file: g.files.length === 1 ? g.files[0] : undefined,
           configuration,
+          // Pick a dialect parser for the group: SCSS wins over Less wins over plain CSS. (Host files
+          // carry their dialect internally; the projection is parsed as CSS here — best-effort.)
+          parse: resolveParser(
+            g.files.some((f) => dialectForFilename(f) === "scss")
+              ? "scss"
+              : g.files.some((f) => dialectForFilename(f) === "less")
+                ? "less"
+                : "css",
+          ),
         }),
         severities: resolveRuleSeverities(
           g.configFile.ruleSeverities as Parameters<typeof resolveRuleSeverities>[0],

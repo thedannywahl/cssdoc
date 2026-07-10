@@ -107,3 +107,20 @@ test("lint violations carry absolute source lines", () => {
 test("a malformed source yields [] rather than throwing", () => {
   expect(parseCssDocsFromSource("<style>.a { color:", { host: "html" })).toEqual([]);
 });
+
+test('a <style lang="scss"> block parses through the SCSS dialect', () => {
+  const vue = `<style lang="scss">
+$brand: #06c;
+/**
+ * @component card
+ * @summary A surface.
+ */
+.card {
+  // a scss line comment
+  color: $brand;
+  &.card--featured { box-shadow: 0 1px 4px; }
+}
+</style>`;
+  const records = parseCssDocsFromSource(vue, { host: "html" });
+  expect(records.map((e) => e.name)).toEqual(["card"]);
+});

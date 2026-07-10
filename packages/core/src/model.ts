@@ -215,6 +215,9 @@ export interface CssDocEntry {
   customBlocks?: Record<string, string[]>;
 }
 
+/** A PostCSS parse function — turns a source string into a Root. Inject one to read a non-CSS dialect. */
+export type CssParse = (css: string) => import("postcss").Root;
+
 /** Options for {@link parseCssDocs}. */
 export interface ParseOptions {
   /**
@@ -235,4 +238,9 @@ export interface ParseOptions {
    * `configuration`'s convention when both are given.
    */
   modifierConvention?: import("./modifier.ts").ModifierConventionInput;
+  /**
+   * The PostCSS parser to read `css` with. Defaults to `postcss.parse` (plain CSS). Inject a dialect
+   * parser (e.g. `postcss-scss`/`postcss-less` via `@cssdoc/dialects`) to document `.scss`/`.less`.
+   */
+  parse?: CssParse;
 }

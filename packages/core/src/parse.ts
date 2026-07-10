@@ -393,7 +393,7 @@ export function parseCssDocs(css: string, options: ParseOptions = {}): CssDocEnt
   );
   const boundary =
     options.isRecordBoundary ?? ((text: string) => recordNameOf(text, configuration));
-  const root = postcss.parse(css);
+  const root = (options.parse ?? postcss.parse)(css);
   const records: { name: string; doc: ParsedDoc; nodes: ChildNode[] }[] = [];
   let current: { name: string; doc: ParsedDoc; nodes: ChildNode[] } | null = null;
 

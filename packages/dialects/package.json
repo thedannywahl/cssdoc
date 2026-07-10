@@ -1,13 +1,13 @@
 {
-  "name": "@cssdoc/json",
-  "version": "0.2.0",
-  "description": "Emit the cssdoc model as JSON — a whole-model file, optional per-record files, and a JSON Schema of the model.",
+  "name": "@cssdoc/dialects",
+  "version": "0.1.0",
+  "description": "Resolve a PostCSS parser for a stylesheet dialect (SCSS, Sass, Less) to document non-CSS sources with cssdoc.",
   "keywords": [
     "css",
     "cssdoc",
-    "documentation",
-    "emitter",
-    "json"
+    "less",
+    "postcss",
+    "scss"
   ],
   "homepage": "https://cssdoc.dev",
   "bugs": "https://github.com/thedannywahl/cssdoc/issues",
@@ -15,7 +15,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/thedannywahl/cssdoc.git",
-    "directory": "emitters/json"
+    "directory": "packages/dialects"
   },
   "files": [
     "dist"
@@ -33,17 +33,17 @@
     "dev": "vp pack --watch",
     "test": "vp test",
     "check": "vp check",
-    "publint": "publint",
-    "prepublishOnly": "vp run build"
+    "prepublishOnly": "vp run build",
+    "publint": "publint"
   },
   "dependencies": {
-    "@cssdoc/core": "workspace:*",
-    "@cssdoc/dialects": "workspace:*",
-    "@cssdoc/embedded": "workspace:*"
+    "postcss": "catalog:",
+    "postcss-less": "^6.0.0",
+    "postcss-scss": "^4.0.9"
   },
   "devDependencies": {
+    "@cssdoc/core": "workspace:*",
     "@types/node": "catalog:",
-    "ajv": "catalog:",
     "publint": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",

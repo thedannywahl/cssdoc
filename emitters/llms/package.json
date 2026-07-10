@@ -38,6 +38,7 @@
   },
   "dependencies": {
     "@cssdoc/core": "workspace:*",
+    "@cssdoc/dialects": "workspace:*",
     "@cssdoc/embedded": "workspace:*"
   },
   "devDependencies": {

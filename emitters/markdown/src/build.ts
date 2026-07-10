@@ -9,6 +9,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { CssDocConfiguration, CssDocEntry } from "@cssdoc/core";
 import { parseCssDocs } from "@cssdoc/core";
+import { type CssDialect, resolveParser } from "@cssdoc/dialects";
 import { parseCssDocsFromSource } from "@cssdoc/embedded";
 import {
   KIND_GROUPS,
@@ -36,6 +37,8 @@ export interface BuildCssApiOptions extends RenderEntryOptions, RenderIndexOptio
   configuration?: CssDocConfiguration;
   /** The host language `css` is written in. Non-`css` values extract embedded CSS first. Default `css`. */
   lang?: "css" | "js" | "html" | "markdown";
+  /** The stylesheet dialect of `css` (`scss`/`less` pick a dialect parser). Default `css`. */
+  dialect?: CssDialect;
   /** The sidebar file name (defaults to `css-sidebar.json`). */
   sidebarFileName?: string;
 }
@@ -80,10 +83,16 @@ export function buildSidebar(entries: readonly CssDocEntry[], baseHref = "/"): S
  */
 export function buildCssApi(options: BuildCssApiOptions): BuildCssApiResult {
   const css = Array.isArray(options.css) ? options.css.join("\n") : options.css;
+  const parse =
+    options.dialect && options.dialect !== "css" ? resolveParser(options.dialect) : undefined;
   const parsed =
     options.lang && options.lang !== "css"
-      ? parseCssDocsFromSource(css, { host: options.lang, configuration: options.configuration })
-      : parseCssDocs(css, { configuration: options.configuration });
+      ? parseCssDocsFromSource(css, {
+          host: options.lang,
+          configuration: options.configuration,
+          parse,
+        })
+      : parseCssDocs(css, { configuration: options.configuration, parse });
   const entries = parsed.sort((a, b) => a.name.localeCompare(b.name));
   const baseHref = options.baseHref ?? "/";
 

@@ -352,6 +352,8 @@ export function createIndex(
     file?: string;
     configuration?: CssDocConfiguration;
     modifierConvention?: ModifierConventionInput;
+    /** The PostCSS parser (inject a dialect parser for `.scss`/`.less`; default `postcss.parse`). */
+    parse?: (css: string) => ReturnType<typeof postcss.parse>;
   } = {},
 ): CssDocIndex {
   const matcher = new ModifierMatcher(
@@ -362,11 +364,12 @@ export function createIndex(
   const entries = parseCssDocs(css, {
     configuration: options.configuration,
     modifierConvention: options.modifierConvention,
+    parse: options.parse,
   });
   const byName = new Map(entries.map((e) => [e.name, e]));
   const builds = new Map<string, Build>();
 
-  const root = postcss.parse(css);
+  const root = (options.parse ?? postcss.parse)(css);
   let current: Build | undefined;
   for (const node of root.nodes) {
     if (node.type === "comment") {
@@ -412,10 +415,13 @@ export function createIndex(
  * @param css - The CSS source.
  * @returns The assignments and `var(…)` usages found.
  */
-export function cssValueSites(css: string): CssValueSites {
+export function cssValueSites(
+  css: string,
+  options: { parse?: (css: string) => ReturnType<typeof postcss.parse> } = {},
+): CssValueSites {
   const assignments: PropertyAssignment[] = [];
   const usages: PropertyUsage[] = [];
-  const root = postcss.parse(css);
+  const root = (options.parse ?? postcss.parse)(css);
   root.walkDecls((decl) => {
     const loc = spanOf(decl);
     if (decl.prop.startsWith("--")) {
