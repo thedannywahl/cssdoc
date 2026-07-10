@@ -10,7 +10,7 @@ rmSync("dist", { recursive: true, force: true });
 // grammar can't come from node_modules; copy the single source of truth from @cssdoc/tmlanguage.
 mkdirSync("syntaxes", { recursive: true });
 copyFileSync(
-  new URL("../../../syntaxes/cssdoc/cssdoc.injection.tmLanguage.json", import.meta.url),
+  new URL("../../../syntaxes/cssdoc/tmlanguage/cssdoc.injection.tmLanguage.json", import.meta.url),
   "syntaxes/cssdoc.injection.tmLanguage.json",
 );
 

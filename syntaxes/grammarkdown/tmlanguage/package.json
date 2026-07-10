@@ -1,14 +1,14 @@
 {
-  "name": "@cssdoc/core",
+  "name": "@cssdoc/grammarkdown-tmlanguage",
   "version": "0.2.0",
-  "description": "A generic CSS documentation extractor: parse doc-comments + the CSS AST into a serializable model (TSDoc, for CSS).",
+  "description": "A TextMate grammar for grammarkdown (the ECMAScript-style grammar notation), shipped as a Shiki language.",
   "keywords": [
-    "css",
-    "design-system",
-    "doc-comments",
-    "documentation",
-    "postcss",
-    "tsdoc"
+    "grammar",
+    "grammarkdown",
+    "shiki",
+    "syntax-highlighting",
+    "textmate",
+    "tmlanguage"
   ],
   "homepage": "https://cssdoc.dev",
   "bugs": "https://github.com/thedannywahl/cssdoc/issues",
@@ -16,15 +16,16 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/thedannywahl/cssdoc.git",
-    "directory": "packages/core"
+    "directory": "syntaxes/grammarkdown/tmlanguage"
   },
   "files": [
     "dist",
-    "grammar"
+    "grammarkdown.tmLanguage.json"
   ],
   "type": "module",
   "exports": {
     ".": "./dist/index.mjs",
+    "./grammarkdown.tmLanguage.json": "./grammarkdown.tmLanguage.json",
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -38,14 +39,9 @@
     "prepublishOnly": "vp run build",
     "publint": "publint"
   },
-  "dependencies": {
-    "@cssdoc/spec": "workspace:*",
-    "postcss": "catalog:"
-  },
   "devDependencies": {
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
-    "grammarkdown": "catalog:",
     "publint": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",

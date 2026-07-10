@@ -4,7 +4,7 @@ packages:
   - generators/*
   - plugins/*
   - servers/*
-  - syntaxes/*
+  - syntaxes/*/*
   - docs
 
 catalogMode: prefer

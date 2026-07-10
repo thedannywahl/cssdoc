@@ -1,14 +1,15 @@
 {
-  "name": "@cssdoc/core",
+  "name": "@cssdoc/tmlanguage",
   "version": "0.2.0",
-  "description": "A generic CSS documentation extractor: parse doc-comments + the CSS AST into a serializable model (TSDoc, for CSS).",
+  "description": "A TextMate injection grammar that highlights cssdoc doc-comment tags inside CSS comments, the way TSDoc highlights JSDoc tags. Ships as a Shiki language.",
   "keywords": [
     "css",
-    "design-system",
-    "doc-comments",
-    "documentation",
-    "postcss",
-    "tsdoc"
+    "cssdoc",
+    "injection",
+    "shiki",
+    "syntax-highlighting",
+    "textmate",
+    "tmlanguage"
   ],
   "homepage": "https://cssdoc.dev",
   "bugs": "https://github.com/thedannywahl/cssdoc/issues",
@@ -16,15 +17,16 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/thedannywahl/cssdoc.git",
-    "directory": "packages/core"
+    "directory": "syntaxes/cssdoc/tmlanguage"
   },
   "files": [
     "dist",
-    "grammar"
+    "cssdoc.injection.tmLanguage.json"
   ],
   "type": "module",
   "exports": {
     ".": "./dist/index.mjs",
+    "./cssdoc.injection.tmLanguage.json": "./cssdoc.injection.tmLanguage.json",
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -33,19 +35,18 @@
   "scripts": {
     "build": "vp pack",
     "dev": "vp pack --watch",
+    "generate": "node scripts/generate.mjs",
     "test": "vp test",
     "check": "vp check",
     "prepublishOnly": "vp run build",
     "publint": "publint"
   },
   "dependencies": {
-    "@cssdoc/spec": "workspace:*",
-    "postcss": "catalog:"
+    "@cssdoc/spec": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
-    "grammarkdown": "catalog:",
     "publint": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",

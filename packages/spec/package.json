@@ -1,15 +1,14 @@
 {
-  "name": "@cssdoc/tmlanguage",
+  "name": "@cssdoc/spec",
   "version": "0.2.0",
-  "description": "A TextMate injection grammar that highlights cssdoc doc-comment tags inside CSS comments, the way TSDoc highlights JSDoc tags. Ships as a Shiki language.",
+  "description": "The canonical cssdoc tag vocabulary — the single source of truth for the doc-comment tags, shared by the parser and every syntax grammar. Zero dependencies.",
   "keywords": [
-    "css",
     "cssdoc",
-    "injection",
-    "shiki",
-    "syntax-highlighting",
-    "textmate",
-    "tmlanguage"
+    "doc-comments",
+    "grammar",
+    "spec",
+    "tags",
+    "vocabulary"
   ],
   "homepage": "https://cssdoc.dev",
   "bugs": "https://github.com/thedannywahl/cssdoc/issues",
@@ -17,16 +16,14 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/thedannywahl/cssdoc.git",
-    "directory": "syntaxes/cssdoc"
+    "directory": "packages/spec"
   },
   "files": [
-    "dist",
-    "cssdoc.injection.tmLanguage.json"
+    "dist"
   ],
   "type": "module",
   "exports": {
     ".": "./dist/index.mjs",
-    "./cssdoc.injection.tmLanguage.json": "./cssdoc.injection.tmLanguage.json",
     "./package.json": "./package.json"
   },
   "publishConfig": {

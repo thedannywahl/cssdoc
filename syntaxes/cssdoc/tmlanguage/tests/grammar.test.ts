@@ -1,4 +1,6 @@
 import { expect, test } from "vite-plus/test";
+import { CSSDOC_TAG_NAMES } from "@cssdoc/spec";
+import { buildInjectionGrammar } from "../src/index.ts";
 import grammar from "../cssdoc.injection.tmLanguage.json" with { type: "json" };
 
 test("is a well-formed injection grammar", () => {
@@ -6,6 +8,17 @@ test("is a well-formed injection grammar", () => {
   expect(grammar.injectionSelector).toContain("comment.block.css");
   expect(Array.isArray(grammar.patterns)).toBe(true);
   expect(grammar.patterns.length).toBeGreaterThan(0);
+});
+
+test("the committed JSON is in sync with the builder (run `pnpm build && pnpm generate`)", () => {
+  expect(grammar).toEqual(buildInjectionGrammar());
+});
+
+test("every standard tag from @cssdoc/spec appears in a grammar rule", () => {
+  const rules = JSON.stringify(grammar.repository);
+  for (const name of CSSDOC_TAG_NAMES) {
+    expect(rules, `missing @${name}`).toContain(name);
+  }
 });
 
 test("every #include resolves to a repository rule", () => {

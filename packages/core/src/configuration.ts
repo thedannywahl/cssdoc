@@ -12,6 +12,7 @@
  *
  * @module
  */
+import { CSSDOC_TAGS, CSSDOC_TAG_NAMES } from "@cssdoc/spec";
 import type { CssRecordKind } from "./model.ts";
 import {
   DEFAULT_MODIFIER_CONVENTION,
@@ -171,117 +172,19 @@ export class CssDocConfiguration {
     );
   }
 
-  /** The names (without `@`) of every standard tag. */
-  static readonly standardTagNames: readonly string[] = [
-    "component",
-    "name",
-    "utility",
-    "rule",
-    "declaration",
-    "class",
-    "summary",
-    "remarks",
-    "privateRemarks",
-    "deprecated",
-    "example",
-    "see",
-    "since",
-    "group",
-    "category",
-    "defaultValue",
-    "modifier",
-    "part",
-    "csspart",
-    "cssproperty",
-    "property",
-    "cssstate",
-    "slot",
-    "function",
-    "keyframes",
-    "animation",
-    "layer",
-    "container",
-    "supports",
-    "media",
-    "responsive",
-    "a11y",
-    "accessibility",
-    "structure",
-    "demo",
-    "alpha",
-    "beta",
-    "experimental",
-    "internal",
-    "public",
-    "link",
-    "inheritDoc",
-    "label",
-  ];
+  /** The names (without `@`) of every standard tag — the canonical vocabulary from `@cssdoc/spec`. */
+  static readonly standardTagNames: readonly string[] = CSSDOC_TAG_NAMES;
 
-  /** A fresh set of the standard tag definitions (new instances on each call). */
+  /** A fresh set of the standard tag definitions (new instances on each call), built from the spec. */
   static standardTags(): CssDocTagDefinition[] {
-    return [
-      // Record-opening tags.
-      def({ tagName: "component", syntaxKind: "record", recordKind: "component" }),
-      def({ tagName: "name", syntaxKind: "record", recordKind: "component" }),
-      def({ tagName: "utility", syntaxKind: "record", recordKind: "utility" }),
-      def({ tagName: "rule", syntaxKind: "record", recordKind: "rule" }),
-      def({ tagName: "declaration", syntaxKind: "record", recordKind: "declaration" }),
-      // Prose (TSDoc-adopted).
-      def({ tagName: "class", syntaxKind: "block" }),
-      def({ tagName: "summary", syntaxKind: "block" }),
-      def({ tagName: "remarks", syntaxKind: "block" }),
-      def({ tagName: "privateRemarks", syntaxKind: "block" }),
-      def({ tagName: "deprecated", syntaxKind: "block" }),
-      def({ tagName: "example", syntaxKind: "block", allowMultiple: true }),
-      def({ tagName: "see", syntaxKind: "block", allowMultiple: true }),
-      def({ tagName: "since", syntaxKind: "block" }),
-      def({ tagName: "group", syntaxKind: "block" }),
-      def({ tagName: "category", syntaxKind: "block", aliasFor: "group" }),
-      def({ tagName: "defaultValue", syntaxKind: "block" }),
-      // CSS surface (existing + Custom Elements Manifest).
-      def({ tagName: "modifier", syntaxKind: "block", allowMultiple: true }),
-      def({ tagName: "part", syntaxKind: "block", allowMultiple: true }),
-      def({ tagName: "csspart", syntaxKind: "block", allowMultiple: true, aliasFor: "part" }),
-      def({ tagName: "cssproperty", syntaxKind: "block", allowMultiple: true }),
+    return CSSDOC_TAGS.map((tag) =>
       def({
-        tagName: "property",
-        syntaxKind: "block",
-        allowMultiple: true,
-        aliasFor: "cssproperty",
+        tagName: tag.name,
+        syntaxKind: tag.kind,
+        ...(tag.recordKind ? { recordKind: tag.recordKind } : {}),
+        ...(tag.aliasFor ? { aliasFor: tag.aliasFor } : {}),
+        ...(tag.allowMultiple ? { allowMultiple: true } : {}),
       }),
-      def({ tagName: "cssstate", syntaxKind: "block", allowMultiple: true }),
-      def({ tagName: "slot", syntaxKind: "block", allowMultiple: true }),
-      // CSSOM at-rule surfaces.
-      def({ tagName: "function", syntaxKind: "block", allowMultiple: true }),
-      def({ tagName: "keyframes", syntaxKind: "block", allowMultiple: true }),
-      def({
-        tagName: "animation",
-        syntaxKind: "block",
-        allowMultiple: true,
-        aliasFor: "keyframes",
-      }),
-      def({ tagName: "layer", syntaxKind: "block", allowMultiple: true }),
-      def({ tagName: "container", syntaxKind: "block", allowMultiple: true }),
-      def({ tagName: "supports", syntaxKind: "block", allowMultiple: true }),
-      def({ tagName: "media", syntaxKind: "block", allowMultiple: true }),
-      def({ tagName: "responsive", syntaxKind: "block", allowMultiple: true, aliasFor: "media" }),
-      // Accessibility.
-      def({ tagName: "a11y", syntaxKind: "block", allowMultiple: true }),
-      def({ tagName: "accessibility", syntaxKind: "block", allowMultiple: true, aliasFor: "a11y" }),
-      // Structure & demo.
-      def({ tagName: "structure", syntaxKind: "block" }),
-      def({ tagName: "demo", syntaxKind: "block" }),
-      // Modifier (flag) tags — release stage.
-      def({ tagName: "alpha", syntaxKind: "modifier" }),
-      def({ tagName: "beta", syntaxKind: "modifier" }),
-      def({ tagName: "experimental", syntaxKind: "modifier" }),
-      def({ tagName: "internal", syntaxKind: "modifier" }),
-      def({ tagName: "public", syntaxKind: "modifier" }),
-      // Inline tags.
-      def({ tagName: "link", syntaxKind: "inline" }),
-      def({ tagName: "inheritDoc", syntaxKind: "inline" }),
-      def({ tagName: "label", syntaxKind: "inline" }),
-    ];
+    );
   }
 }

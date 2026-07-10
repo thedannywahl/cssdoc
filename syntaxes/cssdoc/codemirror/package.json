@@ -1,14 +1,14 @@
 {
-  "name": "@cssdoc/grammarkdown-tmlanguage",
+  "name": "@cssdoc/codemirror",
   "version": "0.2.0",
-  "description": "A TextMate grammar for grammarkdown (the ECMAScript-style grammar notation), shipped as a Shiki language.",
+  "description": "A CodeMirror 6 extension that highlights cssdoc doc-comment tags inside CSS comments, the way TSDoc highlights JSDoc tags.",
   "keywords": [
-    "grammar",
-    "grammarkdown",
-    "shiki",
-    "syntax-highlighting",
-    "textmate",
-    "tmlanguage"
+    "codemirror",
+    "codemirror6",
+    "css",
+    "cssdoc",
+    "editor",
+    "syntax-highlighting"
   ],
   "homepage": "https://cssdoc.dev",
   "bugs": "https://github.com/thedannywahl/cssdoc/issues",
@@ -16,16 +16,14 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/thedannywahl/cssdoc.git",
-    "directory": "syntaxes/grammarkdown"
+    "directory": "syntaxes/cssdoc/codemirror"
   },
   "files": [
-    "dist",
-    "grammarkdown.tmLanguage.json"
+    "dist"
   ],
   "type": "module",
   "exports": {
     ".": "./dist/index.mjs",
-    "./grammarkdown.tmLanguage.json": "./grammarkdown.tmLanguage.json",
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -38,6 +36,12 @@
     "check": "vp check",
     "prepublishOnly": "vp run build",
     "publint": "publint"
+  },
+  "dependencies": {
+    "@codemirror/language": "^6.12.4",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/view": "^6.43.6",
+    "@cssdoc/spec": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",
