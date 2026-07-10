@@ -140,6 +140,18 @@ test("attribute (CUBE) convention: data attributes map to prop/value; parts unaf
   expect(card.parts.map((p) => p.name)).toEqual(["title"]);
 });
 
+test("a separator array matches several chained prefixes (is-/has-)", () => {
+  const css =
+    `/**\n * @component card\n */\n.card {}\n` +
+    `.card.is-open {}\n.card.has-icon {}\n.card.featured {}`;
+  const [card] = parseCssDocs(css, {
+    modifierConvention: { structure: "chained", separator: ["is-", "has-"] },
+  });
+  // Only the is-/has- prefixed classes are modifiers; `.featured` is neither.
+  expect(card.modifiers.map((m) => m.name).sort()).toEqual(["has-icon", "is-open"]);
+  expect(card.modifiers.find((m) => m.name === "is-open")?.prop).toBe("open");
+});
+
 test("a custom is- convention picks up state classes", () => {
   const card = parseCssDocs(CONVENTION_FIXTURE, {
     modifierConvention: { structure: "chained", separator: "is-" },

@@ -26,8 +26,12 @@
 export interface ModifierConvention {
   /** The structural form. An open union — further forms may be added without a breaking change. */
   structure: "chained" | "suffix" | "attribute";
-  /** The prefix/delimiter, interpreted per {@link ModifierConvention.structure}. */
-  separator: string;
+  /**
+   * The prefix/delimiter, interpreted per {@link ModifierConvention.structure}. May be a single
+   * string or several — any one of which marks a modifier (e.g. `["is-", "has-"]` for state
+   * classes, or `["--", "__"]`). Separators are matched literally (never as a regex).
+   */
+  separator: string | string[];
   /**
    * Split the modifier body into `prop`/`value` on {@link ModifierConvention.propValueSeparator}?
    * Defaults to `false`. Ignored for `attribute` (which always derives `prop` from the attribute name
@@ -98,11 +102,35 @@ const unquote = (v: string): string => v.trim().replace(/^(["'])([\s\S]*)\1$/u, 
  */
 export class ModifierMatcher {
   readonly convention: ModifierConvention;
-  private readonly sepEsc: string;
+  /** The separator(s), longest-first so overlapping prefixes (e.g. `--` before `-`) match greedily. */
+  private readonly separators: string[];
+  /** The separators as a non-capturing regex alternation, e.g. `(?:is-|has-)` (or `(?:)` when empty). */
+  private readonly sepAlt: string;
 
   constructor(convention: ModifierConvention) {
     this.convention = convention;
-    this.sepEsc = escapeRe(convention.separator);
+    this.separators = (
+      Array.isArray(convention.separator) ? convention.separator : [convention.separator]
+    )
+      .slice()
+      .sort((a, b) => b.length - a.length);
+    this.sepAlt = `(?:${this.separators.map(escapeRe).join("|")})`;
+  }
+
+  /** Strip a leading chained-class separator from `name` (the longest that matches), else return it. */
+  private stripPrefix(name: string): string {
+    for (const s of this.separators) if (name.startsWith(s)) return name.slice(s.length);
+    return name;
+  }
+
+  /** Return the suffix body — the part after the first (longest) non-empty separator occurrence. */
+  private stripToBody(name: string): string {
+    for (const s of this.separators) {
+      if (s === "") continue;
+      const at = name.indexOf(s);
+      if (at !== -1) return name.slice(at + s.length);
+    }
+    return name;
   }
 
   /**
@@ -121,7 +149,7 @@ export class ModifierMatcher {
 
     if (this.convention.structure === "suffix") {
       // `.base<sep><body>` — the modifier is conjoined into the base class name.
-      const re = new RegExp(`\\.(${baseEsc}${this.sepEsc}[\\w-]+)`, "gu");
+      const re = new RegExp(`\\.(${baseEsc}${this.sepAlt}[\\w-]+)`, "gu");
       for (const m of selector.matchAll(re)) push(m[1]);
       return hits;
     }
@@ -138,10 +166,10 @@ export class ModifierMatcher {
       return hits;
     }
 
-    // chained: one or more classes chained onto the base, each carrying the separator prefix.
-    const cls = `\\.${this.sepEsc}[\\w-]+`;
+    // chained: one or more classes chained onto the base, each carrying a separator prefix.
+    const cls = `\\.${this.sepAlt}[\\w-]+`;
     const chain = new RegExp(`(?:\\.${baseEsc}|:scope)((?:${cls})+)`, "gu");
-    const inner = new RegExp(`\\.(${this.sepEsc}[\\w-]+)`, "gu");
+    const inner = new RegExp(`\\.(${this.sepAlt}[\\w-]+)`, "gu");
     for (const m of selector.matchAll(chain)) {
       for (const c of m[1].matchAll(inner)) push(c[1]);
     }
@@ -154,24 +182,14 @@ export class ModifierMatcher {
       const canonical = this.normalizeAttribute(name);
       const eq = canonical.indexOf("=");
       const attr = eq === -1 ? canonical : canonical.slice(0, eq);
-      const prop = attr.startsWith(this.convention.separator)
-        ? attr.slice(this.convention.separator.length)
-        : attr;
+      const prop = this.stripPrefix(attr);
       const value = eq === -1 ? undefined : unquote(canonical.slice(eq + 1));
       return { prop, value };
     }
 
     // Reduce the name to its body (the part after the structural marker).
-    let body: string;
-    if (this.convention.structure === "suffix") {
-      const at = name.indexOf(this.convention.separator);
-      body = at === -1 ? name : name.slice(at + this.convention.separator.length);
-    } else {
-      body =
-        this.convention.separator && name.startsWith(this.convention.separator)
-          ? name.slice(this.convention.separator.length)
-          : name;
-    }
+    const body =
+      this.convention.structure === "suffix" ? this.stripToBody(name) : this.stripPrefix(name);
 
     if (!this.convention.propValue) return { prop: body };
     const sep = this.convention.propValueSeparator ?? "-";
@@ -204,12 +222,12 @@ export class ModifierMatcher {
     }
     const name = token.replace(/^\./u, "");
     if (this.convention.structure === "suffix") {
-      if (baseNoDot) return name.startsWith(`${baseNoDot}${this.convention.separator}`);
-      return this.convention.separator !== "" && name.includes(this.convention.separator);
+      if (baseNoDot) return this.separators.some((s) => name.startsWith(`${baseNoDot}${s}`));
+      return this.separators.some((s) => s !== "" && name.includes(s));
     }
     // chained
     if (baseNoDot && name === baseNoDot) return false;
-    return name.startsWith(this.convention.separator);
+    return this.separators.some((s) => name.startsWith(s));
   }
 
   /** Canonicalize an attribute expression (bracket-inner): normalize quotes to double, trim. */
@@ -223,10 +241,10 @@ export class ModifierMatcher {
     return `${attr}"${value}"`;
   }
 
-  /** Does an attribute-expression's name carry the convention's required prefix? */
+  /** Does an attribute-expression's name carry one of the convention's required prefixes? */
   private attributeMatches(name: string): boolean {
     const eq = name.indexOf("=");
     const attr = (eq === -1 ? name : name.slice(0, eq)).replace(/[~|^$*]$/u, "");
-    return attr.length > 0 && attr.startsWith(this.convention.separator);
+    return attr.length > 0 && this.separators.some((s) => attr.startsWith(s));
   }
 }

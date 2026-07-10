@@ -37,7 +37,7 @@ splitting. Every well-known scheme is one of three structures:
 ```ts
 interface ModifierConvention {
   structure: "chained" | "suffix" | "attribute";
-  separator: string; // interpreted per structure (see below)
+  separator: string | string[]; // interpreted per structure (see below)
   propValue?: boolean; // split the body into prop/value? (default false)
   propValueSeparator?: string; // default "-"
 }
@@ -49,6 +49,22 @@ interface ModifierConvention {
   the modifier body.
 - **`attribute`** — an attribute selector on the base. `separator` is the required attribute-name
   prefix (`""` means any attribute).
+
+`separator` may be an **array** — any one of the values marks a modifier, useful for state prefixes
+like `is-`/`has-`. Values are matched literally (never as a regex):
+
+```jsonc
+{ "modifierConvention": { "structure": "chained", "separator": ["is-", "has-"] } }
+```
+
+```css
+.card.is-open {
+  /* → modifier "is-open" */
+}
+.card.has-icon {
+  /* → modifier "has-icon" */
+}
+```
 
 ## Worked examples
 

@@ -65,7 +65,9 @@ export const cssDocSchema = {
           required: ["structure", "separator"],
           properties: {
             structure: { enum: ["chained", "suffix", "attribute"] },
-            separator: { type: "string" },
+            separator: {
+              oneOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+            },
             propValue: { type: "boolean" },
             propValueSeparator: { type: "string" },
           },
