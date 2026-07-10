@@ -9,6 +9,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { CssDocConfiguration, CssDocEntry } from "@cssdoc/core";
 import { parseCssDocs } from "@cssdoc/core";
+import { parseCssDocsFromSource } from "@cssdoc/embedded";
 import {
   KIND_GROUPS,
   type RenderEntryOptions,
@@ -33,6 +34,8 @@ export interface BuildCssApiOptions extends RenderEntryOptions, RenderIndexOptio
   outDir: string;
   /** The tag configuration to parse with (e.g. from `@cssdoc/config`). */
   configuration?: CssDocConfiguration;
+  /** The host language `css` is written in. Non-`css` values extract embedded CSS first. Default `css`. */
+  lang?: "css" | "js" | "html" | "markdown";
   /** The sidebar file name (defaults to `css-sidebar.json`). */
   sidebarFileName?: string;
 }
@@ -77,9 +80,11 @@ export function buildSidebar(entries: readonly CssDocEntry[], baseHref = "/"): S
  */
 export function buildCssApi(options: BuildCssApiOptions): BuildCssApiResult {
   const css = Array.isArray(options.css) ? options.css.join("\n") : options.css;
-  const entries = parseCssDocs(css, { configuration: options.configuration }).sort((a, b) =>
-    a.name.localeCompare(b.name),
-  );
+  const parsed =
+    options.lang && options.lang !== "css"
+      ? parseCssDocsFromSource(css, { host: options.lang, configuration: options.configuration })
+      : parseCssDocs(css, { configuration: options.configuration });
+  const entries = parsed.sort((a, b) => a.name.localeCompare(b.name));
   const baseHref = options.baseHref ?? "/";
 
   mkdirSync(options.outDir, { recursive: true });

@@ -43,6 +43,7 @@
   "dependencies": {
     "@cssdoc/config": "workspace:*",
     "@cssdoc/core": "workspace:*",
+    "@cssdoc/embedded": "workspace:*",
     "@cssdoc/index": "workspace:*",
     "@cssdoc/providers": "workspace:*",
     "vscode-languageserver": "catalog:",

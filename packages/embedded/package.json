@@ -1,13 +1,13 @@
 {
-  "name": "@cssdoc/stylelint-plugin",
-  "version": "0.2.0",
-  "description": "Stylelint rules that check CSS doc-comment hygiene (undocumented modifiers/parts, deprecations, drift).",
+  "name": "@cssdoc/embedded",
+  "version": "0.1.0",
+  "description": "Extract cssdoc-annotated CSS embedded in JS/TS tagged templates, HTML-like <style> blocks, and Markdown code fences.",
   "keywords": [
     "css",
+    "css-in-js",
     "cssdoc",
     "documentation",
-    "stylelint",
-    "stylelint-plugin"
+    "styled-components"
   ],
   "homepage": "https://cssdoc.dev",
   "bugs": "https://github.com/thedannywahl/cssdoc/issues",
@@ -15,7 +15,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/thedannywahl/cssdoc.git",
-    "directory": "plugins/stylelint"
+    "directory": "packages/embedded"
   },
   "files": [
     "dist"
@@ -42,15 +42,9 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "postcss-html": "catalog:",
-    "postcss-styled-syntax": "catalog:",
     "publint": "catalog:",
-    "stylelint": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vite-plus": "catalog:"
-  },
-  "peerDependencies": {
-    "stylelint": ">=16"
   }
 }

@@ -130,6 +130,37 @@ test("multi-config: each scope checks consumer usage against its own convention"
   expect(b.filter((d) => d.code === "unknown-modifier")).toHaveLength(1);
 });
 
+test("diagnostics lint the embedded CSS in a Vue <style> block, at absolute lines", () => {
+  const vue = `<template><button class="btn" /></template>
+<style>
+/**
+ * @component btn
+ */
+.btn { color: red; }
+</style>`;
+  const diags = new CssDocLanguageService(createIndex("")).diagnostics(vue, "vue", "Button.vue");
+  const summary = diags.find((d) => d.code === "missing-summary");
+  expect(summary).toBeDefined();
+  expect(summary?.range.start.line).toBeGreaterThan(1); // inside the <style> block, not line 0
+});
+
+test("diagnostics see a doc comment authored above a styled-component const (via projection)", () => {
+  const ts = `import styled from "styled-components";
+/**
+ * @component button
+ */
+const Button = styled.button\`
+  color: red;
+\`;`;
+  const diags = new CssDocLanguageService(createIndex("")).diagnostics(
+    ts,
+    "typescript",
+    "Button.ts",
+  );
+  // stylelint can't see this comment; the LSP can, because the projection keeps it in place.
+  expect(diags.some((d) => d.code === "missing-summary")).toBe(true);
+});
+
 test("css diagnostics honor the configured name case", () => {
   const svc = new CssDocLanguageService(
     createIndex(`/**\n * @component card\n * @summary s\n */\n.card {}`),

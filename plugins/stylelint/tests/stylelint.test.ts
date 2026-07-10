@@ -43,3 +43,40 @@ test("a fully documented stylesheet produces no warnings", async () => {
 `;
   expect(await lint(clean)).toEqual([]);
 });
+
+const lintWith = (code: string, customSyntax: string): Promise<string[]> =>
+  stylelint
+    .lint({
+      code,
+      customSyntax,
+      config: { plugins: [plugin], rules: { [ruleName]: [true, { modifierConvention: "rscss" }] } },
+    })
+    .then((r) => r.results[0].warnings.map((w) => w.text));
+
+test("lints a Vue <style> block through postcss-html (comment inside the block)", async () => {
+  const vue = `<template><button class="btn" /></template>
+<style>
+/**
+ * @component btn
+ */
+.btn { color: red; }
+.btn.-size-sm { font-size: small; }
+</style>`;
+  const warnings = await lintWith(vue, "postcss-html");
+  // btn has no @summary; -size-sm is used but undocumented.
+  expect(warnings.some((t) => t.includes("missing-summary"))).toBe(true);
+  expect(warnings.some((t) => t.includes("undocumented-modifier"))).toBe(true);
+});
+
+test("lints an in-template comment through postcss-styled-syntax", async () => {
+  const ts = `import styled from "styled-components";
+const Button = styled.button\`
+  /**
+   * @component button
+   */
+  color: red;
+  &.-size-sm { font-size: small; }
+\`;`;
+  const warnings = await lintWith(ts, "postcss-styled-syntax");
+  expect(warnings.some((t) => t.includes("missing-summary"))).toBe(true);
+});

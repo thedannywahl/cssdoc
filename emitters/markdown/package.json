@@ -37,7 +37,8 @@
     "publint": "publint"
   },
   "dependencies": {
-    "@cssdoc/core": "workspace:*"
+    "@cssdoc/core": "workspace:*",
+    "@cssdoc/embedded": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",

@@ -26,6 +26,20 @@ test("renderJson produces valid JSON of the model", () => {
   expect(parsed.find((e: { name: string }) => e.name === "button")).toBeDefined();
 });
 
+test('lang: "js" extracts and emits records from a tagged template', () => {
+  const outDir = mkdtempSync(join(tmpdir(), "cssdoc-json-js-"));
+  const ts = `import styled from "styled-components";
+/**
+ * @component button
+ * @summary The primary action control.
+ */
+const Button = styled.button\`color: red;\`;`;
+  const result = writeJson({ css: ts, lang: "js", outDir });
+  const model = JSON.parse(readFileSync(result.modelPath, "utf8"));
+  expect(model).toHaveLength(1);
+  expect(model[0]).toMatchObject({ name: "button", summary: "The primary action control." });
+});
+
 test("the shipped JSON Schema validates the model output (schema stays in step with the model)", () => {
   const ajv = new Ajv({ allErrors: true });
   const validate = ajv.compile(cssDocSchema);

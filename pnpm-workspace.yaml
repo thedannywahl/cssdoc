@@ -53,6 +53,8 @@ catalog:
   bumpp: ^11.1.0
   "@commitlint/cli": ^21.2.1
   "@commitlint/config-conventional": ^21.2.0
+  postcss-styled-syntax: ^0.7.2
+  postcss-html: ^1.8.1
 
 allowBuilds:
   esbuild: true

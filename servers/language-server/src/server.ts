@@ -9,6 +9,7 @@ import { readFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { CssDocConfigFile } from "@cssdoc/config";
+import { detectEmbeddedHost, projectCss } from "@cssdoc/embedded";
 import { createIndex } from "@cssdoc/index";
 import { resolveNaming, resolveRuleSeverities } from "@cssdoc/providers";
 import {
@@ -46,6 +47,14 @@ export function startLanguageServer(): void {
     }
   };
 
+  // Read a file for indexing: plain stylesheets pass through; host files (`.vue`/`.ts`/`.md` …) are
+  // projected to CSS first so their embedded, documented components enter the index.
+  const readIndexable = (p: string): string => {
+    const host = detectEmbeddedHost(p);
+    const raw = readSafe(p);
+    return host ? projectCss(raw, { host }) : raw;
+  };
+
   const rebuild = (): void => {
     // Group the documented CSS by the nearest `cssdoc.json` (walking up per file), so a monorepo with
     // a config per package gets one scope per config — each with its own convention/severities/naming.
@@ -67,7 +76,7 @@ export function startLanguageServer(): void {
       return {
         dir: g.dir,
         configuration,
-        index: createIndex(g.files.map(readSafe).join("\n"), {
+        index: createIndex(g.files.map(readIndexable).join("\n"), {
           file: g.files.length === 1 ? g.files[0] : undefined,
           configuration,
         }),

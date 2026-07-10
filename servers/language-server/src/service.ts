@@ -7,6 +7,7 @@
  * @module
  */
 import type { CssDocConfiguration } from "@cssdoc/core";
+import { type EmbeddedHost, detectEmbeddedHost, projectCss } from "@cssdoc/embedded";
 import {
   type ClassUsage,
   type CssDocIndex,
@@ -34,6 +35,27 @@ import {
 
 /** Language ids handled as CSS (the value/hygiene checks run on these). */
 const CSS_LANGUAGES = new Set(["css", "scss", "less", "postcss"]);
+
+/** Map an editor `languageId` to an embedded host, for docs whose path extension isn't decisive. */
+const hostForLanguageId = (languageId?: string): EmbeddedHost | undefined => {
+  switch (languageId) {
+    case "javascript":
+    case "javascriptreact":
+    case "typescript":
+    case "typescriptreact":
+      return "js";
+    case "html":
+    case "vue":
+    case "svelte":
+    case "astro":
+      return "html";
+    case "markdown":
+    case "mdx":
+      return "markdown";
+    default:
+      return undefined;
+  }
+};
 
 /** A 0-based LSP position. */
 export interface LspPosition {
@@ -281,10 +303,14 @@ export class CssDocLanguageService {
    */
   diagnostics(text: string, languageId?: string, path?: string): LspDiagnostic[] {
     if (languageId && CSS_LANGUAGES.has(languageId)) return this.cssDiagnostics(text, path);
+    const out: LspDiagnostic[] = [];
+    // Host documents (`.vue`/`.ts`/`.md` …) carry embedded CSS: lint the doc comments in place by
+    // projecting to CSS first. The projection shares the source's offsets, so ranges land correctly.
+    const host = detectEmbeddedHost(path) ?? hostForLanguageId(languageId);
+    if (host) out.push(...this.cssDiagnostics(projectCss(text, { host }), path));
     // Consumer usage: check against every scope's index (a base class resolves in exactly the scope
     // that documents it), deduping identical diagnostics from any overlap.
     const seen = new Set<string>();
-    const out: LspDiagnostic[] = [];
     for (const scope of this.scopes) {
       for (const { usage, start, end } of this.modifierUsages(text, scope)) {
         for (const d of checkClassUsage([usage], scope.index, scope.severities)) {

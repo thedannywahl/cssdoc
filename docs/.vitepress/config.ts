@@ -59,6 +59,7 @@ export default defineConfig({
             { text: "Authoring doc comments", link: "/guide/authoring" },
             { text: "Modifier conventions", link: "/guide/modifier-conventions" },
             { text: "Configuration", link: "/guide/config" },
+            { text: "Embedded CSS", link: "/guide/embedded-css" },
             { text: "Emitting docs", link: "/guide/emitters" },
             { text: "Standard formats", link: "/guide/generators" },
             { text: "Linting", link: "/guide/linting" },

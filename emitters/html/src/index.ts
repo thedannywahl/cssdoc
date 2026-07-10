@@ -12,18 +12,23 @@ import {
   type StructureNode,
   parseCssDocs,
 } from "@cssdoc/core";
+import { parseCssDocsFromSource } from "@cssdoc/embedded";
 
 /** Either a CSS source or an already-parsed model. */
 export interface ModelInput {
   css?: string | string[];
   entries?: CssDocEntry[];
   configuration?: CssDocConfiguration;
+  /** The host language `css` is written in. Non-`css` values extract embedded CSS first. Default `css`. */
+  lang?: "css" | "js" | "html" | "markdown";
 }
 
 function resolveEntries(input: ModelInput): CssDocEntry[] {
   if (input.entries) return input.entries;
   const css = Array.isArray(input.css) ? input.css.join("\n") : (input.css ?? "");
-  return parseCssDocs(css, { configuration: input.configuration });
+  return input.lang && input.lang !== "css"
+    ? parseCssDocsFromSource(css, { host: input.lang, configuration: input.configuration })
+    : parseCssDocs(css, { configuration: input.configuration });
 }
 
 const esc = (text: string | undefined): string =>

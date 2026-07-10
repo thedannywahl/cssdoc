@@ -58,6 +58,10 @@ const rule: Rule<boolean, SecondaryOptions> = (primary, secondaryOptions) => (ro
   );
   if (!valid || !primary) return;
 
+  // A custom syntax (postcss-html, postcss-styled-syntax, postcss-lit) hands the rule one clean-CSS
+  // Root per embedded block, so `root.toString()` is the extracted stylesheet — doc comments inside a
+  // `<style>` block or a template are preserved and linted. (A comment authored *above* a
+  // `const X = styled…` lives in code the custom syntax discards; use @cssdoc/embedded for that.)
   const css = root.toString();
   const violations = lintCssDocs(css, {
     rules: secondaryOptions?.rules,

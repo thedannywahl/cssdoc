@@ -7,6 +7,9 @@ Custom Elements Manifest names (`@cssproperty`, `@csspart`, `@cssstate`) where t
 Unknown tags are ignored, so the grammar degrades gracefully. The formal grammar lives in
 `@cssdoc/spec`'s `grammar/CssDoc.grammarkdown`.
 
+You can write these comments in a plain `.css` file or in CSS embedded in a host file — a tagged
+template, a `<style>` block, or a Markdown fence. See [Embedded CSS](/guide/embedded-css).
+
 ## Record tags
 
 One of these opens a record and picks its kind. `@name` is an alias for `@component`.
