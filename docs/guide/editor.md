@@ -25,6 +25,14 @@ scans, set globs (in `.vscode/settings.json` or the Settings UI):
 For an exact list instead, `cssdoc.css` takes explicit paths and overrides auto-detection. The set
 refreshes automatically when files or settings change.
 
+### cssdoc.json is applied automatically
+
+The server reads the nearest [`cssdoc.json`](/guide/config) walking up from each documented CSS file,
+so your custom tags, [modifier convention](/guide/modifier-conventions), rule severities, and name-case
+rules all take effect in the editor — no extra settings. In a monorepo, each package's `cssdoc.json`
+governs its own CSS independently, so packages can use different conventions side by side. Editing a
+`cssdoc.json` reloads the affected rules live.
+
 In `.css`, `.html`, and JSX/TSX files you get:
 
 - **Completion** — a component's modifiers inside `class`/`className`, and declared custom properties

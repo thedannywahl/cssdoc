@@ -6,6 +6,7 @@
  *
  * @module
  */
+import type { CssDocConfiguration } from "@cssdoc/core";
 import {
   type ClassUsage,
   type CssDocIndex,
@@ -154,70 +155,118 @@ function classAttrAt(text: string, offset: number): ClassAttr | undefined {
   return classAttributes(text).find((a) => offset >= a.valueStart && offset <= a.valueEnd);
 }
 
+/**
+ * One config scope: a documented-CSS index plus the `cssdoc.json` settings that govern it. A workspace
+ * may have several (e.g. a monorepo with a `cssdoc.json` per package, each with its own convention).
+ */
+export interface ConfigScope {
+  /** The directory of the governing `cssdoc.json` (`""` for the default/no-config scope). */
+  dir: string;
+  /** The configuration (for rebuilding a CSS-doc index from unsaved editor text). */
+  configuration?: CssDocConfiguration;
+  index: CssDocIndex;
+  severities: RuleSeverities;
+  naming: ResolvedNaming;
+}
+
 /** The language service. Construct with the component index (rebuild it when the CSS changes). */
 export class CssDocLanguageService {
-  private naming: ResolvedNaming = {};
+  private scopes: ConfigScope[];
 
-  constructor(
-    private index: CssDocIndex,
-    private severities: RuleSeverities = DEFAULT_RULE_SEVERITIES,
-  ) {}
+  constructor(index: CssDocIndex, severities: RuleSeverities = DEFAULT_RULE_SEVERITIES) {
+    this.scopes = [{ dir: "", index, severities, naming: {} }];
+  }
 
-  /** Replace the component index (e.g. after the CSS files change). */
+  /** Replace the component index (single-scope path; e.g. after the CSS files change). */
   setIndex(index: CssDocIndex): void {
-    this.index = index;
+    this.scopes = [{ ...this.scopes[0], index }];
   }
 
-  /** Set the per-rule severities (e.g. loaded from a `cssdoc.json`). */
+  /** Set the per-rule severities (single-scope path). */
   setRuleSeverities(severities: RuleSeverities): void {
-    this.severities = severities;
+    this.scopes[0] = { ...this.scopes[0], severities };
   }
 
-  /** Set the name-case conventions (e.g. loaded from a `cssdoc.json`). */
+  /** Set the name-case conventions (single-scope path). */
   setNaming(naming: NamingRules): void {
-    this.naming = resolveNaming(naming);
+    this.scopes[0] = { ...this.scopes[0], naming: resolveNaming(naming) };
+  }
+
+  /** Replace all config scopes (multi-config path; one per governing `cssdoc.json`). */
+  setScopes(scopes: ConfigScope[]): void {
+    if (scopes.length) this.scopes = scopes;
+  }
+
+  /** The scope governing `path` — the deepest `cssdoc.json` dir containing it, else the default. */
+  private scopeForPath(path?: string): ConfigScope {
+    let best: ConfigScope | undefined;
+    if (path) {
+      for (const s of this.scopes) {
+        const prefix = s.dir.endsWith("/") ? s.dir : `${s.dir}/`;
+        if (s.dir && (path === s.dir || path.startsWith(prefix))) {
+          if (!best || s.dir.length > best.dir.length) best = s;
+        }
+      }
+    }
+    return best ?? this.scopes.find((s) => !s.dir) ?? this.scopes[0];
+  }
+
+  /** The scope whose index defines one of `tokens` as a component (which owns the referenced class). */
+  private scopeForBase(tokens: string[]): ConfigScope | undefined {
+    return this.scopes.find((s) => tokens.some((t) => s.index.componentForClass(t)));
   }
 
   /** Completions at a position: `var(--…)` custom properties, or classes/modifiers in a class attribute. */
-  completions(text: string, position: LspPosition): LspCompletion[] {
+  completions(text: string, position: LspPosition, path?: string): LspCompletion[] {
     const offset = offsetAt(text, position);
     const before = text.slice(0, offset);
     if (/var\(\s*(--[\w-]*)$/u.test(before)) {
-      return completeCustomProperties(this.index).map(toCompletion);
+      return completeCustomProperties(this.scopeForPath(path).index).map(toCompletion);
     }
     const attr = classAttrAt(text, offset);
     if (attr) {
-      const base = attr.tokens.find((t) => this.index.componentForClass(t));
-      return completeClasses(base, this.index).map(toCompletion);
+      const scope = this.scopeForBase(attr.tokens) ?? this.scopeForPath(path);
+      const base = attr.tokens.find((t) => scope.index.componentForClass(t));
+      return completeClasses(base, scope.index).map(toCompletion);
     }
     return [];
   }
 
   /** Hover at a position: a custom property, or a class token in a class attribute. */
-  hover(text: string, position: LspPosition): LspHover | undefined {
+  hover(text: string, position: LspPosition, path?: string): LspHover | undefined {
     const offset = offsetAt(text, position);
     const prop = propertyAt(text, offset);
     if (prop) {
-      const h = hoverForCustomProperty(prop.name, this.index);
-      if (h) return { contents: h.contents };
+      for (const scope of this.scopes) {
+        const h = hoverForCustomProperty(prop.name, scope.index);
+        if (h) return { contents: h.contents };
+      }
     }
     const token = this.classTokenAt(text, offset);
     if (token) {
-      const h = hoverForClass(token.base ?? token.token, token.token, this.index);
+      const scope = this.scopeForBase([token.base ?? token.token]) ?? this.scopeForPath(path);
+      const h = hoverForClass(token.base ?? token.token, token.token, scope.index);
       if (h) return { contents: h.contents };
     }
     return undefined;
   }
 
   /** Definition at a position: the CSS rule for a class token or a custom property. */
-  definition(text: string, position: LspPosition): LspLocation | undefined {
+  definition(text: string, position: LspPosition, path?: string): LspLocation | undefined {
     const offset = offsetAt(text, position);
     const prop = propertyAt(text, offset);
-    if (prop) return this.toLocation(definitionForCustomProperty(prop.name, this.index));
+    if (prop) {
+      for (const scope of this.scopes) {
+        const loc = definitionForCustomProperty(prop.name, scope.index);
+        if (loc) return this.toLocation(loc);
+      }
+      return undefined;
+    }
     const token = this.classTokenAt(text, offset);
     if (token) {
+      const scope = this.scopeForBase([token.base ?? token.token]) ?? this.scopeForPath(path);
       return this.toLocation(
-        definitionForClass(token.base ?? token.token, token.token, this.index),
+        definitionForClass(token.base ?? token.token, token.token, scope.index),
       );
     }
     return undefined;
@@ -228,36 +277,46 @@ export class CssDocLanguageService {
    * registered-property value checks); for other languages, class-attribute usage is checked against
    * the configured index.
    */
-  diagnostics(text: string, languageId?: string): LspDiagnostic[] {
-    if (languageId && CSS_LANGUAGES.has(languageId)) return this.cssDiagnostics(text);
+  diagnostics(text: string, languageId?: string, path?: string): LspDiagnostic[] {
+    if (languageId && CSS_LANGUAGES.has(languageId)) return this.cssDiagnostics(text, path);
+    // Consumer usage: check against every scope's index (a base class resolves in exactly the scope
+    // that documents it), deduping identical diagnostics from any overlap.
+    const seen = new Set<string>();
     const out: LspDiagnostic[] = [];
-    for (const { usage, start, end } of this.modifierUsages(text)) {
-      const diags = checkClassUsage([usage], this.index, this.severities);
-      for (const d of diags) {
-        const canonical = usage.base
-          ? this.index.deprecationOf(usage.base, usage.token)?.canonical
-          : undefined;
-        out.push({
-          range: rangeOf(text, start, end),
-          message: d.message,
-          severity: d.severity === "error" ? 1 : 2,
-          code: d.rule,
-          ...(d.rule === "deprecated-modifier" && canonical
-            ? { data: { replace: canonical } }
-            : {}),
-        });
+    for (const scope of this.scopes) {
+      for (const { usage, start, end } of this.modifierUsages(text, scope)) {
+        for (const d of checkClassUsage([usage], scope.index, scope.severities)) {
+          const key = `${start}:${end}:${d.rule}:${d.message}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          const canonical = usage.base
+            ? scope.index.deprecationOf(usage.base, usage.token)?.canonical
+            : undefined;
+          out.push({
+            range: rangeOf(text, start, end),
+            message: d.message,
+            severity: d.severity === "error" ? 1 : 2,
+            code: d.rule,
+            ...(d.rule === "deprecated-modifier" && canonical
+              ? { data: { replace: canonical } }
+              : {}),
+          });
+        }
       }
     }
     return out;
   }
 
   /**
-   * The modifier-usage candidates in a host document, each with its source span. For class conventions
-   * these are class tokens inside `class`/`className`; for the `attribute` convention they are
-   * convention-matching attributes on an element that also carries a documented component class.
+   * The modifier-usage candidates in a host document (against one scope), each with its source span.
+   * For class conventions these are class tokens inside `class`/`className`; for the `attribute`
+   * convention they are convention-matching attributes on an element that also carries a component.
    */
-  private modifierUsages(text: string): { usage: ClassUsage; start: number; end: number }[] {
-    const matcher = this.index.matcher;
+  private modifierUsages(
+    text: string,
+    scope: ConfigScope,
+  ): { usage: ClassUsage; start: number; end: number }[] {
+    const { matcher } = scope.index;
     const results: { usage: ClassUsage; start: number; end: number }[] = [];
 
     if (matcher.convention.structure === "attribute") {
@@ -270,7 +329,7 @@ export class CssDocLanguageService {
             tokens.push(...(a[2] ?? a[3] ?? "").split(/\s+/u).filter(Boolean));
           }
         }
-        const base = tokens.find((t) => this.index.componentForClass(t));
+        const base = tokens.find((t) => scope.index.componentForClass(t));
         if (!base) continue;
         for (const a of attrs) {
           if (a[1] === "class" || a[1] === "className") continue;
@@ -284,7 +343,8 @@ export class CssDocLanguageService {
     }
 
     for (const attr of classAttributes(text)) {
-      const base = attr.tokens.find((t) => this.index.componentForClass(t));
+      const base = attr.tokens.find((t) => scope.index.componentForClass(t));
+      if (!base) continue; // only check elements that carry a documented component of this scope
       for (const member of attr.members) {
         if (!matcher.looksLikeUsage(member.token, base)) continue;
         results.push({
@@ -297,14 +357,15 @@ export class CssDocLanguageService {
     return results;
   }
 
-  /** Lint an open stylesheet: doc-comment hygiene and the registered-property value checks. */
-  private cssDiagnostics(text: string): LspDiagnostic[] {
-    const index = createIndex(text);
+  /** Lint an open stylesheet against its governing scope: doc hygiene + registered-property checks. */
+  private cssDiagnostics(text: string, path?: string): LspDiagnostic[] {
+    const scope = this.scopeForPath(path);
+    const index = createIndex(text, { configuration: scope.configuration });
     const { assignments, usages } = cssValueSites(text);
     const diags = [
-      ...lintModel(index, this.severities, this.naming),
-      ...checkPropertyAssignments(assignments, index, this.severities),
-      ...checkPropertyUsage(usages, index, {}, this.severities),
+      ...lintModel(index, scope.severities, scope.naming),
+      ...checkPropertyAssignments(assignments, index, scope.severities),
+      ...checkPropertyUsage(usages, index, {}, scope.severities),
     ];
     const out: LspDiagnostic[] = [];
     for (const d of diags) {
@@ -320,12 +381,13 @@ export class CssDocLanguageService {
   }
 
   /** Quick fixes for the given diagnostics (replace a deprecated modifier with its canonical). */
-  codeActions(diagnostics: LspDiagnostic[]): LspCodeAction[] {
+  codeActions(diagnostics: LspDiagnostic[], path?: string): LspCodeAction[] {
+    const { matcher } = this.scopeForPath(path).index;
     const actions: LspCodeAction[] = [];
     for (const d of diagnostics) {
       if (d.data?.replace) {
         actions.push({
-          title: `Replace with ${this.index.matcher.selectorFor(d.data.replace)}`,
+          title: `Replace with ${matcher.selectorFor(d.data.replace)}`,
           edit: { range: d.range, newText: d.data.replace },
         });
       }
@@ -338,7 +400,7 @@ export class CssDocLanguageService {
     if (!attr) return undefined;
     const member = attr.members.find((m) => offset >= m.start && offset <= m.end);
     if (!member) return undefined;
-    const base = attr.tokens.find((t) => this.index.componentForClass(t));
+    const base = attr.tokens.find((t) => this.scopes.some((s) => s.index.componentForClass(t)));
     return { token: member.token, base };
   }
 

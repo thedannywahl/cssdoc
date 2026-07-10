@@ -7,10 +7,10 @@
  */
 import { readFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { CssDocConfigFile } from "@cssdoc/config";
 import { createIndex } from "@cssdoc/index";
-import { resolveRuleSeverities } from "@cssdoc/providers";
+import { resolveNaming, resolveRuleSeverities } from "@cssdoc/providers";
 import {
   CompletionItemTag,
   DiagnosticSeverity,
@@ -20,7 +20,16 @@ import {
   createConnection,
 } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { CssDocLanguageService, type LspDiagnostic } from "./service.ts";
+import { type ConfigScope, CssDocLanguageService, type LspDiagnostic } from "./service.ts";
+
+/** The absolute file path for a document URI, or `undefined` for non-file URIs. */
+const fsPathOf = (uri: string): string | undefined => {
+  try {
+    return fileURLToPath(uri);
+  } catch {
+    return undefined;
+  }
+};
 
 /** Start the language server on the Node stdio connection. */
 export function startLanguageServer(): void {
@@ -29,33 +38,46 @@ export function startLanguageServer(): void {
   const service = new CssDocLanguageService(createIndex(""));
   let cssPaths: string[] = [];
 
+  const readSafe = (p: string): string => {
+    try {
+      return readFileSync(p, "utf8");
+    } catch {
+      return "";
+    }
+  };
+
   const rebuild = (): void => {
-    const css = cssPaths
-      .map((p) => {
-        try {
-          return readFileSync(p, "utf8");
-        } catch {
-          return "";
-        }
-      })
-      .join("\n");
-    // Honor a cssdoc.json near the CSS (custom tags + modifier convention + rule severities).
-    const configFile = CssDocConfigFile.loadForFolder(
-      cssPaths[0] ? dirname(cssPaths[0]) : process.cwd(),
-    );
-    const configuration = configFile.toConfiguration();
-    service.setIndex(
-      createIndex(css, {
-        file: cssPaths.length === 1 ? cssPaths[0] : undefined,
+    // Group the documented CSS by the nearest `cssdoc.json` (walking up per file), so a monorepo with
+    // a config per package gets one scope per config — each with its own convention/severities/naming.
+    const groups = new Map<
+      string,
+      { dir: string; configFile: CssDocConfigFile; files: string[] }
+    >();
+    const add = (configFile: CssDocConfigFile, file?: string): void => {
+      const dir = configFile.fileNotFound ? "" : dirname(configFile.filePath);
+      const g = groups.get(dir) ?? { dir, configFile, files: [] };
+      if (file) g.files.push(file);
+      groups.set(dir, g);
+    };
+    for (const p of cssPaths) add(CssDocConfigFile.loadForFolder(dirname(p)), p);
+    if (groups.size === 0) add(CssDocConfigFile.loadForFolder(process.cwd())); // no CSS yet
+
+    const scopes: ConfigScope[] = [...groups.values()].map((g) => {
+      const configuration = g.configFile.toConfiguration();
+      return {
+        dir: g.dir,
         configuration,
-      }),
-    );
-    service.setRuleSeverities(
-      resolveRuleSeverities(
-        configFile.ruleSeverities as Parameters<typeof resolveRuleSeverities>[0],
-      ),
-    );
-    service.setNaming(configFile.naming);
+        index: createIndex(g.files.map(readSafe).join("\n"), {
+          file: g.files.length === 1 ? g.files[0] : undefined,
+          configuration,
+        }),
+        severities: resolveRuleSeverities(
+          g.configFile.ruleSeverities as Parameters<typeof resolveRuleSeverities>[0],
+        ),
+        naming: resolveNaming(g.configFile.naming),
+      };
+    });
+    service.setScopes(scopes);
   };
 
   connection.onInitialize((params) => {
@@ -74,13 +96,15 @@ export function startLanguageServer(): void {
   });
 
   const validate = (doc: TextDocument): void => {
-    const diagnostics = service.diagnostics(doc.getText(), doc.languageId).map((d) => ({
-      range: d.range,
-      message: d.message,
-      severity: d.severity === 1 ? DiagnosticSeverity.Error : DiagnosticSeverity.Warning,
-      code: d.code,
-      data: d.data,
-    }));
+    const diagnostics = service
+      .diagnostics(doc.getText(), doc.languageId, fsPathOf(doc.uri))
+      .map((d) => ({
+        range: d.range,
+        message: d.message,
+        severity: d.severity === 1 ? DiagnosticSeverity.Error : DiagnosticSeverity.Warning,
+        code: d.code,
+        data: d.data,
+      }));
     void connection.sendDiagnostics({ uri: doc.uri, diagnostics });
   };
   documents.onDidChangeContent((e) => {
@@ -90,25 +114,31 @@ export function startLanguageServer(): void {
   connection.onCompletion((params) => {
     const doc = documents.get(params.textDocument.uri);
     if (!doc) return [];
-    return service.completions(doc.getText(), params.position).map((c) => ({
-      label: c.label,
-      detail: c.detail,
-      documentation: c.documentation,
-      tags: c.deprecated ? [CompletionItemTag.Deprecated] : undefined,
-    }));
+    return service
+      .completions(doc.getText(), params.position, fsPathOf(params.textDocument.uri))
+      .map((c) => ({
+        label: c.label,
+        detail: c.detail,
+        documentation: c.documentation,
+        tags: c.deprecated ? [CompletionItemTag.Deprecated] : undefined,
+      }));
   });
 
   connection.onHover((params) => {
     const doc = documents.get(params.textDocument.uri);
     if (!doc) return null;
-    const hover = service.hover(doc.getText(), params.position);
+    const hover = service.hover(doc.getText(), params.position, fsPathOf(params.textDocument.uri));
     return hover ? { contents: { kind: "markdown" as const, value: hover.contents } } : null;
   });
 
   connection.onDefinition((params) => {
     const doc = documents.get(params.textDocument.uri);
     if (!doc) return null;
-    const location = service.definition(doc.getText(), params.position);
+    const location = service.definition(
+      doc.getText(),
+      params.position,
+      fsPathOf(params.textDocument.uri),
+    );
     if (!location?.uri) return null;
     return { uri: pathToFileURL(location.uri).href, range: location.range };
   });
@@ -121,7 +151,7 @@ export function startLanguageServer(): void {
       code: typeof d.code === "string" ? d.code : undefined,
       data: d.data as LspDiagnostic["data"],
     }));
-    return service.codeActions(diagnostics).map((a) => ({
+    return service.codeActions(diagnostics, fsPathOf(params.textDocument.uri)).map((a) => ({
       title: a.title,
       kind: "quickfix" as const,
       edit: {

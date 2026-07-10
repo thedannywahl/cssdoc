@@ -1,4 +1,5 @@
 import { createIndex } from "@cssdoc/index";
+import { DEFAULT_RULE_SEVERITIES } from "@cssdoc/providers";
 import { expect, test } from "vite-plus/test";
 import { CssDocLanguageService } from "../src/service.ts";
 
@@ -97,4 +98,46 @@ test("attribute (CUBE): a data-attribute modifier on the base element is checked
       .diagnostics(`<div class="card" data-variant="ghost"></div>`)
       .some((d) => d.code === "unknown-modifier"),
   ).toBe(false);
+});
+
+test("multi-config: each scope checks consumer usage against its own convention", () => {
+  // Two packages with different conventions (BEM and rscss).
+  const bem = createIndex(
+    `/**\n * @component card\n * @summary s\n */\n.card {}\n.card--featured {}`,
+  );
+  const rscss = createIndex(
+    `/**\n * @component tag\n * @summary s\n */\n.tag {}\n.tag.-color-red {}`,
+    {
+      modifierConvention: "rscss",
+    },
+  );
+  const svc = new CssDocLanguageService(createIndex(""));
+  svc.setScopes([
+    { dir: "/repo/a", index: bem, severities: DEFAULT_RULE_SEVERITIES, naming: {} },
+    { dir: "/repo/b", index: rscss, severities: DEFAULT_RULE_SEVERITIES, naming: {} },
+  ]);
+  // BEM component → BEM convention flags `card--bogus`.
+  const a = svc.diagnostics(`<div class="card card--bogus"></div>`, "html");
+  expect(a.some((d) => d.code === "unknown-modifier" && d.message.includes(".card--bogus"))).toBe(
+    true,
+  );
+  // rscss component → rscss convention flags `-color-bad`; the BEM scope doesn't own `tag`, so it
+  // contributes nothing (no cross-convention false positives).
+  const b = svc.diagnostics(`<div class="tag -color-bad"></div>`, "html");
+  expect(b.some((d) => d.code === "unknown-modifier" && d.message.includes(".-color-bad"))).toBe(
+    true,
+  );
+  expect(b.filter((d) => d.code === "unknown-modifier")).toHaveLength(1);
+});
+
+test("css diagnostics honor the configured name case", () => {
+  const svc = new CssDocLanguageService(
+    createIndex(`/**\n * @component card\n * @summary s\n */\n.card {}`),
+  );
+  svc.setNaming({ component: "pascalCase" });
+  const diags = svc.diagnostics(
+    `/**\n * @component card\n * @summary s\n */\n.card { color: red; }`,
+    "css",
+  );
+  expect(diags.some((d) => d.code === "component-name-case")).toBe(true);
 });
