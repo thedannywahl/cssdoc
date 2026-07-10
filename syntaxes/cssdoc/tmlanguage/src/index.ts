@@ -75,6 +75,7 @@ export function buildInjectionGrammar(): InjectionGrammar {
       { include: "#modifier-tag" },
       { include: "#part-tag" },
       { include: "#property-tag" },
+      { include: "#structure-tag" },
       { include: "#block-tag" },
       { include: "#custom-property" },
     ],
@@ -117,6 +118,21 @@ export function buildInjectionGrammar(): InjectionGrammar {
       "block-tag": {
         match: `(@(?:${blockTags}))\\b`,
         name: TAG_SCOPE,
+      },
+      // The `@structure` body is nested CSS. We light up only the parts (class selectors) and the
+      // braces that show nesting — not a full CSS grammar. The region runs to the next tag or the
+      // comment's end. Listed before `#block-tag` so it claims `@structure` first.
+      "structure-tag": {
+        begin: "(@structure)\\b",
+        beginCaptures: { "1": { name: TAG_SCOPE } },
+        end: "(?=@)|(?=\\*/)",
+        patterns: [
+          {
+            match: "\\.[A-Za-z][A-Za-z0-9_-]*",
+            name: "entity.other.attribute-name.part.cssdoc",
+          },
+          { match: "[{}]", name: "punctuation.section.structure.cssdoc" },
+        ],
       },
       "custom-property": {
         match: "(?<![\\w-])--[A-Za-z][A-Za-z0-9-]*",

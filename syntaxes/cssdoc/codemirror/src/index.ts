@@ -82,6 +82,12 @@ const GROUP_TYPE: Record<string, CssdocTokenType> = {
   cprop: "property",
 };
 
+// Inside a `@structure` body we lightly highlight the two things that carry meaning — the parts (class
+// selectors) and the braces that show nesting — not a full CSS grammar. Selectors, pseudo-classes, and
+// combinators are otherwise left plain.
+const STRUCTURE_TAG = /@structure\b/gu;
+const STRUCTURE_TOKEN = /\.[A-Za-z][\w-]*|[{}]/gu;
+
 /** Tokenize one CSS comment's text into cssdoc doc-tag spans (offsets are relative to `text`). */
 export const tokenizeComment = (text: string): CssdocToken[] => {
   const out: CssdocToken[] = [];
@@ -91,6 +97,16 @@ export const tokenizeComment = (text: string): CssdocToken[] => {
     for (const key of Object.keys(groups)) {
       const gi = groups[key];
       if (gi && gi[0] !== gi[1]) out.push({ from: gi[0], to: gi[1], type: GROUP_TYPE[key] });
+    }
+  }
+  // Second pass: the body of each `@structure` (from the tag to the next tag or the comment end).
+  for (const m of text.matchAll(STRUCTURE_TAG)) {
+    const start = (m.index ?? 0) + m[0].length;
+    const after = text.slice(start).search(/@[A-Za-z]/u);
+    const end = after === -1 ? text.length : start + after;
+    for (const s of text.slice(start, end).matchAll(STRUCTURE_TOKEN)) {
+      const from = start + (s.index ?? 0);
+      out.push({ from, to: from + s[0].length, type: s[0][0] === "." ? "part" : "punct" });
     }
   }
   return out;

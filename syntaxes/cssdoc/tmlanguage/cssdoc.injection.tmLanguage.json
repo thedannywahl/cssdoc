@@ -17,6 +17,9 @@
       "include": "#property-tag"
     },
     {
+      "include": "#structure-tag"
+    },
+    {
       "include": "#block-tag"
     },
     {
@@ -88,6 +91,25 @@
     "block-tag": {
       "match": "(@(?:component|name|utility|rule|declaration|class|summary|remarks|privateRemarks|deprecated|example|see|since|group|category|defaultValue|cssstate|function|keyframes|animation|layer|container|supports|media|responsive|a11y|accessibility|structure|demo|alpha|beta|experimental|internal|public))\\b",
       "name": "storage.type.class.cssdoc"
+    },
+    "structure-tag": {
+      "begin": "(@structure)\\b",
+      "beginCaptures": {
+        "1": {
+          "name": "storage.type.class.cssdoc"
+        }
+      },
+      "end": "(?=@)|(?=\\*/)",
+      "patterns": [
+        {
+          "match": "\\.[A-Za-z][A-Za-z0-9_-]*",
+          "name": "entity.other.attribute-name.part.cssdoc"
+        },
+        {
+          "match": "[{}]",
+          "name": "punctuation.section.structure.cssdoc"
+        }
+      ]
     },
     "custom-property": {
       "match": "(?<![\\w-])--[A-Za-z][A-Za-z0-9-]*",

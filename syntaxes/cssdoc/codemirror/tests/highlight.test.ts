@@ -26,6 +26,20 @@ test("splits an inline {@link …} into punctuation, tag, and link text", () => 
   expect(toks).toContainEqual({ type: "punct", text: "}" });
 });
 
+test("lightly highlights an @structure body — class selectors and braces, nothing else", () => {
+  const toks = label("@structure Caption.\n.tabs {\n  .list:has(.tab) {}\n}\n@a11y ok");
+  // The parts (class selectors) light up, including one inside :has().
+  expect(toks).toContainEqual({ type: "part", text: ".tabs" });
+  expect(toks).toContainEqual({ type: "part", text: ".list" });
+  expect(toks).toContainEqual({ type: "part", text: ".tab" });
+  // Braces read as punctuation.
+  expect(toks.filter((t) => t.type === "punct" && t.text === "{").length).toBe(2);
+  // The region stops at the next tag — @a11y is still a tag, not swallowed.
+  expect(toks).toContainEqual({ type: "tag", text: "@a11y" });
+  // The pseudo-class itself stays plain (no CSS grammar): `:has` isn't tokenized.
+  expect(toks.some((t) => t.text.includes("has"))).toBe(false);
+});
+
 test("highlights a bare custom property", () => {
   expect(label("uses --tabs-gap internally")).toContainEqual({
     type: "property",
