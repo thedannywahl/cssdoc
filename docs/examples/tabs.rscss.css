@@ -1,0 +1,52 @@
+/**
+ * @component tabs
+ * @summary A tabbed interface — a labelled list of tabs, each revealing a panel.
+ * @remarks Roving focus: only the selected tab is in the tab order.
+ * @part .list — The tablist row.
+ * @part .tab — A single tab control.
+ * @part .panel — The content panel for the selected tab.
+ * @slot label — A tab's visible label.
+ * @cssproperty --tabs-gap — Space between the tabs.
+ * @cssstate selected — The active tab (its panel is shown).
+ * @a11y The list is `role="tablist"`; each `.tab` is `role="tab"` and each `.panel` `role="tabpanel"`.
+ * @structure
+ *   .tabs
+ *     .list
+ *       .tab
+ *     .panel
+ * @modifier -orientation-vertical — Stacks the tabs down the side.
+ * @modifier -variant-boxed — @deprecated {@link -orientation-vertical}
+ */
+@property --tabs-gap {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0.5rem;
+}
+
+.tabs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tabs-gap);
+}
+.tabs.-orientation-vertical {
+  flex-direction: row;
+}
+.tabs.-variant-boxed {
+  border: 1px solid;
+}
+
+@scope (.tabs) {
+  :scope .list {
+    display: flex;
+    gap: var(--tabs-gap);
+  }
+  :scope .tab {
+    cursor: pointer;
+  }
+  :scope .tab:state(selected) {
+    font-weight: 700;
+  }
+  :scope .panel {
+    padding: 1rem;
+  }
+}

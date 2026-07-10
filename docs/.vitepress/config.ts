@@ -4,6 +4,7 @@ import grammarkdown from "@cssdoc/grammarkdown-tmlanguage";
 import cssdoc from "@cssdoc/tmlanguage";
 import type { DefaultTheme } from "vitepress";
 import { defineConfig } from "vitepress";
+import { mermaidPlugin } from "./plugins/vitepress-mermaid/index.js";
 
 // The site is served at its own apex domain (cssdoc.dev), so it lives at the root. DOCS_BASE can still
 // override this (e.g. to preview under a project-pages subpath).
@@ -28,6 +29,9 @@ export default defineConfig({
   // examples highlight their doc-comment tags, the way TSDoc does).
   markdown: {
     languages: [grammarkdown, cssdoc],
+    config: (md) => {
+      md.use(mermaidPlugin);
+    },
   },
   head: [
     ["link", { rel: "icon", href: `${base}icon.svg` }],
@@ -64,6 +68,8 @@ export default defineConfig({
         {
           text: "Reference",
           items: [
+            { text: "Example", link: "/guide/example" },
+            { text: "Playground", link: "/guide/playground" },
             { text: "Packages", link: "/guide/packages" },
             { text: "Grammar", link: "/guide/grammar" },
             { text: "API Reference", link: "/reference/" },

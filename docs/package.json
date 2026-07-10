@@ -17,13 +17,21 @@
     "docs:preview": "vitepress preview"
   },
   "devDependencies": {
+    "@cssdoc/core": "workspace:*",
     "@cssdoc/grammarkdown-tmlanguage": "workspace:*",
+    "@cssdoc/index": "workspace:*",
+    "@cssdoc/providers": "workspace:*",
     "@cssdoc/tmlanguage": "workspace:*",
     "@cssdoc/typedoc": "workspace:*",
+    "@types/markdown-it": "^14.1.2",
     "@types/node": "catalog:",
+    "markdown-it": "^14.1.0",
+    "mermaid": "^11.4.1",
+    "shiki": "^2.5.0",
     "typedoc": "catalog:",
     "typedoc-plugin-markdown": "catalog:",
     "typedoc-vitepress-theme": "catalog:",
-    "vitepress": "catalog:"
+    "vitepress": "catalog:",
+    "vue": "^3.5.13"
   }
 }

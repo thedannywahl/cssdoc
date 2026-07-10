@@ -215,8 +215,8 @@ export interface ParseOptions {
   configuration?: import("./configuration.ts").CssDocConfiguration;
   /**
    * The modifier convention — how modifier classes are spelled (BEM `.button--primary` by default;
-   * `rscss`, `bare`, or a custom {@link import("./modifier.ts").ModifierConvention} for SUIT/CUBE/etc.).
-   * Overrides the `configuration`'s convention when both are given.
+   * `rscss`, `bare`, or a custom `ModifierConvention` for SUIT/CUBE/etc.). Overrides the
+   * `configuration`'s convention when both are given.
    */
   modifierConvention?: import("./modifier.ts").ModifierConventionInput;
 }

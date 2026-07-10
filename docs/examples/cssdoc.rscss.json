@@ -1,0 +1,11 @@
+{
+  "$schema": "https://cssdoc.dev/cssdoc.schema.json",
+  "modifierConvention": "rscss",
+  "rules": {
+    "unknown-modifier": "warn"
+  },
+  "naming": {
+    "component": "lowercase",
+    "part": "lowercase"
+  }
+}

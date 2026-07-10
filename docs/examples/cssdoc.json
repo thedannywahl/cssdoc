@@ -1,0 +1,11 @@
+{
+  "$schema": "https://cssdoc.dev/cssdoc.schema.json",
+  "modifierConvention": "bem",
+  "rules": {
+    "unknown-modifier": "error"
+  },
+  "naming": {
+    "component": "lowercase",
+    "part": "lowercase"
+  }
+}
