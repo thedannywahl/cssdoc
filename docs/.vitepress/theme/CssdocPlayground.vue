@@ -105,16 +105,17 @@ const usage = computed(() => {
     </div>
 
     <!-- 2 — cssdoc.json (editable, full width) -->
+
+    <h2 class="pg__label">cssdoc.json</h2>
     <div class="pg__panel">
-      <p class="pg__label">cssdoc.json</p>
       <CodeEditor v-model="config" lang="json" />
       <p v-if="cfg.error" class="pg__error">⚠ Invalid JSON — {{ cfg.error }}</p>
     </div>
 
     <!-- 3 — component CSS | resolved + lint -->
+    <h2 class="pg__label">tabs.css</h2>
     <div class="pg__row">
       <div class="pg__cell">
-        <p class="pg__label">Component CSS</p>
         <CodeEditor v-model="css" lang="css" />
       </div>
       <div class="pg__cell pg__resolved">
@@ -166,9 +167,10 @@ const usage = computed(() => {
     </div>
 
     <!-- 4 — component HTML | resolved + lint -->
+
+    <h2 class="pg__label">tabs.html</h2>
     <div class="pg__row">
       <div class="pg__cell">
-        <p class="pg__label">Consumer HTML</p>
         <CodeEditor v-model="html" lang="html" />
       </div>
       <div class="pg__cell pg__resolved">
@@ -178,7 +180,8 @@ const usage = computed(() => {
         <div class="pg__findings">
           <p v-if="!usage.diagnostics.length" class="pg__ok">✓ No usage findings</p>
           <p v-for="(d, i) in usage.diagnostics" :key="i" class="pg__diag">
-            <code>{{ d.rule }}</code> {{ d.message }}
+            <code>{{ d.rule }}</code
+            ><br />{{ d.message }}
           </p>
         </div>
       </div>
@@ -226,10 +229,7 @@ const usage = computed(() => {
   min-width: 0;
 }
 .pg__label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--vp-c-text-2);
-  margin: 0 0 0.35rem;
+  margin: 0.5rem 0;
 }
 .pg__resolved {
   border: 1px solid var(--vp-c-divider);
@@ -275,7 +275,7 @@ const usage = computed(() => {
 }
 .pg__diag {
   color: var(--vp-c-yellow-1);
-  margin: 0.25rem 0;
+  margin: 0.25rem 0 0.75rem;
 }
 .pg__error {
   color: var(--vp-c-red-1);

@@ -8,6 +8,9 @@ hero:
     - theme: brand
       text: Get started
       link: /guide/introduction
+    - theme: alt
+      text: Try it
+      link: /guide/playground
 features:
   - icon:
       light: /edit-light.svg

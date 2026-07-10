@@ -1,114 +1,97 @@
 <script setup lang="ts">
 import { useData } from "vitepress";
-import { onMounted, ref, watch } from "vue";
-import type { Highlighter } from "shiki";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import type { EditorView } from "codemirror";
+import type { Compartment, Extension } from "@codemirror/state";
+import { cssdocHighlight } from "@cssdoc/codemirror";
 
 const props = defineProps<{ modelValue: string; lang: "css" | "html" | "json" }>();
 const emit = defineEmits<{ "update:modelValue": [value: string] }>();
 
 const { isDark } = useData();
-const highlighted = ref("");
-let hl: Highlighter | undefined;
+const host = ref<HTMLElement>();
+let view: EditorView | undefined;
+let themeCompartment: Compartment | undefined;
+let darkTheme: Extension = [];
 
-// One highlighter shared across every editor instance: the CSS grammar, HTML, and the cssdoc
-// doc-comment injection (so `@tag`s colour the same as the rest of the docs). Lazy, client-only.
-let highlighterPromise: Promise<Highlighter> | undefined;
-const getHighlighter = (): Promise<Highlighter> => {
-  highlighterPromise ??= (async () => {
-    const { createHighlighter } = await import("shiki");
-    const cssdocGrammar = (await import("@cssdoc/tmlanguage")).default;
-    return createHighlighter({
-      themes: ["github-light", "github-dark"],
-      langs: ["css", "html", "json", cssdocGrammar],
-    });
-  })();
-  return highlighterPromise;
-};
-
-const render = (): void => {
-  if (!hl) return;
-  highlighted.value = hl.codeToHtml(`${props.modelValue}\n`, {
-    lang: props.lang,
-    theme: isDark.value ? "github-dark" : "github-light",
-  });
+const langExtension = async (lang: typeof props.lang): Promise<Extension> => {
+  if (lang === "css") return [(await import("@codemirror/lang-css")).css(), cssdocHighlight()];
+  if (lang === "html") return (await import("@codemirror/lang-html")).html();
+  return (await import("@codemirror/lang-json")).json();
 };
 
 onMounted(async () => {
-  try {
-    hl = await getHighlighter();
-    render();
-  } catch {
-    highlighted.value = ""; // graceful fallback to a plain textarea
+  // CodeMirror is heavy and browser-only — load it lazily on mount.
+  const { basicSetup, EditorView } = await import("codemirror");
+  const { EditorState, Compartment } = await import("@codemirror/state");
+  darkTheme = (await import("@codemirror/theme-one-dark")).oneDark;
+  themeCompartment = new Compartment();
+
+  const chrome = EditorView.theme({
+    "&": {
+      minHeight: "8rem",
+      maxHeight: "21rem",
+      fontSize: "0.8rem",
+      border: "1px solid var(--vp-c-divider)",
+      borderRadius: "8px",
+      backgroundColor: "var(--vp-c-bg-alt)",
+    },
+    "&.cm-focused": { outline: "none" },
+    ".cm-scroller": { fontFamily: "var(--vp-font-family-mono)", overflow: "auto" },
+  });
+  const sync = EditorView.updateListener.of((u) => {
+    if (!u.docChanged) return;
+    const value = u.state.doc.toString();
+    if (value !== props.modelValue) emit("update:modelValue", value);
+  });
+
+  view = new EditorView({
+    parent: host.value,
+    state: EditorState.create({
+      doc: props.modelValue,
+      extensions: [
+        basicSetup,
+        await langExtension(props.lang),
+        themeCompartment.of(isDark.value ? darkTheme : []),
+        chrome,
+        sync,
+      ],
+    }),
+  });
+});
+
+// External value changes (e.g. a preset swap) replace the document.
+watch(
+  () => props.modelValue,
+  (value) => {
+    if (view && value !== view.state.doc.toString()) {
+      view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: value } });
+    }
+  },
+);
+
+// Follow the site's light/dark theme.
+watch(isDark, (dark) => {
+  if (view && themeCompartment) {
+    view.dispatch({ effects: themeCompartment.reconfigure(dark ? darkTheme : []) });
   }
 });
 
-watch([() => props.modelValue, isDark], render);
+onBeforeUnmount(() => view?.destroy());
 </script>
 
 <template>
-  <div class="code-editor" :class="{ 'is-highlighted': highlighted }">
-    <div class="code-editor__hl" v-html="highlighted" aria-hidden="true" />
-    <textarea
-      :value="modelValue"
-      spellcheck="false"
-      autocapitalize="off"
-      autocomplete="off"
-      :aria-label="`${lang.toUpperCase()} editor`"
-      @input="emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
-    />
-  </div>
+  <div ref="host" class="code-editor" />
 </template>
 
 <style scoped>
-/* The highlighted <pre> sizes the box; the textarea overlays it exactly. Both layers share identical
-   typography + padding so the caret lines up with the highlighted glyphs. */
 .code-editor {
-  position: relative;
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 8px;
-  background: var(--vp-c-bg-alt);
-  overflow: hidden;
+  display: flex;
+  min-height: 0;
 }
-.code-editor__hl,
-.code-editor textarea {
-  margin: 0;
-  padding: 0.75rem;
-  font-family: var(--vp-font-family-mono);
-  font-size: 0.8rem;
-  line-height: 1.5;
-  tab-size: 2;
-  white-space: pre-wrap;
-  overflow-wrap: break-word;
-  box-sizing: border-box;
-}
-.code-editor__hl {
-  min-height: 9rem;
-}
-.code-editor__hl :deep(pre.shiki) {
-  margin: 0;
-  padding: 0;
-  background: transparent !important;
-  overflow: visible;
-}
-.code-editor__hl :deep(code) {
-  font: inherit;
-}
-.code-editor textarea {
-  position: absolute;
-  inset: 0;
+.code-editor :deep(.cm-editor) {
+  flex: 1 1 auto;
+  min-height: 0;
   width: 100%;
-  height: 100%;
-  border: 0;
-  resize: none;
-  background: transparent;
-  color: var(--vp-c-text-1);
-  caret-color: var(--vp-c-text-1);
-}
-/* Once highlighted, hide the textarea's own text so only the coloured layer shows (caret stays). */
-.code-editor.is-highlighted textarea {
-  color: transparent;
-}
-.code-editor textarea::selection {
-  background: var(--vp-c-brand-soft);
 }
 </style>

@@ -17,6 +17,12 @@
     "docs:preview": "vitepress preview"
   },
   "devDependencies": {
+    "@codemirror/lang-css": "^6.3.1",
+    "@codemirror/lang-html": "^6.4.9",
+    "@codemirror/lang-json": "^6.0.1",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/theme-one-dark": "^6.1.2",
+    "@cssdoc/codemirror": "workspace:*",
     "@cssdoc/core": "workspace:*",
     "@cssdoc/grammarkdown-tmlanguage": "workspace:*",
     "@cssdoc/index": "workspace:*",
@@ -25,9 +31,9 @@
     "@cssdoc/typedoc": "workspace:*",
     "@types/markdown-it": "^14.1.2",
     "@types/node": "catalog:",
+    "codemirror": "^6.0.1",
     "markdown-it": "^14.1.0",
     "mermaid": "^11.4.1",
-    "shiki": "^2.5.0",
     "typedoc": "catalog:",
     "typedoc-plugin-markdown": "catalog:",
     "typedoc-vitepress-theme": "catalog:",

@@ -42,6 +42,43 @@ npm i -D @cssdoc/config @cssdoc/core
 
 See [Modifier conventions](/guide/modifier-conventions) for the convention forms and the full rule list.
 
+## Rule severities
+
+Each lint rule has a configurable severity — `off`, `warn`, or `error` — set under `rules` in
+`cssdoc.json`:
+
+```jsonc
+{
+  "modifierConvention": "bem",
+  "rules": {
+    "unknown-modifier": "warn",
+    "undocumented-modifier": "error",
+  },
+}
+```
+
+The rule ids:
+
+| Rule                            | Default | Fires when…                                                                  |
+| ------------------------------- | ------- | ---------------------------------------------------------------------------- |
+| `missing-summary`               | `warn`  | a record has no `@summary`.                                                  |
+| `undocumented-modifier`         | `warn`  | a modifier has no `@modifier` description.                                   |
+| `deprecated-requires-canonical` | `warn`  | a deprecated modifier has no replacement.                                    |
+| `name-not-in-css`               | `warn`  | a documented modifier/part isn't in any selector.                            |
+| `unknown-modifier`              | `warn`  | a consumer uses a modifier candidate that isn't documented.                  |
+| `deprecated-modifier`           | `warn`  | a consumer uses a deprecated modifier.                                       |
+| `undocumented-part`             | `warn`  | a part has no `@part` description.                                           |
+| `component-name-case`           | `warn`  | a component class breaks the configured `naming.component` case (see below). |
+| `part-name-case`                | `warn`  | a part class breaks the configured `naming.part` case.                       |
+| `invalid-default-value`         | `warn`  | a registered property's default doesn't match its syntax.                    |
+| `invalid-property-value`        | `warn`  | an assignment doesn't match a property's declared syntax.                    |
+| `invalid-fallback-value`        | `warn`  | a `var(--x, …)` fallback doesn't match the declared syntax.                  |
+| `unknown-custom-property`       | `off`   | a `var(--x)` isn't documented (opt-in via a property prefix).                |
+
+`unknown-modifier` defaults to `warn` because BEM's `--` is an unambiguous signal — only `base--…`
+tokens are candidates. Under weak-signal conventions (`bare`/OOCSS), where every chained class is a
+candidate, set it to `off` to avoid flagging unrelated classes.
+
 ## Loading it
 
 ```ts

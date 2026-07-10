@@ -21,35 +21,53 @@ export const presets: Record<string, Preset> = {
     css: bemCss,
     config: bemConfig,
     html: `<div class="tabs tabs--vertical">
-  <ul class="list"><li class="tab">One</li></ul>
+  <ul class="list">
+    <li class="tab">One</li>
+  </ul>
   <div class="panel">Panel one</div>
 </div>
 
-<!-- tabs--jumbo isn't documented; tabs--boxed is deprecated -->
-<div class="tabs tabs--jumbo tabs--boxed"></div>`,
+<div class="tabs tabs--jumbo tabs--boxed">
+  <ul class="list">
+    <li class="tab">A</li>
+  </ul>
+  <div class="panel">Panel A</div>
+</div>`,
   },
   rscss: {
     label: "rscss",
     css: rscssCss,
     config: rscssConfig,
     html: `<div class="tabs -orientation-vertical">
-  <ul class="list"><li class="tab">One</li></ul>
+  <ul class="list">
+    <li class="tab">One</li>
+  </ul>
   <div class="panel">Panel one</div>
 </div>
 
-<!-- -orientation-jumbo isn't documented; -variant-boxed is deprecated -->
-<div class="tabs -orientation-jumbo -variant-boxed"></div>`,
+<div class="tabs -orientation-jumbo -variant-boxed">
+  <ul class="list">
+    <li class="tab">A</li>
+  </ul>
+  <div class="panel">Panel A</div>
+</div>`,
   },
   bare: {
     label: "bare",
     css: bareCss,
     config: bareConfig,
     html: `<div class="tabs vertical">
-  <ul class="list"><li class="tab">One</li></ul>
+  <ul class="list">
+    <li class="tab">One</li>
+  </ul>
   <div class="panel">Panel one</div>
 </div>
 
-<!-- boxed is deprecated; unknown-modifier is off for bare -->
-<div class="tabs boxed"></div>`,
+<div class="tabs boxed">
+  <ul class="list">
+    <li class="tab">A</li>
+  </ul>
+  <div class="panel">Panel A</div>
+</div>`,
   },
 };

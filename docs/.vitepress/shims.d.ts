@@ -2,6 +2,16 @@
 declare module "*.css";
 
 // Vite `?raw` imports (the playground loads the example CSS as a string).
+declare module "*.css?raw" {
+  const content: string;
+  export default content;
+}
+
+declare module "*.json?raw" {
+  const content: string;
+  export default content;
+}
+
 declare module "*?raw" {
   const content: string;
   export default content;
