@@ -4,6 +4,19 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.3.1
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.3.0...v0.3.1)
+
+### 🩹 Fixes
+
+- Esm calls in VS Code server bundle ([14d885c](https://github.com/thedannywahl/cssdoc/commit/14d885c))
+- Add css-tree shim for improved compatibility with bundled builds ([a26c658](https://github.com/thedannywahl/cssdoc/commit/a26c658))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.3.0
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.2.0...v0.3.0)
