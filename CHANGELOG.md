@@ -4,6 +4,60 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.3.0
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.2.0...v0.3.0)
+
+### 🚀 Enhancements
+
+- **core:** Allow an array of modifier separators ([6ce8e45](https://github.com/thedannywahl/cssdoc/commit/6ce8e45))
+- **lint:** Add configurable name-case rules for class names ([b533e81](https://github.com/thedannywahl/cssdoc/commit/b533e81))
+- **language-server:** Per-package cssdoc.json config with live reload ([8597b32](https://github.com/thedannywahl/cssdoc/commit/8597b32))
+- Enhance CodeEditor and playground with improved linting rules and configurations ([9762c0c](https://github.com/thedannywahl/cssdoc/commit/9762c0c))
+- Add @cssdoc/codemirror extension for highlighting cssdoc tags in CSS comments ([6090d0e](https://github.com/thedannywahl/cssdoc/commit/6090d0e))
+- Add grammar specification and validation test for CssDoc ([6ce8f00](https://github.com/thedannywahl/cssdoc/commit/6ce8f00))
+- Add support for jsonc configuration files and enhance modifier conventions ([c70693c](https://github.com/thedannywahl/cssdoc/commit/c70693c))
+- Refactor HTML generation in presets and add TypeScript configuration ([ddc4972](https://github.com/thedannywahl/cssdoc/commit/ddc4972))
+- Enhance CSS documentation with shadow parts and native pseudo-class states ([8d207fb](https://github.com/thedannywahl/cssdoc/commit/8d207fb))
+- Enhance modifier and part handling in CSS documentation and diagnostics ([94e9da7](https://github.com/thedannywahl/cssdoc/commit/94e9da7))
+- Enhance @structure support with nested CSS and description handling ([2b10772](https://github.com/thedannywahl/cssdoc/commit/2b10772))
+- Add support for @structure highlighting in CSS documentation ([59b33e9](https://github.com/thedannywahl/cssdoc/commit/59b33e9))
+- Add DEFAULT_STATE_PSEUDO_CLASSES export to index ([3b5e15e](https://github.com/thedannywahl/cssdoc/commit/3b5e15e))
+- **embedded:** Add @cssdoc/embedded package for extracting CSS from various sources ([eb9d6de](https://github.com/thedannywahl/cssdoc/commit/eb9d6de))
+- Add support for SCSS and Less dialects in cssdoc ([0249f47](https://github.com/thedannywahl/cssdoc/commit/0249f47))
+- Add class usage scanning for JSX, Vue, and Svelte templates ([eb3fec6](https://github.com/thedannywahl/cssdoc/commit/eb3fec6))
+- Implement cssdoc comment directives for inline suppression and error expectations ([f8c2b22](https://github.com/thedannywahl/cssdoc/commit/f8c2b22))
+- Update documentation and package structure for improved clarity and usability ([80c93c8](https://github.com/thedannywahl/cssdoc/commit/80c93c8))
+
+### 🩹 Fixes
+
+- **changelog:** Update version from v0.1.0 to v0.2.0 ([b406332](https://github.com/thedannywahl/cssdoc/commit/b406332))
+- **docs:** Publish cssdoc.schema.json to the docs site ([1eafbb0](https://github.com/thedannywahl/cssdoc/commit/1eafbb0))
+
+### 💅 Refactors
+
+- **release-changelog:** Remove unused changelog cleaning logic ([e0afc1f](https://github.com/thedannywahl/cssdoc/commit/e0afc1f))
+- Simplify and clarify comments in CssDoc grammar specification ([edbe53c](https://github.com/thedannywahl/cssdoc/commit/edbe53c))
+
+### 📖 Documentation
+
+- Add Example + Playground reference pages ([ea51b15](https://github.com/thedannywahl/cssdoc/commit/ea51b15))
+
+### 📦 Build
+
+- Move root package.json scripts to vite.config.ts tasks ([7101ff2](https://github.com/thedannywahl/cssdoc/commit/7101ff2))
+
+### 🤖 CI
+
+- **release:** Title changelog sections by version, not the compare range ([782bf3e](https://github.com/thedannywahl/cssdoc/commit/782bf3e))
+- **release:** Title changelog by version and drop the compare-changes line ([0c0c35e](https://github.com/thedannywahl/cssdoc/commit/0c0c35e))
+- Use the setup-vp action instead of pnpm exec ([e20a988](https://github.com/thedannywahl/cssdoc/commit/e20a988))
+- **docs:** Deploy docs on a successful release, not on every push ([4224e27](https://github.com/thedannywahl/cssdoc/commit/4224e27))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.2.0
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.1.0...main)

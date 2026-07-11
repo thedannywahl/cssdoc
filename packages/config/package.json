@@ -1,6 +1,6 @@
 {
   "name": "@cssdoc/config",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Load a cssdoc.json configuration file (custom tags, extends) into an @cssdoc/core CssDocConfiguration — TSDoc-config, for CSS.",
   "keywords": [
     "config",

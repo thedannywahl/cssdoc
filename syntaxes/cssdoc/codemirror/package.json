@@ -1,6 +1,6 @@
 {
   "name": "@cssdoc/codemirror",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A CodeMirror 6 extension that highlights cssdoc doc-comment tags inside CSS comments, the way TSDoc highlights JSDoc tags.",
   "keywords": [
     "codemirror",

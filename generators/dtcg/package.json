@@ -1,6 +1,6 @@
 {
   "name": "@cssdoc/dtcg",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Export cssdoc custom properties as W3C Design Tokens (DTCG): $value, $type, $description.",
   "keywords": [
     "css",
