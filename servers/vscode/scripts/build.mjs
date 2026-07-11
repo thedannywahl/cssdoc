@@ -4,6 +4,7 @@
 import { copyFileSync, mkdirSync, rmSync } from "node:fs";
 import { createRequire } from "node:module";
 import { sep } from "node:path";
+import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 
 const require = createRequire(import.meta.url);
@@ -17,6 +18,7 @@ const cssTreeBundle = (() => {
   const providers = createRequire(languageServer).resolve("@cssdoc/providers");
   return createRequire(providers).resolve("css-tree/dist/csstree");
 })();
+const cssTreeForkShim = fileURLToPath(new URL("../src/shims/css-tree.ts", import.meta.url));
 
 // jsonc-parser (via @cssdoc/config) resolves to its UMD build by default, whose factory does a runtime
 // `require("./impl/format")` esbuild can't follow. Point at its ESM build, which uses static imports.
@@ -60,6 +62,10 @@ await build({
 await build({
   ...common,
   entryPoints: ["src/server-main.ts"],
-  alias: { "css-tree": cssTreeBundle, "jsonc-parser": jsoncParserEsm },
+  alias: {
+    "css-tree": cssTreeForkShim,
+    "css-tree-bundle": cssTreeBundle,
+    "jsonc-parser": jsoncParserEsm,
+  },
   outfile: "dist/server.cjs",
 });
