@@ -4,6 +4,23 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.3.3
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.3.2...v0.3.3)
+
+### 🩹 Fixes
+
+- Edge cases for VS Code plugin ([ee2aeee](https://github.com/thedannywahl/cssdoc/commit/ee2aeee))
+- Update playground instructions for clarity and usability ([157daf9](https://github.com/thedannywahl/cssdoc/commit/157daf9))
+
+### 🏡 Chore
+
+- Update dependencies for CodeMirror packages ([d66d9e2](https://github.com/thedannywahl/cssdoc/commit/d66d9e2))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.3.2
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.3.1...v0.3.2)

@@ -1,6 +1,6 @@
 {
   "name": "@cssdoc/lint-core",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Shared doc-comment-hygiene rules for CSS, consumed by @cssdoc/stylelint-plugin and @cssdoc/eslint-plugin.",
   "keywords": [
     "css",

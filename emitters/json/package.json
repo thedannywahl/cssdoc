@@ -1,6 +1,6 @@
 {
   "name": "@cssdoc/json",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Emit the cssdoc model as JSON — a whole-model file, optional per-record files, and a JSON Schema of the model.",
   "keywords": [
     "css",
