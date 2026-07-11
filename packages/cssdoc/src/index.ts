@@ -1,6 +1,6 @@
 /**
- * `cssdoc` — the programmatic API in a single install. This umbrella package re-exports the three
- * browser-safe building blocks so you can `import { parseCssDocs, createIndex, lintModel } from "cssdoc"`
+ * `@cssdoc/cssdoc` — the programmatic API in a single install. This umbrella package re-exports the three
+ * browser-safe building blocks so you can `import { parseCssDocs, createIndex, lintModel } from "@cssdoc/cssdoc"`
  * instead of wiring up the scoped packages yourself:
  *
  * - {@link https://cssdoc.dev @cssdoc/core} — parse doc-comments + the CSS AST into a model.
@@ -12,13 +12,13 @@
  *
  * @example
  * ```ts
- * import { parseCssDocs, createIndex, lintModel } from "cssdoc";
+ * import { parseCssDocs, createIndex, lintModel } from "@cssdoc/cssdoc";
  *
  * const model = parseCssDocs(css);
  * const findings = lintModel(createIndex(css));
  * ```
  *
- * @module cssdoc
+ * @module @cssdoc/cssdoc
  */
 export * from "@cssdoc/core";
 export * from "@cssdoc/index";

@@ -2,13 +2,16 @@
 
 ## Install
 
-The parser and model live in `@cssdoc/core`:
+For the programmatic API in one install, add `@cssdoc/cssdoc` — it re-exports the parser, the index,
+and the providers (lint, hover, completion):
 
 ```sh
-npm i -D @cssdoc/core
+npm i -D @cssdoc/cssdoc
 ```
 
-Everything else (emitters, linters, the language server) builds on it — add those as you need them.
+Prefer to pick à la carte? The parser and model alone live in `@cssdoc/core`. Everything else —
+emitters, linters, the language server — builds on the same model; add those as you need them. See
+[Packages](/guide/packages) for the full set.
 
 ## Document a component
 
@@ -30,12 +33,15 @@ Put a `/** … */` comment above a component's rules. A record begins at a `@com
 }
 ```
 
+The same comment works wherever your CSS lives — a `.css`/`.scss`/`.less` file, a styled-components or
+Lit template, a Vue or Svelte `<style>` block, or a Markdown fence. See [Embedded CSS](/guide/embedded-css).
+
 ## Parse it
 
 `parseCssDocs` returns one entry per record:
 
 ```ts
-import { parseCssDocs, toJson } from "@cssdoc/core";
+import { parseCssDocs, toJson } from "@cssdoc/cssdoc";
 import { readFileSync, writeFileSync } from "node:fs";
 
 const model = parseCssDocs(readFileSync("dist/components.css", "utf8"));

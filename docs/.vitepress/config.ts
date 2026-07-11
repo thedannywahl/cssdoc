@@ -44,7 +44,7 @@ export default defineConfig({
     },
     logo: { light: "/icon.svg", dark: "/icon-dark.svg" },
     nav: [
-      { text: "Guide", link: "/guide/getting-started" },
+      { text: "Guide", link: "/guide/introduction" },
       { text: "Packages", link: "/guide/packages" },
       { text: "API Reference", link: "/reference/" },
     ],

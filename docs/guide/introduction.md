@@ -32,10 +32,12 @@ From that, cssdoc knows the component `button`, its class `.button`, the modifie
 
 ## What you can do with it
 
+- **Author anywhere** — a `.css`/`.scss`/`.less` file, a styled-components or Lit template, a Vue or
+  Svelte `<style>` block, or a Markdown fence. See [Embedded CSS](/guide/embedded-css).
 - **Generate documentation** — Markdown, standalone HTML, JSON, or an `llms.txt` digest.
 - **Export to standards** — VS Code custom data, a Custom Elements Manifest, or W3C Design Tokens.
 - **Lint** — flag undocumented or drifted docs (Stylelint/ESLint), and validate the classes your
-  HTML/JSX applies against the documented surface.
+  HTML, JSX, Vue, or Svelte templates apply against the documented surface.
 - **Edit with IntelliSense** — completion, hover, go-to-definition, and deprecation quick-fixes via a
   language server (and a VS Code extension).
 

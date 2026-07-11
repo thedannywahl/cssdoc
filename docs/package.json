@@ -31,7 +31,6 @@
     "@cssdoc/index": "workspace:*",
     "@cssdoc/providers": "workspace:*",
     "@cssdoc/tmlanguage": "workspace:*",
-    "@cssdoc/typedoc": "workspace:*",
     "@types/markdown-it": "^14.1.2",
     "@types/node": "catalog:",
     "codemirror": "^6.0.1",

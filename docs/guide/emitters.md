@@ -4,6 +4,10 @@ Emitters consume the model and produce an output format — one package per form
 `typedoc-plugin-markdown` and the default HTML theme are separate emitters over TypeDoc's reflections.
 Each takes CSS (or an already-parsed model) and writes files.
 
+Every emitter also accepts a `lang` (`"js"`, `"html"`, or `"markdown"`) to extract CSS from a host file
+first, and a `dialect` (`"scss"` or `"less"`) to parse a preprocessor source — see
+[Embedded CSS](/guide/embedded-css). So you can emit docs straight from a `.tsx`, `.vue`, or `.scss`.
+
 ## Markdown
 
 [`@cssdoc/markdown`](https://www.npmjs.com/package/@cssdoc/markdown) writes one Markdown page per record,

@@ -33,14 +33,26 @@ rules all take effect in the editor — no extra settings. In a monorepo, each p
 governs its own CSS independently, so packages can use different conventions side by side. Editing a
 `cssdoc.json` reloads the affected rules live.
 
-In `.css`, `.html`, and JSX/TSX files you get:
+In CSS (`.css`, `.scss`, `.less`) and host files (HTML, JSX/TSX, Vue, Svelte, Astro, Markdown) you get:
 
 - **Completion** — a component's modifiers inside `class`/`className`, and declared custom properties
   inside `var(--…)`;
 - **Hover** — a modifier's or custom property's documentation;
 - **Definition** — jump to the CSS rule that defines a class or `@property`;
-- **Diagnostics + quick-fix** — unknown and deprecated modifiers, with a one-click
+- **Diagnostics + quick-fix** — doc-comment hygiene in embedded CSS, and unknown or deprecated
+  modifiers where classes are used (`class`, `className`, `:class`, `class:name`), with a one-click
   replace-with-canonical fix.
+
+To cover embedded CSS, widen the scan globs to your host files:
+
+```jsonc
+// .vscode/settings.json
+{
+  "cssdoc.include": ["src/**/*.{css,scss,vue,svelte,tsx}"],
+}
+```
+
+See [Embedded CSS](/guide/embedded-css) for what's read from each host.
 
 ## Any LSP editor
 

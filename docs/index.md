@@ -16,17 +16,17 @@ features:
       light: /edit-light.svg
       dark: /edit-dark.svg
     title: Author with a grammar
-    details: A small, TSDoc-shaped comment vocabulary — @component, @modifier, @cssproperty, @csspart, and more — with the machine facts derived from the selectors so they can't drift.
+    details: A small comment vocabulary — @component, @modifier, @cssproperty and more — with the machine facts derived from the selectors.
   - icon:
       light: /send-light.svg
       dark: /send-dark.svg
     title: Emit anywhere
-    details: One model, many outputs — Markdown, standalone HTML, JSON (with a schema), and an llms.txt digest — plus VS Code custom data, a Custom Elements Manifest, and W3C Design Tokens.
+    details: One model, many outputs — Markdown, standalone HTML, JSON schema, llms.txt and more — or extend with your own formats.
   - icon:
       light: /search-light.svg
       dark: /search-dark.svg
     title: Catch drift and misuse
-    details: Stylelint and ESLint rules flag undocumented or drifted docs, and validate the classes and modifiers your HTML or JSX actually applies.
+    details: Linter rules flag undocumented or drifted docs, and validate the classes and modifiers your HTML or JSX actually applies with confiurable rules.
   - icon:
       light: /brain-light.svg
       dark: /brain-dark.svg
