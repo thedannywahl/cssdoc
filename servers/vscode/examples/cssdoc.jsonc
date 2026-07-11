@@ -1,0 +1,89 @@
+{
+  // A fully-enumerated cssdoc config for the demo. Every value below is the built-in default, spelled
+  // out for reference — deleting this whole file would behave identically. See the schema for details:
+  "$schema": "https://cssdoc.dev/cssdoc.schema.json",
+
+  // Inherit tag definitions from other cssdoc configs or packages. Default: none.
+  "extends": [],
+
+  // Disable every built-in standard tag (@component, @modifier, @part, @cssproperty, …) and keep only
+  // your own `tagDefinitions`. Default: false (standard tags on).
+  "noStandardTags": false,
+
+  // Register custom doc-comment tags. Each: { tagName, syntaxKind: record|block|modifier|inline,
+  // allowMultiple?, recordKind?: component|utility|rule|declaration, aliasFor? }. Default: none.
+  "tagDefinitions": [],
+
+  // Turn individual tags on/off by name, e.g. { "part": false }. Default: {} (all standard tags on).
+  "supportForTags": {},
+
+  // How modifier classes are spelled. The one-line shorthand for this whole block is "bem"; it's
+  // expanded here to show every sub-default. Presets: "bem", "rscss", "bare".
+  "modifierConvention": {
+    // Where the modifier lives: "suffix" (.button--primary), "chained" (.button.-primary), or
+    // "attribute" (.button[data-…]).
+    "structure": "suffix",
+    // Delimiter (per structure). BEM joins with "--". May be an array to accept several.
+    "separator": "--",
+    // BEM-style element delimiter; classes like .button__icon become documented parts.
+    "elementSeparator": "__",
+    // Class prefixes that mark a state, e.g. ["is-", "has-"]. Default: none.
+    "statePrefixes": [],
+    // Native pseudo-classes (no colon) treated as component states. Setting this replaces the built-in
+    // set below. Ubiquitous interaction pseudos (:hover, :focus, :active) are intentionally excluded.
+    "statePseudoClasses": [
+      "checked",
+      "disabled",
+      "enabled",
+      "indeterminate",
+      "default",
+      "open",
+      "placeholder-shown",
+      "read-only",
+      "read-write",
+      "required",
+      "optional",
+      "valid",
+      "invalid",
+      "in-range",
+      "out-of-range",
+    ],
+    // Split the modifier body into prop/value (rscss-style)? Default: false for BEM.
+    "propValue": false,
+    // The prop/value delimiter when `propValue` is true. Default: "-".
+    "propValueSeparator": "-",
+  },
+
+  // Per-rule severity overrides: "off" | "warn" | "error". Every rule is listed at its default.
+  "rules": {
+    "missing-summary": "warn", // a documented component has no @summary
+    "undocumented-modifier": "warn", // a modifier selector in CSS has no @modifier
+    "deprecated-requires-canonical": "warn", // @deprecated modifier without a {@link} replacement
+    "name-not-in-css": "warn", // a documented name never appears in the stylesheet
+    "unknown-modifier": "warn", // a used modifier isn't documented on the component
+    "deprecated-modifier": "warn", // a used modifier is marked @deprecated
+    "unknown-state": "warn", // a used state pseudo/prefix isn't documented
+    "unknown-part": "warn", // a referenced part isn't documented
+    "undocumented-part": "warn", // a part selector in CSS has no @part
+    "undocumented-css-part": "warn", // a ::part() exposed in CSS has no @csspart
+    "component-name-case": "warn", // component name violates the `naming.component` case
+    "part-name-case": "warn", // part name violates the `naming.part` case
+    "structure-unknown-selector": "warn", // an @structure selector isn't defined or ignored
+    "invalid-default-value": "warn", // @defaultValue doesn't match the @property syntax
+    "invalid-property-value": "warn", // a custom-property value doesn't match its @property syntax
+    "invalid-fallback-value": "warn", // a var() fallback doesn't match the property syntax
+    "unknown-custom-property": "off", // a used --custom-property isn't documented (needs a prefix opt-in)
+    "cssdoc-directive": "warn", // a `cssdoc-expect-error` directive matched no problem
+  },
+
+  // Enforce a case on names: a preset ("pascalCase", "camelCase", "lowercase") or a custom regex.
+  // Default: no enforcement (both unset). Uncomment to enable:
+  "naming": {
+    // "component": "lowercase",
+    // "part": "lowercase"
+  },
+
+  // Class names exempt from `structure-unknown-selector` — external classes referenced in @structure.
+  // Literal names or simple globs (util-*). Default: none.
+  "structureIgnore": [],
+}

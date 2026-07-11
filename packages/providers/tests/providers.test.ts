@@ -214,3 +214,74 @@ test("rule severities: unknown-modifier defaults to warn (BEM), and is off/error
   // An unrelated class on an unknown base is never a candidate.
   expect(checkClassUsage([{ base: undefined, tokens: ["mt-4"], token: "mt-4" }], bem)).toEqual([]);
 });
+
+test("component hover card: full renders every present facet, compact shows counts", () => {
+  const css = [
+    "/**",
+    " * @component button",
+    " * @summary The primary action control.",
+    " * @a11y Give icon-only buttons an aria-label.",
+    " * @modifier button--secondary — A lower-emphasis action.",
+    " * @modifier button--ghost — @deprecated {@link button--secondary}",
+    " * @part .button__icon — A leading glyph.",
+    " * @cssproperty --button-radius — The corner radius.",
+    " * @defaultValue 4px",
+    " * @example",
+    ' * <button class="button">Save</button>',
+    " */",
+    ".button {}",
+    ".button--secondary {}",
+    ".button--ghost {}",
+    ".button__icon {}",
+    '@property --button-radius { syntax: "<length>"; inherits: false; initial-value: 4px; }',
+  ].join("\n");
+  const idx = createIndex(css); // BEM default
+  const full = hoverForClass("button", "button", idx, "full")?.contents ?? "";
+  // Markdown structure with codicons; names get symbol-category colour spans, descriptions stay prose.
+  expect(full).toContain(
+    '$(symbol-class) <code style="color:var(--vscode-symbolIcon-classForeground);">.button</code>',
+  );
+  expect(full).toContain("**$(symbol-property) Modifiers**");
+  expect(full).toContain(
+    '- <code style="color:var(--vscode-symbolIcon-fieldForeground);">.button--secondary</code> — A lower-emphasis action.',
+  );
+  expect(full).toContain("**$(symbol-field) Parts**");
+  expect(full).toContain(
+    '- <code style="color:var(--vscode-symbolIcon-variableForeground);">--button-radius</code>: `<length>` (default `4px`) — The corner radius.',
+  );
+  // Accessibility renders; a deprecated modifier gets the themed HTML accent.
+  expect(full).toContain("$(accessibility) Give icon-only buttons an aria-label.");
+  expect(full).toContain(
+    '<span style="color:var(--vscode-editorWarning-foreground);">deprecated</span>',
+  );
+  // Only genuine code is fenced — the @example, language-sniffed to html.
+  expect(full).toContain("**$(book) Example**");
+  expect(full).toContain('```html\n<button class="button">Save</button>\n```');
+
+  const compact = hoverForClass("button", "button", idx, "compact")?.contents ?? "";
+  expect(compact).not.toContain("Modifiers**");
+  expect(compact).toContain("2 modifiers");
+});
+
+test("hover custom detail: per-section on/off/auto", () => {
+  const css = [
+    "/**",
+    " * @component button",
+    " * @summary The primary action control.",
+    " * @modifier button--secondary — A lower-emphasis action.",
+    " * @part .button__icon — A leading glyph.",
+    " */",
+    ".button {}",
+    ".button--secondary {}",
+    ".button__icon {}",
+  ].join("\n");
+  const idx = createIndex(css);
+  const custom =
+    hoverForClass("button", "button", idx, "custom", {
+      modifiers: "off", // hidden even though it has content
+      see: "on", // forced on even though it's empty → placeholder
+    })?.contents ?? "";
+  expect(custom).not.toContain("Modifiers**"); // off
+  expect(custom).toContain("**$(symbol-field) Parts**"); // auto (default) + has content
+  expect(custom).toContain("**$(references) See also**\n_—_"); // on + empty → placeholder
+});

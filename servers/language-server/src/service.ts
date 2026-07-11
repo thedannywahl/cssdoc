@@ -6,10 +6,11 @@
  *
  * @module
  */
-import type { CssDocConfiguration } from "@cssdoc/core";
+import { CssDocConfiguration } from "@cssdoc/core";
 import {
   type EmbeddedHost,
   detectEmbeddedHost,
+  extractCssBlocks,
   projectCss,
   projectionDialect,
   scanClassUsages,
@@ -24,6 +25,8 @@ import {
 } from "@cssdoc/index";
 import {
   DEFAULT_RULE_SEVERITIES,
+  type HoverDetail,
+  type HoverSections,
   type NamingRules,
   type ResolvedNaming,
   type RuleSeverities,
@@ -185,6 +188,33 @@ function classAttrAt(text: string, offset: number): ClassAttr | undefined {
   return classAttributes(text).find((a) => offset >= a.valueStart && offset <= a.valueEnd);
 }
 
+const stripLeadingDot = (s: string): string => s.replace(/^\./u, "");
+
+/** The CSS class name under `offset` in a stylesheet — a `.name` selector token — else undefined. The
+ *  `(?<!\d)` guard keeps decimals like `0.5em` from looking like a `.5em` class. */
+function cssClassTokenAt(text: string, offset: number): string | undefined {
+  for (const m of text.matchAll(/(?<!\d)\.(-?[\w-]+)/gu)) {
+    const dot = m.index ?? 0;
+    if (offset >= dot && offset <= dot + m[0].length) return m[1];
+  }
+  return undefined;
+}
+
+/** Resolve a bare CSS class token to the component that owns it: its base, a modifier, or a member. */
+function resolveCssClass(
+  token: string,
+  index: CssDocIndex,
+): { base: string; token: string } | undefined {
+  if (index.componentForClass(token)) return { base: token, token };
+  const modOwner = index.entries.find((e) => index.isModifier(stripLeadingDot(e.className), token));
+  if (modOwner) return { base: stripLeadingDot(modOwner.className), token };
+  // A part/element/state selector — attribute it to the component whose base is the longest prefix.
+  const owner = index.entries
+    .filter((e) => token.startsWith(stripLeadingDot(e.className)))
+    .sort((a, b) => stripLeadingDot(b.className).length - stripLeadingDot(a.className).length)[0];
+  return owner ? { base: stripLeadingDot(owner.className), token } : undefined;
+}
+
 /**
  * One config scope: a documented-CSS index plus the `cssdoc.json` settings that govern it. A workspace
  * may have several (e.g. a monorepo with a `cssdoc.json` per package, each with its own convention).
@@ -204,9 +234,19 @@ export interface ConfigScope {
 /** The language service. Construct with the component index (rebuild it when the CSS changes). */
 export class CssDocLanguageService {
   private scopes: ConfigScope[];
+  /** How much a component hover card shows (`cssdoc.hover.detail`). */
+  private hoverDetail: HoverDetail = "full";
+  /** Per-section visibility for the `custom` hover detail (`cssdoc.hover.sections`). */
+  private hoverSections: HoverSections = {};
 
   constructor(index: CssDocIndex, severities: RuleSeverities = DEFAULT_RULE_SEVERITIES) {
     this.scopes = [{ dir: "", index, severities, naming: {} }];
+  }
+
+  /** Set the component-hover detail level (`compact` | `full` | `custom`) and its per-section map. */
+  setHoverDetail(detail: HoverDetail, sections: HoverSections = {}): void {
+    this.hoverDetail = detail;
+    this.hoverSections = sections;
   }
 
   /** Replace the component index (single-scope path; e.g. after the CSS files change). */
@@ -243,64 +283,276 @@ export class CssDocLanguageService {
     return best ?? this.scopes.find((s) => !s.dir) ?? this.scopes[0];
   }
 
-  /** The scope whose index defines one of `tokens` as a component (which owns the referenced class). */
-  private scopeForBase(tokens: string[]): ConfigScope | undefined {
-    return this.scopes.find((s) => tokens.some((t) => s.index.componentForClass(t)));
+  /**
+   * The scopes to resolve `text` against: the workspace scopes, plus — for a host document — an in-file
+   * scope built from its own embedded CSS. So a component defined in a document's `<style>` block (or a
+   * Vue SFC) is available to that same document's markup for hover, completion, definition, and usage
+   * checks, not just components from the workspace's `.css` files.
+   */
+  private scopesFor(text: string, path?: string, languageId?: string): ConfigScope[] {
+    const host = detectEmbeddedHost(path) ?? hostForLanguageId(languageId);
+    if (!host) return this.scopes;
+    const govern = this.scopeForPath(path);
+    const parse = resolveParser(projectionDialect(text, { host }));
+    return [
+      ...this.scopes,
+      {
+        ...govern,
+        index: createIndex(projectCss(text, { host }), {
+          file: path, // so go-to-definition on a single-file component lands in this file
+          configuration: govern.configuration,
+          parse,
+        }),
+      },
+    ];
   }
 
-  /** Completions at a position: `var(--…)` custom properties, or classes/modifiers in a class attribute. */
-  completions(text: string, position: LspPosition, path?: string): LspCompletion[] {
+  /** The scope whose index defines one of `tokens` as a component (which owns the referenced class). */
+  private scopeForBase(
+    tokens: string[],
+    scopes: ConfigScope[] = this.scopes,
+  ): ConfigScope | undefined {
+    return scopes.find((s) => tokens.some((t) => s.index.componentForClass(t)));
+  }
+
+  /**
+   * Completions at a position: cssdoc `@tags` inside a doc comment (while authoring a stylesheet),
+   * `var(--…)` custom properties, or classes/modifiers in a `class`/`className` attribute.
+   */
+  completions(
+    text: string,
+    position: LspPosition,
+    path?: string,
+    languageId?: string,
+  ): LspCompletion[] {
     const offset = offsetAt(text, position);
     const before = text.slice(0, offset);
-    if (/var\(\s*(--[\w-]*)$/u.test(before)) {
-      return completeCustomProperties(this.scopeForPath(path).index).map(toCompletion);
+
+    // Doc-tag completion: inside an unclosed `/**` block right after an `@`, while authoring CSS — a
+    // stylesheet, or an embedded CSS region (a `<style>` block / `css` template / Markdown fence).
+    const open = before.lastIndexOf("/**");
+    if (open !== -1 && open > before.lastIndexOf("*/") && /(?:^|[\s*])@[\w-]*$/u.test(before)) {
+      const host = detectEmbeddedHost(path) ?? hostForLanguageId(languageId);
+      const authoring =
+        (languageId && CSS_LANGUAGES.has(languageId)) ||
+        (host !== undefined &&
+          extractCssBlocks(text, { host }).some(
+            (b) => offset >= b.start.offset && offset <= b.start.offset + b.css.length,
+          ));
+      if (authoring) {
+        const config = this.scopeForPath(path).configuration ?? new CssDocConfiguration();
+        const seen = new Set<string>();
+        return config.supportedTagDefinitions
+          .filter((t) => (seen.has(t.tagName) ? false : seen.add(t.tagName)))
+          .map((t) => ({ label: t.tagName, detail: `${t.syntaxKind} tag` }));
+      }
     }
-    const attr = classAttrAt(text, offset);
-    if (attr) {
-      const scope = this.scopeForBase(attr.tokens) ?? this.scopeForPath(path);
-      const base = attr.tokens.find((t) => scope.index.componentForClass(t));
+
+    const scopes = this.scopesFor(text, path);
+    if (/var\(\s*(--[\w-]*)$/u.test(before)) {
+      const seen = new Set<string>();
+      return scopes
+        .flatMap((s) => completeCustomProperties(s.index))
+        .filter((c) => (seen.has(c.label) ? false : seen.add(c.label)))
+        .map(toCompletion);
+    }
+    // Class completion — in a `class`/`className` attribute, or a usage helper (`clsx(…)`, Vue
+    // `:class`, Svelte `class:name`). Offer the component's modifiers when a base is already present,
+    // else the components.
+    const tokens = classAttrAt(text, offset)?.tokens ?? this.usageSiteAt(text, offset);
+    if (tokens) {
+      const scope = this.scopeForBase(tokens, scopes) ?? this.scopeForPath(path);
+      const base = tokens.find((t) => scope.index.componentForClass(t));
       return completeClasses(base, scope.index).map(toCompletion);
     }
     return [];
   }
 
-  /** Hover at a position: a custom property, or a class token in a class attribute. */
-  hover(text: string, position: LspPosition, path?: string): LspHover | undefined {
+  /** The class tokens of the usage site under `offset` — for completion in `clsx(…)` / `:class` /
+   *  `class:name`, where the cursor sits in a string that isn't a `class="…"` attribute. */
+  private usageSiteAt(text: string, offset: number): string[] | undefined {
+    for (const site of scanClassUsages(text)) {
+      if (!site.tokens.length) continue;
+      const min = Math.min(...site.tokens.map((t) => t.start));
+      const max = Math.max(...site.tokens.map((t) => t.end));
+      if (offset >= min && offset <= max) return site.tokens.map((t) => t.token);
+    }
+    return undefined;
+  }
+
+  /**
+   * Hover at a position. Resolves to a documentation card in three places: while authoring a stylesheet
+   * (a selector/property in a `.css` file), while authoring embedded CSS (inside a `<style>` block, a
+   * `css` template, or a Markdown ```css fence — resolved against the projected CSS, which shares the
+   * source's offsets), and over a class *usage* (`class`/`className`, `clsx(…)`, Vue `:class`, Svelte
+   * `class:name`).
+   */
+  hover(
+    text: string,
+    position: LspPosition,
+    path?: string,
+    languageId?: string,
+  ): LspHover | undefined {
     const offset = offsetAt(text, position);
+
+    // Authoring a stylesheet directly.
+    if (languageId && CSS_LANGUAGES.has(languageId)) {
+      return this.authoringHover(text, offset, path, resolveParser(dialectForFilename(path)));
+    }
+    // Authoring embedded CSS in a host document — run the same resolution over the projected CSS.
+    const host = detectEmbeddedHost(path) ?? hostForLanguageId(languageId);
+    if (host) {
+      const parse = resolveParser(projectionDialect(text, { host }));
+      const h = this.authoringHover(projectCss(text, { host }), offset, path, parse);
+      if (h) return h;
+    }
+
+    // Usage: a custom property, or a class token in markup / a class helper.
+    const scopes = this.scopesFor(text, path);
     const prop = propertyAt(text, offset);
     if (prop) {
-      for (const scope of this.scopes) {
+      for (const scope of scopes) {
         const h = hoverForCustomProperty(prop.name, scope.index);
         if (h) return { contents: h.contents };
       }
     }
-    const token = this.classTokenAt(text, offset);
+    const token = this.usageTokenAt(text, offset, scopes);
     if (token) {
-      const scope = this.scopeForBase([token.base ?? token.token]) ?? this.scopeForPath(path);
-      const h = hoverForClass(token.base ?? token.token, token.token, scope.index);
+      const scope =
+        this.scopeForBase([token.base ?? token.token], scopes) ?? this.scopeForPath(path);
+      const h = hoverForClass(
+        token.base ?? token.token,
+        token.token,
+        scope.index,
+        this.hoverDetail,
+        this.hoverSections,
+      );
       if (h) return { contents: h.contents };
     }
     return undefined;
   }
 
-  /** Definition at a position: the CSS rule for a class token or a custom property. */
-  definition(text: string, position: LspPosition, path?: string): LspLocation | undefined {
-    const offset = offsetAt(text, position);
+  /**
+   * An authoring hover over CSS `text`: the custom property or selector under `offset`, resolved against
+   * a fresh index of that CSS (the file's own model, so unsaved edits are reflected).
+   */
+  private authoringHover(
+    text: string,
+    offset: number,
+    path?: string,
+    parse?: CssParse,
+  ): LspHover | undefined {
+    const index = createIndex(text, {
+      configuration: this.scopeForPath(path).configuration,
+      parse: parse ?? resolveParser(dialectForFilename(path)),
+    });
     const prop = propertyAt(text, offset);
     if (prop) {
-      for (const scope of this.scopes) {
+      const h = hoverForCustomProperty(prop.name, index);
+      if (h) return { contents: h.contents };
+    }
+    const cls = cssClassTokenAt(text, offset);
+    const resolved = cls ? resolveCssClass(cls, index) : undefined;
+    if (resolved) {
+      const h = hoverForClass(
+        resolved.base,
+        resolved.token,
+        index,
+        this.hoverDetail,
+        this.hoverSections,
+      );
+      if (h) return { contents: h.contents };
+    }
+    return undefined;
+  }
+
+  /**
+   * The class-usage token under `offset` — covers `class`/`className`, `clsx(…)` and similar helpers,
+   * Vue `:class`, and Svelte `class:name`, via the same scanner the usage diagnostics use.
+   */
+  private usageTokenAt(
+    text: string,
+    offset: number,
+    scopes: ConfigScope[],
+  ): { token: string; base?: string } | undefined {
+    for (const site of scanClassUsages(text)) {
+      const member = site.tokens.find((m) => offset >= m.start && offset <= m.end);
+      if (member) {
+        const base = site.tokens
+          .map((t) => t.token)
+          .find((t) => scopes.some((s) => s.index.componentForClass(t)));
+        return { token: member.token, base };
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * Definition at a position — the CSS rule for the thing under the cursor. Mirrors {@link hover}: it
+   * jumps from a class *usage* (`class`/`className`, `clsx(…)`, Vue `:class`, Svelte `class:name`) to the
+   * rule, and from a selector/property authored in a stylesheet or embedded CSS to its own rule.
+   */
+  definition(
+    text: string,
+    position: LspPosition,
+    path?: string,
+    languageId?: string,
+  ): LspLocation | undefined {
+    const offset = offsetAt(text, position);
+
+    if (languageId && CSS_LANGUAGES.has(languageId)) {
+      return this.authoringDefinition(text, offset, path, resolveParser(dialectForFilename(path)));
+    }
+    const host = detectEmbeddedHost(path) ?? hostForLanguageId(languageId);
+    if (host) {
+      const parse = resolveParser(projectionDialect(text, { host }));
+      const d = this.authoringDefinition(projectCss(text, { host }), offset, path, parse);
+      if (d) return d;
+    }
+
+    const scopes = this.scopesFor(text, path);
+    const prop = propertyAt(text, offset);
+    if (prop) {
+      for (const scope of scopes) {
         const loc = definitionForCustomProperty(prop.name, scope.index);
         if (loc) return this.toLocation(loc);
       }
       return undefined;
     }
-    const token = this.classTokenAt(text, offset);
+    const token = this.usageTokenAt(text, offset, scopes);
     if (token) {
-      const scope = this.scopeForBase([token.base ?? token.token]) ?? this.scopeForPath(path);
+      const scope =
+        this.scopeForBase([token.base ?? token.token], scopes) ?? this.scopeForPath(path);
       return this.toLocation(
         definitionForClass(token.base ?? token.token, token.token, scope.index),
       );
     }
+    return undefined;
+  }
+
+  /**
+   * An authoring go-to-definition over CSS `text`: the rule for the property/selector under `offset`, in
+   * the file's own model. `file: path` is set so the jump lands in this file (embedded offsets align).
+   */
+  private authoringDefinition(
+    text: string,
+    offset: number,
+    path?: string,
+    parse?: CssParse,
+  ): LspLocation | undefined {
+    const index = createIndex(text, {
+      file: path,
+      configuration: this.scopeForPath(path).configuration,
+      parse: parse ?? resolveParser(dialectForFilename(path)),
+    });
+    const prop = propertyAt(text, offset);
+    if (prop) {
+      const loc = definitionForCustomProperty(prop.name, index);
+      if (loc) return this.toLocation(loc);
+    }
+    const cls = cssClassTokenAt(text, offset);
+    const resolved = cls ? resolveCssClass(cls, index) : undefined;
+    if (resolved) return this.toLocation(definitionForClass(resolved.base, resolved.token, index));
     return undefined;
   }
 
@@ -322,10 +574,10 @@ export class CssDocLanguageService {
       const parse = resolveParser(projectionDialect(text, { host }));
       out.push(...this.cssDiagnostics(projectCss(text, { host }), path, parse));
     }
-    // Consumer usage: check against every scope's index (a base class resolves in exactly the scope
-    // that documents it), deduping identical diagnostics from any overlap.
+    // Consumer usage: check against every scope's index — the workspace scopes plus the document's own
+    // embedded components (see `scopesFor`) — deduping identical diagnostics from any overlap.
     const seen = new Set<string>();
-    for (const scope of this.scopes) {
+    for (const scope of this.scopesFor(text, path, languageId)) {
       for (const { usage, start, end } of this.modifierUsages(text, scope)) {
         for (const d of checkClassUsage([usage], scope.index, scope.severities)) {
           const key = `${start}:${end}:${d.rule}:${d.message}`;
@@ -441,15 +693,6 @@ export class CssDocLanguageService {
       }
     }
     return actions;
-  }
-
-  private classTokenAt(text: string, offset: number): { token: string; base?: string } | undefined {
-    const attr = classAttrAt(text, offset);
-    if (!attr) return undefined;
-    const member = attr.members.find((m) => offset >= m.start && offset <= m.end);
-    if (!member) return undefined;
-    const base = attr.tokens.find((t) => this.scopes.some((s) => s.index.componentForClass(t)));
-    return { token: member.token, base };
   }
 
   private toLocation(

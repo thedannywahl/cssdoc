@@ -3,17 +3,51 @@
   <head>
     <meta charset="utf-8" />
     <title>cssdoc example</title>
+
+    <!-- The `button` and `card` component rules are inherited from components.css. -->
     <link rel="stylesheet" href="components.css" />
+
+    <!--
+      cssdoc also reads documented CSS inside a <style> block (the HTML embedded host), the same as a
+      .css file or a css`` template. The `note` component below is defined here AND cross-referenced in
+      this file's markup — a single-file component. TRY:
+        - Inside the <style>, delete the `@summary` line → "missing-summary" on .note
+        - On the <p> below, change `note--info` to `note--xyz` → "unknown-modifier"
+        - Hover `note--info` on the <p> → its docs, defined right here in the <style>
+    -->
+    <style>
+      /**
+       * @component note
+       * @summary An inline callout, defined in this page.
+       * @modifier note--info — An informational callout.
+       */
+      .note {
+        display: block;
+        padding: 0.75em 1em;
+        border-left: 3px solid #888;
+      }
+      .note--info {
+        border-color: #3498db;
+      }
+    </style>
   </head>
   <body>
-    <!-- Valid: hover `-color-secondary` for its docs; go-to-definition jumps into components.css;
-         type a space inside class="…" to get modifier completions. -->
-    <button class="button -color-secondary">OK</button>
+    <!--
+      Consumer markup. The extension checks class usage against components.css and is clean by default.
+      Things to TRY on the <button> below:
+        - Hover "button--secondary" ................ shows its summary and docs
+        - Cursor on it, press F12 (Go to Definition) jumps to the rule in components.css
+        - Cursor inside class="button |" (after a .. completion lists button's
+          space), press Ctrl/Cmd+Space .............  modifiers
+        - Change "button--secondary" to "button--x"  "unknown-modifier" warning
+        - Change it to "button--ghost", then open .. "deprecated-modifier" + a
+          the lightbulb (Ctrl/Cmd+.) ...............  "Replace with .button--secondary" fix
+    -->
+    <button class="button button--secondary">Save</button>
 
-    <!-- Unknown modifier: cssdoc/valid-class-usage flags `-bogus`. -->
-    <button class="button -bogus">Unknown modifier</button>
+    <div class="card card--featured">Featured content</div>
 
-    <!-- Deprecated modifier: a quick-fix offers "Replace with .-color-secondary". -->
-    <button class="button -variant-old">Deprecated modifier</button>
+    <!-- `.note` is defined in the <style> above, not in components.css. -->
+    <p class="note note--info">Inline callout.</p>
   </body>
 </html>

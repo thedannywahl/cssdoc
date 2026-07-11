@@ -105,15 +105,51 @@
           "default": [],
           "markdownDescription": "Explicit paths to documented CSS files. When set, this overrides `#cssdoc.include#` / `#cssdoc.exclude#` auto-detection.",
           "markdownDeprecationMessage": "Prefer `#cssdoc.include#` / `#cssdoc.exclude#`. This explicit list still works and takes precedence when non-empty."
+        },
+        "cssdoc.hover.detail": {
+          "type": "string",
+          "enum": [
+            "compact",
+            "full",
+            "custom"
+          ],
+          "enumDescriptions": [
+            "Header, summary, deprecation, and a facet count line.",
+            "Every section that has content, each listed with its description (empty sections are omitted).",
+            "Per-section visibility, from `#cssdoc.hover.sections#`."
+          ],
+          "default": "full",
+          "markdownDescription": "How much detail a documented component's hover card shows. Use `custom` to control each section via `#cssdoc.hover.sections#`."
+        },
+        "cssdoc.hover.sections": {
+          "type": "object",
+          "markdownDescription": "Per-section visibility when `#cssdoc.hover.detail#` is `custom`. Each value is `auto` (show only when the section has content — what `full` does), `on` (always show; empty renders a placeholder), or `off` (hide). Keys: `summary`, `deprecated`, `remarks`, `accessibility`, `modifiers`, `parts`, `shadowParts`, `states`, `customProperties`, `functions`, `slots`, `animations`, `layers`, `conditions`, `see`, `structure`, `examples`. Unlisted sections default to `auto`.",
+          "additionalProperties": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "on",
+              "off"
+            ]
+          },
+          "default": {}
         }
       }
     }
   },
   "activationEvents": [
+    "onLanguage:astro",
     "onLanguage:css",
     "onLanguage:html",
+    "onLanguage:javascript",
     "onLanguage:javascriptreact",
-    "onLanguage:typescriptreact"
+    "onLanguage:less",
+    "onLanguage:markdown",
+    "onLanguage:scss",
+    "onLanguage:svelte",
+    "onLanguage:typescript",
+    "onLanguage:typescriptreact",
+    "onLanguage:vue"
   ],
   "icon": "icon.png",
   "engines": {

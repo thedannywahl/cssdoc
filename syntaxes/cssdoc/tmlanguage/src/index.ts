@@ -58,11 +58,17 @@ const alt = (names: readonly string[]): string => names.join("|");
  */
 export function buildInjectionGrammar(): InjectionGrammar {
   const inlineTags = alt(cssdocTagNamesByKind("inline"));
+  const recordTags = alt(cssdocTagNamesByKind("record"));
   const modifierTags = alt(cssdocTagNamesByArgument("modifier-name"));
   const partTags = alt(cssdocTagNamesByArgument("part-name"));
   const propertyTags = alt(cssdocTagNamesByArgument("custom-property"));
+  // Everything argument-less that isn't a record tag or `@cssstate` — those get their own value-colouring
+  // rules below (a record's name, a state's `:state(…)`), so they must not fall through to the bare
+  // keyword rule.
   const blockTags = alt(
-    CSSDOC_TAGS.filter((t) => t.kind !== "inline" && !t.argument).map((t) => t.name),
+    CSSDOC_TAGS.filter(
+      (t) => t.kind !== "inline" && t.kind !== "record" && t.name !== "cssstate" && !t.argument,
+    ).map((t) => t.name),
   );
 
   return {
@@ -72,9 +78,11 @@ export function buildInjectionGrammar(): InjectionGrammar {
     injectionSelector: "L:comment.block.css, L:comment.block.scss, L:comment.block.less",
     patterns: [
       { include: "#inline-tag" },
+      { include: "#record-tag" },
       { include: "#modifier-tag" },
       { include: "#part-tag" },
       { include: "#property-tag" },
+      { include: "#state-tag" },
       { include: "#structure-tag" },
       { include: "#block-tag" },
       { include: "#custom-property" },
@@ -94,11 +102,30 @@ export function buildInjectionGrammar(): InjectionGrammar {
           { match: "[^}|]+", name: "markup.underline.link.cssdoc" },
         ],
       },
-      "modifier-tag": {
-        match: `(@(?:${modifierTags}))\\b[ \\t]*(-[A-Za-z][A-Za-z0-9-]*)?`,
+      // A record's name (`@component button`) reads like a type name. Listed before the bare keyword
+      // rule so it claims the tag and colours the identifier that follows.
+      "record-tag": {
+        match: `(@(?:${recordTags}))\\b[ \\t]*(\\.?[A-Za-z][A-Za-z0-9_-]*)?`,
         captures: {
           "1": { name: TAG_SCOPE },
-          "2": { name: "variable.other.modifier.cssdoc" },
+          "2": { name: "entity.name.type.cssdoc" },
+        },
+      },
+      // Modifiers are spelled many ways (`-color-secondary`, `button--secondary`, `primary`); colour the
+      // whole name, using the same scope as parts so a component's members read consistently.
+      "modifier-tag": {
+        match: `(@(?:${modifierTags}))\\b[ \\t]*(-?[A-Za-z][A-Za-z0-9_-]*)?`,
+        captures: {
+          "1": { name: TAG_SCOPE },
+          "2": { name: "entity.other.attribute-name.part.cssdoc" },
+        },
+      },
+      // `@cssstate :state(open)` / `@cssstate :disabled` — colour the state token like a custom property.
+      "state-tag": {
+        match: "(@(?:cssstate))\\b[ \\t]*(:?[A-Za-z][A-Za-z0-9_-]*(?:\\([A-Za-z0-9_-]*\\))?)?",
+        captures: {
+          "1": { name: TAG_SCOPE },
+          "2": { name: "support.type.custom-property.cssdoc" },
         },
       },
       "part-tag": {

@@ -162,19 +162,26 @@ function scanJs(src: string, tags: readonly string[]): { regions: Region[]; mask
   return { regions, masks };
 }
 
-/** Find `<style …>…</style>` regions in HTML-like sources. */
+/**
+ * Find `<style …>…</style>` regions in HTML-like sources. Scanning runs over a comment-masked copy (same
+ * length, so offsets still map to `src`) so a `<style>` written inside a comment — e.g. a
+ * `<!-- move this into a <style> block -->` note — isn't treated as a real opener. Left unmasked, a
+ * commented, unclosed `<style>` would pair with the next real `</style>` (or run to end of file) and
+ * project the wrong region, silently breaking every check in the document.
+ */
 function scanHtml(src: string): { regions: Region[] } {
   const regions: Region[] = [];
+  const scan = maskComments(src);
   const open = /<style([^>]*)>/giu;
-  let m: RegExpExecArray | null = open.exec(src);
+  let m: RegExpExecArray | null = open.exec(scan);
   while (m) {
     const contentStart = m.index + m[0].length;
-    const close = src.indexOf("</style", contentStart);
-    const end = close === -1 ? src.length : close;
+    const close = scan.indexOf("</style", contentStart);
+    const end = close === -1 ? scan.length : close;
     const lang = m[1].match(/\blang\s*=\s*["']?([a-z]+)/iu)?.[1];
     regions.push({ start: contentStart, end, host: "html", dialect: dialectFromLang(lang) });
-    open.lastIndex = close === -1 ? src.length : close;
-    m = open.exec(src);
+    open.lastIndex = close === -1 ? scan.length : close;
+    m = open.exec(scan);
   }
   return { regions };
 }

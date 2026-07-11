@@ -387,3 +387,20 @@ test("a record tag added via configuration opens a record", () => {
   expect(entry?.name).toBe("card");
   expect(entry?.kind).toBe("component");
 });
+
+test("only /** doc comments open records — a plain comment mentioning @component is ignored", () => {
+  const css = [
+    "/* TODO: revisit the @component button spacing */",
+    "/**",
+    " * @component button",
+    " * @summary The primary action control.",
+    " */",
+    ".button { color: red; }",
+    "/* banner: @component ghost must NOT become a record */",
+    ".button--secondary { color: blue; }",
+  ].join("\n");
+  const entries = parseCssDocs(css);
+  expect(entries.map((e) => e.name)).toEqual(["button"]);
+  // The button record still owns its modifier, even though a plain comment sits between the rules.
+  expect(entries[0]?.modifiers.map((m) => m.name)).toContain("button--secondary");
+});

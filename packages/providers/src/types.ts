@@ -124,6 +124,43 @@ export interface Hover {
   contents: string;
 }
 
+/**
+ * How much a component hover card shows. `compact` is the header, summary, deprecation, and a facet
+ * count line; `full` expands every facet that has content into a labelled section; `custom` takes a
+ * per-section {@link HoverSections} map. A shippable stand-in for VS Code's not-yet-stable
+ * hover-verbosity control.
+ */
+export type HoverDetail = "compact" | "full" | "custom";
+
+/**
+ * Per-section visibility for the `custom` hover detail. `auto` shows the section only when it has
+ * content (what `full` does for every section); `on` always shows it (empty sections render a
+ * placeholder); `off` hides it. Keys are the card's section names — see {@link HOVER_SECTION_KEYS}.
+ */
+export type HoverSectionMode = "on" | "off" | "auto";
+export type HoverSections = Record<string, HoverSectionMode>;
+
+/** The card's section keys, in render order — the `custom` map is keyed by these. */
+export const HOVER_SECTION_KEYS = [
+  "summary",
+  "deprecated",
+  "remarks",
+  "accessibility",
+  "modifiers",
+  "parts",
+  "shadowParts",
+  "states",
+  "customProperties",
+  "functions",
+  "slots",
+  "animations",
+  "layers",
+  "conditions",
+  "see",
+  "structure",
+  "examples",
+] as const;
+
 /** Options that tune usage checks. */
 export interface UsageOptions {
   /**

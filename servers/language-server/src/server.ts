@@ -101,13 +101,21 @@ export function startLanguageServer(): void {
   };
 
   connection.onInitialize((params) => {
-    const options = params.initializationOptions as { css?: string[] } | undefined;
+    const options = params.initializationOptions as
+      | {
+          css?: string[];
+          hoverDetail?: "compact" | "full" | "custom";
+          hoverSections?: Record<string, "on" | "off" | "auto">;
+        }
+      | undefined;
     cssPaths = options?.css ?? [];
+    if (options?.hoverDetail)
+      service.setHoverDetail(options.hoverDetail, options.hoverSections ?? {});
     rebuild();
     return {
       capabilities: {
         textDocumentSync: TextDocumentSyncKind.Incremental,
-        completionProvider: { triggerCharacters: ["-", '"', "'", "(", " "] },
+        completionProvider: { triggerCharacters: ["-", '"', "'", "(", " ", "@"] },
         hoverProvider: true,
         definitionProvider: true,
         codeActionProvider: true,
@@ -135,7 +143,12 @@ export function startLanguageServer(): void {
     const doc = documents.get(params.textDocument.uri);
     if (!doc) return [];
     return service
-      .completions(doc.getText(), params.position, fsPathOf(params.textDocument.uri))
+      .completions(
+        doc.getText(),
+        params.position,
+        fsPathOf(params.textDocument.uri),
+        doc.languageId,
+      )
       .map((c) => ({
         label: c.label,
         detail: c.detail,
@@ -147,7 +160,12 @@ export function startLanguageServer(): void {
   connection.onHover((params) => {
     const doc = documents.get(params.textDocument.uri);
     if (!doc) return null;
-    const hover = service.hover(doc.getText(), params.position, fsPathOf(params.textDocument.uri));
+    const hover = service.hover(
+      doc.getText(),
+      params.position,
+      fsPathOf(params.textDocument.uri),
+      doc.languageId,
+    );
     return hover ? { contents: { kind: "markdown" as const, value: hover.contents } } : null;
   });
 
@@ -158,6 +176,7 @@ export function startLanguageServer(): void {
       doc.getText(),
       params.position,
       fsPathOf(params.textDocument.uri),
+      doc.languageId,
     );
     if (!location?.uri) return null;
     return { uri: pathToFileURL(location.uri).href, range: location.range };

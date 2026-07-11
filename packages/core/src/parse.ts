@@ -370,7 +370,19 @@ function buildEntry(
 }
 
 /**
- * Parse a CSS string into a documentation model. Records are delimited by doc comments carrying a
+ * A cssdoc record is opened only by a JSDoc-style doc comment (its opener is `/**`) — never a plain
+ * block comment. PostCSS doesn't distinguish the two, so an ordinary comment that merely mentions
+ * `@component` (a TODO, a banner) would otherwise mint a phantom, summary-less record. We check the raw
+ * source at the comment's offset for the `/**` opener, falling back to the leftover `*` that a `/**`
+ * leaves at the start of the comment body when no offset is available.
+ */
+function isDocComment(node: Extract<ChildNode, { type: "comment" }>, source: string): boolean {
+  const offset = node.source?.start?.offset;
+  return offset === undefined ? node.text.startsWith("*") : source.startsWith("/**", offset);
+}
+
+/**
+ * Parse a CSS string into a documentation model. Records are delimited by `/**` doc comments carrying a
  * record tag (`@component`/`@name` by default; override via {@link ParseOptions.isRecordBoundary});
  * everything from one boundary comment to the next belongs to that record.
  *
@@ -398,7 +410,7 @@ export function parseCssDocs(css: string, options: ParseOptions = {}): CssDocEnt
   let current: { name: string; doc: ParsedDoc; nodes: ChildNode[] } | null = null;
 
   for (const node of root.nodes) {
-    if (node.type === "comment") {
+    if (node.type === "comment" && isDocComment(node, css)) {
       const name = boundary(node.text);
       if (name) {
         current = { name, doc: parseDocComment(node.text, configuration), nodes: [] };

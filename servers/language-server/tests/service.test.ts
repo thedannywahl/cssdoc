@@ -212,3 +212,197 @@ test("css diagnostics honor the configured name case", () => {
   );
   expect(diags.some((d) => d.code === "component-name-case")).toBe(true);
 });
+
+test("a component defined in the document's own <style> is available to its markup", () => {
+  const svc = new CssDocLanguageService(createIndex("")); // empty workspace index
+  const src = `<style>
+/**
+ * @component note
+ * @summary A note.
+ * @modifier note--info — Info.
+ */
+.note {}
+.note--info {}
+</style>
+<p class="note note--bogus">x</p>`;
+  // Usage checking: an undocumented modifier of the in-file component is flagged…
+  expect(
+    svc.diagnostics(src, "html").find((d) => d.code === "unknown-modifier")?.message,
+  ).toContain(".note--bogus");
+  // …while a documented one stays clean.
+  const clean = src.replace("note--bogus", "note--info");
+  expect(svc.diagnostics(clean, "html").some((d) => d.code === "unknown-modifier")).toBe(false);
+  // Hover also resolves the in-file component (path drives host detection).
+  const at = clean.indexOf("note--info", clean.indexOf('class="note'));
+  const position = {
+    line: clean.slice(0, at).split("\n").length - 1,
+    character: at - clean.lastIndexOf("\n", at) - 1,
+  };
+  expect(svc.hover(clean, position, "note.html")?.contents).toContain("note");
+});
+
+test("authoring hover: hovering a selector or property in the CSS source resolves its card", () => {
+  const css = `/**
+ * @component button
+ * @summary The primary action control.
+ * @modifier button--danger — A destructive action.
+ * @cssproperty --button-radius — The corner radius.
+ */
+.button {
+  border-radius: var(--button-radius);
+}
+.button--danger {
+  color: red;
+}
+@property --button-radius { syntax: "<length>"; inherits: false; initial-value: 4px; }`;
+  const svc = new CssDocLanguageService(createIndex("")); // empty workspace; resolves against the file
+  const pos = (needle: string, extra = 1) => {
+    const i = css.indexOf(needle) + extra;
+    return {
+      line: css.slice(0, i).split("\n").length - 1,
+      character: i - css.lastIndexOf("\n", i) - 1,
+    };
+  };
+  // The base selector's rule → the component card.
+  expect(svc.hover(css, pos(".button {"), "components.css", "css")?.contents).toContain(
+    "The primary action control.",
+  );
+  // A modifier selector → its modifier docs.
+  expect(svc.hover(css, pos(".button--danger {"), "components.css", "css")?.contents).toContain(
+    "A destructive action.",
+  );
+  // A custom property in a declaration → its property docs.
+  expect(
+    svc.hover(css, pos("var(--button-radius", 6), "components.css", "css")?.contents,
+  ).toContain("The corner radius.");
+});
+
+test("doc-tag completion: `@` inside a /** */ comment in a stylesheet suggests cssdoc tags", () => {
+  const svc = new CssDocLanguageService(createIndex(""));
+  const labels = svc
+    .completions("/**\n * @", { line: 1, character: 4 }, "components.css", "css")
+    .map((c) => c.label);
+  expect(labels).toEqual(expect.arrayContaining(["@component", "@modifier", "@part", "@summary"]));
+  // Not offered outside a doc comment, or in a non-stylesheet document.
+  expect(svc.completions("@", { line: 0, character: 1 }, "a.css", "css")).toEqual([]);
+  expect(svc.completions("/**\n * @", { line: 1, character: 4 }, "a.ts", "typescript")).toEqual([]);
+});
+
+test("hover works inside clsx() and inside embedded CSS (css`` template, Markdown fence)", () => {
+  const pos = (text: string, needle: string) => {
+    const i = text.indexOf(needle) + 1;
+    return {
+      line: text.slice(0, i).split("\n").length - 1,
+      character: i - text.lastIndexOf("\n", i) - 1,
+    };
+  };
+  // 1) A class inside clsx(...) — a usage hover, not a class="" attribute.
+  const svc = new CssDocLanguageService(createIndex(BEM_CSS)); // documents `card`
+  const jsx = `<div className={clsx("card", "card--featured")} />`;
+  expect(svc.hover(jsx, pos(jsx, '"card"'), "App.jsx", "javascriptreact")?.contents).toContain(
+    "A surface.",
+  );
+
+  // 2) A selector authored inside a css`` template (empty workspace — resolves against the file).
+  const empty = new CssDocLanguageService(createIndex(""));
+  const ts = [
+    "const css = String.raw;",
+    "export const s = css`",
+    "/**",
+    " * @component badge",
+    " * @summary A label.",
+    " */",
+    ".badge {}",
+    "`;",
+  ].join("\n");
+  expect(empty.hover(ts, pos(ts, ".badge"), "styles.ts", "typescript")?.contents).toContain(
+    "A label.",
+  );
+
+  // 3) A selector authored inside a Markdown ```css fence.
+  const md = [
+    "# Doc",
+    "",
+    "```css",
+    "/**",
+    " * @component alert",
+    " * @summary A banner.",
+    " */",
+    ".alert {}",
+    "```",
+  ].join("\n");
+  expect(empty.hover(md, pos(md, ".alert"), "styleguide.md", "markdown")?.contents).toContain(
+    "A banner.",
+  );
+});
+
+test("definition works inside clsx() and inside embedded CSS", () => {
+  const pos = (text: string, needle: string) => {
+    const i = text.indexOf(needle) + 1;
+    return {
+      line: text.slice(0, i).split("\n").length - 1,
+      character: i - text.lastIndexOf("\n", i) - 1,
+    };
+  };
+  // clsx usage → jumps to the workspace rule.
+  const svc = new CssDocLanguageService(createIndex(BEM_CSS, { file: "components.css" }));
+  const jsx = `<div className={clsx("card", "card--featured")} />`;
+  const d = svc.definition(jsx, pos(jsx, '"card--featured"'), "App.jsx", "javascriptreact");
+  expect(d?.uri).toBe("components.css");
+
+  // A selector authored in a css`` template → jumps within the file.
+  const empty = new CssDocLanguageService(createIndex(""));
+  const ts = [
+    "const css = String.raw;",
+    "export const s = css`",
+    "/**",
+    " * @component badge",
+    " * @summary A label.",
+    " */",
+    ".badge {}",
+    ".badge--big {}",
+    "`;",
+  ].join("\n");
+  const d2 = empty.definition(ts, pos(ts, ".badge--big {"), "styles.ts", "typescript");
+  expect(d2?.uri).toBe("styles.ts");
+  expect(d2?.range.start.line).toBe(7); // the .badge--big rule
+});
+
+test("completions round out: doc-tags in embedded CSS, and class modifiers in clsx()", () => {
+  const empty = new CssDocLanguageService(createIndex(""));
+  const svc = new CssDocLanguageService(createIndex(BEM_CSS)); // documents card + card--featured
+
+  // Position of the char just after `needle`, correct even when that lands at a line boundary.
+  const posAfter = (text: string, needle: string) => {
+    const at = text.indexOf(needle) + needle.length;
+    return {
+      line: text.slice(0, at).split("\n").length - 1,
+      character: at - text.lastIndexOf("\n", at - 1) - 1,
+    };
+  };
+
+  // 1) `@` inside a css`` template's doc comment suggests cssdoc tags…
+  const ts = [
+    "const css = String.raw;",
+    "export const s = css`",
+    "/**",
+    " * @",
+    " */",
+    ".x {}",
+    "`;",
+  ].join("\n");
+  expect(
+    empty.completions(ts, posAfter(ts, " * @"), "styles.ts", "typescript").map((c) => c.label),
+  ).toEqual(expect.arrayContaining(["@component", "@modifier"]));
+  // …but NOT in a plain JSDoc that isn't inside any CSS region.
+  const jsdoc = ["/**", " * @", " */", "function f() {}"].join("\n");
+  expect(empty.completions(jsdoc, posAfter(jsdoc, " * @"), "a.ts", "typescript")).toEqual([]);
+
+  // 2) A partial modifier inside clsx() offers the base component's modifiers.
+  const jsx = `<div className={clsx("card", "card--")} />`;
+  const ci = jsx.indexOf('"card--"') + 6; // inside "card--"
+  const labels = svc
+    .completions(jsx, { line: 0, character: ci }, "App.jsx", "javascriptreact")
+    .map((c) => c.label);
+  expect(labels).toContain("card--featured");
+});

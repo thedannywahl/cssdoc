@@ -1,27 +1,102 @@
+/* =============================================================================
+ * cssdoc example stylesheet — BEM convention (see cssdoc.jsonc).
+ *
+ * Everything here is CLEAN by default: open it and there are no warnings. Only
+ * JSDoc-style blocks (opening with a double asterisk) are parsed as records;
+ * plain comments like this one — including the "TRY" notes below — are ignored,
+ * so mentioning a tag here is harmless. Make an edit, watch the squiggle appear,
+ * then undo to go back to green.
+ * ========================================================================== */
+
 /**
  * @component button
  * @summary The primary action control.
- * @modifier -color-secondary — A lower-emphasis action.
- * @modifier -variant-old — @deprecated {@link -color-secondary}
- * @part .icon — A leading glyph.
+ * @remarks One button per primary action; secondary actions use `button--secondary`.
+ * @modifier button--secondary — A lower-emphasis action.
+ * @modifier button--danger — A destructive action.
+ * @modifier button--ghost — @deprecated {@link button--secondary}
+ * @part .button__icon — A leading glyph.
+ * @cssstate :disabled — The control can't be activated.
  * @cssproperty --button-radius — The corner radius.
+ * @defaultValue 4px
+ * @a11y The button is accessible by default, but you can add `aria-label` or `aria-labelledby` to provide a more descriptive label for screen readers.
+ * @since 1.0.0
+ * @example
+ * ```html
+ * <button class="button">Click me</button>
+ * ```
  */
 .button {
   border-radius: var(--button-radius);
+  padding: 0.5em 1em;
 }
-.button.-color-secondary {
+.button:disabled {
+  opacity: 0.5;
+}
+.button--secondary {
   background: #eee;
 }
-.button.-variant-old {
-  background: #eee;
+.button--danger {
+  background: #c0392b;
+  color: #fff;
 }
-@scope (.button) {
-  :scope > .icon {
-    width: 1em;
-  }
+.button--ghost {
+  background: transparent;
 }
+.button__icon {
+  width: 1em;
+  height: 1em;
+}
+
+/* TRY these edits to the button doc comment above (the JSDoc block):
+ *   - Delete the `@summary` line ............... "missing-summary" on .button
+ *   - Remove the "— A destructive action." .... "undocumented-modifier" on
+ *     text after `@modifier button--danger` ....  button--danger
+ *   - Delete `{@link button--secondary}` from .. "deprecated-requires-canonical"
+ *     the `@modifier button--ghost` line ........  (a deprecation needs a target)
+ *   - Remove "— A leading glyph." after ........ "undocumented-part" on
+ *     `@part .button__icon` ....................   .button__icon
+ *   - Add `@modifier button--huge — Big.` plus . button--huge then appears in
+ *     a matching ".button--huge {}" rule .......  consumer completion (no warning)
+ */
+
 @property --button-radius {
   syntax: "<length>";
   inherits: false;
   initial-value: 4px;
 }
+
+/**
+ * @component card
+ * @summary A content surface that groups related information.
+ * @modifier card--featured — A promoted card with extra emphasis.
+ * @part .card__title — The heading row.
+ * @part .card__body — The main content.
+ * @structure
+ * .card {
+ *   .card__title {}
+ *   .card__body {}
+ * }
+ */
+.card {
+  display: block;
+  padding: 1em;
+}
+.card--featured {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+.card__title {
+  font-weight: 600;
+}
+.card__body {
+  margin-top: 0.5em;
+}
+
+/* TRY these edits to the card doc comment above:
+ *   - In the `@structure` tree, change `.card__body {}` to `.card__nope {}`
+ *     ......................................... "structure-unknown-selector"
+ *     (every class in `@structure` must resolve to the component or a documented part)
+ *   - Delete the whole `@component card` block . "card" and "card--featured" stop
+ *     ..........................................  resolving in index.html / App.jsx
+ *     (hover, completion, and modifier checks all go quiet for that component)
+ */

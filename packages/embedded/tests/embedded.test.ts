@@ -159,3 +159,24 @@ $brand: #06c;
   const records = parseCssDocsFromSource(vue, { host: "html" });
   expect(records.map((e) => e.name)).toEqual(["card"]);
 });
+
+test("a <style> written inside an HTML comment is ignored, not opened as a region", () => {
+  // Regression: a lone commented `<style>` used to pair with the next real `</style>` (or run to end
+  // of file), projecting the surrounding markup as CSS and silently breaking every check in the file.
+  const commented = `<!-- move this into a <style> block --><div class="note">x</div>`;
+  // The trailing markup must NOT be projected as CSS…
+  expect(projectCss(commented, { host: "html" })).not.toContain("note");
+  // …while class-usage scanning still reads the real `class="note"` usage.
+  expect(scanClassUsages(commented).flatMap((s) => s.tokens.map((t) => t.token))).toContain("note");
+
+  // A real <style> that follows such a comment still projects and parses.
+  const withReal = `<!-- see the <style> below -->
+<style>
+/**
+ * @component note
+ * @summary A note.
+ */
+.note {}
+</style>`;
+  expect(parseCssDocsFromSource(withReal, { host: "html" }).map((e) => e.name)).toEqual(["note"]);
+});

@@ -45,3 +45,19 @@ test("every #include resolves to a repository rule", () => {
   const missing = [...refs].filter((ref) => !(ref in repo));
   expect(missing).toEqual([]);
 });
+
+test("member names get semantic scopes: record name, modifier like part, cssstate like property", () => {
+  const g = buildInjectionGrammar();
+  expect(g.repository["record-tag"]?.captures?.["2"]?.name).toBe("entity.name.type.cssdoc");
+  // A modifier's value uses the same scope as a part.
+  expect(g.repository["modifier-tag"]?.captures?.["2"]?.name).toBe(
+    g.repository["part-tag"]?.captures?.["2"]?.name,
+  );
+  // A cssstate's value uses the same scope as a custom property.
+  expect(g.repository["state-tag"]?.captures?.["2"]?.name).toBe(
+    g.repository["property-tag"]?.captures?.["2"]?.name,
+  );
+  // @component / @cssstate no longer fall through to the value-less keyword rule.
+  expect(g.repository["block-tag"]?.match).not.toContain("component");
+  expect(g.repository["block-tag"]?.match).not.toContain("cssstate");
+});

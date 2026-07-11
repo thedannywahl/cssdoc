@@ -17,7 +17,15 @@ import {
   memberKey,
 } from "@cssdoc/index";
 import { matchesSyntax } from "./syntax.ts";
-import type { Completion, Diagnostic, Hover, ResolvedNaming, UsageOptions } from "./types.ts";
+import type {
+  Completion,
+  Diagnostic,
+  Hover,
+  HoverDetail,
+  HoverSections,
+  ResolvedNaming,
+  UsageOptions,
+} from "./types.ts";
 
 const stripDot = (name: string): string => name.replace(/^\./u, "");
 const warn = (d: Omit<Diagnostic, "severity">): Diagnostic => ({ ...d, severity: "warning" });
@@ -34,6 +42,19 @@ const globMatch = (pattern: string, value: string): boolean => {
   );
   return re.test(value);
 };
+
+/**
+ * Serialize an authored `@structure` tree back to nested CSS for a syntax-highlighted hover block. Leaf
+ * selectors are left bare (no `{}`) — VS Code's CSS grammar still colours them, and it reads like the
+ * authored `@structure` declaration; only nesting keeps braces.
+ */
+const renderStructureTree = (nodes: StructureNode[], depth = 0): string[] =>
+  nodes.flatMap((n) => {
+    const pad = "  ".repeat(depth);
+    return n.children.length
+      ? [`${pad}${n.selector} {`, ...renderStructureTree(n.children, depth + 1), `${pad}}`]
+      : [`${pad}${n.selector}`];
+  });
 
 // ── record ──────────────────────────────────────────────────────────────────────────────────────
 
@@ -124,24 +145,194 @@ export const record = {
     }));
   },
 
-  hover(base: string, index: CssDocIndex): Hover | undefined {
+  hover(
+    base: string,
+    index: CssDocIndex,
+    detail: HoverDetail = "full",
+    sections?: HoverSections,
+  ): Hover | undefined {
     const entry = index.componentForClass(base);
     if (!entry) return undefined;
-    const lines = [`\`${entry.className}\` — ${entry.kind}`];
-    if (entry.summary) lines.push("", entry.summary);
-    if (entry.remarks) lines.push("", entry.remarks);
-    const facets = [
-      entry.modifiers.length && `${entry.modifiers.length} modifiers`,
-      entry.parts.length && `${entry.parts.length} parts`,
-      entry.shadowParts.length && `${entry.shadowParts.length} shadow parts`,
-      entry.states.length && `${entry.states.length} states`,
-      entry.cssPropertiesDeclared.length &&
-        `${entry.cssPropertiesDeclared.length} custom properties`,
-      entry.functions.length && `${entry.functions.length} functions`,
-      entry.conditions.length && `${entry.conditions.length} conditions`,
-    ].filter(Boolean);
-    if (facets.length) lines.push("", facets.join(" · "));
-    if (entry.deprecated) lines.push("", `**Deprecated** — ${entry.deprecated}`);
+    const selectorFor = (name: string): string => index.matcher.selectorFor(name);
+    // Inline HTML accents (the client enables `supportHtml`): a warning colour for deprecation, and
+    // symbol-category colours so a selector/property/name pops over its prose description — mirroring
+    // the palette the injection grammar uses (component → class, modifier/part → field, state/property
+    // → variable, function → method).
+    const warnHtml = (label: string): string =>
+      `<span style="color:var(--vscode-editorWarning-foreground);">${label}</span>`;
+    const styled = (text: string, kind: "class" | "field" | "variable" | "method"): string =>
+      `<code style="color:var(--vscode-symbolIcon-${kind}Foreground);">${text}</code>`;
+    const dash = (d?: string): string => (d ? ` — ${d}` : "");
+
+    const head = [`$(symbol-class) ${styled(entry.className, "class")}`, entry.kind];
+    if (entry.releaseStage) head.push(entry.releaseStage);
+    if (entry.since) head.push(`since ${entry.since}`);
+    const lines = [head.join(" · ")];
+    const deprecatedLine = entry.deprecated
+      ? `$(warning) ${warnHtml("Deprecated")} — ${entry.deprecated}`
+      : undefined;
+
+    if (detail === "compact") {
+      if (entry.summary) lines.push("", entry.summary);
+      if (deprecatedLine) lines.push("", deprecatedLine);
+      const facets = [
+        entry.modifiers.length && `${entry.modifiers.length} modifiers`,
+        entry.parts.length && `${entry.parts.length} parts`,
+        entry.shadowParts.length && `${entry.shadowParts.length} shadow parts`,
+        entry.states.length && `${entry.states.length} states`,
+        entry.cssPropertiesDeclared.length &&
+          `${entry.cssPropertiesDeclared.length} custom properties`,
+        entry.functions.length && `${entry.functions.length} functions`,
+        entry.conditions.length && `${entry.conditions.length} conditions`,
+      ].filter(Boolean);
+      if (facets.length) lines.push("", facets.join(" · "));
+      return { contents: lines.join("\n") };
+    }
+
+    // full / custom: a section-driven Markdown card. Structure and prose stay Markdown (bold headers
+    // with codicons, plain-text descriptions); only genuine CSS — the @structure tree and @example
+    // blocks — is fenced so VS Code syntax-highlights it. `full` shows every section that has content;
+    // `custom` consults `sections` per key: `auto` (show if content), `on` (always), `off` (hide).
+    const want = (key: string, has: boolean): "content" | "empty" | "skip" => {
+      const mode = detail === "custom" ? (sections?.[key] ?? "auto") : "auto";
+      if (mode === "off") return "skip";
+      return has ? "content" : mode === "on" ? "empty" : "skip";
+    };
+    const prose = (key: string, prefix: string, text?: string): void => {
+      const w = want(key, Boolean(text?.trim()));
+      if (w !== "skip") lines.push("", `${prefix}${w === "content" ? text : "_—_"}`);
+    };
+    const list = (key: string, icon: string, label: string, rows: string[]): void => {
+      const w = want(key, rows.length > 0);
+      if (w !== "skip")
+        lines.push("", `**$(${icon}) ${label}**`, ...(w === "content" ? rows : ["_—_"]));
+    };
+
+    prose("summary", "", entry.summary);
+    {
+      const w = want("deprecated", Boolean(entry.deprecated));
+      if (w !== "skip")
+        lines.push(
+          "",
+          w === "content" ? (deprecatedLine as string) : `$(warning) ${warnHtml("Deprecated")}`,
+        );
+    }
+    prose("remarks", "", entry.remarks);
+    prose("accessibility", "$(accessibility) ", entry.accessibility);
+
+    list(
+      "modifiers",
+      "symbol-property",
+      "Modifiers",
+      entry.modifiers.map((m) => {
+        const sel = styled(selectorFor(m.name), "field");
+        if (m.deprecated) {
+          const to = m.deprecated.canonical
+            ? ` → ${styled(selectorFor(m.deprecated.canonical), "field")}`
+            : dash(m.deprecated.note);
+          return `- ${sel} — ${warnHtml("deprecated")}${to}`;
+        }
+        return `- ${sel}${dash(m.description)}`;
+      }),
+    );
+    list(
+      "parts",
+      "symbol-field",
+      "Parts",
+      entry.parts.map((p) => `- ${styled(`.${p.name}`, "field")}${dash(p.description)}`),
+    );
+    list(
+      "shadowParts",
+      "symbol-namespace",
+      "Shadow parts",
+      entry.shadowParts.map(
+        (p) => `- ${styled(`::part(${p.name})`, "field")}${dash(p.description)}`,
+      ),
+    );
+    list(
+      "states",
+      "symbol-event",
+      "States",
+      entry.states.map(
+        (s) =>
+          `- ${styled(s.kind === "custom" ? `:state(${s.name})` : `:${s.name}`, "variable")}${dash(s.description)}`,
+      ),
+    );
+    list(
+      "customProperties",
+      "symbol-variable",
+      "Custom properties",
+      entry.cssPropertiesDeclared.map((p) => {
+        const syntax = p.syntax ? `: \`${p.syntax}\`` : "";
+        const def = p.defaultValue ? ` (default \`${p.defaultValue}\`)` : "";
+        return `- ${styled(p.name, "variable")}${syntax}${def}${dash(p.description)}`;
+      }),
+    );
+    list(
+      "functions",
+      "symbol-method",
+      "Functions",
+      entry.functions.map((f) => `- ${styled(`${f.name}()`, "method")}${dash(f.description)}`),
+    );
+    list(
+      "slots",
+      "symbol-parameter",
+      "Slots",
+      entry.slots.map((s) => `- ${styled(s.name, "field")}${dash(s.description)}`),
+    );
+    list(
+      "animations",
+      "play",
+      "Animations",
+      entry.animations.map((a) => `- ${styled(a.name, "method")}${dash(a.description)}`),
+    );
+    list(
+      "layers",
+      "layers",
+      "Layers",
+      entry.layers.map((l) => `- ${styled(l.name, "class")}${dash(l.description)}`),
+    );
+    list(
+      "conditions",
+      "filter",
+      "Conditions",
+      entry.conditions.map((c) => `- \`@${c.type} ${c.query}\`${dash(c.description)}`),
+    );
+    list(
+      "see",
+      "references",
+      "See also",
+      entry.see.map((s) => `- ${s}`),
+    );
+
+    {
+      const w = want("structure", Boolean(entry.structure?.length));
+      if (w !== "skip") {
+        lines.push("", "**$(list-tree) Structure**");
+        if (w === "content") {
+          if (entry.structureDescription) lines.push("", entry.structureDescription);
+          lines.push("", "```css", ...renderStructureTree(entry.structure ?? []), "```");
+        } else lines.push("", "_—_");
+      }
+    }
+    {
+      const w = want("examples", entry.examples.length > 0);
+      if (w !== "skip") {
+        lines.push("", `**$(book) Example${entry.examples.length > 1 ? "s" : ""}**`);
+        if (w === "content")
+          for (const e of entry.examples) {
+            const ex = e.trim();
+            // Respect an authored fence; otherwise sniff markup vs CSS so it highlights right.
+            lines.push(
+              "",
+              ex.startsWith("```")
+                ? ex
+                : `\`\`\`${ex.includes("<") ? "html" : "css"}\n${ex}\n\`\`\``,
+            );
+          }
+        else lines.push("", "_—_");
+      }
+    }
     return { contents: lines.join("\n") };
   },
 

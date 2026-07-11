@@ -18,6 +18,8 @@ import {
   DEFAULT_EXCLUDE,
   DEFAULT_INCLUDE,
   DOCUMENT_SELECTOR,
+  type HoverDetail,
+  type HoverSections,
   initializationOptions,
   toGlob,
 } from "./config.ts";
@@ -59,9 +61,15 @@ function createClient(context: ExtensionContext, cssPaths: string[]): LanguageCl
     run: { module: serverModule, transport: TransportKind.ipc },
     debug: { module: serverModule, transport: TransportKind.ipc },
   };
+  const cfg = workspace.getConfiguration("cssdoc");
+  const hoverDetail = cfg.get<HoverDetail>("hover.detail", "full");
+  const hoverSections = cfg.get<HoverSections>("hover.sections", {});
   const clientOptions: LanguageClientOptions = {
     documentSelector: [...DOCUMENT_SELECTOR],
-    initializationOptions: initializationOptions(cssPaths),
+    initializationOptions: initializationOptions(cssPaths, hoverDetail, hoverSections),
+    // Let the hover cards use codicons (`$(icon)`) and a little inline HTML (a themed deprecation
+    // accent) — the server emits both; these flags tell the client to render rather than escape them.
+    markdown: { supportHtml: true, supportThemeIcons: true },
   };
   return new LanguageClient("cssdoc", "cssdoc", serverOptions, clientOptions);
 }

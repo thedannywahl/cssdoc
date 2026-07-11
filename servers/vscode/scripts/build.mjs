@@ -11,12 +11,13 @@ const require = createRequire(import.meta.url);
 
 // css-tree's ESM entry loads its data with `createRequire(import.meta.url)`, which is `undefined` in a
 // CJS bundle — so the naive bundle throws at load and the language server never starts. Point esbuild at
-// css-tree's prebuilt, self-contained bundle instead (data inlined, no `createRequire`). It's a
-// transitive dep, so resolve it through the dependency chain.
+// css-tree's CJS build instead: it uses plain `require` (no `import.meta.url`) and, unlike the standalone
+// `dist/csstree` browser bundle, exposes `fork()` + `lexer` — which the `@property` value checks need to
+// validate a value against its syntax. It's a transitive dep, so resolve it through the dependency chain.
 const languageServer = require.resolve("@cssdoc/language-server");
 const cssTreeBundle = (() => {
   const providers = createRequire(languageServer).resolve("@cssdoc/providers");
-  return createRequire(providers).resolve("css-tree/dist/csstree");
+  return createRequire(providers).resolve("css-tree"); // → css-tree/cjs/index.cjs (require condition)
 })();
 const cssTreeForkShim = fileURLToPath(new URL("../src/shims/css-tree.ts", import.meta.url));
 

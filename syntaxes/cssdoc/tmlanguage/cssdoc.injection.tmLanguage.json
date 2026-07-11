@@ -8,6 +8,9 @@
       "include": "#inline-tag"
     },
     {
+      "include": "#record-tag"
+    },
+    {
       "include": "#modifier-tag"
     },
     {
@@ -15,6 +18,9 @@
     },
     {
       "include": "#property-tag"
+    },
+    {
+      "include": "#state-tag"
     },
     {
       "include": "#structure-tag"
@@ -55,14 +61,36 @@
         }
       ]
     },
-    "modifier-tag": {
-      "match": "(@(?:modifier))\\b[ \\t]*(-[A-Za-z][A-Za-z0-9-]*)?",
+    "record-tag": {
+      "match": "(@(?:component|name|utility|rule|declaration))\\b[ \\t]*(\\.?[A-Za-z][A-Za-z0-9_-]*)?",
       "captures": {
         "1": {
           "name": "storage.type.class.cssdoc"
         },
         "2": {
-          "name": "variable.other.modifier.cssdoc"
+          "name": "entity.name.type.cssdoc"
+        }
+      }
+    },
+    "modifier-tag": {
+      "match": "(@(?:modifier))\\b[ \\t]*(-?[A-Za-z][A-Za-z0-9_-]*)?",
+      "captures": {
+        "1": {
+          "name": "storage.type.class.cssdoc"
+        },
+        "2": {
+          "name": "entity.other.attribute-name.part.cssdoc"
+        }
+      }
+    },
+    "state-tag": {
+      "match": "(@(?:cssstate))\\b[ \\t]*(:?[A-Za-z][A-Za-z0-9_-]*(?:\\([A-Za-z0-9_-]*\\))?)?",
+      "captures": {
+        "1": {
+          "name": "storage.type.class.cssdoc"
+        },
+        "2": {
+          "name": "support.type.custom-property.cssdoc"
         }
       }
     },
@@ -89,7 +117,7 @@
       }
     },
     "block-tag": {
-      "match": "(@(?:component|name|utility|rule|declaration|class|summary|remarks|privateRemarks|deprecated|example|see|since|group|category|defaultValue|cssstate|function|keyframes|animation|layer|container|supports|media|responsive|a11y|accessibility|structure|demo|alpha|beta|experimental|internal|public))\\b",
+      "match": "(@(?:class|summary|remarks|privateRemarks|deprecated|example|see|since|group|category|defaultValue|function|keyframes|animation|layer|container|supports|media|responsive|a11y|accessibility|structure|demo|alpha|beta|experimental|internal|public))\\b",
       "name": "storage.type.class.cssdoc"
     },
     "structure-tag": {

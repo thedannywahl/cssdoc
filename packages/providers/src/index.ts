@@ -28,6 +28,8 @@ import {
   type Completion,
   type Diagnostic,
   type Hover,
+  type HoverDetail,
+  type HoverSections,
   type ResolvedNaming,
   type RuleId,
   type RuleSeverities,
@@ -155,9 +157,15 @@ export function completeFunctions(index: CssDocIndex): Completion[] {
   return func.completions(index);
 }
 
-/** Hover for a class token: the modifier's docs, else the component's. */
-export function hoverForClass(base: string, token: string, index: CssDocIndex): Hover | undefined {
-  return modifier.hover(base, token, index) ?? record.hover(base, index);
+/** Hover for a class token: the modifier's docs, else the component's card (at the given detail). */
+export function hoverForClass(
+  base: string,
+  token: string,
+  index: CssDocIndex,
+  detail: HoverDetail = "full",
+  sections?: HoverSections,
+): Hover | undefined {
+  return modifier.hover(base, token, index) ?? record.hover(base, index, detail, sections);
 }
 
 /** Hover for a `var(--…)` custom property. */
