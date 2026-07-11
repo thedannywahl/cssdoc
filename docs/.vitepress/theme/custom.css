@@ -41,3 +41,8 @@
     }
   }
 }
+
+/* Change header social icons */
+.VPSocialLink > svg {
+  fill: none !important;
+}

@@ -55,6 +55,7 @@ catalog:
   "@commitlint/config-conventional": ^21.2.0
   postcss-styled-syntax: ^0.7.2
   postcss-html: ^1.8.1
+  vitepress-plugin-llms: ^1.13.2
 
 allowBuilds:
   esbuild: true

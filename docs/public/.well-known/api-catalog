@@ -1,0 +1,31 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://cssdoc.dev/",
+      "service-doc": [
+        {
+          "href": "https://cssdoc.dev/guide/introduction",
+          "type": "text/html",
+          "title": "cssdoc documentation"
+        },
+        {
+          "href": "https://cssdoc.dev/guide/introduction.md",
+          "type": "text/markdown",
+          "title": "cssdoc documentation (Markdown)"
+        }
+      ],
+      "alternate": [
+        {
+          "href": "https://cssdoc.dev/llms.txt",
+          "type": "text/plain",
+          "title": "LLM-friendly documentation index"
+        },
+        {
+          "href": "https://cssdoc.dev/llms-full.txt",
+          "type": "text/plain",
+          "title": "Full documentation as one document"
+        }
+      ]
+    }
+  ]
+}

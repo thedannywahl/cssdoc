@@ -4,6 +4,7 @@ import grammarkdown from "@cssdoc/grammarkdown-tmlanguage";
 import cssdoc from "@cssdoc/tmlanguage";
 import type { DefaultTheme } from "vitepress";
 import { defineConfig } from "vitepress";
+import llmstxt from "vitepress-plugin-llms";
 import { mermaidPlugin } from "./plugins/vitepress-mermaid/index.js";
 
 // The site is served at its own apex domain (cssdoc.dev), so it lives at the root. DOCS_BASE can still
@@ -25,6 +26,20 @@ export default defineConfig({
   description: "TSDoc, for CSS — document CSS with structured comments.",
   cleanUrls: true,
   sitemap: { hostname: "https://cssdoc.dev" },
+  // Emit /llms.txt (an agent-legible index) and /llms-full.txt (the whole site as one document) at the
+  // dist root, so AI agents can read cssdoc without scraping HTML. Covers the guide pages and the
+  // generated API reference.
+  vite: {
+    // The repo aliases `vite` to vite-plus-core, but VitePress types this field against upstream Vite,
+    // and llmstxt() carries a third Vite's Plugin types — three incompatible `PluginOption`s. The plugin
+    // works at runtime; cast through the bottom type to bridge the type identities.
+    plugins: [
+      llmstxt({
+        title: "cssdoc",
+        description: "TSDoc, for CSS — document CSS with structured comments.",
+      }) as never,
+    ],
+  },
   // Register the grammarkdown grammar (for the Grammar page) and the cssdoc injection grammar (so CSS
   // examples highlight their doc-comment tags, the way TSDoc does).
   markdown: {
@@ -83,6 +98,15 @@ export default defineConfig({
       pattern: "https://github.com/thedannywahl/cssdoc/edit/main/docs/:path",
       text: "Edit this page on GitHub",
     },
-    socialLinks: [{ icon: "github", link: "https://github.com/thedannywahl/cssdoc" }],
+    socialLinks: [
+      {
+        icon: {
+          svg: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>',
+        },
+        link: "/llms.txt",
+        ariaLabel: "llms.txt — documentation for AI agents",
+      },
+      { icon: "github", link: "https://github.com/thedannywahl/cssdoc" },
+    ],
   },
 });

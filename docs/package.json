@@ -41,6 +41,7 @@
     "typedoc-plugin-markdown": "catalog:",
     "typedoc-vitepress-theme": "catalog:",
     "vitepress": "catalog:",
+    "vitepress-plugin-llms": "catalog:",
     "vue": "^3.5.13"
   }
 }

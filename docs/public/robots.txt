@@ -1,0 +1,10 @@
+# Content signal policy — https://contentsignals.org
+# search=yes    allow building a search index and returning results
+# ai-train=yes  allow training or fine-tuning AI models
+# ai-input=yes  allow use as AI input (RAG, grounding, generative answers)
+
+User-agent: *
+Content-Signal: search=yes, ai-train=yes, ai-input=yes
+Allow: /
+
+Sitemap: https://cssdoc.dev/sitemap.xml
