@@ -1,0 +1,150 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cssdoc.dev/cssdoc.schema.json",
+  "title": "cssdoc.json",
+  "description": "Configuration for @cssdoc/core: custom tags and inherited configs.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "extends": {
+      "description": "Paths to other cssdoc.json files (or packages) to inherit tag definitions from.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "noStandardTags": {
+      "description": "Disable every built-in standard tag; only tagDefinitions remain supported.",
+      "type": "boolean"
+    },
+    "tagDefinitions": {
+      "description": "Custom tags to register.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["tagName", "syntaxKind"],
+        "properties": {
+          "tagName": {
+            "type": "string",
+            "pattern": "^@?[a-zA-Z][a-zA-Z0-9-]*$"
+          },
+          "syntaxKind": {
+            "enum": ["record", "block", "modifier", "inline"]
+          },
+          "allowMultiple": {
+            "type": "boolean"
+          },
+          "recordKind": {
+            "enum": ["component", "utility", "rule", "declaration"]
+          },
+          "aliasFor": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "supportForTags": {
+      "description": "Enable or disable specific tags by name.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "boolean"
+      }
+    },
+    "modifierConvention": {
+      "description": "How modifier classes are spelled: a preset name (bem, rscss, bare) or a custom convention.",
+      "oneOf": [
+        {
+          "enum": ["bem", "rscss", "bare"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["structure", "separator"],
+          "properties": {
+            "structure": {
+              "enum": ["chained", "suffix", "attribute"]
+            },
+            "separator": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
+            },
+            "elementSeparator": {
+              "description": "BEM-style element delimiter (e.g. \"__\"); matched classes become parts.",
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
+            },
+            "statePrefixes": {
+              "description": "Class prefixes that mark a state (e.g. [\"is-\",\"has-\"]).",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "statePseudoClasses": {
+              "description": "Native pseudo-classes (without the colon) recognized as states, e.g. [\"disabled\",\"checked\"]. Overrides the built-in default set.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "propValue": {
+              "type": "boolean"
+            },
+            "propValueSeparator": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "rules": {
+      "description": "Per-rule severity overrides (off/warn/error).",
+      "type": "object",
+      "additionalProperties": {
+        "enum": ["off", "warn", "error"]
+      }
+    },
+    "naming": {
+      "description": "Enforce a name case on class names: a preset (pascalCase, camelCase, lowercase) or a custom regex.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "component": {
+          "type": "string"
+        },
+        "part": {
+          "type": "string"
+        }
+      }
+    },
+    "structureIgnore": {
+      "description": "Class names to exempt from the structure-unknown-selector rule — legitimately-external classes (utilities, cross-component refs) referenced in @structure. Literal names or simple globs where * matches any run of characters (e.g. util-*).",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
