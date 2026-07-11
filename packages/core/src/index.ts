@@ -11,8 +11,7 @@
  *   declared custom properties, deprecated-alias links) from the actual selectors — so they can't drift;
  * - returns a {@link CssDocEntry}[] model (one record per `@component`), plus a {@link toJson} helper.
  *
- * Build a project-specific emitter on top (pantoken's docs emit VitePress markdown and cross-reference
- * the token IR) — the way `typedoc-plugin-markdown` builds on TypeDoc's reflections.
+ * Build a project-specific emitter on top  — the way `typedoc-plugin-markdown` builds on TypeDoc's reflections.
  *
  * @example
  * ```ts

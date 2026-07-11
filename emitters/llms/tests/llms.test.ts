@@ -26,8 +26,8 @@ const CSS = `
 `;
 
 test("renders a compact per-component digest with a title and blockquote", () => {
-  const out = renderLlms(parseCssDocs(CSS), { title: "InstUI CSS", intro: "Class-based styles." });
-  expect(out.startsWith("# InstUI CSS\n")).toBe(true);
+  const out = renderLlms(parseCssDocs(CSS), { title: "My CSS", intro: "Class-based styles." });
+  expect(out.startsWith("# My CSS\n")).toBe(true);
   expect(out).toContain("> Class-based styles.");
   expect(out).toContain("## button — `.button`");
   expect(out).toContain("The primary action control.");

@@ -5,7 +5,7 @@ import { parseDocComment, parseStructure } from "../src/grammar.ts";
 // A fixture mirroring the real generated output: authored @component doc comments delimit records; the
 // modifiers / parts / tokens / deprecations are all things the parser must derive from the CSS itself.
 const FIXTURE = `
-/* InstUI component styles (@pantoken/components) — prefix: instui */
+/* Component styles */
 
 /**
  * @component button
@@ -226,7 +226,7 @@ test("parseDocComment reads the grammar, ignoring unknown tags and comment frami
  * @summary An inline message.
  * @modifier -color-info — Informational.
  * @modifier -render-icon — @deprecated Use the \`-icon-<name>\` glyph form.
- * @cssproperty --pantoken-alert-icon-bg <color> — The glyph fill.
+ * @cssproperty --alert-icon-bg <color> — The glyph fill.
  * @bogus this tag is ignored
  */`);
   expect(doc.component).toBe("alert");
@@ -236,7 +236,7 @@ test("parseDocComment reads the grammar, ignoring unknown tags and comment frami
     deprecated: "Use the `-icon-<name>` glyph form.",
   });
   expect(doc.cssProperties[0]).toEqual({
-    name: "--pantoken-alert-icon-bg",
+    name: "--alert-icon-bg",
     syntax: "<color>",
     description: "The glyph fill.",
   });

@@ -2,7 +2,7 @@
 
 An emitter for [`@cssdoc/core`](../../packages/core): render the model to markdown reference pages and a
 sidebar, in the shape `typedoc-plugin-markdown` / `typedoc-vitepress-theme` expect — so CSS docs theme
-identically to a TypeDoc site. This is the generic half of pantoken's CSS-API generator, codified.
+identically to a TypeDoc site.
 
 ## Install
 

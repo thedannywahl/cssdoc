@@ -46,5 +46,5 @@ test("buildHtml writes a page per record and an index linking to them", () => {
 });
 
 test("renderIndex uses a custom title", () => {
-  expect(renderIndex(parseCssDocs(CSS), { title: "InstUI CSS" })).toContain("<h1>InstUI CSS</h1>");
+  expect(renderIndex(parseCssDocs(CSS), { title: "My CSS" })).toContain("<h1>My CSS</h1>");
 });

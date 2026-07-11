@@ -11,7 +11,7 @@ import { toMermaid } from "@cssdoc/core";
 
 /**
  * Resolve a consumed custom property to its type/value for the "Tokens consumed" table. Supplied by the
- * caller (e.g. pantoken resolves `--*` against its token IR); when absent, tokens are listed
+ * caller; when absent, tokens are listed
  * without type/value columns.
  */
 export type ResolveToken = (name: string) => { syntax?: string; value?: string } | undefined;

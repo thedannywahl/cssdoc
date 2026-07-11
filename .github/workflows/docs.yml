@@ -23,11 +23,8 @@ jobs:
       - uses: voidzero-dev/setup-vp@v1
         with:
           cache: true
-      # Build the packages first: the API reference extracts them, and `docs:build` loads the built
-      # @cssdoc/typedoc plugin from its dist.
       - name: Build packages
         run: vp run build
-      # Served at the apex domain cssdoc.dev, so the default base (/) is correct — no DOCS_BASE override.
       - name: Build docs
         run: vp run docs:build
       - uses: actions/configure-pages@v6
