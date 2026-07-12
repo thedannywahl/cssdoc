@@ -272,7 +272,7 @@ const usage = computed(() => {
           <section v-if="entry.cssPropertiesConsumed.length" class="pg__facet">
             <h5 class="pg__facet-label">Consumes</h5>
             <div class="pg__member">
-              <code v-for="v in entry.cssPropertiesConsumed" :key="v">{{ v }}</code>
+              <code v-for="v in entry.cssPropertiesConsumed" :key="v.name">{{ v.name }}</code>
             </div>
           </section>
 
