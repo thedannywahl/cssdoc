@@ -152,6 +152,37 @@ export interface StructureNode {
   children: StructureNode[];
 }
 
+/**
+ * A design token the component consumes via `var(--*)`. The set is derived from the CSS; an authored
+ * `@tokens` tag annotates one with prose (and may add a token not literally found via `var()`). Type and
+ * resolved value are not modeled here — an emitter resolves them via its own token source (e.g. a
+ * `resolveToken` hook).
+ */
+export interface CssTokenConsumed {
+  /** The custom-property name, e.g. `--color-primary`. */
+  name: string;
+  /** Prose from an `@tokens` doc tag, when authored. */
+  description?: string;
+}
+
+/** A related component cross-reference (`@related`). */
+export interface CssRelated {
+  /** The related record's name, e.g. `card`. */
+  name: string;
+  /** Prose from the `@related` tag, when authored. */
+  description?: string;
+}
+
+/** Where a record was authored, for source links. Positions are 1-based, matching PostCSS. */
+export interface CssSource {
+  /** The file the record was parsed from, when {@link ParseOptions.fileName} was supplied. */
+  file?: string;
+  /** The 1-based line of the record's opening doc comment. */
+  line?: number;
+  /** The 1-based column of the record's opening doc comment. */
+  column?: number;
+}
+
 /** One documented CSS record: its base class plus everything derived from the CSS + doc comments. */
 export interface CssDocEntry {
   /** The record name from `@component`/`@utility`/`@rule`/`@declaration`/`@name`, e.g. `button`. */
@@ -184,8 +215,12 @@ export interface CssDocEntry {
   states: CssState[];
   /** Named slots the component shell exposes, from `@slot`. */
   slots: CssSlot[];
-  /** Every `--*` custom property referenced via `var(...)` inside this component's rules. */
-  cssPropertiesConsumed: string[];
+  /**
+   * Design tokens this component consumes: every `--*` custom property referenced via `var(...)` inside
+   * its rules, each annotated with `@tokens` prose where authored (and including any `@tokens`-declared
+   * token not literally found via `var()`).
+   */
+  cssPropertiesConsumed: CssTokenConsumed[];
   /** Custom properties this component declares (`@property`) or documents (`@cssproperty`). */
   cssPropertiesDeclared: CssPropertyDeclared[];
   /** CSS custom functions (`@function`) this component defines. */
@@ -208,6 +243,14 @@ export interface CssDocEntry {
   deprecated?: string;
   /** `@see <ref>` cross-references. */
   see: string[];
+  /** Usage prose from `@usage` — how to include the stylesheet / use the component. */
+  usage?: string;
+  /** Browser-support / feature-compatibility notes from `@compat`. */
+  compat: string[];
+  /** Related components from `@related`. */
+  related: CssRelated[];
+  /** Where the record was authored, when position info is available (for source links). */
+  source?: CssSource;
   /**
    * Content of registered custom (block) tags, keyed by tag name without its `@`. Populated only for
    * tags added via configuration; unregistered unknown tags are ignored. Absent when none were found.
@@ -243,4 +286,9 @@ export interface ParseOptions {
    * parser (e.g. `postcss-scss`/`postcss-less` via `@cssdoc/dialects`) to document `.scss`/`.less`.
    */
   parse?: CssParse;
+  /**
+   * The source file name to record on each entry's {@link CssSource}, enabling source links. The parser
+   * always records line/column; supply this to also record the file.
+   */
+  fileName?: string;
 }

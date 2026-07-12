@@ -209,7 +209,7 @@ test("parts come from scoped child selectors; consumed + declared custom propert
   expect(menu.parts.map((p) => p.name)).toEqual(["item", "separator"]);
 
   const button = model.find((e) => e.name === "button")!;
-  expect(button.cssPropertiesConsumed).toContain(
+  expect(button.cssPropertiesConsumed.map((t) => t.name)).toContain(
     "--color-background-interactive-action-secondary-base",
   );
 
@@ -403,4 +403,56 @@ test("only /** doc comments open records — a plain comment mentioning @compone
   expect(entries.map((e) => e.name)).toEqual(["button"]);
   // The button record still owns its modifier, even though a plain comment sits between the rules.
   expect(entries[0]?.modifiers.map((m) => m.name)).toContain("button--secondary");
+});
+
+test("@tokens annotates an AST-discovered token and unions a token not found via var()", () => {
+  const css = [
+    "/**",
+    " * @component card",
+    " * @tokens --color-bg — The surface background.",
+    " * @tokens --color-fg-indirect — Set on the element by script.",
+    " */",
+    ".card { background: var(--color-bg); color: var(--color-fg); }",
+  ].join("\n");
+  const [card] = parseCssDocs(css);
+  const consumed = card!.cssPropertiesConsumed;
+  const byName = new Map(consumed.map((t) => [t.name, t.description]));
+  // AST-discovered var() tokens are present; the authored one carries its description.
+  expect(byName.get("--color-bg")).toBe("The surface background.");
+  // A var() token with no @tokens prose is present without a description.
+  expect(byName.has("--color-fg")).toBe(true);
+  expect(byName.get("--color-fg")).toBeUndefined();
+  // A @tokens-declared token never seen in var() is unioned in.
+  expect(byName.get("--color-fg-indirect")).toBe("Set on the element by script.");
+});
+
+test("@usage, @compat, and @related populate their fields", () => {
+  const css = [
+    "/**",
+    " * @component card",
+    " * @usage Include the sheet, then apply the class.",
+    " * @compat Uses @scope.",
+    " * @compat Anchor positioning enhanced.",
+    " * @related button — The action inside a card.",
+    " * @related dialog",
+    " */",
+    ".card { color: red; }",
+  ].join("\n");
+  const [card] = parseCssDocs(css);
+  expect(card!.usage).toBe("Include the sheet, then apply the class.");
+  expect(card!.compat).toEqual(["Uses @scope.", "Anchor positioning enhanced."]);
+  expect(card!.related).toEqual([
+    { name: "button", description: "The action inside a card." },
+    { name: "dialog", description: undefined },
+  ]);
+});
+
+test("entry.source records line/column, and file when fileName is supplied", () => {
+  const css = ["", "/**", " * @component card", " */", ".card { color: red; }"].join("\n");
+  const [withFile] = parseCssDocs(css, { fileName: "cards.css" });
+  expect(withFile!.source).toEqual({ file: "cards.css", line: 2, column: 1 });
+
+  const [withoutFile] = parseCssDocs(css);
+  expect(withoutFile!.source?.file).toBeUndefined();
+  expect(withoutFile!.source?.line).toBe(2);
 });

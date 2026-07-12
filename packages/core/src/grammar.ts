@@ -26,7 +26,7 @@
  */
 import postcss, { type ChildNode, type Rule } from "postcss";
 import { CssDocConfiguration } from "./configuration.ts";
-import type { CssRecordKind, CssReleaseStage, StructureNode } from "./model.ts";
+import type { CssRecordKind, CssRelated, CssReleaseStage, StructureNode } from "./model.ts";
 
 /**
  * The record-opening tags and the {@link CssRecordKind} each selects, as the default boundary map.
@@ -97,6 +97,8 @@ export interface ParsedDoc {
   modifiers: Map<string, DocModifier>;
   /** `@part` descriptions, keyed by the class part name without its dot (e.g. `item`). */
   parts: Map<string, string>;
+  /** `@tokens` descriptions, keyed by custom-property name (e.g. `--color-primary`). */
+  tokens: Map<string, string>;
   /** `@csspart` descriptions (shadow-DOM `::part()`), keyed by the bare part name (e.g. `header`). */
   cssParts: Map<string, string>;
   /** `@cssproperty` declarations. */
@@ -125,6 +127,12 @@ export interface ParsedDoc {
   demo?: string;
   /** `@see <ref>` entries. */
   see: string[];
+  /** `@usage` prose — how to include the stylesheet / use the component. */
+  usage?: string;
+  /** `@compat` browser-support / feature-compatibility notes. */
+  compat: string[];
+  /** `@related` component cross-references. */
+  related: CssRelated[];
   /** Content of registered custom (block) tags, keyed by tag name without its `@`. */
   customBlocks: Map<string, string[]>;
 }
@@ -191,6 +199,7 @@ export function parseDocComment(
   const doc: ParsedDoc = {
     modifiers: new Map(),
     parts: new Map(),
+    tokens: new Map(),
     cssParts: new Map(),
     cssProperties: [],
     cssStates: new Map(),
@@ -201,6 +210,8 @@ export function parseDocComment(
     conditions: [],
     examples: [],
     see: [],
+    compat: [],
+    related: [],
     customBlocks: new Map(),
   };
 
@@ -276,6 +287,12 @@ function applyBlockTag(doc: ParsedDoc, canonical: string, tagName: string, rest:
       doc.parts.set(head.replace(/^\./u, ""), description ?? "");
       break;
     }
+    case "tokens": {
+      // `--name — description`; the token set is derived from the CSS, this annotates (or adds) one.
+      const { head, description } = splitDesc(rest);
+      doc.tokens.set(head, description ?? "");
+      break;
+    }
     case "csspart": {
       // A shadow-DOM `::part()` name — a bare identifier (tolerate a stray leading dot).
       const { head, description } = splitDesc(rest);
@@ -345,6 +362,17 @@ function applyBlockTag(doc: ParsedDoc, canonical: string, tagName: string, rest:
     case "see":
       doc.see.push(rest);
       break;
+    case "usage":
+      doc.usage = rest.trim();
+      break;
+    case "compat":
+      doc.compat.push(rest.trim());
+      break;
+    case "related": {
+      const { head, description } = splitDesc(rest);
+      doc.related.push({ name: head.replace(/^\./u, ""), description });
+      break;
+    }
     default: {
       // A supported custom block tag: capture its content, keyed by tag name.
       const list = doc.customBlocks.get(tagName) ?? [];
