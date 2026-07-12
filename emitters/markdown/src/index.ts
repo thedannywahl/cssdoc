@@ -7,6 +7,7 @@
  * @module @cssdoc/markdown
  */
 export {
+  DEFAULT_SECTION_ORDER,
   KIND_GROUPS,
   cell,
   escProse,
@@ -14,7 +15,9 @@ export {
   renderIndex,
   type RenderEntryOptions,
   type RenderIndexOptions,
+  type ResolveSource,
   type ResolveToken,
+  type SectionKey,
 } from "./render.ts";
 export {
   buildCssApi,

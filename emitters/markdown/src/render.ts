@@ -16,12 +16,75 @@ import { toMermaid } from "@cssdoc/core";
  */
 export type ResolveToken = (name: string) => { syntax?: string; value?: string } | undefined;
 
+/** Resolve a record to a source link (file/line), for the "Source" line. Supplied by the caller. */
+export type ResolveSource = (entry: CssDocEntry) => { href: string; label?: string } | undefined;
+
+/**
+ * The reorderable `##` sections of a record page, in default render order. The page header (title,
+ * base-class line, deprecation warning, remarks, and the Since/Group/Source meta line) is fixed above
+ * these. Pass {@link RenderEntryOptions.sectionOrder} to reorder or drop sections.
+ */
+export type SectionKey =
+  | "demo"
+  | "examples"
+  | "usage"
+  | "modifiers"
+  | "parts"
+  | "shadowParts"
+  | "states"
+  | "slots"
+  | "structure"
+  | "cssProperties"
+  | "functions"
+  | "animations"
+  | "layers"
+  | "conditions"
+  | "tokensConsumed"
+  | "compat"
+  | "accessibility"
+  | "related"
+  | "see";
+
+/** The default order of the reorderable `##` sections. */
+export const DEFAULT_SECTION_ORDER: readonly SectionKey[] = [
+  "demo",
+  "examples",
+  "usage",
+  "modifiers",
+  "parts",
+  "shadowParts",
+  "states",
+  "slots",
+  "structure",
+  "cssProperties",
+  "functions",
+  "animations",
+  "layers",
+  "conditions",
+  "tokensConsumed",
+  "compat",
+  "accessibility",
+  "related",
+  "see",
+];
+
 /** Options controlling how one entry renders. */
 export interface RenderEntryOptions {
   /** Resolve a consumed token's type/value (adds Type + Value columns to "Tokens consumed"). */
   resolveToken?: ResolveToken;
   /** Choose the demo spec for an entry (defaults to `entry.demo`). */
   resolveDemo?: (entry: CssDocEntry) => string | undefined;
+  /** Resolve a record to a source link, rendered on the meta line as `**Source:** [label](href)`. */
+  resolveSource?: ResolveSource;
+  /**
+   * Produce an include/usage snippet for a record, rendered as a fenced block in the "Usage" section
+   * alongside any authored `@usage` prose (e.g. the `@import` line and class-prefix convention).
+   */
+  importSnippet?: (entry: CssDocEntry) => string | undefined;
+  /** Base href for `@related` cross-links (defaults to `./`). Set to `""` to render names without links. */
+  baseHref?: string;
+  /** Reorder (or drop) the `##` sections; defaults to {@link DEFAULT_SECTION_ORDER}. */
+  sectionOrder?: readonly SectionKey[];
   /** Heading prefix for the page title (defaults to no prefix, i.e. just the record name). */
   headingPrefix?: string;
 }
@@ -110,14 +173,27 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   const meta: string[] = [];
   if (entry.since) meta.push(`**Since:** ${escProse(entry.since)}`);
   if (entry.group) meta.push(`**Group:** ${escProse(entry.group)}`);
+  const src = options.resolveSource?.(entry);
+  if (src) meta.push(`**Source:** [${escProse(src.label ?? "source")}](${src.href})`);
   if (meta.length) lines.push(meta.join(" · "), "");
 
+  // Each reorderable section builds its own fragment; they're emitted in `sectionOrder` below.
+  const fragments = {} as Record<SectionKey, string[]>;
+  for (const key of DEFAULT_SECTION_ORDER) fragments[key] = [];
+
   const spec = options.resolveDemo ? options.resolveDemo(entry) : entry.demo;
-  if (spec) lines.push("## Demo", "", "```demo", spec, "```", "");
+  if (spec) fragments.demo.push("## Demo", "", "```demo", spec, "```", "");
 
   if (entry.examples.length) {
-    lines.push("## Examples", "");
-    for (const ex of entry.examples) lines.push("```html", ex, "```", "");
+    fragments.examples.push("## Examples", "");
+    for (const ex of entry.examples) fragments.examples.push("```html", ex, "```", "");
+  }
+
+  const importSnippet = options.importSnippet?.(entry);
+  if (entry.usage || importSnippet) {
+    fragments.usage.push("## Usage", "");
+    if (entry.usage) fragments.usage.push(escProse(entry.usage), "");
+    if (importSnippet) fragments.usage.push("```css", importSnippet, "```", "");
   }
 
   if (entry.modifiers.length) {
@@ -131,11 +207,11 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
       }
       return [`\`.${m.name}\``, cell(m.description)];
     });
-    lines.push("## Modifiers", "", ...table(["Modifier", "Description"], rows));
+    fragments.modifiers.push("## Modifiers", "", ...table(["Modifier", "Description"], rows));
   }
 
   if (entry.parts.length) {
-    lines.push(
+    fragments.parts.push(
       "## Parts",
       "",
       ...table(
@@ -146,7 +222,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   }
 
   if (entry.shadowParts.length) {
-    lines.push(
+    fragments.shadowParts.push(
       "## Shadow parts",
       "",
       ...table(
@@ -157,7 +233,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   }
 
   if (entry.states.length) {
-    lines.push(
+    fragments.states.push(
       "## States",
       "",
       ...table(
@@ -171,7 +247,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   }
 
   if (entry.slots.length) {
-    lines.push(
+    fragments.slots.push(
       "## Slots",
       "",
       ...table(
@@ -182,15 +258,15 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   }
 
   if (entry.structure?.length) {
-    lines.push("## Structure", "");
-    if (entry.structureDescription) lines.push(entry.structureDescription, "");
-    lines.push("```text", ...renderTree(entry.structure), "```", "");
+    fragments.structure.push("## Structure", "");
+    if (entry.structureDescription) fragments.structure.push(entry.structureDescription, "");
+    fragments.structure.push("```text", ...renderTree(entry.structure), "```", "");
     const mermaid = toMermaid(entry.structure);
-    if (mermaid) lines.push("```mermaid", mermaid, "```", "");
+    if (mermaid) fragments.structure.push("```mermaid", mermaid, "```", "");
   }
 
   if (entry.cssPropertiesDeclared.length) {
-    lines.push(
+    fragments.cssProperties.push(
       "## Custom properties",
       "",
       ...table(
@@ -206,7 +282,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   }
 
   if (entry.functions.length) {
-    lines.push(
+    fragments.functions.push(
       "## Functions",
       "",
       ...table(
@@ -222,7 +298,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   }
 
   if (entry.animations.length) {
-    lines.push(
+    fragments.animations.push(
       "## Animations",
       "",
       ...table(
@@ -233,7 +309,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   }
 
   if (entry.layers.length) {
-    lines.push(
+    fragments.layers.push(
       "## Cascade layers",
       "",
       ...table(
@@ -244,7 +320,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   }
 
   if (entry.conditions.length) {
-    lines.push(
+    fragments.conditions.push(
       "## Conditions",
       "",
       ...table(
@@ -260,33 +336,68 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
 
   // A `@cssproperty`-declared property is the component's own knob — keep it out of "Tokens consumed".
   const declaredNames = new Set(entry.cssPropertiesDeclared.map((p) => p.name));
-  const consumed = entry.cssPropertiesConsumed.filter((name) => !declaredNames.has(name));
+  const consumed = entry.cssPropertiesConsumed.filter((t) => !declaredNames.has(t.name));
   if (consumed.length) {
-    lines.push("## Tokens consumed", "");
+    fragments.tokensConsumed.push("## Tokens consumed", "");
+    const hasDescriptions = consumed.some((t) => t.description);
     if (options.resolveToken) {
       const resolve = options.resolveToken;
-      lines.push(
+      const headers = hasDescriptions
+        ? ["Token", "Type", "Value", "Description"]
+        : ["Token", "Type", "Value"];
+      fragments.tokensConsumed.push(
         ...table(
-          ["Token", "Type", "Value"],
-          consumed.map((name) => {
-            const info = resolve(name);
-            return [`\`${name}\``, code(info?.syntax), code(info?.value)];
+          headers,
+          consumed.map((t) => {
+            const info = resolve(t.name);
+            const row = [`\`${t.name}\``, code(info?.syntax), code(info?.value)];
+            if (hasDescriptions) row.push(cell(t.description));
+            return row;
           }),
         ),
       );
     } else {
-      for (const name of consumed) lines.push(`- \`${name}\``);
-      lines.push("");
+      for (const t of consumed) {
+        fragments.tokensConsumed.push(
+          `- \`${t.name}\`${t.description ? ` — ${escProse(t.description)}` : ""}`,
+        );
+      }
+      fragments.tokensConsumed.push("");
     }
   }
 
-  if (entry.accessibility) lines.push("## Accessibility", "", escProse(entry.accessibility), "");
+  if (entry.compat.length) {
+    fragments.compat.push("## Browser support", "");
+    for (const note of entry.compat) fragments.compat.push(`- ${escProse(note)}`);
+    fragments.compat.push("");
+  }
+
+  if (entry.accessibility) {
+    fragments.accessibility.push("## Accessibility", "", escProse(entry.accessibility), "");
+  }
+
+  if (entry.related.length) {
+    const baseHref = options.baseHref ?? "./";
+    fragments.related.push("## Related", "");
+    for (const rel of entry.related) {
+      const link = baseHref
+        ? `[${escProse(rel.name)}](${baseHref}${rel.name}.md)`
+        : `\`${rel.name}\``;
+      fragments.related.push(
+        `- ${link}${rel.description ? ` — ${escProse(rel.description)}` : ""}`,
+      );
+    }
+    fragments.related.push("");
+  }
 
   if (entry.see.length) {
-    lines.push("## See also", "");
-    for (const ref of entry.see) lines.push(`- ${escProse(ref)}`);
-    lines.push("");
+    fragments.see.push("## See also", "");
+    for (const ref of entry.see) fragments.see.push(`- ${escProse(ref)}`);
+    fragments.see.push("");
   }
+
+  const order = options.sectionOrder ?? DEFAULT_SECTION_ORDER;
+  for (const key of order) lines.push(...(fragments[key] ?? []));
 
   return `${lines.join("\n")}\n`;
 }
