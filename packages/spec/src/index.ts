@@ -77,6 +77,8 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
   },
   { name: "cssstate", kind: "block", allowMultiple: true },
   { name: "slot", kind: "block", allowMultiple: true, argument: "part-name" },
+  // A design token the component consumes (`var(--*)`); the set is derived from the CSS, this adds prose.
+  { name: "tokens", kind: "block", allowMultiple: true, argument: "custom-property" },
   // CSSOM at-rule surfaces.
   { name: "function", kind: "block", allowMultiple: true },
   { name: "keyframes", kind: "block", allowMultiple: true },
@@ -92,6 +94,10 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
   // Structure & demo.
   { name: "structure", kind: "block" },
   { name: "demo", kind: "block" },
+  // Usage, compatibility & related.
+  { name: "usage", kind: "block" },
+  { name: "compat", kind: "block", allowMultiple: true },
+  { name: "related", kind: "block", allowMultiple: true },
   // Modifier (flag) tags — release stage.
   { name: "alpha", kind: "modifier" },
   { name: "beta", kind: "modifier" },
