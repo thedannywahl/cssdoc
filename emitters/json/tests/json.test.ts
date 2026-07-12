@@ -12,6 +12,10 @@ const CSS = `
  * @summary The primary action control.
  * @modifier -color-secondary — A lower-emphasis action.
  * @cssstate loading — Awaiting a response.
+ * @tokens --r — The corner radius token.
+ * @usage Import the sheet and apply the class.
+ * @compat Uses :state(); needs a recent browser.
+ * @related link — A textual action.
  */
 .button { border-radius: var(--r); }
 .button.-color-secondary { color: blue; }
@@ -23,7 +27,16 @@ const CSS = `
 test("renderJson produces valid JSON of the model", () => {
   const entries = parseCssDocs(CSS);
   const parsed = JSON.parse(renderJson(entries));
-  expect(parsed.find((e: { name: string }) => e.name === "button")).toBeDefined();
+  const button = parsed.find((e: { name: string }) => e.name === "button");
+  expect(button).toBeDefined();
+  // cssPropertiesConsumed is now an array of { name, description? } objects.
+  expect(button.cssPropertiesConsumed).toContainEqual({
+    name: "--r",
+    description: "The corner radius token.",
+  });
+  expect(button.usage).toBe("Import the sheet and apply the class.");
+  expect(button.compat).toEqual(["Uses :state(); needs a recent browser."]);
+  expect(button.related).toEqual([{ name: "link", description: "A textual action." }]);
 });
 
 test('lang: "js" extracts and emits records from a tagged template', () => {
