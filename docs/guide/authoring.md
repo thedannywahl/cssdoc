@@ -52,6 +52,7 @@ modifier conventions (rscss, CUBE, OOCSS, and more) — see [Modifier convention
 | `@cssstate :<x> — <desc>`                              | A native pseudo-class state (`:disabled`)                 | pseudo-class selectors |
 | `@slot <x> — <desc>`                                   | A named slot                                              | authored (CEM)         |
 | `@cssproperty` / `@property --<x> [<syntax>] — <desc>` | A registered custom property                              | `@property` at-rules   |
+| `@tokens --<x> — <desc>`                               | A consumed design token (annotates the auto-derived list) | `var(--x)` usages      |
 | `@function --<x> — <desc>`                             | A CSS custom function                                     | `@function` at-rules   |
 | `@keyframes` / `@animation <x> — <desc>`               | An exposed animation                                      | `@keyframes` at-rules  |
 | `@layer <x> — <desc>`                                  | A cascade layer                                           | `@layer` at-rules      |
@@ -60,6 +61,14 @@ modifier conventions (rscss, CUBE, OOCSS, and more) — see [Modifier convention
 | `@structure`                                           | A nested-CSS element tree                                 | authored               |
 | `@demo <spec>`                                         | An embeddable demo (`self:button`, `stackblitz:…`, a URL) | authored               |
 | `@defaultValue <value>`                                | The default of the preceding `@cssproperty`               | authored               |
+| `@usage <text>`                                        | How to include the stylesheet / use the component         | authored               |
+| `@compat <text>`                                       | A browser-support / feature-compatibility note            | authored               |
+| `@related <name> — <desc>`                             | A related component cross-reference                       | authored               |
+
+The `@tokens` tag annotates the auto-derived "Tokens consumed" list: cssdoc already collects every
+`var(--*)` a record references, and `@tokens --x — <desc>` attaches a description (a `@tokens` entry with
+no matching `var()` is added to the list too). Emitters resolve each token's type and value separately —
+see the markdown emitter's `resolveToken` hook.
 
 ## Modifier (flag) tags
 
