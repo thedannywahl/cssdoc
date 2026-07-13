@@ -152,28 +152,61 @@ function table(headers: string[], rows: string[][]): string[] {
   ];
 }
 
-const CARDINALITY_LABEL: Record<NonNullable<StructureNode["cardinality"]>, string> = {
-  optional: " (optional)",
-  many: " (0..n)",
-  "one-or-more": " (1..n)",
+/** ER-style cardinality tokens, shared with the flowchart (absent = required). */
+const CARDINALITY_TOKEN: Record<NonNullable<StructureNode["cardinality"]>, string> = {
+  optional: "0..1",
+  many: "0..n",
+  "one-or-more": "1..n",
 };
 
 /** Match a `slot` / `slot[name="x"]` structure node (a light-DOM content region → the default/named slot). */
 const SLOT_NODE = /^slot(?:\[\s*name\s*=\s*["']?([\w-]+)["']?\s*\])?$/u;
 
-/** The display label for one structure node: `slot` → ‹content›, plus a cardinality suffix. */
-function structureLabel(node: StructureNode): string {
+/** The leading bare class of a compound selector, e.g. `.item.-selected` → `item`. */
+const firstClass = (selector: string): string | undefined => selector.match(/\.([\w-]+)/u)?.[1];
+
+/**
+ * The display label for one structure node, mirroring the flowchart's classification in plain text: a
+ * `slot` → ‹content› / ‹content: name›; a sibling component (resolved via `resolveComponent`, and not
+ * the record's own class `self`) → its component name; anything else → its selector. A trailing `(…)`
+ * carries the kind tag (`component`) and/or the cardinality (`0..1` / `0..n` / `1..n`; absent =
+ * required).
+ */
+function structureLabel(
+  node: StructureNode,
+  self?: string,
+  resolveComponent?: RenderEntryOptions["resolveComponent"],
+): string {
   const slot = node.selector.match(SLOT_NODE);
-  const base = slot ? (slot[1] ? `‹content: ${slot[1]}›` : "‹content›") : node.selector;
-  return `${base}${node.cardinality ? CARDINALITY_LABEL[node.cardinality] : ""}`;
+  let base = node.selector;
+  let kind: string | undefined;
+  if (slot) {
+    base = slot[1] ? `‹content: ${slot[1]}›` : "‹content›";
+  } else {
+    const primary = firstClass(node.selector);
+    const component = primary && primary !== self ? resolveComponent?.(primary) : undefined;
+    if (component) {
+      base = component.name;
+      kind = "component";
+    }
+  }
+  const tags = [kind, node.cardinality ? CARDINALITY_TOKEN[node.cardinality] : undefined].filter(
+    Boolean,
+  );
+  return tags.length ? `${base} (${tags.join(", ")})` : base;
 }
 
 /** Flatten a `@structure` tree into indented text lines (two spaces per depth level). */
-function renderTree(nodes: StructureNode[], depth = 0): string[] {
+function renderTree(
+  nodes: StructureNode[],
+  self?: string,
+  resolveComponent?: RenderEntryOptions["resolveComponent"],
+  depth = 0,
+): string[] {
   const out: string[] = [];
   for (const node of nodes) {
-    out.push(`${"  ".repeat(depth)}${structureLabel(node)}`);
-    out.push(...renderTree(node.children, depth + 1));
+    out.push(`${"  ".repeat(depth)}${structureLabel(node, self, resolveComponent)}`);
+    out.push(...renderTree(node.children, self, resolveComponent, depth + 1));
   }
   return out;
 }
@@ -305,10 +338,15 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   if (entry.structure?.length) {
     fragments.structure.push("## Structure", "");
     if (entry.structureDescription) fragments.structure.push(entry.structureDescription, "");
-    fragments.structure.push("```text", ...renderTree(entry.structure), "```", "");
-    // The flowchart classifies each node (root / part / slot / sibling component) — `self` keeps the
-    // record's own class from reading as a sibling, and `resolveComponent` finds sibling components.
+    // Both views classify each node (root / part / slot / sibling component): `self` keeps the record's
+    // own class from reading as a sibling, and `resolveComponent` resolves siblings to component names.
     const self = entry.className.replace(/^\./u, "");
+    fragments.structure.push(
+      "```text",
+      ...renderTree(entry.structure, self, options.resolveComponent),
+      "```",
+      "",
+    );
     const mermaid = toMermaid(entry.structure, {
       self,
       resolveComponent: options.resolveComponent,
