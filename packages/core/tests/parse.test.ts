@@ -306,6 +306,24 @@ test("@structure parses nested CSS into a tree, and toMermaid renders it", () =>
   expect(mermaid).toContain("n0 --> n1"); // tabs → list
 });
 
+test("@structure cardinality pseudos (full + `:opt`/`:more` shorthands) parse and strip", () => {
+  const tree = parseStructure(
+    ".alert {\n  slot {}\n  .close-button:optional {}\n  .icon:opt {}\n  .item:one-or-more {}\n  .tag:more {}\n  .badge:many {}\n  .body {}\n}",
+    postcss.parse,
+  );
+  const [alert] = tree;
+  const card = Object.fromEntries(alert.children.map((c) => [c.selector, c.cardinality]));
+  expect(card).toEqual({
+    slot: undefined, // no marker → required (present when used)
+    ".close-button": "optional",
+    ".icon": "optional", // `:opt` shorthand
+    ".item": "one-or-more",
+    ".tag": "one-or-more", // `:more` shorthand
+    ".badge": "many",
+    ".body": undefined,
+  });
+});
+
 test("@structure captures an optional leading description without disturbing the tree", () => {
   const [withDesc] = parseCssDocs(
     `/**\n * @component tabs\n * @summary Tabs.\n` +

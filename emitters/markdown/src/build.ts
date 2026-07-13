@@ -98,10 +98,22 @@ export function buildCssApi(options: BuildCssApiOptions): BuildCssApiResult {
 
   mkdirSync(options.outDir, { recursive: true });
 
+  // Resolve an `@structure` sibling-component class to its page (for cross-links + the Subcomponents
+  // section), unless the caller supplied its own resolver.
+  const componentByClass = new Map(
+    entries.map((e) => [
+      e.className.replace(/^\./u, ""),
+      { name: e.name, href: `${baseHref}${e.name}.md` },
+    ]),
+  );
+  const resolveComponent =
+    options.resolveComponent ?? ((className: string) => componentByClass.get(className));
+  const renderOptions = { ...options, resolveComponent };
+
   const pages: string[] = [];
   for (const entry of entries) {
     const pagePath = join(options.outDir, `${entry.name}.md`);
-    writeFileSync(pagePath, renderEntry(entry, options));
+    writeFileSync(pagePath, renderEntry(entry, renderOptions));
     pages.push(pagePath);
   }
 

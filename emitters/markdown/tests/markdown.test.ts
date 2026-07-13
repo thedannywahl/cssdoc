@@ -115,6 +115,33 @@ test("sectionOrder reorders the rendered sections", () => {
   expect(md).not.toContain("## Browser support");
 });
 
+test("@structure renders slot content, cardinality, and a linked Subcomponents section", () => {
+  const [alert] = parseCssDocs(
+    [
+      "/**",
+      " * @component alert",
+      " * @summary An alert.",
+      " * @slot — The message.",
+      " * @structure",
+      " * .alert {",
+      " *   slot {}",
+      " *   .close-button:optional {}",
+      " * }",
+      " */",
+      ".alert {}",
+    ].join("\n"),
+    { modifierConvention: "rscss" },
+  );
+  const md = renderEntry(alert!, {
+    resolveComponent: (c) =>
+      c === "close-button" ? { name: "close-button", href: "./close-button.md" } : undefined,
+  });
+  expect(md).toContain("‹content›"); // the `slot` node reads as the content region
+  expect(md).toContain(".close-button (optional)"); // cardinality from `:optional`
+  expect(md).toContain("## Subcomponents");
+  expect(md).toContain("- [close-button](./close-button.md)"); // derived + cross-linked
+});
+
 test("buildCssApi writes per-record pages, an index, and a compatible sidebar", () => {
   const outDir = mkdtempSync(join(tmpdir(), "cssdoc-md-"));
   const result = buildCssApi({ css: CSS, outDir, baseHref: "/api/css/" });

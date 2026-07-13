@@ -7,8 +7,19 @@
  */
 import type { StructureNode } from "./model.ts";
 
-/** Escape a selector label for a Mermaid node body (quoted to allow dots, brackets, and spaces). */
-const label = (selector: string): string => `"${selector.replace(/"/gu, "&quot;")}"`;
+const CARDINALITY_LABEL = { optional: " (optional)", many: " (0..n)", "one-or-more": " (1..n)" };
+const SLOT_NODE = /^slot(?:\[\s*name\s*=\s*["']?([\w-]+)["']?\s*\])?$/u;
+
+/**
+ * A node's label: its selector (a `slot` node shown as ‹content›) plus a cardinality suffix, quoted for a
+ * Mermaid node body (quoting allows dots, brackets, and spaces).
+ */
+const label = (node: StructureNode): string => {
+  const slot = node.selector.match(SLOT_NODE);
+  const base = slot ? (slot[1] ? `‹content: ${slot[1]}›` : "‹content›") : node.selector;
+  const text = `${base}${node.cardinality ? CARDINALITY_LABEL[node.cardinality] : ""}`;
+  return `"${text.replace(/"/gu, "&quot;")}"`;
+};
 
 /**
  * Convert a structure tree to a Mermaid `flowchart` definition. Each node gets a stable id (`n0`, `n1`,
@@ -37,7 +48,7 @@ export function toMermaid(
   let counter = 0;
   const walk = (node: StructureNode): string => {
     const id = `n${counter++}`;
-    lines.push(`  ${id}[${label(node.selector)}]`);
+    lines.push(`  ${id}[${label(node)}]`);
     for (const child of node.children) edges.push(`  ${id} --> ${walk(child)}`);
     return id;
   };

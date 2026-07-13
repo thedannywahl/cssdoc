@@ -143,14 +143,17 @@ export const record = {
           );
         }
       }
-      // Every class named anywhere in an @structure selector should resolve to the component class or
-      // a documented member — catches drift when a selector is renamed but the doc comment isn't. We
-      // validate *every* class token (the node's own compound classes and any inside `:has()`/`:is()`/
-      // `:not()`), so class order never matters and inner targets are covered too. Legitimately-external
-      // classes (utilities, cross-component refs) are exempted via `structureIgnore`.
+      // Every class named anywhere in an @structure selector should resolve to the component class, a
+      // documented member, or another documented component (a composed subcomponent) — catches drift when
+      // a selector is renamed but the doc comment isn't. We validate *every* class token (the node's own
+      // compound classes and any inside `:has()`/`:is()`/`:not()`), so class order never matters and inner
+      // targets are covered too. A sibling component's own members (e.g. its modifiers) belong to that
+      // component's docs, so reference it bare (`.close-button`); list other externals under structureIgnore.
       if (info.entry.structure?.length) {
         const known = new Set<string>([
           stripDot(info.entry.className),
+          // Sibling components are valid children — a component tree composes other components.
+          ...index.records.map((r) => stripDot(r.entry.className)),
           ...info.entry.parts.flatMap((p) => [
             stripDot(p.name),
             ...(p.modifiers ?? []).map((m) => m.name),

@@ -178,6 +178,7 @@ export const cssDocSchema = {
       additionalProperties: false,
       properties: {
         selector: { type: "string" },
+        cardinality: { enum: ["optional", "many", "one-or-more"] },
         children: { type: "array", items: { $ref: "#/$defs/StructureNode" } },
       },
     },

@@ -34,6 +34,7 @@ export type SectionKey =
   | "states"
   | "slots"
   | "structure"
+  | "subcomponents"
   | "cssProperties"
   | "functions"
   | "animations"
@@ -56,6 +57,7 @@ export const DEFAULT_SECTION_ORDER: readonly SectionKey[] = [
   "states",
   "slots",
   "structure",
+  "subcomponents",
   "cssProperties",
   "functions",
   "animations",
@@ -83,6 +85,12 @@ export interface RenderEntryOptions {
   importSnippet?: (entry: CssDocEntry) => string | undefined;
   /** Base href for `@related` cross-links (defaults to `./`). Set to `""` to render names without links. */
   baseHref?: string;
+  /**
+   * Resolve a bare class name to the component whose base class it is (for `@structure` sibling
+   * references) — returns the component's name + page href, else `undefined`. Supplied by `buildCssApi`
+   * from the full set of records; powers the "Subcomponents" section.
+   */
+  resolveComponent?: (className: string) => { name: string; href: string } | undefined;
   /** Reorder (or drop) the `##` sections; defaults to {@link DEFAULT_SECTION_ORDER}. */
   sectionOrder?: readonly SectionKey[];
   /** Heading prefix for the page title (defaults to no prefix, i.e. just the record name). */
@@ -144,14 +152,51 @@ function table(headers: string[], rows: string[][]): string[] {
   ];
 }
 
+const CARDINALITY_LABEL: Record<NonNullable<StructureNode["cardinality"]>, string> = {
+  optional: " (optional)",
+  many: " (0..n)",
+  "one-or-more": " (1..n)",
+};
+
+/** Match a `slot` / `slot[name="x"]` structure node (a light-DOM content region → the default/named slot). */
+const SLOT_NODE = /^slot(?:\[\s*name\s*=\s*["']?([\w-]+)["']?\s*\])?$/u;
+
+/** The display label for one structure node: `slot` → ‹content›, plus a cardinality suffix. */
+function structureLabel(node: StructureNode): string {
+  const slot = node.selector.match(SLOT_NODE);
+  const base = slot ? (slot[1] ? `‹content: ${slot[1]}›` : "‹content›") : node.selector;
+  return `${base}${node.cardinality ? CARDINALITY_LABEL[node.cardinality] : ""}`;
+}
+
 /** Flatten a `@structure` tree into indented text lines (two spaces per depth level). */
 function renderTree(nodes: StructureNode[], depth = 0): string[] {
   const out: string[] = [];
   for (const node of nodes) {
-    out.push(`${"  ".repeat(depth)}${node.selector}`);
+    out.push(`${"  ".repeat(depth)}${structureLabel(node)}`);
     out.push(...renderTree(node.children, depth + 1));
   }
   return out;
+}
+
+/** The sibling components referenced anywhere in a structure tree, resolved + de-duped by name. */
+function subcomponentsOf(
+  nodes: StructureNode[],
+  self: string,
+  resolve: (className: string) => { name: string; href: string } | undefined,
+): { name: string; href: string }[] {
+  const byName = new Map<string, { name: string; href: string }>();
+  const walk = (ns: StructureNode[]): void => {
+    for (const node of ns) {
+      for (const m of node.selector.matchAll(/\.([\w-]+)/gu)) {
+        if (m[1] === self) continue;
+        const c = resolve(m[1]);
+        if (c) byName.set(c.name, c);
+      }
+      walk(node.children);
+    }
+  };
+  walk(nodes);
+  return [...byName.values()];
 }
 
 /** Render one record to a markdown page. */
@@ -263,6 +308,17 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
     fragments.structure.push("```text", ...renderTree(entry.structure), "```", "");
     const mermaid = toMermaid(entry.structure);
     if (mermaid) fragments.structure.push("```mermaid", mermaid, "```", "");
+
+    // Composition is derived from the structure tree: sibling components referenced as children.
+    if (options.resolveComponent) {
+      const self = entry.className.replace(/^\./u, "");
+      const subs = subcomponentsOf(entry.structure, self, options.resolveComponent);
+      if (subs.length) {
+        fragments.subcomponents.push("## Subcomponents", "");
+        for (const s of subs) fragments.subcomponents.push(`- [${escProse(s.name)}](${s.href})`);
+        fragments.subcomponents.push("");
+      }
+    }
   }
 
   if (entry.cssPropertiesDeclared.length) {

@@ -24,7 +24,7 @@
  *
  * @module
  */
-import type { ChildNode, Rule } from "postcss";
+import type { ChildNode } from "postcss";
 import { CssDocConfiguration } from "./configuration.ts";
 import type {
   CssParse,
@@ -457,12 +457,37 @@ function splitStructureBody(raw: string): { description?: string; css: string } 
  * @param parse - The CSS parser to build the tree with (the same one `parseCssDocs` uses, or a dialect
  *   parser). Injected so this module carries no runtime CSS-parser dependency; without it the tree is empty.
  */
+// A trailing pseudo marks a child's cardinality: `:optional`/`:opt` (0..1), `:many` (0..n), or
+// `:one-or-more`/`:more` (1..n). No marker means the child is present (required) when the component is
+// used. A pseudo, not a `/* … *\/` comment, because `@structure` lives inside a doc comment where a
+// nested comment would close it early — an unknown pseudo-class is valid selector syntax, and it's
+// stripped from the stored selector here.
+const CARDINALITY: Record<string, NonNullable<StructureNode["cardinality"]>> = {
+  optional: "optional",
+  opt: "optional",
+  many: "many",
+  "one-or-more": "one-or-more",
+  more: "one-or-more",
+};
+const CARD_RE = /:(optional|opt|one-or-more|more|many)\s*$/u;
+
 export function parseStructure(raw: string, parse?: CssParse): StructureNode[] {
   if (!parse) return []; // no parser injected → no tree (the grammar module stays parser-free)
-  const build = (nodes: readonly ChildNode[]): StructureNode[] =>
-    nodes
-      .filter((n): n is Rule => n.type === "rule")
-      .map((rule) => ({ selector: rule.selector.trim(), children: build(rule.nodes ?? []) }));
+  const build = (nodes: readonly ChildNode[]): StructureNode[] => {
+    const out: StructureNode[] = [];
+    for (const rule of nodes) {
+      if (rule.type !== "rule") continue;
+      const selector = rule.selector.trim();
+      const card = selector.match(CARD_RE);
+      const node: StructureNode = {
+        selector: card ? selector.slice(0, card.index).trim() : selector,
+        children: build(rule.nodes ?? []),
+      };
+      if (card) node.cardinality = CARDINALITY[card[1]];
+      out.push(node);
+    }
+    return out;
+  };
   try {
     return build(parse(raw).nodes);
   } catch {
