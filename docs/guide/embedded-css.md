@@ -181,7 +181,7 @@ Dynamic bindings are read best-effort: string and template **literals** are scan
 quoted object key like `:class="{ 'card--x': on }"`), but a computed name or an unquoted object key
 (`:class="{ cardX: on }"`) isn't. The same checks run in CI via the
 [`cssdoc/valid-class-usage`](/guide/linting) ESLint rule, which reads these dynamic bindings in JSX too
-(nested `className={{ … }}` object literals are the one form it skips — braces don't nest in its scan).
+(it skips only nested object literals inside `className={…}`, since its brace scan doesn't nest).
 
 ## Preprocessor dialects
 
