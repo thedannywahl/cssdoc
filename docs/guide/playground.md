@@ -1,6 +1,7 @@
 ---
 aside: false
 editLink: false
+title: Playground
 ---
 
 # Playground <Badge type="warning" text="beta" />
