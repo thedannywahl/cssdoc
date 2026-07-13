@@ -4,6 +4,40 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.4.0
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.3.3...v0.4.0)
+
+### 🚀 Enhancements
+
+- **spec:** Add @tokens, @usage, @compat, and @related tags ([592c714](https://github.com/thedannywahl/cssdoc/commit/592c714))
+- **core:** ⚠️  Enrich consumed tokens and add usage/compat/related/source ([1911c00](https://github.com/thedannywahl/cssdoc/commit/1911c00))
+- **markdown:** Add usage, browser-support, related, and source surfaces ([5a486c2](https://github.com/thedannywahl/cssdoc/commit/5a486c2))
+- **json:** ⚠️  Emit consumed tokens as objects; add usage/compat/related/source ([b4529fe](https://github.com/thedannywahl/cssdoc/commit/b4529fe))
+- **typedoc:** Thread resolveSource, importSnippet, and sectionOrder options ([c98240f](https://github.com/thedannywahl/cssdoc/commit/c98240f))
+
+### 🩹 Fixes
+
+- **docs:** Render consumed tokens by name in the playground ([6c933e7](https://github.com/thedannywahl/cssdoc/commit/6c933e7))
+
+### 📖 Documentation
+
+- Document the new tags and markdown emitter options ([5b1b195](https://github.com/thedannywahl/cssdoc/commit/5b1b195))
+
+### 🏡 Chore
+
+- **tmlanguage:** Regenerate injection grammar for the new tags ([f30b0a4](https://github.com/thedannywahl/cssdoc/commit/f30b0a4))
+- Update postcss and eslint versions to 8.5.17 and 10.7.0 respectively ([8184981](https://github.com/thedannywahl/cssdoc/commit/8184981))
+
+#### ⚠️ Breaking Changes
+
+- **core:** ⚠️  Enrich consumed tokens and add usage/compat/related/source ([1911c00](https://github.com/thedannywahl/cssdoc/commit/1911c00))
+- **json:** ⚠️  Emit consumed tokens as objects; add usage/compat/related/source ([b4529fe](https://github.com/thedannywahl/cssdoc/commit/b4529fe))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.3.3
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.3.2...v0.3.3)
