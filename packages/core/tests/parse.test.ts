@@ -306,16 +306,16 @@ test("@structure parses nested CSS into a tree, and toMermaid renders it", () =>
   expect(mermaid).toContain("n0 --> n1"); // tabs → list
 });
 
-test("@structure reads a trailing `:card(?|*|+)` as child cardinality (and strips it)", () => {
+test("@structure reads a trailing `:optional`/`:many`/`:one-or-more` as cardinality (and strips it)", () => {
   const tree = parseStructure(
-    ".alert {\n  slot {}\n  .close-button:card(?) {}\n  .item:card(+) {}\n  .badge:card(*) {}\n  .body {}\n}",
+    ".alert {\n  slot {}\n  .close-button:optional {}\n  .item:one-or-more {}\n  .badge:many {}\n  .body {}\n}",
     postcss.parse,
   );
   const [alert] = tree;
   const card = Object.fromEntries(alert.children.map((c) => [c.selector, c.cardinality]));
   expect(card).toEqual({
     slot: undefined, // no annotation → present when used
-    ".close-button": "optional", // the `:card(?)` marker is stripped from the stored selector
+    ".close-button": "optional", // the `:optional` pseudo is stripped from the stored selector
     ".item": "one-or-more",
     ".badge": "many",
     ".body": undefined,

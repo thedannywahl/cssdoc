@@ -125,7 +125,7 @@ test("@structure renders slot content, cardinality, and a linked Subcomponents s
       " * @structure",
       " * .alert {",
       " *   slot {}",
-      " *   .close-button:card(?) {}",
+      " *   .close-button:optional {}",
       " * }",
       " */",
       ".alert {}",
@@ -137,7 +137,7 @@ test("@structure renders slot content, cardinality, and a linked Subcomponents s
       c === "close-button" ? { name: "close-button", href: "./close-button.md" } : undefined,
   });
   expect(md).toContain("‹content›"); // the `slot` node reads as the content region
-  expect(md).toContain(".close-button (optional)"); // cardinality from `:card(?)`
+  expect(md).toContain(".close-button (optional)"); // cardinality from `:optional`
   expect(md).toContain("## Subcomponents");
   expect(md).toContain("- [close-button](./close-button.md)"); // derived + cross-linked
 });

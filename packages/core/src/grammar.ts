@@ -457,16 +457,11 @@ function splitStructureBody(raw: string): { description?: string; css: string } 
  * @param parse - The CSS parser to build the tree with (the same one `parseCssDocs` uses, or a dialect
  *   parser). Injected so this module carries no runtime CSS-parser dependency; without it the tree is empty.
  */
-/** EBNF/RELAX-NG cardinality sigils, written as a trailing `:card(?|*|+)` on a structure selector. */
-const CARDINALITY: Record<string, StructureNode["cardinality"]> = {
-  "?": "optional",
-  "*": "many",
-  "+": "one-or-more",
-};
-// A trailing `:card(?)` / `:card(*)` / `:card(+)` marks a child's cardinality. A pseudo (not a CSS
-// comment) because `@structure` lives inside a `/** … *\/` doc comment, where a nested `/* … *\/` would
-// close the doc comment early; postcss accepts the pseudo verbatim and it nests cleanly.
-const CARD_RE = /:card\(\s*([?*+])\s*\)\s*$/u;
+// A trailing `:optional` (0..1), `:many` (0..n), or `:one-or-more` (1..n) pseudo marks a child's
+// cardinality (the names match {@link StructureNode.cardinality}). A pseudo, not a `/* … *\/` comment,
+// because `@structure` lives inside a doc comment where a nested comment would close it early — an
+// unknown pseudo-class is valid selector syntax, and it's stripped from the stored selector here.
+const CARD_RE = /:(optional|many|one-or-more)\s*$/u;
 
 export function parseStructure(raw: string, parse?: CssParse): StructureNode[] {
   if (!parse) return []; // no parser injected → no tree (the grammar module stays parser-free)
@@ -480,7 +475,7 @@ export function parseStructure(raw: string, parse?: CssParse): StructureNode[] {
         selector: card ? selector.slice(0, card.index).trim() : selector,
         children: build(rule.nodes ?? []),
       };
-      if (card) node.cardinality = CARDINALITY[card[1]];
+      if (card) node.cardinality = card[1] as StructureNode["cardinality"];
       out.push(node);
     }
     return out;
