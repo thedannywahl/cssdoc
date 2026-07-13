@@ -54,6 +54,20 @@ To cover embedded CSS, widen the scan globs to your host files:
 
 See [Embedded CSS](/guide/embedded-css) for what's read from each host.
 
+A component's hover card links each custom-property `<type>` (e.g. `<color>`, `<length>`) out to its
+MDN reference page, and you can tune the card:
+
+```jsonc
+// .vscode/settings.json
+{
+  "cssdoc.hover.detail": "custom", // "compact" | "full" | "custom"
+  // custom: choose which sections show — "auto" | "on" | "off"
+  "cssdoc.hover.sections": { "examples": "off" },
+  // choose the section order (omitted keys are dropped); empty = default order
+  "cssdoc.hover.sectionOrder": ["summary", "modifiers", "parts", "customProperties"],
+}
+```
+
 ## Any LSP editor
 
 [`@cssdoc/language-server`](https://www.npmjs.com/package/@cssdoc/language-server) is editor-agnostic.

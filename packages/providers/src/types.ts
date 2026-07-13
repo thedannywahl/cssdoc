@@ -140,7 +140,7 @@ export type HoverDetail = "compact" | "full" | "custom";
 export type HoverSectionMode = "on" | "off" | "auto";
 export type HoverSections = Record<string, HoverSectionMode>;
 
-/** The card's section keys, in render order — the `custom` map is keyed by these. */
+/** The card's section keys, in default render order — the `custom` map is keyed by these. */
 export const HOVER_SECTION_KEYS = [
   "summary",
   "deprecated",
@@ -160,6 +160,16 @@ export const HOVER_SECTION_KEYS = [
   "structure",
   "examples",
 ] as const;
+
+/** One hover-card section name. */
+export type HoverSectionKey = (typeof HOVER_SECTION_KEYS)[number];
+
+/**
+ * The order sections render in the hover card, and which ones render. Defaults to
+ * {@link HOVER_SECTION_KEYS}; supply a subset/reordering to move or drop sections (unlisted sections are
+ * omitted). The fixed header (name · kind · release stage · since) always leads.
+ */
+export type HoverSectionOrder = readonly HoverSectionKey[];
 
 /** Options that tune usage checks. */
 export interface UsageOptions {

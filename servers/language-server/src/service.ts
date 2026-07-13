@@ -26,6 +26,7 @@ import {
 import {
   DEFAULT_RULE_SEVERITIES,
   type HoverDetail,
+  type HoverSectionOrder,
   type HoverSections,
   type NamingRules,
   type ResolvedNaming,
@@ -238,15 +239,22 @@ export class CssDocLanguageService {
   private hoverDetail: HoverDetail = "full";
   /** Per-section visibility for the `custom` hover detail (`cssdoc.hover.sections`). */
   private hoverSections: HoverSections = {};
+  /** Section render order for the component hover card (`cssdoc.hover.sectionOrder`). */
+  private hoverSectionOrder: HoverSectionOrder | undefined;
 
   constructor(index: CssDocIndex, severities: RuleSeverities = DEFAULT_RULE_SEVERITIES) {
     this.scopes = [{ dir: "", index, severities, naming: {} }];
   }
 
-  /** Set the component-hover detail level (`compact` | `full` | `custom`) and its per-section map. */
-  setHoverDetail(detail: HoverDetail, sections: HoverSections = {}): void {
+  /** Set the component-hover detail level (`compact` | `full` | `custom`), section map, and order. */
+  setHoverDetail(
+    detail: HoverDetail,
+    sections: HoverSections = {},
+    sectionOrder?: HoverSectionOrder,
+  ): void {
     this.hoverDetail = detail;
     this.hoverSections = sections;
+    this.hoverSectionOrder = sectionOrder;
   }
 
   /** Replace the component index (single-scope path; e.g. after the CSS files change). */
@@ -426,6 +434,7 @@ export class CssDocLanguageService {
         scope.index,
         this.hoverDetail,
         this.hoverSections,
+        this.hoverSectionOrder,
       );
       if (h) return { contents: h.contents };
     }
@@ -460,6 +469,7 @@ export class CssDocLanguageService {
         index,
         this.hoverDetail,
         this.hoverSections,
+        this.hoverSectionOrder,
       );
       if (h) return { contents: h.contents };
     }

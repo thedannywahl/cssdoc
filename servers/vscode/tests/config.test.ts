@@ -24,13 +24,21 @@ test("the document selector covers stylesheets, markup hosts, and JS/TS flavors"
 test("initializationOptions forwards the CSS paths as a fresh array + the hover config", () => {
   const input = ["dist/components.css"];
   const options = initializationOptions(input);
-  // full detail + empty per-section map by default.
-  expect(options).toEqual({ css: ["dist/components.css"], hoverDetail: "full", hoverSections: {} });
+  // full detail + empty per-section map and order by default.
+  expect(options).toEqual({
+    css: ["dist/components.css"],
+    hoverDetail: "full",
+    hoverSections: {},
+    hoverSectionOrder: [],
+  });
   expect(options.css).not.toBe(input); // copied, not the same reference
   expect(initializationOptions(input, "compact").hoverDetail).toBe("compact");
   expect(initializationOptions(input, "custom", { modifiers: "off" }).hoverSections).toEqual({
     modifiers: "off",
   });
+  expect(
+    initializationOptions(input, "full", {}, ["summary", "modifiers"]).hoverSectionOrder,
+  ).toEqual(["summary", "modifiers"]);
 });
 
 test("toGlob brace-expands multiple patterns and is undefined when empty", () => {

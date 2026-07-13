@@ -133,6 +133,33 @@
             ]
           },
           "default": {}
+        },
+        "cssdoc.hover.sectionOrder": {
+          "type": "array",
+          "markdownDescription": "The order sections appear in a component's hover card. List section keys in the order you want; any section you omit is dropped from the card. Leave empty to use the default order. The header (name, kind, release stage, since) always leads.",
+          "items": {
+            "type": "string",
+            "enum": [
+              "summary",
+              "deprecated",
+              "remarks",
+              "accessibility",
+              "modifiers",
+              "parts",
+              "shadowParts",
+              "states",
+              "customProperties",
+              "functions",
+              "slots",
+              "animations",
+              "layers",
+              "conditions",
+              "see",
+              "structure",
+              "examples"
+            ]
+          },
+          "default": []
         }
       }
     }
