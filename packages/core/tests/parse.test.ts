@@ -1,5 +1,6 @@
 import { expect, test } from "vite-plus/test";
 import { CssDocConfiguration, CssDocTagDefinition, parseCssDocs, toMermaid } from "../src/index.ts";
+import postcss from "postcss";
 import { parseDocComment, parseStructure } from "../src/grammar.ts";
 
 // A fixture mirroring the real generated output: authored @component doc comments delimit records; the
@@ -254,7 +255,10 @@ test("record-opening tags set the kind; @component defaults to component", () =>
 });
 
 test("@structure parses nested CSS into a tree, and toMermaid renders it", () => {
-  const tree = parseStructure(".tabs {\n  .list {\n    .tab {}\n  }\n  .panel {}\n}");
+  const tree = parseStructure(
+    ".tabs {\n  .list {\n    .tab {}\n  }\n  .panel {}\n}",
+    postcss.parse,
+  );
   expect(tree).toEqual([
     {
       selector: ".tabs",
@@ -289,7 +293,7 @@ test("@structure captures an optional leading description without disturbing the
 
 test("@structure keeps compound selectors verbatim and never throws on a malformed body", () => {
   // A compound node — `:has()`/`:is()`/`:not()` express relationships between parts.
-  const compound = parseStructure(".tabs {\n  .list:has(.tab) {}\n}");
+  const compound = parseStructure(".tabs {\n  .list:has(.tab) {}\n}", postcss.parse);
   expect(compound).toEqual([
     {
       selector: ".tabs",
@@ -297,7 +301,9 @@ test("@structure keeps compound selectors verbatim and never throws on a malform
     },
   ]);
   // A malformed (unclosed) body parses to an empty tree rather than throwing.
-  expect(parseStructure(".tabs {\n  .list {")).toEqual([]);
+  expect(parseStructure(".tabs {\n  .list {", postcss.parse)).toEqual([]);
+  // With no parser injected, the tree is empty (the grammar module carries no CSS-parser dependency).
+  expect(parseStructure(".tabs {\n  .panel {}\n}")).toEqual([]);
 });
 
 test("expansive prose tags surface on the entry (remarks, since, group, a11y, release stage)", () => {

@@ -22,8 +22,10 @@
     "dist"
   ],
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": "./dist/index.mjs",
+    "./lite": "./dist/lite.mjs",
     "./package.json": "./package.json"
   },
   "publishConfig": {

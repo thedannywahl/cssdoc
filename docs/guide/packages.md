@@ -20,6 +20,22 @@ links to its npm page.
 | [`@cssdoc/providers`](https://www.npmjs.com/package/@cssdoc/providers) | Host-agnostic diagnostics, completions, hover, and definitions over the index.                                                              |
 | [`@cssdoc/lint-core`](https://www.npmjs.com/package/@cssdoc/lint-core) | The author-side doc-hygiene rules, shared by the ESLint and Stylelint plugins.                                                              |
 
+### Embedding without postcss
+
+`@cssdoc/core` uses [postcss](https://postcss.org/) to parse CSS, but only `parseCssDocs` needs it. If
+you consume the model, the doc-comment grammar, the tag config, or the helpers (`toJson`, `toMermaid`)
+without parsing at runtime, import the **parse-free** entry so postcss never enters your bundle:
+
+```ts
+import { parseDocComment, toJson, CssDocConfiguration, type CssDocEntry } from "@cssdoc/core/lite";
+```
+
+`@cssdoc/core/lite` re-exports everything except `parseCssDocs`, and pulls in no CSS parser. (The main
+`@cssdoc/core` entry statically imports postcss for `parseCssDocs`, so importing from it can still bundle
+postcss even if you only use parse-free names — use `/lite` when keeping postcss out matters.) When you
+_do_ parse, use `parseCssDocs` (postcss by default) or inject any parser via `ParseOptions.parse` — e.g.
+`@cssdoc/dialects`'s `resolveParser` for SCSS/Less.
+
 ## Embedded CSS and dialects
 
 | Package                                                              | What it is                                                                                                                                         |
