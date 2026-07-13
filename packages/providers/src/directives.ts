@@ -9,6 +9,10 @@
  * - `/* cssdoc-expect-error [rules] *\/` — like disable-next-line, but a problem is *required*; if none
  *   appears, an `cssdoc-directive` diagnostic is raised (an unused expectation, like ts-expect-error).
  *
+ * Any directive may carry a trailing ` - <reason>` explaining why the rule(s) are disabled, e.g.
+ * `/* cssdoc-disable-line missing-summary - generated file, documented upstream *\/`. The reason is
+ * captured on the {@link Directive} and otherwise ignored, so it never counts as a rule name.
+ *
  * @module
  */
 import type { Diagnostic } from "./types.ts";
@@ -19,6 +23,8 @@ interface Directive {
   kind: DirectiveKind;
   /** Rule ids the directive scopes to, or `null` for every rule. */
   rules: string[] | null;
+  /** The author's justification, from a trailing ` - <reason>` on the directive, when present. */
+  reason?: string;
   /** 1-based line the comment starts / ends on. */
   startLine: number;
   endLine: number;
@@ -39,10 +45,21 @@ export function parseDirectives(source: string): Directive[] {
   const out: Directive[] = [];
   for (const m of source.matchAll(DIRECTIVE_RE)) {
     const at = m.index ?? 0;
-    const rest = m[2].trim();
+    // A ` - <reason>` suffix (space-hyphen-space) splits the justification off the rule list. Rule ids
+    // never contain a standalone ` - `, so this can't swallow one (e.g. `missing-summary` is untouched).
+    const reasonAt = m[2].search(/\s-\s/u);
+    const rulesPart = (reasonAt === -1 ? m[2] : m[2].slice(0, reasonAt)).trim();
+    const reason =
+      reasonAt === -1
+        ? undefined
+        : m[2]
+            .slice(reasonAt)
+            .replace(/^\s-\s/u, "")
+            .trim();
     out.push({
       kind: m[1] as DirectiveKind,
-      rules: rest ? rest.split(/[\s,]+/u).filter(Boolean) : null,
+      rules: rulesPart ? rulesPart.split(/[\s,]+/u).filter(Boolean) : null,
+      reason: reason || undefined,
       startLine: lineAt(source, at),
       endLine: lineAt(source, at + m[0].length - 1),
     });

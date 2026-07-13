@@ -126,3 +126,10 @@ too (a `<style>` block, a tagged template).
 With no rule names a directive covers every rule; name one or more to scope it. A
 `/* cssdoc-expect-error [rules] */` asserts a problem on the next line — if none is reported, cssdoc
 raises `cssdoc-directive` (an unused expectation, like an unused `@ts-expect-error`).
+
+Any directive can carry a trailing ` - <reason>` explaining why it's there — handy for reviews and
+future readers. The reason is free text after a space-hyphen-space; it never counts as a rule name.
+
+```css
+/* cssdoc-disable-line missing-summary - generated file, documented upstream */
+```
