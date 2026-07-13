@@ -865,6 +865,9 @@ importers:
       '@cssdoc/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@cssdoc/embedded':
+        specifier: workspace:*
+        version: link:../../packages/embedded
       '@cssdoc/index':
         specifier: workspace:*
         version: link:../../packages/index

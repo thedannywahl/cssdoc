@@ -5,7 +5,9 @@
  *   doc-comment hygiene via `@cssdoc/lint-core`.
  * - `cssdoc/valid-class-usage` (on JS/JSX and HTML) checks that the classes consumers apply — including
  *   chained modifiers like `class="btn -color-secondary"` — match the documented CSS surface, via
- *   `@cssdoc/providers`. Point it at your CSS with the `css` option.
+ *   `@cssdoc/providers`. Point it at your CSS with the `css` option. In JSX it reads dynamic bindings
+ *   best-effort (string/template literals in `className={…}`, arrays, and quoted object keys), the same
+ *   forms the editor checks.
  *
  * @example
  * ```js
@@ -35,21 +37,24 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { ModifierConventionInput } from "@cssdoc/core";
+import { scanClassUsages } from "@cssdoc/embedded";
 import { type NamingRules, type RuleName, lintCssDocs } from "@cssdoc/lint-core";
 import { type CssDocIndex, createIndex } from "@cssdoc/index";
 import { type RuleSeverity, checkClassUsage } from "@cssdoc/providers";
 import css from "@eslint/css";
 
+type Position = { line: number; column: number };
+
 interface ReportDescriptor {
   node?: unknown;
-  loc?: { line: number; column: number };
+  loc?: Position | { start: Position; end: Position };
   message: string;
 }
 
 interface RuleContext {
   options: readonly unknown[];
   cwd?: string;
-  sourceCode: { text: string };
+  sourceCode: { text: string; getLocFromIndex(index: number): Position };
   report(descriptor: ReportDescriptor): void;
 }
 
@@ -193,46 +198,58 @@ const validClassUsage: RuleModule = {
     if (!options.css?.length) return {} as Record<string, (node: never) => void>;
     const index = indexFor(options.css, context.cwd ?? process.cwd(), options.modifierConvention);
     const isAttribute = index.matcher.convention.structure === "attribute";
-    const report = (value: string, node: unknown): void => {
-      for (const message of checkClassValue(value, index)) context.report({ node, message });
-    };
+
+    // Attribute conventions (e.g. CUBE `data-variant="ghost"`): inspect JSX element attributes.
+    if (isAttribute) {
+      return {
+        JSXOpeningElement(node: never): void {
+          const attrs = (node as JsxOpeningElement).attributes ?? [];
+          const tokens = attrs
+            .filter((a) => a.name?.name === "class" || a.name?.name === "className")
+            .flatMap((a) => (jsxLiteral(a) ?? "").split(/\s+/u).filter(Boolean));
+          const base = tokens.find((t) => index.componentForClass(t));
+          if (!base) return;
+          for (const a of attrs) {
+            const name = a.name?.name;
+            const value = jsxLiteral(a);
+            if (!name || name === "class" || name === "className" || value === undefined) continue;
+            const token = `${name}="${value}"`;
+            if (!index.matcher.looksLikeUsage(token, base)) continue;
+            for (const d of checkClassUsage([{ base, tokens, token }], index)) {
+              context.report({ node: a.value ?? a, message: `[${d.rule}] ${d.message}` });
+            }
+          }
+        },
+      };
+    }
+
     return {
-      // JSX: className="…" / class="…" with a string literal (class conventions).
-      JSXAttribute(node: never): void {
-        if (isAttribute) return;
-        const attr = node as JsxAttribute;
-        const name = attr.name?.name;
-        const value = jsxLiteral(attr);
-        if ((name === "className" || name === "class") && value !== undefined) {
-          report(value, attr.value);
+      // JSX (class conventions): scan the whole source so both static `className="…"` and dynamic
+      // bindings — `:class`, `class:name`, `className={\`…\`}`, arrays, quoted object keys — are read,
+      // matching the language server (`scanClassUsages`). `Program` fires for JS/JSX, not HTML.
+      Program(): void {
+        const sc = context.sourceCode;
+        for (const site of scanClassUsages(sc.text)) {
+          const names = site.tokens.map((t) => t.token);
+          const base = names.find((t) => index.componentForClass(t));
+          for (const tok of site.tokens) {
+            if (index.matcher.usageKind(tok.token, base) === undefined) continue;
+            for (const d of checkClassUsage([{ base, tokens: names, token: tok.token }], index)) {
+              context.report({
+                loc: { start: sc.getLocFromIndex(tok.start), end: sc.getLocFromIndex(tok.end) },
+                message: `[${d.rule}] ${d.message}`,
+              });
+            }
+          }
         }
       },
-      // HTML (@html-eslint): class="…" (class conventions).
+      // HTML (@html-eslint): class="…" — static only (HTML has no dynamic bindings). Its AST root is
+      // `Document`, so the `Program` scan above never double-reports these.
       Attribute(node: never): void {
-        if (isAttribute) return;
         const attr = node as HtmlAttribute;
         if (attr.key?.value === "class" && typeof attr.value?.value === "string") {
-          report(attr.value.value, attr.value);
-        }
-      },
-      // JSX element (attribute conventions, e.g. CUBE `data-variant="ghost"`): inspect every attribute.
-      JSXOpeningElement(node: never): void {
-        if (!isAttribute) return;
-        const attrs = (node as JsxOpeningElement).attributes ?? [];
-        const tokens = attrs
-          .filter((a) => a.name?.name === "class" || a.name?.name === "className")
-          .flatMap((a) => (jsxLiteral(a) ?? "").split(/\s+/u).filter(Boolean));
-        const base = tokens.find((t) => index.componentForClass(t));
-        if (!base) return;
-        for (const a of attrs) {
-          const name = a.name?.name;
-          const value = jsxLiteral(a);
-          if (!name || name === "class" || name === "className" || value === undefined) continue;
-          const token = `${name}="${value}"`;
-          if (!index.matcher.looksLikeUsage(token, base)) continue;
-          for (const d of checkClassUsage([{ base, tokens, token }], index)) {
-            context.report({ node: a.value ?? a, message: `[${d.rule}] ${d.message}` });
-          }
+          for (const message of checkClassValue(attr.value.value, index))
+            context.report({ node: attr.value, message });
         }
       },
     };

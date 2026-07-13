@@ -179,8 +179,9 @@ and flags an undocumented modifier, part, or state (`unknown-modifier` / `unknow
 Dynamic bindings are read best-effort: string and template **literals** are scanned (a
 `:class="['card--x']"` array, a `class:card--x` toggle, a ``className={`card--x`}`` template, and a
 quoted object key like `:class="{ 'card--x': on }"`), but a computed name or an unquoted object key
-(`:class="{ cardX: on }"`) isn't. (An ESLint rule for JSX usage is a possible follow-up; today this runs
-in the editor via the language server.)
+(`:class="{ cardX: on }"`) isn't. The same checks run in CI via the
+[`cssdoc/valid-class-usage`](/guide/linting) ESLint rule, which reads these dynamic bindings in JSX too
+(nested `className={{ … }}` object literals are the one form it skips — braces don't nest in its scan).
 
 ## Preprocessor dialects
 

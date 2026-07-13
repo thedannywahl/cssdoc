@@ -38,6 +38,7 @@
   },
   "dependencies": {
     "@cssdoc/core": "workspace:*",
+    "@cssdoc/embedded": "workspace:*",
     "@cssdoc/index": "workspace:*",
     "@cssdoc/lint-core": "workspace:*",
     "@cssdoc/providers": "workspace:*"
