@@ -1,6 +1,6 @@
 {
   "name": "@cssdoc/index",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "A queryable semantic index over the @cssdoc/core model, plus a host-agnostic Usage abstraction and source spans — the shared data layer for cssdoc's linters and language server.",
   "keywords": [
     "css",

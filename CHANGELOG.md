@@ -4,6 +4,22 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.5.1
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.5.0...v0.5.1)
+
+### 🚀 Enhancements
+
+- **mermaid:** Render `@structure` as a classified, cardinality-aware flowchart ([df34e2d](https://github.com/thedannywahl/cssdoc/commit/df34e2d))
+
+### 🩹 Fixes
+
+- **providers,language-server:** Recognize cross-file @structure siblings and unmask interpolations ([73b9ec7](https://github.com/thedannywahl/cssdoc/commit/73b9ec7))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.5.0
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.4.2...v0.5.0)

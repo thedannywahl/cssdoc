@@ -1,6 +1,6 @@
 {
   "name": "@cssdoc/embedded",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Extract cssdoc-annotated CSS embedded in JS/TS tagged templates, HTML-like <style> blocks, and Markdown code fences.",
   "keywords": [
     "css",
