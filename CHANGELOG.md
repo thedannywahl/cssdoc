@@ -11,9 +11,9 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 ### 🚀 Enhancements
 
 - **spec:** Add @tokens, @usage, @compat, and @related tags ([592c714](https://github.com/thedannywahl/cssdoc/commit/592c714))
-- **core:** ⚠️  Enrich consumed tokens and add usage/compat/related/source ([1911c00](https://github.com/thedannywahl/cssdoc/commit/1911c00))
+- **core:** ⚠️ Enrich consumed tokens and add usage/compat/related/source ([1911c00](https://github.com/thedannywahl/cssdoc/commit/1911c00))
 - **markdown:** Add usage, browser-support, related, and source surfaces ([5a486c2](https://github.com/thedannywahl/cssdoc/commit/5a486c2))
-- **json:** ⚠️  Emit consumed tokens as objects; add usage/compat/related/source ([b4529fe](https://github.com/thedannywahl/cssdoc/commit/b4529fe))
+- **json:** ⚠️ Emit consumed tokens as objects; add usage/compat/related/source ([b4529fe](https://github.com/thedannywahl/cssdoc/commit/b4529fe))
 - **typedoc:** Thread resolveSource, importSnippet, and sectionOrder options ([c98240f](https://github.com/thedannywahl/cssdoc/commit/c98240f))
 
 ### 🩹 Fixes
@@ -31,8 +31,8 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 #### ⚠️ Breaking Changes
 
-- **core:** ⚠️  Enrich consumed tokens and add usage/compat/related/source ([1911c00](https://github.com/thedannywahl/cssdoc/commit/1911c00))
-- **json:** ⚠️  Emit consumed tokens as objects; add usage/compat/related/source ([b4529fe](https://github.com/thedannywahl/cssdoc/commit/b4529fe))
+- **core:** ⚠️ Enrich consumed tokens and add usage/compat/related/source ([1911c00](https://github.com/thedannywahl/cssdoc/commit/1911c00))
+- **json:** ⚠️ Emit consumed tokens as objects; add usage/compat/related/source ([b4529fe](https://github.com/thedannywahl/cssdoc/commit/b4529fe))
 
 ### ❤️ Contributors
 
