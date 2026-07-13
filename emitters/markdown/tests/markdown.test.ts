@@ -46,6 +46,75 @@ test("renderEntry uses the resolveToken hook for the Tokens consumed table", () 
   expect(md).toContain("`#fff`");
 });
 
+const RICH_CSS = `
+/**
+ * @component card
+ * @summary A surface container.
+ * @tokens --color-bg — The surface background.
+ * @tokens --color-fg-indirect — Set on the element by script.
+ * @usage Include the sheet, then apply the class.
+ * @compat Uses \`@scope\`; needs a recent browser.
+ * @compat Anchor positioning is progressively enhanced.
+ * @related button — The action inside a card.
+ */
+.card { background: var(--color-bg); color: var(--color-fg); }
+`;
+
+test("Tokens consumed gains a Description column from @tokens, and unions non-var() tokens", () => {
+  const [card] = parseCssDocs(RICH_CSS);
+  const md = renderEntry(card!, {
+    resolveToken: (name) =>
+      name === "--color-bg" ? { syntax: "<color>", value: "#fff" } : undefined,
+  });
+  expect(md).toContain("| Token | Type | Value | Description |");
+  expect(md).toContain("The surface background.");
+  // A token declared only via @tokens (never seen in var()) is still listed.
+  expect(md).toContain("`--color-fg-indirect`");
+  expect(md).toContain("Set on the element by script.");
+});
+
+test("without resolveToken, consumed tokens render as bullets with their @tokens description", () => {
+  const [card] = parseCssDocs(RICH_CSS);
+  const md = renderEntry(card!);
+  expect(md).toContain("- `--color-bg` — The surface background.");
+});
+
+test("renders Usage (with importSnippet), Browser support, and Related sections", () => {
+  const [card] = parseCssDocs(RICH_CSS);
+  const md = renderEntry(card!, {
+    importSnippet: () => `@import "cards.css";`,
+    baseHref: "./",
+  });
+  expect(md).toContain("## Usage");
+  expect(md).toContain("Include the sheet, then apply the class.");
+  expect(md).toContain('```css\n@import "cards.css";\n```');
+  expect(md).toContain("## Browser support");
+  expect(md).toContain("- Uses `@scope`; needs a recent browser.");
+  expect(md).toContain("## Related");
+  expect(md).toContain("- [button](./button.md) — The action inside a card.");
+});
+
+test("resolveSource adds a Source link to the meta line", () => {
+  const [card] = parseCssDocs(RICH_CSS, { fileName: "cards.css" });
+  const md = renderEntry(card!, {
+    resolveSource: (entry) => ({
+      href: `https://example.com/${entry.source?.file}#L${entry.source?.line}`,
+      label: `${entry.source?.file}:${entry.source?.line}`,
+    }),
+  });
+  expect(md).toContain("**Source:** [cards.css:2](https://example.com/cards.css#L2)");
+});
+
+test("sectionOrder reorders the rendered sections", () => {
+  const [card] = parseCssDocs(RICH_CSS);
+  const md = renderEntry(card!, { sectionOrder: ["related", "usage"] });
+  // Only the listed sections render, in the given order.
+  expect(md.indexOf("## Related")).toBeGreaterThan(-1);
+  expect(md.indexOf("## Related")).toBeLessThan(md.indexOf("## Usage"));
+  // A section dropped from the order does not render.
+  expect(md).not.toContain("## Browser support");
+});
+
 test("buildCssApi writes per-record pages, an index, and a compatible sidebar", () => {
   const outDir = mkdtempSync(join(tmpdir(), "cssdoc-md-"));
   const result = buildCssApi({ css: CSS, outDir, baseHref: "/api/css/" });

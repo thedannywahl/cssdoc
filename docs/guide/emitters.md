@@ -25,8 +25,12 @@ buildCssApi({
 ```
 
 Pass a `resolveToken` hook to add a Type/Value column for consumed custom properties (e.g. resolve
-`--your-*` against a design-token source). `renderEntry(entry)` / `renderIndex(entries)` return strings
-if you'd rather place the output yourself.
+`--your-*` against a design-token source); an authored `@tokens` description adds a Description column.
+Other `renderEntry` options: `resolveSource` (a `**Source:**` link from `entry.source` — set `fileName`
+on the parse to record the file), `importSnippet` (a fenced snippet in the Usage section), `baseHref`
+(the `@related` cross-link prefix), and `sectionOrder` (reorder or drop the `##` sections without a
+post-processor). `renderEntry(entry)` / `renderIndex(entries)` return strings if you'd rather place the
+output yourself.
 
 ## HTML
 

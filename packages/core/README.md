@@ -83,12 +83,16 @@ interface CssDocEntry {
     deprecated?: { canonical: string };
   }[];
   parts: { name: string; description?: string }[];
-  cssPropertiesConsumed: string[];
+  cssPropertiesConsumed: { name: string; description?: string }[];
   cssPropertiesDeclared: { name: string; syntax?: string; description?: string }[];
   examples: string[];
   demo?: string;
   deprecated?: string;
   see: string[];
+  usage?: string;
+  compat: string[];
+  related: { name: string; description?: string }[];
+  source?: { file?: string; line?: number; column?: number };
 }
 ```
 

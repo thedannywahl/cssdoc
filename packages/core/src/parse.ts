@@ -22,7 +22,9 @@ import type {
   CssModifier,
   CssPart,
   CssPropertyDeclared,
+  CssSource,
   CssState,
+  CssTokenConsumed,
   ParseOptions,
 } from "./model.ts";
 
@@ -204,6 +206,7 @@ function buildEntry(
   doc: ParsedDoc,
   nodes: ChildNode[],
   matcher: ModifierMatcher,
+  source?: CssSource,
 ): CssDocEntry {
   // Base class: an explicit @class, else a bare single-class rule — preferring the one whose name ends
   // with the record name (`.badge`, not a sibling like `.badge-wrapper` that happens to
@@ -330,6 +333,16 @@ function buildEntry(
     (a, b) => a.prop.localeCompare(b.prop) || (a.value ?? "").localeCompare(b.value ?? ""),
   );
 
+  // Consumed tokens: the AST-derived set, annotated with `@tokens` prose. Authored tokens with no
+  // matching `var()` are added too (a token may be consumed indirectly or set outside these rules).
+  const consumedTokens = new Map<string, CssTokenConsumed>();
+  for (const tokenName of acc.consumed) consumedTokens.set(tokenName, { name: tokenName });
+  for (const [tokenName, description] of doc.tokens) {
+    const existing = consumedTokens.get(tokenName);
+    if (existing) existing.description = description || existing.description;
+    else consumedTokens.set(tokenName, { name: tokenName, description: description || undefined });
+  }
+
   return {
     name,
     kind: doc.kind ?? "component",
@@ -353,7 +366,7 @@ function buildEntry(
         description: description || undefined,
       }))
       .sort(byName),
-    cssPropertiesConsumed: [...acc.consumed].sort(),
+    cssPropertiesConsumed: [...consumedTokens.values()].sort(byName),
     cssPropertiesDeclared: [...acc.declared.values()].sort(byName),
     functions: [...acc.functions.values()].sort(byName),
     animations: [...acc.animations.values()].sort(byName),
@@ -365,6 +378,10 @@ function buildEntry(
     demo: doc.demo,
     deprecated: doc.deprecated,
     see: doc.see,
+    usage: doc.usage,
+    compat: doc.compat,
+    related: doc.related,
+    ...(source ? { source } : {}),
     ...(doc.customBlocks.size > 0 ? { customBlocks: Object.fromEntries(doc.customBlocks) } : {}),
   };
 }
@@ -406,14 +423,20 @@ export function parseCssDocs(css: string, options: ParseOptions = {}): CssDocEnt
   const boundary =
     options.isRecordBoundary ?? ((text: string) => recordNameOf(text, configuration));
   const root = (options.parse ?? postcss.parse)(css);
-  const records: { name: string; doc: ParsedDoc; nodes: ChildNode[] }[] = [];
-  let current: { name: string; doc: ParsedDoc; nodes: ChildNode[] } | null = null;
+  type Record_ = { name: string; doc: ParsedDoc; nodes: ChildNode[]; source?: CssSource };
+  const records: Record_[] = [];
+  let current: Record_ | null = null;
 
   for (const node of root.nodes) {
     if (node.type === "comment" && isDocComment(node, css)) {
       const name = boundary(node.text);
       if (name) {
-        current = { name, doc: parseDocComment(node.text, configuration), nodes: [] };
+        const start = node.source?.start;
+        const source: CssSource | undefined =
+          options.fileName || start
+            ? { file: options.fileName, line: start?.line, column: start?.column }
+            : undefined;
+        current = { name, doc: parseDocComment(node.text, configuration), nodes: [], source };
         records.push(current);
         continue;
       }
@@ -421,5 +444,5 @@ export function parseCssDocs(css: string, options: ParseOptions = {}): CssDocEnt
     if (current) current.nodes.push(node);
   }
 
-  return records.map((r) => buildEntry(r.name, r.doc, r.nodes, matcher));
+  return records.map((r) => buildEntry(r.name, r.doc, r.nodes, matcher, r.source));
 }

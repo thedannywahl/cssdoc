@@ -31,5 +31,21 @@ test("exposes the groups grammars need", () => {
   expect(cssdocTagNamesByKind("inline")).toEqual(["link", "inheritDoc", "label"]);
   expect(cssdocTagNamesByArgument("modifier-name")).toEqual(["modifier"]);
   expect(cssdocTagNamesByArgument("part-name")).toEqual(["part", "csspart", "slot"]);
-  expect(cssdocTagNamesByArgument("custom-property")).toEqual(["cssproperty", "property"]);
+  expect(cssdocTagNamesByArgument("custom-property")).toEqual([
+    "cssproperty",
+    "property",
+    "tokens",
+  ]);
+});
+
+test("the new hoisted tags are registered with the expected kinds", () => {
+  const byName = (name: string) => CSSDOC_TAGS.find((t) => t.name === name);
+  expect(byName("tokens")).toMatchObject({
+    kind: "block",
+    allowMultiple: true,
+    argument: "custom-property",
+  });
+  expect(byName("usage")).toMatchObject({ kind: "block" });
+  expect(byName("compat")).toMatchObject({ kind: "block", allowMultiple: true });
+  expect(byName("related")).toMatchObject({ kind: "block", allowMultiple: true });
 });

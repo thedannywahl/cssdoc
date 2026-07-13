@@ -71,6 +71,8 @@ export const cssDocEntrySchema = {
     "conditions",
     "examples",
     "see",
+    "compat",
+    "related",
   ],
   additionalProperties: false,
   properties: {
@@ -89,7 +91,7 @@ export const cssDocEntrySchema = {
     shadowParts: { type: "array", items: named },
     states: { type: "array", items: state },
     slots: { type: "array", items: named },
-    cssPropertiesConsumed: { type: "array", items: { type: "string" } },
+    cssPropertiesConsumed: { type: "array", items: named },
     cssPropertiesDeclared: {
       type: "array",
       items: {
@@ -141,6 +143,18 @@ export const cssDocEntrySchema = {
     demo: { type: "string" },
     deprecated: { type: "string" },
     see: { type: "array", items: { type: "string" } },
+    usage: { type: "string" },
+    compat: { type: "array", items: { type: "string" } },
+    related: { type: "array", items: named },
+    source: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        file: { type: "string" },
+        line: { type: "number" },
+        column: { type: "number" },
+      },
+    },
     customBlocks: {
       type: "object",
       additionalProperties: { type: "array", items: { type: "string" } },

@@ -43,7 +43,18 @@ buildCssApi({
 });
 ```
 
-Without it, consumed tokens are listed by name only.
+Without it, consumed tokens are listed by name only. An authored `@tokens --x — <desc>` adds a
+Description column (and can document a token consumed indirectly, not just those found via `var()`).
+
+## Other `renderEntry` / `buildCssApi` options
+
+- **`resolveSource(entry)`** — return `{ href, label? }` to render a `**Source:**` link. The parser
+  records `entry.source` (line/column, plus `file` when you pass `fileName` to the parse).
+- **`importSnippet(entry)`** — return a snippet rendered as a fenced block in the "Usage" section,
+  alongside any authored `@usage` prose (e.g. the `@import` line and class-prefix convention).
+- **`baseHref`** — the link prefix for `@related` cross-links (defaults to `./`; set `""` for names only).
+- **`sectionOrder`** — reorder or drop the `##` sections (see `DEFAULT_SECTION_ORDER` / `SectionKey`),
+  so you don't need a post-processor.
 
 ## License
 

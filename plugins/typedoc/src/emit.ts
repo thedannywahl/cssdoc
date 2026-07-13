@@ -77,6 +77,9 @@ export function emitCssApi(
     configuration: options.configuration,
     resolveToken: options.resolveToken,
     resolveDemo: options.resolveDemo,
+    resolveSource: options.resolveSource,
+    importSnippet: options.importSnippet,
+    sectionOrder: options.sectionOrder,
     headingPrefix: options.headingPrefix,
   });
 
