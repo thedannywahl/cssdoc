@@ -68,6 +68,34 @@ test("structure-unknown-selector flags a @structure class that isn't a documente
   );
 });
 
+test("structure-unknown-selector accepts a sibling component as a child, still flags unknowns", () => {
+  const css = [
+    "/**",
+    " * @component alert",
+    " * @summary An alert.",
+    " * @slot — The message.",
+    " * @structure",
+    " * .alert {",
+    " *   slot {}",
+    " *   .close-button {}",
+    " *   .bogus {}",
+    " * }",
+    " */",
+    ".alert {}",
+    "/**",
+    " * @component close-button",
+    " * @summary A dismiss control.",
+    " */",
+    ".close-button {}",
+  ].join("\n");
+  const structureWarnings = lintModel(createIndex(css)).filter(
+    (d) => d.rule === "structure-unknown-selector",
+  );
+  // `.close-button` is a documented sibling component → not flagged; `slot` is ignored; `.bogus` flags.
+  expect(structureWarnings).toHaveLength(1);
+  expect(structureWarnings[0].message).toContain(".bogus");
+});
+
 test("structure-unknown-selector is order-independent, checks inner :has() targets, and honors structureIgnore", () => {
   const doc = (nodeSelector: string) => `/**
  * @component tabs
