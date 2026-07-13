@@ -101,6 +101,12 @@ export interface Diagnostic {
   span?: SourceSpan;
   /** Severity (defaults to `warning`). */
   severity: Severity;
+  /**
+   * Optional structured payload for consumers. `maskedName` is the class token as it appears in the
+   * linted (possibly projected) source, so the language server can restore an embedded `${…}`
+   * interpolation for display instead of the masked filler.
+   */
+  data?: { maskedName?: string };
 }
 
 /** What kind of thing a completion inserts. */

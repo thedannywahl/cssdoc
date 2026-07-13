@@ -115,8 +115,16 @@ export const record = {
     index: CssDocIndex,
     naming?: ResolvedNaming,
     structureIgnore: readonly string[] = [],
+    // Sibling components a structure tree may compose. Defaults to the linted index, so a single sheet
+    // (all records in one file) works as before; the language server passes the project-wide index so a
+    // component can reference a sibling defined in another file (see the prefix-derivation below).
+    siblingIndex: CssDocIndex = index,
   ): Diagnostic[] {
     const out: Diagnostic[] = [];
+    const siblingClasses = new Set(siblingIndex.records.map((r) => stripDot(r.entry.className)));
+    const siblingNames = new Set(
+      siblingIndex.records.flatMap((r) => (r.entry.kind === "component" ? [r.entry.name] : [])),
+    );
     for (const info of index.records) {
       if (!info.entry.summary?.trim()) {
         out.push(
@@ -153,7 +161,7 @@ export const record = {
         const known = new Set<string>([
           stripDot(info.entry.className),
           // Sibling components are valid children — a component tree composes other components.
-          ...index.records.map((r) => stripDot(r.entry.className)),
+          ...siblingClasses,
           ...info.entry.parts.flatMap((p) => [
             stripDot(p.name),
             ...(p.modifiers ?? []).map((m) => m.name),
@@ -163,12 +171,28 @@ export const record = {
           ...info.entry.modifiers.map((m) => m.name),
           ...info.entry.slots.map((s) => s.name),
         ]);
+        // The prefix this record's own class carries in front of its name (e.g. `instui-` in
+        // `.instui-alert`, or the masked `aaaa` when an embedded `${p}` is projected). A sibling
+        // reference wears the same prefix, so stripping it should leave a known component name — this is
+        // how `.aaaaclose-button` resolves to the `close-button` component regardless of the mask.
+        const own = stripDot(info.entry.className);
+        const prefix =
+          info.entry.name && own.endsWith(info.entry.name)
+            ? own.slice(0, own.length - info.entry.name.length)
+            : "";
+        const isSibling = (cls: string): boolean =>
+          prefix !== "" && cls.startsWith(prefix) && siblingNames.has(cls.slice(prefix.length));
         const seen = new Set<string>();
         const walk = (nodes: StructureNode[]): void => {
           for (const node of nodes) {
             for (const m of node.selector.matchAll(/\.([\w-]+)/gu)) {
               const cls = m[1];
-              if (seen.has(cls) || known.has(cls) || structureIgnore.some((g) => globMatch(g, cls)))
+              if (
+                seen.has(cls) ||
+                known.has(cls) ||
+                isSibling(cls) ||
+                structureIgnore.some((g) => globMatch(g, cls))
+              )
                 continue;
               seen.add(cls);
               out.push(
@@ -178,6 +202,9 @@ export const record = {
                   message: `@structure references ".${cls}", which isn't the component class or a documented member (add it, or list it under structureIgnore).`,
                   record: info.entry.name,
                   span: info.span,
+                  // The class as it appears in the (possibly projected) source. The language server uses
+                  // it to restore an embedded interpolation for display — e.g. `.${p}foo`, not `.aaaafoo`.
+                  data: { maskedName: cls },
                 }),
               );
             }

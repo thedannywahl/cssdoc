@@ -96,6 +96,44 @@ test("structure-unknown-selector accepts a sibling component as a child, still f
   expect(structureWarnings[0].message).toContain(".bogus");
 });
 
+test("structure-unknown-selector resolves a cross-file sibling via siblingIndex, across prefixes", () => {
+  // The linted file only knows `alert` (masked prefix `aaaa`, as an embedded `${p}` projects). The
+  // sibling `close-button` lives in another file and carries a *different* prefix (`instui-`).
+  const alert = createIndex(
+    [
+      "/**",
+      " * @component alert",
+      " * @summary An alert.",
+      " * @structure",
+      " * .aaaaalert {",
+      " *   .aaaaclose-button {}",
+      " *   .aaaabogus {}",
+      " * }",
+      " */",
+      ".aaaaalert {}",
+    ].join("\n"),
+    { modifierConvention: "rscss" },
+  );
+  const project = createIndex(
+    "/**\n * @component close-button\n * @summary A dismiss control.\n */\n.instui-close-button {}",
+    { modifierConvention: "rscss" },
+  );
+
+  // Without the project index, the per-file lint can't see the sibling → both classes flag.
+  const alone = lintModel(alert)
+    .filter((d) => d.rule === "structure-unknown-selector")
+    .map((d) => d.data?.maskedName);
+  expect(alone).toEqual(["aaaaclose-button", "aaaabogus"]);
+
+  // With it, `.aaaaclose-button` resolves (prefix `aaaa` stripped → `close-button`, a known component
+  // name); `.aaaabogus` still flags and carries the masked class for the editor to restore.
+  const withProject = lintModel(alert, undefined, undefined, undefined, project).filter(
+    (d) => d.rule === "structure-unknown-selector",
+  );
+  expect(withProject).toHaveLength(1);
+  expect(withProject[0].data?.maskedName).toBe("aaaabogus");
+});
+
 test("structure-unknown-selector is order-independent, checks inner :has() targets, and honors structureIgnore", () => {
   const doc = (nodeSelector: string) => `/**
  * @component tabs

@@ -86,10 +86,13 @@ export function lintModel(
   severities: RuleSeverities = DEFAULT_RULE_SEVERITIES,
   naming?: ResolvedNaming,
   structureIgnore?: readonly string[],
+  // The project-wide index, when linting one file of a multi-file set: lets `@structure` reference a
+  // sibling component defined elsewhere. Defaults (in `record.model`) to `index` — single-sheet linting.
+  siblingIndex?: CssDocIndex,
 ): Diagnostic[] {
   return applySeverities(
     [
-      ...record.model(index, naming, structureIgnore),
+      ...record.model(index, naming, structureIgnore, siblingIndex),
       ...modifier.model(index),
       ...part.model(index, naming),
       ...cssPart.model(index),

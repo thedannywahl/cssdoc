@@ -189,6 +189,40 @@ const Button = styled.button\`
   expect(diags.some((d) => d.code === "missing-summary")).toBe(true);
 });
 
+test("structure diagnostics resolve a cross-file sibling and restore masked ${…} for display", () => {
+  // The workspace scope knows the `close-button` sibling (any prefix — here `instui-`).
+  const svc = new CssDocLanguageService(
+    createIndex(
+      "/**\n * @component close-button\n * @summary A dismiss control.\n */\n.instui-close-button {}",
+      { modifierConvention: "rscss" },
+    ),
+  );
+  // alert.ts: the doc comment (and its `@structure`) lives inside the `css` template, so `${p}` is a
+  // real interpolation that projects to the masked filler.
+  const ts = [
+    "export const alert = css`",
+    "/**",
+    " * @component alert",
+    " * @summary An alert.",
+    " * @structure",
+    " * .${p}alert {",
+    " *   .${p}close-button {}",
+    " *   .${p}bogus {}",
+    " * }",
+    " */",
+    ".${p}alert {}",
+    "`;",
+  ].join("\n");
+  const structure = svc
+    .diagnostics(ts, "typescript", "alert.ts")
+    .filter((d) => d.code === "structure-unknown-selector");
+  // `.${p}close-button` resolves to the sibling; only `.${p}bogus` is unknown.
+  expect(structure).toHaveLength(1);
+  // Its message shows the source interpolation, not the masked projection (`.aaaabogus`).
+  expect(structure[0].message).toContain(".${p}bogus");
+  expect(structure[0].message).not.toContain("aaaa");
+});
+
 test("diagnostics parse a .scss document through the SCSS dialect", () => {
   const scss = `$brand: #06c;
 // a scss line comment
