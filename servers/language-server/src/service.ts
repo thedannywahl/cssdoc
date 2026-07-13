@@ -125,6 +125,26 @@ function rangeOf(text: string, start: number, end: number): LspRange {
   return { start: positionAt(text, start), end: positionAt(text, end) };
 }
 
+/**
+ * Restore a masked interpolation in a diagnostic message. `projected` is the CSS the linter saw
+ * (interpolations blanked to filler); `source` is the original document. Since the projection is
+ * character-for-character with the source, the token at `projected.indexOf(maskedName)` occupies the
+ * same offsets in `source`, where it still reads `${…}`. No-op when there's nothing masked (direct CSS,
+ * or the token isn't found).
+ */
+function unmask(
+  message: string,
+  maskedName: string | undefined,
+  projected: string,
+  source: string,
+): string {
+  if (!maskedName || source === projected) return message;
+  const at = projected.indexOf(maskedName);
+  if (at < 0) return message;
+  const original = source.slice(at, at + maskedName.length);
+  return original === maskedName ? message : message.split(maskedName).join(original);
+}
+
 /** Convert a 1-based PostCSS {@link SourceSpan} to a 0-based LSP range. */
 function spanToRange(span: SourceSpan): LspRange {
   return {
@@ -582,7 +602,8 @@ export class CssDocLanguageService {
     const host = detectEmbeddedHost(path) ?? hostForLanguageId(languageId);
     if (host) {
       const parse = resolveParser(projectionDialect(text, { host }));
-      out.push(...this.cssDiagnostics(projectCss(text, { host }), path, parse));
+      // Pass the original text as `source` so masked interpolations are restored in messages.
+      out.push(...this.cssDiagnostics(projectCss(text, { host }), path, parse, text));
     }
     // Consumer usage: check against every scope's index — the workspace scopes plus the document's own
     // embedded components (see `scopesFor`) — deduping identical diagnostics from any overlap.
@@ -664,14 +685,26 @@ export class CssDocLanguageService {
     return results;
   }
 
-  /** Lint an open stylesheet against its governing scope: doc hygiene + registered-property checks. */
-  private cssDiagnostics(text: string, path?: string, parse?: CssParse): LspDiagnostic[] {
+  /**
+   * Lint an open stylesheet against its governing scope: doc hygiene + registered-property checks.
+   * `source` is the original document text; it differs from `text` only for embedded hosts, where `text`
+   * is the CSS projection (interpolations masked). The projection is character-for-character with the
+   * source, so a diagnostic's `maskedName` — the masked class token — can be restored for display by
+   * slicing `source` at the token's offset (found in `text`).
+   */
+  private cssDiagnostics(
+    text: string,
+    path?: string,
+    parse?: CssParse,
+    source: string = text,
+  ): LspDiagnostic[] {
     const scope = this.scopeForPath(path);
     const index = createIndex(text, { configuration: scope.configuration, parse });
     const { assignments, usages } = cssValueSites(text, { parse });
     const diags = applyDirectives(
       [
-        ...lintModel(index, scope.severities, scope.naming, scope.structureIgnore),
+        // Pass the project-wide index so `@structure` can reference sibling components from other files.
+        ...lintModel(index, scope.severities, scope.naming, scope.structureIgnore, scope.index),
         ...checkPropertyAssignments(assignments, index, scope.severities),
         ...checkPropertyUsage(usages, index, {}, scope.severities),
       ],
@@ -682,7 +715,7 @@ export class CssDocLanguageService {
       if (!d.span) continue;
       out.push({
         range: spanToRange(d.span),
-        message: d.message,
+        message: unmask(d.message, d.data?.maskedName, text, source),
         severity: d.severity === "error" ? 1 : 2,
         code: d.rule,
       });
