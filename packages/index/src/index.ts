@@ -213,19 +213,23 @@ export class CssDocIndex {
     return this.byName.get(name)?.entry.structure;
   }
 
-  /** Whether `modifier` (a class token or attribute expression) is a documented modifier of `base`. */
+  /** Whether `modifier` (a class token or attribute expression) is a documented modifier of `base` —
+   * an exact match, or an instance of a documented `*` family (`-icon-arrow` → `-icon-*`). */
   isModifier(base: string, modifier: string): boolean {
     const wanted = this.matcher.normalizeMember(modifier);
     return (
-      this.byClass.get(stripDot(base))?.entry.modifiers.some((m) => m.name === wanted) ?? false
+      this.byClass
+        .get(stripDot(base))
+        ?.entry.modifiers.some((m) => this.matcher.matchesModifier(m.name, wanted)) ?? false
     );
   }
 
-  /** The deprecation of a modifier on `base`, if it is deprecated. */
+  /** The deprecation of a modifier on `base`, if it is deprecated (including via a `*` family). */
   deprecationOf(base: string, modifier: string): { canonical?: string; note?: string } | undefined {
     const wanted = this.matcher.normalizeMember(modifier);
-    return this.byClass.get(stripDot(base))?.entry.modifiers.find((m) => m.name === wanted)
-      ?.deprecated;
+    return this.byClass
+      .get(stripDot(base))
+      ?.entry.modifiers.find((m) => this.matcher.matchesModifier(m.name, wanted))?.deprecated;
   }
 
   /** Every declared custom property, paired with the record that declares it (for `var(...)` completion). */

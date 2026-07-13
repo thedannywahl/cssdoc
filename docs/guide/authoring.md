@@ -70,11 +70,13 @@ The `@tokens` tag annotates the auto-derived "Tokens consumed" list: cssdoc alre
 no matching `var()` is added to the list too). Emitters resolve each token's type and value separately —
 see the markdown emitter's `resolveToken` hook.
 
-To document a **family** of modifiers or parts, use a `*` wildcard in the name — `@modifier -icon-* —
-<desc>` (`*` matches any run of `[\w-]`). `name-not-in-css` treats it as a family: it's satisfied by a
-literal instance (`.base.-icon-foo`) or a `class` attribute selector that targets the family — with the
-operator's real semantics, so `[class*="-icon-"]` (contains), `[class$="-icon"]` (suffix), and
-`[class~="-icon-foo"]` (exact) all count, while `[class^="…"]` does not (it anchors to the base class).
+To document a **family** of modifiers, use a `*` wildcard in the name — `@modifier -icon-* — <desc>`
+(`*` matches any run of `[\w-]`). A family is a first-class modifier: it shows in the model and hover, a
+concrete usage (`-icon-arrow`) resolves to it (so it isn't flagged unknown), and `name-not-in-css`
+accepts it. cssdoc also **derives** a family straight from a `class` attribute selector on the base — a
+`.base[class*="-icon-"]` painter yields the `-icon-*` family even before you author it, using the
+operator's real semantics: `[class*="…"]` (contains) and `[class~="…"]`/`[class$="…"]` (exact word /
+suffix) count, while `[class^="…"]` does not (it anchors to the base class, not a chained modifier).
 
 ## Modifier (flag) tags
 
