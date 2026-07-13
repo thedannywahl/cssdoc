@@ -4,6 +4,40 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.5.0
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.4.2...v0.5.0)
+
+### 🚀 Enhancements
+
+- **docs:** Add social card and Open Graph/Twitter meta for link unfurling ([9919257](https://github.com/thedannywahl/cssdoc/commit/9919257))
+- **docs:** Flesh out meta tags — longer description, Twitter, JSON-LD ([7bf4dcd](https://github.com/thedannywahl/cssdoc/commit/7bf4dcd))
+- **core:** Add parse-free @cssdoc/core/lite entry (no postcss) ([321c388](https://github.com/thedannywahl/cssdoc/commit/321c388))
+- **providers:** Make name-not-in-css attribute-aware; add * wildcards, exempt deprecated ([70f43cf](https://github.com/thedannywahl/cssdoc/commit/70f43cf))
+- **core:** Derive `*` family modifiers from [class*=…] selectors ([1ec0cb3](https://github.com/thedannywahl/cssdoc/commit/1ec0cb3))
+- **index:** Resolve concrete usages to `*` family modifiers ([b94b0ec](https://github.com/thedannywahl/cssdoc/commit/b94b0ec))
+- **config,markdown,plugins:** Drive docs render + lint from cssdoc.json ([e4e2183](https://github.com/thedannywahl/cssdoc/commit/e4e2183))
+- **core:** @structure cardinality (:card) and slot content nodes ([333bb2e](https://github.com/thedannywahl/cssdoc/commit/333bb2e))
+- **providers:** Accept sibling components as @structure children ([e28ba80](https://github.com/thedannywahl/cssdoc/commit/e28ba80))
+- **markdown:** Render @structure content, cardinality, and a Subcomponents list ([0a4b47a](https://github.com/thedannywahl/cssdoc/commit/0a4b47a))
+- **structure:** Add `:opt` and `:more` cardinality shorthands ([ba37525](https://github.com/thedannywahl/cssdoc/commit/ba37525))
+
+### 🩹 Fixes
+
+- **docs:** Add image to Schema.org JSON-LD ([20b2ec5](https://github.com/thedannywahl/cssdoc/commit/20b2ec5))
+
+### 💅 Refactors
+
+- **structure:** Use word pseudos for cardinality (:optional/:many/:one-or-more) ([b078c4e](https://github.com/thedannywahl/cssdoc/commit/b078c4e))
+
+### 📖 Documentation
+
+- **spec:** Document * wildcard families and name-not-in-css matching ([7a65b74](https://github.com/thedannywahl/cssdoc/commit/7a65b74))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.4.2
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.4.1...v0.4.2)

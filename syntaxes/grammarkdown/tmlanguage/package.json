@@ -1,6 +1,6 @@
 {
   "name": "@cssdoc/grammarkdown-tmlanguage",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "description": "A TextMate grammar for grammarkdown (the ECMAScript-style grammar notation), shipped as a Shiki language.",
   "keywords": [
     "grammar",
