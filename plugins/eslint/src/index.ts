@@ -35,7 +35,8 @@
  * @module @cssdoc/eslint-plugin
  */
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { CssDocConfigFile } from "@cssdoc/config";
 import type { ModifierConventionInput } from "@cssdoc/core";
 import { scanClassUsages } from "@cssdoc/embedded";
 import { type NamingRules, type RuleName, lintCssDocs } from "@cssdoc/lint-core";
@@ -54,9 +55,21 @@ interface ReportDescriptor {
 interface RuleContext {
   options: readonly unknown[];
   cwd?: string;
+  filename?: string;
   sourceCode: { text: string; getLocFromIndex(index: number): Position };
   report(descriptor: ReportDescriptor): void;
 }
+
+/** Cache loaded `cssdoc.json` per start folder — reused across every linted stylesheet. */
+const docConfigCache = new Map<string, CssDocConfigFile>();
+const loadDocConfig = (folder: string): CssDocConfigFile => {
+  let cached = docConfigCache.get(folder);
+  if (!cached) {
+    cached = CssDocConfigFile.loadForFolder(folder);
+    docConfigCache.set(folder, cached);
+  }
+  return cached;
+};
 
 interface RuleModule {
   meta: {
@@ -101,13 +114,17 @@ const validDocComments: RuleModule = {
   },
   create(context) {
     const options = (context.options[0] ?? {}) as DocCommentsOptions;
+    // Load the nearest `cssdoc.json` (from the linted file's folder) as the config base; inline options
+    // override it. `toConfiguration()` also carries custom tags to the parser.
+    const configFile = loadDocConfig(dirname(context.filename ?? context.cwd ?? process.cwd()));
     return {
       StyleSheet(): void {
         const violations = lintCssDocs(context.sourceCode.text, {
-          rules: options.rules,
-          modifierConvention: options.modifierConvention,
-          naming: options.naming,
-          structureIgnore: options.structureIgnore,
+          configuration: configFile.toConfiguration(),
+          rules: { ...configFile.ruleSeverities, ...options.rules } as DocCommentsOptions["rules"],
+          modifierConvention: options.modifierConvention ?? configFile.modifierConvention,
+          naming: { ...configFile.naming, ...options.naming } as NamingRules,
+          structureIgnore: options.structureIgnore ?? configFile.structureIgnore,
         });
         for (const violation of violations) {
           context.report({

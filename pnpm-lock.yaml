@@ -865,6 +865,9 @@ importers:
 
   plugins/eslint:
     dependencies:
+      '@cssdoc/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@cssdoc/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -908,6 +911,9 @@ importers:
 
   plugins/stylelint:
     dependencies:
+      '@cssdoc/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@cssdoc/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -942,6 +948,9 @@ importers:
 
   plugins/typedoc:
     dependencies:
+      '@cssdoc/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@cssdoc/core':
         specifier: workspace:*
         version: link:../../packages/core

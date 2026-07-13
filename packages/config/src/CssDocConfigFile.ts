@@ -25,6 +25,17 @@ export interface NamingOverride {
   part?: string;
 }
 
+/**
+ * The `render` block: markdown render options for the CSS API pages, as spelled in `cssdoc.json`.
+ * `sectionOrder` items are the emitter's section keys (typed loosely here to keep `@cssdoc/config`
+ * independent of `@cssdoc/markdown`; the emitter validates/uses them).
+ */
+export interface RenderConfig {
+  sectionOrder?: readonly string[];
+  headingPrefix?: string;
+  baseHref?: string;
+}
+
 interface RawTagDefinition {
   tagName: string;
   syntaxKind: CssDocSyntaxKind;
@@ -43,6 +54,7 @@ interface RawConfig {
   rules?: Record<string, RuleSeverityOverride>;
   naming?: NamingOverride;
   structureIgnore?: string[];
+  render?: RenderConfig;
 }
 
 const ajv = new Ajv({ allErrors: true });
@@ -69,6 +81,7 @@ interface ConfigFileInit {
   rules: Record<string, RuleSeverityOverride>;
   naming: NamingOverride;
   structureIgnore: string[];
+  render: RenderConfig;
 }
 
 /** A loaded `cssdoc.json` (plus the files it `extends`), ready to configure a parser. */
@@ -104,6 +117,12 @@ export class CssDocConfigFile {
    * chain. Pass to `lintModel` in `@cssdoc/providers`.
    */
   readonly structureIgnore: readonly string[];
+  /**
+   * Markdown render options (`sectionOrder`/`headingPrefix`/`baseHref`), merged across the `extends`
+   * chain (this file wins). The emitter (`@cssdoc/markdown`/`@cssdoc/typedoc`) reads these as defaults;
+   * explicit emitter options still override. Not part of the parser `CssDocConfiguration`.
+   */
+  readonly render: Readonly<RenderConfig>;
 
   private constructor(init: ConfigFileInit) {
     this.filePath = init.filePath;
@@ -116,17 +135,21 @@ export class CssDocConfigFile {
     this.modifierConvention = init.modifierConvention;
     const severities: Record<string, RuleSeverityOverride> = {};
     const naming: NamingOverride = {};
+    const render: RenderConfig = {};
     const structureIgnore = new Set<string>();
     for (const extended of init.extendsFiles) {
       Object.assign(severities, extended.ruleSeverities);
       Object.assign(naming, extended.naming);
+      Object.assign(render, extended.render);
       for (const g of extended.structureIgnore) structureIgnore.add(g);
     }
     Object.assign(severities, init.rules);
     Object.assign(naming, init.naming);
+    Object.assign(render, init.render);
     for (const g of init.structureIgnore) structureIgnore.add(g);
     this.ruleSeverities = severities;
     this.naming = naming;
+    this.render = render;
     this.structureIgnore = [...structureIgnore];
   }
 
@@ -215,6 +238,7 @@ export class CssDocConfigFile {
       rules: {},
       naming: {},
       structureIgnore: [],
+      render: {},
     });
   }
 
@@ -232,6 +256,7 @@ export class CssDocConfigFile {
         rules: {},
         naming: {},
         structureIgnore: [],
+        render: {},
       });
 
     if (visited.has(filePath)) {
@@ -298,6 +323,7 @@ export class CssDocConfigFile {
       rules: raw.rules ?? {},
       naming: raw.naming ?? {},
       structureIgnore: raw.structureIgnore ?? [],
+      render: raw.render ?? {},
     });
   }
 }

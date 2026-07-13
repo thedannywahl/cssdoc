@@ -14,11 +14,24 @@
  *
  * @module @cssdoc/stylelint-plugin
  */
+import { dirname } from "node:path";
+import { CssDocConfigFile } from "@cssdoc/config";
 import type { ModifierConventionInput } from "@cssdoc/core";
 import { type NamingRules, type RuleName, type RuleSeverity, lintCssDocs } from "@cssdoc/lint-core";
 import stylelint, { type Rule } from "stylelint";
 
 const { createPlugin, utils } = stylelint;
+
+/** Cache loaded `cssdoc.json` per start folder — the same file is reused across every linted stylesheet. */
+const configCache = new Map<string, CssDocConfigFile>();
+const loadConfig = (folder: string): CssDocConfigFile => {
+  let cached = configCache.get(folder);
+  if (!cached) {
+    cached = CssDocConfigFile.loadForFolder(folder);
+    configCache.set(folder, cached);
+  }
+  return cached;
+};
 
 /** The rule name; enable it as `"cssdoc/valid-doc-comments": true` (optionally with rule toggles). */
 export const ruleName = "cssdoc/valid-doc-comments";
@@ -51,12 +64,18 @@ const rule: Rule<boolean, SecondaryOptions> = (primary, secondaryOptions) => (ro
         rules: [(value) => typeof value === "object"],
         modifierConvention: [(value) => typeof value === "string" || typeof value === "object"],
         naming: [(value) => typeof value === "object"],
-        structureIgnore: [(value) => Array.isArray(value)],
+        // stylelint validates array options per element, so this must test the item type, not array-ness.
+        structureIgnore: [(value) => typeof value === "string"],
       },
       optional: true,
     },
   );
   if (!valid || !primary) return;
+
+  // Load the nearest `cssdoc.json` (from the linted file's folder) as the config base; inline secondary
+  // options override it. `toConfiguration()` carries custom tags to the parser too.
+  const file = root.source?.input?.file;
+  const configFile = loadConfig(file ? dirname(file) : process.cwd());
 
   // A custom syntax (postcss-html, postcss-styled-syntax, postcss-lit) hands the rule one clean-CSS
   // Root per embedded block, so `root.toString()` is the extracted stylesheet — doc comments inside a
@@ -64,10 +83,14 @@ const rule: Rule<boolean, SecondaryOptions> = (primary, secondaryOptions) => (ro
   // `const X = styled…` lives in code the custom syntax discards; use @cssdoc/embedded for that.)
   const css = root.toString();
   const violations = lintCssDocs(css, {
-    rules: secondaryOptions?.rules,
-    modifierConvention: secondaryOptions?.modifierConvention,
-    naming: secondaryOptions?.naming,
-    structureIgnore: secondaryOptions?.structureIgnore,
+    configuration: configFile.toConfiguration(),
+    rules: {
+      ...configFile.ruleSeverities,
+      ...secondaryOptions?.rules,
+    } as SecondaryOptions["rules"],
+    modifierConvention: secondaryOptions?.modifierConvention ?? configFile.modifierConvention,
+    naming: { ...configFile.naming, ...secondaryOptions?.naming } as NamingRules,
+    structureIgnore: secondaryOptions?.structureIgnore ?? configFile.structureIgnore,
   });
   for (const violation of violations) {
     utils.report({

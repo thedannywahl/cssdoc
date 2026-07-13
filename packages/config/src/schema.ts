@@ -11,7 +11,7 @@ export const cssDocSchema = {
   $schema: "http://json-schema.org/draft-07/schema#",
   $id: "https://cssdoc.dev/cssdoc.schema.json",
   title: "cssdoc.json",
-  description: "Configuration for @cssdoc/core: custom tags and inherited configs.",
+  description: "Configuration for cssdoc: custom tags, lint rules, and markdown render options.",
   type: "object",
   additionalProperties: false,
   properties: {
@@ -109,6 +109,50 @@ export const cssDocSchema = {
         "Class names to exempt from the structure-unknown-selector rule — legitimately-external classes (utilities, cross-component refs) referenced in @structure. Literal names or simple globs where * matches any run of characters (e.g. util-*).",
       type: "array",
       items: { type: "string" },
+    },
+    render: {
+      description:
+        "Markdown render options for the CSS API pages (used by @cssdoc/markdown and @cssdoc/typedoc). Explicit emitter options still override these.",
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        sectionOrder: {
+          description:
+            "Order (and inclusion) of the reorderable ## sections on a record page; omitted keys are dropped.",
+          type: "array",
+          items: {
+            enum: [
+              "demo",
+              "examples",
+              "usage",
+              "modifiers",
+              "parts",
+              "shadowParts",
+              "states",
+              "slots",
+              "structure",
+              "cssProperties",
+              "functions",
+              "animations",
+              "layers",
+              "conditions",
+              "tokensConsumed",
+              "compat",
+              "accessibility",
+              "related",
+              "see",
+            ],
+          },
+        },
+        headingPrefix: {
+          description: 'Prefix for each record page title, e.g. "CSS:".',
+          type: "string",
+        },
+        baseHref: {
+          description: "Base href for @related cross-links and the sidebar/index links.",
+          type: "string",
+        },
+      },
     },
   },
 } as const;

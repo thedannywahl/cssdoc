@@ -7,10 +7,12 @@
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import type { CssDocConfigFile } from "@cssdoc/config";
 import type { CssDocConfiguration } from "@cssdoc/core";
 import {
   type BuildCssApiResult,
   type RenderEntryOptions,
+  type SectionKey,
   type SidebarItem,
   buildCssApi,
   buildSidebar,
@@ -33,6 +35,12 @@ export interface EmitCssApiOptions extends RenderEntryOptions {
   baseHref?: string;
   /** The tag configuration to parse with. */
   configuration?: CssDocConfiguration;
+  /**
+   * A loaded `cssdoc.json` (from `@cssdoc/config`). When given, it supplies the parse `configuration`
+   * (unless one is passed explicitly) and the render defaults `sectionOrder`/`headingPrefix`/`baseHref`
+   * from its `render` block. Any explicit option above still overrides the config file.
+   */
+  configFile?: CssDocConfigFile;
   /** Base directory the `css` paths are resolved against (default `process.cwd()`). */
   cwd?: string;
 }
@@ -64,9 +72,16 @@ export function mergeCssSidebar(
 export function emitCssApi(
   options: EmitCssApiOptions,
 ): BuildCssApiResult & { sidebarMerged: boolean } {
+  // Render defaults come from the `cssdoc.json` `render` block when a `configFile` is supplied; any
+  // explicit option passed here wins over it. The parse `configuration` likewise falls back to the file.
+  const render = options.configFile?.render;
   const outSubdir = options.outSubdir ?? "css";
   const label = options.label ?? "CSS";
-  const baseHref = options.baseHref ?? `${outSubdir}/`;
+  const baseHref = options.baseHref ?? render?.baseHref ?? `${outSubdir}/`;
+  const configuration = options.configuration ?? options.configFile?.toConfiguration();
+  const sectionOrder =
+    options.sectionOrder ?? (render?.sectionOrder as readonly SectionKey[] | undefined);
+  const headingPrefix = options.headingPrefix ?? render?.headingPrefix;
   const cwd = options.cwd ?? process.cwd();
 
   const css = options.css.map((file) => readFileSync(resolve(cwd, file), "utf8"));
@@ -74,13 +89,13 @@ export function emitCssApi(
     css,
     outDir: join(options.outputDirectory, outSubdir),
     baseHref,
-    configuration: options.configuration,
+    configuration,
     resolveToken: options.resolveToken,
     resolveDemo: options.resolveDemo,
     resolveSource: options.resolveSource,
     importSnippet: options.importSnippet,
-    sectionOrder: options.sectionOrder,
-    headingPrefix: options.headingPrefix,
+    sectionOrder,
+    headingPrefix,
   });
 
   const sidebarPath = join(options.outputDirectory, TYPEDOC_SIDEBAR_FILE);
