@@ -87,6 +87,12 @@ ChainedModifierName ::
     `-` Prop
     `-` Prop `-` Value
 
+// A `*` wildcard marks a modifier/part *family*, standing in for the varying segment — e.g. `-icon-*`.
+// A documented name may contain one; `name-not-in-css` then treats it as a family, satisfied by a literal
+// instance (`.-icon-foo`) or a `class` attribute selector (`[class*="-icon-"]`, `[class$=…]`, `[class~=…]`).
+WildcardSegment ::
+    `*`
+
 // The attribute form: an attribute selector on the base, e.g. `.base[name="value"]`.
 AttributeModifier ::
     `[` AttributeName `]`

@@ -70,6 +70,12 @@ The `@tokens` tag annotates the auto-derived "Tokens consumed" list: cssdoc alre
 no matching `var()` is added to the list too). Emitters resolve each token's type and value separately —
 see the markdown emitter's `resolveToken` hook.
 
+To document a **family** of modifiers or parts, use a `*` wildcard in the name — `@modifier -icon-* —
+<desc>` (`*` matches any run of `[\w-]`). `name-not-in-css` treats it as a family: it's satisfied by a
+literal instance (`.base.-icon-foo`) or a `class` attribute selector that targets the family — with the
+operator's real semantics, so `[class*="-icon-"]` (contains), `[class$="-icon"]` (suffix), and
+`[class~="-icon-foo"]` (exact) all count, while `[class^="…"]` does not (it anchors to the base class).
+
 ## Modifier (flag) tags
 
 Presence sets the record's release stage: `@alpha`, `@beta`, `@experimental`, `@internal`, `@public`.

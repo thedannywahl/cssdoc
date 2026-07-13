@@ -29,6 +29,13 @@ It reports the hygiene rules — `missing-summary`, `undocumented-modifier`, `un
 `deprecated-requires-canonical`, and `name-not-in-css` (a documented modifier/part that no selector
 defines — drift) — plus the registered-property value rules below.
 
+`name-not-in-css` has two deliberate allowances: a modifier documented as a deprecated alias
+(`@modifier -x — @deprecated {@link -y}`) is a legacy name that's intentionally gone from the CSS and is
+exempt, and a **`*` wildcard** name (`@modifier -icon-*`) documents a family — satisfied by a literal
+instance (`.-icon-foo`) or a `class` attribute selector interpreted with its real operator semantics
+(`[class*="-icon-"]` contains, `[class$="…"]` suffix, `[class~="…"]` exact word; `[class^="…"]` does not
+count, since it anchors to the base class, not a chained modifier).
+
 ## ESLint — doc hygiene and class usage
 
 [`@cssdoc/eslint-plugin`](https://www.npmjs.com/package/@cssdoc/eslint-plugin) offers two rules:
