@@ -16,16 +16,26 @@ import {
   type RecordInfo,
   memberKey,
 } from "@cssdoc/index";
+import { linkSyntax } from "./mdn.ts";
 import { matchesSyntax } from "./syntax.ts";
+import { HOVER_SECTION_KEYS } from "./types.ts";
 import type {
   Completion,
   Diagnostic,
   Hover,
   HoverDetail,
+  HoverSectionKey,
+  HoverSectionOrder,
   HoverSections,
   ResolvedNaming,
   UsageOptions,
 } from "./types.ts";
+
+/** Render a `@property` syntax descriptor with each `<type>` linked to its MDN reference page. */
+const linkedSyntax = (syntax: string): string => {
+  const linked = linkSyntax(syntax, (type, url) => `[\`<${type}>\`](${url})`);
+  return linked === syntax ? `\`${syntax}\`` : linked; // no `<type>` to link → plain code span
+};
 
 const stripDot = (name: string): string => name.replace(/^\./u, "");
 const warn = (d: Omit<Diagnostic, "severity">): Diagnostic => ({ ...d, severity: "warning" });
@@ -150,6 +160,7 @@ export const record = {
     index: CssDocIndex,
     detail: HoverDetail = "full",
     sections?: HoverSections,
+    sectionOrder?: HoverSectionOrder,
   ): Hover | undefined {
     const entry = index.componentForClass(base);
     if (!entry) return undefined;
@@ -198,24 +209,27 @@ export const record = {
       if (mode === "off") return "skip";
       return has ? "content" : mode === "on" ? "empty" : "skip";
     };
-    const prose = (key: string, prefix: string, text?: string): void => {
+    // Each section builds into its own fragment, keyed by section name; the emit loop at the end appends
+    // them in `sectionOrder` (default {@link HOVER_SECTION_KEYS}), so users can reorder or drop sections.
+    const fragments = {} as Record<HoverSectionKey, string[]>;
+    const prose = (key: HoverSectionKey, prefix: string, text?: string): void => {
       const w = want(key, Boolean(text?.trim()));
-      if (w !== "skip") lines.push("", `${prefix}${w === "content" ? text : "_—_"}`);
+      if (w !== "skip") fragments[key] = ["", `${prefix}${w === "content" ? text : "_—_"}`];
     };
-    const list = (key: string, icon: string, label: string, rows: string[]): void => {
+    const list = (key: HoverSectionKey, icon: string, label: string, rows: string[]): void => {
       const w = want(key, rows.length > 0);
       if (w !== "skip")
-        lines.push("", `**$(${icon}) ${label}**`, ...(w === "content" ? rows : ["_—_"]));
+        fragments[key] = ["", `**$(${icon}) ${label}**`, ...(w === "content" ? rows : ["_—_"])];
     };
 
     prose("summary", "", entry.summary);
     {
       const w = want("deprecated", Boolean(entry.deprecated));
       if (w !== "skip")
-        lines.push(
+        fragments.deprecated = [
           "",
           w === "content" ? (deprecatedLine as string) : `$(warning) ${warnHtml("Deprecated")}`,
-        );
+        ];
     }
     prose("remarks", "", entry.remarks);
     prose("accessibility", "$(accessibility) ", entry.accessibility);
@@ -263,7 +277,7 @@ export const record = {
       "symbol-variable",
       "Custom properties",
       entry.cssPropertiesDeclared.map((p) => {
-        const syntax = p.syntax ? `: \`${p.syntax}\`` : "";
+        const syntax = p.syntax ? `: ${linkedSyntax(p.syntax)}` : "";
         const def = p.defaultValue ? ` (default \`${p.defaultValue}\`)` : "";
         return `- ${styled(p.name, "variable")}${syntax}${def}${dash(p.description)}`;
       }),
@@ -308,30 +322,38 @@ export const record = {
     {
       const w = want("structure", Boolean(entry.structure?.length));
       if (w !== "skip") {
-        lines.push("", "**$(list-tree) Structure**");
+        const frag = ["", "**$(list-tree) Structure**"];
         if (w === "content") {
-          if (entry.structureDescription) lines.push("", entry.structureDescription);
-          lines.push("", "```css", ...renderStructureTree(entry.structure ?? []), "```");
-        } else lines.push("", "_—_");
+          if (entry.structureDescription) frag.push("", entry.structureDescription);
+          frag.push("", "```css", ...renderStructureTree(entry.structure ?? []), "```");
+        } else frag.push("", "_—_");
+        fragments.structure = frag;
       }
     }
     {
       const w = want("examples", entry.examples.length > 0);
       if (w !== "skip") {
-        lines.push("", `**$(book) Example${entry.examples.length > 1 ? "s" : ""}**`);
+        const frag = ["", `**$(book) Example${entry.examples.length > 1 ? "s" : ""}**`];
         if (w === "content")
           for (const e of entry.examples) {
             const ex = e.trim();
             // Respect an authored fence; otherwise sniff markup vs CSS so it highlights right.
-            lines.push(
+            frag.push(
               "",
               ex.startsWith("```")
                 ? ex
                 : `\`\`\`${ex.includes("<") ? "html" : "css"}\n${ex}\n\`\`\``,
             );
           }
-        else lines.push("", "_—_");
+        else frag.push("", "_—_");
+        fragments.examples = frag;
       }
+    }
+
+    // Emit sections in the requested order (default the canonical order); unlisted keys are dropped.
+    for (const key of sectionOrder ?? HOVER_SECTION_KEYS) {
+      const frag = fragments[key];
+      if (frag) lines.push(...frag);
     }
     return { contents: lines.join("\n") };
   },
@@ -682,7 +704,7 @@ export const customProperty = {
     const found = findProperty(index, name);
     if (!found) return undefined;
     const p = found.record.entry.cssPropertiesDeclared[found.index];
-    const lines = [`\`${p.name}\`${p.syntax ? ` — \`${p.syntax}\`` : ""}`];
+    const lines = [`\`${p.name}\`${p.syntax ? ` — ${linkedSyntax(p.syntax)}` : ""}`];
     if (p.defaultValue) lines.push("", `Default: \`${p.defaultValue}\``);
     if (p.description) lines.push("", p.description);
     return { contents: lines.join("\n") };

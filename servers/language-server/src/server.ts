@@ -12,7 +12,7 @@ import { CssDocConfigFile } from "@cssdoc/config";
 import { dialectForFilename, resolveParser } from "@cssdoc/dialects";
 import { detectEmbeddedHost, projectCss } from "@cssdoc/embedded";
 import { createIndex } from "@cssdoc/index";
-import { resolveNaming, resolveRuleSeverities } from "@cssdoc/providers";
+import { type HoverSectionOrder, resolveNaming, resolveRuleSeverities } from "@cssdoc/providers";
 import {
   CompletionItemTag,
   DiagnosticSeverity,
@@ -106,11 +106,16 @@ export function startLanguageServer(): void {
           css?: string[];
           hoverDetail?: "compact" | "full" | "custom";
           hoverSections?: Record<string, "on" | "off" | "auto">;
+          hoverSectionOrder?: string[];
         }
       | undefined;
     cssPaths = options?.css ?? [];
     if (options?.hoverDetail)
-      service.setHoverDetail(options.hoverDetail, options.hoverSections ?? {});
+      service.setHoverDetail(
+        options.hoverDetail,
+        options.hoverSections ?? {},
+        options.hoverSectionOrder as HoverSectionOrder | undefined,
+      );
     rebuild();
     return {
       capabilities: {

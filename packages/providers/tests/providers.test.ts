@@ -246,8 +246,9 @@ test("component hover card: full renders every present facet, compact shows coun
     '- <code style="color:var(--vscode-symbolIcon-fieldForeground);">.button--secondary</code> — A lower-emphasis action.',
   );
   expect(full).toContain("**$(symbol-field) Parts**");
+  // The `<length>` syntax links out to its MDN reference page.
   expect(full).toContain(
-    '- <code style="color:var(--vscode-symbolIcon-variableForeground);">--button-radius</code>: `<length>` (default `4px`) — The corner radius.',
+    '- <code style="color:var(--vscode-symbolIcon-variableForeground);">--button-radius</code>: [`<length>`](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/length) (default `4px`) — The corner radius.',
   );
   // Accessibility renders; a deprecated modifier gets the themed HTML accent.
   expect(full).toContain("$(accessibility) Give icon-only buttons an aria-label.");
@@ -284,4 +285,30 @@ test("hover custom detail: per-section on/off/auto", () => {
   expect(custom).not.toContain("Modifiers**"); // off
   expect(custom).toContain("**$(symbol-field) Parts**"); // auto (default) + has content
   expect(custom).toContain("**$(references) See also**\n_—_"); // on + empty → placeholder
+});
+
+test("hover sectionOrder: reorders sections and drops unlisted ones", () => {
+  const css = [
+    "/**",
+    " * @component button",
+    " * @summary The primary action control.",
+    " * @a11y Give icon-only buttons an aria-label.",
+    " * @modifier button--secondary — A lower-emphasis action.",
+    " * @part .button__icon — A leading glyph.",
+    " */",
+    ".button {}",
+    ".button--secondary {}",
+    ".button__icon {}",
+  ].join("\n");
+  const idx = createIndex(css);
+  const contents =
+    hoverForClass("button", "button", idx, "full", undefined, ["parts", "modifiers"])?.contents ??
+    "";
+  // Parts renders before Modifiers (reversed from the default), and unlisted sections are dropped.
+  expect(contents.indexOf("**$(symbol-field) Parts**")).toBeLessThan(
+    contents.indexOf("**$(symbol-property) Modifiers**"),
+  );
+  expect(contents).not.toContain("$(accessibility)"); // accessibility not in the order → dropped
+  // The fixed header still leads.
+  expect(contents.startsWith("$(symbol-class)")).toBe(true);
 });

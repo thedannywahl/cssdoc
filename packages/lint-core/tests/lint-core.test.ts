@@ -48,6 +48,22 @@ test("directives: disable, disable-next-line, and expect-error suppress and veri
   expect(byRule(lintCssDocs(unmet), "cssdoc-directive")).toHaveLength(1);
 });
 
+test("directives: a ` - <reason>` suffix is ignored for rule scoping", () => {
+  const missing = "/**\n * @component chip\n */\n.chip { color: red; }";
+  // The reason after ` - ` must not be treated as extra rule names — the named rule still suppresses.
+  const withReason = `/* cssdoc-disable-next-line missing-summary - generated, documented upstream */\n${missing}`;
+  expect(byRule(lintCssDocs(withReason), "missing-summary")).toHaveLength(0);
+
+  // A reason on an all-rules disable (no rule list) still disables everything.
+  const allWithReason = `/* cssdoc-disable - vendor file */\n${missing}`;
+  expect(byRule(lintCssDocs(allWithReason), "missing-summary")).toHaveLength(0);
+
+  // The reason doesn't accidentally scope to an unrelated rule: disabling a *different* rule with a
+  // reason leaves missing-summary reported.
+  const otherRule = `/* cssdoc-disable-next-line unknown-modifier - unrelated */\n${missing}`;
+  expect(byRule(lintCssDocs(otherRule), "missing-summary")).toHaveLength(1);
+});
+
 test("flags an AST modifier without a @modifier description", () => {
   const v = byRule(lintCssDocs(CSS), "undocumented-modifier");
   // -size-sm has no description; -color-secondary is documented; -variant-old is deprecated.

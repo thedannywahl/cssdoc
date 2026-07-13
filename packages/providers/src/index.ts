@@ -29,6 +29,7 @@ import {
   type Diagnostic,
   type Hover,
   type HoverDetail,
+  type HoverSectionOrder,
   type HoverSections,
   type ResolvedNaming,
   type RuleId,
@@ -38,6 +39,7 @@ import {
 
 export * from "./types.ts";
 export * from "./syntax.ts";
+export { linkSyntax, mdnUrlForType } from "./mdn.ts";
 export { applyDirectives, parseDirectives } from "./directives.ts";
 export {
   cssPart,
@@ -164,8 +166,11 @@ export function hoverForClass(
   index: CssDocIndex,
   detail: HoverDetail = "full",
   sections?: HoverSections,
+  sectionOrder?: HoverSectionOrder,
 ): Hover | undefined {
-  return modifier.hover(base, token, index) ?? record.hover(base, index, detail, sections);
+  return (
+    modifier.hover(base, token, index) ?? record.hover(base, index, detail, sections, sectionOrder)
+  );
 }
 
 /** Hover for a `var(--…)` custom property. */

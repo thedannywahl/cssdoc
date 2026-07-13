@@ -83,6 +83,25 @@ test("JSX: a `-modifier` on a non-cssdoc element is not flagged", () => {
   expect(lintJsx(`export const x = <div className="grid -gap-4" />;`)).toEqual([]);
 });
 
+test("JSX dynamic bindings: template literal flags an unknown modifier", () => {
+  const messages = lintJsx("export const x = <button className={`button -bogus`} />;");
+  expect(messages.some((m) => m.includes("unknown-modifier") && m.includes("-bogus"))).toBe(true);
+});
+
+test("JSX dynamic bindings: clsx string args flag an unknown modifier", () => {
+  const messages = lintJsx(`export const x = <button className={clsx("button", "-bogus")} />;`);
+  expect(messages.some((m) => m.includes("unknown-modifier") && m.includes("-bogus"))).toBe(true);
+});
+
+test("JSX dynamic bindings: a valid modifier chain produces no messages", () => {
+  expect(lintJsx("export const x = <button className={`button -color-secondary`} />;")).toEqual([]);
+});
+
+test("JSX dynamic bindings: a computed name (no string literal) is not flagged (best-effort)", () => {
+  // An unquoted/computed class can't be read statically, so it's skipped rather than false-flagged.
+  expect(lintJsx(`export const x = <button className={cx(buttonClasses)} />;`)).toEqual([]);
+});
+
 test("HTML class: flags an unknown modifier on the component", () => {
   const messages = lintHtml(`<button class="button -bogus">x</button>`);
   expect(messages.some((m) => m.includes("unknown-modifier") && m.includes("-bogus"))).toBe(true);

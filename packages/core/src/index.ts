@@ -54,9 +54,12 @@ export type {
   CssPart,
   CssPropertyDeclared,
   CssRecordKind,
+  CssRelated,
   CssReleaseStage,
   CssSlot,
+  CssSource,
   CssState,
+  CssTokenConsumed,
   ParseOptions,
   StructureNode,
 } from "./model.ts";

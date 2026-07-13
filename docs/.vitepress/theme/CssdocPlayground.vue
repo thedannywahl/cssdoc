@@ -6,6 +6,7 @@ import {
   checkClassUsage,
   checkPropertyAssignments,
   lintModel,
+  mdnUrlForType,
   resolveNaming,
   resolveRuleSeverities,
 } from "@cssdoc/providers";
@@ -26,19 +27,12 @@ const block = (text?: string): string => (text ? md.render(text) : "");
 const escapeHtml = (s: string): string =>
   s.replace(/&/gu, "&amp;").replace(/</gu, "&lt;").replace(/>/gu, "&gt;");
 
-// Most CSS value types live at /Web/CSS/Reference/Values/<type>; a few (e.g. <color>) don't.
-const MDN_URL: Record<string, string> = {
-  color: "https://developer.mozilla.org/en-US/docs/Web/CSS/color_value",
-};
-const mdnUrl = (type: string): string =>
-  MDN_URL[type] ?? `https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/${type}`;
-
 /** Render a @property `syntax` descriptor with each `<type>` linked out to its MDN reference page. */
 const syntaxHtml = (syntax: string): string =>
   escapeHtml(syntax).replace(
     /&lt;([a-z][\w-]*)&gt;/gu,
     (_m, type: string) =>
-      `<a href="${mdnUrl(type)}" target="_blank" rel="noopener noreferrer">&lt;${type}&gt;</a>`,
+      `<a href="${mdnUrlForType(type)}" target="_blank" rel="noopener noreferrer">&lt;${type}&gt;</a>`,
   );
 
 const active = ref("bem");

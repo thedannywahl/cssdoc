@@ -19,6 +19,7 @@ import {
   DEFAULT_INCLUDE,
   DOCUMENT_SELECTOR,
   type HoverDetail,
+  type HoverSectionOrder,
   type HoverSections,
   initializationOptions,
   toGlob,
@@ -64,9 +65,15 @@ function createClient(context: ExtensionContext, cssPaths: string[]): LanguageCl
   const cfg = workspace.getConfiguration("cssdoc");
   const hoverDetail = cfg.get<HoverDetail>("hover.detail", "full");
   const hoverSections = cfg.get<HoverSections>("hover.sections", {});
+  const hoverSectionOrder = cfg.get<HoverSectionOrder>("hover.sectionOrder", []);
   const clientOptions: LanguageClientOptions = {
     documentSelector: [...DOCUMENT_SELECTOR],
-    initializationOptions: initializationOptions(cssPaths, hoverDetail, hoverSections),
+    initializationOptions: initializationOptions(
+      cssPaths,
+      hoverDetail,
+      hoverSections,
+      hoverSectionOrder,
+    ),
     // Let the hover cards use codicons (`$(icon)`) and a little inline HTML (a themed deprecation
     // accent) — the server emits both; these flags tell the client to render rather than escape them.
     markdown: { supportHtml: true, supportThemeIcons: true },

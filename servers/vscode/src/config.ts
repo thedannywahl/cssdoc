@@ -51,11 +51,20 @@ export type HoverDetail = "compact" | "full" | "custom";
 /** Per-section visibility for the `custom` hover detail (`cssdoc.hover.sections`). */
 export type HoverSections = Record<string, "on" | "off" | "auto">;
 
+/** Section render order for the component hover card (`cssdoc.hover.sectionOrder`). */
+export type HoverSectionOrder = string[];
+
 /** The `initializationOptions` sent to the server (documented CSS paths + the hover config). */
 export function initializationOptions(
   cssPaths: readonly string[],
   hoverDetail: HoverDetail = "full",
   hoverSections: HoverSections = {},
-): { css: string[]; hoverDetail: HoverDetail; hoverSections: HoverSections } {
-  return { css: [...cssPaths], hoverDetail, hoverSections };
+  hoverSectionOrder: HoverSectionOrder = [],
+): {
+  css: string[];
+  hoverDetail: HoverDetail;
+  hoverSections: HoverSections;
+  hoverSectionOrder: HoverSectionOrder;
+} {
+  return { css: [...cssPaths], hoverDetail, hoverSections, hoverSectionOrder };
 }
