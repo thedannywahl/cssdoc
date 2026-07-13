@@ -143,6 +143,35 @@ test("@structure renders slot content, cardinality, and a linked Subcomponents s
   expect(md).toContain("- [close-button](./close-button.md)"); // derived + cross-linked
 });
 
+test("structureView selects which Structure representation(s) render (default both)", () => {
+  const [alert] = parseCssDocs(
+    [
+      "/**",
+      " * @component alert",
+      " * @structure",
+      " * .alert {",
+      " *   slot {}",
+      " * }",
+      " */",
+      ".alert {}",
+    ].join("\n"),
+    { modifierConvention: "rscss" },
+  );
+  const has = (md: string) => ({
+    text: md.includes("```text"),
+    diagram: md.includes("```mermaid"),
+  });
+  expect(has(renderEntry(alert!, {}))).toEqual({ text: true, diagram: true }); // default = both
+  expect(has(renderEntry(alert!, { structureView: "text" }))).toEqual({
+    text: true,
+    diagram: false,
+  });
+  expect(has(renderEntry(alert!, { structureView: "diagram" }))).toEqual({
+    text: false,
+    diagram: true,
+  });
+});
+
 test("buildCssApi writes per-record pages, an index, and a compatible sidebar", () => {
   const outDir = mkdtempSync(join(tmpdir(), "cssdoc-md-"));
   const result = buildCssApi({ css: CSS, outDir, baseHref: "/api/css/" });

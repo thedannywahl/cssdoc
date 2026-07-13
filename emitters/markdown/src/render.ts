@@ -95,6 +95,11 @@ export interface RenderEntryOptions {
   sectionOrder?: readonly SectionKey[];
   /** Heading prefix for the page title (defaults to no prefix, i.e. just the record name). */
   headingPrefix?: string;
+  /**
+   * Which representation(s) the `## Structure` section emits: the `` ```text `` tree, the `` ```mermaid ``
+   * flowchart, or both. Defaults to `"both"`.
+   */
+  structureView?: "text" | "diagram" | "both";
 }
 
 /** Options controlling how the index renders. */
@@ -341,17 +346,22 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
     // Both views classify each node (root / part / slot / sibling component): `self` keeps the record's
     // own class from reading as a sibling, and `resolveComponent` resolves siblings to component names.
     const self = entry.className.replace(/^\./u, "");
-    fragments.structure.push(
-      "```text",
-      ...renderTree(entry.structure, self, options.resolveComponent),
-      "```",
-      "",
-    );
-    const mermaid = toMermaid(entry.structure, {
-      self,
-      resolveComponent: options.resolveComponent,
-    });
-    if (mermaid) fragments.structure.push("```mermaid", mermaid, "```", "");
+    const view = options.structureView ?? "both";
+    if (view !== "diagram") {
+      fragments.structure.push(
+        "```text",
+        ...renderTree(entry.structure, self, options.resolveComponent),
+        "```",
+        "",
+      );
+    }
+    if (view !== "text") {
+      const mermaid = toMermaid(entry.structure, {
+        self,
+        resolveComponent: options.resolveComponent,
+      });
+      if (mermaid) fragments.structure.push("```mermaid", mermaid, "```", "");
+    }
 
     // Composition is derived from the structure tree: sibling components referenced as children.
     if (options.resolveComponent) {

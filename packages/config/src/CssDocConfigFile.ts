@@ -34,6 +34,8 @@ export interface RenderConfig {
   sectionOrder?: readonly string[];
   headingPrefix?: string;
   baseHref?: string;
+  /** Which Structure representation(s) to emit: `"text"`, `"diagram"`, or `"both"` (default). */
+  structureView?: "text" | "diagram" | "both";
 }
 
 interface RawTagDefinition {

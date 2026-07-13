@@ -152,6 +152,11 @@ export const cssDocSchema = {
           description: "Base href for @related cross-links and the sidebar/index links.",
           type: "string",
         },
+        structureView: {
+          description:
+            'Which Structure representation(s) to emit: "text" tree, "diagram" flowchart, or "both" (default).',
+          enum: ["text", "diagram", "both"],
+        },
       },
     },
   },

@@ -37,8 +37,9 @@ export interface EmitCssApiOptions extends RenderEntryOptions {
   configuration?: CssDocConfiguration;
   /**
    * A loaded `cssdoc.json` (from `@cssdoc/config`). When given, it supplies the parse `configuration`
-   * (unless one is passed explicitly) and the render defaults `sectionOrder`/`headingPrefix`/`baseHref`
-   * from its `render` block. Any explicit option above still overrides the config file.
+   * (unless one is passed explicitly) and the render defaults
+   * `sectionOrder`/`headingPrefix`/`baseHref`/`structureView` from its `render` block. Any explicit
+   * option above still overrides the config file.
    */
   configFile?: CssDocConfigFile;
   /** Base directory the `css` paths are resolved against (default `process.cwd()`). */
@@ -82,6 +83,7 @@ export function emitCssApi(
   const sectionOrder =
     options.sectionOrder ?? (render?.sectionOrder as readonly SectionKey[] | undefined);
   const headingPrefix = options.headingPrefix ?? render?.headingPrefix;
+  const structureView = options.structureView ?? render?.structureView;
   const cwd = options.cwd ?? process.cwd();
 
   const css = options.css.map((file) => readFileSync(resolve(cwd, file), "utf8"));
@@ -96,6 +98,7 @@ export function emitCssApi(
     importSnippet: options.importSnippet,
     sectionOrder,
     headingPrefix,
+    structureView,
   });
 
   const sidebarPath = join(options.outputDirectory, TYPEDOC_SIDEBAR_FILE);
