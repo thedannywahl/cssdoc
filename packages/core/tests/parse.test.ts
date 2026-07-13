@@ -302,8 +302,35 @@ test("@structure parses nested CSS into a tree, and toMermaid renders it", () =>
   ]);
   const mermaid = toMermaid(tree);
   expect(mermaid.startsWith("flowchart TD")).toBe(true);
-  expect(mermaid).toContain(`n0[".tabs"]`);
-  expect(mermaid).toContain("n0 --> n1"); // tabs → list
+  expect(mermaid).toContain(`n0[".tabs"]:::cssdoc-root`); // root → rectangle
+  expect(mermaid).toContain(`n1(".list"):::cssdoc-part`); // part → rounded
+  expect(mermaid).toContain("n0 --> n1"); // tabs → list (required)
+  expect(mermaid).toContain("classDef cssdoc-root");
+});
+
+test("toMermaid shapes/classes each node by kind, with cardinality on the edge", () => {
+  const tree = parseStructure(
+    '.alert {\n  slot {}\n  slot[name="icon"] {}\n  .body {}\n  .tag:many {}\n  .item:more {}\n  .close-button:optional {}\n}',
+    postcss.parse,
+  );
+  // A `resolveComponent` marks `.close-button` as a sibling component (linked); `.body`/`.tag` are parts.
+  const mermaid = toMermaid(tree, {
+    self: "alert",
+    resolveComponent: (c) =>
+      c === "close-button" ? { name: "close-button", href: "/api/css/close-button.md" } : undefined,
+  });
+  // Slots → parallelogram, ‹content› / ‹content: name›.
+  expect(mermaid).toContain(`[/"‹content›"/]:::cssdoc-slot`);
+  expect(mermaid).toContain(`[/"‹content: icon›"/]:::cssdoc-slot`);
+  // Sibling component → stadium, labelled by component name, with a click link.
+  expect(mermaid).toContain(`(["close-button"]):::cssdoc-component`);
+  expect(mermaid).toMatch(/click n\d+ "\/api\/css\/close-button\.md"/u);
+  // Plain part → rounded.
+  expect(mermaid).toContain(`(".body"):::cssdoc-part`);
+  // Cardinality rides the edge: many `0..n`, one-or-more `1..n`, optional dashed `0..1`.
+  expect(mermaid).toMatch(/n0 -->\|0\.\.n\| n\d+/u); // .tag:many
+  expect(mermaid).toMatch(/n0 -->\|1\.\.n\| n\d+/u); // .item:more
+  expect(mermaid).toMatch(/n0 -\.->\|0\.\.1\| n\d+/u); // .close-button:optional
 });
 
 test("@structure cardinality pseudos (full + `:opt`/`:more` shorthands) parse and strip", () => {

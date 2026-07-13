@@ -306,12 +306,17 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
     fragments.structure.push("## Structure", "");
     if (entry.structureDescription) fragments.structure.push(entry.structureDescription, "");
     fragments.structure.push("```text", ...renderTree(entry.structure), "```", "");
-    const mermaid = toMermaid(entry.structure);
+    // The flowchart classifies each node (root / part / slot / sibling component) — `self` keeps the
+    // record's own class from reading as a sibling, and `resolveComponent` finds sibling components.
+    const self = entry.className.replace(/^\./u, "");
+    const mermaid = toMermaid(entry.structure, {
+      self,
+      resolveComponent: options.resolveComponent,
+    });
     if (mermaid) fragments.structure.push("```mermaid", mermaid, "```", "");
 
     // Composition is derived from the structure tree: sibling components referenced as children.
     if (options.resolveComponent) {
-      const self = entry.className.replace(/^\./u, "");
       const subs = subcomponentsOf(entry.structure, self, options.resolveComponent);
       if (subs.length) {
         fragments.subcomponents.push("## Subcomponents", "");
