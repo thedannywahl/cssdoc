@@ -138,6 +138,34 @@ test("checkClassUsage flags an unknown modifier and a deprecated one", () => {
   expect(deprecated.message).toContain("-color-secondary"); // suggests the canonical
 });
 
+test("a concrete usage resolves to a `*` family modifier (AST-derived from a [class*] selector)", () => {
+  const css = [
+    "/**",
+    " * @component alert",
+    " * @summary An alert.",
+    " * @modifier -legacy-icon-* — @deprecated {@link -icon-*}",
+    " */",
+    ".alert {}",
+    '.alert[class*="-icon-"] { background: var(--g); }',
+    '.alert[class*="-legacy-icon-"] {}',
+  ].join("\n");
+  const idx = createIndex(css, { modifierConvention: "rscss" });
+  // A concrete instance of the AST-derived `-icon-*` family is known → no unknown-modifier.
+  expect(
+    checkClassUsage(
+      [{ base: "alert", tokens: ["alert", "-icon-arrow"], token: "-icon-arrow" }],
+      idx,
+    ).map((d) => d.rule),
+  ).toEqual([]);
+  // A concrete instance of a deprecated family is flagged deprecated.
+  expect(
+    checkClassUsage(
+      [{ base: "alert", tokens: ["alert", "-legacy-icon-star"], token: "-legacy-icon-star" }],
+      idx,
+    ).map((d) => d.rule),
+  ).toContain("deprecated-modifier");
+});
+
 test("checkClassUsage flags unknown element and state classes, not documented ones", () => {
   const css = `/**
  * @component card

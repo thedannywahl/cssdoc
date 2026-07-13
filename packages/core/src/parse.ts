@@ -162,6 +162,7 @@ function collect(
             name: mod.name,
             prop: mod.prop,
             value: mod.value,
+            ...(mod.pattern ? { pattern: true } : {}),
           };
           if (pendingCanonical) entry.deprecated = { canonical: pendingCanonical };
           acc.modifiers.set(mod.name, entry);
@@ -265,6 +266,7 @@ function buildEntry(
         name: modName,
         prop,
         value,
+        ...(modName.includes("*") ? { pattern: true } : {}),
         description: mdoc.description,
         deprecated: dep,
       });

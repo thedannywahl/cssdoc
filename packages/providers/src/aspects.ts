@@ -40,6 +40,48 @@ const linkedSyntax = (syntax: string): string => {
 const stripDot = (name: string): string => name.replace(/^\./u, "");
 const warn = (d: Omit<Diagnostic, "severity">): Diagnostic => ({ ...d, severity: "warning" });
 
+const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+
+/** A `*`-glob name (e.g. `-icon-*`) as a regex source over one class token (`*` → any `[\w-]` run). */
+const globSource = (name: string): string => name.split("*").map(escapeRe).join("[\\w-]*");
+
+/** `class` attribute selectors, capturing the operator (`~`/`^`/`$`/`*`/`|`/none) and the value. */
+const CLASS_ATTR_RE = /\[\s*class\s*([~^$*|]?)=\s*(?:"([^"]*)"|'([^']*)'|([^\]\s]*))\s*\]/gu;
+
+/**
+ * Whether `selectorText` (the record's concatenated selectors) defines the modifier/part `selector`
+ * (`.name`, where `name` may be a `*` glob for a family like `.-icon-*`; a name with no `*` is exact).
+ * Beyond a literal class token, `class` attribute selectors count with their real CSS operator
+ * semantics — `[class~=v]`/`[class=v]` (exact word), `[class*=v]` (substring), and `[class$=v]` (suffix)
+ * can define a chained modifier; `[class^=v]` cannot, since `^=` anchors to the start of the whole
+ * attribute (the base class), never a chained modifier.
+ */
+const selectorDefines = (selectorText: string, selector: string): boolean => {
+  if (!selector.startsWith(".")) return selectorText.includes(selector); // attribute-convention modifier
+  const name = stripDot(selector); // e.g. `-icon-*` or `-foo`
+  const wild = name.includes("*");
+  const prefix = name.split("*")[0]; // literal part before the first `*`
+
+  // 1. A literal class token matching the (glob) name — e.g. `.-icon-foo` for `-icon-*`, `.-foo` for `-foo`.
+  if (new RegExp(`\\.${globSource(name)}(?![\\w-])`, "u").test(selectorText)) return true;
+
+  // 2. `class` attribute selectors, evaluated per operator against the modifier as a class token.
+  const glob = new RegExp(`^${globSource(name)}$`, "u");
+  for (const m of selectorText.matchAll(CLASS_ATTR_RE)) {
+    const op = m[1];
+    const v = m[2] ?? m[3] ?? m[4] ?? "";
+    if (!v || op === "^") continue; // ^= targets the attribute start (base class), not a chained modifier
+    if (op === "*") {
+      if (wild ? prefix.includes(v) || v.includes(prefix) : name.includes(v)) return true;
+    } else if (op === "$") {
+      if (wild ? v.endsWith(prefix) || prefix.endsWith(v) : name.endsWith(v)) return true;
+    } else if (glob.test(v)) {
+      return true; // `~=` / `=` (and `|=` bare value): an exact class in the family
+    }
+  }
+  return false;
+};
+
 /**
  * Match a class name against a `structureIgnore` pattern — a literal name or a simple glob where `*`
  * stands for any run of characters (e.g. `util-*`, `*--legacy`, `*`). Matched literally otherwise.
@@ -397,13 +439,20 @@ export const modifier = {
           );
         }
       }
+      // Deprecated aliases (`@modifier -x — @deprecated {@link -y}`) are legacy names intentionally not
+      // in the CSS, so they're exempt from the "defined by a selector" check.
+      const deprecated = new Set(
+        info.entry.modifiers.filter((m) => m.deprecated).map((m) => m.name),
+      );
       for (const authored of info.authoredModifiers) {
-        if (!info.selectorText.includes(index.matcher.selectorFor(authored))) {
+        if (deprecated.has(authored)) continue;
+        const sel = index.matcher.selectorFor(authored);
+        if (!selectorDefines(info.selectorText, sel)) {
           out.push(
             warn({
               aspect: "modifier",
               rule: "name-not-in-css",
-              message: `Documented modifier "${index.matcher.selectorFor(authored)}" of "${name}" is not defined by any selector.`,
+              message: `Documented modifier "${sel}" of "${name}" is not defined by any selector.`,
               record: name,
               span: info.span,
             }),
@@ -517,7 +566,7 @@ export const part = {
         }
       }
       for (const authored of info.authoredParts) {
-        if (!info.selectorText.includes(`.${authored}`)) {
+        if (!selectorDefines(info.selectorText, `.${authored}`)) {
           out.push(
             warn({
               aspect: "part",

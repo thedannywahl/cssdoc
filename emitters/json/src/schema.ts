@@ -31,6 +31,7 @@ const modifier = {
     name: { type: "string" },
     prop: { type: "string" },
     value: { type: "string" },
+    pattern: { type: "boolean" },
     description: { type: "string" },
     deprecated: {
       type: "object",

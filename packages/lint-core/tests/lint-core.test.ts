@@ -99,6 +99,75 @@ test("flags documentation that has drifted from the CSS (name-not-in-css)", () =
   expect(v[0].line).toBeGreaterThan(0);
 });
 
+test("name-not-in-css: a deprecated alias with no selector is exempt", () => {
+  const css = [
+    "/**",
+    " * @component alert",
+    " * @summary An alert.",
+    " * @modifier -without-shadow — No shadow.",
+    " * @modifier -has-shadow-false — @deprecated {@link -without-shadow}",
+    " */",
+    ".alert { color: red; }",
+    ".alert.-without-shadow { box-shadow: none; }",
+  ].join("\n");
+  // -without-shadow is defined; -has-shadow-false is a deprecated alias intentionally absent → no warning.
+  expect(byRule(lintCssDocs(css), "name-not-in-css")).toHaveLength(0);
+});
+
+test("name-not-in-css: a `*` wildcard modifier is satisfied by an attribute-family selector", () => {
+  const withFamily = [
+    "/**",
+    " * @component alert",
+    " * @summary An alert.",
+    " * @modifier -icon-* — Swap the status glyph.",
+    " */",
+    ".alert { color: red; }",
+    '.alert[class*="-icon-"] { background: var(--glyph); }',
+  ].join("\n");
+  expect(byRule(lintCssDocs(withFamily), "name-not-in-css")).toHaveLength(0);
+
+  // A literal instance of the family also satisfies the wildcard.
+  const withInstance = [
+    "/**",
+    " * @component alert",
+    " * @modifier -icon-* — Swap the status glyph.",
+    " */",
+    ".alert { color: red; }",
+    ".alert.-icon-arrow { background: var(--glyph); }",
+  ].join("\n");
+  expect(byRule(lintCssDocs(withInstance), "name-not-in-css")).toHaveLength(0);
+
+  // Nothing defines the family → still warns (genuine drift).
+  const withoutFamily = [
+    "/**",
+    " * @component alert",
+    " * @modifier -icon-* — Swap the status glyph.",
+    " */",
+    ".alert { color: red; }",
+  ].join("\n");
+  expect(byRule(lintCssDocs(withoutFamily), "name-not-in-css")).toHaveLength(1);
+});
+
+test("name-not-in-css: class attribute selectors define a modifier per their operator", () => {
+  const doc = (rule: string) =>
+    [
+      "/**",
+      " * @component alert",
+      " * @modifier -foo — A modifier.",
+      " */",
+      ".alert { color: red; }",
+      rule,
+    ].join("\n");
+  // *= (contains), $= (suffix), ~= (exact word) all define the chained `-foo` modifier.
+  expect(byRule(lintCssDocs(doc('.alert[class*="-foo"] {}')), "name-not-in-css")).toHaveLength(0);
+  expect(byRule(lintCssDocs(doc('.alert[class$="-foo"] {}')), "name-not-in-css")).toHaveLength(0);
+  expect(byRule(lintCssDocs(doc('.alert[class~="-foo"] {}')), "name-not-in-css")).toHaveLength(0);
+  // ^= anchors to the start of the class attribute (the base), so it does NOT define `-foo`.
+  expect(byRule(lintCssDocs(doc('.alert[class^="-prop-foo"] {}')), "name-not-in-css")).toHaveLength(
+    1,
+  );
+});
+
 test("rules can be disabled", () => {
   const v = lintCssDocs(CSS, { rules: { "missing-summary": false } });
   expect(byRule(v, "missing-summary")).toHaveLength(0);

@@ -27,6 +27,12 @@ export interface CssModifier {
   prop: string;
   /** The value segment, e.g. `secondary` or `ghost`; absent for boolean/flag modifiers. */
   value?: string;
+  /**
+   * Set when this is a `*` family (e.g. `-icon-*`) rather than a single modifier — authored as
+   * `@modifier -icon-*` and/or derived from a `[class*="-icon-"]` selector. Concrete usages
+   * (`-icon-arrow`) are matched against it as instances.
+   */
+  pattern?: boolean;
   /** Prose from a `@modifier` doc tag, when authored. */
   description?: string;
   /**
