@@ -23,56 +23,8 @@
  *
  * @module @cssdoc/core
  */
+// The full surface: the parse-free `@cssdoc/core/lite` barrel plus `parseCssDocs` (the only export that
+// links a CSS parser, postcss). Consumers who never parse should import from `@cssdoc/core/lite` to keep
+// postcss out of their bundle — this entry statically imports it for `parseCssDocs`.
+export * from "./lite.ts";
 export { parseCssDocs } from "./parse.ts";
-export {
-  parseDocComment,
-  parseStructure,
-  recordNameOf,
-  RECORD_TAGS,
-  stripCommentFraming,
-} from "./grammar.ts";
-export type { ParsedDoc, DocCssProperty, DocModifier, DocCondition } from "./grammar.ts";
-export { CssDocConfiguration, CssDocTagDefinition } from "./configuration.ts";
-export type { CssDocSyntaxKind, CssDocTagDefinitionOptions } from "./configuration.ts";
-export {
-  DEFAULT_MODIFIER_CONVENTION,
-  DEFAULT_STATE_PSEUDO_CLASSES,
-  MODIFIER_PRESETS,
-  ModifierMatcher,
-  resolveModifierConvention,
-} from "./modifier.ts";
-export type { ModifierConvention, ModifierConventionInput, ModifierHit } from "./modifier.ts";
-export { toMermaid } from "./mermaid.ts";
-export type {
-  CssAnimation,
-  CssCondition,
-  CssDocEntry,
-  CssFunction,
-  CssLayer,
-  CssModifier,
-  CssParse,
-  CssPart,
-  CssPropertyDeclared,
-  CssRecordKind,
-  CssRelated,
-  CssReleaseStage,
-  CssSlot,
-  CssSource,
-  CssState,
-  CssTokenConsumed,
-  ParseOptions,
-  StructureNode,
-} from "./model.ts";
-
-import type { CssDocEntry } from "./model.ts";
-
-/**
- * Serialize a documentation model to pretty JSON (the raw, emitter-agnostic artifact — like TypeDoc's
- * `--json`).
- *
- * @param model - The entries from {@link parseCssDocs}.
- * @returns A JSON string.
- */
-export function toJson(model: CssDocEntry[]): string {
-  return `${JSON.stringify(model, null, 2)}\n`;
-}

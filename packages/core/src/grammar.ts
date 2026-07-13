@@ -24,9 +24,15 @@
  *
  * @module
  */
-import postcss, { type ChildNode, type Rule } from "postcss";
+import type { ChildNode, Rule } from "postcss";
 import { CssDocConfiguration } from "./configuration.ts";
-import type { CssRecordKind, CssRelated, CssReleaseStage, StructureNode } from "./model.ts";
+import type {
+  CssParse,
+  CssRecordKind,
+  CssRelated,
+  CssReleaseStage,
+  StructureNode,
+} from "./model.ts";
 
 /**
  * The record-opening tags and the {@link CssRecordKind} each selects, as the default boundary map.
@@ -192,6 +198,7 @@ function parseModifierBody(description: string | undefined): DocModifier {
 export function parseDocComment(
   raw: string,
   configuration: CssDocConfiguration = new CssDocConfiguration(),
+  parse?: CssParse,
 ): ParsedDoc {
   // Works on either a raw `/** … *\/` block or PostCSS's already-unframed `Comment.text` (which keeps
   // the inner `*` line prefixes) — stripCommentFraming no-ops the frame removal when it's absent.
@@ -242,13 +249,19 @@ export function parseDocComment(
     }
     if (definition.syntaxKind === "inline") continue; // inline tags live inside descriptions
 
-    applyBlockTag(doc, definition.canonicalName, definition.tagNameWithoutAt, rest);
+    applyBlockTag(doc, definition.canonicalName, definition.tagNameWithoutAt, rest, parse);
   }
   return doc;
 }
 
 /** Apply one supported block tag (resolved to its canonical name) to the accumulating {@link ParsedDoc}. */
-function applyBlockTag(doc: ParsedDoc, canonical: string, tagName: string, rest: string): void {
+function applyBlockTag(
+  doc: ParsedDoc,
+  canonical: string,
+  tagName: string,
+  rest: string,
+  parse?: CssParse,
+): void {
   switch (canonical) {
     case "class":
       doc.className = rest.split(/\s/u)[0];
@@ -273,7 +286,7 @@ function applyBlockTag(doc: ParsedDoc, canonical: string, tagName: string, rest:
       break;
     case "structure": {
       const { description, css } = splitStructureBody(rest);
-      doc.structure = parseStructure(css);
+      doc.structure = parseStructure(css, parse);
       if (description) doc.structureDescription = description;
       break;
     }
@@ -439,14 +452,19 @@ function splitStructureBody(raw: string): { description?: string; css: string } 
  *   .panel {}
  * }
  * ```
+ *
+ * @param raw - The nested-CSS structure body.
+ * @param parse - The CSS parser to build the tree with (the same one `parseCssDocs` uses, or a dialect
+ *   parser). Injected so this module carries no runtime CSS-parser dependency; without it the tree is empty.
  */
-export function parseStructure(raw: string): StructureNode[] {
+export function parseStructure(raw: string, parse?: CssParse): StructureNode[] {
+  if (!parse) return []; // no parser injected → no tree (the grammar module stays parser-free)
   const build = (nodes: readonly ChildNode[]): StructureNode[] =>
     nodes
       .filter((n): n is Rule => n.type === "rule")
       .map((rule) => ({ selector: rule.selector.trim(), children: build(rule.nodes ?? []) }));
   try {
-    return build(postcss.parse(raw).nodes);
+    return build(parse(raw).nodes);
   } catch {
     return []; // malformed structure → empty, never throws
   }

@@ -422,7 +422,8 @@ export function parseCssDocs(css: string, options: ParseOptions = {}): CssDocEnt
   );
   const boundary =
     options.isRecordBoundary ?? ((text: string) => recordNameOf(text, configuration));
-  const root = (options.parse ?? postcss.parse)(css);
+  const parse = options.parse ?? postcss.parse;
+  const root = parse(css);
   type Record_ = { name: string; doc: ParsedDoc; nodes: ChildNode[]; source?: CssSource };
   const records: Record_[] = [];
   let current: Record_ | null = null;
@@ -436,7 +437,12 @@ export function parseCssDocs(css: string, options: ParseOptions = {}): CssDocEnt
           options.fileName || start
             ? { file: options.fileName, line: start?.line, column: start?.column }
             : undefined;
-        current = { name, doc: parseDocComment(node.text, configuration), nodes: [], source };
+        current = {
+          name,
+          doc: parseDocComment(node.text, configuration, parse),
+          nodes: [],
+          source,
+        };
         records.push(current);
         continue;
       }
