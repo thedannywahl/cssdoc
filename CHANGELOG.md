@@ -4,6 +4,18 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.4.2
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.4.1...v0.4.2)
+
+### 🩹 Fixes
+
+- **docs:** Add title to Playground documentation ([61ddc80](https://github.com/thedannywahl/cssdoc/commit/61ddc80))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.4.1
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.4.0...v0.4.1)
