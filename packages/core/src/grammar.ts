@@ -24,7 +24,7 @@
  *
  * @module
  */
-import type { ChildNode, Rule } from "postcss";
+import type { ChildNode } from "postcss";
 import { CssDocConfiguration } from "./configuration.ts";
 import type {
   CssParse,
@@ -457,12 +457,34 @@ function splitStructureBody(raw: string): { description?: string; css: string } 
  * @param parse - The CSS parser to build the tree with (the same one `parseCssDocs` uses, or a dialect
  *   parser). Injected so this module carries no runtime CSS-parser dependency; without it the tree is empty.
  */
+/** EBNF/RELAX-NG cardinality sigils, written as a trailing `:card(?|*|+)` on a structure selector. */
+const CARDINALITY: Record<string, StructureNode["cardinality"]> = {
+  "?": "optional",
+  "*": "many",
+  "+": "one-or-more",
+};
+// A trailing `:card(?)` / `:card(*)` / `:card(+)` marks a child's cardinality. A pseudo (not a CSS
+// comment) because `@structure` lives inside a `/** … *\/` doc comment, where a nested `/* … *\/` would
+// close the doc comment early; postcss accepts the pseudo verbatim and it nests cleanly.
+const CARD_RE = /:card\(\s*([?*+])\s*\)\s*$/u;
+
 export function parseStructure(raw: string, parse?: CssParse): StructureNode[] {
   if (!parse) return []; // no parser injected → no tree (the grammar module stays parser-free)
-  const build = (nodes: readonly ChildNode[]): StructureNode[] =>
-    nodes
-      .filter((n): n is Rule => n.type === "rule")
-      .map((rule) => ({ selector: rule.selector.trim(), children: build(rule.nodes ?? []) }));
+  const build = (nodes: readonly ChildNode[]): StructureNode[] => {
+    const out: StructureNode[] = [];
+    for (const rule of nodes) {
+      if (rule.type !== "rule") continue;
+      const selector = rule.selector.trim();
+      const card = selector.match(CARD_RE);
+      const node: StructureNode = {
+        selector: card ? selector.slice(0, card.index).trim() : selector,
+        children: build(rule.nodes ?? []),
+      };
+      if (card) node.cardinality = CARDINALITY[card[1]];
+      out.push(node);
+    }
+    return out;
+  };
   try {
     return build(parse(raw).nodes);
   } catch {

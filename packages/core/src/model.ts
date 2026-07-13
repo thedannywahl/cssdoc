@@ -154,6 +154,12 @@ export type CssReleaseStage = "alpha" | "beta" | "experimental" | "internal" | "
 export interface StructureNode {
   /** The node's compound selector, e.g. `.tabs`, `.tab.-selected`, or `.list:has(.tab)`. */
   selector: string;
+  /**
+   * How often the child may appear, from a trailing `:card(?|*|+)` on the selector: `optional` (0..1),
+   * `many` (0..n), `one-or-more` (1..n). Absent means "present when the component is used". A pseudo,
+   * not a `/* … *\/` comment, because `@structure` lives inside a doc comment where comments can't nest.
+   */
+  cardinality?: "optional" | "many" | "one-or-more";
   /** Child nodes (rules nested one brace level deeper). */
   children: StructureNode[];
 }
