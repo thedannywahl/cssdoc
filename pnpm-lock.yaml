@@ -376,6 +376,9 @@ importers:
       '@cssdoc/tmlanguage':
         specifier: workspace:*
         version: link:../syntaxes/cssdoc/tmlanguage
+      '@resvg/resvg-js':
+        specifier: 'catalog:'
+        version: 2.6.2
       '@types/markdown-it':
         specifier: ^14.1.2
         version: 14.1.2
