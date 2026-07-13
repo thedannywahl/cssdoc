@@ -4,6 +4,24 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.4.1
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.4.0...v0.4.1)
+
+### 🚀 Enhancements
+
+- **providers:** Add a reason suffix to suppression directives ([49f8e6a](https://github.com/thedannywahl/cssdoc/commit/49f8e6a))
+- **eslint:** Check dynamic class bindings in valid-class-usage ([90b6ca5](https://github.com/thedannywahl/cssdoc/commit/90b6ca5))
+- **hover:** Link property syntaxes to MDN and make section order configurable ([c4c2505](https://github.com/thedannywahl/cssdoc/commit/c4c2505))
+
+### 🩹 Fixes
+
+- **core:** Export CssSource/CssTokenConsumed/CssRelated; fix docs interpolation ([b906ee2](https://github.com/thedannywahl/cssdoc/commit/b906ee2))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.4.0
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.3.3...v0.4.0)
