@@ -223,6 +223,32 @@ test("structure diagnostics resolve a cross-file sibling and restore masked ${�
   expect(structure[0].message).not.toContain("aaaa");
 });
 
+test("embedded hover restores ${…} and renders the full card even with an empty sectionOrder", () => {
+  const svc = new CssDocLanguageService(createIndex(""));
+  svc.setHoverDetail("full", {}, []); // the client's default empty order must not blank the card
+  const ts = [
+    "export const alert = css`",
+    "/**",
+    " * @component alert",
+    " * @summary An alert.",
+    " * @modifier -color-info — Informational (default).",
+    " */",
+    ".${p}alert {}",
+    ".${p}alert.-color-info {}",
+    "`;",
+  ].join("\n");
+  const off = ts.indexOf("\n.${p}alert {") + 4; // inside the class of the rule declaration
+  const before = ts.slice(0, off);
+  const position = {
+    line: (before.match(/\n/gu) ?? []).length,
+    character: off - (before.lastIndexOf("\n") + 1),
+  };
+  const contents = svc.hover(ts, position, "alert.ts", "typescript")?.contents ?? "";
+  expect(contents).toContain(".${p}alert"); // interpolation restored, not the masked `.aaaaalert`
+  expect(contents).not.toContain("aaaa");
+  expect(contents).toContain("Modifiers"); // the full card, not just the one-line header
+});
+
 test("diagnostics parse a .scss document through the SCSS dialect", () => {
   const scss = `$brand: #06c;
 // a scss line comment
