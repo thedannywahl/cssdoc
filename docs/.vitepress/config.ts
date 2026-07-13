@@ -92,6 +92,7 @@ export default defineConfig({
         name: "cssdoc",
         url: hostname,
         description,
+        image: `${hostname}/og.png`,
         author: { "@type": "Person", name: "Danny Wahl", url: "https://iywahl.com" },
       }),
     ],
