@@ -131,6 +131,8 @@ export interface ModifierHit {
   prop: string;
   /** The value segment; absent for boolean modifiers. */
   value?: string;
+  /** Set when the name is a `*` family (e.g. `-icon-*`, derived from a `[class*="-icon-"]` selector). */
+  pattern?: boolean;
 }
 
 /** Escape a string for literal use inside a `RegExp`. */
@@ -210,13 +212,14 @@ export class ModifierMatcher {
     const push = (name: string): void => {
       if (seen.has(name)) return;
       seen.add(name);
-      hits.push({ name, ...this.analyze(name) });
+      hits.push({ name, ...this.analyze(name), ...(name.includes("*") ? { pattern: true } : {}) });
     };
 
     if (this.convention.structure === "suffix") {
       // `.base<sep><body>` — the modifier is conjoined into the base class name.
       const re = new RegExp(`\\.(${baseEsc}${this.sepAlt}[\\w-]+)`, "gu");
       for (const m of selector.matchAll(re)) push(m[1]);
+      for (const name of this.classAttrFamilies(selector, baseEsc)) push(name);
       return hits;
     }
 
@@ -239,7 +242,41 @@ export class ModifierMatcher {
     for (const m of selector.matchAll(chain)) {
       for (const c of m[1].matchAll(inner)) if (!this.isStateClass(c[1])) push(c[1]);
     }
+    for (const name of this.classAttrFamilies(selector, baseEsc)) push(name);
     return hits;
+  }
+
+  /**
+   * Family modifiers declared by a `class` attribute selector on the base — `.base[class*="-icon-"]`
+   * yields the `*` family `-icon-*`. The operator maps to the wildcard position: `*=`/`|=` and (rare)
+   * exact `~=`/`=` derive a prefix family or a concrete name, `$=` a suffix family; `^=` is skipped
+   * (it anchors to the start of the whole class attribute — the base class — not a chained modifier).
+   * The value must begin with a convention separator to count (so `[class*="-icon-"]` does, `[dir]` and
+   * `[class*="grid"]` don't), and carry a literal core beyond the separator.
+   */
+  private classAttrFamilies(selector: string, baseEsc: string): string[] {
+    const out: string[] = [];
+    const chain = new RegExp(`(?:\\.${baseEsc}|:scope)((?:\\[[^\\]]*\\])+)`, "gu");
+    const attr = /\[\s*class\s*([~^$*|]?)=\s*(?:"([^"]*)"|'([^']*)'|([^\]\s]*))\s*\]/gu;
+    for (const m of selector.matchAll(chain)) {
+      for (const a of m[1].matchAll(attr)) {
+        const value = (a[2] ?? a[3] ?? a[4] ?? "").trim();
+        const name = this.classAttrFamily(a[1], value);
+        if (name) out.push(name);
+      }
+    }
+    return out;
+  }
+
+  /** Derive a modifier name from a `[class OP value]` selector, or `undefined` when it isn't one. */
+  private classAttrFamily(op: string, value: string): string | undefined {
+    const sep = this.separators.find((s) => s !== "" && value.startsWith(s));
+    if (sep === undefined && this.separators.every((s) => s !== "")) return undefined; // not a modifier value
+    if (value.length <= (sep?.length ?? 0)) return undefined; // no literal core beyond the separator
+    if (op === "^") return undefined; // anchors to the attribute start (base class), not a chained modifier
+    if (op === "$") return `*${value}`;
+    if (op === "" || op === "~") return value; // exact class → a concrete modifier
+    return `${value}*`; // *=, |= → prefix family
   }
 
   /**
@@ -327,6 +364,13 @@ export class ModifierMatcher {
 
   /** Derive `prop`/`value` for a modifier `name` (as returned by {@link modifiersIn} or authored). */
   analyze(name: string): { prop: string; value?: string } {
+    if (name.includes("*")) {
+      // A `*` family has no clean value; group by its literal core (the body minus wildcard and seps).
+      const body =
+        this.convention.structure === "suffix" ? this.stripToBody(name) : this.stripPrefix(name);
+      const prop = body.replace(/\*/gu, "").replace(/-+$/u, "");
+      return { prop: prop || body };
+    }
     if (this.convention.structure === "attribute") {
       const canonical = this.normalizeAttribute(name);
       const eq = canonical.indexOf("=");
@@ -350,6 +394,17 @@ export class ModifierMatcher {
   /** Render a modifier `name` as the selector fragment it denotes (`.name` or `[name]`). */
   selectorFor(name: string): string {
     return this.convention.structure === "attribute" ? `[${name}]` : `.${name}`;
+  }
+
+  /**
+   * Whether a used class `used` is an instance of the documented modifier `name` — an exact match, or,
+   * when `name` is a `*` family (e.g. `-icon-*`), a glob match (`*` → any `[\w-]` run). Used consumer-side
+   * so `-icon-arrow` resolves to the documented `-icon-*` family.
+   */
+  matchesModifier(name: string, used: string): boolean {
+    if (name === used) return true;
+    if (!name.includes("*")) return false;
+    return new RegExp(`^${name.split("*").map(escapeRe).join("[\\w-]*")}$`, "u").test(used);
   }
 
   /** Normalize a member token/expression to its canonical `name` key (the inverse of authoring noise). */

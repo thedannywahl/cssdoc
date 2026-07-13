@@ -170,6 +170,38 @@ test("BEM elements (.block__element) are recorded as parts, distinct from modifi
   expect(tabs.parts.map((p) => p.name).sort()).toEqual(["tabs__list", "tabs__tab"]);
 });
 
+test("a class attribute selector on the base derives a `*` family modifier (rscss)", () => {
+  const [alert] = parseCssDocs(
+    `/**\n * @component alert\n */\n.alert {}\n.alert[class*="-icon-"] { background: var(--g); }`,
+    { modifierConvention: "rscss" },
+  );
+  const icon = alert.modifiers.find((m) => m.name === "-icon-*")!;
+  expect(icon).toMatchObject({ name: "-icon-*", prop: "icon", pattern: true });
+});
+
+test("an authored @modifier merges with the AST-derived family (one entry, with prose)", () => {
+  const [alert] = parseCssDocs(
+    `/**\n * @component alert\n * @modifier -icon-* — Swap the glyph.\n */\n` +
+      `.alert {}\n.alert[class*="-icon-"] {}`,
+    { modifierConvention: "rscss" },
+  );
+  const families = alert.modifiers.filter((m) => m.name === "-icon-*");
+  expect(families).toHaveLength(1);
+  expect(families[0]).toMatchObject({ pattern: true, description: "Swap the glyph." });
+});
+
+test("attribute-family derivation respects the operator and ignores non-modifier values", () => {
+  const fam = (rule: string) =>
+    parseCssDocs(`/**\n * @component c\n */\n.c {}\n${rule}`, {
+      modifierConvention: "rscss",
+    })[0].modifiers.map((m) => m.name);
+  expect(fam('.c[class$="-icon"] {}')).toEqual(["*-icon"]); // ends-with → suffix family
+  expect(fam('.c[class~="-icon-x"] {}')).toEqual(["-icon-x"]); // exact word → concrete
+  expect(fam('.c[class^="-icon-"] {}')).toEqual([]); // ^= anchors to the base class → not a modifier
+  expect(fam('.c[class*="grid"] {}')).toEqual([]); // value isn't a chained modifier (no `-` prefix)
+  expect(fam('.c[class*="-"] {}')).toEqual([]); // no literal core beyond the separator
+});
+
 test("a BEM element's own modifier (.block__element--mod) nests on the part", () => {
   const [tabs] = parseCssDocs(
     `/**\n * @component tabs\n */\n.tabs {}\n.tabs__tab {}\n.tabs__tab--active { font-weight: 700; }`,
