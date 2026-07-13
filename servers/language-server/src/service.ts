@@ -145,6 +145,29 @@ function unmask(
   return original === maskedName ? message : message.split(maskedName).join(original);
 }
 
+/**
+ * Restore every masked interpolation in generated content (a hover card). Unlike {@link unmask}, which
+ * targets one known token, this rewrites all of them: the projection only differs from the source
+ * inside `${…}` masks, so any identifier token in `projected` that doesn't match `source` at the same
+ * offset was masked, and the equal-length source slice is its original form (e.g. `aaaaalert` →
+ * `${p}alert`). No-op for a real stylesheet, where `source === projected`.
+ */
+function unmaskContent(content: string, projected: string, source: string): string {
+  if (source === projected) return content;
+  let out = content;
+  const done = new Set<string>();
+  for (const m of projected.matchAll(/[A-Za-z_][\w-]*/gu)) {
+    const token = m[0];
+    if (done.has(token)) continue;
+    const original = source.slice(m.index, m.index + token.length);
+    if (original !== token) {
+      done.add(token);
+      out = out.split(token).join(original);
+    }
+  }
+  return out;
+}
+
 /** Convert a 1-based PostCSS {@link SourceSpan} to a 0-based LSP range. */
 function spanToRange(span: SourceSpan): LspRange {
   return {
@@ -427,11 +450,12 @@ export class CssDocLanguageService {
     if (languageId && CSS_LANGUAGES.has(languageId)) {
       return this.authoringHover(text, offset, path, resolveParser(dialectForFilename(path)));
     }
-    // Authoring embedded CSS in a host document — run the same resolution over the projected CSS.
+    // Authoring embedded CSS in a host document — run the same resolution over the projected CSS,
+    // passing the original text so masked `${…}` interpolations are restored in the card.
     const host = detectEmbeddedHost(path) ?? hostForLanguageId(languageId);
     if (host) {
       const parse = resolveParser(projectionDialect(text, { host }));
-      const h = this.authoringHover(projectCss(text, { host }), offset, path, parse);
+      const h = this.authoringHover(projectCss(text, { host }), offset, path, parse, text);
       if (h) return h;
     }
 
@@ -470,15 +494,20 @@ export class CssDocLanguageService {
     offset: number,
     path?: string,
     parse?: CssParse,
+    source: string = text,
   ): LspHover | undefined {
     const index = createIndex(text, {
       configuration: this.scopeForPath(path).configuration,
       parse: parse ?? resolveParser(dialectForFilename(path)),
     });
+    // Restore any `${…}` the projection masked (a no-op for a real stylesheet, where source === text).
+    const card = (contents: string): LspHover => ({
+      contents: unmaskContent(contents, text, source),
+    });
     const prop = propertyAt(text, offset);
     if (prop) {
       const h = hoverForCustomProperty(prop.name, index);
-      if (h) return { contents: h.contents };
+      if (h) return card(h.contents);
     }
     const cls = cssClassTokenAt(text, offset);
     const resolved = cls ? resolveCssClass(cls, index) : undefined;
@@ -491,7 +520,7 @@ export class CssDocLanguageService {
         this.hoverSections,
         this.hoverSectionOrder,
       );
-      if (h) return { contents: h.contents };
+      if (h) return card(h.contents);
     }
     return undefined;
   }
