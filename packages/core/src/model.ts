@@ -155,10 +155,11 @@ export interface StructureNode {
   /** The node's compound selector, e.g. `.tabs`, `.tab.-selected`, or `.list:has(.tab)`. */
   selector: string;
   /**
-   * How often the child may appear, from a trailing `:optional` (0..1), `:many` (0..n), or
-   * `:one-or-more` (1..n) pseudo on the selector. Absent means "present when the component is used". A
-   * pseudo, not a `/* … *\/` comment, because `@structure` lives inside a doc comment where comments
-   * can't nest; an unknown pseudo is valid selector syntax and is stripped from the stored selector.
+   * How often the child may appear, from a trailing pseudo on the selector: `:optional`/`:opt` (0..1),
+   * `:many` (0..n), or `:one-or-more`/`:more` (1..n). Absent means the child is required (present when
+   * the component is used). A pseudo, not a `/* … *\/` comment, because `@structure` lives inside a doc
+   * comment where comments can't nest; an unknown pseudo is valid selector syntax and is stripped from
+   * the stored selector.
    */
   cardinality?: "optional" | "many" | "one-or-more";
   /** Child nodes (rules nested one brace level deeper). */
