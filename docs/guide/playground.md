@@ -1,4 +1,5 @@
 ---
+title: Playground
 aside: false
 editLink: false
 ---
