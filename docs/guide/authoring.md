@@ -158,6 +158,29 @@ the first rule is the description, and everything from the first selector on is 
  */
 ```
 
-Every class named in an `@structure` selector should resolve to the component class or a documented
-member; otherwise `structure-unknown-selector` warns. Exempt legitimately-external classes (utilities,
-cross-component refs) with `structureIgnore` in `cssdoc.json`.
+Three more things a node can express:
+
+- **Cardinality** — a trailing `:card(?)` (optional, 0..1), `:card(*)` (any, 0..n), or `:card(+)`
+  (one-or-more, 1..n) on the selector; no marker means "present when the component is used." It's a
+  pseudo, not a `/* … */` comment, because `@structure` lives inside a doc comment where CSS comments
+  can't nest.
+- **Content** — a `slot` node (or `slot[name="x"]`) marks where light-DOM content goes; it resolves to
+  the component's default (or named) `@slot` and renders as ‹content› rather than a literal element.
+- **Subcomponents** — reference another documented component by its class (`.close-button`); it's a
+  valid child (no `structureIgnore` needed), is cross-linked, and populates a derived **Subcomponents**
+  list. Keep such references bare — that component's own modifiers/parts live in its own docs.
+
+```css
+/**
+ * @slot — The alert message.
+ * @structure
+ * .alert {
+ *   slot {}
+ *   .close-button:card(?) {}
+ * }
+ */
+```
+
+Every remaining class named in an `@structure` selector should resolve to the component class, a
+documented member, or another documented component; otherwise `structure-unknown-selector` warns.
+Exempt other externals (utilities) with `structureIgnore` in `cssdoc.json`.
