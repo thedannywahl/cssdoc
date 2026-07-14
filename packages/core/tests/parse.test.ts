@@ -221,8 +221,11 @@ test("@structure optional-ancestor wrapper: root cardinality + @wrapper prose, i
   expect(root.selector).toBe(".badge-wrapper");
   expect(root.cardinality).toBe("optional");
   expect(root.description).toBe("Optional; anchors the badge over a target."); // @wrapper prose
-  // Mermaid: a root has no incoming edge, so its cardinality rides the label.
-  expect(toMermaid(badge!.structure!, { self: "badge" })).toContain(".badge-wrapper (0..1)");
+  // Mermaid: a root has no incoming edge, so its cardinality rides the label, and the @wrapper prose
+  // trails it (matching the text tree).
+  expect(toMermaid(badge!.structure!, { self: "badge" })).toContain(
+    ".badge-wrapper (0..1) — Optional; anchors the badge over a target.",
+  );
 });
 
 const CONVENTION_FIXTURE = `
