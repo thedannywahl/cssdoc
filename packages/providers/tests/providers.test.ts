@@ -96,6 +96,15 @@ test("structure-unknown-selector accepts a sibling component as a child, still f
   expect(structureWarnings[0].message).toContain(".bogus");
 });
 
+test("hoverForClass: an empty sectionOrder falls back to the default order (not a blank card)", () => {
+  // The `cssdoc.hover.sectionOrder` setting defaults to `[]`; empty must mean "default order", not
+  // "drop every section" (which collapsed the card to just its header line).
+  const full = hoverForClass("button", "button", index, "full", {}, undefined)?.contents ?? "";
+  const empty = hoverForClass("button", "button", index, "full", {}, [])?.contents ?? "";
+  expect(empty).toBe(full);
+  expect(empty).toContain("Modifiers"); // sections render, not just `.button · component`
+});
+
 test("structure-unknown-selector resolves a cross-file sibling via siblingIndex, across prefixes", () => {
   // The linted file only knows `alert` (masked prefix `aaaa`, as an embedded `${p}` projects). The
   // sibling `close-button` lives in another file and carries a *different* prefix (`instui-`).

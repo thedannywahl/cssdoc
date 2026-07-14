@@ -422,8 +422,10 @@ export const record = {
       }
     }
 
-    // Emit sections in the requested order (default the canonical order); unlisted keys are dropped.
-    for (const key of sectionOrder ?? HOVER_SECTION_KEYS) {
+    // Emit sections in the requested order (default the canonical order); unlisted keys are dropped. An
+    // empty order means "not configured" → use the default (matching the `cssdoc.hover.sectionOrder`
+    // setting, whose empty default must not blank the whole card).
+    for (const key of sectionOrder?.length ? sectionOrder : HOVER_SECTION_KEYS) {
       const frag = fragments[key];
       if (frag) lines.push(...frag);
     }
