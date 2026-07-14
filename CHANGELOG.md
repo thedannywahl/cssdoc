@@ -4,6 +4,20 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.7.0
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.6.1...v0.7.0)
+
+### 🚀 Enhancements
+
+- **config:** Providers field + resolveProviders (cross-provider consumption, phase 1) ([fa86349](https://github.com/thedannywahl/cssdoc/commit/fa86349))
+- **language-server,lint-core,plugins:** Consume providers in lint + hover (phase 2) ([9f36457](https://github.com/thedannywahl/cssdoc/commit/9f36457))
+- **markdown:** Cross-link provider components in generated docs (phase 3) ([4a939a3](https://github.com/thedannywahl/cssdoc/commit/4a939a3))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.6.1
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.6.0...v0.6.1)

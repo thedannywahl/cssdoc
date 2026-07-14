@@ -1,6 +1,6 @@
 {
   "name": "@cssdoc/eslint-plugin",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "ESLint (@eslint/css) rules that check CSS doc-comment hygiene (undocumented modifiers/parts, deprecations, drift).",
   "keywords": [
     "css",
