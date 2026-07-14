@@ -249,6 +249,38 @@ test("embedded hover restores ${…} and renders the full card even with an empt
   expect(contents).toContain("Modifiers"); // the full card, not just the one-line header
 });
 
+test("embedded hover renders an escaped fenced @example: real fence, prose, unmasked ${…}", () => {
+  const bt = String.fromCharCode(96);
+  const f = "\\" + bt + "\\" + bt + "\\" + bt; // an escaped ``` fence, as authored in a css template
+  const ts = [
+    "export const alert = css" + bt,
+    "/**",
+    " * @component alert",
+    " * @summary An alert.",
+    " * @example",
+    " * Prose before.",
+    " * " + f + "html",
+    ' * <div class="${p}alert"></div>',
+    " * " + f,
+    " */",
+    ".${p}alert {}",
+    bt + ";",
+  ].join("\n");
+  const off = ts.indexOf("\n.${p}alert {") + 4;
+  const before = ts.slice(0, off);
+  const position = {
+    line: (before.match(/\n/gu) ?? []).length,
+    character: off - (before.lastIndexOf("\n") + 1),
+  };
+  const contents =
+    new CssDocLanguageService(createIndex("")).hover(ts, position, "alert.ts", "typescript")
+      ?.contents ?? "";
+  expect(contents).toContain("Prose before.");
+  expect(contents).toContain("```html"); // a real fence, not the escaped `\`\`\``
+  expect(contents).not.toContain("\\`");
+  expect(contents).toContain('<div class="${p}alert">'); // interpolation restored, fence preserved
+});
+
 test("diagnostics parse a .scss document through the SCSS dialect", () => {
   const scss = `$brand: #06c;
 // a scss line comment

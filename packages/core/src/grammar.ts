@@ -364,7 +364,10 @@ function applyBlockTag(
       break;
     }
     case "example":
-      doc.examples.push(rest);
+      // `@example` is Markdown (prose plus fenced code). When authored inside a JS `css` template, a
+      // literal fence must be written `\`\`\`` to avoid closing the template; unescape those backticks
+      // here so the stored example carries real fences. (A no-op for a plain `.css` file.)
+      doc.examples.push(rest.replace(/\\`/gu, "`"));
       break;
     case "deprecated":
       doc.deprecated = rest;

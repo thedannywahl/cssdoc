@@ -94,6 +94,26 @@ test("an authored `@deprecated {@link -x}` sets the modifier's canonical", () =>
   expect(alias.deprecated?.canonical).toBe("-color-danger");
 });
 
+test("@example unescapes `\\`` so a fence authored inside a css template becomes a real fence", () => {
+  // As it reaches the parser from a projected `css` template: the fence backticks are escaped.
+  const src = [
+    "/**",
+    " * @component alert",
+    " * @summary An alert.",
+    " * @example",
+    " * Prose before.",
+    " * \\`\\`\\`html",
+    ' * <div class="alert"></div>',
+    " * \\`\\`\\`",
+    " */",
+    ".alert {}",
+  ].join("\n");
+  const [alert] = parseCssDocs(src, { modifierConvention: "rscss" });
+  expect(alert.examples[0]).toContain("```html");
+  expect(alert.examples[0]).not.toContain("\\`"); // the escape is gone; the fence is real
+  expect(alert.examples[0].startsWith("Prose before.")).toBe(true);
+});
+
 const CONVENTION_FIXTURE = `
 /**
  * @component card
