@@ -31,7 +31,7 @@ One of these opens a record and picks its kind. `@name` is an alias for `@compon
 | `@class <selector>`                  | An explicit base class (otherwise inferred from the first bare-class rule). |
 | `@since <version>`                   | Version introduced.                                                         |
 | `@group <name>` / `@category <name>` | Documentation grouping.                                                     |
-| `@example <code>`                    | A verbatim example block.                                                   |
+| `@example <markdown>`                | An example: Markdown prose plus fenced code (bare code is auto-fenced).     |
 | `@see <ref>`                         | A cross-reference.                                                          |
 | `@deprecated <text>`                 | Marks the record deprecated, with replacement guidance.                     |
 

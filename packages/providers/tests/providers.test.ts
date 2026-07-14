@@ -96,6 +96,28 @@ test("structure-unknown-selector accepts a sibling component as a child, still f
   expect(structureWarnings[0].message).toContain(".bogus");
 });
 
+test("hoverForClass: a fenced @example renders as Markdown verbatim (prose + code)", () => {
+  const idx = createIndex(
+    [
+      "/**",
+      " * @component alert",
+      " * @summary An alert.",
+      " * @example",
+      " * Prose before.",
+      " * ```html",
+      ' * <div class="alert"></div>',
+      " * ```",
+      " */",
+      ".alert {}",
+    ].join("\n"),
+    { modifierConvention: "rscss" },
+  );
+  const h = hoverForClass("alert", "alert", idx, "full")?.contents ?? "";
+  expect(h).toContain("Prose before.");
+  expect(h).toContain("```html");
+  expect(h).not.toContain("```html\nProse before."); // prose isn't swallowed into a code fence
+});
+
 test("hoverForClass: an empty sectionOrder falls back to the default order (not a blank card)", () => {
   // The `cssdoc.hover.sectionOrder` setting defaults to `[]`; empty must mean "default order", not
   // "drop every section" (which collapsed the card to just its header line).

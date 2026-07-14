@@ -172,6 +172,41 @@ test("structureView selects which Structure representation(s) render (default bo
   });
 });
 
+test("@example: a fenced block renders as Markdown verbatim; bare code is auto-wrapped", () => {
+  const fenced = parseCssDocs(
+    [
+      "/**",
+      " * @component alert",
+      " * @summary An alert.",
+      " * @example",
+      " * Prose before.",
+      " * ```html",
+      ' * <div class="alert"></div>',
+      " * ```",
+      " */",
+      ".alert {}",
+    ].join("\n"),
+  )[0]!;
+  const md = renderEntry(fenced);
+  expect(md).toContain("## Examples");
+  expect(md).toContain("Prose before."); // prose survives, outside any fence
+  expect(md).toContain("```html");
+  expect(md).not.toContain("```html\nProse before."); // not the old whole-example wrap
+
+  const bare = parseCssDocs(
+    [
+      "/**",
+      " * @component b",
+      " * @summary B.",
+      " * @example",
+      ' * <b class="b"></b>',
+      " */",
+      ".b {}",
+    ].join("\n"),
+  )[0]!;
+  expect(renderEntry(bare)).toContain('```html\n<b class="b"></b>\n```'); // fence-less code gets wrapped
+});
+
 test("buildCssApi writes per-record pages, an index, and a compatible sidebar", () => {
   const outDir = mkdtempSync(join(tmpdir(), "cssdoc-md-"));
   const result = buildCssApi({ css: CSS, outDir, baseHref: "/api/css/" });

@@ -409,10 +409,11 @@ export const record = {
         if (w === "content")
           for (const e of entry.examples) {
             const ex = e.trim();
-            // Respect an authored fence; otherwise sniff markup vs CSS so it highlights right.
+            // An example that already carries a fenced block is Markdown (prose + code) — emit it
+            // verbatim. Only bare, fence-less code gets auto-fenced (sniffing markup vs CSS).
             frag.push(
               "",
-              ex.startsWith("```")
+              /(^|\n)\s*```/u.test(ex)
                 ? ex
                 : `\`\`\`${ex.includes("<") ? "html" : "css"}\n${ex}\n\`\`\``,
             );

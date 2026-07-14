@@ -269,7 +269,13 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
 
   if (entry.examples.length) {
     fragments.examples.push("## Examples", "");
-    for (const ex of entry.examples) fragments.examples.push("```html", ex, "```", "");
+    for (const raw of entry.examples) {
+      const ex = raw.trim();
+      // An example that already carries a fenced block is Markdown (prose + code) — emit it verbatim.
+      // Only bare, fence-less code gets auto-fenced (sniffing markup vs CSS).
+      if (/(^|\n)\s*```/u.test(ex)) fragments.examples.push(ex, "");
+      else fragments.examples.push(`\`\`\`${ex.includes("<") ? "html" : "css"}`, ex, "```", "");
+    }
   }
 
   const importSnippet = options.importSnippet?.(entry);

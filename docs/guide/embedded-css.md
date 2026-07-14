@@ -247,3 +247,7 @@ clash entirely, at the cost of the less-natural position.
   templates and `<style>` blocks that contain real class selectors.
 - **Interpolations** (`${…}`) are masked, not evaluated. A region that still can't parse is skipped
   rather than throwing.
+- **Fenced code in `@example`** — when the doc comment lives inside a backtick template (`` css`…` ``),
+  a code fence's backticks would close the template, so escape them: write ``\`\`\`html`` (and the
+  closing `` \`\`\` ``). cssdoc restores the fence when it reads the example. In a `.css` file or an
+  HTML `<style>` block there's no template, so write the fence plainly.
