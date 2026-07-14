@@ -100,6 +100,27 @@ export const cssDocSchema = {
         "How a /* … */ comment on a member's rule combines with its tag prose: append (default), prepend, replace, or ignore.",
       enum: ["append", "prepend", "replace", "ignore"],
     },
+    providers: {
+      description:
+        "Upstream cssdoc providers this config consumes, so their components resolve in this scope's lint/hover/docs. Each points at a provider's model.json or a source stylesheet.",
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["path"],
+        properties: {
+          path: {
+            type: "string",
+            description:
+              "Path to the provider's model.json or a source stylesheet — relative (starts with .) or a package specifier.",
+          },
+          baseHref: {
+            type: "string",
+            description: "URL prefix for links to the provider's rendered doc pages.",
+          },
+        },
+      },
+    },
     rules: {
       description: "Per-rule severity overrides (off/warn/error).",
       type: "object",

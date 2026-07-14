@@ -43,6 +43,17 @@ export interface RenderConfig {
   structureView?: "text" | "diagram" | "both";
 }
 
+/**
+ * An upstream cssdoc provider this config consumes. `path` points at the provider's published model
+ * (`model.json`, the JSON emitter's output) or a source stylesheet (`.css`/`.scss`/…) — resolved
+ * relative to this file for `.`-paths, else via Node resolution (so a package specifier works).
+ * `baseHref` prefixes links to the provider's rendered doc pages (`<baseHref><name>.md`).
+ */
+export interface ProviderRef {
+  path: string;
+  baseHref?: string;
+}
+
 interface RawTagDefinition {
   tagName: string;
   syntaxKind: CssDocSyntaxKind;
@@ -59,6 +70,7 @@ interface RawConfig {
   supportForTags?: Record<string, boolean>;
   modifierConvention?: ModifierConventionInput;
   inlineComments?: InlineCommentMode;
+  providers?: ProviderRef[];
   rules?: Record<string, RuleSeverityOverride>;
   naming?: NamingOverride;
   structureIgnore?: string[];
@@ -87,6 +99,7 @@ interface ConfigFileInit {
   extendsFiles: CssDocConfigFile[];
   modifierConvention?: ModifierConventionInput;
   inlineComments?: InlineCommentMode;
+  providers: ProviderRef[];
   rules: Record<string, RuleSeverityOverride>;
   naming: NamingOverride;
   structureIgnore: string[];
@@ -113,6 +126,11 @@ export class CssDocConfigFile {
   readonly modifierConvention?: ModifierConventionInput;
   /** How inline `/* … *\/` comments combine with tag prose, if declared by this file. */
   readonly inlineComments?: InlineCommentMode;
+  /**
+   * Upstream cssdoc providers this file consumes (this file's own — NOT inherited via `extends`, which
+   * carries configuration, not components). Resolve with {@link resolveProviders}.
+   */
+  readonly providers: readonly ProviderRef[];
   /**
    * The per-rule severity overrides, merged across the `extends` chain (this file wins). Not the
    * resolved severities — pass these to `resolveRuleSeverities` in `@cssdoc/providers`.
@@ -145,6 +163,7 @@ export class CssDocConfigFile {
     this.extendsFiles = init.extendsFiles;
     this.modifierConvention = init.modifierConvention;
     this.inlineComments = init.inlineComments;
+    this.providers = init.providers;
     const severities: Record<string, RuleSeverityOverride> = {};
     const naming: NamingOverride = {};
     const render: RenderConfig = {};
@@ -250,6 +269,7 @@ export class CssDocConfigFile {
       tagDefinitions: [],
       supportForTags: new Map(),
       extendsFiles: [],
+      providers: [],
       rules: {},
       naming: {},
       structureIgnore: [],
@@ -268,6 +288,7 @@ export class CssDocConfigFile {
         tagDefinitions: [],
         supportForTags: new Map(),
         extendsFiles: [],
+        providers: [],
         rules: {},
         naming: {},
         structureIgnore: [],
@@ -336,6 +357,7 @@ export class CssDocConfigFile {
       extendsFiles,
       modifierConvention: raw.modifierConvention,
       inlineComments: raw.inlineComments,
+      providers: raw.providers ?? [],
       rules: raw.rules ?? {},
       naming: raw.naming ?? {},
       structureIgnore: raw.structureIgnore ?? [],

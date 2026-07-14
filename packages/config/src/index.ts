@@ -18,5 +18,7 @@ export {
   CssDocConfigFile,
   CSSDOC_CONFIG_FILENAME,
   CSSDOC_CONFIG_FILENAMES,
+  type ProviderRef,
 } from "./CssDocConfigFile.ts";
+export { resolveProviders, type ResolvedProviders } from "./providers.ts";
 export { cssDocSchema } from "./schema.ts";
