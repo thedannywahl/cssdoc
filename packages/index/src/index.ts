@@ -143,23 +143,80 @@ const spanOf = (node: ChildNode): SourceSpan | undefined => {
   };
 };
 
+/**
+ * Follow the `var()` references in `value` through `values` to a terminal literal — the resolution a
+ * browser's dev tools show. Uses a `var(--x, fallback)` fallback when `--x` is undefined, and leaves a
+ * reference in place on an unknown property or a cycle (so the output degrades to the furthest it could
+ * reach rather than looping).
+ */
+function resolveValue(
+  value: string,
+  values: ReadonlyMap<string, string>,
+  seen: Set<string>,
+): string {
+  if (!value.includes("var(")) return value;
+  const parsed = valueParser(value);
+  parsed.walk((node) => {
+    if (node.type !== "function" || node.value !== "var") return undefined;
+    const ref = node.nodes.find((n) => n.type === "word")?.value;
+    if (!ref?.startsWith("--")) return false;
+    const comma = node.nodes.findIndex((n) => n.type === "div" && n.value === ",");
+    const fallback =
+      comma >= 0 ? valueParser.stringify(node.nodes.slice(comma + 1)).trim() : undefined;
+    const declared = seen.has(ref) ? undefined : values.get(ref);
+    const replacement =
+      declared !== undefined
+        ? resolveValue(declared, values, new Set([...seen, ref]))
+        : fallback !== undefined
+          ? resolveValue(fallback, values, seen)
+          : undefined;
+    if (replacement !== undefined) {
+      (node as unknown as { type: string; value: string; nodes: [] }).type = "word";
+      node.value = replacement;
+      (node as unknown as { nodes: [] }).nodes = [];
+    }
+    return false; // never descend into a var()'s own arguments
+  });
+  return valueParser.stringify(parsed.nodes);
+}
+
 /** A queryable view over the parsed records. */
 export class CssDocIndex {
   readonly file?: string;
   readonly records: readonly RecordInfo[];
   /** The modifier matcher for this index's convention — how members are matched and rendered. */
   readonly matcher: ModifierMatcher;
+  /** Every custom property's effective value (`--x: value` declarations and `@property` initial-values). */
+  readonly customPropertyValues: ReadonlyMap<string, string>;
   private readonly byName = new Map<string, RecordInfo>();
   private readonly byClass = new Map<string, RecordInfo>();
 
-  constructor(records: RecordInfo[], file?: string, matcher?: ModifierMatcher) {
+  constructor(
+    records: RecordInfo[],
+    file?: string,
+    matcher?: ModifierMatcher,
+    customPropertyValues: ReadonlyMap<string, string> = new Map(),
+  ) {
     this.records = records;
     this.file = file;
     this.matcher = matcher ?? new ModifierMatcher(DEFAULT_MODIFIER_CONVENTION);
+    this.customPropertyValues = customPropertyValues;
     for (const record of records) {
       this.byName.set(record.entry.name, record);
       this.byClass.set(stripDot(record.entry.className), record);
     }
+  }
+
+  /**
+   * A custom property's declared value and its fully resolved value — following `var()` references
+   * through the index to a terminal literal, the way browser dev tools do. `resolved` is omitted when
+   * nothing was followed (no `var()`, or the chain couldn't be resolved further).
+   */
+  resolveCustomProperty(name: string): { declared?: string; resolved?: string } {
+    const declared = this.customPropertyValues.get(name);
+    if (declared === undefined) return {};
+    const resolved = resolveValue(declared, this.customPropertyValues, new Set([name]));
+    return { declared, resolved: resolved === declared ? undefined : resolved };
   }
 
   /** Every documented record's model entry. */
@@ -408,7 +465,21 @@ export function createIndex(
         selectorText: "",
       },
   );
-  return new CssDocIndex(records, options.file, matcher);
+
+  // The custom-property value graph, for dev-tools-style `var()` resolution: seed each `@property`'s
+  // `initial-value`, then let plain `--x: value` declarations (the actual assignments) win.
+  const customPropertyValues = new Map<string, string>();
+  root.walkAtRules("property", (at) => {
+    const name = at.params.trim();
+    at.walkDecls("initial-value", (d) => {
+      customPropertyValues.set(name, d.value);
+    });
+  });
+  root.walkDecls((d) => {
+    if (d.prop.startsWith("--")) customPropertyValues.set(d.prop, d.value);
+  });
+
+  return new CssDocIndex(records, options.file, matcher, customPropertyValues);
 }
 
 /**

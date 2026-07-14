@@ -79,3 +79,19 @@ test("spans and lookups work for suffix (BEM) and attribute (CUBE) modifiers", (
     cube.recordInfo("card")?.memberSpans.has(memberKey("modifier", 'data-variant="ghost"')),
   ).toBe(true);
 });
+
+test("resolveCustomProperty follows the var() chain to a terminal value, cycle-safe", () => {
+  const idx = createIndex(
+    ":root { --a: var(--b); --b: var(--c); --c: #0770a3; --x: var(--y); --y: var(--x); }",
+  );
+  expect(idx.resolveCustomProperty("--a")).toEqual({ declared: "var(--b)", resolved: "#0770a3" });
+  // A cycle degrades to the furthest point rather than looping.
+  expect(idx.resolveCustomProperty("--x").resolved).toContain("var(");
+  // A plain literal has nothing to resolve.
+  expect(idx.resolveCustomProperty("--c")).toEqual({ declared: "#0770a3" });
+  // `@property` initial-values seed the graph; a fallback is used when the ref is unknown.
+  const idx2 = createIndex(
+    '@property --p { syntax: "<color>"; inherits: false; initial-value: var(--missing, #fff); }',
+  );
+  expect(idx2.resolveCustomProperty("--p").resolved).toBe("#fff");
+});

@@ -49,6 +49,7 @@ export {
   part,
   partUsage,
   record,
+  selectorDefines,
   stateUsage,
 } from "./aspects.ts";
 
@@ -176,9 +177,16 @@ export function hoverForClass(
   );
 }
 
-/** Hover for a `var(--…)` custom property. */
-export function hoverForCustomProperty(name: string, index: CssDocIndex): Hover | undefined {
-  return customProperty.hover(name, index);
+/**
+ * Hover for a `var(--…)` custom property. `valueIndex` (default `index`) supplies the value graph for
+ * `var()` resolution — pass a project-wide index so a chain that runs through other sheets resolves.
+ */
+export function hoverForCustomProperty(
+  name: string,
+  index: CssDocIndex,
+  valueIndex: CssDocIndex = index,
+): Hover | undefined {
+  return customProperty.hover(name, index, valueIndex);
 }
 
 /** Hover for a custom function. */

@@ -281,6 +281,61 @@ test("embedded hover renders an escaped fenced @example: real fence, prose, unma
   expect(contents).toContain('<div class="${p}alert">'); // interpolation restored, fence preserved
 });
 
+test("embedded hover: var() chain resolves, [class*] shows the family, a sibling shows its card", () => {
+  // Project index (the generated sheet): the token chain, alert (with a `-icon-*` family), close-button.
+  const project = createIndex(
+    [
+      '@property --info-border { syntax: "<color>"; inherits: false; initial-value: var(--stroke-info); }',
+      ":root { --stroke-info: #0770a3; }",
+      "/**\n * @component alert\n * @summary An alert.\n * @modifier -icon-* — Swap the glyph.\n */",
+      ".instui-alert {}",
+      ".instui-alert[class*='-icon-'] {}",
+      "/**\n * @component close-button\n * @summary A dismiss control.\n */",
+      ".instui-close-button {}",
+    ].join("\n"),
+    { modifierConvention: "rscss" },
+  );
+  const svc = new CssDocLanguageService(project);
+  svc.setHoverDetail("full", {}, []);
+
+  const bt = String.fromCharCode(96);
+  const ts = [
+    "export const alert = css" + bt,
+    "/**\n * @component alert\n * @summary An alert.\n * @modifier -icon-* — Swap the glyph.\n */",
+    ".${p}alert {}",
+    ".${p}alert.-color-info { border-color: var(--info-border); }",
+    '.${p}alert[class*="-icon-"] { color: red; }',
+    ".${p}alert > .${p}close-button {}",
+    bt + ";",
+  ].join("\n");
+  const hoverAt = (needle: string, delta: number) => {
+    const off = ts.indexOf(needle) + delta;
+    const before = ts.slice(0, off);
+    return svc.hover(
+      ts,
+      {
+        line: (before.match(/\n/gu) ?? []).length,
+        character: off - (before.lastIndexOf("\n") + 1),
+      },
+      "alert.ts",
+      "typescript",
+    )?.contents;
+  };
+
+  // ① var() chain resolved to the terminal literal.
+  const varHover = hoverAt("var(--info-border)", 6) ?? "";
+  expect(varHover).toContain("Resolves to: `#0770a3`");
+
+  // ② the `[class*="-icon-"]` attribute selector resolves to the `-icon-*` family modifier.
+  const attrHover = hoverAt('[class*="-icon-"]', 3) ?? "";
+  expect(attrHover).toContain("Swap the glyph");
+
+  // ③ a sibling component reference shows that component's own card.
+  const sibHover = hoverAt("> .${p}close-button", 5) ?? "";
+  expect(sibHover).toContain("A dismiss control.");
+  expect(sibHover).toContain("close-button");
+});
+
 test("diagnostics parse a .scss document through the SCSS dialect", () => {
   const scss = `$brand: #06c;
 // a scss line comment

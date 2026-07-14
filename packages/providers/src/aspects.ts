@@ -56,7 +56,7 @@ const CLASS_ATTR_RE = /\[\s*class\s*([~^$*|]?)=\s*(?:"([^"]*)"|'([^']*)'|([^\]\s
  * can define a chained modifier; `[class^=v]` cannot, since `^=` anchors to the start of the whole
  * attribute (the base class), never a chained modifier.
  */
-const selectorDefines = (selectorText: string, selector: string): boolean => {
+export const selectorDefines = (selectorText: string, selector: string): boolean => {
   if (!selector.startsWith(".")) return selectorText.includes(selector); // attribute-convention modifier
   const name = stripDot(selector); // e.g. `-icon-*` or `-foo`
   const wild = name.includes("*");
@@ -782,13 +782,18 @@ export const customProperty = {
     }));
   },
 
-  hover(name: string, index: CssDocIndex): Hover | undefined {
+  hover(name: string, index: CssDocIndex, valueIndex: CssDocIndex = index): Hover | undefined {
     const found = findProperty(index, name);
-    if (!found) return undefined;
-    const p = found.record.entry.cssPropertiesDeclared[found.index];
-    const lines = [`\`${p.name}\`${p.syntax ? ` — ${linkedSyntax(p.syntax)}` : ""}`];
-    if (p.defaultValue) lines.push("", `Default: \`${p.defaultValue}\``);
-    if (p.description) lines.push("", p.description);
+    const { declared, resolved } = valueIndex.resolveCustomProperty(name);
+    // Hover a documented `@property`/`@cssproperty`, or any custom property the value graph knows.
+    if (!found && declared === undefined) return undefined;
+    const p = found?.record.entry.cssPropertiesDeclared[found.index];
+    const lines = [`\`${name}\`${p?.syntax ? ` — ${linkedSyntax(p.syntax)}` : ""}`];
+    const value = declared ?? p?.defaultValue;
+    if (value) lines.push("", `Value: \`${value}\``);
+    // The value it computes to, following `var()` references through the sheet (dev-tools style).
+    if (resolved) lines.push("", `Resolves to: \`${resolved}\``);
+    if (p?.description) lines.push("", p.description);
     return { contents: lines.join("\n") };
   },
 
