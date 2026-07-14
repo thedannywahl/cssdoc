@@ -40,8 +40,31 @@ npm i -D @cssdoc/config @cssdoc/core
 | `rules`              | Per-rule severity overrides (`off`/`warn`/`error`).                                                                                                                                                                                                                                         |
 | `naming`             | Name-case to enforce on `component`/`part` class names — a preset (`pascalCase`/`camelCase`/`lowercase`) or a custom regex.                                                                                                                                                                 |
 | `structureIgnore`    | Class names exempt from `structure-unknown-selector` — external classes (utilities, cross-component refs) named in `@structure`. Literal names or simple `*` globs (e.g. `util-*`).                                                                                                         |
+| `providers`          | Upstream cssdoc providers this config consumes — `[{ path, baseHref? }]`. Their documented components resolve in this scope's lint and hover. See below.                                                                                                                                    |
 
 See [Modifier conventions](/guide/modifier-conventions) for the convention forms and the full rule list.
+
+## Consuming another provider
+
+`extends` inherits **configuration** (tags, convention, rules); `providers` imports another provider's
+**components**, so a consumer can compose them without a false `structure-unknown-selector` and get
+hover on their classes. The two are orthogonal — a consumer typically uses both.
+
+```jsonc
+{
+  "extends": ["../vendor/cssdoc.json"], // convention + tags
+  "providers": [
+    { "path": "../vendor/vendor.css", "baseHref": "/vendor/" }, // local source (parsed with its own convention)
+    { "path": "@vendor/ui/model.json", "baseHref": "https://vendor.dev/api/" }, // a published model
+  ],
+}
+```
+
+Each `path` resolves relative (`./…`) or via Node resolution (a package specifier). A `.json` path
+loads a published **model** — the [`@cssdoc/json`](/guide/packages) emitter's `model.json` (a
+`CssDocEntry[]`); any other path is a **source stylesheet**, parsed with the provider's own governing
+`cssdoc.json` convention. `baseHref` prefixes links to the provider's rendered doc pages
+(`<baseHref><name>.md`).
 
 ## Rule severities
 

@@ -15,7 +15,7 @@
  * @module @cssdoc/stylelint-plugin
  */
 import { dirname } from "node:path";
-import { CssDocConfigFile } from "@cssdoc/config";
+import { CssDocConfigFile, resolveProviders } from "@cssdoc/config";
 import type { ModifierConventionInput } from "@cssdoc/core";
 import { type NamingRules, type RuleName, type RuleSeverity, lintCssDocs } from "@cssdoc/lint-core";
 import stylelint, { type Rule } from "stylelint";
@@ -91,6 +91,7 @@ const rule: Rule<boolean, SecondaryOptions> = (primary, secondaryOptions) => (ro
     modifierConvention: secondaryOptions?.modifierConvention ?? configFile.modifierConvention,
     naming: { ...configFile.naming, ...secondaryOptions?.naming } as NamingRules,
     structureIgnore: secondaryOptions?.structureIgnore ?? configFile.structureIgnore,
+    providerEntries: resolveProviders(configFile).entries,
   });
   for (const violation of violations) {
     utils.report({

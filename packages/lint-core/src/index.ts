@@ -6,8 +6,13 @@
  *
  * @module @cssdoc/lint-core
  */
-import type { CssDocConfiguration, CssParse, ModifierConventionInput } from "@cssdoc/core";
-import { createIndex, cssValueSites } from "@cssdoc/index";
+import type {
+  CssDocConfiguration,
+  CssDocEntry,
+  CssParse,
+  ModifierConventionInput,
+} from "@cssdoc/core";
+import { createIndex, cssValueSites, indexFromEntries } from "@cssdoc/index";
 import {
   applyDirectives,
   checkPropertyAssignments,
@@ -84,6 +89,12 @@ export interface LintOptions {
   naming?: NamingRules;
   /** Class names exempt from the `structure-unknown-selector` rule (literal names or `*` globs). */
   structureIgnore?: readonly string[];
+  /**
+   * Components from upstream `providers` this scope consumes — added to the sibling set so a consumer
+   * stylesheet can compose them without a false `structure-unknown-selector`. Resolve via
+   * `resolveProviders` in `@cssdoc/config`.
+   */
+  providerEntries?: readonly CssDocEntry[];
   /** The PostCSS parser (inject a dialect parser for `.scss`/`.less`; default `postcss.parse`). */
   parse?: CssParse;
 }
@@ -107,7 +118,16 @@ export function lintCssDocs(css: string, options: LintOptions = {}): Violation[]
   // The providers drop `off` rules and stamp the resolved severity — no separate filter here.
   const diagnostics = applyDirectives(
     [
-      ...lintModel(index, severities, naming, options.structureIgnore), // hygiene + invalid-default-value + name-case
+      // Providers' components join the sibling set so a consumer can compose them without a false flag.
+      ...lintModel(
+        index,
+        severities,
+        naming,
+        options.structureIgnore,
+        options.providerEntries?.length
+          ? indexFromEntries([...index.entries, ...options.providerEntries])
+          : index,
+      ),
       ...checkPropertyAssignments(assignments, index, severities), // invalid-property-value
       ...checkPropertyUsage(usages, index, {}, severities), // invalid-fallback-value (unknown-property opt-in, off here)
     ],
