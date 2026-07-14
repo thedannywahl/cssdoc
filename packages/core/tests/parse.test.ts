@@ -199,6 +199,32 @@ test("@todo (block tag + inline comment) collects record to-dos, distinct from d
   expect(alert.modifiers.find((m) => m.name === "-x")?.description).toBeUndefined();
 });
 
+test("@structure optional-ancestor wrapper: root cardinality + @wrapper prose, in the model and mermaid", () => {
+  const [badge] = parseCssDocs(
+    [
+      "/**",
+      " * @component badge",
+      " * @summary A small status dot.",
+      " * @slot — The target being badged.",
+      " * @wrapper .badge-wrapper — Optional; anchors the badge over a target.",
+      " * @structure",
+      " * .badge-wrapper:opt {",
+      " *   slot {}",
+      " *   .badge {}",
+      " * }",
+      " */",
+      ".badge {}",
+    ].join("\n"),
+    { modifierConvention: "rscss" },
+  );
+  const [root] = badge!.structure!;
+  expect(root.selector).toBe(".badge-wrapper");
+  expect(root.cardinality).toBe("optional");
+  expect(root.description).toBe("Optional; anchors the badge over a target."); // @wrapper prose
+  // Mermaid: a root has no incoming edge, so its cardinality rides the label.
+  expect(toMermaid(badge!.structure!, { self: "badge" })).toContain(".badge-wrapper (0..1)");
+});
+
 const CONVENTION_FIXTURE = `
 /**
  * @component card

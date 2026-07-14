@@ -95,7 +95,7 @@
       }
     },
     "part-tag": {
-      "match": "(@(?:part|csspart|slot))\\b[ \\t]*(\\.?[A-Za-z][A-Za-z0-9_-]*)?",
+      "match": "(@(?:part|csspart|wrapper|slot))\\b[ \\t]*(\\.?[A-Za-z][A-Za-z0-9_-]*)?",
       "captures": {
         "1": {
           "name": "storage.type.class.cssdoc"

@@ -61,6 +61,7 @@ modifier conventions (rscss, CUBE, OOCSS, and more) — see [Modifier convention
 | `@container` / `@supports` / `@media <query> — <desc>` | A conditional block                                       | those at-rules         |
 | `@a11y` / `@accessibility <text>`                      | Accessibility guidance                                    | authored               |
 | `@structure`                                           | A nested-CSS element tree                                 | authored               |
+| `@wrapper .<x> — <desc>`                               | Prose for an optional-ancestor wrapper in `@structure`    | authored               |
 | `@demo <spec>`                                         | An embeddable demo (`self:button`, `stackblitz:…`, a URL) | authored               |
 | `@defaultValue <value>`                                | The default of the preceding `@cssproperty`               | authored               |
 | `@usage <text>`                                        | How to include the stylesheet / use the component         | authored               |
@@ -213,3 +214,22 @@ Three more things a node can express:
 Every remaining class named in an `@structure` selector should resolve to the component class, a
 documented member, or another documented component; otherwise `structure-unknown-selector` warns.
 Exempt other externals (utilities) with `structureIgnore` in `cssdoc.json`.
+
+### Optional-ancestor wrappers
+
+Sometimes the notable structure is an _optional ancestor_ — a wrapper the component sits inside. Root
+the tree at the wrapper and mark it `:opt`; because the component's own class appears beneath it, cssdoc
+recognizes the wrapper as a valid ancestor (no `structureIgnore`), and the diagram carries the `0..1` on
+the root. `@wrapper .<class> — <desc>` adds prose to it, the way `@modifier` annotates a modifier:
+
+```css
+/**
+ * @slot — The target being badged.
+ * @wrapper .badge-wrapper — Optional; anchors the badge over a target.
+ * @structure
+ * .badge-wrapper:opt {
+ *   slot {}
+ *   .badge {}
+ * }
+ */
+```

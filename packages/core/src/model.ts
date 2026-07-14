@@ -174,6 +174,8 @@ export interface StructureNode {
    * the stored selector.
    */
   cardinality?: "optional" | "many" | "one-or-more";
+  /** Prose from a `@wrapper` doc tag matching this node's class, when authored (annotates the node). */
+  description?: string;
   /** Child nodes (rules nested one brace level deeper). */
   children: StructureNode[];
 }

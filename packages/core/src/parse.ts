@@ -25,6 +25,7 @@ import type {
   CssPseudoElement,
   CssSource,
   CssState,
+  StructureNode,
   CssTokenConsumed,
   ParseOptions,
 } from "./model.ts";
@@ -411,6 +412,19 @@ function buildEntry(
     const existing = consumedTokens.get(tokenName);
     if (existing) existing.description = description || existing.description;
     else consumedTokens.set(tokenName, { name: tokenName, description: description || undefined });
+  }
+
+  // Attach `@wrapper` prose to the matching `@structure` node(s), by their leading class.
+  if (doc.wrappers.size && doc.structure?.length) {
+    const applyWrappers = (nodes: StructureNode[]): void => {
+      for (const node of nodes) {
+        const cls = node.selector.match(/\.([\w-]+)/u)?.[1];
+        const description = cls ? doc.wrappers.get(cls) : undefined;
+        if (description) node.description = description;
+        applyWrappers(node.children);
+      }
+    };
+    applyWrappers(doc.structure);
   }
 
   return {

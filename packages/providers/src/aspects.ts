@@ -171,6 +171,19 @@ export const record = {
           ...info.entry.modifiers.map((m) => m.name),
           ...info.entry.slots.map((s) => s.name),
         ]);
+        // An optional-ancestor wrapper: the tree roots at a class other than this component's own, with
+        // the component itself appearing below it (`.wrapper { … .self … }`). Such ancestor roots are
+        // valid — they're documented by the structure's shape (and optionally annotated with `@wrapper`)
+        // — so a top-level root's classes are known when the component's own class is one of its
+        // descendants. A normal structure (rooted at the component) is unaffected.
+        const selfClass = stripDot(info.entry.className);
+        const classesOf = (sel: string): string[] =>
+          [...sel.matchAll(/\.([\w-]+)/gu)].map((m) => m[1]);
+        const hasSelfBelow = (nodes: StructureNode[]): boolean =>
+          nodes.some((n) => classesOf(n.selector).includes(selfClass) || hasSelfBelow(n.children));
+        for (const root of info.entry.structure) {
+          if (hasSelfBelow(root.children)) for (const c of classesOf(root.selector)) known.add(c);
+        }
         // The prefix this record's own class carries in front of its name (e.g. `instui-` in
         // `.instui-alert`, or the masked `aaaa` when an embedded `${p}` is projected). A sibling
         // reference wears the same prefix, so stripping it should leave a known component name — this is

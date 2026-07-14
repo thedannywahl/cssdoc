@@ -200,7 +200,8 @@ function structureLabel(
   const tags = [kind, node.cardinality ? CARDINALITY_TOKEN[node.cardinality] : undefined].filter(
     Boolean,
   );
-  return tags.length ? `${base} (${tags.join(", ")})` : base;
+  const label = tags.length ? `${base} (${tags.join(", ")})` : base;
+  return node.description ? `${label} — ${node.description}` : label;
 }
 
 /** Flatten a `@structure` tree into indented text lines (two spaces per depth level). */

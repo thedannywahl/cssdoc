@@ -97,6 +97,36 @@ test("structure-unknown-selector accepts a sibling component as a child, still f
   expect(structureWarnings[0].message).toContain(".bogus");
 });
 
+test("structure-unknown-selector accepts an optional-ancestor wrapper root (self below it), else flags", () => {
+  const rule = (css: string) =>
+    lintModel(createIndex(css, { modifierConvention: "rscss" }))
+      .filter((d) => d.rule === "structure-unknown-selector")
+      .map((d) => d.message);
+  // Rooted at an ancestor wrapper with the component's own class beneath it → the wrapper is valid.
+  const ok = [
+    "/**",
+    " * @component badge",
+    " * @summary A badge.",
+    " * @slot — target",
+    " * @structure",
+    " * .badge-wrapper:opt { slot {} .badge {} }",
+    " */",
+    ".badge {}",
+  ].join("\n");
+  expect(rule(ok)).toEqual([]);
+  // A non-self root with no self beneath it is still an unknown selector.
+  const bad = [
+    "/**",
+    " * @component badge",
+    " * @summary A badge.",
+    " * @structure",
+    " * .mystery-wrapper { .thing {} }",
+    " */",
+    ".badge {}",
+  ].join("\n");
+  expect(rule(bad).join(" ")).toContain(".mystery-wrapper");
+});
+
 test("hover shows a To do section (@todo) and an inline-comment modifier description", () => {
   const idx = createIndex(
     [
