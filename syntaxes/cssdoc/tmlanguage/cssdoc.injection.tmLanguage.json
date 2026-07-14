@@ -117,7 +117,7 @@
       }
     },
     "block-tag": {
-      "match": "(@(?:class|summary|remarks|privateRemarks|deprecated|example|see|since|group|category|defaultValue|function|keyframes|animation|layer|container|supports|media|responsive|a11y|accessibility|structure|demo|usage|compat|related|alpha|beta|experimental|internal|public))\\b",
+      "match": "(@(?:class|summary|remarks|privateRemarks|deprecated|example|see|since|group|category|defaultValue|pseudo|function|keyframes|animation|layer|container|supports|media|responsive|a11y|accessibility|structure|demo|usage|compat|related|alpha|beta|experimental|internal|public))\\b",
       "name": "storage.type.class.cssdoc"
     },
     "structure-tag": {

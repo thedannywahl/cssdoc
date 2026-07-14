@@ -70,6 +70,18 @@ export interface CssState {
   description?: string;
 }
 
+/**
+ * A native pseudo-element a component styles (`::before`, `::marker`, `::selection`, …) — from a
+ * `@pseudo` doc tag or derived from a `::name` selector. Shadow `::part()` parts are modeled separately
+ * as {@link CssPart} (`shadowParts`), since only they map to a Custom Elements Manifest entry.
+ */
+export interface CssPseudoElement {
+  /** The pseudo-element name without the leading `::`, e.g. `before`. */
+  name: string;
+  /** Prose from a `@pseudo` doc tag, when authored. */
+  description?: string;
+}
+
 /** A named slot a component shell exposes (`@slot`, Custom Elements Manifest). */
 export interface CssSlot {
   /** The slot name (empty string for the default slot). */
@@ -225,6 +237,8 @@ export interface CssDocEntry {
   parts: CssPart[];
   /** Shadow-DOM exposed parts (`::part(name)`), from `@csspart` or a `::part()` selector. */
   shadowParts: CssPart[];
+  /** Native pseudo-elements the component styles (`::before`, `::marker`, …), from `@pseudo` or a selector. */
+  pseudoElements: CssPseudoElement[];
   /** States the component reacts to, from `@cssstate`, `:state()`, pseudo-classes, or state classes. */
   states: CssState[];
   /** Named slots the component shell exposes, from `@slot`. */

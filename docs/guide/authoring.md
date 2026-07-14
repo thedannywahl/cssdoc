@@ -48,6 +48,7 @@ modifier conventions (rscss, CUBE, OOCSS, and more) — see [Modifier convention
 | `@modifier <x> — <desc>`                               | A modifier on the base class                              | modifier selectors     |
 | `@part .<x> — <desc>`                                  | A class-based sub-element part                            | scoped child selectors |
 | `@csspart <x> — <desc>`                                | A shadow-DOM exposed part (`::part(x)`)                   | `::part(x)` / authored |
+| `@pseudo ::<x> — <desc>`                               | A native pseudo-element (`::before`, `::marker`, …)       | `::x` selectors        |
 | `@cssstate <x> — <desc>`                               | A custom `:state(x)` state                                | `:state(x)` selectors  |
 | `@cssstate :<x> — <desc>`                              | A native pseudo-class state (`:disabled`)                 | pseudo-class selectors |
 | `@slot <x> — <desc>`                                   | A named slot                                              | authored (CEM)         |
@@ -77,6 +78,12 @@ accepts it. cssdoc also **derives** a family straight from a `class` attribute s
 `.base[class*="-icon-"]` painter yields the `-icon-*` family even before you author it, using the
 operator's real semantics: `[class*="…"]` (contains) and `[class~="…"]`/`[class$="…"]` (exact word /
 suffix) count, while `[class^="…"]` does not (it anchors to the base class, not a chained modifier).
+
+cssdoc documents a **native pseudo-element** (`::before`, `::after`, `::marker`, `::selection`, and the
+other standard ones) as soon as a selector styles it — `@pseudo ::before — <desc>` only adds prose.
+Recognition is a curated allow-list, so vendor/experimental pseudo-elements (`::-webkit-*`) don't
+become API; extend it with `pseudoElements` in the modifier convention. Shadow `::part()` stays its own
+thing (`@csspart`).
 
 ## Modifier (flag) tags
 

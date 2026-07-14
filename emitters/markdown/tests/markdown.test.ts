@@ -207,6 +207,27 @@ test("@example: a fenced block renders as Markdown verbatim; bare code is auto-w
   expect(renderEntry(bare)).toContain('```html\n<b class="b"></b>\n```'); // fence-less code gets wrapped
 });
 
+test("renders a Pseudo-elements section from derived + @pseudo pseudo-elements", () => {
+  const [alert] = parseCssDocs(
+    [
+      "/**",
+      " * @component alert",
+      " * @summary An alert.",
+      " * @pseudo ::before — The status bar.",
+      " */",
+      ".alert {}",
+      ".alert::before {}",
+      ".alert::after {}",
+    ].join("\n"),
+    { modifierConvention: "rscss" },
+  );
+  const md = renderEntry(alert!);
+  expect(md).toContain("## Pseudo-elements");
+  expect(md).toContain("`::before`");
+  expect(md).toContain("The status bar.");
+  expect(md).toContain("`::after`");
+});
+
 test("buildCssApi writes per-record pages, an index, and a compatible sidebar", () => {
   const outDir = mkdtempSync(join(tmpdir(), "cssdoc-md-"));
   const result = buildCssApi({ css: CSS, outDir, baseHref: "/api/css/" });

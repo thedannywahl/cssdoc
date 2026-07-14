@@ -155,6 +155,7 @@ export const HOVER_SECTION_KEYS = [
   "modifiers",
   "parts",
   "shadowParts",
+  "pseudoElements",
   "states",
   "customProperties",
   "functions",

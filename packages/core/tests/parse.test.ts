@@ -114,6 +114,29 @@ test("@example unescapes `\\`` so a fence authored inside a css template becomes
   expect(alert.examples[0].startsWith("Prose before.")).toBe(true);
 });
 
+test("native pseudo-elements derive from selectors (allow-list), @pseudo adds prose, ::part stays a shadow part", () => {
+  const [alert] = parseCssDocs(
+    [
+      "/**",
+      " * @component alert",
+      " * @summary An alert.",
+      " * @pseudo ::before — The status bar.",
+      " */",
+      ".alert {}",
+      ".alert::before {}",
+      ".alert::after {}",
+      ".alert::-webkit-scrollbar {}", // vendor: not in the allow-list → ignored
+      ".alert::part(thumb) {}", // a shadow part, not a native pseudo-element
+    ].join("\n"),
+    { modifierConvention: "rscss" },
+  );
+  expect(alert.pseudoElements.map((p) => p.name)).toEqual(["after", "before"]); // sorted; vendor excluded
+  expect(alert.pseudoElements.find((p) => p.name === "before")?.description).toBe(
+    "The status bar.",
+  );
+  expect(alert.shadowParts.map((p) => p.name)).toEqual(["thumb"]); // ::part() is still a shadow part
+});
+
 const CONVENTION_FIXTURE = `
 /**
  * @component card

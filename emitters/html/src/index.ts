@@ -142,6 +142,13 @@ export function renderPage(entry: CssDocEntry, options: { indexHref?: string } =
     ),
   );
   section(
+    "Pseudo-elements",
+    table(
+      ["Pseudo-element", "Description"],
+      entry.pseudoElements.map((p) => [code(`::${p.name}`), esc(p.description) || "—"]),
+    ),
+  );
+  section(
     "States",
     table(
       ["State", "Description"],

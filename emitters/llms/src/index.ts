@@ -92,6 +92,12 @@ export function renderLlms(
       ),
     );
     facet(
+      "Pseudo-elements",
+      e.pseudoElements.map((p) =>
+        clean(p.description) ? `\`::${p.name}\` (${clean(p.description)})` : `\`::${p.name}\``,
+      ),
+    );
+    facet(
       "States",
       e.states.map(
         (s) =>

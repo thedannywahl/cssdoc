@@ -22,6 +22,7 @@ import type {
   CssModifier,
   CssPart,
   CssPropertyDeclared,
+  CssPseudoElement,
   CssSource,
   CssState,
   CssTokenConsumed,
@@ -38,6 +39,7 @@ interface Collected {
   modifiers: Map<string, CssModifier>;
   parts: Map<string, CssPart>;
   shadowParts: Map<string, CssPart>;
+  pseudoElements: Map<string, CssPseudoElement>;
   states: Map<string, CssState>;
   consumed: Set<string>;
   declared: Map<string, CssPropertyDeclared>;
@@ -153,6 +155,9 @@ function collect(
         for (const sp of selector.matchAll(/::part\(\s*([\w-]+)\s*\)/gu)) {
           if (!acc.shadowParts.has(sp[1])) acc.shadowParts.set(sp[1], { name: sp[1] });
         }
+        for (const pe of matcher.pseudoElementsIn(selector)) {
+          if (!acc.pseudoElements.has(pe.name)) acc.pseudoElements.set(pe.name, { name: pe.name });
+        }
         const bare = selector.replace(/::?[\w-]+(\([^)]*\))?/gu, ""); // drop pseudos
         const mods = matcher.modifiersIn(bare, baseNoDot);
         const modNames = new Set(mods.map((mod) => mod.name));
@@ -229,6 +234,7 @@ function buildEntry(
     modifiers: new Map(),
     parts: new Map(),
     shadowParts: new Map(),
+    pseudoElements: new Map(),
     states: new Map(),
     consumed: new Set(),
     declared: new Map(),
@@ -281,6 +287,11 @@ function buildEntry(
     const existing = acc.shadowParts.get(part);
     if (existing) existing.description = description || existing.description;
     else acc.shadowParts.set(part, { name: part, description: description || undefined });
+  }
+  for (const [pseudo, description] of doc.pseudoElements) {
+    const existing = acc.pseudoElements.get(pseudo);
+    if (existing) existing.description = description || existing.description;
+    else acc.pseudoElements.set(pseudo, { name: pseudo, description: description || undefined });
   }
   for (const [rawState, description] of doc.cssStates) {
     // A `:`-prefixed authored name (`@cssstate :disabled`) is a native pseudo-class state.
@@ -361,6 +372,7 @@ function buildEntry(
       .sort(byName)
       .map((p) => (p.modifiers ? { ...p, modifiers: [...p.modifiers].sort(byName) } : p)),
     shadowParts: [...acc.shadowParts.values()].sort(byName),
+    pseudoElements: [...acc.pseudoElements.values()].sort(byName),
     states: [...acc.states.values()].sort(byName),
     slots: [...doc.slots]
       .map(([slotName, description]) => ({
