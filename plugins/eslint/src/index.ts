@@ -36,7 +36,7 @@
  */
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { CssDocConfigFile } from "@cssdoc/config";
+import { CssDocConfigFile, resolveProviders } from "@cssdoc/config";
 import type { ModifierConventionInput } from "@cssdoc/core";
 import { scanClassUsages } from "@cssdoc/embedded";
 import { type NamingRules, type RuleName, lintCssDocs } from "@cssdoc/lint-core";
@@ -125,6 +125,7 @@ const validDocComments: RuleModule = {
           modifierConvention: options.modifierConvention ?? configFile.modifierConvention,
           naming: { ...configFile.naming, ...options.naming } as NamingRules,
           structureIgnore: options.structureIgnore ?? configFile.structureIgnore,
+          providerEntries: resolveProviders(configFile).entries,
         });
         for (const violation of violations) {
           context.report({

@@ -1,4 +1,5 @@
-import { createIndex } from "@cssdoc/index";
+import { parseCssDocs } from "@cssdoc/core";
+import { createIndex, indexFromEntries } from "@cssdoc/index";
 import { DEFAULT_RULE_SEVERITIES } from "@cssdoc/providers";
 import { expect, test } from "vite-plus/test";
 import { CssDocLanguageService } from "../src/service.ts";
@@ -552,4 +553,52 @@ test("completions round out: doc-tags in embedded CSS, and class modifiers in cl
     .completions(jsx, { line: 0, character: ci }, "App.jsx", "javascriptreact")
     .map((c) => c.label);
   expect(labels).toContain("card--featured");
+});
+
+test("a scope's providers let a consumer stylesheet compose an upstream component (lint + hover)", () => {
+  // The upstream provider (vendor) documents a `widget`; the consumer scope carries it as a sibling.
+  const providerEntries = parseCssDocs(
+    "/**\n * @component widget\n * @summary A vendor widget.\n */\n.widget {}",
+    { modifierConvention: "rscss" },
+  );
+  const demo = [
+    "/**",
+    " * @component panel",
+    " * @summary A panel.",
+    " * @structure",
+    " * .panel { .widget {} }",
+    " */",
+    ".panel {}",
+    ".panel .widget { color: red; }",
+  ].join("\n");
+  const own = createIndex(demo, { file: "demo.css" });
+  const svc = new CssDocLanguageService(createIndex(""));
+  svc.setScopes([
+    {
+      dir: "",
+      index: own,
+      siblingIndex: indexFromEntries([...own.entries, ...providerEntries]),
+      severities: DEFAULT_RULE_SEVERITIES,
+      naming: {},
+    },
+  ]);
+
+  // Lint: the composed vendor `.widget` is recognized, not a false structure-unknown-selector.
+  const diags = svc.diagnostics(demo, "css", "demo.css");
+  expect(diags.some((d) => d.code === "structure-unknown-selector")).toBe(false);
+
+  // Hover: hovering the vendor `.widget` inside demo.css resolves to the vendor component's card.
+  const off = demo.indexOf(".widget { color") + 2;
+  const before = demo.slice(0, off);
+  const contents =
+    svc.hover(
+      demo,
+      {
+        line: (before.match(/\n/gu) ?? []).length,
+        character: off - (before.lastIndexOf("\n") + 1),
+      },
+      "demo.css",
+      "css",
+    )?.contents ?? "";
+  expect(contents).toContain("A vendor widget.");
 });

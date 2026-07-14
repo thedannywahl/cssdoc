@@ -1,3 +1,4 @@
+import { parseCssDocs } from "@cssdoc/core";
 import { expect, test } from "vite-plus/test";
 import { type LintOptions, type Violation, lintCssDocs as lintRaw } from "../src/index.ts";
 
@@ -192,4 +193,27 @@ test("naming: a custom regex is honored for the name case", () => {
   // Require a `c-` prefix; `.widget` doesn't match.
   const v = byRule(lintCssDocs(css, { naming: { component: "^c-" } }), "component-name-case");
   expect(v).toHaveLength(1);
+});
+
+test("providerEntries let a consumer @structure compose an upstream component without a false flag", () => {
+  const providerEntries = parseCssDocs(
+    "/**\n * @component widget\n * @summary A widget.\n */\n.widget {}",
+    {
+      modifierConvention: "rscss",
+    },
+  );
+  const consumer = [
+    "/**",
+    " * @component panel",
+    " * @summary A panel.",
+    " * @structure",
+    " * .panel { .widget {} }",
+    " */",
+    ".panel {}",
+  ].join("\n");
+  const rules = (opts: LintOptions) => lintCssDocs(consumer, opts).map((v) => v.rule);
+  // Without the provider, the composed `.widget` is an unknown structure selector...
+  expect(rules({})).toContain("structure-unknown-selector");
+  // ...with it, the upstream component is recognized as a sibling.
+  expect(rules({ providerEntries })).not.toContain("structure-unknown-selector");
 });

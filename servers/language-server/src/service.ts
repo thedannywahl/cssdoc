@@ -328,6 +328,14 @@ export interface ConfigScope {
   /** The configuration (for rebuilding a CSS-doc index from unsaved editor text). */
   configuration?: CssDocConfiguration;
   index: CssDocIndex;
+  /**
+   * The index used for sibling/cross-component recognition — this scope's own records plus any declared
+   * `providers`' components. Defaults to {@link ConfigScope.index}. (Kept separate from `index` so the
+   * value graph for `var()` resolution stays on the real, span-carrying scope index.)
+   */
+  siblingIndex?: CssDocIndex;
+  /** A provider component's doc-page URL, from its `baseHref` (for cross-links). */
+  providerHref?: (className: string) => string | undefined;
   severities: RuleSeverities;
   naming: ResolvedNaming;
   /** Class names exempt from the `structure-unknown-selector` rule. */
@@ -505,9 +513,12 @@ export class CssDocLanguageService {
   ): LspHover | undefined {
     const offset = offsetAt(text, position);
 
-    // The governing project index: the value graph for `var()` resolution and the sibling components a
-    // reference in this file may point at.
-    const project = this.scopeForPath(path).index;
+    // The governing scope supplies two indexes: `project` (the value graph for `var()` resolution and
+    // this scope's own components) and `siblings` (that plus any declared providers' components, for
+    // cross-component resolution).
+    const governing = this.scopeForPath(path);
+    const project = governing.index;
+    const siblings = governing.siblingIndex ?? governing.index;
 
     // Authoring a stylesheet directly.
     if (languageId && CSS_LANGUAGES.has(languageId)) {
@@ -518,6 +529,7 @@ export class CssDocLanguageService {
         resolveParser(dialectForFilename(path)),
         text,
         project,
+        siblings,
       );
     }
     // Authoring embedded CSS in a host document — run the same resolution over the projected CSS,
@@ -525,7 +537,15 @@ export class CssDocLanguageService {
     const host = detectEmbeddedHost(path) ?? hostForLanguageId(languageId);
     if (host) {
       const parse = resolveParser(projectionDialect(text, { host }));
-      const h = this.authoringHover(projectCss(text, { host }), offset, path, parse, text, project);
+      const h = this.authoringHover(
+        projectCss(text, { host }),
+        offset,
+        path,
+        parse,
+        text,
+        project,
+        siblings,
+      );
       if (h) return h;
     }
 
@@ -568,6 +588,7 @@ export class CssDocLanguageService {
     parse?: CssParse,
     source: string = text,
     project?: CssDocIndex,
+    siblings?: CssDocIndex,
   ): LspHover | undefined {
     const index = createIndex(text, {
       configuration: this.scopeForPath(path).configuration,
@@ -617,7 +638,21 @@ export class CssDocLanguageService {
     if (cls) {
       const resolved = resolveCssClass(cls, index);
       if (resolved) return clsCard(resolved.base, resolved.token, index);
-      // Not a member of this file's component — maybe a sibling component defined in another sheet.
+      // A class defined elsewhere in the scope or in a declared provider — the consumer writes the
+      // real class, so a direct lookup against the sibling/provider index resolves it to its card.
+      const external = siblings && resolveCssClass(cls, siblings);
+      if (external) {
+        const h = hoverForClass(
+          external.base,
+          external.token,
+          siblings,
+          this.hoverDetail,
+          this.hoverSections,
+          this.hoverSectionOrder,
+        );
+        if (h) return { contents: h.contents };
+      }
+      // A prefixed sibling from the same package (an embedded `${p}` masked reference).
       const sibling = project && siblingComponentClass(cls, index, project);
       if (sibling) {
         const h = hoverForClass(
@@ -628,7 +663,7 @@ export class CssDocLanguageService {
           this.hoverSections,
           this.hoverSectionOrder,
         );
-        if (h) return { contents: h.contents }; // the sibling's own card, from the project index
+        if (h) return { contents: h.contents };
       }
     }
     return undefined;
@@ -842,7 +877,14 @@ export class CssDocLanguageService {
     const diags = applyDirectives(
       [
         // Pass the project-wide index so `@structure` can reference sibling components from other files.
-        ...lintModel(index, scope.severities, scope.naming, scope.structureIgnore, scope.index),
+        // Recognize this scope's own components AND any declared providers' components as siblings.
+        ...lintModel(
+          index,
+          scope.severities,
+          scope.naming,
+          scope.structureIgnore,
+          scope.siblingIndex ?? scope.index,
+        ),
         ...checkPropertyAssignments(assignments, index, scope.severities),
         ...checkPropertyUsage(usages, index, {}, scope.severities),
       ],

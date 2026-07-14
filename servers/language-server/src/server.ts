@@ -8,10 +8,10 @@
 import { readFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { CssDocConfigFile } from "@cssdoc/config";
+import { CssDocConfigFile, resolveProviders } from "@cssdoc/config";
 import { dialectForFilename, resolveParser } from "@cssdoc/dialects";
 import { detectEmbeddedHost, projectCss } from "@cssdoc/embedded";
-import { createIndex } from "@cssdoc/index";
+import { createIndex, indexFromEntries } from "@cssdoc/index";
 import { type HoverSectionOrder, resolveNaming, resolveRuleSeverities } from "@cssdoc/providers";
 import {
   CompletionItemTag,
@@ -74,22 +74,31 @@ export function startLanguageServer(): void {
 
     const scopes: ConfigScope[] = [...groups.values()].map((g) => {
       const configuration = g.configFile.toConfiguration();
+      const index = createIndex(g.files.map(readIndexable).join("\n"), {
+        file: g.files.length === 1 ? g.files[0] : undefined,
+        configuration,
+        // Pick a dialect parser for the group: SCSS wins over Less wins over plain CSS. (Host files
+        // carry their dialect internally; the projection is parsed as CSS here — best-effort.)
+        parse: resolveParser(
+          g.files.some((f) => dialectForFilename(f) === "scss")
+            ? "scss"
+            : g.files.some((f) => dialectForFilename(f) === "less")
+              ? "less"
+              : "css",
+        ),
+      });
+      // Declared providers add their components to the sibling set (lint + cross-component hover) — the
+      // real, span-carrying `index` stays the source for `var()` resolution.
+      const providers = resolveProviders(g.configFile);
+      const siblingIndex = providers.entries.length
+        ? indexFromEntries([...index.entries, ...providers.entries])
+        : index;
       return {
         dir: g.dir,
         configuration,
-        index: createIndex(g.files.map(readIndexable).join("\n"), {
-          file: g.files.length === 1 ? g.files[0] : undefined,
-          configuration,
-          // Pick a dialect parser for the group: SCSS wins over Less wins over plain CSS. (Host files
-          // carry their dialect internally; the projection is parsed as CSS here — best-effort.)
-          parse: resolveParser(
-            g.files.some((f) => dialectForFilename(f) === "scss")
-              ? "scss"
-              : g.files.some((f) => dialectForFilename(f) === "less")
-                ? "less"
-                : "css",
-          ),
-        }),
+        index,
+        siblingIndex,
+        providerHref: providers.href,
         severities: resolveRuleSeverities(
           g.configFile.ruleSeverities as Parameters<typeof resolveRuleSeverities>[0],
         ),
