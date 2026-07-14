@@ -4,6 +4,18 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.5.3
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.5.2...v0.5.3)
+
+### 🩹 Fixes
+
+- **providers,language-server:** Full hover card on empty sectionOrder; unmask card interpolations ([1c87df9](https://github.com/thedannywahl/cssdoc/commit/1c87df9))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.5.2
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.5.1...v0.5.2)
