@@ -4,6 +4,21 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.6.0
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.5.4...v0.6.0)
+
+### 🚀 Enhancements
+
+- **index,providers,language-server:** Resolve var() chains + attribute-selector & cross-component hover ([c2cb0aa](https://github.com/thedannywahl/cssdoc/commit/c2cb0aa))
+- **core,index,providers,emitters:** Document native pseudo-elements (@pseudo + derivation) ([4ad1d57](https://github.com/thedannywahl/cssdoc/commit/4ad1d57))
+- **core,config,providers:** Inline-comment prose, inlineComments mode, and @todo ([8f7f775](https://github.com/thedannywahl/cssdoc/commit/8f7f775))
+- **core,providers,emitters:** Optional-ancestor wrappers in @structure (+ @wrapper prose) ([f45040a](https://github.com/thedannywahl/cssdoc/commit/f45040a))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.5.4
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.5.3...v0.5.4)

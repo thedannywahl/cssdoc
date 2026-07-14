@@ -1,6 +1,6 @@
 {
   "name": "@cssdoc/language-server",
-  "version": "0.5.4",
+  "version": "0.6.0",
   "description": "An editor-agnostic language server (LSP) for cssdoc: completion, hover, definition, and deprecation quick-fixes over the documented CSS surface.",
   "keywords": [
     "css",

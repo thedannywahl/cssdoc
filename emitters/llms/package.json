@@ -1,6 +1,6 @@
 {
   "name": "@cssdoc/llms",
-  "version": "0.5.4",
+  "version": "0.6.0",
   "description": "Emit an llms.txt-style, token-efficient digest of the cssdoc model for LLM context windows.",
   "keywords": [
     "css",
