@@ -32,6 +32,22 @@ on the parse to record the file), `importSnippet` (a fenced snippet in the Usage
 post-processor). `renderEntry(entry)` / `renderIndex(entries)` return strings if you'd rather place the
 output yourself.
 
+To cross-link components from an upstream [provider](/guide/config#consuming-another-provider), pass
+`providers` — the result of `resolveProviders` from `@cssdoc/config`. A referenced provider component in
+an `@structure` (or the derived Subcomponents list) then links out to that provider's page:
+
+```ts
+import { CssDocConfigFile, resolveProviders } from "@cssdoc/config";
+
+const configFile = CssDocConfigFile.loadForFolder("packages/app");
+buildCssApi({
+  css: readFileSync("dist/app.css", "utf8"),
+  outDir: "docs/api/css",
+  baseHref: "/api/css/",
+  providers: resolveProviders(configFile), // each provider's `baseHref` prefixes its links
+});
+```
+
 ## HTML
 
 [`@cssdoc/html`](https://www.npmjs.com/package/@cssdoc/html) writes standalone, self-contained HTML —
