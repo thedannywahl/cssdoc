@@ -97,6 +97,25 @@ test("structure-unknown-selector accepts a sibling component as a child, still f
   expect(structureWarnings[0].message).toContain(".bogus");
 });
 
+test("the hover Structure block carries @wrapper prose as a trailing comment", () => {
+  const idx = createIndex(
+    [
+      "/**",
+      " * @component badge",
+      " * @summary A badge.",
+      " * @slot — target",
+      " * @wrapper .badge-wrapper — Optional; anchors the badge over a target.",
+      " * @structure",
+      " * .badge-wrapper:opt { slot {} .badge {} }",
+      " */",
+      ".badge {}",
+    ].join("\n"),
+    { modifierConvention: "rscss" },
+  );
+  const card = hoverForClass("badge", "badge", idx, "full")?.contents ?? "";
+  expect(card).toContain(".badge-wrapper { /* Optional; anchors the badge over a target. */");
+});
+
 test("structure-unknown-selector accepts an optional-ancestor wrapper root (self below it), else flags", () => {
   const rule = (css: string) =>
     lintModel(createIndex(css, { modifierConvention: "rscss" }))

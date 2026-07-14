@@ -143,7 +143,9 @@ export function toMermaid(roots: StructureNode[], options: MermaidOptions = {}):
   const walk = (node: StructureNode, isRoot: boolean): string => {
     const id = `n${counter++}`;
     const { klass, label, href } = classify(node, isRoot, options);
-    nodes.push(`  ${SHAPE[klass](id, esc(label))}:::${klass}`);
+    // A node's authored prose (`@wrapper`) rides its label, matching the text tree.
+    const shown = node.description ? `${label} — ${node.description}` : label;
+    nodes.push(`  ${SHAPE[klass](id, esc(shown))}:::${klass}`);
     if (href) links.push(`  click ${id} "${href}"`);
     for (const child of node.children) {
       const childId = walk(child, false);

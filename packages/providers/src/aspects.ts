@@ -98,14 +98,16 @@ const globMatch = (pattern: string, value: string): boolean => {
 /**
  * Serialize an authored `@structure` tree back to nested CSS for a syntax-highlighted hover block. Leaf
  * selectors are left bare (no `{}`) — VS Code's CSS grammar still colours them, and it reads like the
- * authored `@structure` declaration; only nesting keeps braces.
+ * authored `@structure` declaration; only nesting keeps braces. A node's authored prose (`@wrapper`)
+ * trails its selector as a CSS comment.
  */
 const renderStructureTree = (nodes: StructureNode[], depth = 0): string[] =>
   nodes.flatMap((n) => {
     const pad = "  ".repeat(depth);
+    const note = n.description ? ` /* ${n.description} */` : "";
     return n.children.length
-      ? [`${pad}${n.selector} {`, ...renderStructureTree(n.children, depth + 1), `${pad}}`]
-      : [`${pad}${n.selector}`];
+      ? [`${pad}${n.selector} {${note}`, ...renderStructureTree(n.children, depth + 1), `${pad}}`]
+      : [`${pad}${n.selector}${note}`];
   });
 
 // ── record ──────────────────────────────────────────────────────────────────────────────────────
