@@ -95,6 +95,7 @@ export type MemberKind =
   | "modifier"
   | "part"
   | "shadow-part"
+  | "pseudo-element"
   | "property"
   | "function"
   | "animation"
@@ -361,6 +362,9 @@ function scanNodes(nodes: ChildNode[], build: Build, base: string, matcher: Modi
         }
         for (const sp of selector.matchAll(/::part\(\s*([\w-]+)\s*\)/gu)) {
           set(memberKey("shadow-part", sp[1]), node);
+        }
+        for (const pe of matcher.pseudoElementsIn(selector)) {
+          set(memberKey("pseudo-element", pe.name), node);
         }
         const bare = selector.replace(/::?[\w-]+(\([^)]*\))?/gu, "");
         const modNames = new Set<string>();

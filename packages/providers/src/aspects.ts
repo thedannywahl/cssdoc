@@ -262,6 +262,7 @@ export const record = {
         entry.modifiers.length && `${entry.modifiers.length} modifiers`,
         entry.parts.length && `${entry.parts.length} parts`,
         entry.shadowParts.length && `${entry.shadowParts.length} shadow parts`,
+        entry.pseudoElements.length && `${entry.pseudoElements.length} pseudo-elements`,
         entry.states.length && `${entry.states.length} states`,
         entry.cssPropertiesDeclared.length &&
           `${entry.cssPropertiesDeclared.length} custom properties`,
@@ -334,6 +335,12 @@ export const record = {
       entry.shadowParts.map(
         (p) => `- ${styled(`::part(${p.name})`, "field")}${dash(p.description)}`,
       ),
+    );
+    list(
+      "pseudoElements",
+      "symbol-misc",
+      "Pseudo-elements",
+      entry.pseudoElements.map((p) => `- ${styled(`::${p.name}`, "field")}${dash(p.description)}`),
     );
     list(
       "states",

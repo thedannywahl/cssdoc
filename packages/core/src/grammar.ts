@@ -107,6 +107,8 @@ export interface ParsedDoc {
   tokens: Map<string, string>;
   /** `@csspart` descriptions (shadow-DOM `::part()`), keyed by the bare part name (e.g. `header`). */
   cssParts: Map<string, string>;
+  /** `@pseudo` descriptions (native pseudo-elements), keyed by the bare name (e.g. `before`). */
+  pseudoElements: Map<string, string>;
   /** `@cssproperty` declarations. */
   cssProperties: DocCssProperty[];
   /** `@cssstate` descriptions, keyed by state name. */
@@ -208,6 +210,7 @@ export function parseDocComment(
     parts: new Map(),
     tokens: new Map(),
     cssParts: new Map(),
+    pseudoElements: new Map(),
     cssProperties: [],
     cssStates: new Map(),
     slots: new Map(),
@@ -310,6 +313,12 @@ function applyBlockTag(
       // A shadow-DOM `::part()` name — a bare identifier (tolerate a stray leading dot).
       const { head, description } = splitDesc(rest);
       doc.cssParts.set(head.replace(/^\./u, ""), description ?? "");
+      break;
+    }
+    case "pseudo": {
+      // A native pseudo-element, named as `::before` or `before` (tolerate the leading `::`).
+      const { head, description } = splitDesc(rest);
+      doc.pseudoElements.set(head.replace(/^::/u, ""), description ?? "");
       break;
     }
     case "cssproperty": {

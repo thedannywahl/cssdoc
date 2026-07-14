@@ -51,6 +51,12 @@ export interface ModifierConvention {
    */
   statePseudoClasses?: string[];
   /**
+   * Native pseudo-elements (without the `::`) to document when they appear on a component's selectors,
+   * e.g. `["before", "after"]`. Defaults to {@link DEFAULT_PSEUDO_ELEMENTS} — a curated set of standard
+   * pseudo-elements, excluding vendor/experimental ones. Shadow `::part()` is handled separately.
+   */
+  pseudoElements?: string[];
+  /**
    * Split the modifier body into `prop`/`value` on {@link ModifierConvention.propValueSeparator}?
    * Defaults to `false`. Ignored for `attribute` (which always derives `prop` from the attribute name
    * and `value` from the attribute value).
@@ -81,6 +87,24 @@ export const DEFAULT_STATE_PSEUDO_CLASSES: readonly string[] = [
   "invalid",
   "in-range",
   "out-of-range",
+];
+
+/**
+ * The native pseudo-elements cssdoc documents by default when a component styles them. A curated set of
+ * the standard ones — vendor/experimental pseudo-elements (`::-webkit-*`) are left out so incidental
+ * rules don't become documented API. `::part()`/`::slotted()` are handled separately (shadow parts).
+ */
+export const DEFAULT_PSEUDO_ELEMENTS: readonly string[] = [
+  "before",
+  "after",
+  "marker",
+  "placeholder",
+  "selection",
+  "backdrop",
+  "first-line",
+  "first-letter",
+  "file-selector-button",
+  "details-content",
 ];
 
 /** The built-in convention presets. Other schemes use the custom object (see the docs). */
@@ -117,6 +141,7 @@ export function resolveModifierConvention(input?: ModifierConventionInput): Modi
     ...(base.elementSeparator !== undefined ? { elementSeparator: base.elementSeparator } : {}),
     ...(base.statePrefixes !== undefined ? { statePrefixes: base.statePrefixes } : {}),
     statePseudoClasses: base.statePseudoClasses ?? [...DEFAULT_STATE_PSEUDO_CLASSES],
+    pseudoElements: base.pseudoElements ?? [...DEFAULT_PSEUDO_ELEMENTS],
     propValue: base.propValue ?? false,
     propValueSeparator: base.propValueSeparator ?? "-",
   };
@@ -160,6 +185,8 @@ export class ModifierMatcher {
   private readonly statePrefixes: string[];
   /** Native pseudo-classes (no `:`) recognized as states. */
   private readonly statePseudoClasses: Set<string>;
+  /** Native pseudo-elements (no `::`) recognized as documented pseudo-elements. */
+  private readonly pseudoElements: Set<string>;
 
   constructor(convention: ModifierConvention) {
     this.convention = convention;
@@ -178,6 +205,7 @@ export class ModifierMatcher {
       .slice()
       .sort((a, b) => b.length - a.length);
     this.statePseudoClasses = new Set(convention.statePseudoClasses ?? []);
+    this.pseudoElements = new Set(convention.pseudoElements ?? []);
   }
 
   /** Does a class name (no leading dot) start with one of the convention's state prefixes? */
@@ -355,6 +383,25 @@ export class ModifierMatcher {
     for (const m of selector.matchAll(/(?<!:):([\w-]+)/gu)) {
       const name = m[1];
       if (this.statePseudoClasses.has(name) && !seen.has(name)) {
+        seen.add(name);
+        out.push({ name });
+      }
+    }
+    return out;
+  }
+
+  /**
+   * Every native pseudo-element on the selector recognized for documentation — a `::name` whose `name`
+   * is in the convention's {@link ModifierConvention.pseudoElements} (e.g. `.alert::before` → `before`).
+   * `::part()`/`::slotted()` and pseudo-elements not in the set are ignored.
+   */
+  pseudoElementsIn(selector: string): { name: string }[] {
+    if (this.pseudoElements.size === 0) return [];
+    const seen = new Set<string>();
+    const out: { name: string }[] = [];
+    for (const m of selector.matchAll(/::([\w-]+)/gu)) {
+      const name = m[1];
+      if (this.pseudoElements.has(name) && !seen.has(name)) {
         seen.add(name);
         out.push({ name });
       }

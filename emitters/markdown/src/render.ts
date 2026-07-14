@@ -31,6 +31,7 @@ export type SectionKey =
   | "modifiers"
   | "parts"
   | "shadowParts"
+  | "pseudoElements"
   | "states"
   | "slots"
   | "structure"
@@ -54,6 +55,7 @@ export const DEFAULT_SECTION_ORDER: readonly SectionKey[] = [
   "modifiers",
   "parts",
   "shadowParts",
+  "pseudoElements",
   "states",
   "slots",
   "structure",
@@ -317,6 +319,17 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
       ...table(
         ["Part", "Description"],
         entry.shadowParts.map((p) => [`\`::part(${p.name})\``, cell(p.description)]),
+      ),
+    );
+  }
+
+  if (entry.pseudoElements.length) {
+    fragments.pseudoElements.push(
+      "## Pseudo-elements",
+      "",
+      ...table(
+        ["Pseudo-element", "Description"],
+        entry.pseudoElements.map((p) => [`\`::${p.name}\``, cell(p.description)]),
       ),
     );
   }
