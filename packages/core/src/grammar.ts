@@ -109,6 +109,8 @@ export interface ParsedDoc {
   cssParts: Map<string, string>;
   /** `@pseudo` descriptions (native pseudo-elements), keyed by the bare name (e.g. `before`). */
   pseudoElements: Map<string, string>;
+  /** `@todo` notes (internal development notes). */
+  todos: string[];
   /** `@cssproperty` declarations. */
   cssProperties: DocCssProperty[];
   /** `@cssstate` descriptions, keyed by state name. */
@@ -211,6 +213,7 @@ export function parseDocComment(
     tokens: new Map(),
     cssParts: new Map(),
     pseudoElements: new Map(),
+    todos: [],
     cssProperties: [],
     cssStates: new Map(),
     slots: new Map(),
@@ -278,6 +281,11 @@ function applyBlockTag(
     case "privateRemarks":
       doc.privateRemarks = rest.trim();
       break;
+    case "todo": {
+      const todo = rest.trim();
+      if (todo) doc.todos.push(todo);
+      break;
+    }
     case "since":
       doc.since = rest.trim();
       break;

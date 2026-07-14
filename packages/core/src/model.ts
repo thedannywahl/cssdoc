@@ -244,6 +244,11 @@ export interface CssDocEntry {
   /** Named slots the component shell exposes, from `@slot`. */
   slots: CssSlot[];
   /**
+   * Internal to-do notes, from `@todo` tags and `/* @todo … *\/` inline comments. Development notes,
+   * not public API — emitters may omit them (like {@link CssDocEntry.privateRemarks}).
+   */
+  todos: string[];
+  /**
    * Design tokens this component consumes: every `--*` custom property referenced via `var(...)` inside
    * its rules, each annotated with `@tokens` prose where authored (and including any `@tokens`-declared
    * token not literally found via `var()`).

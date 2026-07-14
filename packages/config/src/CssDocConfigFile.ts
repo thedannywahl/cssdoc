@@ -13,7 +13,12 @@ import { dirname, parse as parsePath, resolve } from "node:path";
 import { Ajv } from "ajv";
 import { type ParseError, parse as parseJsonc, printParseErrorCode } from "jsonc-parser";
 import { CssDocConfiguration, CssDocTagDefinition } from "@cssdoc/core";
-import type { CssDocSyntaxKind, CssRecordKind, ModifierConventionInput } from "@cssdoc/core";
+import type {
+  CssDocSyntaxKind,
+  CssRecordKind,
+  InlineCommentMode,
+  ModifierConventionInput,
+} from "@cssdoc/core";
 import { cssDocSchema } from "./schema.ts";
 
 /** A per-rule severity override, as spelled in `cssdoc.json`. */
@@ -53,6 +58,7 @@ interface RawConfig {
   tagDefinitions?: RawTagDefinition[];
   supportForTags?: Record<string, boolean>;
   modifierConvention?: ModifierConventionInput;
+  inlineComments?: InlineCommentMode;
   rules?: Record<string, RuleSeverityOverride>;
   naming?: NamingOverride;
   structureIgnore?: string[];
@@ -80,6 +86,7 @@ interface ConfigFileInit {
   supportForTags: Map<string, boolean>;
   extendsFiles: CssDocConfigFile[];
   modifierConvention?: ModifierConventionInput;
+  inlineComments?: InlineCommentMode;
   rules: Record<string, RuleSeverityOverride>;
   naming: NamingOverride;
   structureIgnore: string[];
@@ -104,6 +111,8 @@ export class CssDocConfigFile {
   readonly extendsFiles: readonly CssDocConfigFile[];
   /** The modifier convention declared by this file, if any. */
   readonly modifierConvention?: ModifierConventionInput;
+  /** How inline `/* … *\/` comments combine with tag prose, if declared by this file. */
+  readonly inlineComments?: InlineCommentMode;
   /**
    * The per-rule severity overrides, merged across the `extends` chain (this file wins). Not the
    * resolved severities — pass these to `resolveRuleSeverities` in `@cssdoc/providers`.
@@ -135,6 +144,7 @@ export class CssDocConfigFile {
     this.supportForTags = init.supportForTags;
     this.extendsFiles = init.extendsFiles;
     this.modifierConvention = init.modifierConvention;
+    this.inlineComments = init.inlineComments;
     const severities: Record<string, RuleSeverityOverride> = {};
     const naming: NamingOverride = {};
     const render: RenderConfig = {};
@@ -187,6 +197,9 @@ export class CssDocConfigFile {
     // Extended files applied their convention first; this file's (if any) wins.
     if (this.modifierConvention !== undefined) {
       configuration.setModifierConvention(this.modifierConvention);
+    }
+    if (this.inlineComments !== undefined) {
+      configuration.setInlineComments(this.inlineComments);
     }
   }
 
@@ -322,6 +335,7 @@ export class CssDocConfigFile {
       supportForTags: new Map(Object.entries(raw.supportForTags ?? {})),
       extendsFiles,
       modifierConvention: raw.modifierConvention,
+      inlineComments: raw.inlineComments,
       rules: raw.rules ?? {},
       naming: raw.naming ?? {},
       structureIgnore: raw.structureIgnore ?? [],

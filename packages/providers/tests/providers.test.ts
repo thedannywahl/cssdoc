@@ -97,6 +97,28 @@ test("structure-unknown-selector accepts a sibling component as a child, still f
   expect(structureWarnings[0].message).toContain(".bogus");
 });
 
+test("hover shows a To do section (@todo) and an inline-comment modifier description", () => {
+  const idx = createIndex(
+    [
+      "/**",
+      " * @component alert",
+      " * @summary An alert.",
+      " * @todo drop the legacy fallback",
+      " */",
+      ".alert {}",
+      "/* Removes the elevation shadow. */",
+      ".alert.-without-shadow {}",
+    ].join("\n"),
+    { modifierConvention: "rscss" },
+  );
+  const card = hoverForClass("alert", "alert", idx, "full")?.contents ?? "";
+  expect(card).toContain("To do");
+  expect(card).toContain("drop the legacy fallback");
+  // The inline `/* … */` comment reaches the modifier's own hover.
+  const mod = hoverForClass("alert", "-without-shadow", idx)?.contents ?? "";
+  expect(mod).toContain("Removes the elevation shadow.");
+});
+
 test("hoverForCustomProperty resolves the var() chain and shows the terminal value", () => {
   const idx = createIndex(
     [
