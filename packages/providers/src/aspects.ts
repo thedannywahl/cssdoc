@@ -397,6 +397,12 @@ export const record = {
       "See also",
       entry.see.map((s) => `- ${s}`),
     );
+    list(
+      "todos",
+      "checklist",
+      "To do",
+      entry.todos.map((t) => `- ${t}`),
+    );
 
     {
       const w = want("structure", Boolean(entry.structure?.length));

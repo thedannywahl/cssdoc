@@ -164,6 +164,7 @@ export const HOVER_SECTION_KEYS = [
   "layers",
   "conditions",
   "see",
+  "todos",
   "structure",
   "examples",
 ] as const;

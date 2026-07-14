@@ -55,6 +55,8 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
   { name: "summary", kind: "block" },
   { name: "remarks", kind: "block" },
   { name: "privateRemarks", kind: "block" },
+  // An internal development note; also recognized in `/* @todo … */` inline comments.
+  { name: "todo", kind: "block", allowMultiple: true },
   { name: "deprecated", kind: "block" },
   { name: "example", kind: "block", allowMultiple: true },
   { name: "see", kind: "block", allowMultiple: true },

@@ -34,6 +34,7 @@ One of these opens a record and picks its kind. `@name` is an alias for `@compon
 | `@example <markdown>`                | An example: Markdown prose plus fenced code (bare code is auto-fenced).     |
 | `@see <ref>`                         | A cross-reference.                                                          |
 | `@deprecated <text>`                 | Marks the record deprecated, with replacement guidance.                     |
+| `@todo <text>`                       | An internal to-do note (also read from `/* @todo … */` comments).           |
 
 ## The CSS surface
 
@@ -84,6 +85,27 @@ other standard ones) as soon as a selector styles it — `@pseudo ::before — <
 Recognition is a curated allow-list, so vendor/experimental pseudo-elements (`::-webkit-*`) don't
 become API; extend it with `pseudoElements` in the modifier convention. Shadow `::part()` stays its own
 thing (`@csspart`).
+
+## Inline comments
+
+A plain `/* … */` comment on a member's rule describes that member — no `@modifier`/`@part`/`@pseudo`
+line needed:
+
+```css
+/* Opt out of the default elevation. */
+.alert.-without-shadow {
+  box-shadow: none;
+}
+```
+
+The comment attaches to whatever the next rule defines (a modifier, part, or pseudo-element); a comment
+above the base rule or a non-member rule is ignored. When a member has **both** an inline comment and an
+authored tag description, the `inlineComments` setting in `cssdoc.json` decides how they combine —
+`append` (tag then comment, the default), `prepend`, `replace`, or `ignore`.
+
+A `/* @todo … */` comment is captured as a to-do, not a description — the natural home for a
+note-to-self that shouldn't read as prose. `@todo` also works as a block tag. To-dos are internal:
+they surface in the editor hover but public emitters omit them, like `@privateRemarks`.
 
 ## Modifier (flag) tags
 

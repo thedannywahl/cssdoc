@@ -20,7 +20,11 @@ export {
 } from "./grammar.ts";
 export type { ParsedDoc, DocCssProperty, DocModifier, DocCondition } from "./grammar.ts";
 export { CssDocConfiguration, CssDocTagDefinition } from "./configuration.ts";
-export type { CssDocSyntaxKind, CssDocTagDefinitionOptions } from "./configuration.ts";
+export type {
+  CssDocSyntaxKind,
+  CssDocTagDefinitionOptions,
+  InlineCommentMode,
+} from "./configuration.ts";
 export {
   DEFAULT_MODIFIER_CONVENTION,
   DEFAULT_STATE_PSEUDO_CLASSES,

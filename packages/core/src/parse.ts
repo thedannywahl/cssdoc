@@ -10,8 +10,8 @@
  * @module
  */
 import postcss, { type ChildNode } from "postcss";
-import { CssDocConfiguration } from "./configuration.ts";
-import { parseDocComment, recordNameOf, type ParsedDoc } from "./grammar.ts";
+import { CssDocConfiguration, type InlineCommentMode } from "./configuration.ts";
+import { parseDocComment, recordNameOf, stripCommentFraming, type ParsedDoc } from "./grammar.ts";
 import { ModifierMatcher, resolveModifierConvention } from "./modifier.ts";
 import type {
   CssAnimation,
@@ -47,6 +47,7 @@ interface Collected {
   animations: Map<string, CssAnimation>;
   layers: Map<string, CssLayer>;
   conditions: CssCondition[];
+  todos: string[];
 }
 
 /** Record a conditional-support block, de-duplicating by type + query. */
@@ -81,13 +82,27 @@ function collect(
   baseNoDot: string,
   prefixNoDot: string,
   inScope: boolean,
+  inlineMode: InlineCommentMode,
 ): void {
   let pendingCanonical: string | undefined;
+  let pendingDescription: string | undefined;
 
   for (const node of nodes) {
     if (node.type === "comment") {
       const dep = node.text.match(/@deprecated.*?use\s+(\.[\w-]+|\[[^\]]*\])/u);
-      if (dep) pendingCanonical = matcher.normalizeMember(dep[1]);
+      if (dep) {
+        pendingCanonical = matcher.normalizeMember(dep[1]);
+      } else if (/(^|\s)@todo\b/u.test(node.text)) {
+        // A `/* @todo … */` note — a record to-do, not a member description.
+        const todo = stripCommentFraming(node.text)
+          .replace(/^@todo\b[:\s]*/u, "")
+          .trim();
+        if (todo) acc.todos.push(todo);
+      } else if (!/^\s*cssdoc-/u.test(node.text) && inlineMode !== "ignore") {
+        // Any other comment is provisional prose for the next member-defining rule.
+        const text = stripCommentFraming(node.text).replace(/\s+/gu, " ").trim();
+        if (text) pendingDescription = text;
+      }
       continue;
     }
     if (node.type === "decl") {
@@ -138,7 +153,15 @@ function collect(
         addCondition(acc, { type: "media", query: node.params.trim() });
       }
       if (node.nodes)
-        collect(node.nodes, acc, matcher, baseNoDot, prefixNoDot, inScope || node.name === "scope");
+        collect(
+          node.nodes,
+          acc,
+          matcher,
+          baseNoDot,
+          prefixNoDot,
+          inScope || node.name === "scope",
+          inlineMode,
+        );
       continue;
     }
     if (node.type === "rule") {
@@ -156,7 +179,8 @@ function collect(
           if (!acc.shadowParts.has(sp[1])) acc.shadowParts.set(sp[1], { name: sp[1] });
         }
         for (const pe of matcher.pseudoElementsIn(selector)) {
-          if (!acc.pseudoElements.has(pe.name)) acc.pseudoElements.set(pe.name, { name: pe.name });
+          if (!acc.pseudoElements.has(pe.name))
+            acc.pseudoElements.set(pe.name, { name: pe.name, description: pendingDescription });
         }
         const bare = selector.replace(/::?[\w-]+(\([^)]*\))?/gu, ""); // drop pseudos
         const mods = matcher.modifiersIn(bare, baseNoDot);
@@ -170,11 +194,13 @@ function collect(
             ...(mod.pattern ? { pattern: true } : {}),
           };
           if (pendingCanonical) entry.deprecated = { canonical: pendingCanonical };
+          if (pendingDescription && !entry.description) entry.description = pendingDescription;
           acc.modifiers.set(mod.name, entry);
         }
         // BEM-style elements (`.base__x`) are parts; `.base__x--mod` gives the element a modifier.
         for (const el of matcher.elementsIn(bare, baseNoDot)) {
           const part = acc.parts.get(el.name) ?? { name: el.name };
+          if (pendingDescription && !part.description) part.description = pendingDescription;
           for (const m of el.modifiers) {
             part.modifiers ??= [];
             if (!part.modifiers.some((x) => x.name === m.name)) {
@@ -191,7 +217,8 @@ function collect(
             const part = m[1];
             if (modNames.has(part)) continue; // a modifier, not a part
             if (prefixNoDot && part.startsWith(prefixNoDot)) continue; // a component ref, not a part
-            if (!acc.parts.has(part)) acc.parts.set(part, { name: part });
+            if (!acc.parts.has(part))
+              acc.parts.set(part, { name: part, description: pendingDescription });
           }
         }
       }
@@ -200,11 +227,29 @@ function collect(
           for (const m of child.value.matchAll(VAR_RE)) acc.consumed.add(m[1]);
       }
       pendingCanonical = undefined;
+      pendingDescription = undefined;
     }
   }
 }
 
 const byName = (a: { name: string }, b: { name: string }): number => a.name.localeCompare(b.name);
+
+/**
+ * Combine a member's authored tag prose with an inline `/* … *\/` comment, per the configured
+ * {@link InlineCommentMode}. Either side may be absent; when both are present, `append`/`prepend` join
+ * them (tag-first / comment-first), `replace` takes the comment, and `ignore` keeps only the tag.
+ */
+function combineDescription(
+  mode: InlineCommentMode,
+  tag: string | undefined,
+  inline: string | undefined,
+): string | undefined {
+  if (mode === "ignore") return tag;
+  if (!tag) return inline;
+  if (!inline) return tag;
+  if (mode === "replace") return inline;
+  return mode === "prepend" ? `${inline}\n\n${tag}` : `${tag}\n\n${inline}`;
+}
 
 /** Build one entry from its record name, doc comment, and nodes. */
 function buildEntry(
@@ -212,6 +257,7 @@ function buildEntry(
   doc: ParsedDoc,
   nodes: ChildNode[],
   matcher: ModifierMatcher,
+  inlineMode: InlineCommentMode,
   source?: CssSource,
 ): CssDocEntry {
   // Base class: an explicit @class, else a bare single-class rule — preferring the one whose name ends
@@ -242,12 +288,13 @@ function buildEntry(
     animations: new Map(),
     layers: new Map(),
     conditions: [],
+    todos: [],
   };
   const baseNoDot = className.replace(/^\./u, "");
   const prefixNoDot = className.endsWith(name)
     ? className.slice(1, className.length - name.length) // ".button" − "button" → ""
     : "";
-  collect(nodes, acc, matcher, baseNoDot, prefixNoDot, false);
+  collect(nodes, acc, matcher, baseNoDot, prefixNoDot, false, inlineMode);
 
   // Merge in authored prose; authored @modifier/@part entries also appear even if extraction missed.
   for (const [modName, mdoc] of doc.modifiers) {
@@ -264,7 +311,7 @@ function buildEntry(
           }
         : undefined;
     if (existing) {
-      if (mdoc.description) existing.description = mdoc.description;
+      existing.description = combineDescription(inlineMode, mdoc.description, existing.description);
       if (dep) existing.deprecated = { ...existing.deprecated, ...dep };
     } else {
       const { prop, value } = matcher.analyze(modName);
@@ -280,7 +327,12 @@ function buildEntry(
   }
   for (const [part, description] of doc.parts) {
     const existing = acc.parts.get(part);
-    if (existing) existing.description = description || existing.description;
+    if (existing)
+      existing.description = combineDescription(
+        inlineMode,
+        description || undefined,
+        existing.description,
+      );
     else acc.parts.set(part, { name: part, description });
   }
   for (const [part, description] of doc.cssParts) {
@@ -290,7 +342,12 @@ function buildEntry(
   }
   for (const [pseudo, description] of doc.pseudoElements) {
     const existing = acc.pseudoElements.get(pseudo);
-    if (existing) existing.description = description || existing.description;
+    if (existing)
+      existing.description = combineDescription(
+        inlineMode,
+        description || undefined,
+        existing.description,
+      );
     else acc.pseudoElements.set(pseudo, { name: pseudo, description: description || undefined });
   }
   for (const [rawState, description] of doc.cssStates) {
@@ -380,6 +437,7 @@ function buildEntry(
         description: description || undefined,
       }))
       .sort(byName),
+    todos: [...doc.todos, ...acc.todos],
     cssPropertiesConsumed: [...consumedTokens.values()].sort(byName),
     cssPropertiesDeclared: [...acc.declared.values()].sort(byName),
     functions: [...acc.functions.values()].sort(byName),
@@ -464,5 +522,7 @@ export function parseCssDocs(css: string, options: ParseOptions = {}): CssDocEnt
     if (current) current.nodes.push(node);
   }
 
-  return records.map((r) => buildEntry(r.name, r.doc, r.nodes, matcher, r.source));
+  return records.map((r) =>
+    buildEntry(r.name, r.doc, r.nodes, matcher, configuration.inlineComments, r.source),
+  );
 }

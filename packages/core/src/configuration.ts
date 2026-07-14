@@ -91,11 +91,19 @@ function def(options: CssDocTagDefinitionOptions): CssDocTagDefinition {
  * const model = parseCssDocs(css, { configuration: config });
  * ```
  */
+/**
+ * How a `/* … *\/` comment on a member's rule combines with the member's authored tag prose:
+ * `append` (tag then comment, the default), `prepend` (comment then tag), `replace` (comment wins when
+ * present), or `ignore` (comments are never used as descriptions).
+ */
+export type InlineCommentMode = "append" | "prepend" | "replace" | "ignore";
+
 export class CssDocConfiguration {
   private readonly _tagDefinitions: CssDocTagDefinition[] = [];
   private readonly _byName = new Map<string, CssDocTagDefinition>();
   private readonly _supported = new Set<CssDocTagDefinition>();
   private _modifierConvention: ModifierConvention = DEFAULT_MODIFIER_CONVENTION;
+  private _inlineComments: InlineCommentMode = "append";
 
   constructor() {
     this.addTagDefinitions(CssDocConfiguration.standardTags(), true);
@@ -109,6 +117,16 @@ export class CssDocConfiguration {
   /** Set the modifier convention from a preset name or a custom {@link ModifierConvention}. */
   setModifierConvention(input: ModifierConventionInput): void {
     this._modifierConvention = resolveModifierConvention(input);
+  }
+
+  /** How inline `/* … *\/` comments combine with tag prose (defaults to `append`). */
+  get inlineComments(): InlineCommentMode {
+    return this._inlineComments;
+  }
+
+  /** Set the inline-comment combine mode. */
+  setInlineComments(mode: InlineCommentMode): void {
+    this._inlineComments = mode;
   }
 
   /** Every registered tag definition, in registration order. */

@@ -65,6 +65,7 @@ export const cssDocEntrySchema = {
     "pseudoElements",
     "states",
     "slots",
+    "todos",
     "cssPropertiesConsumed",
     "cssPropertiesDeclared",
     "functions",
@@ -94,6 +95,7 @@ export const cssDocEntrySchema = {
     pseudoElements: { type: "array", items: named },
     states: { type: "array", items: state },
     slots: { type: "array", items: named },
+    todos: { type: "array", items: { type: "string" } },
     cssPropertiesConsumed: { type: "array", items: named },
     cssPropertiesDeclared: {
       type: "array",
