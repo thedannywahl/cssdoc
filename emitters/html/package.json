@@ -1,6 +1,6 @@
 {
   "name": "@cssdoc/html",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Emit standalone, self-contained HTML reference pages from the cssdoc model — one page per record plus an index.",
   "keywords": [
     "css",

@@ -4,6 +4,18 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.6.1
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.6.0...v0.6.1)
+
+### 🩹 Fixes
+
+- **core,providers:** Render @wrapper prose in the mermaid diagram and the hover ([78735f9](https://github.com/thedannywahl/cssdoc/commit/78735f9))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.6.0
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.5.4...v0.6.0)

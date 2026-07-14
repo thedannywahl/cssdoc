@@ -1,6 +1,6 @@
 {
   "name": "@cssdoc/spec",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "The canonical cssdoc spec: the tag vocabulary and the formal grammar (CssDoc.grammarkdown), the single source of truth shared by the parser and every syntax grammar. Zero runtime dependencies.",
   "keywords": [
     "cssdoc",
