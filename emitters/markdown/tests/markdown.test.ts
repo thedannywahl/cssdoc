@@ -250,6 +250,35 @@ test("@structure text tree shows an optional-ancestor wrapper's cardinality and 
   expect(md).toContain(".badge-wrapper (0..1) — Optional; anchors the badge over a target.");
 });
 
+test("buildCssApi cross-links a provider component composed in a consumer @structure", () => {
+  const providerEntries = parseCssDocs(
+    "/**\n * @component widget\n * @summary A vendor widget.\n */\n.widget {}",
+    { modifierConvention: "rscss" },
+  );
+  const outDir = mkdtempSync(join(tmpdir(), "cssdoc-prov-md-"));
+  buildCssApi({
+    css: [
+      "/**",
+      " * @component panel",
+      " * @summary A panel.",
+      " * @structure",
+      " * .panel { .widget {} }",
+      " */",
+      ".panel {}",
+    ].join("\n"),
+    outDir,
+    baseHref: "/api/",
+    providers: {
+      entries: providerEntries,
+      href: (c) => (c === "widget" ? "https://vendor.dev/widget.md" : undefined),
+    },
+  });
+  const panel = readFileSync(join(outDir, "panel.md"), "utf8");
+  // The composed provider component resolves to its own page (Subcomponents + structure cross-link).
+  expect(panel).toContain("## Subcomponents");
+  expect(panel).toContain("[widget](https://vendor.dev/widget.md)");
+});
+
 test("buildCssApi writes per-record pages, an index, and a compatible sidebar", () => {
   const outDir = mkdtempSync(join(tmpdir(), "cssdoc-md-"));
   const result = buildCssApi({ css: CSS, outDir, baseHref: "/api/css/" });

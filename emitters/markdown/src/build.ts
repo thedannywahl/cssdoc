@@ -41,6 +41,15 @@ export interface BuildCssApiOptions extends RenderEntryOptions, RenderIndexOptio
   dialect?: CssDialect;
   /** The sidebar file name (defaults to `css-sidebar.json`). */
   sidebarFileName?: string;
+  /**
+   * Upstream cssdoc providers this doc set consumes (from `resolveProviders` in `@cssdoc/config`). Their
+   * components become cross-link targets, so an `@structure` reference or Subcomponents entry pointing
+   * at a provider component links out to the provider's rendered page (via its `href`).
+   */
+  providers?: {
+    entries: readonly CssDocEntry[];
+    href: (className: string) => string | undefined;
+  };
 }
 
 /** What {@link buildCssApi} produced. */
@@ -106,6 +115,13 @@ export function buildCssApi(options: BuildCssApiOptions): BuildCssApiResult {
       { name: e.name, href: `${baseHref}${e.name}.md` },
     ]),
   );
+  // A referenced upstream provider component links to its own page (via the provider's `href`); local
+  // components win a name clash. Providers without a resolvable href aren't cross-linked.
+  for (const e of options.providers?.entries ?? []) {
+    const cls = e.className.replace(/^\./u, "");
+    const href = options.providers?.href(cls);
+    if (href && !componentByClass.has(cls)) componentByClass.set(cls, { name: e.name, href });
+  }
   const resolveComponent =
     options.resolveComponent ?? ((className: string) => componentByClass.get(className));
   const renderOptions = { ...options, resolveComponent };
