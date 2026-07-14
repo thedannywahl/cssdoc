@@ -55,6 +55,8 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
   { name: "summary", kind: "block" },
   { name: "remarks", kind: "block" },
   { name: "privateRemarks", kind: "block" },
+  // An internal development note; also recognized in `/* @todo … */` inline comments.
+  { name: "todo", kind: "block", allowMultiple: true },
   { name: "deprecated", kind: "block" },
   { name: "example", kind: "block", allowMultiple: true },
   { name: "see", kind: "block", allowMultiple: true },
@@ -78,6 +80,8 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
   { name: "cssstate", kind: "block", allowMultiple: true },
   // A native pseudo-element the component styles (`::before`, `::marker`, …), named by `::name`.
   { name: "pseudo", kind: "block", allowMultiple: true },
+  // Prose for an optional-ancestor wrapper named in `@structure` (e.g. `.badge-wrapper`).
+  { name: "wrapper", kind: "block", allowMultiple: true, argument: "part-name" },
   { name: "slot", kind: "block", allowMultiple: true, argument: "part-name" },
   // A design token the component consumes (`var(--*)`); the set is derived from the CSS, this adds prose.
   { name: "tokens", kind: "block", allowMultiple: true, argument: "custom-property" },

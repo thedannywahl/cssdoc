@@ -109,6 +109,10 @@ export interface ParsedDoc {
   cssParts: Map<string, string>;
   /** `@pseudo` descriptions (native pseudo-elements), keyed by the bare name (e.g. `before`). */
   pseudoElements: Map<string, string>;
+  /** `@wrapper` descriptions (optional-ancestor wrappers), keyed by the bare class (e.g. `badge-wrapper`). */
+  wrappers: Map<string, string>;
+  /** `@todo` notes (internal development notes). */
+  todos: string[];
   /** `@cssproperty` declarations. */
   cssProperties: DocCssProperty[];
   /** `@cssstate` descriptions, keyed by state name. */
@@ -211,6 +215,8 @@ export function parseDocComment(
     tokens: new Map(),
     cssParts: new Map(),
     pseudoElements: new Map(),
+    wrappers: new Map(),
+    todos: [],
     cssProperties: [],
     cssStates: new Map(),
     slots: new Map(),
@@ -278,6 +284,11 @@ function applyBlockTag(
     case "privateRemarks":
       doc.privateRemarks = rest.trim();
       break;
+    case "todo": {
+      const todo = rest.trim();
+      if (todo) doc.todos.push(todo);
+      break;
+    }
     case "since":
       doc.since = rest.trim();
       break;
@@ -319,6 +330,12 @@ function applyBlockTag(
       // A native pseudo-element, named as `::before` or `before` (tolerate the leading `::`).
       const { head, description } = splitDesc(rest);
       doc.pseudoElements.set(head.replace(/^::/u, ""), description ?? "");
+      break;
+    }
+    case "wrapper": {
+      // Prose for an optional-ancestor wrapper named in `@structure`, keyed by its bare class.
+      const { head, description } = splitDesc(rest);
+      doc.wrappers.set(head.replace(/^\./u, ""), description ?? "");
       break;
     }
     case "cssproperty": {

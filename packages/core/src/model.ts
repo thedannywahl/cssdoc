@@ -174,6 +174,8 @@ export interface StructureNode {
    * the stored selector.
    */
   cardinality?: "optional" | "many" | "one-or-more";
+  /** Prose from a `@wrapper` doc tag matching this node's class, when authored (annotates the node). */
+  description?: string;
   /** Child nodes (rules nested one brace level deeper). */
   children: StructureNode[];
 }
@@ -243,6 +245,11 @@ export interface CssDocEntry {
   states: CssState[];
   /** Named slots the component shell exposes, from `@slot`. */
   slots: CssSlot[];
+  /**
+   * Internal to-do notes, from `@todo` tags and `/* @todo … *\/` inline comments. Development notes,
+   * not public API — emitters may omit them (like {@link CssDocEntry.privateRemarks}).
+   */
+  todos: string[];
   /**
    * Design tokens this component consumes: every `--*` custom property referenced via `var(...)` inside
    * its rules, each annotated with `@tokens` prose where authored (and including any `@tokens`-declared

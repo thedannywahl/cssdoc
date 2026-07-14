@@ -228,6 +228,28 @@ test("renders a Pseudo-elements section from derived + @pseudo pseudo-elements",
   expect(md).toContain("`::after`");
 });
 
+test("@structure text tree shows an optional-ancestor wrapper's cardinality and @wrapper prose", () => {
+  const [badge] = parseCssDocs(
+    [
+      "/**",
+      " * @component badge",
+      " * @summary A badge.",
+      " * @slot — The target being badged.",
+      " * @wrapper .badge-wrapper — Optional; anchors the badge over a target.",
+      " * @structure",
+      " * .badge-wrapper:opt {",
+      " *   slot {}",
+      " *   .badge {}",
+      " * }",
+      " */",
+      ".badge {}",
+    ].join("\n"),
+    { modifierConvention: "rscss" },
+  );
+  const md = renderEntry(badge!, { structureView: "text" });
+  expect(md).toContain(".badge-wrapper (0..1) — Optional; anchors the badge over a target.");
+});
+
 test("buildCssApi writes per-record pages, an index, and a compatible sidebar", () => {
   const outDir = mkdtempSync(join(tmpdir(), "cssdoc-md-"));
   const result = buildCssApi({ css: CSS, outDir, baseHref: "/api/css/" });

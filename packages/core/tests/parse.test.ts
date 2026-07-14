@@ -137,6 +137,94 @@ test("native pseudo-elements derive from selectors (allow-list), @pseudo adds pr
   expect(alert.shadowParts.map((p) => p.name)).toEqual(["thumb"]); // ::part() is still a shadow part
 });
 
+test("an inline /* */ comment above a rule becomes the modifier's description (default append)", () => {
+  const [alert] = parseCssDocs(
+    [
+      "/**",
+      " * @component alert",
+      " * @summary An alert.",
+      " */",
+      ".alert {}",
+      "/* Opt out of the default elevation. */",
+      ".alert.-without-shadow {}",
+    ].join("\n"),
+    { modifierConvention: "rscss" },
+  );
+  expect(alert.modifiers.find((m) => m.name === "-without-shadow")?.description).toBe(
+    "Opt out of the default elevation.",
+  );
+});
+
+test("inlineComments mode controls how an inline comment combines with @modifier prose", () => {
+  const css = [
+    "/**",
+    " * @component alert",
+    " * @summary An alert.",
+    " * @modifier -x — Tag prose.",
+    " */",
+    ".alert {}",
+    "/* Inline note. */",
+    ".alert.-x {}",
+  ].join("\n");
+  const desc = (mode: "append" | "prepend" | "replace" | "ignore") => {
+    const cfg = new CssDocConfiguration();
+    cfg.setModifierConvention("rscss");
+    cfg.setInlineComments(mode);
+    return parseCssDocs(css, { configuration: cfg })[0]!.modifiers.find((m) => m.name === "-x")
+      ?.description;
+  };
+  expect(desc("append")).toBe("Tag prose.\n\nInline note.");
+  expect(desc("prepend")).toBe("Inline note.\n\nTag prose.");
+  expect(desc("replace")).toBe("Inline note.");
+  expect(desc("ignore")).toBe("Tag prose.");
+});
+
+test("@todo (block tag + inline comment) collects record to-dos, distinct from descriptions", () => {
+  const [alert] = parseCssDocs(
+    [
+      "/**",
+      " * @component alert",
+      " * @summary An alert.",
+      " * @todo migrate to logical properties",
+      " */",
+      "/* Describes nothing — the base rule defines no member. */",
+      ".alert {}",
+      "/* @todo make -x responsive */",
+      ".alert.-x {}",
+    ].join("\n"),
+    { modifierConvention: "rscss" },
+  );
+  expect(alert.todos).toEqual(["migrate to logical properties", "make -x responsive"]);
+  // A `@todo` comment is a note, not the member's description; the base-rule comment attaches to nothing.
+  expect(alert.modifiers.find((m) => m.name === "-x")?.description).toBeUndefined();
+});
+
+test("@structure optional-ancestor wrapper: root cardinality + @wrapper prose, in the model and mermaid", () => {
+  const [badge] = parseCssDocs(
+    [
+      "/**",
+      " * @component badge",
+      " * @summary A small status dot.",
+      " * @slot — The target being badged.",
+      " * @wrapper .badge-wrapper — Optional; anchors the badge over a target.",
+      " * @structure",
+      " * .badge-wrapper:opt {",
+      " *   slot {}",
+      " *   .badge {}",
+      " * }",
+      " */",
+      ".badge {}",
+    ].join("\n"),
+    { modifierConvention: "rscss" },
+  );
+  const [root] = badge!.structure!;
+  expect(root.selector).toBe(".badge-wrapper");
+  expect(root.cardinality).toBe("optional");
+  expect(root.description).toBe("Optional; anchors the badge over a target."); // @wrapper prose
+  // Mermaid: a root has no incoming edge, so its cardinality rides the label.
+  expect(toMermaid(badge!.structure!, { self: "badge" })).toContain(".badge-wrapper (0..1)");
+});
+
 const CONVENTION_FIXTURE = `
 /**
  * @component card

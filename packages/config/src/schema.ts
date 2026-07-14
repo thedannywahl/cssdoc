@@ -83,11 +83,22 @@ export const cssDocSchema = {
               type: "array",
               items: { type: "string" },
             },
+            pseudoElements: {
+              description:
+                'Native pseudo-elements (without the ::) to document, e.g. ["before","after"]. Overrides the built-in default set.',
+              type: "array",
+              items: { type: "string" },
+            },
             propValue: { type: "boolean" },
             propValueSeparator: { type: "string" },
           },
         },
       ],
+    },
+    inlineComments: {
+      description:
+        "How a /* … */ comment on a member's rule combines with its tag prose: append (default), prepend, replace, or ignore.",
+      enum: ["append", "prepend", "replace", "ignore"],
     },
     rules: {
       description: "Per-rule severity overrides (off/warn/error).",

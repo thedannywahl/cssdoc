@@ -58,6 +58,13 @@ const EDGE: Record<NonNullable<StructureNode["cardinality"]> | "required", strin
   "one-or-more": "-->|1..n|",
 };
 
+/** The ER range token for a cardinality — used on the root's label, which has no incoming edge. */
+const CARDINALITY_TOKEN: Record<NonNullable<StructureNode["cardinality"]>, string> = {
+  optional: "0..1",
+  many: "0..n",
+  "one-or-more": "1..n",
+};
+
 /** Wrap a node's label in the shape mermaid draws for its class. */
 const SHAPE: Record<NodeClass, (id: string, label: string) => string> = {
   "cssdoc-root": (id, l) => `${id}["${l}"]`,
@@ -91,7 +98,12 @@ interface Classified {
 function classify(node: StructureNode, isRoot: boolean, options: MermaidOptions): Classified {
   const slot = node.selector.match(SLOT_NODE);
   if (slot) return { klass: "cssdoc-slot", label: slot[1] ? `‹content: ${slot[1]}›` : "‹content›" };
-  if (isRoot) return { klass: "cssdoc-root", label: node.selector };
+  if (isRoot) {
+    // A root has no incoming edge to carry its cardinality (an optional-ancestor wrapper), so it rides
+    // the label instead — matching the text tree.
+    const card = node.cardinality ? ` (${CARDINALITY_TOKEN[node.cardinality]})` : "";
+    return { klass: "cssdoc-root", label: `${node.selector}${card}` };
+  }
   const primary = firstClass(node.selector);
   if (primary && primary !== options.self) {
     const component = options.resolveComponent?.(primary);

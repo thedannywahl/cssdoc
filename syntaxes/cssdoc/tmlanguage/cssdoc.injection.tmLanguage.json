@@ -95,7 +95,7 @@
       }
     },
     "part-tag": {
-      "match": "(@(?:part|csspart|slot))\\b[ \\t]*(\\.?[A-Za-z][A-Za-z0-9_-]*)?",
+      "match": "(@(?:part|csspart|wrapper|slot))\\b[ \\t]*(\\.?[A-Za-z][A-Za-z0-9_-]*)?",
       "captures": {
         "1": {
           "name": "storage.type.class.cssdoc"
@@ -117,7 +117,7 @@
       }
     },
     "block-tag": {
-      "match": "(@(?:class|summary|remarks|privateRemarks|deprecated|example|see|since|group|category|defaultValue|pseudo|function|keyframes|animation|layer|container|supports|media|responsive|a11y|accessibility|structure|demo|usage|compat|related|alpha|beta|experimental|internal|public))\\b",
+      "match": "(@(?:class|summary|remarks|privateRemarks|todo|deprecated|example|see|since|group|category|defaultValue|pseudo|function|keyframes|animation|layer|container|supports|media|responsive|a11y|accessibility|structure|demo|usage|compat|related|alpha|beta|experimental|internal|public))\\b",
       "name": "storage.type.class.cssdoc"
     },
     "structure-tag": {

@@ -34,6 +34,7 @@ One of these opens a record and picks its kind. `@name` is an alias for `@compon
 | `@example <markdown>`                | An example: Markdown prose plus fenced code (bare code is auto-fenced).     |
 | `@see <ref>`                         | A cross-reference.                                                          |
 | `@deprecated <text>`                 | Marks the record deprecated, with replacement guidance.                     |
+| `@todo <text>`                       | An internal to-do note (also read from `/* @todo … */` comments).           |
 
 ## The CSS surface
 
@@ -60,6 +61,7 @@ modifier conventions (rscss, CUBE, OOCSS, and more) — see [Modifier convention
 | `@container` / `@supports` / `@media <query> — <desc>` | A conditional block                                       | those at-rules         |
 | `@a11y` / `@accessibility <text>`                      | Accessibility guidance                                    | authored               |
 | `@structure`                                           | A nested-CSS element tree                                 | authored               |
+| `@wrapper .<x> — <desc>`                               | Prose for an optional-ancestor wrapper in `@structure`    | authored               |
 | `@demo <spec>`                                         | An embeddable demo (`self:button`, `stackblitz:…`, a URL) | authored               |
 | `@defaultValue <value>`                                | The default of the preceding `@cssproperty`               | authored               |
 | `@usage <text>`                                        | How to include the stylesheet / use the component         | authored               |
@@ -84,6 +86,27 @@ other standard ones) as soon as a selector styles it — `@pseudo ::before — <
 Recognition is a curated allow-list, so vendor/experimental pseudo-elements (`::-webkit-*`) don't
 become API; extend it with `pseudoElements` in the modifier convention. Shadow `::part()` stays its own
 thing (`@csspart`).
+
+## Inline comments
+
+A plain `/* … */` comment on a member's rule describes that member — no `@modifier`/`@part`/`@pseudo`
+line needed:
+
+```css
+/* Opt out of the default elevation. */
+.alert.-without-shadow {
+  box-shadow: none;
+}
+```
+
+The comment attaches to whatever the next rule defines (a modifier, part, or pseudo-element); a comment
+above the base rule or a non-member rule is ignored. When a member has **both** an inline comment and an
+authored tag description, the `inlineComments` setting in `cssdoc.json` decides how they combine —
+`append` (tag then comment, the default), `prepend`, `replace`, or `ignore`.
+
+A `/* @todo … */` comment is captured as a to-do, not a description — the natural home for a
+note-to-self that shouldn't read as prose. `@todo` also works as a block tag. To-dos are internal:
+they surface in the editor hover but public emitters omit them, like `@privateRemarks`.
 
 ## Modifier (flag) tags
 
@@ -191,3 +214,22 @@ Three more things a node can express:
 Every remaining class named in an `@structure` selector should resolve to the component class, a
 documented member, or another documented component; otherwise `structure-unknown-selector` warns.
 Exempt other externals (utilities) with `structureIgnore` in `cssdoc.json`.
+
+### Optional-ancestor wrappers
+
+Sometimes the notable structure is an _optional ancestor_ — a wrapper the component sits inside. Root
+the tree at the wrapper and mark it `:opt`; because the component's own class appears beneath it, cssdoc
+recognizes the wrapper as a valid ancestor (no `structureIgnore`), and the diagram carries the `0..1` on
+the root. `@wrapper .<class> — <desc>` adds prose to it, the way `@modifier` annotates a modifier:
+
+```css
+/**
+ * @slot — The target being badged.
+ * @wrapper .badge-wrapper — Optional; anchors the badge over a target.
+ * @structure
+ * .badge-wrapper:opt {
+ *   slot {}
+ *   .badge {}
+ * }
+ */
+```
