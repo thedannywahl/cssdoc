@@ -4,6 +4,22 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.5.4
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.5.3...v0.5.4)
+
+### 🚀 Enhancements
+
+- **core,providers,markdown:** Markdown @example (prose + fenced code) ([32ab62e](https://github.com/thedannywahl/cssdoc/commit/32ab62e))
+
+### 🩹 Fixes
+
+- **dependencies:** Update postcss version to ^8.5.19 in lockfile and workspace ([21ed041](https://github.com/thedannywahl/cssdoc/commit/21ed041))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.5.3
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.5.2...v0.5.3)

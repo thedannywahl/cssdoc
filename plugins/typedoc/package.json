@@ -1,6 +1,6 @@
 {
   "name": "@cssdoc/typedoc",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "A TypeDoc plugin that emits CSS reference pages (via @cssdoc/markdown) alongside a TS API-docs build and merges them into the TypeDoc sidebar.",
   "keywords": [
     "css",
