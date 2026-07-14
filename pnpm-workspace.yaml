@@ -16,7 +16,7 @@ catalog:
   vite: npm:@voidzero-dev/vite-plus-core@0.2.4
   vite-plus: 0.2.4
   # Core
-  postcss: ^8.5.17
+  postcss: ^8.5.19
   postcss-value-parser: ^4.2.0
   grammarkdown: ^3.3.2
   # CSS value / @property syntax matching
