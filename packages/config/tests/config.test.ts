@@ -1,8 +1,10 @@
-import { readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseCssDocs } from "@cssdoc/core";
 import { expect, test } from "vite-plus/test";
-import { CssDocConfigFile } from "../src/index.ts";
+import { CssDocConfigFile, resolveProviders } from "../src/index.ts";
 import { cssDocSchema } from "../src/schema.ts";
 
 const fixture = (name: string): string =>
@@ -97,4 +99,66 @@ test("the shipped cssdoc.schema.json mirrors the source schema (no drift)", () =
   // docs site — it must stay byte-identical (structurally) to the `cssDocSchema` source of truth.
   const json = JSON.parse(readFileSync(new URL("../cssdoc.schema.json", import.meta.url), "utf8"));
   expect(json).toEqual(cssDocSchema);
+});
+
+test("providers is this file's own, not inherited via extends", () => {
+  // base declares a provider; the extending file should NOT inherit it (components ≠ config).
+  const dir = mkdtempSync(join(tmpdir(), "cssdoc-prov-x-"));
+  writeFileSync(join(dir, "base.json"), JSON.stringify({ providers: [{ path: "./x.json" }] }));
+  writeFileSync(join(dir, "cssdoc.json"), JSON.stringify({ extends: ["./base.json"] }));
+  const cf = CssDocConfigFile.loadFile(join(dir, "cssdoc.json"));
+  expect(cf.providers).toEqual([]);
+});
+
+test("resolveProviders loads a .css provider (its own convention) and a .json model, with hrefs", () => {
+  const dir = mkdtempSync(join(tmpdir(), "cssdoc-prov-"));
+  // A local source provider (rscss) with its own cssdoc.json governing the convention.
+  mkdirSync(join(dir, "vendor"));
+  writeFileSync(
+    join(dir, "vendor", "cssdoc.json"),
+    JSON.stringify({ modifierConvention: "rscss" }),
+  );
+  writeFileSync(
+    join(dir, "vendor", "vendor.css"),
+    "/**\n * @component widget\n * @summary A widget.\n */\n.widget {}\n.widget.-size-sm {}",
+  );
+  // A published model.json (a CssDocEntry[]) — no source, no convention needed.
+  const model = parseCssDocs("/**\n * @component chip\n * @summary A chip.\n */\n.chip {}");
+  writeFileSync(join(dir, "model.json"), JSON.stringify(model));
+  writeFileSync(
+    join(dir, "cssdoc.json"),
+    JSON.stringify({
+      modifierConvention: "bem",
+      providers: [
+        { path: "./vendor/vendor.css", baseHref: "/vendor/" },
+        { path: "./model.json", baseHref: "https://x.dev/api/" },
+      ],
+    }),
+  );
+  const { entries, href, messages } = resolveProviders(
+    CssDocConfigFile.loadFile(join(dir, "cssdoc.json")),
+  );
+  expect(messages).toEqual([]);
+  expect(entries.map((e) => e.name).sort()).toEqual(["chip", "widget"]);
+  // The .css provider parsed with ITS convention (rscss), not the consumer's bem.
+  expect(entries.find((e) => e.name === "widget")!.modifiers.map((m) => m.name)).toContain(
+    "-size-sm",
+  );
+  // Cross-link hrefs come from each provider's baseHref + `<name>.md`.
+  expect(href("widget")).toBe("/vendor/widget.md");
+  expect(href("chip")).toBe("https://x.dev/api/chip.md");
+  expect(href("nope")).toBeUndefined();
+});
+
+test("resolveProviders reports an unresolvable provider without throwing", () => {
+  const dir = mkdtempSync(join(tmpdir(), "cssdoc-prov-miss-"));
+  writeFileSync(
+    join(dir, "cssdoc.json"),
+    JSON.stringify({ providers: [{ path: "./missing.json" }] }),
+  );
+  const { entries, messages } = resolveProviders(
+    CssDocConfigFile.loadFile(join(dir, "cssdoc.json")),
+  );
+  expect(entries).toEqual([]);
+  expect(messages[0]).toContain("missing.json");
 });
