@@ -37,7 +37,10 @@ In CSS (`.css`, `.scss`, `.less`) and host files (HTML, JSX/TSX, Vue, Svelte, As
 
 - **Completion** — a component's modifiers inside `class`/`className`, and declared custom properties
   inside `var(--…)`;
-- **Hover** — a modifier's or custom property's documentation;
+- **Hover** — a modifier's or custom property's documentation. A `[class*="-icon-"]` attribute
+  selector shows its `-icon-*` family; a reference to another documented component shows that
+  component's card; and a custom property resolves its `var()` chain through the indexed sheets to a
+  terminal value, the way a browser's dev tools do;
 - **Definition** — jump to the CSS rule that defines a class or `@property`;
 - **Diagnostics + quick-fix** — doc-comment hygiene in embedded CSS, and unknown or deprecated
   modifiers where classes are used (`class`, `className`, `:class`, `class:name`), with a one-click

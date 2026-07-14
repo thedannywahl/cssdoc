@@ -6,6 +6,7 @@ import {
   completeCustomProperties,
   definitionForClass,
   hoverForClass,
+  hoverForCustomProperty,
   lintModel,
   resolveRuleSeverities,
 } from "../src/index.ts";
@@ -94,6 +95,22 @@ test("structure-unknown-selector accepts a sibling component as a child, still f
   // `.close-button` is a documented sibling component → not flagged; `slot` is ignored; `.bogus` flags.
   expect(structureWarnings).toHaveLength(1);
   expect(structureWarnings[0].message).toContain(".bogus");
+});
+
+test("hoverForCustomProperty resolves the var() chain and shows the terminal value", () => {
+  const idx = createIndex(
+    [
+      "/**",
+      " * @component c",
+      " * @summary s",
+      " */",
+      ".c { color: var(--info-border); }",
+      ":root { --info-border: var(--stroke-info); --stroke-info: #0770a3; }",
+    ].join("\n"),
+  );
+  const h = hoverForCustomProperty("--info-border", idx)?.contents ?? "";
+  expect(h).toContain("`var(--stroke-info)`"); // the declared value
+  expect(h).toContain("Resolves to: `#0770a3`"); // followed through to a literal
 });
 
 test("hoverForClass: a fenced @example renders as Markdown verbatim (prose + code)", () => {

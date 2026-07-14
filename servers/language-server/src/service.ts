@@ -43,6 +43,7 @@ import {
   hoverForCustomProperty,
   lintModel,
   resolveNaming,
+  selectorDefines,
 } from "@cssdoc/providers";
 
 /** Language ids handled as CSS (the value/hygiene checks run on these). */
@@ -259,6 +260,64 @@ function resolveCssClass(
   return owner ? { base: stripLeadingDot(owner.className), token } : undefined;
 }
 
+const CLASS_ATTR_SELECTOR_RE = /\[\s*class\s*([~^$*|]?)=\s*(?:"([^"]*)"|'([^']*)')\s*\]/gu;
+
+/** The `[class OP="value"]` attribute selector under `offset` (its operator, value, and start), if any. */
+function cssClassAttrSelectorAt(
+  text: string,
+  offset: number,
+): { op: string; value: string; start: number } | undefined {
+  for (const m of text.matchAll(CLASS_ATTR_SELECTOR_RE)) {
+    const start = m.index ?? 0;
+    if (offset >= start && offset <= start + m[0].length) {
+      return { op: m[1], value: m[2] ?? m[3] ?? "", start };
+    }
+  }
+  return undefined;
+}
+
+/** The first documented component class in the selector segment ending at `before` (its base class). */
+function baseComponentInSelector(
+  text: string,
+  before: number,
+  index: CssDocIndex,
+): string | undefined {
+  const boundary = Math.max(
+    text.lastIndexOf("{", before),
+    text.lastIndexOf("}", before),
+    text.lastIndexOf(";", before),
+    text.lastIndexOf(",", before),
+    text.lastIndexOf("\n", before),
+  );
+  const segment = text.slice(boundary + 1, before);
+  for (const m of segment.matchAll(/(?<!\d)\.(-?[\w-]+)/gu)) {
+    if (index.componentForClass(m[1])) return m[1];
+  }
+  return undefined;
+}
+
+/**
+ * A class token that isn't a member of `perFile`'s component but names a sibling component in `project`
+ * — mask-aware: the reference wears this file's own prefix (e.g. the projected `aaaa` for `${p}`), so
+ * stripping it should leave a known component name. Returns that sibling's own base class (in `project`).
+ */
+function siblingComponentClass(
+  token: string,
+  perFile: CssDocIndex,
+  project: CssDocIndex,
+): string | undefined {
+  for (const e of perFile.entries) {
+    if (e.kind !== "component" || !e.className) continue;
+    const own = stripLeadingDot(e.className);
+    const prefix = e.name && own.endsWith(e.name) ? own.slice(0, own.length - e.name.length) : "";
+    if (prefix === "" || !token.startsWith(prefix)) continue;
+    const name = token.slice(prefix.length);
+    const target = project.entries.find((pe) => pe.kind === "component" && pe.name === name);
+    if (target?.className) return stripLeadingDot(target.className);
+  }
+  return undefined;
+}
+
 /**
  * One config scope: a documented-CSS index plus the `cssdoc.json` settings that govern it. A workspace
  * may have several (e.g. a monorepo with a `cssdoc.json` per package, each with its own convention).
@@ -446,16 +505,27 @@ export class CssDocLanguageService {
   ): LspHover | undefined {
     const offset = offsetAt(text, position);
 
+    // The governing project index: the value graph for `var()` resolution and the sibling components a
+    // reference in this file may point at.
+    const project = this.scopeForPath(path).index;
+
     // Authoring a stylesheet directly.
     if (languageId && CSS_LANGUAGES.has(languageId)) {
-      return this.authoringHover(text, offset, path, resolveParser(dialectForFilename(path)));
+      return this.authoringHover(
+        text,
+        offset,
+        path,
+        resolveParser(dialectForFilename(path)),
+        text,
+        project,
+      );
     }
     // Authoring embedded CSS in a host document — run the same resolution over the projected CSS,
     // passing the original text so masked `${…}` interpolations are restored in the card.
     const host = detectEmbeddedHost(path) ?? hostForLanguageId(languageId);
     if (host) {
       const parse = resolveParser(projectionDialect(text, { host }));
-      const h = this.authoringHover(projectCss(text, { host }), offset, path, parse, text);
+      const h = this.authoringHover(projectCss(text, { host }), offset, path, parse, text, project);
       if (h) return h;
     }
 
@@ -487,7 +557,9 @@ export class CssDocLanguageService {
 
   /**
    * An authoring hover over CSS `text`: the custom property or selector under `offset`, resolved against
-   * a fresh index of that CSS (the file's own model, so unsaved edits are reflected).
+   * a fresh index of that CSS (the file's own model, so unsaved edits are reflected). `project` is the
+   * governing scope index — it supplies the value graph for `var()` resolution and the sibling
+   * components a reference may point at (both live in other sheets the per-file index can't see).
    */
   private authoringHover(
     text: string,
@@ -495,6 +567,7 @@ export class CssDocLanguageService {
     path?: string,
     parse?: CssParse,
     source: string = text,
+    project?: CssDocIndex,
   ): LspHover | undefined {
     const index = createIndex(text, {
       configuration: this.scopeForPath(path).configuration,
@@ -504,23 +577,59 @@ export class CssDocLanguageService {
     const card = (contents: string): LspHover => ({
       contents: unmaskContent(contents, text, source),
     });
-    const prop = propertyAt(text, offset);
-    if (prop) {
-      const h = hoverForCustomProperty(prop.name, index);
-      if (h) return card(h.contents);
-    }
-    const cls = cssClassTokenAt(text, offset);
-    const resolved = cls ? resolveCssClass(cls, index) : undefined;
-    if (resolved) {
+    const clsCard = (base: string, token: string, idx: CssDocIndex): LspHover | undefined => {
       const h = hoverForClass(
-        resolved.base,
-        resolved.token,
-        index,
+        base,
+        token,
+        idx,
         this.hoverDetail,
         this.hoverSections,
         this.hoverSectionOrder,
       );
+      return h ? card(h.contents) : undefined;
+    };
+
+    // A custom property (`var(--…)` or a `--x:` declaration): the card resolves the value chain against
+    // the project index, so `var(--a)` → `--a: var(--b)` → … reads through to a literal.
+    const prop = propertyAt(text, offset);
+    if (prop) {
+      const h = hoverForCustomProperty(prop.name, index, project ?? index);
       if (h) return card(h.contents);
+    }
+
+    // A `[class*="-icon-"]` (or `~=`/`$=`) attribute selector resolves to the family modifier it defines
+    // on the base component in the same selector.
+    const attr = cssClassAttrSelectorAt(text, offset);
+    if (attr) {
+      const base = baseComponentInSelector(text, attr.start, index);
+      const entry = base ? index.componentForClass(base) : undefined;
+      if (base && entry) {
+        const sel = `[class${attr.op}="${attr.value}"]`;
+        const mod = entry.modifiers.find((m) => selectorDefines(sel, `.${m.name}`));
+        if (mod) {
+          const h = clsCard(base, mod.name, index);
+          if (h) return h;
+        }
+      }
+    }
+
+    const cls = cssClassTokenAt(text, offset);
+    if (cls) {
+      const resolved = resolveCssClass(cls, index);
+      if (resolved) return clsCard(resolved.base, resolved.token, index);
+      // Not a member of this file's component — maybe a sibling component defined in another sheet.
+      const sibling = project && siblingComponentClass(cls, index, project);
+      if (sibling) {
+        const h = hoverForClass(
+          sibling,
+          sibling,
+          project,
+          this.hoverDetail,
+          this.hoverSections,
+          this.hoverSectionOrder,
+        );
+        if (h) return { contents: h.contents }; // the sibling's own card, from the project index
+      }
     }
     return undefined;
   }
