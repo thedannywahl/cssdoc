@@ -44,9 +44,9 @@ catalog:
   ovsx: ^1.0.2
   "@resvg/resvg-js": ^2.6.2
   # Docs site
-  vitepress: ^1.6.4
+  vitepress: 2.0.0-alpha.18
   # Quality gates
-  "@vitest/coverage-v8": 4.1.9
+  "@vitest/coverage-v8": ^4.1.10
   publint: ^0.3.21
   # Release
   changelogen: ^0.6.2
