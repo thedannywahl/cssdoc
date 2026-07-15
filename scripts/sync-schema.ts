@@ -1,12 +1,17 @@
 /**
  * Single source of truth → mirrors. `cssDocSchema` in `@cssdoc/config` is the ONE hand-edited copy of
- * the `cssdoc.json` schema; this script writes it, byte-for-byte, to every location that ships or
- * references the JSON:
+ * the `cssdoc.json` schema; this script writes it, byte-for-byte, to every *committed* location that
+ * ships or references the JSON:
  *
- *   - packages/config/cssdoc.schema.json   — the npm-published copy (referenced by `$schema`)
- *   - docs/public/cssdoc.schema.json       — served at https://cssdoc.dev/cssdoc.schema.json
+ *   - packages/config/cssdoc.schema.json        — the npm-published copy (referenced by `$schema`)
  *   - servers/vscode/schemas/cssdoc.schema.json — bundled with the VS Code extension
- *   - schemas/cssdoc.schema.json           — the repo-root copy
+ *   - schemas/cssdoc.schema.json                — the repo-root copy
+ *
+ * `docs/public/cssdoc.schema.json` (served at https://cssdoc.dev/cssdoc.schema.json) is deliberately
+ * NOT listed here: it's gitignored and generated at docs-build time by `docs/scripts/copy-schema.mjs`,
+ * which copies `packages/config/cssdoc.schema.json` verbatim. Since that copy is a target below, the
+ * docs site still tracks the source. Including it here would make `--check` fail in a clean checkout
+ * (e.g. CI), where the artifact doesn't exist yet.
  *
  * The generated files are formatter-ignored (see `vite.config.ts` `fmt.ignorePatterns`) so their exact
  * bytes are owned here — `JSON.stringify(schema, null, 2)` + trailing newline — not by oxfmt. That lets
@@ -25,10 +30,9 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { cssDocSchema } from "../packages/config/src/schema.ts";
 
-/** Repo-root-relative paths that must mirror {@link cssDocSchema}, byte-for-byte. */
+/** Committed, repo-root-relative paths that must mirror {@link cssDocSchema}, byte-for-byte. */
 export const SCHEMA_TARGETS = [
   "packages/config/cssdoc.schema.json",
-  "docs/public/cssdoc.schema.json",
   "servers/vscode/schemas/cssdoc.schema.json",
   "schemas/cssdoc.schema.json",
 ] as const;
