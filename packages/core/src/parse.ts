@@ -272,7 +272,15 @@ function buildEntry(
       .filter((sel) => /^\.[a-z][\w-]*$/u.test(sel));
     const nameEsc = name.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
     const endsWithName = new RegExp(`(?:^|-)${nameEsc}$`, "u");
-    className = bare.find((sel) => endsWithName.test(sel.slice(1))) ?? bare[0] ?? "";
+    // A masked `${p}` prefix abuts the name with no `-` (`.aaaabadge`), so the boundary match above
+    // misses it and would fall through to the first bare rule — a wrapper like `.aaaabadge-wrapper`.
+    // Fall back to any bare class ending in the name (shortest first, so `.badge` beats `.superbadge`).
+    const endsLoose = new RegExp(`${nameEsc}$`, "u");
+    className =
+      bare.find((sel) => endsWithName.test(sel.slice(1))) ??
+      bare.filter((sel) => endsLoose.test(sel.slice(1))).sort((a, b) => a.length - b.length)[0] ??
+      bare[0] ??
+      "";
   }
   if (!className) className = `.${name}`;
 

@@ -84,6 +84,21 @@ test("deprecated-alias comment links the alias modifier to its canonical (rscss)
   expect(alias.deprecated?.canonical).toBe("-color-danger");
 });
 
+test("base class resolves under a masked `${p}` prefix, over a wrapper-first bare rule", () => {
+  // As the projection emits it: `${p}` is masked to `aaaa`, so the name abuts the prefix with no `-`
+  // (`.aaaabadge`). The base class must still be `.aaaabadge`, not the first bare rule `.aaaabadge-wrapper`.
+  const src = [
+    "/**",
+    " * @component badge",
+    " * @summary A badge.",
+    " */",
+    ".aaaabadge-wrapper { position: relative; }",
+    ".aaaabadge { background: red; }",
+  ].join("\n");
+  const [badge] = parseCssDocs(src, { modifierConvention: "rscss" });
+  expect(badge.className).toBe(".aaaabadge");
+});
+
 test("an authored `@deprecated {@link -x}` sets the modifier's canonical", () => {
   const [comp] = parseCssDocs(
     `/**\n * @component alert\n * @modifier -variant-error — @deprecated {@link -color-danger}\n */\n` +
