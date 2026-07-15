@@ -29,9 +29,10 @@ Pass a `resolveToken` hook to add a Type/Value column for consumed custom proper
 Other `renderEntry` options: `resolveSource` (a `**Source:**` link from `entry.source` — set `fileName`
 on the parse to record the file), `importSnippet` (a fenced snippet in the Usage section), `baseHref`
 (the `@related` cross-link prefix), `sectionOrder` (reorder or drop the `##` sections without a
-post-processor), and `classNames` (wrap the deprecation and release-stage markers in `<span>`s with
-your own classes — e.g. `{ deprecated: "-your-pill", stage: { experimental: "-your-pill" } }` — so a
-VitePress theme can style them; off by default to keep the output pure Markdown). `renderEntry(entry)`
+post-processor), and `classNames` (wrap just the deprecation/release-stage marker _word_ — `Deprecated`,
+`experimental`, etc. — in a `<span>` with your own classes, leaving the reason prose outside, e.g.
+`{ deprecated: "-your-pill", stage: { experimental: "-your-pill" } }` — so a VitePress theme can style
+them as compact pills/tags; off by default to keep the output pure Markdown). `renderEntry(entry)`
 / `renderIndex(entries)` return strings if you'd rather place the output yourself.
 
 To cross-link components from an upstream [provider](/guide/config#consuming-another-provider), pass

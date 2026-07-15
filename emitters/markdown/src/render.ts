@@ -161,12 +161,14 @@ export function cell(text: string | undefined): string {
 }
 
 /**
- * Wrap `inner` in `<span class="cls">…</span>` when `cls` is a non-empty class (a
- * {@link RenderEntryOptions.classNames} hook), else return it unchanged. The span is built outside
- * {@link escProse}, so the tag passes through while any inner prose stays escaped.
+ * Render a status marker as a styleable tag. When `cls` is a non-empty class (a
+ * {@link RenderEntryOptions.classNames} hook), wrap just the `label` word in `<span class="cls">…</span>`
+ * — a compact pill/tag — and leave any surrounding prose (the deprecation reason, etc.) outside it. When
+ * no class is given, fall back to `fallback` (defaults to `label`) so the pure-markdown output is
+ * unchanged. The span is built outside {@link escProse}, so it passes through while prose stays escaped.
  */
-function hook(cls: string | undefined, inner: string): string {
-  return cls ? `<span class="${cls}">${inner}</span>` : inner;
+function tag(cls: string | undefined, label: string, fallback: string = label): string {
+  return cls ? `<span class="${cls}">${label}</span>` : fallback;
 }
 
 /** A code-span cell: collapse whitespace and escape pipes so it survives a GFM table row. */
@@ -272,7 +274,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   const lines: string[] = [`# ${prefix}${entry.name}`, ""];
 
   const stage = entry.releaseStage
-    ? ` · ${hook(options.classNames?.stage?.[entry.releaseStage], `\`${entry.releaseStage}\``)}`
+    ? ` · ${tag(options.classNames?.stage?.[entry.releaseStage], entry.releaseStage, `\`${entry.releaseStage}\``)}`
     : "";
   lines.push(
     `\`${entry.className}\`${stage}${entry.summary ? ` — ${escProse(entry.summary)}` : ""}`,
@@ -282,7 +284,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   if (entry.deprecated) {
     lines.push(
       "> [!WARNING]",
-      `> ${hook(options.classNames?.deprecated, `Deprecated — ${escProse(entry.deprecated)}`)}`,
+      `> ${tag(options.classNames?.deprecated, "Deprecated")} — ${escProse(entry.deprecated)}`,
       "",
     );
   }
@@ -327,11 +329,9 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
           ? `use \`.${m.deprecated.canonical}\`.`
           : (m.deprecated.note ?? "");
         const tail = m.description ? ` ${m.description}` : "";
-        const wrapped = hook(
-          options.classNames?.deprecated,
-          `_Deprecated_ — ${escProse(via + tail)}`,
-        );
-        return [`\`.${m.name}\``, wrapped.replace(/\|/gu, "\\|")];
+        const marker = tag(options.classNames?.deprecated, "Deprecated", "_Deprecated_");
+        const cellText = `${marker} — ${escProse(via + tail)}`;
+        return [`\`.${m.name}\``, cellText.replace(/\|/gu, "\\|")];
       }
       return [`\`.${m.name}\``, cell(m.description)];
     });

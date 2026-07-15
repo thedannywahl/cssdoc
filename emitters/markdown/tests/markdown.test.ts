@@ -327,7 +327,7 @@ test("classNames is opt-in: deprecation and stage markers stay pure markdown by 
   expect(md).not.toContain("<span class=");
 });
 
-test("classNames wraps deprecation and the matching stage marker in styleable spans", () => {
+test("classNames wraps just the marker word, leaving the prose outside the span", () => {
   const [box] = parseCssDocs(STATUS_CSS);
   const md = renderEntry(box!, {
     classNames: {
@@ -335,11 +335,13 @@ test("classNames wraps deprecation and the matching stage marker in styleable sp
       stage: { experimental: "-instui-pill -color-alert" },
     },
   });
-  // Record-level banner and the deprecated modifier cell share the deprecated class.
-  expect(md).toContain('> <span class="-instui-pill -color-warning">Deprecated — ');
-  expect(md).toContain('<span class="-instui-pill -color-warning">_Deprecated_ — ');
-  // The stage marker gets its per-stage class, wrapping the code span (which survives).
-  expect(md).toContain('<span class="-instui-pill -color-alert">`experimental`</span>');
+  // Record-level banner: only "Deprecated" is a pill; the reason stays plain prose after it.
+  expect(md).toContain('> <span class="-instui-pill -color-warning">Deprecated</span> — Use ');
+  // The deprecated modifier cell: same — the pill wraps the word, the note follows outside.
+  expect(md).toContain('<span class="-instui-pill -color-warning">Deprecated</span> — use ');
+  // The stage marker becomes a bare-word pill (no code-span backticks) so it styles like a tag.
+  expect(md).toContain('<span class="-instui-pill -color-alert">experimental</span>');
+  expect(md).not.toContain("`experimental`");
 });
 
 test("classNames.stage only applies to the record's own stage", () => {

@@ -82,5 +82,5 @@ test("emitCssApi forwards classNames to the renderer so deprecation markers get 
   });
 
   const page = readFileSync(join(out, "css", "box.md"), "utf8");
-  expect(page).toContain('<span class="instui-pill -color-warning">_Deprecated_ — ');
+  expect(page).toContain('<span class="instui-pill -color-warning">Deprecated</span> — ');
 });
