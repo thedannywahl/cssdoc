@@ -116,7 +116,7 @@ function classify(node: StructureNode, isRoot: boolean, options: MermaidOptions)
 /**
  * Convert a structure tree to a Mermaid `flowchart` definition. Each node gets a stable id (`n0`, `n1`,
  * …) in depth-first order; a parent connects to each child with an edge carrying the child's
- * cardinality. Nodes are shaped + classed by kind ({@link classify}); sibling components with an href
+ * cardinality. Nodes are shaped + classed by kind; sibling components with an href
  * get a `click` link.
  *
  * @param roots - Top-level {@link StructureNode}s (an authored `@structure`).

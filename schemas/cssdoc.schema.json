@@ -26,20 +26,33 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["tagName", "syntaxKind"],
+        "required": [
+          "tagName",
+          "syntaxKind"
+        ],
         "properties": {
           "tagName": {
             "type": "string",
             "pattern": "^@?[a-zA-Z][a-zA-Z0-9-]*$"
           },
           "syntaxKind": {
-            "enum": ["record", "block", "modifier", "inline"]
+            "enum": [
+              "record",
+              "block",
+              "modifier",
+              "inline"
+            ]
           },
           "allowMultiple": {
             "type": "boolean"
           },
           "recordKind": {
-            "enum": ["component", "utility", "rule", "declaration"]
+            "enum": [
+              "component",
+              "utility",
+              "rule",
+              "declaration"
+            ]
           },
           "aliasFor": {
             "type": "string"
@@ -58,15 +71,26 @@
       "description": "How modifier classes are spelled: a preset name (bem, rscss, bare) or a custom convention.",
       "oneOf": [
         {
-          "enum": ["bem", "rscss", "bare"]
+          "enum": [
+            "bem",
+            "rscss",
+            "bare"
+          ]
         },
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["structure", "separator"],
+          "required": [
+            "structure",
+            "separator"
+          ],
           "properties": {
             "structure": {
-              "enum": ["chained", "suffix", "attribute"]
+              "enum": [
+                "chained",
+                "suffix",
+                "attribute"
+              ]
             },
             "separator": {
               "oneOf": [
@@ -109,6 +133,13 @@
                 "type": "string"
               }
             },
+            "pseudoElements": {
+              "description": "Native pseudo-elements (without the ::) to document, e.g. [\"before\",\"after\"]. Overrides the built-in default set.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
             "propValue": {
               "type": "boolean"
             },
@@ -119,11 +150,45 @@
         }
       ]
     },
+    "inlineComments": {
+      "description": "How a /* … */ comment on a member's rule combines with its tag prose: append (default), prepend, replace, or ignore.",
+      "enum": [
+        "append",
+        "prepend",
+        "replace",
+        "ignore"
+      ]
+    },
+    "providers": {
+      "description": "Upstream cssdoc providers this config consumes, so their components resolve in this scope's lint/hover/docs. Each points at a provider's model.json or a source stylesheet.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Path to the provider's model.json or a source stylesheet — relative (starts with .) or a package specifier."
+          },
+          "baseHref": {
+            "type": "string",
+            "description": "URL prefix for links to the provider's rendered doc pages."
+          }
+        }
+      }
+    },
     "rules": {
       "description": "Per-rule severity overrides (off/warn/error).",
       "type": "object",
       "additionalProperties": {
-        "enum": ["off", "warn", "error"]
+        "enum": [
+          "off",
+          "warn",
+          "error"
+        ]
       }
     },
     "naming": {
@@ -162,9 +227,11 @@
               "modifiers",
               "parts",
               "shadowParts",
+              "pseudoElements",
               "states",
               "slots",
               "structure",
+              "subcomponents",
               "cssProperties",
               "functions",
               "animations",
@@ -188,7 +255,11 @@
         },
         "structureView": {
           "description": "Which Structure representation(s) to emit: \"text\" tree, \"diagram\" flowchart, or \"both\" (default).",
-          "enum": ["text", "diagram", "both"]
+          "enum": [
+            "text",
+            "diagram",
+            "both"
+          ]
         }
       }
     }

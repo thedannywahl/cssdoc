@@ -1,11 +1,11 @@
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseCssDocs } from "@cssdoc/core";
 import { expect, test } from "vite-plus/test";
+import { findSchemaDrift } from "../../../scripts/sync-schema.ts";
 import { CssDocConfigFile, resolveProviders } from "../src/index.ts";
-import { cssDocSchema } from "../src/schema.ts";
 
 const fixture = (name: string): string =>
   fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
@@ -94,11 +94,11 @@ test("an invalid modifierConvention value is a collected schema error", () => {
   expect(configFile.getErrorSummary()).toContain("Schema error");
 });
 
-test("the shipped cssdoc.schema.json mirrors the source schema (no drift)", () => {
-  // The JSON file is validated against at runtime, shipped in the npm tarball, and published to the
-  // docs site — it must stay byte-identical (structurally) to the `cssDocSchema` source of truth.
-  const json = JSON.parse(readFileSync(new URL("../cssdoc.schema.json", import.meta.url), "utf8"));
-  expect(json).toEqual(cssDocSchema);
+test("every cssdoc.schema.json mirror is byte-identical to the source schema (no drift)", () => {
+  // `cssDocSchema` is the single source of truth; scripts/sync-schema.ts writes it, byte-for-byte, to
+  // four locations (npm tarball, docs site, VS Code extension, repo root). This asserts none has
+  // drifted — run `vp run sync:schema` to regenerate them all. Mirrored by `vp run check`.
+  expect(findSchemaDrift()).toEqual([]);
 });
 
 test("providers is this file's own, not inherited via extends", () => {

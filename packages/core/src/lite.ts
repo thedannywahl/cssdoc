@@ -27,6 +27,7 @@ export type {
 } from "./configuration.ts";
 export {
   DEFAULT_MODIFIER_CONVENTION,
+  DEFAULT_PSEUDO_ELEMENTS,
   DEFAULT_STATE_PSEUDO_CLASSES,
   MODIFIER_PRESETS,
   ModifierMatcher,
@@ -34,6 +35,7 @@ export {
 } from "./modifier.ts";
 export type { ModifierConvention, ModifierConventionInput, ModifierHit } from "./modifier.ts";
 export { toMermaid } from "./mermaid.ts";
+export type { MermaidOptions } from "./mermaid.ts";
 export type {
   CssAnimation,
   CssCondition,
