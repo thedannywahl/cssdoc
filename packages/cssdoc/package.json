@@ -1,6 +1,6 @@
 {
   "name": "@cssdoc/cssdoc",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "description": "The cssdoc programmatic API in one install — re-exports @cssdoc/core, @cssdoc/index, and @cssdoc/providers. TSDoc, for CSS.",
   "keywords": [
     "css",
