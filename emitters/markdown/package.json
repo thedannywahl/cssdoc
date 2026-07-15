@@ -1,6 +1,6 @@
 {
   "name": "@cssdoc/markdown",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Render an @cssdoc/core model to markdown reference pages + a sidebar (compatible with typedoc-plugin-markdown / typedoc-vitepress-theme).",
   "keywords": [
     "css",
