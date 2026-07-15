@@ -4,6 +4,18 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.7.5
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.7.4...v0.7.5)
+
+### 🩹 Fixes
+
+- **render:** Wrap only the marker word in classNames spans, not the prose ([3c24ec8](https://github.com/thedannywahl/cssdoc/commit/3c24ec8))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.7.4
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.7.3...v0.7.4)
