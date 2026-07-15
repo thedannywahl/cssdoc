@@ -4,6 +4,18 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.7.2
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.7.1...v0.7.2)
+
+### 🚀 Enhancements
+
+- **render:** Add classNames option for customizable styling of deprecation and release-stage markers ([f9125fe](https://github.com/thedannywahl/cssdoc/commit/f9125fe))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.7.1
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.7.0...v0.7.1)
