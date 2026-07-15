@@ -1,6 +1,6 @@
 {
   "name": "@cssdoc/tmlanguage",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "A TextMate injection grammar that highlights cssdoc doc-comment tags inside CSS comments, the way TSDoc highlights JSDoc tags. Ships as a Shiki language.",
   "keywords": [
     "css",

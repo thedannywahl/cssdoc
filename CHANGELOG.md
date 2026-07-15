@@ -4,6 +4,18 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.7.3
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.7.2...v0.7.3)
+
+### 🩹 Fixes
+
+- **typedoc:** Forward classNames through emitCssApi to the renderer ([747df10](https://github.com/thedannywahl/cssdoc/commit/747df10))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.7.2
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.7.1...v0.7.2)
