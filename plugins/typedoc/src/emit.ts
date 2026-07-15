@@ -96,6 +96,7 @@ export function emitCssApi(
     resolveDemo: options.resolveDemo,
     resolveSource: options.resolveSource,
     importSnippet: options.importSnippet,
+    classNames: options.classNames,
     sectionOrder,
     headingPrefix,
     structureView,

@@ -59,3 +59,28 @@ test("emitCssApi still emits pages when no typedoc-sidebar.json is present", () 
   expect(result.sidebarMerged).toBe(false);
   expect(existsSync(join(out, "css", "button.md"))).toBe(true);
 });
+
+const DEPRECATED_CSS = `
+/**
+ * @component box
+ * @summary A layout box.
+ * @modifier -variant-old — @deprecated {@link -variant-new}
+ */
+.box.-variant-new {}
+.box.-variant-old {}
+`;
+
+test("emitCssApi forwards classNames to the renderer so deprecation markers get styleable spans", () => {
+  const out = mkdtempSync(join(tmpdir(), "cssdoc-td-"));
+  const cssPath = join(out, "box.css");
+  writeFileSync(cssPath, DEPRECATED_CSS);
+
+  emitCssApi({
+    outputDirectory: out,
+    css: [cssPath],
+    classNames: { deprecated: "instui-pill -color-warning" },
+  });
+
+  const page = readFileSync(join(out, "css", "box.md"), "utf8");
+  expect(page).toContain('<span class="instui-pill -color-warning">_Deprecated_ — ');
+});
