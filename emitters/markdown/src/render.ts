@@ -6,7 +6,7 @@
  *
  * @module
  */
-import type { CssDocEntry, CssRecordKind, StructureNode } from "@cssdoc/core";
+import type { CssDocEntry, CssReleaseStage, CssRecordKind, StructureNode } from "@cssdoc/core";
 import { toMermaid } from "@cssdoc/core";
 
 /**
@@ -102,6 +102,23 @@ export interface RenderEntryOptions {
    * flowchart, or both. Defaults to `"both"`.
    */
   structureView?: "text" | "diagram" | "both";
+  /**
+   * Optional CSS classes for HTML-preserving renderers (e.g. VitePress). Each key is opt-in; omit for
+   * pure markdown. Values are used verbatim as the `class` attribute (multiple space-separated tokens
+   * allowed). Renderers that strip unknown attributes (e.g. GitHub) drop the class but keep the text.
+   */
+  classNames?: {
+    /**
+     * Wrap deprecation output — the record-level `> [!WARNING]` banner and deprecated modifier-table
+     * cells — in `<span class="…">`, e.g. `"-instui-pill -color-warning"`.
+     */
+    deprecated?: string;
+    /**
+     * Per-stage classes for the release-stage marker on the header line (the HTML emitter's `badge`
+     * analog). Only the current record's stage is applied; omit a stage for pure markdown there.
+     */
+    stage?: Partial<Record<CssReleaseStage, string>>;
+  };
 }
 
 /** Options controlling how the index renders. */
@@ -141,6 +158,15 @@ export function escProse(text: string): string {
 /** A GFM table-cell-safe rendering of prose (escape pipes + Vue-unsafe chars; empty → em dash). */
 export function cell(text: string | undefined): string {
   return text ? escProse(text).replace(/\|/gu, "\\|") : "—";
+}
+
+/**
+ * Wrap `inner` in `<span class="cls">…</span>` when `cls` is a non-empty class (a
+ * {@link RenderEntryOptions.classNames} hook), else return it unchanged. The span is built outside
+ * {@link escProse}, so the tag passes through while any inner prose stays escaped.
+ */
+function hook(cls: string | undefined, inner: string): string {
+  return cls ? `<span class="${cls}">${inner}</span>` : inner;
 }
 
 /** A code-span cell: collapse whitespace and escape pipes so it survives a GFM table row. */
@@ -245,14 +271,20 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   const prefix = options.headingPrefix ? `${options.headingPrefix} ` : "";
   const lines: string[] = [`# ${prefix}${entry.name}`, ""];
 
-  const stage = entry.releaseStage ? ` · \`${entry.releaseStage}\`` : "";
+  const stage = entry.releaseStage
+    ? ` · ${hook(options.classNames?.stage?.[entry.releaseStage], `\`${entry.releaseStage}\``)}`
+    : "";
   lines.push(
     `\`${entry.className}\`${stage}${entry.summary ? ` — ${escProse(entry.summary)}` : ""}`,
     "",
   );
 
   if (entry.deprecated) {
-    lines.push("> [!WARNING]", `> Deprecated — ${escProse(entry.deprecated)}`, "");
+    lines.push(
+      "> [!WARNING]",
+      `> ${hook(options.classNames?.deprecated, `Deprecated — ${escProse(entry.deprecated)}`)}`,
+      "",
+    );
   }
   if (entry.remarks) lines.push(escProse(entry.remarks), "");
 
@@ -295,7 +327,11 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
           ? `use \`.${m.deprecated.canonical}\`.`
           : (m.deprecated.note ?? "");
         const tail = m.description ? ` ${m.description}` : "";
-        return [`\`.${m.name}\``, `_Deprecated_ — ${escProse(via + tail)}`.replace(/\|/gu, "\\|")];
+        const wrapped = hook(
+          options.classNames?.deprecated,
+          `_Deprecated_ — ${escProse(via + tail)}`,
+        );
+        return [`\`.${m.name}\``, wrapped.replace(/\|/gu, "\\|")];
       }
       return [`\`.${m.name}\``, cell(m.description)];
     });

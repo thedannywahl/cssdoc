@@ -305,3 +305,47 @@ test("buildSidebar groups records by kind and lists Overview first", () => {
   const sidebar = buildSidebar(entries, "/api/css/");
   expect(sidebar.map((s) => s.text)).toEqual(["Overview", "Components", "Utilities"]);
 });
+
+const STATUS_CSS = `
+/**
+ * @component legacy-box
+ * @summary Old container.
+ * @experimental
+ * @deprecated Use \`.card\` instead.
+ * @modifier -variant-old — @deprecated {@link -color-secondary}
+ */
+.legacy-box { display: block; }
+.legacy-box.-variant-old {}
+`;
+
+test("classNames is opt-in: deprecation and stage markers stay pure markdown by default", () => {
+  const [box] = parseCssDocs(STATUS_CSS);
+  const md = renderEntry(box!);
+  expect(md).toContain("> [!WARNING]");
+  expect(md).toContain("_Deprecated_");
+  expect(md).toContain("`experimental`");
+  expect(md).not.toContain("<span class=");
+});
+
+test("classNames wraps deprecation and the matching stage marker in styleable spans", () => {
+  const [box] = parseCssDocs(STATUS_CSS);
+  const md = renderEntry(box!, {
+    classNames: {
+      deprecated: "-instui-pill -color-warning",
+      stage: { experimental: "-instui-pill -color-alert" },
+    },
+  });
+  // Record-level banner and the deprecated modifier cell share the deprecated class.
+  expect(md).toContain('> <span class="-instui-pill -color-warning">Deprecated — ');
+  expect(md).toContain('<span class="-instui-pill -color-warning">_Deprecated_ — ');
+  // The stage marker gets its per-stage class, wrapping the code span (which survives).
+  expect(md).toContain('<span class="-instui-pill -color-alert">`experimental`</span>');
+});
+
+test("classNames.stage only applies to the record's own stage", () => {
+  const [box] = parseCssDocs(STATUS_CSS);
+  // The record is @experimental; a class registered for a different stage is not applied.
+  const md = renderEntry(box!, { classNames: { stage: { beta: "-instui-pill" } } });
+  expect(md).toContain(" · `experimental`");
+  expect(md).not.toContain("<span class=");
+});
