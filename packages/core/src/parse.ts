@@ -33,6 +33,20 @@ import type {
 /** Matches a `var(--name` reference; group 1 is the custom-property name. */
 const VAR_RE = /var\(\s*(--[\w-]+)/gu;
 
+/**
+ * A documented CSS class name (without the leading dot): a letter or `_` start — any case — then word
+ * characters or hyphens. CSS idents may also start with `-`/escapes/non-ASCII, but a `-`-led class is a
+ * bare modifier here (`.-secondary`), and an unescaped ident can't start with a digit — so those are
+ * intentionally excluded. Accepting UPPERCASE (not just `a-z`) is what lets a PascalCase or
+ * namespaced/prefixed base class (`.Button`, `.PFX-badge`) be recognized as the component's class rather
+ * than silently mis-inferred to the bare `@name`. Used for base-class inference and the scoped-part scan.
+ */
+const CLASS_IDENT = String.raw`[A-Za-z_][\w-]*`;
+/** Every class reference in a selector (name captured, dot dropped) — for the scoped-part scan. */
+const CLASS_REF_RE = new RegExp(String.raw`\.(${CLASS_IDENT})`, "gu");
+/** A selector that is exactly one class — the base-class inference candidate filter. */
+const SINGLE_CLASS_RE = new RegExp(String.raw`^\.${CLASS_IDENT}$`, "u");
+
 const unquote = (value: string): string => value.trim().replace(/^["']|["']$/gu, "");
 
 interface Collected {
@@ -214,7 +228,7 @@ function collect(
           if (!acc.states.has(st.name)) acc.states.set(st.name, { name: st.name, kind: "class" });
         }
         if (inScope) {
-          for (const m of bare.matchAll(/\.([a-z][\w-]*)/gu)) {
+          for (const m of bare.matchAll(CLASS_REF_RE)) {
             const part = m[1];
             if (modNames.has(part)) continue; // a modifier, not a part
             if (prefixNoDot && part.startsWith(prefixNoDot)) continue; // a component ref, not a part
@@ -269,7 +283,7 @@ function buildEntry(
     const bare = nodes
       .filter((n): n is ChildNode & { selector: string } => n.type === "rule")
       .map((n) => n.selector.trim())
-      .filter((sel) => /^\.[a-z][\w-]*$/u.test(sel));
+      .filter((sel) => SINGLE_CLASS_RE.test(sel));
     const nameEsc = name.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
     const endsWithName = new RegExp(`(?:^|-)${nameEsc}$`, "u");
     // A masked `${p}` prefix abuts the name with no `-` (`.aaaabadge`), so the boundary match above
