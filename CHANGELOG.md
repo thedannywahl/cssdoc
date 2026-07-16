@@ -4,6 +4,19 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.7.6
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.7.5...v0.7.6)
+
+### 🩹 Fixes
+
+- **vscode:** Serialize and debounce client restarts to stop server leak ([f771578](https://github.com/thedannywahl/cssdoc/commit/f771578))
+- **core:** Accept upper-case and PascalCase base classes in inference ([47f85bf](https://github.com/thedannywahl/cssdoc/commit/47f85bf))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.7.5
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.7.4...v0.7.5)
