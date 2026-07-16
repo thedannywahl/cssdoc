@@ -34,6 +34,7 @@ export default defineConfig({
   description,
   cleanUrls: true,
   sitemap: { hostname },
+  srcExclude: ["engineering-log.md"],
   // Emit /llms.txt (an agent-legible index) and /llms-full.txt (the whole site as one document) at the
   // dist root, so AI agents can read cssdoc without scraping HTML. Covers the guide pages and the
   // generated API reference.
