@@ -173,6 +173,24 @@ test("diagnostics lint the embedded CSS in a Vue <style> block, at absolute line
   expect(summary?.range.start.line).toBeGreaterThan(1); // inside the <style> block, not line 0
 });
 
+test("Markdown diagnostics ignore comment-like globs in prose and non-CSS fences", () => {
+  const md = `# Tooling notes
+
+- Test files (\`__tests__/**\`) are excluded.
+
+\`\`\`typescript
+export default {
+  lint: { "**/*.md": "markdownlint" },
+};
+\`\`\`
+
+Exports may use \`/** @public */\` annotations.
+`;
+  const service = new CssDocLanguageService(createIndex(""));
+  expect(() => service.diagnostics(md, "markdown", "gotchas.md")).not.toThrow();
+  expect(service.diagnostics(md, "markdown", "gotchas.md")).toEqual([]);
+});
+
 test("diagnostics see a doc comment authored above a styled-component const (via projection)", () => {
   const ts = `import styled from "styled-components";
 /**
