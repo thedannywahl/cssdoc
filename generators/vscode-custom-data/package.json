@@ -1,6 +1,6 @@
 {
   "name": "@cssdoc/vscode-custom-data",
-  "version": "0.7.7",
+  "version": "0.7.8",
   "description": "Generate VS Code custom data (css.customData + html.customData) from the cssdoc model, for built-in editor completions and hover.",
   "keywords": [
     "css",

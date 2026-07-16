@@ -126,10 +126,7 @@ function rangeOf(text: string, start: number, end: number): LspRange {
   return { start: positionAt(text, start), end: positionAt(text, end) };
 }
 
-function safeCreateIndex(
-  text: string,
-  options: Parameters<typeof createIndex>[1],
-): CssDocIndex {
+function safeCreateIndex(text: string, options: Parameters<typeof createIndex>[1]): CssDocIndex {
   try {
     return createIndex(text, options);
   } catch {

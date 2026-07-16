@@ -4,6 +4,18 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.7.8
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.7.7...v0.7.8)
+
+### ✅ Tests
+
+- Add tests for TypeScript config command globs handling in diagnostics, hover, and definition ([3f67a3b](https://github.com/thedannywahl/cssdoc/commit/3f67a3b))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.7.7
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.7.6...v0.7.7)
