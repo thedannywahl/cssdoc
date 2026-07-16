@@ -1,7 +1,7 @@
 {
   "name": "cssdoc-vscode",
   "displayName": "cssdoc",
-  "version": "0.7.6",
+  "version": "0.7.7",
   "private": true,
   "description": "VS Code support for cssdoc: completions, hover, go-to-definition, and deprecation quick-fixes for documented CSS classes, modifiers, and custom properties.",
   "categories": [

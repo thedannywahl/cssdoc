@@ -1,6 +1,6 @@
 {
   "name": "cssdoc",
-  "version": "0.7.6",
+  "version": "0.7.7",
   "private": true,
   "description": "A documentation toolchain for plain CSS — TSDoc, for CSS.",
   "homepage": "https://cssdoc.dev",

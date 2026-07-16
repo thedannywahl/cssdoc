@@ -4,6 +4,22 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.7.7
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.7.6...v0.7.7)
+
+### 🩹 Fixes
+
+- **embedded:** Ignore comment-like globs ([d9b839b](https://github.com/thedannywahl/cssdoc/commit/d9b839b))
+
+### 📖 Documentation
+
+- Add AGENTS.md and engineering log ([fc1e890](https://github.com/thedannywahl/cssdoc/commit/fc1e890))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.7.6
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.7.5...v0.7.6)
