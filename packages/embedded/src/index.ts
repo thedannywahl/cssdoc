@@ -120,9 +120,13 @@ function skipTemplate(src: string, i: number): number {
 }
 
 /** Find embedded CSS regions in JS/TS: tagged-template literals whose tag is in {@link EmbeddedOptions.tags}. */
-function scanJs(src: string, tags: readonly string[]): { regions: Region[]; masks: Mask[] } {
+function scanJs(
+  src: string,
+  tags: readonly string[],
+): { regions: Region[]; masks: Mask[]; comments: Mask[] } {
   const regions: Region[] = [];
   const masks: Mask[] = [];
+  const comments: Mask[] = [];
   // Matches a CSS tag expression immediately before a backtick: `css`, `styled.x`, `styled(x)`, chains.
   const tagRe = new RegExp(
     `(?:[^.\\w$]|^)(?:${tags.join("|")})(?:\\.[A-Za-z0-9_$]+|\\([^()]*\\))*\\s*$`,
@@ -133,9 +137,13 @@ function scanJs(src: string, tags: readonly string[]): { regions: Region[]; mask
     if (c === "/" && src[i + 1] === "/") {
       while (i < src.length && src[i] !== "\n") i++;
     } else if (c === "/" && src[i + 1] === "*") {
+      const start = i;
+      const isDoc = src[i + 2] === "*";
       i += 2;
       while (i < src.length && !(src[i] === "*" && src[i + 1] === "/")) i++;
+      const closed = i < src.length;
       i += 1; // land on the '/'; loop's i++ moves past
+      if (isDoc && closed) comments.push({ start, end: Math.min(i + 1, src.length) });
     } else if (c === "'" || c === '"') {
       i = skipString(src, i, c);
     } else if (c === "`") {
@@ -159,7 +167,7 @@ function scanJs(src: string, tags: readonly string[]): { regions: Region[]; mask
       i = j;
     }
   }
-  return { regions, masks };
+  return { regions, masks, comments };
 }
 
 /**
@@ -205,30 +213,22 @@ function scanMarkdown(src: string): { regions: Region[] } {
   return { regions };
 }
 
-/** Preserve `/** … *\/` block comments that sit outside every region (e.g. above `const X = styled…`). */
-function docCommentsOutside(src: string, regions: Region[]): Mask[] {
-  const inRegion = (p: number): boolean => regions.some((r) => p >= r.start && p < r.end);
-  const out: Mask[] = [];
-  const re = /\/\*\*[\s\S]*?\*\//gu;
-  let m: RegExpExecArray | null = re.exec(src);
-  while (m) {
-    if (!inRegion(m.index)) out.push({ start: m.index, end: m.index + m[0].length });
-    m = re.exec(src);
-  }
-  return out;
-}
-
-function scan(source: string, opts: EmbeddedOptions): { regions: Region[]; masks: Mask[] } {
+function scan(
+  source: string,
+  opts: EmbeddedOptions,
+): { regions: Region[]; masks: Mask[]; comments: Mask[] } {
   const host = opts.host && opts.host !== "auto" ? opts.host : detectEmbeddedHost(opts.filename);
   const tags = opts.tags ?? DEFAULT_TAGS;
   if (host === "js") return scanJs(source, tags);
-  if (host === "html") return { regions: scanHtml(source).regions, masks: [] };
-  if (host === "markdown") return { regions: scanMarkdown(source).regions, masks: [] };
+  if (host === "html") return { regions: scanHtml(source).regions, masks: [], comments: [] };
+  if (host === "markdown")
+    return { regions: scanMarkdown(source).regions, masks: [], comments: [] };
   // "auto" with no filename hint: run all finders and union the regions.
   const js = scanJs(source, tags);
   return {
     regions: [...js.regions, ...scanHtml(source).regions, ...scanMarkdown(source).regions],
     masks: js.masks,
+    comments: js.comments,
   };
 }
 
@@ -238,10 +238,13 @@ function scan(source: string, opts: EmbeddedOptions): { regions: Region[]; masks
  * interpolations masked. The result feeds any CSS tool with source-accurate positions.
  */
 export function projectCss(source: string, opts: EmbeddedOptions = {}): string {
-  const { regions, masks } = scan(source, opts);
+  const { regions, masks, comments } = scan(source, opts);
   const keep = [
     ...regions.map((r) => ({ start: r.start, end: r.end })),
-    ...docCommentsOutside(source, regions),
+    // JS doc comments can document a following styled-component declaration. Collect them with the
+    // JS lexer rather than a source-wide regex: Markdown prose and glob strings can contain `/**`
+    // followed much later by `*/`, and preserving that span would feed non-CSS text to PostCSS.
+    ...comments,
   ];
   const out: string[] = Array.from({ length: source.length }, (_, i) =>
     source[i] === "\n" ? "\n" : " ",

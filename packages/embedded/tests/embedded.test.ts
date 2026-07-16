@@ -81,6 +81,33 @@ test("parseCssDocsFromSource reads a JS tagged template, a Vue <style scoped>, a
   expect(md.map((e) => e.name)).toEqual(["card"]);
 });
 
+test("Markdown prose and non-CSS fences containing comment-like globs stay masked", () => {
+  const md = `# Tooling notes
+
+- Test files (\`__tests__/**\`) are excluded.
+
+\`\`\`typescript
+export default {
+  lint: { "**/*.md": "markdownlint" },
+};
+\`\`\`
+
+Exports may use \`/** @public */\` annotations.
+`;
+  const projected = projectCss(md, { host: "markdown" });
+  expect(projected).not.toContain("__tests__/**");
+  expect(projected).not.toContain("**/*.md");
+  expect(projected).not.toContain("@public");
+  expect(() => parseCssDocsFromSource(md, { host: "markdown" })).not.toThrow();
+});
+
+test("an unfinished JS doc comment stays masked while it is being authored", () => {
+  const source = "/**\n * @";
+  const projected = projectCss(source, { host: "js" });
+  expect(projected).toBe("   \n    ");
+  expect(() => parseCssDocsFromSource(source, { host: "js" })).not.toThrow();
+});
+
 test("host auto-detects from the filename", () => {
   expect(parseCssDocsFromSource(VUE, { filename: "Button.vue" }).map((e) => e.name)).toEqual([
     "btn",
