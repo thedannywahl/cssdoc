@@ -34,6 +34,16 @@ export {
 } from "./config.ts";
 
 let client: LanguageClient | undefined;
+/**
+ * Serializes restarts: each one waits for the previous stop → create → start to finish before it
+ * begins. Without this, concurrent triggers race on the module-level `client` — two overlapping
+ * `restart()` calls each reassign it, so the first-started client is dropped without ever being
+ * stopped and its server child process leaks (the memory-leak culprit: orphaned servers pile up,
+ * each holding a full index, until the host runs out of memory).
+ */
+let restartChain: Promise<void> = Promise.resolve();
+/** Pending debounce timer, coalescing a burst of file/config events into a single restart. */
+let restartTimer: ReturnType<typeof setTimeout> | undefined;
 
 /**
  * Resolve the documented CSS file paths: an explicit `cssdoc.css` list (resolved against the workspace
@@ -81,11 +91,42 @@ function createClient(context: ExtensionContext, cssPaths: string[]): LanguageCl
   return new LanguageClient("cssdoc", "cssdoc", serverOptions, clientOptions);
 }
 
-/** (Re)start the client, re-resolving the CSS paths first. */
-async function restart(context: ExtensionContext): Promise<void> {
-  await client?.stop();
-  client = createClient(context, await resolveCssPaths());
-  await client.start();
+/**
+ * (Re)start the client, re-resolving the CSS paths first. Serialized through `restartChain` so the
+ * old client is always fully stopped before a new one starts — a burst of watcher events can never
+ * leave a started-but-unreferenced server process running.
+ */
+function restart(context: ExtensionContext): Promise<void> {
+  restartChain = restartChain
+    .then(async () => {
+      const previous = client;
+      client = undefined;
+      if (previous) {
+        try {
+          await previous.stop();
+        } catch {
+          // A stop can reject (e.g. the server was still mid-start); dispose to make sure the child
+          // process is torn down rather than orphaned.
+          await previous.dispose().catch(() => {});
+        }
+      }
+      const next = createClient(context, await resolveCssPaths());
+      client = next;
+      await next.start();
+    })
+    .catch(() => {
+      // Swallow so one failed restart doesn't wedge the chain for every later one.
+    });
+  return restartChain;
+}
+
+/** Coalesce a burst of file-system / configuration events into a single restart. */
+function scheduleRestart(context: ExtensionContext): void {
+  if (restartTimer) clearTimeout(restartTimer);
+  restartTimer = setTimeout(() => {
+    restartTimer = undefined;
+    void restart(context);
+  }, 300);
 }
 
 /** VS Code entry point: launch the language client and keep the CSS set current. */
@@ -95,7 +136,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
   // Re-resolve when a cssdoc setting changes...
   context.subscriptions.push(
     workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration("cssdoc")) void restart(context);
+      if (e.affectsConfiguration("cssdoc")) scheduleRestart(context);
     }),
   );
 
@@ -105,22 +146,28 @@ export async function activate(context: ExtensionContext): Promise<void> {
   );
   if (include) {
     const watcher = workspace.createFileSystemWatcher(include, false, true, false);
-    watcher.onDidCreate(() => void restart(context));
-    watcher.onDidDelete(() => void restart(context));
+    watcher.onDidCreate(() => scheduleRestart(context));
+    watcher.onDidDelete(() => scheduleRestart(context));
     context.subscriptions.push(watcher);
   }
 
   // ...and when any cssdoc.json / cssdoc.jsonc changes, so edited conventions/severities/naming reload live.
   const configWatcher = workspace.createFileSystemWatcher("**/cssdoc.{json,jsonc}");
-  configWatcher.onDidCreate(() => void restart(context));
-  configWatcher.onDidChange(() => void restart(context));
-  configWatcher.onDidDelete(() => void restart(context));
+  configWatcher.onDidCreate(() => scheduleRestart(context));
+  configWatcher.onDidChange(() => scheduleRestart(context));
+  configWatcher.onDidDelete(() => scheduleRestart(context));
   context.subscriptions.push(configWatcher);
 
-  context.subscriptions.push({ dispose: () => void client?.stop() });
+  context.subscriptions.push({
+    dispose: () => {
+      if (restartTimer) clearTimeout(restartTimer);
+      void client?.stop();
+    },
+  });
 }
 
 /** VS Code entry point: stop the language client. */
 export function deactivate(): Thenable<void> | undefined {
+  if (restartTimer) clearTimeout(restartTimer);
   return client?.stop();
 }
