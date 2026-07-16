@@ -126,6 +126,17 @@ function rangeOf(text: string, start: number, end: number): LspRange {
   return { start: positionAt(text, start), end: positionAt(text, end) };
 }
 
+function safeCreateIndex(
+  text: string,
+  options: Parameters<typeof createIndex>[1],
+): CssDocIndex {
+  try {
+    return createIndex(text, options);
+  } catch {
+    return createIndex("", options);
+  }
+}
+
 /**
  * Restore a masked interpolation in a diagnostic message. `projected` is the CSS the linter saw
  * (interpolations blanked to filler); `source` is the original document. Since the projection is
@@ -416,7 +427,7 @@ export class CssDocLanguageService {
       ...this.scopes,
       {
         ...govern,
-        index: createIndex(projectCss(text, { host }), {
+        index: safeCreateIndex(projectCss(text, { host }), {
           file: path, // so go-to-definition on a single-file component lands in this file
           configuration: govern.configuration,
           parse,
@@ -590,10 +601,15 @@ export class CssDocLanguageService {
     project?: CssDocIndex,
     siblings?: CssDocIndex,
   ): LspHover | undefined {
-    const index = createIndex(text, {
-      configuration: this.scopeForPath(path).configuration,
-      parse: parse ?? resolveParser(dialectForFilename(path)),
-    });
+    let index: CssDocIndex;
+    try {
+      index = createIndex(text, {
+        configuration: this.scopeForPath(path).configuration,
+        parse: parse ?? resolveParser(dialectForFilename(path)),
+      });
+    } catch {
+      return undefined;
+    }
     // Restore any `${…}` the projection masked (a no-op for a real stylesheet, where source === text).
     const card = (contents: string): LspHover => ({
       contents: unmaskContent(contents, text, source),
@@ -743,11 +759,16 @@ export class CssDocLanguageService {
     path?: string,
     parse?: CssParse,
   ): LspLocation | undefined {
-    const index = createIndex(text, {
-      file: path,
-      configuration: this.scopeForPath(path).configuration,
-      parse: parse ?? resolveParser(dialectForFilename(path)),
-    });
+    let index: CssDocIndex;
+    try {
+      index = createIndex(text, {
+        file: path,
+        configuration: this.scopeForPath(path).configuration,
+        parse: parse ?? resolveParser(dialectForFilename(path)),
+      });
+    } catch {
+      return undefined;
+    }
     const prop = propertyAt(text, offset);
     if (prop) {
       const loc = definitionForCustomProperty(prop.name, index);
@@ -871,36 +892,40 @@ export class CssDocLanguageService {
     parse?: CssParse,
     source: string = text,
   ): LspDiagnostic[] {
-    const scope = this.scopeForPath(path);
-    const index = createIndex(text, { configuration: scope.configuration, parse });
-    const { assignments, usages } = cssValueSites(text, { parse });
-    const diags = applyDirectives(
-      [
-        // Pass the project-wide index so `@structure` can reference sibling components from other files.
-        // Recognize this scope's own components AND any declared providers' components as siblings.
-        ...lintModel(
-          index,
-          scope.severities,
-          scope.naming,
-          scope.structureIgnore,
-          scope.siblingIndex ?? scope.index,
-        ),
-        ...checkPropertyAssignments(assignments, index, scope.severities),
-        ...checkPropertyUsage(usages, index, {}, scope.severities),
-      ],
-      text, // honor `/* cssdoc-disable … */` directives in the source
-    );
-    const out: LspDiagnostic[] = [];
-    for (const d of diags) {
-      if (!d.span) continue;
-      out.push({
-        range: spanToRange(d.span),
-        message: unmask(d.message, d.data?.maskedName, text, source),
-        severity: d.severity === "error" ? 1 : 2,
-        code: d.rule,
-      });
+    try {
+      const scope = this.scopeForPath(path);
+      const index = createIndex(text, { configuration: scope.configuration, parse });
+      const { assignments, usages } = cssValueSites(text, { parse });
+      const diags = applyDirectives(
+        [
+          // Pass the project-wide index so `@structure` can reference sibling components from other files.
+          // Recognize this scope's own components AND any declared providers' components as siblings.
+          ...lintModel(
+            index,
+            scope.severities,
+            scope.naming,
+            scope.structureIgnore,
+            scope.siblingIndex ?? scope.index,
+          ),
+          ...checkPropertyAssignments(assignments, index, scope.severities),
+          ...checkPropertyUsage(usages, index, {}, scope.severities),
+        ],
+        text, // honor `/* cssdoc-disable … */` directives in the source
+      );
+      const out: LspDiagnostic[] = [];
+      for (const d of diags) {
+        if (!d.span) continue;
+        out.push({
+          range: spanToRange(d.span),
+          message: unmask(d.message, d.data?.maskedName, text, source),
+          severity: d.severity === "error" ? 1 : 2,
+          code: d.rule,
+        });
+      }
+      return out;
+    } catch {
+      return [];
     }
-    return out;
   }
 
   /** Quick fixes for the given diagnostics (replace a deprecated modifier with its canonical). */

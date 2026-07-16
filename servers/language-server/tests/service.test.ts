@@ -407,6 +407,38 @@ test("a component defined in the document's own <style> is available to its mark
   expect(svc.hover(clean, position, "note.html")?.contents).toContain("note");
 });
 
+test("typescript config command globs do not throw in diagnostics, hover, or definition", () => {
+  const svc = new CssDocLanguageService(createIndex(""));
+  const ts = `import { defineConfig } from "vite-plus";
+
+export default defineConfig({
+  run: {
+    tasks: {
+      // CSS/cssdoc linting depends on generated records.
+      "lint:css": {
+        command:
+          'vp exec stylelint "renderers/web-components/src/**/*.css" "formats/components/src/{components,utilities}/*.css" "formats/components/generated/*.css"',
+      },
+      "lint:js": {
+        command:
+          'vp exec eslint "formats/components/src/{components,utilities}/*.css" "formats/components/generated/*.css" "renderers/web-components/src/**/*.css"',
+      },
+    },
+  },
+});`;
+
+  const at = ts.indexOf("components,utilities");
+  const before = ts.slice(0, at);
+  const pos = {
+    line: (before.match(/\n/gu) ?? []).length,
+    character: at - (before.lastIndexOf("\n") + 1),
+  };
+
+  expect(() => svc.diagnostics(ts, "typescript", "vite.config.ts")).not.toThrow();
+  expect(() => svc.hover(ts, pos, "vite.config.ts", "typescript")).not.toThrow();
+  expect(() => svc.definition(ts, pos, "vite.config.ts", "typescript")).not.toThrow();
+});
+
 test("authoring hover: hovering a selector or property in the CSS source resolves its card", () => {
   const css = `/**
  * @component button
