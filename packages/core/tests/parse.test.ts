@@ -99,6 +99,36 @@ test("base class resolves under a masked `${p}` prefix, over a wrapper-first bar
   expect(badge.className).toBe(".aaaabadge");
 });
 
+test("base class inference accepts an upper-case-led prefix / PascalCase class, not just lowercase", () => {
+  // Inference used to require a lowercase-first bare class, so an upper-case namespace (`.PFX-badge`) or
+  // a PascalCase class (`.Card`) was skipped and it fell back to the bare `@name` — silently producing a
+  // className that no longer matched the CSS (and a wrong prefix for modifier derivation).
+  const prefixed = [
+    "/**",
+    " * @component badge",
+    " * @summary A badge.",
+    " * @modifier -color-danger — Danger.",
+    " */",
+    ".PFX-badge { background: gray; }",
+    ".PFX-badge.-color-danger { background: red; }",
+  ].join("\n");
+  const [badge] = parseCssDocs(prefixed, { modifierConvention: "rscss" });
+  expect(badge.className).toBe(".PFX-badge");
+  // The `PFX-` prefix boundary is honoured, so the chained class is still the `-color-danger` modifier.
+  expect(badge.modifiers.map((m) => m.name)).toContain("-color-danger");
+
+  // A single PascalCase class resolves to itself (previously mis-inferred to `.card`).
+  const pascal = [
+    "/**",
+    " * @component card",
+    " * @summary A card.",
+    " */",
+    ".Card { display: block; }",
+  ].join("\n");
+  const [card] = parseCssDocs(pascal);
+  expect(card.className).toBe(".Card");
+});
+
 test("an authored `@deprecated {@link -x}` sets the modifier's canonical", () => {
   const [comp] = parseCssDocs(
     `/**\n * @component alert\n * @modifier -variant-error — @deprecated {@link -color-danger}\n */\n` +

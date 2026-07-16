@@ -32,6 +32,14 @@ import {
 import postcss, { type ChildNode } from "postcss";
 import valueParser from "postcss-value-parser";
 
+/**
+ * Every class reference in a selector (name captured, dot dropped). The leading `[A-Za-z_]` accepts any
+ * case, so a PascalCase or namespaced/prefixed class (`.Button`, `.PFX-badge`) is picked up as a part —
+ * `-`-led modifiers and digit-led idents are excluded. Mirrors `CLASS_IDENT`/`CLASS_REF_RE` in
+ * `@cssdoc/core`'s parse.ts (kept a local copy rather than widening core's published surface).
+ */
+const CLASS_REF_RE = /\.([A-Za-z_][\w-]*)/gu;
+
 /** A 1-based line/column position (matching PostCSS). */
 export interface Position {
   line: number;
@@ -379,7 +387,7 @@ function scanNodes(nodes: ChildNode[], build: Build, base: string, matcher: Modi
         for (const st of matcher.statesIn(bare, baseNoDot)) {
           set(memberKey("state", st.name), node);
         }
-        for (const p of bare.matchAll(/\.([a-z][\w-]*)/gu)) {
+        for (const p of bare.matchAll(CLASS_REF_RE)) {
           if (modNames.has(p[1])) continue; // a modifier, not a part
           set(memberKey("part", p[1]), node);
         }
