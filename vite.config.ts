@@ -1,16 +1,24 @@
-import { defineConfig } from "vite-plus";
+import { configDefaults, defineConfig } from "vite-plus";
+
+// Coding agents create git worktrees here; each holds a full copy of the repo whose stale source would
+// otherwise be linted, formatted, and (via Vitest's file discovery) test-run. Ignore both the bare and
+// `.claude/`-nested locations across every tool.
+const WORKTREE_IGNORE = ["**/.worktrees/**", "**/.claude/worktrees/**"];
 
 export default defineConfig({
   staged: {
     "*": "vp check --fix",
   },
+  // Vitest replaces (not merges) `exclude`, so keep its defaults and add the worktree copies.
+  test: { exclude: [...configDefaults.exclude, ...WORKTREE_IGNORE] },
   // Generated files whose exact bytes are owned elsewhere, so oxfmt must not touch them:
   //   - CHANGELOG.md — changelogen at release time (see scripts/release-changelog.mjs); its markdown
   //     (e.g. `⚠️  ` after a breaking-change entry) doesn't match oxfmt and would fail the release Gate.
   //   - **/cssdoc.schema.json — the JSON Schema mirrors written by scripts/sync-schema.ts from the
   //     `cssDocSchema` source of truth; oxfmt would collapse arrays and break the byte-exact drift check.
-  fmt: { ignorePatterns: ["CHANGELOG.md", "**/cssdoc.schema.json"] },
+  fmt: { ignorePatterns: ["CHANGELOG.md", "**/cssdoc.schema.json", ...WORKTREE_IGNORE] },
   lint: {
+    ignorePatterns: [...WORKTREE_IGNORE],
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
     rules: { "vite-plus/prefer-vite-plus-imports": "error" },
     options: { typeAware: true, typeCheck: true },
