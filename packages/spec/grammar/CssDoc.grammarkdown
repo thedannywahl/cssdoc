@@ -76,30 +76,62 @@ RecordName ::
 //   chained   — a separate prefixed class on the base:      `.base.-name`  (optionally split prop/value)
 //   attribute — an attribute selector on the base:          `.base[name="value"]`
 
-// The suffix form (the default): the modifier joined into the base class name with a separator.
+// A modifier name, in whichever of the three structural spellings the convention uses (below). This is
+// what `@modifier` names and what `{@link}`/`{@inheritDoc}` reference; the modifier set itself is derived
+// from the CSS, so this only supplies the reference key.
 ModifierName ::
-    Identifier `--` Identifier
+    SuffixModifierName
+    ChainedModifierName
+    AttributeModifier
+
+// The suffix form (the default): the modifier joined into the base class name with a separator. The tail
+// is a `Value`, so it may be a `*` family — `.button--primary`, `.button--icon-arrow`, `.button--size-*`.
+SuffixModifierName ::
+    Identifier `--` Value
 
 // The chained form: a separate prefixed class on the base — a `-<prop>` boolean modifier, or a
 // `-<prop>-<value>` modifier split into prop and value. `Prop` is the segment up to the first interior
-// hyphen; `Value` is the remainder (which may itself contain hyphens).
+// hyphen; `Value` is the remainder (which may itself contain hyphens, or be a `*` family — `-icon-*`).
 ChainedModifierName ::
     `-` Prop
     `-` Prop `-` Value
 
+Prop ::
+    > an identifier segment of letters and digits, containing no hyphen
+
+// A modifier value: a literal value, or a `*` family standing in for the varying value, optionally with a
+// literal prefix — `secondary`, `*`, `icon-*`. Reused as the suffix-form tail (SuffixModifierName).
+Value ::
+    Identifier
+    WildcardValue
+
+WildcardValue ::
+    WildcardSegment
+    Identifier WildcardSegment
+
 // A `*` wildcard marks a modifier/part *family*, standing in for the varying segment — e.g. `-icon-*`.
-// A documented name may contain one; `name-not-in-css` then treats it as a family, satisfied by a literal
-// instance (`.-icon-foo`) or a `class` attribute selector (`[class*="-icon-"]`, `[class$=…]`, `[class~=…]`).
+// Reached through `Value` (suffix/chained names) and `PartName`; the `class`-attribute operator forms
+// (`[class*="-icon-"]`, `[class$=…]`, `[class~=…]`) denote the same families. `name-not-in-css` treats a
+// family as satisfied by a literal instance (`.-icon-foo`) or such a `class` selector.
 WildcardSegment ::
     `*`
 
-// The attribute form: an attribute selector on the base, e.g. `.base[name="value"]`.
+// The attribute form: an attribute selector on the base, e.g. `.base[name="value"]` (CUBE), or a
+// `class`-attribute family selector — `.base[class*="-icon-"]` denotes the `-icon-*` WildcardSegment
+// family.
 AttributeModifier ::
     `[` AttributeName `]`
-    `[` AttributeName `=` AttributeValue `]`
+    `[` AttributeName AttributeOperator AttributeValue `]`
 
 AttributeName ::
     Identifier
+
+// A CSS attribute-selector comparison operator: `=` exact; `~=` whitespace-list member; `|=` hyphen
+// prefix; `^=` prefix; `$=` suffix; `*=` substring. cssdoc maps `*=`/`|=` to a prefix family, `$=` to a
+// suffix family, `~=`/`=` to a concrete name; `^=` anchors to the base class and isn't a modifier (see
+// modifier.ts classAttrFamily).
+AttributeOperator :: one of
+    `=` `~=` `|=` `^=` `$=` `*=`
 
 AttributeValue ::
     QuotedString
@@ -122,15 +154,10 @@ ElementName ::
 StateClass ::
     > a class chained to the base whose name starts with a state prefix
 
-Prop ::
-    > an identifier segment of letters and digits, containing no hyphen
-
-Value ::
-    Identifier
-
-// A `.`-prefixed sub-element class, e.g. `.part`.
+// A `.`-prefixed sub-element class, e.g. `.part`, or a `*` family — `.icon-*`.
 PartName ::
     `.` Identifier
+    `.` Identifier WildcardSegment
 
 // A base-class selector, e.g. `.base`.
 ClassSelector ::
