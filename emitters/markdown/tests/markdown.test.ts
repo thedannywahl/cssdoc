@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseCssDocs } from "@cssdoc/core";
 import { expect, test } from "vite-plus/test";
-import { buildCssApi, buildSidebar, renderEntry } from "../src/index.ts";
+import { buildCssApi, buildSidebar, renderEntry, renderIndex } from "../src/index.ts";
 
 const CSS = `
 /**
@@ -304,6 +304,56 @@ test("buildSidebar groups records by kind and lists Overview first", () => {
   const entries = parseCssDocs(CSS);
   const sidebar = buildSidebar(entries, "/api/css/");
   expect(sidebar.map((s) => s.text)).toEqual(["Overview", "Components", "Utilities"]);
+});
+
+// Two mixed-kind records (a utility and a component) share `@group Plugins`; `button` stays ungrouped.
+const GROUP_CSS = `
+/**
+ * @component button
+ * @summary Primary action.
+ */
+.button {}
+
+/**
+ * @utility stacking
+ * @group Plugins
+ * @summary Depth utilities.
+ */
+.stacking {}
+
+/**
+ * @component overlay
+ * @group Plugins
+ * @summary Layer control.
+ */
+.overlay {}
+`;
+
+// `parseCssDocs` returns records in source order (`button`, `stacking`, `overlay`); `groupEntries`
+// name-sorts internally, so passing this unsorted directly still yields deterministic, sorted output.
+test("buildSidebar puts @group records in a named group after the kind groups", () => {
+  const entries = parseCssDocs(GROUP_CSS);
+  const sidebar = buildSidebar(entries, "/api/css/");
+  // Components holds only ungrouped `button`; Utilities is empty (its record moved) and is dropped.
+  expect(sidebar.map((s) => s.text)).toEqual(["Overview", "Components", "Plugins"]);
+  const plugins = sidebar.find((s) => s.text === "Plugins");
+  // Mixed kinds (a component and a utility) under one group, name-sorted despite unsorted input.
+  expect(plugins?.items?.map((i) => i.text)).toEqual(["overlay", "stacking"]);
+});
+
+test("buildSidebar honors an explicit groups order", () => {
+  const entries = parseCssDocs(GROUP_CSS);
+  const sidebar = buildSidebar(entries, "/api/css/", ["Plugins"]);
+  expect(sidebar.map((s) => s.text)).toEqual(["Overview", "Plugins", "Components"]);
+});
+
+test("renderIndex groups records by @group and drops empty kind groups", () => {
+  const entries = parseCssDocs(GROUP_CSS);
+  const md = renderIndex(entries, { baseHref: "/api/css/" });
+  expect(md).toContain("## Plugins");
+  expect(md).toContain("[overlay](/api/css/overlay.md)");
+  expect(md).toContain("[stacking](/api/css/stacking.md)");
+  expect(md).not.toContain("## Utilities");
 });
 
 const STATUS_CSS = `

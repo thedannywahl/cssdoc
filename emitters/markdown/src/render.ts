@@ -129,6 +129,12 @@ export interface RenderIndexOptions {
   intro?: string;
   /** Link prefix for page links (defaults to `"/"`; e.g. `"/api/css/"`). */
   baseHref?: string;
+  /**
+   * Explicit group order for the sidebar and index. Listed labels come first, in this order; any
+   * unlisted group follows in the default order ({@link KIND_GROUPS} kinds, then custom `@group` groups
+   * in first-appearance order). Omitted → the default order. See {@link groupEntries}.
+   */
+  groups?: readonly string[];
 }
 
 /** Sidebar/index groups, in display order. Only kinds with records appear. */
@@ -138,6 +144,49 @@ export const KIND_GROUPS: readonly { kind: CssRecordKind; label: string }[] = [
   { kind: "rule", label: "Rules" },
   { kind: "declaration", label: "Declarations" },
 ];
+
+/** One sidebar/index group: a display label and the records under it (name-sorted, from `entries`). */
+export interface EntryGroup {
+  label: string;
+  entries: CssDocEntry[];
+}
+
+/**
+ * Bucket records into display groups for the sidebar and index. A record with `@group Foo` joins a group
+ * labelled `Foo`; a record without one falls back to its {@link KIND_GROUPS} kind label. Order: any
+ * `groups` labels first (in that order), then the kind groups in {@link KIND_GROUPS} order, then any
+ * remaining custom groups in first-appearance order. Empty groups are dropped. A custom `@group` value
+ * equal to a kind label merges into that kind group.
+ *
+ * Records are name-sorted internally, so the result is deterministic regardless of input order — both
+ * within each group and across the first-appearance custom groups. (`buildCssApi` already name-sorts;
+ * this keeps direct callers of {@link buildSidebar}/{@link renderIndex} consistent with it.)
+ *
+ * @param entries - The records to group.
+ * @param groups - Optional explicit label order; see {@link RenderIndexOptions.groups}.
+ * @returns The non-empty groups, in display order.
+ */
+export function groupEntries(
+  entries: readonly CssDocEntry[],
+  groups?: readonly string[],
+): EntryGroup[] {
+  const kindLabel = new Map(KIND_GROUPS.map((g) => [g.kind, g.label]));
+  const byLabel = new Map<string, CssDocEntry[]>();
+  for (const e of [...entries].sort((a, b) => a.name.localeCompare(b.name))) {
+    // An empty `@group` (a bare tag) is treated as absent, matching the per-page meta line's truthy check.
+    const label = e.group || kindLabel.get(e.kind) || e.kind;
+    const bucket = byLabel.get(label);
+    if (bucket) bucket.push(e);
+    else byLabel.set(label, [e]);
+  }
+  const order: string[] = [];
+  for (const label of groups ?? []) if (!order.includes(label)) order.push(label);
+  for (const g of KIND_GROUPS) if (!order.includes(g.label)) order.push(g.label);
+  for (const label of byLabel.keys()) if (!order.includes(label)) order.push(label);
+  return order
+    .filter((label) => byLabel.has(label))
+    .map((label) => ({ label, entries: byLabel.get(label)! }));
+}
 
 /**
  * Escape prose for VitePress markdown (which compiles through Vue's SFC parser): a raw `<tag>` reads as
@@ -567,7 +616,10 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   return `${lines.join("\n")}\n`;
 }
 
-/** Render the index/overview page: records grouped by kind, each a table with its summary. */
+/**
+ * Render the index/overview page: records grouped by `@group` (or their kind), each a table with its
+ * summary. See {@link groupEntries} for the grouping and order.
+ */
 export function renderIndex(
   entries: readonly CssDocEntry[],
   options: RenderIndexOptions = {},
@@ -575,15 +627,13 @@ export function renderIndex(
   const baseHref = options.baseHref ?? "/";
   const lines = [`# ${options.title ?? "CSS API reference"}`, ""];
   if (options.intro) lines.push(escProse(options.intro), "");
-  for (const group of KIND_GROUPS) {
-    const inGroup = entries.filter((e) => e.kind === group.kind);
-    if (!inGroup.length) continue;
+  for (const group of groupEntries(entries, options.groups)) {
     lines.push(
       `## ${group.label}`,
       "",
       ...table(
         ["Name", "Class", "Summary"],
-        inGroup.map((e) => [
+        group.entries.map((e) => [
           `[${e.name}](${baseHref}${e.name}.md)`,
           `\`${e.className}\``,
           cell(e.summary),

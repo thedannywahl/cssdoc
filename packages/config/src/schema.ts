@@ -191,6 +191,12 @@ export const cssDocSchema = {
             'Which Structure representation(s) to emit: "text" tree, "diagram" flowchart, or "both" (default).',
           enum: ["text", "diagram", "both"],
         },
+        groups: {
+          description:
+            "Explicit sidebar/index group order. Listed group labels come first, in this order; unlisted groups follow the default order (record kinds, then custom @group groups).",
+          type: "array",
+          items: { type: "string" },
+        },
       },
     },
   },

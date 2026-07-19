@@ -12,9 +12,9 @@ import { parseCssDocs } from "@cssdoc/core";
 import { type CssDialect, resolveParser } from "@cssdoc/dialects";
 import { parseCssDocsFromSource } from "@cssdoc/embedded";
 import {
-  KIND_GROUPS,
   type RenderEntryOptions,
   type RenderIndexOptions,
+  groupEntries,
   renderEntry,
   renderIndex,
 } from "./render.ts";
@@ -64,14 +64,22 @@ export interface BuildCssApiResult {
   sidebarPath: string;
 }
 
-/** Build the sidebar tree (Overview, then a group per kind). */
-export function buildSidebar(entries: readonly CssDocEntry[], baseHref = "/"): SidebarItem[] {
+/**
+ * Build the sidebar tree (Overview, then a group per `@group` or kind). Grouping and order follow
+ * {@link groupEntries}; pass `groups` for an explicit label order.
+ */
+export function buildSidebar(
+  entries: readonly CssDocEntry[],
+  baseHref = "/",
+  groups?: readonly string[],
+): SidebarItem[] {
   const sidebar: SidebarItem[] = [{ text: "Overview", link: baseHref }];
-  for (const group of KIND_GROUPS) {
-    const items = entries
-      .filter((e) => e.kind === group.kind)
-      .map((e) => ({ text: e.name, link: `${baseHref}${e.name}.md` }));
-    if (items.length) sidebar.push({ text: group.label, collapsed: false, items });
+  for (const group of groupEntries(entries, groups)) {
+    sidebar.push({
+      text: group.label,
+      collapsed: false,
+      items: group.entries.map((e) => ({ text: e.name, link: `${baseHref}${e.name}.md` })),
+    });
   }
   return sidebar;
 }
@@ -137,7 +145,10 @@ export function buildCssApi(options: BuildCssApiOptions): BuildCssApiResult {
   writeFileSync(indexPath, renderIndex(entries, options));
 
   const sidebarPath = join(options.outDir, options.sidebarFileName ?? "css-sidebar.json");
-  writeFileSync(sidebarPath, `${JSON.stringify(buildSidebar(entries, baseHref), null, 2)}\n`);
+  writeFileSync(
+    sidebarPath,
+    `${JSON.stringify(buildSidebar(entries, baseHref, options.groups), null, 2)}\n`,
+  );
 
   return { entries, pages, indexPath, sidebarPath };
 }

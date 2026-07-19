@@ -84,3 +84,39 @@ test("emitCssApi forwards classNames to the renderer so deprecation markers get 
   const page = readFileSync(join(out, "css", "box.md"), "utf8");
   expect(page).toContain('<span class="instui-pill -color-warning">Deprecated</span> — ');
 });
+
+const GROUP_CSS = `
+/**
+ * @component button
+ * @summary Primary action.
+ */
+.button {}
+
+/**
+ * @utility stacking
+ * @group Plugins
+ * @summary Depth utilities.
+ */
+.stacking {}
+`;
+
+test("emitCssApi forwards groups so the CSS sidebar orders custom groups", () => {
+  const out = mkdtempSync(join(tmpdir(), "cssdoc-td-"));
+  const cssPath = join(out, "g.css");
+  writeFileSync(cssPath, GROUP_CSS);
+  writeFileSync(
+    join(out, TYPEDOC_SIDEBAR_FILE),
+    JSON.stringify([{ text: "Modules", items: [] }], null, 2),
+  );
+
+  emitCssApi({ outputDirectory: out, css: [cssPath], baseHref: "/api/css/", groups: ["Plugins"] });
+
+  const sidebar = JSON.parse(readFileSync(join(out, TYPEDOC_SIDEBAR_FILE), "utf8"));
+  const cssSection = sidebar.find((i: { text: string }) => i.text === "CSS");
+  // Without forwarding, `groups` would no-op and Plugins would sort after Components (default order).
+  expect(cssSection.items.map((i: { text: string }) => i.text)).toEqual([
+    "Overview",
+    "Plugins",
+    "Components",
+  ]);
+});

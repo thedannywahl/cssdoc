@@ -260,6 +260,13 @@
             "diagram",
             "both"
           ]
+        },
+        "groups": {
+          "description": "Explicit sidebar/index group order. Listed group labels come first, in this order; unlisted groups follow the default order (record kinds, then custom @group groups).",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     }
