@@ -33,13 +33,18 @@ export interface EmitCssApiOptions extends RenderEntryOptions {
   label?: string;
   /** Link prefix for the emitted pages/sidebar (default `"<outSubdir>/"`). */
   baseHref?: string;
+  /**
+   * Explicit sidebar/index group order (from `render.groups` in a `configFile`, or passed here). Listed
+   * labels come first; unlisted groups follow the default order. See `groupEntries` in `@cssdoc/markdown`.
+   */
+  groups?: readonly string[];
   /** The tag configuration to parse with. */
   configuration?: CssDocConfiguration;
   /**
    * A loaded `cssdoc.json` (from `@cssdoc/config`). When given, it supplies the parse `configuration`
    * (unless one is passed explicitly) and the render defaults
-   * `sectionOrder`/`headingPrefix`/`baseHref`/`structureView` from its `render` block. Any explicit
-   * option above still overrides the config file.
+   * `sectionOrder`/`headingPrefix`/`baseHref`/`structureView`/`groups` from its `render` block. Any
+   * explicit option above still overrides the config file.
    */
   configFile?: CssDocConfigFile;
   /** Base directory the `css` paths are resolved against (default `process.cwd()`). */
@@ -84,6 +89,7 @@ export function emitCssApi(
     options.sectionOrder ?? (render?.sectionOrder as readonly SectionKey[] | undefined);
   const headingPrefix = options.headingPrefix ?? render?.headingPrefix;
   const structureView = options.structureView ?? render?.structureView;
+  const groups = options.groups ?? render?.groups;
   const cwd = options.cwd ?? process.cwd();
 
   const css = options.css.map((file) => readFileSync(resolve(cwd, file), "utf8"));
@@ -100,13 +106,14 @@ export function emitCssApi(
     sectionOrder,
     headingPrefix,
     structureView,
+    groups,
   });
 
   const sidebarPath = join(options.outputDirectory, TYPEDOC_SIDEBAR_FILE);
   let sidebarMerged = false;
   if (existsSync(sidebarPath)) {
     const existing = JSON.parse(readFileSync(sidebarPath, "utf8")) as SidebarItem[];
-    const merged = mergeCssSidebar(existing, label, buildSidebar(result.entries, baseHref));
+    const merged = mergeCssSidebar(existing, label, buildSidebar(result.entries, baseHref, groups));
     writeFileSync(sidebarPath, `${JSON.stringify(merged, null, 2)}\n`);
     sidebarMerged = true;
   }
