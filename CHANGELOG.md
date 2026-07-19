@@ -4,6 +4,26 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.7.9
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.7.8...v0.7.9)
+
+### 🚀 Enhancements
+
+- Enhance modifier name grammar with suffix, chained, and attribute forms ([5719ac7](https://github.com/thedannywahl/cssdoc/commit/5719ac7))
+- Enhance Vite configuration to ignore worktree directories in linting and formatting ([dee5e7a](https://github.com/thedannywahl/cssdoc/commit/dee5e7a))
+- **markdown:** Group sidebar and index by @group, not only by record kind ([231c242](https://github.com/thedannywahl/cssdoc/commit/231c242))
+- **config:** Add render.groups for explicit sidebar group order ([083dfc7](https://github.com/thedannywahl/cssdoc/commit/083dfc7))
+- **typedoc:** Forward groups through the emit path ([187cdb5](https://github.com/thedannywahl/cssdoc/commit/187cdb5))
+
+### 🩹 Fixes
+
+- Exclude engineering-log.md from src processing ([87fc762](https://github.com/thedannywahl/cssdoc/commit/87fc762))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.7.8
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.7.7...v0.7.8)
