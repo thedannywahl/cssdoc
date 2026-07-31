@@ -207,3 +207,39 @@ test("a <style> written inside an HTML comment is ignored, not opened as a regio
 </style>`;
   expect(parseCssDocsFromSource(withReal, { host: "html" }).map((e) => e.name)).toEqual(["note"]);
 });
+
+test("a TSDoc comment whose prose mentions @component does not produce a false record when there are no CSS templates", () => {
+  // Regression: all doc comments were kept verbatim; TSDoc prose like `@component menu` tripped the
+  // parser into thinking a module was being declared.
+  const src = `
+/** A record definition's input. */
+export interface DefineInput {
+  /**
+   * Build the record for prefix p: a leading /** … *\\/ cssdoc doc comment followed by the CSS
+   * body — for example a doc comment tagged @component menu ahead of a rule like .p-menu {}.
+   */
+  css: (p: string) => string;
+}
+`;
+  expect(parseCssDocsFromSource(src, { host: "js" })).toEqual([]);
+  expect(projectCss(src, { host: "js" })).not.toContain("@component");
+});
+
+test("a TSDoc comment with @component in prose between two CSS templates is not kept", () => {
+  const src = `
+/** @component button\n * @summary A button.\n */
+const Button = styled.button\`
+  .button {}
+\`;
+
+/** This is just a TS doc. For example: @component fake — this is prose, not a declaration. */
+export interface Options {}
+
+/** @component card\n * @summary A card.\n */
+const Card = styled.div\`
+  .card {}
+\`;
+`;
+  const records = parseCssDocsFromSource(src, { host: "js" });
+  expect(records.map((e) => e.name)).toEqual(["button", "card"]);
+});

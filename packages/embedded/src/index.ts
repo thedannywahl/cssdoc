@@ -239,13 +239,17 @@ function scan(
  */
 export function projectCss(source: string, opts: EmbeddedOptions = {}): string {
   const { regions, masks, comments } = scan(source, opts);
-  const keep = [
-    ...regions.map((r) => ({ start: r.start, end: r.end })),
-    // JS doc comments can document a following styled-component declaration. Collect them with the
-    // JS lexer rather than a source-wide regex: Markdown prose and glob strings can contain `/**`
-    // followed much later by `*/`, and preserving that span would feed non-CSS text to PostCSS.
-    ...comments,
-  ];
+  // Only keep the last doc comment before each CSS region — the one that documents that template.
+  // Keeping all comments lets TSDoc prose containing `@component`-like examples trigger false records.
+  const commentSet = new Set<Mask>();
+  for (const region of regions) {
+    let best: Mask | undefined;
+    for (const c of comments) {
+      if (c.end <= region.start && (!best || c.end > best.end)) best = c;
+    }
+    if (best) commentSet.add(best);
+  }
+  const keep = [...regions.map((r) => ({ start: r.start, end: r.end })), ...commentSet];
   const out: string[] = Array.from({ length: source.length }, (_, i) =>
     source[i] === "\n" ? "\n" : " ",
   );
