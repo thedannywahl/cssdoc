@@ -1,5 +1,7 @@
 # @cssdoc
 
+![cssdoc: A documentation toolchain for plain CSS — TSDoc, for CSS.](https://cssdoc.dev/og.png)
+
 A framework-agnostic documentation toolchain for plain CSS — TSDoc, for CSS. Parse a doc-comment
 grammar plus the CSS AST into a serializable model, then emit whatever you like on top — the way the
 `@microsoft/tsdoc` family and TypeDoc split a parser, a config loader, and a set of emitters/plugins.
