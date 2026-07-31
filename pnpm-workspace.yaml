@@ -13,10 +13,10 @@ catalog:
   # Toolchain
   typescript: ^6.0.3
   "@types/node": ^24.13.3
-  vite: npm:@voidzero-dev/vite-plus-core@0.2.4
-  vite-plus: 0.2.4
+  vite: npm:@voidzero-dev/vite-plus-core@0.2.7
+  vite-plus: 0.2.7
   # Core
-  postcss: ^8.5.19
+  postcss: ^8.5.25
   postcss-value-parser: ^4.2.0
   grammarkdown: ^3.3.2
   # CSS value / @property syntax matching
@@ -30,10 +30,10 @@ catalog:
   typedoc-plugin-markdown: ^4.12.0
   typedoc-vitepress-theme: ^1.1.3
   # Lint adapters
-  stylelint: ^17.14.0
-  eslint: ^10.7.0
+  stylelint: ^17.14.1
+  eslint: ^10.8.0
   "@eslint/css": ^1.4.0
-  "@html-eslint/parser": ^0.63.0
+  "@html-eslint/parser": ^0.64.0
   # Language server + editor
   vscode-languageserver: ^10.1.0
   vscode-languageserver-textdocument: ^1.0.12
@@ -47,7 +47,7 @@ catalog:
   vitepress: 2.0.0-alpha.18
   # Quality gates
   "@vitest/coverage-v8": ^4.1.10
-  publint: ^0.3.21
+  publint: ^0.3.22
   # Release
   changelogen: ^0.6.2
   bumpp: ^11.1.0
@@ -55,9 +55,21 @@ catalog:
   "@commitlint/config-conventional": ^21.2.0
   postcss-styled-syntax: ^0.7.2
   postcss-html: ^1.8.1
-  vitepress-plugin-llms: ^1.13.3
+  vitepress-plugin-llms: ^1.13.4
 
 allowBuilds:
   esbuild: true
   "@vscode/vsce-sign": false
   keytar: false
+
+minimumReleaseAgeExclude:
+  - '@voidzero-dev/vite-plus-core@0.2.7'
+  - '@voidzero-dev/vite-plus-darwin-arm64@0.2.7'
+  - '@voidzero-dev/vite-plus-darwin-x64@0.2.7'
+  - '@voidzero-dev/vite-plus-linux-arm64-gnu@0.2.7'
+  - '@voidzero-dev/vite-plus-linux-arm64-musl@0.2.7'
+  - '@voidzero-dev/vite-plus-linux-x64-gnu@0.2.7'
+  - '@voidzero-dev/vite-plus-linux-x64-musl@0.2.7'
+  - '@voidzero-dev/vite-plus-win32-arm64-msvc@0.2.7'
+  - '@voidzero-dev/vite-plus-win32-x64-msvc@0.2.7'
+  - vite-plus@0.2.7
