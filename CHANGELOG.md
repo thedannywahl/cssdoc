@@ -4,6 +4,27 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.7.10
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.7.9...v0.7.10)
+
+### 🩹 Fixes
+
+- **scope:** Correct scopeName to match CSS documentation standards ([4246fa6](https://github.com/thedannywahl/cssdoc/commit/4246fa6))
+- Standardize quotes in minimumReleaseAgeExclude section ([a9b5cc2](https://github.com/thedannywahl/cssdoc/commit/a9b5cc2))
+
+### 🏡 Chore
+
+- Update dependencies ([8ed8651](https://github.com/thedannywahl/cssdoc/commit/8ed8651))
+
+### ✅ Tests
+
+- Add regression tests for TSDoc comment handling in CSS projection ([08ac979](https://github.com/thedannywahl/cssdoc/commit/08ac979))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.7.9
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.7.8...v0.7.9)
