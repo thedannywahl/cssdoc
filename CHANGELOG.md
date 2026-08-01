@@ -4,6 +4,42 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.8.0
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.7.10...v0.8.0)
+
+### 🚀 Enhancements
+
+- **spec,core:** ⚠️  Add @selector tag; deprecate @class as alias ([cacb9c4](https://github.com/thedannywahl/cssdoc/commit/cacb9c4))
+- **core,index,providers:** ⚠️  @part accepts non-class selectors with optional alias ([8ee0008](https://github.com/thedannywahl/cssdoc/commit/8ee0008))
+- **core,markdown:** ParseStructure handles @scope at-rules as scope-boundary StructureNodes ([7068b00](https://github.com/thedannywahl/cssdoc/commit/7068b00))
+
+### 🩹 Fixes
+
+- Add missing image to README for better visibility ([4a56ee5](https://github.com/thedannywahl/cssdoc/commit/4a56ee5))
+- **providers:** Correct name-not-in-css false positive for attribute-selector @part ([b7ddb4d](https://github.com/thedannywahl/cssdoc/commit/b7ddb4d))
+- **index:** Recurse into nested CSS rule nodes in scanNodes ([f6e7980](https://github.com/thedannywahl/cssdoc/commit/f6e7980))
+- **core:** Recurse into nested CSS rule nodes in collect ([474f372](https://github.com/thedannywahl/cssdoc/commit/474f372))
+- **language-server:** Guard createIndex in rebuild() against PostCSS parse errors ([63c7383](https://github.com/thedannywahl/cssdoc/commit/63c7383))
+
+### 💅 Refactors
+
+- **parse:** Improve code readability with consistent formatting ([d4063e1](https://github.com/thedannywahl/cssdoc/commit/d4063e1))
+
+### 📖 Documentation
+
+- Comprehensive docs sweep for @selector, @part, @scope, and CSS nesting ([0234869](https://github.com/thedannywahl/cssdoc/commit/0234869))
+- **examples:** Replace pendo-specific example with generic x-banner web component ([c6e35f8](https://github.com/thedannywahl/cssdoc/commit/c6e35f8))
+
+#### ⚠️ Breaking Changes
+
+- **spec,core:** ⚠️  Add @selector tag; deprecate @class as alias ([cacb9c4](https://github.com/thedannywahl/cssdoc/commit/cacb9c4))
+- **core,index,providers:** ⚠️  @part accepts non-class selectors with optional alias ([8ee0008](https://github.com/thedannywahl/cssdoc/commit/8ee0008))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.7.10
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.7.9...v0.7.10)
