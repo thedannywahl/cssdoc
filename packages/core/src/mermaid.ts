@@ -118,8 +118,9 @@ function classify(node: StructureNode, isRoot: boolean, options: MermaidOptions)
  * …) in depth-first order; a parent connects to each child with an edge carrying the child's
  * cardinality. Nodes are shaped + classed by kind; sibling components with an href
  * get a `click` link.
- *
- * @param roots - Top-level {@link StructureNode}s (an authored `@structure`).
+ * * `@scope` boundary nodes (where {@link StructureNode.scope} is set) are rendered as labelled Mermaid
+ * `subgraph` blocks wrapping their children; the scope prelude (e.g. `(.component)`) is the label.
+ * * @param roots - Top-level {@link StructureNode}s (an authored `@structure`).
  * @param options - {@link MermaidOptions}.
  * @returns Mermaid source, or an empty string when there are no nodes.
  *

@@ -26,15 +26,16 @@ export default {
 ```
 
 It reports the hygiene rules — `missing-summary`, `undocumented-modifier`, `undocumented-part`,
-`deprecated-requires-canonical`, and `name-not-in-css` (a documented modifier/part that no selector
-defines — drift) — plus the registered-property value rules below.
+`deprecated-requires-canonical`, and `name-not-in-css` (a documented modifier/part whose selector
+appears in no CSS rule — drift) — plus the registered-property value rules below.
 
-`name-not-in-css` has two deliberate allowances: a modifier documented as a deprecated alias
-(`@modifier -x — @deprecated {@link -y}`) is a legacy name that's intentionally gone from the CSS and is
-exempt, and a **`*` wildcard** name (`@modifier -icon-*`) documents a family — satisfied by a literal
-instance (`.-icon-foo`) or a `class` attribute selector interpreted with its real operator semantics
-(`[class*="-icon-"]` contains, `[class$="…"]` suffix, `[class~="…"]` exact word; `[class^="…"]` does not
-count, since it anchors to the base class, not a chained modifier).
+`name-not-in-css` has three deliberate allowances:
+
+- A **deprecated alias** (`@modifier -x — @deprecated {@link -y}`) is a legacy name intentionally gone from the CSS and is exempt.
+- A **`*` wildcard** name (`@modifier -icon-*`) documents a family — satisfied by a literal instance (`.-icon-foo`) or a `class` attribute selector with its real operator semantics (`[class*="-icon-"]` contains, `[class$="…"]` suffix, `[class~="…"]` exact word; `[class^="…"]` does not count).
+- Parts using **non-class selectors** (`@part [data-layout="x"]`, `@part #root`, `@part :host`) are matched against the selector text as an exact substring search, so `@part [data-layout="lightboxBlank"]` is satisfied when `[data-layout="lightboxBlank"]` appears anywhere in the component's CSS selectors.
+
+Parts defined only in **nested CSS rules** (e.g., `@part .item` where `.item { }` is nested inside the component's outer rule) are also recognized — cssdoc now recurses into nested rule blocks when building the selector text index.
 
 ## ESLint — doc hygiene and class usage
 

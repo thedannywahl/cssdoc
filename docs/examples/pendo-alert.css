@@ -1,0 +1,113 @@
+/**
+ * @component pendo-alert
+ * @summary Styles the embedded (lightboxBlank) Pendo guide as an InstUI Alert.
+ * @selector [class*="instui"][data-layout="lightboxBlank"]
+ * @remarks The HTML is injected by Pendo and cannot be modified. Variant classes on the outermost
+ *   container (`instui-info`, `instui-danger`, `instui-success`, `instui-warning`) must be set in
+ *   the Visual Design Studio. The coloured sidebar strip and the masked status icon are rendered
+ *   via `::before`/`::after` on `._pendo-step-container-styles`; no extra markup is needed.
+ * @part [data-layout="lightboxBlank"] outer — Outermost container; carries the variant class and layout marker.
+ * @part ._pendo-step-container-size sizer — Positioning wrapper; stacked above the fixed backdrop.
+ * @part ._pendo-step-container-styles card — The visible alert card; carries border, shadow, padding, and pseudo-element chrome.
+ * @pseudo ._pendo-step-container-styles::before — Solid variant-coloured sidebar strip, flush with the rounded start edge.
+ * @pseudo ._pendo-step-container-styles::after — Status icon, masked and centred over the strip.
+ * @cssproperty --_alert-color <color> — Private; the variant border/strip colour, set by the matching variant class.
+ * @cssproperty --_alert-icon <url> — Private; the variant status icon, set by the matching variant class.
+ * @structure
+ * @scope ([class*="instui"][data-layout="lightboxBlank"]) {
+ *   ._pendo-step-container-size {
+ *     ._pendo-step-container-styles {
+ *       ::before {}
+ *       ::after {}
+ *     }
+ *   }
+ * }
+ * @related pendo-popover — The overlay (tooltipBlank) counterpart.
+ * @related pendo-close-button — The dismiss button that may appear inside the alert.
+ */
+
+/* Alert container (Embedded guides) */
+
+[class*="instui"][data-layout="lightboxBlank"] {
+  /* Variant tokens — set on the container, inherited by all children */
+  &,
+  &[class*="instui-info"] {
+    --_alert-color: var(--instui-component-alert-info-border-color);
+    --_alert-icon: var(--instui-icon-info);
+  }
+
+  &[class*="instui-danger"] {
+    --_alert-color: var(--instui-component-alert-danger-border-color);
+    --_alert-icon: var(--instui-icon-circle-x);
+  }
+
+  &[class*="instui-success"] {
+    --_alert-color: var(--instui-component-alert-success-border-color);
+    --_alert-icon: var(--instui-icon-circle-check);
+  }
+
+  &[class*="instui-warning"] {
+    --_alert-color: var(--instui-component-alert-warning-border-color);
+    --_alert-icon: var(--instui-icon-triangle-alert);
+  }
+
+  &,
+  ._pendo-step-container-size {
+    margin-right: var(--instui-spacing-space2xs);
+    margin-left: var(--instui-spacing-space2xs);
+    max-width: var(--pendo-embedded-width);
+  }
+
+  ._pendo-step-container-size {
+    z-index: 300000;
+    padding-bottom: calc(var(--instui-spacing-space-md));
+    padding-top: var(--instui-spacing-space-sm);
+  }
+
+  ._pendo-step-container-styles {
+    height: auto;
+    border-color: var(--_alert-color);
+    border-width: var(--instui-component-alert-border-width);
+    border-style: var(--instui-component-alert-border-style);
+    border-radius: var(--instui-component-alert-border-radius);
+    overflow: hidden;
+    padding: var(--instui-component-alert-content-padding-vertical)
+      var(--instui-component-alert-content-padding-horizontal)
+      var(--instui-component-alert-content-padding-vertical)
+      calc(var(--pendo-alert-indent) + var(--instui-component-alert-content-padding-horizontal));
+    box-shadow: var(--instui-elevation-above);
+    position: relative;
+    margin-bottom: var(--instui-spacing-space-md);
+    margin-left: var(--instui-spacing-space-lg);
+    margin-right: var(--instui-spacing-space-lg);
+    margin-top: var(--instui-spacing-space-xs);
+
+    /* Colored sidebar strip — clipped to border-radius by overflow: hidden */
+    &::before {
+      content: "";
+      display: block;
+      position: absolute;
+      inset-block: 0;
+      left: 0;
+      width: var(--pendo-alert-indent);
+      background-color: var(--_alert-color);
+    }
+
+    /* Icon centered in the sidebar strip */
+    &::after {
+      content: "";
+      display: block;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      left: calc((var(--pendo-alert-indent) - var(--instui-component-icon-size-md)) / 2);
+      width: var(--instui-component-icon-size-md);
+      height: var(--instui-component-icon-size-md);
+      mask-image: var(--_alert-icon);
+      mask-size: contain;
+      mask-repeat: no-repeat;
+      mask-position: center;
+      background-color: var(--instui-component-alert-icon-color);
+    }
+  }
+}

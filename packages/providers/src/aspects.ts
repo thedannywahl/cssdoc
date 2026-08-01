@@ -49,12 +49,15 @@ const globSource = (name: string): string => name.split("*").map(escapeRe).join(
 const CLASS_ATTR_RE = /\[\s*class\s*([~^$*|]?)=\s*(?:"([^"]*)"|'([^']*)'|([^\]\s]*))\s*\]/gu;
 
 /**
- * Whether `selectorText` (the record's concatenated selectors) defines the modifier/part `selector`
- * (`.name`, where `name` may be a `*` glob for a family like `.-icon-*`; a name with no `*` is exact).
- * Beyond a literal class token, `class` attribute selectors count with their real CSS operator
- * semantics — `[class~=v]`/`[class=v]` (exact word), `[class*=v]` (substring), and `[class$=v]` (suffix)
- * can define a chained modifier; `[class^=v]` cannot, since `^=` anchors to the start of the whole
- * attribute (the base class), never a chained modifier.
+ * Whether `selectorText` (the record's concatenated selectors) defines the modifier/part `selector`.
+ *
+ * When `selector` starts with `.` the check is class-aware: literal class token match, then `class`
+ * attribute selectors evaluated with their CSS operator semantics (`*=` substring, `$=` suffix,
+ * `~=`/`=` exact word; `^=` is intentionally excluded as it anchors to the base class).
+ *
+ * For any other prefix (`[`, `#`, `:`, or a plain type selector) the check is a direct substring
+ * search — `selectorText.includes(selector)`. This handles attribute selectors (`[data-layout="x"]`),
+ * IDs (`#foo`), and `:host` without modifications.
  */
 export const selectorDefines = (selectorText: string, selector: string): boolean => {
   if (!selector.startsWith(".")) return selectorText.includes(selector); // attribute-convention modifier

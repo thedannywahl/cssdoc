@@ -10,15 +10,23 @@
  * to those productions, and a test in `@cssdoc/spec` keeps the spec valid. Which tags are active — and which
  * custom tags to capture — is governed by a {@link CssDocConfiguration}.
  *
+ * Notable tags:
+ * - `@selector` — explicitly declares the component's base CSS selector when it isn't a plain class
+ *   (attribute, ID, compound, `:host`). `@class` is its deprecated alias.
+ * - `@part` — accepts class, attribute, ID, and `:host`/`:host-context()` selectors, with an optional
+ *   alias between the selector and the ` — ` description separator.
+ * - `@structure` — CSS at-rules (`@scope`, `@media`, etc.) inside the body are never treated as new
+ *   tag openers; they're accumulated as CSS content.
+ *
  * A block looks like:
  * ```css
  * /**
- *  * @component button
- *  * @summary The primary action control.
- *  * @modifier -color-secondary — A lower-emphasis action.
- *  * @part .icon — A leading glyph.
- *  * @cssproperty --value <number> — The 0–100 fill.
- *  * @demo self:button
+ *  * @component pendo-alert
+ *  * @summary An embedded alert.
+ *  * @selector [class*="instui"][data-layout="lightboxBlank"]
+ *  * @part [data-layout="lightboxBlank"] outer — The outermost container.
+ *  * @part ._pendo-step-container-styles inner — The visible card.
+ *  * @cssproperty --_alert-color <color> — Private variant colour.
  *  *\/
  * ```
  *
