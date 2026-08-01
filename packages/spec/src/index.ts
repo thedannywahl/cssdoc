@@ -51,7 +51,9 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
   { name: "rule", kind: "record", recordKind: "rule" },
   { name: "declaration", kind: "record", recordKind: "declaration" },
   // Prose (TSDoc-adopted).
-  { name: "class", kind: "block" },
+  // `@selector` declares the component's base CSS selector when it isn't a plain class.
+  { name: "selector", kind: "block" },
+  { name: "class", kind: "block", aliasFor: "selector" },
   { name: "summary", kind: "block" },
   { name: "remarks", kind: "block" },
   { name: "privateRemarks", kind: "block" },

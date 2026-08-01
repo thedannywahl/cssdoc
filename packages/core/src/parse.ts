@@ -276,11 +276,12 @@ function buildEntry(
   inlineMode: InlineCommentMode,
   source?: CssSource,
 ): CssDocEntry {
-  // Base class: an explicit @class, else a bare single-class rule — preferring the one whose name ends
-  // with the record name (`.badge`, not a sibling like `.badge-wrapper` that happens to
-  // appear first).
+  // Base selector: an explicit @selector/@class wins immediately when set.
+  // Otherwise infer from bare single-class rules — preferring the one ending with the record name.
   let className = doc.className ?? "";
-  if (!className) {
+  if (className && !SINGLE_CLASS_RE.test(className)) {
+    // Non-class explicit selector (attribute, ID, :host, compound, …) — trust it as-is.
+  } else if (!className) {
     const bare = nodes
       .filter((n): n is ChildNode & { selector: string } => n.type === "rule")
       .map((n) => n.selector.trim())

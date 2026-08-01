@@ -83,7 +83,7 @@ export interface ParsedDoc {
   component?: string;
   /** The record kind chosen by the opening tag (`component` unless `@utility`/`@rule`/`@declaration`). */
   kind?: CssRecordKind;
-  /** `@class` — an explicit base class selector (otherwise inferred from the CSS). */
+  /** `@selector` / `@class` — an explicit base CSS selector (any valid simple selector; otherwise inferred from the CSS). */
   className?: string;
   /** `@summary` — one-line intro. */
   summary?: string;
@@ -272,8 +272,9 @@ function applyBlockTag(
   parse?: CssParse,
 ): void {
   switch (canonical) {
-    case "class":
-      doc.className = rest.split(/\s/u)[0];
+    case "selector":
+      // Match a full selector token: consecutive bracket groups, :host(-context(…)), or a plain \S+ token.
+      doc.className = rest.match(/^((?:\[(?:[^\]"']|"[^"]*"|'[^']*')*\]|[^\s[]+)+)/u)?.[1] ?? "";
       break;
     case "summary":
       doc.summary = rest.replace(/\s+/gu, " ").trim();

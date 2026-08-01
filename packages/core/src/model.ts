@@ -217,7 +217,9 @@ export interface CssDocEntry {
   name: string;
   /** Which kind of CSS surface this documents (defaults to `component`). */
   kind: CssRecordKind;
-  /** The base class selector, e.g. `.button` (inferred from the first bare-class rule). */
+  /** The base CSS selector — a class (`.button`), attribute (`[data-layout="x"]`), ID (`#foo`),
+   *  or shadow-DOM pseudo (`:host`) — inferred from the first bare-class rule or set explicitly via
+   *  `@selector`. Always non-empty (falls back to `.${name}` when inference fails). */
   className: string;
   /** One-line summary from `@summary`. */
   summary?: string;

@@ -129,6 +129,23 @@ test("base class inference accepts an upper-case-led prefix / PascalCase class, 
   expect(card.className).toBe(".Card");
 });
 
+test("@selector sets className to any CSS selector and @class is an accepted alias", () => {
+  const attr = parseCssDocs(
+    ['/**', ' * @component pendo-alert', ' * @summary An alert.', ' * @selector [class*="instui"][data-layout="lightboxBlank"]', ' */'].join("\n"),
+  );
+  expect(attr[0].className).toBe('[class*="instui"][data-layout="lightboxBlank"]');
+
+  const id = parseCssDocs(['/**', ' * @component root', ' * @summary Root.', ' * @selector #app', ' */'].join("\n"));
+  expect(id[0].className).toBe("#app");
+
+  const host = parseCssDocs(['/**', ' * @component my-button', ' * @summary A button.', ' * @selector :host', ' */'].join("\n"));
+  expect(host[0].className).toBe(":host");
+
+  // @class is a deprecated alias for @selector — same behaviour.
+  const legacy = parseCssDocs(['/**', ' * @component my-badge', ' * @summary A badge.', ' * @class .my-badge', ' */'].join("\n"));
+  expect(legacy[0].className).toBe(".my-badge");
+});
+
 test("an authored `@deprecated {@link -x}` sets the modifier's canonical", () => {
   const [comp] = parseCssDocs(
     `/**\n * @component alert\n * @modifier -variant-error — @deprecated {@link -color-danger}\n */\n` +
