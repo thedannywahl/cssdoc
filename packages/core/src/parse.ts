@@ -241,7 +241,8 @@ function collect(
         if (child.type === "decl")
           for (const m of child.value.matchAll(VAR_RE)) acc.consumed.add(m[1]);
       }
-      if (node.nodes) collect(node.nodes, acc, matcher, baseNoDot, prefixNoDot, inScope, inlineMode);
+      if (node.nodes)
+        collect(node.nodes, acc, matcher, baseNoDot, prefixNoDot, inScope, inlineMode);
       pendingCanonical = undefined;
       pendingDescription = undefined;
     }
@@ -354,7 +355,11 @@ function buildEntry(
     const existing = acc.parts.get(part);
     const selector = doc.partSelectors.get(part);
     if (existing) {
-      existing.description = combineDescription(inlineMode, description || undefined, existing.description);
+      existing.description = combineDescription(
+        inlineMode,
+        description || undefined,
+        existing.description,
+      );
       if (selector && !existing.selector) existing.selector = selector;
     } else {
       acc.parts.set(part, { name: part, description, ...(selector ? { selector } : {}) });

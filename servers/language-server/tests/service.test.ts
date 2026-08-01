@@ -657,7 +657,9 @@ test("rebuild: a PostCSS parse error yields a valid empty scope, not a thrown ex
   // CssDocLanguageService.setScopes mirrors what server.ts rebuild() does after the try/catch guard.
   const svc = new CssDocLanguageService(createIndex(""));
   // Provide a scope with an empty index (simulating the fallback) — service must stay functional.
-  svc.setScopes([{ dir: "", index: createIndex(""), severities: DEFAULT_RULE_SEVERITIES, naming: {} }]);
+  svc.setScopes([
+    { dir: "", index: createIndex(""), severities: DEFAULT_RULE_SEVERITIES, naming: {} },
+  ]);
   // No diagnostics on clean HTML; service did not crash.
   expect(() => svc.diagnostics("<div></div>", "html")).not.toThrow();
   expect(svc.diagnostics("<div></div>", "html")).toEqual([]);
