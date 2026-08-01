@@ -45,8 +45,13 @@ export interface CssModifier {
 
 /** A sub-element ("part") of a component — a scoped child class like `.item` or `.tip`. */
 export interface CssPart {
-  /** The part class without the leading dot, e.g. `item`. */
+  /** The part's derived name without leading punctuation, e.g. `item` or `data-layout`. */
   name: string;
+  /**
+   * The original CSS selector when the part isn't a plain class, e.g. `[data-layout="x"]`, `#foo`,
+   * `:host`. Absent for class parts (the selector is `.${name}`).
+   */
+  selector?: string;
   /** Prose from a `@part` doc tag, when authored. */
   description?: string;
   /** The part's own modifiers, e.g. `.block__element--active` on a BEM element. Present when non-empty. */
@@ -164,7 +169,7 @@ export type CssReleaseStage = "alpha" | "beta" | "experimental" | "internal" | "
  * {@link toMermaid}, a diagram.
  */
 export interface StructureNode {
-  /** The node's compound selector, e.g. `.tabs`, `.tab.-selected`, or `.list:has(.tab)`. */
+  /** The node's compound selector, e.g. `.tabs`, `.tab.-selected`, or `.list:has(.tab)`. Empty string for `@scope` boundary nodes. */
   selector: string;
   /**
    * How often the child may appear, from a trailing pseudo on the selector: `:optional`/`:opt` (0..1),
@@ -174,6 +179,11 @@ export interface StructureNode {
    * the stored selector.
    */
   cardinality?: "optional" | "many" | "one-or-more";
+  /**
+   * When present, this node is a `@scope` boundary. The value is the `@scope` prelude,
+   * e.g. `(.component)` from `@scope (.component) { … }`.
+   */
+  scope?: string;
   /** Prose from a `@wrapper` doc tag matching this node's class, when authored (annotates the node). */
   description?: string;
   /** Child nodes (rules nested one brace level deeper). */
@@ -217,7 +227,9 @@ export interface CssDocEntry {
   name: string;
   /** Which kind of CSS surface this documents (defaults to `component`). */
   kind: CssRecordKind;
-  /** The base class selector, e.g. `.button` (inferred from the first bare-class rule). */
+  /** The base CSS selector — a class (`.button`), attribute (`[data-layout="x"]`), ID (`#foo`),
+   *  or shadow-DOM pseudo (`:host`) — inferred from the first bare-class rule or set explicitly via
+   *  `@selector`. Always non-empty (falls back to `.${name}` when inference fails). */
   className: string;
   /** One-line summary from `@summary`. */
   summary?: string;

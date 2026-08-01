@@ -23,18 +23,19 @@ One of these opens a record and picks its kind. `@name` is an alias for `@compon
 
 ## Prose tags
 
-| Tag                                  | Meaning                                                                     |
-| ------------------------------------ | --------------------------------------------------------------------------- |
-| `@summary <text>`                    | One-line intro.                                                             |
-| `@remarks <text>`                    | Extended description.                                                       |
-| `@privateRemarks <text>`             | Internal-only notes (emitters may omit).                                    |
-| `@class <selector>`                  | An explicit base class (otherwise inferred from the first bare-class rule). |
-| `@since <version>`                   | Version introduced.                                                         |
-| `@group <name>` / `@category <name>` | Documentation grouping.                                                     |
-| `@example <markdown>`                | An example: Markdown prose plus fenced code (bare code is auto-fenced).     |
-| `@see <ref>`                         | A cross-reference.                                                          |
-| `@deprecated <text>`                 | Marks the record deprecated, with replacement guidance.                     |
-| `@todo <text>`                       | An internal to-do note (also read from `/* @todo … */` comments).           |
+| Tag                                  | Meaning                                                                                                                                          |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@summary <text>`                    | One-line intro.                                                                                                                                  |
+| `@remarks <text>`                    | Extended description.                                                                                                                            |
+| `@privateRemarks <text>`             | Internal-only notes (emitters may omit).                                                                                                         |
+| `@selector <selector>`               | The component's base CSS selector when it isn't a plain class: an attribute selector, an ID, a compound selector, or `:host`/`:host-context(…)`. |
+| `@class <selector>`                  | Deprecated alias for `@selector`; accepted for backward compatibility.                                                                           |
+| `@since <version>`                   | Version introduced.                                                                                                                              |
+| `@group <name>` / `@category <name>` | Documentation grouping.                                                                                                                          |
+| `@example <markdown>`                | An example: Markdown prose plus fenced code (bare code is auto-fenced).                                                                          |
+| `@see <ref>`                         | A cross-reference.                                                                                                                               |
+| `@deprecated <text>`                 | Marks the record deprecated, with replacement guidance.                                                                                          |
+| `@todo <text>`                       | An internal to-do note (also read from `/* @todo … */` comments).                                                                                |
 
 ## The CSS surface
 
@@ -44,34 +45,88 @@ at-rules; you don't have to list what's already there.
 The `@modifier` example below uses the default **BEM** convention (`.base--x`). cssdoc supports other
 modifier conventions (rscss, CUBE, OOCSS, and more) — see [Modifier conventions](/guide/modifier-conventions).
 
-| Tag                                                    | Documents                                                 | Derived from           |
-| ------------------------------------------------------ | --------------------------------------------------------- | ---------------------- |
-| `@modifier <x> — <desc>`                               | A modifier on the base class                              | modifier selectors     |
-| `@part .<x> — <desc>`                                  | A class-based sub-element part                            | scoped child selectors |
-| `@csspart <x> — <desc>`                                | A shadow-DOM exposed part (`::part(x)`)                   | `::part(x)` / authored |
-| `@pseudo ::<x> — <desc>`                               | A native pseudo-element (`::before`, `::marker`, …)       | `::x` selectors        |
-| `@cssstate <x> — <desc>`                               | A custom `:state(x)` state                                | `:state(x)` selectors  |
-| `@cssstate :<x> — <desc>`                              | A native pseudo-class state (`:disabled`)                 | pseudo-class selectors |
-| `@slot <x> — <desc>`                                   | A named slot                                              | authored (CEM)         |
-| `@cssproperty` / `@property --<x> [<syntax>] — <desc>` | A registered custom property                              | `@property` at-rules   |
-| `@tokens --<x> — <desc>`                               | A consumed design token (annotates the auto-derived list) | `var(--x)` usages      |
-| `@function --<x> — <desc>`                             | A CSS custom function                                     | `@function` at-rules   |
-| `@keyframes` / `@animation <x> — <desc>`               | An exposed animation                                      | `@keyframes` at-rules  |
-| `@layer <x> — <desc>`                                  | A cascade layer                                           | `@layer` at-rules      |
-| `@container` / `@supports` / `@media <query> — <desc>` | A conditional block                                       | those at-rules         |
-| `@a11y` / `@accessibility <text>`                      | Accessibility guidance                                    | authored               |
-| `@structure`                                           | A nested-CSS element tree                                 | authored               |
-| `@wrapper .<x> — <desc>`                               | Prose for an optional-ancestor wrapper in `@structure`    | authored               |
-| `@demo <spec>`                                         | An embeddable demo (`self:button`, `stackblitz:…`, a URL) | authored               |
-| `@defaultValue <value>`                                | The default of the preceding `@cssproperty`               | authored               |
-| `@usage <text>`                                        | How to include the stylesheet / use the component         | authored               |
-| `@compat <text>`                                       | A browser-support / feature-compatibility note            | authored               |
-| `@related <name> — <desc>`                             | A related component cross-reference                       | authored               |
+| Tag                                                    | Documents                                                            | Derived from           |
+| ------------------------------------------------------ | -------------------------------------------------------------------- | ---------------------- |
+| `@modifier <x> — <desc>`                               | A modifier on the base class                                         | modifier selectors     |
+| `@part .<x> — <desc>`                                  | A class-based sub-element part                                       | scoped child selectors |
+| `@part [attr="val"] — <desc>`                          | An attribute-selector part; name derived as the first attribute key  | authored               |
+| `@part #id — <desc>`                                   | An ID-selector part; name derived by stripping `#`                   | authored               |
+| `@part :host — <desc>`                                 | The shadow host itself as a documented part                          | authored               |
+| `@part <sel> <alias> — <desc>`                         | Any selector with an explicit name alias; overrides the derived name | authored               |
+| `@csspart <x> — <desc>`                                | A shadow-DOM exposed part (`::part(x)`)                              | `::part(x)` / authored |
+| `@pseudo ::<x> — <desc>`                               | A native pseudo-element (`::before`, `::marker`, …)                  | `::x` selectors        |
+| `@cssstate <x> — <desc>`                               | A custom `:state(x)` state                                           | `:state(x)` selectors  |
+| `@cssstate :<x> — <desc>`                              | A native pseudo-class state (`:disabled`)                            | pseudo-class selectors |
+| `@slot <x> — <desc>`                                   | A named slot                                                         | authored (CEM)         |
+| `@cssproperty` / `@property --<x> [<syntax>] — <desc>` | A registered custom property                                         | `@property` at-rules   |
+| `@tokens --<x> — <desc>`                               | A consumed design token (annotates the auto-derived list)            | `var(--x)` usages      |
+| `@function --<x> — <desc>`                             | A CSS custom function                                                | `@function` at-rules   |
+| `@keyframes` / `@animation <x> — <desc>`               | An exposed animation                                                 | `@keyframes` at-rules  |
+| `@layer <x> — <desc>`                                  | A cascade layer                                                      | `@layer` at-rules      |
+| `@container` / `@supports` / `@media <query> — <desc>` | A conditional block                                                  | those at-rules         |
+| `@a11y` / `@accessibility <text>`                      | Accessibility guidance                                               | authored               |
+| `@structure`                                           | A nested-CSS element tree                                            | authored               |
+| `@wrapper .<x> — <desc>`                               | Prose for an optional-ancestor wrapper in `@structure`               | authored               |
+| `@demo <spec>`                                         | An embeddable demo (`self:button`, `stackblitz:…`, a URL)            | authored               |
+| `@defaultValue <value>`                                | The default of the preceding `@cssproperty`                          | authored               |
+| `@usage <text>`                                        | How to include the stylesheet / use the component                    | authored               |
+| `@compat <text>`                                       | A browser-support / feature-compatibility note                       | authored               |
+| `@related <name> — <desc>`                             | A related component cross-reference                                  | authored               |
 
 The `@tokens` tag annotates the auto-derived "Tokens consumed" list: cssdoc already collects every
 `var(--*)` a record references, and `@tokens --x — <desc>` attaches a description (a `@tokens` entry with
 no matching `var()` is added to the list too). Emitters resolve each token's type and value separately —
 see the markdown emitter's `resolveToken` hook.
+
+## Non-class base selectors (`@selector`)
+
+When a component's base isn't a plain class — it's an attribute selector, an ID, a compound selector,
+or a shadow-DOM host — use `@selector` to tell cssdoc what the root element looks like:
+
+```css
+/**
+ * @component pendo-alert
+ * @summary Styles an embedded Pendo guide as an alert.
+ * @selector [class*="instui"][data-layout="lightboxBlank"]
+ */
+[class*="instui"][data-layout="lightboxBlank"] { … }
+```
+
+Without `@selector`, cssdoc infers the base from the first bare single-class rule (`.button`, `.card`,
+etc.) and falls back to `.${name}` when none is found. An explicit `@selector` always wins and skips
+inference. Accepted forms:
+
+| Form                     | Example                                        |
+| ------------------------ | ---------------------------------------------- |
+| Class (inferred anyway)  | `@selector .my-button`                         |
+| Attribute                | `@selector [data-layout="lightboxBlank"]`      |
+| Compound attribute       | `@selector [class*="instui"][data-layout="x"]` |
+| ID                       | `@selector #root`                              |
+| Shadow host              | `@selector :host`                              |
+| Shadow host with context | `@selector :host-context(.dark-theme)`         |
+
+`@class` is a deprecated alias for `@selector` accepted for backward compatibility.
+
+## Non-class `@part` selectors
+
+Parts can reference any CSS selector, not only `.class` names. The derived name (used as the part's
+key in the model) follows these rules:
+
+| Authored tag                                         | Stored name   | Stored selector                 |
+| ---------------------------------------------------- | ------------- | ------------------------------- |
+| `@part .item — <desc>`                               | `item`        | _(class; selector is `.item`)_  |
+| `@part [data-layout="lightboxBlank"] — <desc>`       | `data-layout` | `[data-layout="lightboxBlank"]` |
+| `@part #root — <desc>`                               | `root`        | `#root`                         |
+| `@part :host — <desc>`                               | `host`        | `:host`                         |
+| `@part [data-layout="lightboxBlank"] outer — <desc>` | `outer`       | `[data-layout="lightboxBlank"]` |
+
+The last form lets you supply an **alias** (a word after the selector, before `—`) to override the
+derived name. Pseudos that already have dedicated tags (`@pseudo`, `@cssstate`, `@csspart`) are
+excluded; `:host` and `:host-context(…)` are the only pseudo-class forms `@part` accepts.
+
+The `name-not-in-css` lint rule checks the stored selector (not the derived name) against the
+stylesheet, so `@part [data-layout="lightboxBlank"]` is satisfied when the string
+`[data-layout="lightboxBlank"]` appears anywhere in the record's CSS selectors.
 
 To document a **family** of modifiers, use a `*` wildcard in the name — `@modifier -icon-* — <desc>`
 (`*` matches any run of `[\w-]`). A family is a first-class modifier: it shows in the model and hover, a
@@ -199,6 +254,8 @@ Three more things a node can express:
 - **Subcomponents** — reference another documented component by its class (`.close-button`); it's a
   valid child (no `structureIgnore` needed), is cross-linked, and populates a derived **Subcomponents**
   list. Keep such references bare — that component's own modifiers/parts live in its own docs.
+- **Scope boundary** — a `@scope (…) { … }` at-rule wraps its children in a named scope group. The
+  scope prelude is used as a label in both the Mermaid diagram (a subgraph) and the text tree.
 
 ```css
 /**
@@ -210,6 +267,21 @@ Three more things a node can express:
  * }
  */
 ```
+
+Using `@scope` inside `@structure`:
+
+```css
+/**
+ * @structure
+ * @scope (.menu) {
+ *   :scope > .item {}
+ *   :scope > .separator:optional {}
+ * }
+ */
+```
+
+CSS at-rules whose names are not cssdoc tags (`@scope`, `@media`, `@layer`, etc.) are treated as CSS
+content within `@structure` and are never mis-read as new doc-comment tag blocks.
 
 Every remaining class named in an `@structure` selector should resolve to the component class, a
 documented member, or another documented component; otherwise `structure-unknown-selector` warns.

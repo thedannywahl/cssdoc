@@ -74,19 +74,24 @@ export function startLanguageServer(): void {
 
     const scopes: ConfigScope[] = [...groups.values()].map((g) => {
       const configuration = g.configFile.toConfiguration();
-      const index = createIndex(g.files.map(readIndexable).join("\n"), {
-        file: g.files.length === 1 ? g.files[0] : undefined,
-        configuration,
-        // Pick a dialect parser for the group: SCSS wins over Less wins over plain CSS. (Host files
-        // carry their dialect internally; the projection is parsed as CSS here — best-effort.)
-        parse: resolveParser(
-          g.files.some((f) => dialectForFilename(f) === "scss")
-            ? "scss"
-            : g.files.some((f) => dialectForFilename(f) === "less")
-              ? "less"
-              : "css",
-        ),
-      });
+      const parse = resolveParser(
+        g.files.some((f) => dialectForFilename(f) === "scss")
+          ? "scss"
+          : g.files.some((f) => dialectForFilename(f) === "less")
+            ? "less"
+            : "css",
+      );
+      // Fall back to an empty index on parse errors so the server stays alive.
+      let index: ReturnType<typeof createIndex>;
+      try {
+        index = createIndex(g.files.map(readIndexable).join("\n"), {
+          file: g.files.length === 1 ? g.files[0] : undefined,
+          configuration,
+          parse,
+        });
+      } catch {
+        index = createIndex("", { configuration });
+      }
       // Declared providers add their components to the sibling set (lint + cross-component hover) — the
       // real, span-carrying `index` stays the source for `var()` resolution.
       const providers = resolveProviders(g.configFile);

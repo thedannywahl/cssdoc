@@ -241,6 +241,8 @@ function collect(
         if (child.type === "decl")
           for (const m of child.value.matchAll(VAR_RE)) acc.consumed.add(m[1]);
       }
+      if (node.nodes)
+        collect(node.nodes, acc, matcher, baseNoDot, prefixNoDot, inScope, inlineMode);
       pendingCanonical = undefined;
       pendingDescription = undefined;
     }
@@ -275,11 +277,12 @@ function buildEntry(
   inlineMode: InlineCommentMode,
   source?: CssSource,
 ): CssDocEntry {
-  // Base class: an explicit @class, else a bare single-class rule — preferring the one whose name ends
-  // with the record name (`.badge`, not a sibling like `.badge-wrapper` that happens to
-  // appear first).
+  // Base selector: an explicit @selector/@class wins immediately when set.
+  // Otherwise infer from bare single-class rules — preferring the one ending with the record name.
   let className = doc.className ?? "";
-  if (!className) {
+  if (className && !SINGLE_CLASS_RE.test(className)) {
+    // Non-class explicit selector (attribute, ID, :host, compound, …) — trust it as-is.
+  } else if (!className) {
     const bare = nodes
       .filter((n): n is ChildNode & { selector: string } => n.type === "rule")
       .map((n) => n.selector.trim())
@@ -350,13 +353,17 @@ function buildEntry(
   }
   for (const [part, description] of doc.parts) {
     const existing = acc.parts.get(part);
-    if (existing)
+    const selector = doc.partSelectors.get(part);
+    if (existing) {
       existing.description = combineDescription(
         inlineMode,
         description || undefined,
         existing.description,
       );
-    else acc.parts.set(part, { name: part, description });
+      if (selector && !existing.selector) existing.selector = selector;
+    } else {
+      acc.parts.set(part, { name: part, description, ...(selector ? { selector } : {}) });
+    }
   }
   for (const [part, description] of doc.cssParts) {
     const existing = acc.shadowParts.get(part);

@@ -1,0 +1,42 @@
+/**
+ * @component x-banner
+ * @summary A dismissible announcement banner (shadow DOM web component).
+ * @selector :host
+ * @part .content body — The message text area.
+ * @part [data-slot="action"] action — Optional call-to-action area; presence indicated by the data attribute.
+ * @part #dismiss close — The dismiss button.
+ * @cssproperty --banner-bg <color> — Background colour.
+ * @cssproperty --banner-fg <color> — Foreground (text) colour.
+ * @cssproperty --banner-radius <length> — Corner radius.
+ * @structure
+ * @scope (:host) {
+ *   .content {}
+ *   [data-slot="action"]:optional {}
+ *   #dismiss:optional {}
+ * }
+ */
+
+:host {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--banner-radius, 0.25rem);
+  background: var(--banner-bg, #e0f2fe);
+  color: var(--banner-fg, #0c4a6e);
+}
+
+.content {
+  flex: 1;
+}
+
+[data-slot="action"] {
+  flex-shrink: 0;
+}
+
+#dismiss {
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: inherit;
+}

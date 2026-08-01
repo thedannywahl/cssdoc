@@ -10,15 +10,23 @@
  * to those productions, and a test in `@cssdoc/spec` keeps the spec valid. Which tags are active — and which
  * custom tags to capture — is governed by a {@link CssDocConfiguration}.
  *
+ * Notable tags:
+ * - `@selector` — explicitly declares the component's base CSS selector when it isn't a plain class
+ *   (attribute, ID, compound, `:host`). `@class` is its deprecated alias.
+ * - `@part` — accepts class, attribute, ID, and `:host`/`:host-context()` selectors, with an optional
+ *   alias between the selector and the ` — ` description separator.
+ * - `@structure` — CSS at-rules (`@scope`, `@media`, etc.) inside the body are never treated as new
+ *   tag openers; they're accumulated as CSS content.
+ *
  * A block looks like:
  * ```css
  * /**
- *  * @component button
- *  * @summary The primary action control.
- *  * @modifier -color-secondary — A lower-emphasis action.
- *  * @part .icon — A leading glyph.
- *  * @cssproperty --value <number> — The 0–100 fill.
- *  * @demo self:button
+ *  * @component pendo-alert
+ *  * @summary An embedded alert.
+ *  * @selector [class*="instui"][data-layout="lightboxBlank"]
+ *  * @part [data-layout="lightboxBlank"] outer — The outermost container.
+ *  * @part ._pendo-step-container-styles inner — The visible card.
+ *  * @cssproperty --_alert-color <color> — Private variant colour.
  *  *\/
  * ```
  *
@@ -83,7 +91,7 @@ export interface ParsedDoc {
   component?: string;
   /** The record kind chosen by the opening tag (`component` unless `@utility`/`@rule`/`@declaration`). */
   kind?: CssRecordKind;
-  /** `@class` — an explicit base class selector (otherwise inferred from the CSS). */
+  /** `@selector` / `@class` — an explicit base CSS selector (any valid simple selector; otherwise inferred from the CSS). */
   className?: string;
   /** `@summary` — one-line intro. */
   summary?: string;
@@ -101,8 +109,14 @@ export interface ParsedDoc {
   releaseStage?: CssReleaseStage;
   /** `@modifier` prose, keyed by the modifier class without its dot (e.g. `-color-secondary`). */
   modifiers: Map<string, DocModifier>;
-  /** `@part` descriptions, keyed by the class part name without its dot (e.g. `item`). */
+  /** `@part` descriptions, keyed by the derived part name (e.g. `item`, `data-layout`). */
   parts: Map<string, string>;
+  /**
+   * The original CSS selector for each `@part`, keyed by the derived name.
+   * Set only for non-class parts (attribute, ID, `:host`). Class parts omit the entry;
+   * callers reconstruct the selector as `.${name}` when absent.
+   */
+  partSelectors: Map<string, string>;
   /** `@tokens` descriptions, keyed by custom-property name (e.g. `--color-primary`). */
   tokens: Map<string, string>;
   /** `@csspart` descriptions (shadow-DOM `::part()`), keyed by the bare part name (e.g. `header`). */
@@ -212,6 +226,7 @@ export function parseDocComment(
   const doc: ParsedDoc = {
     modifiers: new Map(),
     parts: new Map(),
+    partSelectors: new Map(),
     tokens: new Map(),
     cssParts: new Map(),
     pseudoElements: new Map(),
@@ -232,11 +247,27 @@ export function parseDocComment(
   };
 
   // Group lines into tag blocks (the TagList / BlockTag productions): a line starting with `@tag` opens
-  // a block that continues until the next `@tag` (so multi-line @example/@summary work).
+  // a block that continues until the next `@tag`. CSS at-rules (e.g. @scope, @media) inside a
+  // @structure block are NOT treated as new tag openers — they're part of the CSS content.
   const blocks: string[] = [];
+  let inStructureBlock = false;
   for (const line of body.split("\n")) {
-    if (/^\s*@[a-zA-Z]/u.test(line)) blocks.push(line.trim());
-    else if (blocks.length) blocks[blocks.length - 1] += `\n${line}`;
+    const tagMatch = line.match(/^\s*@([a-zA-Z][\w-]*)/u);
+    if (tagMatch) {
+      const isKnownTag = configuration.tryGetTagDefinition(tagMatch[1]) !== undefined;
+      if (isKnownTag) {
+        blocks.push(line.trim());
+        inStructureBlock = tagMatch[1] === "structure";
+      } else if (inStructureBlock) {
+        // CSS at-rule inside @structure body — keep it in the structure block.
+        if (blocks.length) blocks[blocks.length - 1] += `\n${line}`;
+      } else {
+        // Unknown tag outside @structure — own block so the existing skip logic handles it.
+        blocks.push(line.trim());
+      }
+    } else if (blocks.length) {
+      blocks[blocks.length - 1] += `\n${line}`;
+    }
   }
 
   for (const block of blocks) {
@@ -272,8 +303,9 @@ function applyBlockTag(
   parse?: CssParse,
 ): void {
   switch (canonical) {
-    case "class":
-      doc.className = rest.split(/\s/u)[0];
+    case "selector":
+      // Match a full selector token: consecutive bracket groups, :host(-context(…)), or a plain \S+ token.
+      doc.className = rest.match(/^((?:\[(?:[^\]"']|"[^"]*"|'[^']*')*\]|[^\s[]+)+)/u)?.[1] ?? "";
       break;
     case "summary":
       doc.summary = rest.replace(/\s+/gu, " ").trim();
@@ -310,8 +342,9 @@ function applyBlockTag(
       break;
     }
     case "part": {
-      const { head, description } = splitDesc(rest);
-      doc.parts.set(head.replace(/^\./u, ""), description ?? "");
+      const { name: pName, selector: pSel, description: pDesc } = splitPartArg(rest);
+      doc.parts.set(pName, pDesc ?? "");
+      if (pSel !== `.${pName}`) doc.partSelectors.set(pName, pSel);
       break;
     }
     case "tokens": {
@@ -456,6 +489,39 @@ export function recordNameOf(
  * @param raw - The `@structure` body (description and/or nested CSS).
  * @returns The split `description` (when present) and the `css` to parse.
  */
+/**
+ * Parse a `@part` argument into its selector, derived name, and optional description.
+ * Handles class (`.foo`), attribute (`[foo="bar"]`), ID (`#foo`), `:host`, `:host-context(…)`,
+ * and an optional author alias between the selector and the `—` description separator.
+ *
+ * @example `@part [data-layout="x"] container — Desc` → `{ selector: "[data-layout=\"x\"]", name: "container", description: "Desc" }`
+ * @example `@part [data-layout="x"] — Desc`            → `{ selector: "[data-layout=\"x\"]", name: "data-layout", description: "Desc" }`
+ * @example `@part .item — Desc`                         → `{ selector: ".item", name: "item", description: "Desc" }`
+ */
+function splitPartArg(rest: string): { selector: string; name: string; description?: string } {
+  // Grab the selector: consecutive bracket groups and/or non-whitespace, non-bracket chars.
+  const selMatch = rest.match(/^((?:\[(?:[^\]"']|"[^"]*"|'[^']*')*\]|[^\s[]+)+)/u);
+  const selector = selMatch?.[1] ?? "";
+  const after = rest.slice(selector.length).trim();
+
+  // Derive a default name from the selector type.
+  const deriveName = (sel: string): string => {
+    if (sel.startsWith(".")) return sel.slice(1);
+    if (sel.startsWith("#")) return sel.slice(1);
+    if (sel.startsWith(":host")) return "host";
+    const attrKey = sel.match(/^\[([^=\s~^$*|[\]]+)/u)?.[1];
+    if (attrKey) return attrKey;
+    return sel.replace(/^\W+/u, "") || sel;
+  };
+
+  // If `after` starts with a word (the alias) before the `—` separator, use it as the name.
+  const aliasMatch = after.match(/^([\w-]+)\s+(?:—|-{1,2})\s+([\s\S]*)$/u);
+  if (aliasMatch) return { selector, name: aliasMatch[1], description: aliasMatch[2].trim() };
+
+  const descMatch = after.match(/^(?:—|-{1,2})\s+([\s\S]*)$/u);
+  return { selector, name: deriveName(selector), description: descMatch?.[1].trim() };
+}
+
 function splitStructureBody(raw: string): { description?: string; css: string } {
   const lines = raw.split("\n");
   const braceLine = lines.findIndex((l) => l.includes("{"));
@@ -505,6 +571,11 @@ export function parseStructure(raw: string, parse?: CssParse): StructureNode[] {
   const build = (nodes: readonly ChildNode[]): StructureNode[] => {
     const out: StructureNode[] = [];
     for (const rule of nodes) {
+      if (rule.type === "atrule" && rule.name === "scope") {
+        // @scope boundary: emit a wrapper node whose children are the scoped rules.
+        out.push({ selector: "", scope: rule.params.trim(), children: build(rule.nodes ?? []) });
+        continue;
+      }
       if (rule.type !== "rule") continue;
       const selector = rule.selector.trim();
       const card = selector.match(CARD_RE);

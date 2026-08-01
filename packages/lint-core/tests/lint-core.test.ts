@@ -169,6 +169,33 @@ test("name-not-in-css: class attribute selectors define a modifier per their ope
   );
 });
 
+test("name-not-in-css: attribute-selector @part is matched without a spurious dot prefix", () => {
+  const css = [
+    "/**",
+    " * @component pendo-alert",
+    " * @summary An alert.",
+    ' * @part [data-layout="lightboxBlank"] — Outer container.',
+    " */",
+    '[data-layout="lightboxBlank"] { color: red; }',
+  ].join("\n");
+  expect(byRule(lintCssDocs(css, { modifierConvention: "bare" }), "name-not-in-css")).toHaveLength(
+    0,
+  );
+});
+
+test("name-not-in-css: @part defined only in nested CSS rule is not a false positive", () => {
+  const css = [
+    "/**",
+    " * @component card",
+    " * @summary A card.",
+    " * @part .item — A card item.",
+    " */",
+    ".card { color: red; }",
+    ".card { .item { padding: 1rem; } }",
+  ].join("\n");
+  expect(byRule(lintCssDocs(css), "name-not-in-css")).toHaveLength(0);
+});
+
 test("rules can be disabled", () => {
   const v = lintCssDocs(CSS, { rules: { "missing-summary": false } });
   expect(byRule(v, "missing-summary")).toHaveLength(0);

@@ -118,8 +118,9 @@ function classify(node: StructureNode, isRoot: boolean, options: MermaidOptions)
  * …) in depth-first order; a parent connects to each child with an edge carrying the child's
  * cardinality. Nodes are shaped + classed by kind; sibling components with an href
  * get a `click` link.
- *
- * @param roots - Top-level {@link StructureNode}s (an authored `@structure`).
+ * * `@scope` boundary nodes (where {@link StructureNode.scope} is set) are rendered as labelled Mermaid
+ * `subgraph` blocks wrapping their children; the scope prelude (e.g. `(.component)`) is the label.
+ * * @param roots - Top-level {@link StructureNode}s (an authored `@structure`).
  * @param options - {@link MermaidOptions}.
  * @returns Mermaid source, or an empty string when there are no nodes.
  *
@@ -141,6 +142,14 @@ export function toMermaid(roots: StructureNode[], options: MermaidOptions = {}):
   let counter = 0;
 
   const walk = (node: StructureNode, isRoot: boolean): string => {
+    // @scope boundary nodes render as a labelled subgraph around their children.
+    if (node.scope !== undefined) {
+      const id = `sg${counter++}`;
+      nodes.push(`  subgraph ${id} ["@scope ${esc(node.scope)}"]`);
+      for (const child of node.children) walk(child, false);
+      nodes.push("  end");
+      return id;
+    }
     const id = `n${counter++}`;
     const { klass, label, href } = classify(node, isRoot, options);
     // A node's authored prose (`@wrapper`) rides its label, matching the text tree.

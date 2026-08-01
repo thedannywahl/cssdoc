@@ -129,6 +129,77 @@ test("base class inference accepts an upper-case-led prefix / PascalCase class, 
   expect(card.className).toBe(".Card");
 });
 
+test("@selector sets className to any CSS selector and @class is an accepted alias", () => {
+  const attr = parseCssDocs(
+    [
+      "/**",
+      " * @component pendo-alert",
+      " * @summary An alert.",
+      ' * @selector [class*="instui"][data-layout="lightboxBlank"]',
+      " */",
+    ].join("\n"),
+  );
+  expect(attr[0].className).toBe('[class*="instui"][data-layout="lightboxBlank"]');
+
+  const id = parseCssDocs(
+    ["/**", " * @component root", " * @summary Root.", " * @selector #app", " */"].join("\n"),
+  );
+  expect(id[0].className).toBe("#app");
+
+  const host = parseCssDocs(
+    ["/**", " * @component my-button", " * @summary A button.", " * @selector :host", " */"].join(
+      "\n",
+    ),
+  );
+  expect(host[0].className).toBe(":host");
+
+  // @class is a deprecated alias for @selector — same behaviour.
+  const legacy = parseCssDocs(
+    ["/**", " * @component my-badge", " * @summary A badge.", " * @class .my-badge", " */"].join(
+      "\n",
+    ),
+  );
+  expect(legacy[0].className).toBe(".my-badge");
+});
+
+test("@part derives name from selector type and stores selector on the part when non-class", () => {
+  const [entry] = parseCssDocs(
+    [
+      "/**",
+      " * @component pendo-alert",
+      " * @summary An alert.",
+      ' * @part [data-layout="lightboxBlank"] — Outer.',
+      " * @part #root — Root.",
+      " * @part :host — Host.",
+      " * @part .item — An item.",
+      ' * @part [data-layout="lightboxBlank"] container — Aliased.',
+      " */",
+    ].join("\n"),
+  );
+
+  // Attribute selector: derived name is the first attribute key; selector stored on part.
+  const attrPart = entry.parts.find((p) => p.name === "data-layout");
+  expect(attrPart).toBeDefined();
+  expect(attrPart!.selector).toBe('[data-layout="lightboxBlank"]');
+
+  // ID selector: name strips #; selector stored.
+  const idPart = entry.parts.find((p) => p.name === "root");
+  expect(idPart?.selector).toBe("#root");
+
+  // :host: name is "host"; selector stored.
+  const hostPart = entry.parts.find((p) => p.name === "host");
+  expect(hostPart?.selector).toBe(":host");
+
+  // Class selector: name strips dot; no selector stored (falls back to .item).
+  const classPart = entry.parts.find((p) => p.name === "item");
+  expect(classPart?.selector).toBeUndefined();
+
+  // Alias overrides derived name; selector still stored.
+  const aliasPart = entry.parts.find((p) => p.name === "container");
+  expect(aliasPart?.selector).toBe('[data-layout="lightboxBlank"]');
+  expect(aliasPart?.description).toBe("Aliased.");
+});
+
 test("an authored `@deprecated {@link -x}` sets the modifier's canonical", () => {
   const [comp] = parseCssDocs(
     `/**\n * @component alert\n * @modifier -variant-error — @deprecated {@link -color-danger}\n */\n` +
@@ -137,6 +208,30 @@ test("an authored `@deprecated {@link -x}` sets the modifier's canonical", () =>
   );
   const alias = comp.modifiers.find((m) => m.name === "-variant-error")!;
   expect(alias.deprecated?.canonical).toBe("-color-danger");
+});
+
+test("@structure parses @scope at-rules as scope-boundary StructureNodes", () => {
+  const [entry] = parseCssDocs(
+    [
+      "/**",
+      " * @component menu",
+      " * @summary A menu.",
+      " * @structure",
+      " * @scope (.menu) {",
+      " *   :scope > .item {}",
+      " * }",
+      " */",
+      ".menu {}",
+    ].join("\n"),
+    { modifierConvention: "rscss" },
+  );
+
+  expect(entry.structure).toHaveLength(1);
+  const scopeNode = entry.structure![0];
+  expect(scopeNode.scope).toBe("(.menu)");
+  expect(scopeNode.selector).toBe("");
+  expect(scopeNode.children).toHaveLength(1);
+  expect(scopeNode.children[0].selector).toBe(":scope > .item");
 });
 
 test("@example unescapes `\\`` so a fence authored inside a css template becomes a real fence", () => {

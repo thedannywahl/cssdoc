@@ -159,6 +159,26 @@ PartName ::
     `.` Identifier
     `.` Identifier WildcardSegment
 
+// A non-class part selector: an attribute selector, an ID, or a shadow-DOM pseudo (:host).
+// `:host-context(…)` (host in a specific ancestor context) is also accepted — the bracket-aware
+// parser reads the full token until the first unbracketed whitespace.
+NonClassPartSelector ::
+    AttributeModifier
+    `#` Identifier
+    `:host`
+
+// A user-supplied alias that overrides the derived part name, e.g. `@part [data-layout] container`.
+PartAlias ::
+    Identifier
+
+// The base selector for a component: a class, attribute selector, ID, or :host pseudo.
+// An explicit @selector value prevents the class from being inferred from the CSS rules.
+// Compound selectors (e.g. `[class*="x"][data-layout="y"]`) and `:host-context(…)` are also accepted;
+// the bracket-aware parser reads until the first unbracketed whitespace.
+CssSelectorArgument ::
+    ClassSelector
+    NonClassPartSelector
+
 // A base-class selector, e.g. `.base`.
 ClassSelector ::
     `.` Identifier
@@ -228,8 +248,15 @@ RecordTag :
 
 // --- Prose tags --------------------------------------------------------------------------------
 
+// `@selector` explicitly declares the component's base CSS selector when it isn't a plain class —
+// accepts any simple selector: class (`.button`), attribute (`[data-layout="x"]`), ID (`#foo`),
+// compound (`[class*="x"][data-layout="y"]`), or shadow-DOM pseudo (`:host`, `:host-context(…)`).
+// `@class` is a deprecated alias for `@selector` with identical semantics.
+SelectorTag :
+    `@selector` WhiteSpace CssSelectorArgument
+
 ClassTag :
-    `@class` WhiteSpace ClassSelector
+    `@class` WhiteSpace CssSelectorArgument
 
 SummaryTag :
     `@summary` WhiteSpace Description
@@ -282,10 +309,14 @@ ModifierTag :
     `@modifier` WhiteSpace ModifierName
     `@modifier` WhiteSpace ModifierName Separator ModifierBody
 
-// A class-based sub-element, e.g. `@part .list`.
+// A part can now name any simple selector, not only class names. An optional alias overrides the
+// derived name (first attribute key, bare ID/host name, or stripped class name).
 PartTag :
     `@part` WhiteSpace PartName
     `@part` WhiteSpace PartName Separator Description
+    `@part` WhiteSpace NonClassPartSelector
+    `@part` WhiteSpace NonClassPartSelector Separator Description
+    `@part` WhiteSpace NonClassPartSelector WhiteSpace PartAlias Separator Description
 
 // A shadow-DOM exposed part (`::part(name)`), named by a bare identifier, e.g. `@csspart header`.
 ShadowPartName :
@@ -384,9 +415,14 @@ AccessibilityTag :
 // Nested CSS: each rule's selector is a node, and the rules nested inside it are its children. A
 // node's selector is a full compound/complex selector, so `:has()` (contains), `:is()` or a selector
 // list (one-of), and `:not()` (not) express relationships between the related parts.
+// `@scope (…) { … }` at-rules are accepted as scope-boundary nodes (selector is empty; the prelude
+// holds the scope argument). Other CSS at-rules (@media, @layer, etc.) inside the body are forwarded
+// to the parser but treated as unknown and silently omitted.
 Selector ::
     > a CSS compound or complex selector
 
+// `@scope (…) { … }` at-rules inside a @structure body create scope-boundary nodes (StructureNode
+// with scope set to the prelude). The parser recognises @scope as CSS content, not a cssdoc tag.
 StructureNode :
     Selector `{` StructureNodeList? `}`
 
@@ -452,6 +488,7 @@ CustomTag :
 
 BlockTag :
     RecordTag
+    SelectorTag
     ClassTag
     SummaryTag
     RemarksTag
@@ -489,6 +526,8 @@ TagList :
     TagList BlockTag
 
 // A doc comment is a sequence of block tags. Leading untagged prose is ignored; each `@tag` opens a
-// block that runs until the next `@tag` (so multi-line @example / @summary bodies are captured).
+// block that runs until the next *known* cssdoc `@tag` (so multi-line @example / @summary bodies are
+// captured). Inside a `@structure` block, CSS at-rules whose names are not cssdoc tags (e.g. `@scope`,
+// `@media`, `@layer`) are treated as CSS content, not new block openers.
 DocComment :
     CommentOpen TagList CommentClose
