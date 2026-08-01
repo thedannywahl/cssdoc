@@ -4,6 +4,22 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.8.1
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.8.0...v0.8.1)
+
+### 🚀 Enhancements
+
+- Enhance @part handling for descendant chains and aliasing in parser ([52c1ba1](https://github.com/thedannywahl/cssdoc/commit/52c1ba1))
+
+### 📖 Documentation
+
+- Update authoring guide and grammar for @modifier and @wrapper tags ([d1054e4](https://github.com/thedannywahl/cssdoc/commit/d1054e4))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.8.0
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.7.10...v0.8.0)
