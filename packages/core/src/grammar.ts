@@ -15,18 +15,23 @@
  *   (attribute, ID, compound, `:host`). `@class` is its deprecated alias.
  * - `@part` — accepts class, attribute, ID, and `:host`/`:host-context()` selectors, with an optional
  *   alias between the selector and the ` — ` description separator.
+ * - `@modifier` — accepts the same selector forms as `@part`; the stored key matches the AST-extracted
+ *   modifier name (attribute inner content for attribute selectors), with an optional alias.
+ * - `@wrapper` — accepts the same selector forms as `@part`; the stored key is derived the same way
+ *   and matched against `@structure` nodes by {@link deriveSelectorName}.
  * - `@structure` — CSS at-rules (`@scope`, `@media`, etc.) inside the body are never treated as new
  *   tag openers; they're accumulated as CSS content.
  *
  * A block looks like:
  * ```css
  * /**
- *  * @component pendo-alert
- *  * @summary An embedded alert.
- *  * @selector [class*="instui"][data-layout="lightboxBlank"]
- *  * @part [data-layout="lightboxBlank"] outer — The outermost container.
- *  * @part ._pendo-step-container-styles inner — The visible card.
- *  * @cssproperty --_alert-color <color> — Private variant colour.
+ *  * @component x-banner
+ *  * @summary A dismissible announcement banner.
+ *  * @selector :host
+ *  * @modifier [data-size="compact"] — Compressed layout.
+ *  * @part [data-slot="action"] cta — Optional call-to-action area.
+ *  * @part #dismiss — The dismiss button.
+ *  * @cssproperty --banner-bg <color> — Background colour.
  *  *\/
  * ```
  *
@@ -107,8 +112,13 @@ export interface ParsedDoc {
   accessibility?: string;
   /** The release stage from a modifier flag tag (`@alpha`/`@beta`/…). */
   releaseStage?: CssReleaseStage;
-  /** `@modifier` prose, keyed by the modifier class without its dot (e.g. `-color-secondary`). */
+  /** `@modifier` prose, keyed by the derived modifier name (e.g. `-color-secondary`, `data-variant="ghost"`). */
   modifiers: Map<string, DocModifier>;
+  /**
+   * The original CSS selector for each `@modifier`, keyed by the derived name.
+   * Set only for non-class modifiers (attribute, ID, `:host`). Class modifiers omit the entry.
+   */
+  modifierSelectors: Map<string, string>;
   /** `@part` descriptions, keyed by the derived part name (e.g. `item`, `data-layout`). */
   parts: Map<string, string>;
   /**
@@ -123,8 +133,13 @@ export interface ParsedDoc {
   cssParts: Map<string, string>;
   /** `@pseudo` descriptions (native pseudo-elements), keyed by the bare name (e.g. `before`). */
   pseudoElements: Map<string, string>;
-  /** `@wrapper` descriptions (optional-ancestor wrappers), keyed by the bare class (e.g. `badge-wrapper`). */
+  /** `@wrapper` descriptions, keyed by the derived selector name (e.g. `badge-wrapper`, `data-slot`). */
   wrappers: Map<string, string>;
+  /**
+   * The original CSS selector for each `@wrapper`, keyed by the derived name.
+   * Set only for non-class wrappers (attribute, ID, `:host`). Class wrappers omit the entry.
+   */
+  wrapperSelectors: Map<string, string>;
   /** `@todo` notes (internal development notes). */
   todos: string[];
   /** `@cssproperty` declarations. */
@@ -161,6 +176,32 @@ export interface ParsedDoc {
   related: CssRelated[];
   /** Content of registered custom (block) tags, keyed by tag name without its `@`. */
   customBlocks: Map<string, string[]>;
+}
+
+/**
+ * Derive a short human-readable name from any CSS simple selector — the key used to store and look up
+ * `@part`, `@wrapper`, and similar tags keyed by element identity rather than full modifier expression.
+ */
+export function deriveSelectorName(sel: string): string {
+  if (sel.startsWith(".")) return sel.slice(1);
+  if (sel.startsWith("#")) return sel.slice(1);
+  if (sel.startsWith(":host")) return "host";
+  const attrKey = sel.match(/^\[([^=\s~^$*|[\]]+)/u)?.[1];
+  if (attrKey) return attrKey;
+  return sel.replace(/^\W+/u, "") || sel;
+}
+
+/**
+ * Derive the modifier key from a CSS selector token — the form that matches AST-extracted modifier names.
+ * Class and bare names strip the leading dot; attribute selectors strip outer brackets (inner content
+ * is the convention-normalized form); IDs and `:host` strip their prefix.
+ */
+function deriveModifierKey(sel: string): string {
+  if (sel.startsWith(".")) return sel.slice(1);
+  if (sel.startsWith("#")) return sel.slice(1);
+  if (sel.startsWith(":host")) return "host";
+  if (sel.startsWith("[") && sel.endsWith("]")) return sel.slice(1, -1);
+  return sel;
 }
 
 /** Split a tag's argument into `head` (a selector/name/token) and `description` on ` — ` or ` - `. */
@@ -225,12 +266,14 @@ export function parseDocComment(
   const body = stripCommentFraming(raw);
   const doc: ParsedDoc = {
     modifiers: new Map(),
+    modifierSelectors: new Map(),
     parts: new Map(),
     partSelectors: new Map(),
     tokens: new Map(),
     cssParts: new Map(),
     pseudoElements: new Map(),
     wrappers: new Map(),
+    wrapperSelectors: new Map(),
     todos: [],
     cssProperties: [],
     cssStates: new Map(),
@@ -337,8 +380,10 @@ function applyBlockTag(
       break;
     }
     case "modifier": {
-      const { head, description } = splitDesc(rest);
-      doc.modifiers.set(head.replace(/^\./u, ""), parseModifierBody(description));
+      const { name: mName, selector: mSel, description: mDesc } = splitModifierArg(rest);
+      doc.modifiers.set(mName, parseModifierBody(mDesc));
+      // Store only when the selector is a genuine CSS token (not a bare modifier name) and non-trivially different from `.${name}`.
+      if (mSel !== `.${mName}` && /^[.#[:/]/u.test(mSel)) doc.modifierSelectors.set(mName, mSel);
       break;
     }
     case "part": {
@@ -366,9 +411,9 @@ function applyBlockTag(
       break;
     }
     case "wrapper": {
-      // Prose for an optional-ancestor wrapper named in `@structure`, keyed by its bare class.
-      const { head, description } = splitDesc(rest);
-      doc.wrappers.set(head.replace(/^\./u, ""), description ?? "");
+      const { name: wName, selector: wSel, description: wDesc } = splitPartArg(rest);
+      doc.wrappers.set(wName, wDesc ?? "");
+      if (wSel !== `.${wName}`) doc.wrapperSelectors.set(wName, wSel);
       break;
     }
     case "cssproperty": {
@@ -504,22 +549,26 @@ function splitPartArg(rest: string): { selector: string; name: string; descripti
   const selector = selMatch?.[1] ?? "";
   const after = rest.slice(selector.length).trim();
 
-  // Derive a default name from the selector type.
-  const deriveName = (sel: string): string => {
-    if (sel.startsWith(".")) return sel.slice(1);
-    if (sel.startsWith("#")) return sel.slice(1);
-    if (sel.startsWith(":host")) return "host";
-    const attrKey = sel.match(/^\[([^=\s~^$*|[\]]+)/u)?.[1];
-    if (attrKey) return attrKey;
-    return sel.replace(/^\W+/u, "") || sel;
-  };
+  // If `after` starts with a word (the alias) before the `—` separator, use it as the name.
+  const aliasMatch = after.match(/^([\w-]+)\s+(?:—|-{1,2})\s+([\s\S]*)$/u);
+  if (aliasMatch) return { selector, name: aliasMatch[1], description: aliasMatch[2].trim() };
+
+  const descMatch = after.match(/^(?:—|-{1,2})\s+([\s\S]*)$/u);
+  return { selector, name: deriveSelectorName(selector), description: descMatch?.[1].trim() };
+}
+
+function splitModifierArg(rest: string): { selector: string; name: string; description?: string } {
+  // Grab the selector with the same bracket-aware regex as splitPartArg.
+  const selMatch = rest.match(/^((?:\[(?:[^\]"']|"[^"]*"|'[^']*')*\]|[^\s[]+)+)/u);
+  const selector = selMatch?.[1] ?? "";
+  const after = rest.slice(selector.length).trim();
 
   // If `after` starts with a word (the alias) before the `—` separator, use it as the name.
   const aliasMatch = after.match(/^([\w-]+)\s+(?:—|-{1,2})\s+([\s\S]*)$/u);
   if (aliasMatch) return { selector, name: aliasMatch[1], description: aliasMatch[2].trim() };
 
   const descMatch = after.match(/^(?:—|-{1,2})\s+([\s\S]*)$/u);
-  return { selector, name: deriveName(selector), description: descMatch?.[1].trim() };
+  return { selector, name: deriveModifierKey(selector), description: descMatch?.[1].trim() };
 }
 
 function splitStructureBody(raw: string): { description?: string; css: string } {

@@ -11,7 +11,13 @@
  */
 import postcss, { type ChildNode } from "postcss";
 import { CssDocConfiguration, type InlineCommentMode } from "./configuration.ts";
-import { parseDocComment, recordNameOf, stripCommentFraming, type ParsedDoc } from "./grammar.ts";
+import {
+  deriveSelectorName,
+  parseDocComment,
+  recordNameOf,
+  stripCommentFraming,
+  type ParsedDoc,
+} from "./grammar.ts";
 import { ModifierMatcher, resolveModifierConvention } from "./modifier.ts";
 import type {
   CssAnimation,
@@ -341,6 +347,7 @@ function buildEntry(
       if (dep) existing.deprecated = { ...existing.deprecated, ...dep };
     } else {
       const { prop, value } = matcher.analyze(modName);
+      const modSel = doc.modifierSelectors.get(modName);
       acc.modifiers.set(modName, {
         name: modName,
         prop,
@@ -348,6 +355,7 @@ function buildEntry(
         ...(modName.includes("*") ? { pattern: true } : {}),
         description: mdoc.description,
         deprecated: dep,
+        ...(modSel ? { selector: modSel } : {}),
       });
     }
   }
@@ -443,12 +451,19 @@ function buildEntry(
     else consumedTokens.set(tokenName, { name: tokenName, description: description || undefined });
   }
 
-  // Attach `@wrapper` prose to the matching `@structure` node(s), by their leading class.
+  // Attach `@wrapper` prose to the matching `@structure` node(s) by derived selector name or aliased selector.
   if (doc.wrappers.size && doc.structure?.length) {
     const applyWrappers = (nodes: StructureNode[]): void => {
       for (const node of nodes) {
-        const cls = node.selector.match(/\.([\w-]+)/u)?.[1];
-        const description = cls ? doc.wrappers.get(cls) : undefined;
+        const derivedName = deriveSelectorName(node.selector);
+        // Try direct lookup by derived name; fall back to alias-based lookup via wrapperSelectors.
+        const description =
+          doc.wrappers.get(derivedName) ??
+          (() => {
+            for (const [key, sel] of doc.wrapperSelectors) {
+              if (sel === node.selector) return doc.wrappers.get(key);
+            }
+          })();
         if (description) node.description = description;
         applyWrappers(node.children);
       }

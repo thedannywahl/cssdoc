@@ -36,6 +36,12 @@ export interface CssModifier {
   /** Prose from a `@modifier` doc tag, when authored. */
   description?: string;
   /**
+   * The original CSS selector when the modifier was authored with a non-class form (attribute, ID,
+   * `:host`) or an alias — parallel to {@link CssPart.selector}. Absent for class and bare-name
+   * modifiers, which are the common AST-derived forms.
+   */
+  selector?: string;
+  /**
    * Set when the modifier is deprecated. `canonical` (from an AST alias marker) is the modifier class
    * to use instead; `note` (from an authored inline deprecation tag on the `@modifier` line) is
    * free-text replacement guidance for cases where the replacement isn't itself a modifier.

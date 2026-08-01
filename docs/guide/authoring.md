@@ -45,33 +45,40 @@ at-rules; you don't have to list what's already there.
 The `@modifier` example below uses the default **BEM** convention (`.base--x`). cssdoc supports other
 modifier conventions (rscss, CUBE, OOCSS, and more) — see [Modifier conventions](/guide/modifier-conventions).
 
-| Tag                                                    | Documents                                                            | Derived from           |
-| ------------------------------------------------------ | -------------------------------------------------------------------- | ---------------------- |
-| `@modifier <x> — <desc>`                               | A modifier on the base class                                         | modifier selectors     |
-| `@part .<x> — <desc>`                                  | A class-based sub-element part                                       | scoped child selectors |
-| `@part [attr="val"] — <desc>`                          | An attribute-selector part; name derived as the first attribute key  | authored               |
-| `@part #id — <desc>`                                   | An ID-selector part; name derived by stripping `#`                   | authored               |
-| `@part :host — <desc>`                                 | The shadow host itself as a documented part                          | authored               |
-| `@part <sel> <alias> — <desc>`                         | Any selector with an explicit name alias; overrides the derived name | authored               |
-| `@csspart <x> — <desc>`                                | A shadow-DOM exposed part (`::part(x)`)                              | `::part(x)` / authored |
-| `@pseudo ::<x> — <desc>`                               | A native pseudo-element (`::before`, `::marker`, …)                  | `::x` selectors        |
-| `@cssstate <x> — <desc>`                               | A custom `:state(x)` state                                           | `:state(x)` selectors  |
-| `@cssstate :<x> — <desc>`                              | A native pseudo-class state (`:disabled`)                            | pseudo-class selectors |
-| `@slot <x> — <desc>`                                   | A named slot                                                         | authored (CEM)         |
-| `@cssproperty` / `@property --<x> [<syntax>] — <desc>` | A registered custom property                                         | `@property` at-rules   |
-| `@tokens --<x> — <desc>`                               | A consumed design token (annotates the auto-derived list)            | `var(--x)` usages      |
-| `@function --<x> — <desc>`                             | A CSS custom function                                                | `@function` at-rules   |
-| `@keyframes` / `@animation <x> — <desc>`               | An exposed animation                                                 | `@keyframes` at-rules  |
-| `@layer <x> — <desc>`                                  | A cascade layer                                                      | `@layer` at-rules      |
-| `@container` / `@supports` / `@media <query> — <desc>` | A conditional block                                                  | those at-rules         |
-| `@a11y` / `@accessibility <text>`                      | Accessibility guidance                                               | authored               |
-| `@structure`                                           | A nested-CSS element tree                                            | authored               |
-| `@wrapper .<x> — <desc>`                               | Prose for an optional-ancestor wrapper in `@structure`               | authored               |
-| `@demo <spec>`                                         | An embeddable demo (`self:button`, `stackblitz:…`, a URL)            | authored               |
-| `@defaultValue <value>`                                | The default of the preceding `@cssproperty`                          | authored               |
-| `@usage <text>`                                        | How to include the stylesheet / use the component                    | authored               |
-| `@compat <text>`                                       | A browser-support / feature-compatibility note                       | authored               |
-| `@related <name> — <desc>`                             | A related component cross-reference                                  | authored               |
+| Tag                                                    | Documents                                                             | Derived from           |
+| ------------------------------------------------------ | --------------------------------------------------------------------- | ---------------------- |
+| `@modifier <x> — <desc>`                               | A modifier on the base class (class / bare name)                      | modifier selectors     |
+| `@modifier [attr="val"] — <desc>`                      | An attribute-selector modifier; key is the inner attribute expression | modifier selectors     |
+| `@modifier #id — <desc>`                               | An ID-selector modifier; name derived by stripping `#`                | authored               |
+| `@modifier <sel> <alias> — <desc>`                     | Any selector with an explicit name alias; overrides the derived name  | authored               |
+| `@part .<x> — <desc>`                                  | A class-based sub-element part                                        | scoped child selectors |
+| `@part [attr="val"] — <desc>`                          | An attribute-selector part; name derived as the first attribute key   | authored               |
+| `@part #id — <desc>`                                   | An ID-selector part; name derived by stripping `#`                    | authored               |
+| `@part :host — <desc>`                                 | The shadow host itself as a documented part                           | authored               |
+| `@part <sel> <alias> — <desc>`                         | Any selector with an explicit name alias; overrides the derived name  | authored               |
+| `@csspart <x> — <desc>`                                | A shadow-DOM exposed part (`::part(x)`)                               | `::part(x)` / authored |
+| `@pseudo ::<x> — <desc>`                               | A native pseudo-element (`::before`, `::marker`, …)                   | `::x` selectors        |
+| `@cssstate <x> — <desc>`                               | A custom `:state(x)` state                                            | `:state(x)` selectors  |
+| `@cssstate :<x> — <desc>`                              | A native pseudo-class state (`:disabled`)                             | pseudo-class selectors |
+| `@slot <x> — <desc>`                                   | A named slot                                                          | authored (CEM)         |
+| `@cssproperty` / `@property --<x> [<syntax>] — <desc>` | A registered custom property                                          | `@property` at-rules   |
+| `@tokens --<x> — <desc>`                               | A consumed design token (annotates the auto-derived list)             | `var(--x)` usages      |
+| `@function --<x> — <desc>`                             | A CSS custom function                                                 | `@function` at-rules   |
+| `@keyframes` / `@animation <x> — <desc>`               | An exposed animation                                                  | `@keyframes` at-rules  |
+| `@layer <x> — <desc>`                                  | A cascade layer                                                       | `@layer` at-rules      |
+| `@container` / `@supports` / `@media <query> — <desc>` | A conditional block                                                   | those at-rules         |
+| `@a11y` / `@accessibility <text>`                      | Accessibility guidance                                                | authored               |
+| `@structure`                                           | A nested-CSS element tree                                             | authored               |
+| `@wrapper .<x> — <desc>`                               | Prose for a class-selector wrapper node in `@structure`               | authored               |
+| `@wrapper [attr="val"] — <desc>`                       | Prose for an attribute-selector wrapper node; name is the attr key    | authored               |
+| `@wrapper #id — <desc>`                                | Prose for an ID-selector wrapper node                                 | authored               |
+| `@wrapper :host — <desc>`                              | Prose for a `:host` wrapper node                                      | authored               |
+| `@wrapper <sel> <alias> — <desc>`                      | Any selector with an explicit name alias                              | authored               |
+| `@demo <spec>`                                         | An embeddable demo (`self:button`, `stackblitz:…`, a URL)             | authored               |
+| `@defaultValue <value>`                                | The default of the preceding `@cssproperty`                           | authored               |
+| `@usage <text>`                                        | How to include the stylesheet / use the component                     | authored               |
+| `@compat <text>`                                       | A browser-support / feature-compatibility note                        | authored               |
+| `@related <name> — <desc>`                             | A related component cross-reference                                   | authored               |
 
 The `@tokens` tag annotates the auto-derived "Tokens consumed" list: cssdoc already collects every
 `var(--*)` a record references, and `@tokens --x — <desc>` attaches a description (a `@tokens` entry with
@@ -85,25 +92,25 @@ or a shadow-DOM host — use `@selector` to tell cssdoc what the root element lo
 
 ```css
 /**
- * @component pendo-alert
- * @summary Styles an embedded Pendo guide as an alert.
- * @selector [class*="instui"][data-layout="lightboxBlank"]
+ * @component x-banner
+ * @summary A dismissible announcement banner (shadow DOM web component).
+ * @selector :host
  */
-[class*="instui"][data-layout="lightboxBlank"] { … }
+:host { … }
 ```
 
 Without `@selector`, cssdoc infers the base from the first bare single-class rule (`.button`, `.card`,
 etc.) and falls back to `.${name}` when none is found. An explicit `@selector` always wins and skips
 inference. Accepted forms:
 
-| Form                     | Example                                        |
-| ------------------------ | ---------------------------------------------- |
-| Class (inferred anyway)  | `@selector .my-button`                         |
-| Attribute                | `@selector [data-layout="lightboxBlank"]`      |
-| Compound attribute       | `@selector [class*="instui"][data-layout="x"]` |
-| ID                       | `@selector #root`                              |
-| Shadow host              | `@selector :host`                              |
-| Shadow host with context | `@selector :host-context(.dark-theme)`         |
+| Form                     | Example                                           |
+| ------------------------ | ------------------------------------------------- |
+| Class (inferred anyway)  | `@selector .my-button`                            |
+| Attribute                | `@selector [data-slot="action"]`                  |
+| Compound attribute       | `@selector [data-slot="action"][aria-hidden="x"]` |
+| ID                       | `@selector #dismiss`                              |
+| Shadow host              | `@selector :host`                                 |
+| Shadow host with context | `@selector :host-context(.dark-theme)`            |
 
 `@class` is a deprecated alias for `@selector` accepted for backward compatibility.
 
@@ -112,21 +119,21 @@ inference. Accepted forms:
 Parts can reference any CSS selector, not only `.class` names. The derived name (used as the part's
 key in the model) follows these rules:
 
-| Authored tag                                         | Stored name   | Stored selector                 |
-| ---------------------------------------------------- | ------------- | ------------------------------- |
-| `@part .item — <desc>`                               | `item`        | _(class; selector is `.item`)_  |
-| `@part [data-layout="lightboxBlank"] — <desc>`       | `data-layout` | `[data-layout="lightboxBlank"]` |
-| `@part #root — <desc>`                               | `root`        | `#root`                         |
-| `@part :host — <desc>`                               | `host`        | `:host`                         |
-| `@part [data-layout="lightboxBlank"] outer — <desc>` | `outer`       | `[data-layout="lightboxBlank"]` |
+| Authored tag                                 | Stored name | Stored selector                |
+| -------------------------------------------- | ----------- | ------------------------------ |
+| `@part .item — <desc>`                       | `item`      | _(class; selector is `.item`)_ |
+| `@part [data-slot="action"] — <desc>`        | `data-slot` | `[data-slot="action"]`         |
+| `@part #dismiss — <desc>`                    | `dismiss`   | `#dismiss`                     |
+| `@part :host — <desc>`                       | `host`      | `:host`                        |
+| `@part [data-slot="action"] action — <desc>` | `action`    | `[data-slot="action"]`         |
 
 The last form lets you supply an **alias** (a word after the selector, before `—`) to override the
 derived name. Pseudos that already have dedicated tags (`@pseudo`, `@cssstate`, `@csspart`) are
 excluded; `:host` and `:host-context(…)` are the only pseudo-class forms `@part` accepts.
 
 The `name-not-in-css` lint rule checks the stored selector (not the derived name) against the
-stylesheet, so `@part [data-layout="lightboxBlank"]` is satisfied when the string
-`[data-layout="lightboxBlank"]` appears anywhere in the record's CSS selectors.
+stylesheet, so `@part [data-slot="action"]` is satisfied when the string
+`[data-slot="action"]` appears anywhere in the record's CSS selectors.
 
 To document a **family** of modifiers, use a `*` wildcard in the name — `@modifier -icon-* — <desc>`
 (`*` matches any run of `[\w-]`). A family is a first-class modifier: it shows in the model and hover, a
@@ -292,7 +299,10 @@ Exempt other externals (utilities) with `structureIgnore` in `cssdoc.json`.
 Sometimes the notable structure is an _optional ancestor_ — a wrapper the component sits inside. Root
 the tree at the wrapper and mark it `:opt`; because the component's own class appears beneath it, cssdoc
 recognizes the wrapper as a valid ancestor (no `structureIgnore`), and the diagram carries the `0..1` on
-the root. `@wrapper .<class> — <desc>` adds prose to it, the way `@modifier` annotates a modifier:
+the root. `@wrapper` adds prose to a wrapper node the same way `@modifier` annotates a modifier.
+
+`@wrapper` accepts the same selector forms as `@part` and `@modifier` — class, attribute, ID, and
+`:host` — with an optional alias:
 
 ```css
 /**
@@ -305,3 +315,20 @@ the root. `@wrapper .<class> — <desc>` adds prose to it, the way `@modifier` a
  * }
  */
 ```
+
+When the wrapper node isn't a plain class, use the appropriate selector form:
+
+```css
+/**
+ * @wrapper #dismiss — Dismiss trigger; present when the banner is dismissible.
+ * @wrapper [data-slot="action"] — Optional call-to-action area.
+ * @structure
+ * :host {
+ *   #dismiss:optional {}
+ *   [data-slot="action"]:optional {}
+ * }
+ */
+```
+
+An alias (`@wrapper <sel> <alias> — <desc>`) overrides the derived name while the original selector
+is used for matching against the structure node.
