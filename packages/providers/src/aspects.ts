@@ -627,12 +627,14 @@ export const part = {
         }
       }
       for (const authored of info.authoredParts) {
-        if (!selectorDefines(info.selectorText, `.${authored}`)) {
+        // Attribute and ID selectors are already fully-qualified; only bare names need a dot prefix.
+        const partSel = /^[.[#:]/u.test(authored) ? authored : `.${authored}`;
+        if (!selectorDefines(info.selectorText, partSel)) {
           out.push(
             warn({
               aspect: "part",
               rule: "name-not-in-css",
-              message: `Documented part ".${authored}" of "${name}" is not defined by any selector.`,
+              message: `Documented part "${partSel}" of "${name}" is not defined by any selector.`,
               record: name,
               span: info.span,
             }),
