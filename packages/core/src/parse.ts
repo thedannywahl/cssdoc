@@ -234,7 +234,9 @@ function collect(
           if (!acc.states.has(st.name)) acc.states.set(st.name, { name: st.name, kind: "class" });
         }
         if (inScope) {
-          for (const m of bare.matchAll(CLASS_REF_RE)) {
+          // Only derive parts from the final compound — ancestor segments are scoping context.
+          const finalBare = bare.match(/([^\s>~+]+)\s*$/u)?.[1] ?? bare;
+          for (const m of finalBare.matchAll(CLASS_REF_RE)) {
             const part = m[1];
             if (modNames.has(part)) continue; // a modifier, not a part
             if (prefixNoDot && part.startsWith(prefixNoDot)) continue; // a component ref, not a part

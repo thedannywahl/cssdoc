@@ -537,24 +537,32 @@ export function recordNameOf(
 /**
  * Parse a `@part` argument into its selector, derived name, and optional description.
  * Handles class (`.foo`), attribute (`[foo="bar"]`), ID (`#foo`), `:host`, `:host-context(…)`,
- * and an optional author alias between the selector and the `—` description separator.
+ * descendant chains (`A > B > C`), and an optional author alias. For chained selectors the
+ * derived name comes from the final compound.
  *
  * @example `@part [data-layout="x"] container — Desc` → `{ selector: "[data-layout=\"x\"]", name: "container", description: "Desc" }`
  * @example `@part [data-layout="x"] — Desc`            → `{ selector: "[data-layout=\"x\"]", name: "data-layout", description: "Desc" }`
  * @example `@part .item — Desc`                         → `{ selector: ".item", name: "item", description: "Desc" }`
+ * @example `@part A > B > C alias — Desc`               → `{ selector: "A > B > C", name: "alias", description: "Desc" }`
+ * @example `@part A > B > C — Desc`                     → `{ selector: "A > B > C", name: "<derived from C>", description: "Desc" }`
  */
 function splitPartArg(rest: string): { selector: string; name: string; description?: string } {
-  // Grab the selector: consecutive bracket groups and/or non-whitespace, non-bracket chars.
-  const selMatch = rest.match(/^((?:\[(?:[^\]"']|"[^"]*"|'[^']*')*\]|[^\s[]+)+)/u);
-  const selector = selMatch?.[1] ?? "";
-  const after = rest.slice(selector.length).trim();
+  // Split on the description separator to isolate selector+alias from description.
+  const descM = rest.match(/^([\s\S]*?)\s+(?:—|-{1,2})\s+([\s\S]*)$/u);
+  const selectorPlusAlias = (descM ? descM[1] : rest).trim();
+  const description = descM?.[2].trim();
 
-  // If `after` starts with a word (the alias) before the `—` separator, use it as the name.
-  const aliasMatch = after.match(/^([\w-]+)\s+(?:—|-{1,2})\s+([\s\S]*)$/u);
-  if (aliasMatch) return { selector, name: aliasMatch[1], description: aliasMatch[2].trim() };
+  // Greedy-match the last bare [\w-]+ token as a potential alias. A CSS selector segment always
+  // starts with . # [ : — if the candidate selector ends with a combinator (>, ~, +) the last
+  // token is the next selector segment, not an alias.
+  const aliasM = selectorPlusAlias.match(/^([\s\S]+)\s+([\w-]+)$/u);
+  if (aliasM && !/[>~+]\s*$/u.test(aliasM[1])) {
+    return { selector: aliasM[1].trim(), name: aliasM[2], description };
+  }
 
-  const descMatch = after.match(/^(?:—|-{1,2})\s+([\s\S]*)$/u);
-  return { selector, name: deriveSelectorName(selector), description: descMatch?.[1].trim() };
+  // No alias — derive the name from the final compound of the (possibly chained) selector.
+  const finalSeg = selectorPlusAlias.match(/([^\s>~+]+)\s*$/u)?.[1] ?? selectorPlusAlias;
+  return { selector: selectorPlusAlias, name: deriveSelectorName(finalSeg), description };
 }
 
 function splitModifierArg(rest: string): { selector: string; name: string; description?: string } {

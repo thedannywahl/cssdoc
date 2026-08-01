@@ -607,6 +607,12 @@ export const part = {
       const name = info.entry.name;
       for (const p of info.entry.parts) {
         if (!p.description?.trim()) {
+          // A CSS-derived part is covered when an authored chain @part has it as its terminal compound.
+          const cls = `.${p.name}`;
+          const coveredByChain = [...info.authoredParts.values()].some(
+            (sel) => (sel.match(/([^\s>~+]+)\s*$/u)?.[1] ?? sel) === cls,
+          );
+          if (coveredByChain) continue;
           out.push(
             warn({
               aspect: "part",

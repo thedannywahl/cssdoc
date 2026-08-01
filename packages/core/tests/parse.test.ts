@@ -200,6 +200,51 @@ test("@part derives name from selector type and stores selector on the part when
   expect(aliasPart?.description).toBe("Aliased.");
 });
 
+test("@part with descendant chain: full selector stored, alias or final-compound names the part", () => {
+  const [entry] = parseCssDocs(
+    [
+      "/**",
+      " * @component x-banner",
+      ' * @part [class$="-section"] > ._inner > .label poll-label — The poll label.',
+      ' * @part [class$="-section"] > ._inner — No alias; name from final compound.',
+      " */",
+    ].join("\n"),
+  );
+
+  // Alias form: full chain stored as selector, alias is the name.
+  const aliased = entry.parts.find((p) => p.name === "poll-label");
+  expect(aliased).toBeDefined();
+  expect(aliased!.selector).toBe('[class$="-section"] > ._inner > .label');
+  expect(aliased!.description).toBe("The poll label.");
+
+  // No-alias form: name derived from final compound (._inner → _inner).
+  const noAlias = entry.parts.find((p) => p.name === "_inner");
+  expect(noAlias).toBeDefined();
+  expect(noAlias!.selector).toBe('[class$="-section"] > ._inner');
+
+  // No spurious part named "class" from the attribute key of the chain's first segment.
+  expect(entry.parts.find((p) => p.name === "class")).toBeUndefined();
+});
+
+test("inScope scan only derives parts from the final compound of a descendant chain", () => {
+  const [entry] = parseCssDocs(
+    [
+      "/**",
+      " * @component menu",
+      " * @summary A menu.",
+      " */",
+      ".menu {}",
+      "@scope (.menu) {",
+      "  :scope > .group > .item { padding: 0.5rem; }",
+      "}",
+    ].join("\n"),
+  );
+  // .item is the final compound — it is a part.
+  expect(entry.parts.map((p) => p.name)).toContain("item");
+  // .group is an intermediate scoping ancestor — it must NOT become a spurious part.
+  expect(entry.parts.map((p) => p.name)).not.toContain("group");
+});
+
 test("@modifier derives key from selector: attribute stores inner content, ID/host strip prefix", () => {
   // @modifier handles the same selector forms as @part for authoring consistency. The stored key
   // matches what the AST extractor produces for each convention (inner content for attribute).
