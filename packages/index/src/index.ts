@@ -392,6 +392,7 @@ function scanNodes(nodes: ChildNode[], build: Build, base: string, matcher: Modi
           set(memberKey("part", p[1]), node);
         }
       }
+      if (node.nodes) scanNodes(node.nodes, build, base, matcher);
     } else if (node.type === "atrule") {
       if (node.name === "property") set(memberKey("property", node.params.trim()), node);
       else if (node.name === "function") {
