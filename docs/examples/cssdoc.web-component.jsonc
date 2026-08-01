@@ -1,0 +1,9 @@
+{
+  "$schema": "https://cssdoc.dev/cssdoc.schema.json",
+  // Components target third-party or immutable HTML via selectors, not convention-based classes.
+  "modifierConvention": "bare",
+  "rules": {
+    // @selector / @part declare selectors explicitly; CSS-drift detection is off.
+    "name-not-in-css": "off",
+  },
+}
