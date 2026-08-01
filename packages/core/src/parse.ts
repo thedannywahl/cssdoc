@@ -241,6 +241,7 @@ function collect(
         if (child.type === "decl")
           for (const m of child.value.matchAll(VAR_RE)) acc.consumed.add(m[1]);
       }
+      if (node.nodes) collect(node.nodes, acc, matcher, baseNoDot, prefixNoDot, inScope, inlineMode);
       pendingCanonical = undefined;
       pendingDescription = undefined;
     }
