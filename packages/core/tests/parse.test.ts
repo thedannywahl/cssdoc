@@ -133,13 +133,13 @@ test("@selector sets className to any CSS selector and @class is an accepted ali
   const attr = parseCssDocs(
     [
       "/**",
-      " * @component pendo-alert",
-      " * @summary An alert.",
-      ' * @selector [class*="instui"][data-layout="lightboxBlank"]',
+      " * @component x-banner",
+      " * @summary A dismissible banner.",
+      ' * @selector [data-slot="action"][aria-disabled="true"]',
       " */",
     ].join("\n"),
   );
-  expect(attr[0].className).toBe('[class*="instui"][data-layout="lightboxBlank"]');
+  expect(attr[0].className).toBe('[data-slot="action"][aria-disabled="true"]');
 
   const id = parseCssDocs(
     ["/**", " * @component root", " * @summary Root.", " * @selector #app", " */"].join("\n"),
@@ -166,38 +166,174 @@ test("@part derives name from selector type and stores selector on the part when
   const [entry] = parseCssDocs(
     [
       "/**",
-      " * @component pendo-alert",
-      " * @summary An alert.",
-      ' * @part [data-layout="lightboxBlank"] — Outer.',
-      " * @part #root — Root.",
-      " * @part :host — Host.",
-      " * @part .item — An item.",
-      ' * @part [data-layout="lightboxBlank"] container — Aliased.',
+      " * @component x-banner",
+      " * @summary A dismissible banner.",
+      ' * @part [data-slot="action"] — The action area.',
+      " * @part #dismiss — The dismiss button.",
+      " * @part :host — The shadow host.",
+      " * @part .content — The message body.",
+      ' * @part [data-slot="action"] cta — Aliased.',
       " */",
     ].join("\n"),
   );
 
   // Attribute selector: derived name is the first attribute key; selector stored on part.
-  const attrPart = entry.parts.find((p) => p.name === "data-layout");
+  const attrPart = entry.parts.find((p) => p.name === "data-slot");
   expect(attrPart).toBeDefined();
-  expect(attrPart!.selector).toBe('[data-layout="lightboxBlank"]');
+  expect(attrPart!.selector).toBe('[data-slot="action"]');
 
   // ID selector: name strips #; selector stored.
-  const idPart = entry.parts.find((p) => p.name === "root");
-  expect(idPart?.selector).toBe("#root");
+  const idPart = entry.parts.find((p) => p.name === "dismiss");
+  expect(idPart?.selector).toBe("#dismiss");
 
   // :host: name is "host"; selector stored.
   const hostPart = entry.parts.find((p) => p.name === "host");
   expect(hostPart?.selector).toBe(":host");
 
-  // Class selector: name strips dot; no selector stored (falls back to .item).
-  const classPart = entry.parts.find((p) => p.name === "item");
+  // Class selector: name strips dot; no selector stored (falls back to .content).
+  const classPart = entry.parts.find((p) => p.name === "content");
   expect(classPart?.selector).toBeUndefined();
 
   // Alias overrides derived name; selector still stored.
-  const aliasPart = entry.parts.find((p) => p.name === "container");
-  expect(aliasPart?.selector).toBe('[data-layout="lightboxBlank"]');
+  const aliasPart = entry.parts.find((p) => p.name === "cta");
+  expect(aliasPart?.selector).toBe('[data-slot="action"]');
   expect(aliasPart?.description).toBe("Aliased.");
+});
+
+test("@part with descendant chain: full selector stored, alias or final-compound names the part", () => {
+  const [entry] = parseCssDocs(
+    [
+      "/**",
+      " * @component x-banner",
+      ' * @part [class$="-section"] > ._inner > .label poll-label — The poll label.',
+      ' * @part [class$="-section"] > ._inner — No alias; name from final compound.',
+      " */",
+    ].join("\n"),
+  );
+
+  // Alias form: full chain stored as selector, alias is the name.
+  const aliased = entry.parts.find((p) => p.name === "poll-label");
+  expect(aliased).toBeDefined();
+  expect(aliased!.selector).toBe('[class$="-section"] > ._inner > .label');
+  expect(aliased!.description).toBe("The poll label.");
+
+  // No-alias form: name derived from final compound (._inner → _inner).
+  const noAlias = entry.parts.find((p) => p.name === "_inner");
+  expect(noAlias).toBeDefined();
+  expect(noAlias!.selector).toBe('[class$="-section"] > ._inner');
+
+  // No spurious part named "class" from the attribute key of the chain's first segment.
+  expect(entry.parts.find((p) => p.name === "class")).toBeUndefined();
+});
+
+test("inScope scan only derives parts from the final compound of a descendant chain", () => {
+  const [entry] = parseCssDocs(
+    [
+      "/**",
+      " * @component menu",
+      " * @summary A menu.",
+      " */",
+      ".menu {}",
+      "@scope (.menu) {",
+      "  :scope > .group > .item { padding: 0.5rem; }",
+      "}",
+    ].join("\n"),
+  );
+  // .item is the final compound — it is a part.
+  expect(entry.parts.map((p) => p.name)).toContain("item");
+  // .group is an intermediate scoping ancestor — it must NOT become a spurious part.
+  expect(entry.parts.map((p) => p.name)).not.toContain("group");
+});
+
+test("@modifier derives key from selector: attribute stores inner content, ID/host strip prefix", () => {
+  // @modifier handles the same selector forms as @part for authoring consistency. The stored key
+  // matches what the AST extractor produces for each convention (inner content for attribute).
+  const [entry] = parseCssDocs(
+    [
+      "/**",
+      " * @component x-banner",
+      ' * @modifier [data-size="compact"] — Compressed layout.',
+      " * @modifier #dismiss — Dismiss-button active state.",
+      " * @modifier :host — Host-level modifier.",
+      " * @modifier .content — A class modifier.",
+      " * @modifier -without-action — Flag: no action slot.",
+      " */",
+    ].join("\n"),
+  );
+
+  // Attribute: key is inner content (no brackets), matching the AST convention.
+  const attr = entry.modifiers.find((m) => m.name === 'data-size="compact"')!;
+  expect(attr).toBeDefined();
+  expect(attr.description).toBe("Compressed layout.");
+
+  // ID: name strips #.
+  const id = entry.modifiers.find((m) => m.name === "dismiss")!;
+  expect(id.description).toBe("Dismiss-button active state.");
+
+  // :host: name is "host".
+  const host = entry.modifiers.find((m) => m.name === "host")!;
+  expect(host.description).toBe("Host-level modifier.");
+
+  // Class: name strips dot; no selector stored.
+  const cls = entry.modifiers.find((m) => m.name === "content")!;
+  expect(cls.description).toBe("A class modifier.");
+  expect(cls.selector).toBeUndefined();
+
+  // Bare name: unchanged, no selector stored.
+  const bare = entry.modifiers.find((m) => m.name === "-without-action")!;
+  expect(bare.description).toBe("Flag: no action slot.");
+  expect(bare.selector).toBeUndefined();
+});
+
+test("@modifier with alias stores alias as key and original selector on the modifier", () => {
+  const [entry] = parseCssDocs(
+    [
+      "/**",
+      " * @component x-banner",
+      ' * @modifier [data-size="compact"] compact — Alias for the attribute modifier.',
+      " */",
+    ].join("\n"),
+  );
+  const mod = entry.modifiers.find((m) => m.name === "compact")!;
+  expect(mod).toBeDefined();
+  expect(mod.description).toBe("Alias for the attribute modifier.");
+  expect(mod.selector).toBe('[data-size="compact"]');
+});
+
+test("@wrapper with non-class selector matches @structure node by derived name", () => {
+  const [entry] = parseCssDocs(
+    [
+      "/**",
+      " * @component x-banner",
+      " * @wrapper #dismiss — The dismiss button wrapper.",
+      " * @structure",
+      " * :host {}",
+      " * #dismiss:optional {}",
+      " */",
+      ":host {}",
+    ].join("\n"),
+    { modifierConvention: "rscss" },
+  );
+  const dismissNode = entry.structure?.find((n) => n.selector === "#dismiss");
+  expect(dismissNode?.description).toBe("The dismiss button wrapper.");
+});
+
+test("@wrapper with alias matches @structure node via wrapperSelectors", () => {
+  const [entry] = parseCssDocs(
+    [
+      "/**",
+      " * @component x-banner",
+      " * @wrapper #dismiss close-area — Aliased dismiss wrapper.",
+      " * @structure",
+      " * :host {}",
+      " * #dismiss:optional {}",
+      " */",
+      ":host {}",
+    ].join("\n"),
+    { modifierConvention: "rscss" },
+  );
+  const dismissNode = entry.structure?.find((n) => n.selector === "#dismiss");
+  expect(dismissNode?.description).toBe("Aliased dismiss wrapper.");
 });
 
 test("an authored `@deprecated {@link -x}` sets the modifier's canonical", () => {

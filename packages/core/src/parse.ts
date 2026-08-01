@@ -11,7 +11,13 @@
  */
 import postcss, { type ChildNode } from "postcss";
 import { CssDocConfiguration, type InlineCommentMode } from "./configuration.ts";
-import { parseDocComment, recordNameOf, stripCommentFraming, type ParsedDoc } from "./grammar.ts";
+import {
+  deriveSelectorName,
+  parseDocComment,
+  recordNameOf,
+  stripCommentFraming,
+  type ParsedDoc,
+} from "./grammar.ts";
 import { ModifierMatcher, resolveModifierConvention } from "./modifier.ts";
 import type {
   CssAnimation,
@@ -228,7 +234,9 @@ function collect(
           if (!acc.states.has(st.name)) acc.states.set(st.name, { name: st.name, kind: "class" });
         }
         if (inScope) {
-          for (const m of bare.matchAll(CLASS_REF_RE)) {
+          // Only derive parts from the final compound — ancestor segments are scoping context.
+          const finalBare = bare.match(/([^\s>~+]+)\s*$/u)?.[1] ?? bare;
+          for (const m of finalBare.matchAll(CLASS_REF_RE)) {
             const part = m[1];
             if (modNames.has(part)) continue; // a modifier, not a part
             if (prefixNoDot && part.startsWith(prefixNoDot)) continue; // a component ref, not a part
@@ -341,6 +349,7 @@ function buildEntry(
       if (dep) existing.deprecated = { ...existing.deprecated, ...dep };
     } else {
       const { prop, value } = matcher.analyze(modName);
+      const modSel = doc.modifierSelectors.get(modName);
       acc.modifiers.set(modName, {
         name: modName,
         prop,
@@ -348,6 +357,7 @@ function buildEntry(
         ...(modName.includes("*") ? { pattern: true } : {}),
         description: mdoc.description,
         deprecated: dep,
+        ...(modSel ? { selector: modSel } : {}),
       });
     }
   }
@@ -443,12 +453,19 @@ function buildEntry(
     else consumedTokens.set(tokenName, { name: tokenName, description: description || undefined });
   }
 
-  // Attach `@wrapper` prose to the matching `@structure` node(s), by their leading class.
+  // Attach `@wrapper` prose to the matching `@structure` node(s) by derived selector name or aliased selector.
   if (doc.wrappers.size && doc.structure?.length) {
     const applyWrappers = (nodes: StructureNode[]): void => {
       for (const node of nodes) {
-        const cls = node.selector.match(/\.([\w-]+)/u)?.[1];
-        const description = cls ? doc.wrappers.get(cls) : undefined;
+        const derivedName = deriveSelectorName(node.selector);
+        // Try direct lookup by derived name; fall back to alias-based lookup via wrapperSelectors.
+        const description =
+          doc.wrappers.get(derivedName) ??
+          (() => {
+            for (const [key, sel] of doc.wrapperSelectors) {
+              if (sel === node.selector) return doc.wrappers.get(key);
+            }
+          })();
         if (description) node.description = description;
         applyWrappers(node.children);
       }

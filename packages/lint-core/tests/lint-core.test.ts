@@ -93,6 +93,22 @@ test("flags an undocumented part", () => {
   expect(v.map((x) => x.message)).toEqual([expect.stringContaining(".item")]);
 });
 
+test("undocumented-part: authored chain @part suppresses the warning for its terminal compound", () => {
+  const css = [
+    "/**",
+    " * @component menu",
+    " * @summary A menu.",
+    ' * @part [class$="-group"] > .item item-label — The item label.',
+    " */",
+    ".menu {}",
+    "@scope (.menu) {",
+    '  [class$="-group"] > .item { padding: 0.5rem; }',
+    "}",
+  ].join("\n");
+  // .item is the final compound; the authored @part chain covers it — no undocumented-part.
+  expect(byRule(lintCssDocs(css), "undocumented-part")).toHaveLength(0);
+});
+
 test("flags documentation that has drifted from the CSS (name-not-in-css)", () => {
   const v = byRule(lintCssDocs(CSS), "name-not-in-css");
   // .ghost is documented via @part but no selector defines it.
