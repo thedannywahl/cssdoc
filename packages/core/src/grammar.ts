@@ -101,8 +101,14 @@ export interface ParsedDoc {
   releaseStage?: CssReleaseStage;
   /** `@modifier` prose, keyed by the modifier class without its dot (e.g. `-color-secondary`). */
   modifiers: Map<string, DocModifier>;
-  /** `@part` descriptions, keyed by the class part name without its dot (e.g. `item`). */
+  /** `@part` descriptions, keyed by the derived part name (e.g. `item`, `data-layout`). */
   parts: Map<string, string>;
+  /**
+   * The original CSS selector for each `@part`, keyed by the derived name.
+   * Set only for non-class parts (attribute, ID, `:host`). Class parts omit the entry;
+   * callers reconstruct the selector as `.${name}` when absent.
+   */
+  partSelectors: Map<string, string>;
   /** `@tokens` descriptions, keyed by custom-property name (e.g. `--color-primary`). */
   tokens: Map<string, string>;
   /** `@csspart` descriptions (shadow-DOM `::part()`), keyed by the bare part name (e.g. `header`). */
@@ -212,6 +218,7 @@ export function parseDocComment(
   const doc: ParsedDoc = {
     modifiers: new Map(),
     parts: new Map(),
+    partSelectors: new Map(),
     tokens: new Map(),
     cssParts: new Map(),
     pseudoElements: new Map(),
@@ -311,8 +318,9 @@ function applyBlockTag(
       break;
     }
     case "part": {
-      const { head, description } = splitDesc(rest);
-      doc.parts.set(head.replace(/^\./u, ""), description ?? "");
+      const { name: pName, selector: pSel, description: pDesc } = splitPartArg(rest);
+      doc.parts.set(pName, pDesc ?? "");
+      if (pSel !== `.${pName}`) doc.partSelectors.set(pName, pSel);
       break;
     }
     case "tokens": {
@@ -457,6 +465,39 @@ export function recordNameOf(
  * @param raw - The `@structure` body (description and/or nested CSS).
  * @returns The split `description` (when present) and the `css` to parse.
  */
+/**
+ * Parse a `@part` argument into its selector, derived name, and optional description.
+ * Handles class (`.foo`), attribute (`[foo="bar"]`), ID (`#foo`), `:host`, `:host-context(…)`,
+ * and an optional author alias between the selector and the `—` description separator.
+ *
+ * @example `@part [data-layout="x"] container — Desc` → `{ selector: "[data-layout=\"x\"]", name: "container", description: "Desc" }`
+ * @example `@part [data-layout="x"] — Desc`            → `{ selector: "[data-layout=\"x\"]", name: "data-layout", description: "Desc" }`
+ * @example `@part .item — Desc`                         → `{ selector: ".item", name: "item", description: "Desc" }`
+ */
+function splitPartArg(rest: string): { selector: string; name: string; description?: string } {
+  // Grab the selector: consecutive bracket groups and/or non-whitespace, non-bracket chars.
+  const selMatch = rest.match(/^((?:\[(?:[^\]"']|"[^"]*"|'[^']*')*\]|[^\s[]+)+)/u);
+  const selector = selMatch?.[1] ?? "";
+  const after = rest.slice(selector.length).trim();
+
+  // Derive a default name from the selector type.
+  const deriveName = (sel: string): string => {
+    if (sel.startsWith(".")) return sel.slice(1);
+    if (sel.startsWith("#")) return sel.slice(1);
+    if (sel.startsWith(":host")) return "host";
+    const attrKey = sel.match(/^\[([^=\s~^$*|[\]]+)/u)?.[1];
+    if (attrKey) return attrKey;
+    return sel.replace(/^\W+/u, "") || sel;
+  };
+
+  // If `after` starts with a word (the alias) before the `—` separator, use it as the name.
+  const aliasMatch = after.match(/^([\w-]+)\s+(?:—|-{1,2})\s+([\s\S]*)$/u);
+  if (aliasMatch) return { selector, name: aliasMatch[1], description: aliasMatch[2].trim() };
+
+  const descMatch = after.match(/^(?:—|-{1,2})\s+([\s\S]*)$/u);
+  return { selector, name: deriveName(selector), description: descMatch?.[1].trim() };
+}
+
 function splitStructureBody(raw: string): { description?: string; css: string } {
   const lines = raw.split("\n");
   const braceLine = lines.findIndex((l) => l.includes("{"));

@@ -45,8 +45,13 @@ export interface CssModifier {
 
 /** A sub-element ("part") of a component — a scoped child class like `.item` or `.tip`. */
 export interface CssPart {
-  /** The part class without the leading dot, e.g. `item`. */
+  /** The part's derived name without leading punctuation, e.g. `item` or `data-layout`. */
   name: string;
+  /**
+   * The original CSS selector when the part isn't a plain class, e.g. `[data-layout="x"]`, `#foo`,
+   * `:host`. Absent for class parts (the selector is `.${name}`).
+   */
+  selector?: string;
   /** Prose from a `@part` doc tag, when authored. */
   description?: string;
   /** The part's own modifiers, e.g. `.block__element--active` on a BEM element. Present when non-empty. */

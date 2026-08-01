@@ -125,8 +125,11 @@ export interface RecordInfo {
   memberSpans: Map<string, SourceSpan>;
   /** Modifier names authored via `@modifier` (used for drift detection). */
   authoredModifiers: Set<string>;
-  /** Part names authored via `@part` (used for drift detection). */
-  authoredParts: Set<string>;
+  /**
+   * Parts authored via `@part`, keyed by derived name → original CSS selector.
+   * Class parts store `.${name}`; attribute/ID/:host parts store their full selector.
+   */
+  authoredParts: Map<string, string>;
   /** Shadow-part names authored via `@csspart` (used for drift detection). */
   authoredShadowParts: Set<string>;
   /** The concatenated selector text of the record's rules (used for drift detection). */
@@ -332,7 +335,7 @@ export function indexFromEntries(entries: CssDocEntry[], file?: string): CssDocI
     entry,
     memberSpans: new Map(),
     authoredModifiers: new Set(),
-    authoredParts: new Set(),
+    authoredParts: new Map(),
     authoredShadowParts: new Set(),
     selectorText: "",
   }));
@@ -344,7 +347,7 @@ interface Build {
   span?: SourceSpan;
   memberSpans: Map<string, SourceSpan>;
   authoredModifiers: Set<string>;
-  authoredParts: Set<string>;
+  authoredParts: Map<string, string>;
   authoredShadowParts: Set<string>;
   selectorText: string;
 }
@@ -456,7 +459,10 @@ export function createIndex(
           span: spanOf(node),
           memberSpans: new Map(),
           authoredModifiers: new Set(doc.modifiers.keys()),
-          authoredParts: new Set(doc.parts.keys()),
+          // name → selector: non-class parts use their explicit selector; class parts use ".${name}".
+          authoredParts: new Map(
+            [...doc.parts.keys()].map((n) => [n, doc.partSelectors.get(n) ?? `.${n}`]),
+          ),
           authoredShadowParts: new Set(doc.cssParts.keys()),
           selectorText: "",
         };
@@ -473,7 +479,7 @@ export function createIndex(
         entry,
         memberSpans: new Map(),
         authoredModifiers: new Set(),
-        authoredParts: new Set(),
+        authoredParts: new Map(),
         authoredShadowParts: new Set(),
         selectorText: "",
       },

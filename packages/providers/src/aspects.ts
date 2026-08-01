@@ -626,9 +626,7 @@ export const part = {
           );
         }
       }
-      for (const authored of info.authoredParts) {
-        // Attribute and ID selectors are already fully-qualified; only bare names need a dot prefix.
-        const partSel = /^[.[#:]/u.test(authored) ? authored : `.${authored}`;
+      for (const [, partSel] of info.authoredParts) {
         if (!selectorDefines(info.selectorText, partSel)) {
           out.push(
             warn({

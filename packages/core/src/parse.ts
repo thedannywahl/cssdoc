@@ -352,13 +352,13 @@ function buildEntry(
   }
   for (const [part, description] of doc.parts) {
     const existing = acc.parts.get(part);
-    if (existing)
-      existing.description = combineDescription(
-        inlineMode,
-        description || undefined,
-        existing.description,
-      );
-    else acc.parts.set(part, { name: part, description });
+    const selector = doc.partSelectors.get(part);
+    if (existing) {
+      existing.description = combineDescription(inlineMode, description || undefined, existing.description);
+      if (selector && !existing.selector) existing.selector = selector;
+    } else {
+      acc.parts.set(part, { name: part, description, ...(selector ? { selector } : {}) });
+    }
   }
   for (const [part, description] of doc.cssParts) {
     const existing = acc.shadowParts.get(part);

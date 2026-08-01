@@ -146,6 +146,42 @@ test("@selector sets className to any CSS selector and @class is an accepted ali
   expect(legacy[0].className).toBe(".my-badge");
 });
 
+test("@part derives name from selector type and stores selector on the part when non-class", () => {
+  const [entry] = parseCssDocs([
+    "/**",
+    " * @component pendo-alert",
+    " * @summary An alert.",
+    ' * @part [data-layout="lightboxBlank"] — Outer.',
+    " * @part #root — Root.",
+    " * @part :host — Host.",
+    " * @part .item — An item.",
+    ' * @part [data-layout="lightboxBlank"] container — Aliased.',
+    " */",
+  ].join("\n"));
+
+  // Attribute selector: derived name is the first attribute key; selector stored on part.
+  const attrPart = entry.parts.find((p) => p.name === "data-layout");
+  expect(attrPart).toBeDefined();
+  expect(attrPart!.selector).toBe('[data-layout="lightboxBlank"]');
+
+  // ID selector: name strips #; selector stored.
+  const idPart = entry.parts.find((p) => p.name === "root");
+  expect(idPart?.selector).toBe("#root");
+
+  // :host: name is "host"; selector stored.
+  const hostPart = entry.parts.find((p) => p.name === "host");
+  expect(hostPart?.selector).toBe(":host");
+
+  // Class selector: name strips dot; no selector stored (falls back to .item).
+  const classPart = entry.parts.find((p) => p.name === "item");
+  expect(classPart?.selector).toBeUndefined();
+
+  // Alias overrides derived name; selector still stored.
+  const aliasPart = entry.parts.find((p) => p.name === "container");
+  expect(aliasPart?.selector).toBe('[data-layout="lightboxBlank"]');
+  expect(aliasPart?.description).toBe("Aliased.");
+});
+
 test("an authored `@deprecated {@link -x}` sets the modifier's canonical", () => {
   const [comp] = parseCssDocs(
     `/**\n * @component alert\n * @modifier -variant-error — @deprecated {@link -color-danger}\n */\n` +
