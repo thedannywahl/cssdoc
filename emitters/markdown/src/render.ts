@@ -290,6 +290,12 @@ function renderTree(
 ): string[] {
   const out: string[] = [];
   for (const node of nodes) {
+    if (node.scope !== undefined) {
+      // @scope boundary: emit a labelled header at the current depth, then recurse into its children.
+      out.push(`${"  ".repeat(depth)}@scope ${node.scope}`);
+      out.push(...renderTree(node.children, self, resolveComponent, depth + 1));
+      continue;
+    }
     out.push(`${"  ".repeat(depth)}${structureLabel(node, self, resolveComponent)}`);
     out.push(...renderTree(node.children, self, resolveComponent, depth + 1));
   }

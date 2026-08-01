@@ -239,11 +239,27 @@ export function parseDocComment(
   };
 
   // Group lines into tag blocks (the TagList / BlockTag productions): a line starting with `@tag` opens
-  // a block that continues until the next `@tag` (so multi-line @example/@summary work).
+  // a block that continues until the next `@tag`. CSS at-rules (e.g. @scope, @media) inside a
+  // @structure block are NOT treated as new tag openers — they're part of the CSS content.
   const blocks: string[] = [];
+  let inStructureBlock = false;
   for (const line of body.split("\n")) {
-    if (/^\s*@[a-zA-Z]/u.test(line)) blocks.push(line.trim());
-    else if (blocks.length) blocks[blocks.length - 1] += `\n${line}`;
+    const tagMatch = line.match(/^\s*@([a-zA-Z][\w-]*)/u);
+    if (tagMatch) {
+      const isKnownTag = configuration.tryGetTagDefinition(tagMatch[1]) !== undefined;
+      if (isKnownTag) {
+        blocks.push(line.trim());
+        inStructureBlock = tagMatch[1] === "structure";
+      } else if (inStructureBlock) {
+        // CSS at-rule inside @structure body — keep it in the structure block.
+        if (blocks.length) blocks[blocks.length - 1] += `\n${line}`;
+      } else {
+        // Unknown tag outside @structure — own block so the existing skip logic handles it.
+        blocks.push(line.trim());
+      }
+    } else if (blocks.length) {
+      blocks[blocks.length - 1] += `\n${line}`;
+    }
   }
 
   for (const block of blocks) {
@@ -547,6 +563,11 @@ export function parseStructure(raw: string, parse?: CssParse): StructureNode[] {
   const build = (nodes: readonly ChildNode[]): StructureNode[] => {
     const out: StructureNode[] = [];
     for (const rule of nodes) {
+      if (rule.type === "atrule" && rule.name === "scope") {
+        // @scope boundary: emit a wrapper node whose children are the scoped rules.
+        out.push({ selector: "", scope: rule.params.trim(), children: build(rule.nodes ?? []) });
+        continue;
+      }
       if (rule.type !== "rule") continue;
       const selector = rule.selector.trim();
       const card = selector.match(CARD_RE);

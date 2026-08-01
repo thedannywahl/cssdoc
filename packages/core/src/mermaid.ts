@@ -141,6 +141,14 @@ export function toMermaid(roots: StructureNode[], options: MermaidOptions = {}):
   let counter = 0;
 
   const walk = (node: StructureNode, isRoot: boolean): string => {
+    // @scope boundary nodes render as a labelled subgraph around their children.
+    if (node.scope !== undefined) {
+      const id = `sg${counter++}`;
+      nodes.push(`  subgraph ${id} ["@scope ${esc(node.scope)}"]`);
+      for (const child of node.children) walk(child, false);
+      nodes.push("  end");
+      return id;
+    }
     const id = `n${counter++}`;
     const { klass, label, href } = classify(node, isRoot, options);
     // A node's authored prose (`@wrapper`) rides its label, matching the text tree.

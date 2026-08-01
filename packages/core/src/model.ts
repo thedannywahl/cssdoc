@@ -169,7 +169,7 @@ export type CssReleaseStage = "alpha" | "beta" | "experimental" | "internal" | "
  * {@link toMermaid}, a diagram.
  */
 export interface StructureNode {
-  /** The node's compound selector, e.g. `.tabs`, `.tab.-selected`, or `.list:has(.tab)`. */
+  /** The node's compound selector, e.g. `.tabs`, `.tab.-selected`, or `.list:has(.tab)`. Empty string for `@scope` boundary nodes. */
   selector: string;
   /**
    * How often the child may appear, from a trailing pseudo on the selector: `:optional`/`:opt` (0..1),
@@ -179,6 +179,11 @@ export interface StructureNode {
    * the stored selector.
    */
   cardinality?: "optional" | "many" | "one-or-more";
+  /**
+   * When present, this node is a `@scope` boundary. The value is the `@scope` prelude,
+   * e.g. `(.component)` from `@scope (.component) { … }`.
+   */
+  scope?: string;
   /** Prose from a `@wrapper` doc tag matching this node's class, when authored (annotates the node). */
   description?: string;
   /** Child nodes (rules nested one brace level deeper). */
