@@ -82,6 +82,7 @@ export function buildInjectionGrammar(): InjectionGrammar {
       { include: "#modifier-tag" },
       { include: "#part-tag" },
       { include: "#property-tag" },
+      { include: "#ref-tag" },
       { include: "#state-tag" },
       { include: "#structure-tag" },
       { include: "#block-tag" },
@@ -140,6 +141,14 @@ export function buildInjectionGrammar(): InjectionGrammar {
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "support.type.custom-property.cssdoc" },
+        },
+      },
+      // `@ref 1` / `@ref 1.` — numeric annotation reference index.
+      "ref-tag": {
+        match: "(@(?:ref))\\b[ \\t]*(\\d+\\.?)?",
+        captures: {
+          "1": { name: TAG_SCOPE },
+          "2": { name: "constant.numeric.cssdoc" },
         },
       },
       "block-tag": {

@@ -61,3 +61,9 @@ test("member names get semantic scopes: record name, modifier like part, cssstat
   expect(g.repository["block-tag"]?.match).not.toContain("component");
   expect(g.repository["block-tag"]?.match).not.toContain("cssstate");
 });
+
+test("@ref has a dedicated numeric capture", () => {
+  const g = buildInjectionGrammar();
+  expect(g.repository["ref-tag"]?.match).toContain("ref");
+  expect(g.repository["ref-tag"]?.captures?.["2"]?.name).toBe("constant.numeric.cssdoc");
+});

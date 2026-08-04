@@ -33,6 +33,7 @@ import {
   type HoverSections,
   type ResolvedNaming,
   type RuleId,
+  type RuleOptions,
   type RuleSeverities,
   type UsageOptions,
 } from "./types.ts";
@@ -90,10 +91,11 @@ export function lintModel(
   // The project-wide index, when linting one file of a multi-file set: lets `@structure` reference a
   // sibling component defined elsewhere. Defaults (in `record.model`) to `index` — single-sheet linting.
   siblingIndex?: CssDocIndex,
+  ruleOptions?: RuleOptions,
 ): Diagnostic[] {
   return applySeverities(
     [
-      ...record.model(index, naming, structureIgnore, siblingIndex),
+      ...record.model(index, naming, structureIgnore, siblingIndex, ruleOptions),
       ...modifier.model(index),
       ...part.model(index, naming),
       ...cssPart.model(index),

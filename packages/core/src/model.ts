@@ -217,6 +217,17 @@ export interface CssRelated {
   description?: string;
 }
 
+/** One annotation legend row from `@annotations`. */
+export interface CssAnnotation {
+  /** Numeric reference index, consumed by `@ref`. */
+  ref: number;
+  /** Free-form legend text for that index. */
+  text: string;
+}
+
+/** Record-level object-model decorators. */
+export type CssDecorator = "readonly" | "preventExtensions" | "sealed" | "frozen";
+
 /** Where a record was authored, for source links. Positions are 1-based, matching PostCSS. */
 export interface CssSource {
   /** The file the record was parsed from, when {@link ParseOptions.fileName} was supplied. */
@@ -298,6 +309,12 @@ export interface CssDocEntry {
   see: string[];
   /** Usage prose from `@usage` — how to include the stylesheet / use the component. */
   usage?: string;
+  /** Local annotation legend rows from `@annotations`, in author order. */
+  annotations: CssAnnotation[];
+  /** Local annotation references from `@ref`, in author order. */
+  refs: number[];
+  /** Record-level object-model decorators. */
+  decorators: CssDecorator[];
   /** Browser-support / feature-compatibility notes from `@compat`. */
   compat: string[];
   /** Related components from `@related`. */

@@ -67,6 +67,15 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
   { name: "group", kind: "block" },
   { name: "category", kind: "block", aliasFor: "group" },
   { name: "defaultValue", kind: "block" },
+  // Annotation legends + local references.
+  { name: "annotations", kind: "block" },
+  { name: "ref", kind: "block", allowMultiple: true },
+  // Object-model decorators.
+  { name: "readonly", kind: "block" },
+  { name: "preventExtensions", kind: "block" },
+  { name: "noextend", kind: "block", aliasFor: "preventExtensions" },
+  { name: "sealed", kind: "block" },
+  { name: "frozen", kind: "block" },
   // CSS surface (existing + Custom Elements Manifest).
   { name: "modifier", kind: "block", allowMultiple: true, argument: "modifier-name" },
   { name: "part", kind: "block", allowMultiple: true, argument: "part-name" },

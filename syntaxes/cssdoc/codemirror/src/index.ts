@@ -30,7 +30,14 @@ import {
 } from "@codemirror/view";
 
 /** Semantic token kind a doc-comment span maps to. Each becomes a `cm-cssdoc-<kind>` class. */
-export type CssdocTokenType = "tag" | "modifier" | "part" | "property" | "link" | "punct";
+export type CssdocTokenType =
+  | "tag"
+  | "modifier"
+  | "part"
+  | "property"
+  | "link"
+  | "punct"
+  | "ref";
 
 /** A highlighted span within a comment. `from`/`to` are offsets into the scanned comment text. */
 export interface CssdocToken {
@@ -59,6 +66,8 @@ const TOKEN = new RegExp(
     `(?<ptag>@(?:${alt(PART_TAGS)}))\\b[ \\t]*(?<pname>\\.?[A-Za-z][A-Za-z0-9_-]*)?`,
     // @cssproperty / @property --name
     `(?<rtag>@(?:${alt(PROPERTY_TAGS)}))\\b[ \\t]*(?<rname>--[A-Za-z][A-Za-z0-9-]*)?`,
+    // @ref 1 / @ref 1.
+    "(?<xtag>@(?:ref))\\b[ \\t]*(?<xref>\\d+\\.?)?",
     // bare block/record/flag tags
     `(?<btag>@(?:${alt(PLAIN_TAGS)}))\\b`,
     // a custom property named anywhere in the comment
@@ -78,6 +87,8 @@ const GROUP_TYPE: Record<string, CssdocTokenType> = {
   pname: "part",
   rtag: "tag",
   rname: "property",
+  xtag: "tag",
+  xref: "ref",
   btag: "tag",
   cprop: "property",
 };
@@ -156,6 +167,8 @@ const baseTheme = EditorView.baseTheme({
   "&dark .cm-cssdoc-property": { color: "#ffa657" },
   "&light .cm-cssdoc-link": { color: "#0969da", textDecoration: "underline" },
   "&dark .cm-cssdoc-link": { color: "#a5d6ff", textDecoration: "underline" },
+  "&light .cm-cssdoc-ref": { color: "#8250df", fontWeight: "600" },
+  "&dark .cm-cssdoc-ref": { color: "#d2a8ff", fontWeight: "600" },
   "&light .cm-cssdoc-punct": { color: "#6e7781" },
   "&dark .cm-cssdoc-punct": { color: "#8b949e" },
 });

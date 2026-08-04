@@ -455,6 +455,41 @@ test("inlineComments mode controls how an inline comment combines with @modifier
   expect(desc("ignore")).toBe("Tag prose.");
 });
 
+test("inlineComments: ignore still parses explicit-gated inline legends (@annotations/@rule)", () => {
+  const cfg = new CssDocConfiguration();
+  cfg.setInlineComments("ignore");
+  const [card] = parseCssDocs(
+    [
+      "/**",
+      " * @component card",
+      " * @summary A card.",
+      " * @ref 2",
+      " */",
+      ".card {}",
+      "/* @annotations",
+      "1. Reserved for future use",
+      "2. Focus ring must be visible",
+      "*/",
+      ".card.-x {}",
+      "/* @rule",
+      "3. Legacy reset path",
+      "@ref 3",
+      "*/",
+      ".card.-y {}",
+      "/* Plain comment ignored for prose. */",
+      ".card.-z {}",
+    ].join("\n"),
+    { configuration: cfg, modifierConvention: "rscss" },
+  );
+  expect(card.annotations).toEqual([
+    { ref: 1, text: "Reserved for future use" },
+    { ref: 2, text: "Focus ring must be visible" },
+    { ref: 3, text: "Legacy reset path" },
+  ]);
+  expect(card.refs).toEqual([2, 3]);
+  expect(card.modifiers.find((m) => m.name === "-z")?.description).toBeUndefined();
+});
+
 test("@todo (block tag + inline comment) collects record to-dos, distinct from descriptions", () => {
   const [alert] = parseCssDocs(
     [
@@ -683,6 +718,48 @@ test("parseDocComment reads the grammar, ignoring unknown tags and comment frami
     syntax: "<color>",
     description: "The glyph fill.",
   });
+});
+
+test("parseDocComment parses @annotations, @ref, and record decorators", () => {
+  const doc = parseDocComment(`/**
+ * @component card
+ * @annotations
+ * 1. Prevent shrinking
+ * Continuation line.
+ * 2. Full bleed artwork
+ * @ref 1.
+ * @ref 2
+ * @readonly
+ * @preventExtensions
+ * @sealed
+ * @frozen
+ */`);
+  expect([...doc.annotations]).toEqual([
+    [1, "Prevent shrinking\nContinuation line."],
+    [2, "Full bleed artwork"],
+  ]);
+  expect(doc.refs).toEqual([1, 2]);
+  expect(doc.decorators).toEqual({
+    isReadonly: true,
+    preventExtensions: true,
+    sealed: true,
+    frozen: true,
+  });
+});
+
+test("parseCssDocs surfaces annotations, refs, and decorators on entries", () => {
+  const [entry] = parseCssDocs(`/**
+ * @component card
+ * @annotations
+ * 1. Prevent shrinking
+ * @ref 1
+ * @readonly
+ * @noextend
+ */
+.card {}`);
+  expect(entry.annotations).toEqual([{ ref: 1, text: "Prevent shrinking" }]);
+  expect(entry.refs).toEqual([1]);
+  expect(entry.decorators).toEqual(["readonly", "preventExtensions"]);
 });
 
 test("record-opening tags set the kind; @component defaults to component", () => {
