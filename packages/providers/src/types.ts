@@ -105,7 +105,9 @@ export const DEFAULT_RULE_OPTIONS: ResolvedRuleOptions = {
 /** Merge user rule options over defaults. */
 export function resolveRuleOptions(options?: RuleOptions): ResolvedRuleOptions {
   return {
-    values: { allowInherit: options?.values?.allowInherit ?? DEFAULT_RULE_OPTIONS.values.allowInherit },
+    values: {
+      allowInherit: options?.values?.allowInherit ?? DEFAULT_RULE_OPTIONS.values.allowInherit,
+    },
     sealed: { mode: options?.sealed?.mode ?? DEFAULT_RULE_OPTIONS.sealed.mode },
   };
 }

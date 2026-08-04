@@ -30,14 +30,7 @@ import {
 } from "@codemirror/view";
 
 /** Semantic token kind a doc-comment span maps to. Each becomes a `cm-cssdoc-<kind>` class. */
-export type CssdocTokenType =
-  | "tag"
-  | "modifier"
-  | "part"
-  | "property"
-  | "link"
-  | "punct"
-  | "ref";
+export type CssdocTokenType = "tag" | "modifier" | "part" | "property" | "link" | "punct" | "ref";
 
 /** A highlighted span within a comment. `from`/`to` are offsets into the scanned comment text. */
 export interface CssdocToken {

@@ -392,10 +392,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
       );
     }
     if (refs.length) {
-      fragments.annotations.push(
-        `**Refs:** ${refs.map((r) => `\`${r}\``).join(", ")}`,
-        "",
-      );
+      fragments.annotations.push(`**Refs:** ${refs.map((r) => `\`${r}\``).join(", ")}`, "");
     }
   }
 

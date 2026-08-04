@@ -101,7 +101,10 @@ function parseInlineRefs(text: string): number[] {
  * Parse explicit-gated inline legend content from `/* ... *\/` comments.
  * Escape hatch: this runs even when inline comments are globally ignored.
  */
-function parseLegendFromInlineComment(text: string): { annotations: Map<number, string>; refs: number[] } {
+function parseLegendFromInlineComment(text: string): {
+  annotations: Map<number, string>;
+  refs: number[];
+} {
   const stripped = stripCommentFraming(text);
   const lines = stripped.split("\n");
   const first = lines.find((line) => line.trim().length > 0)?.trim() ?? "";
