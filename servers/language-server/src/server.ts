@@ -107,6 +107,7 @@ export function startLanguageServer(): void {
         severities: resolveRuleSeverities(
           g.configFile.ruleSeverities as Parameters<typeof resolveRuleSeverities>[0],
         ),
+        ruleOptions: g.configFile.ruleOptions,
         naming: resolveNaming(g.configFile.naming),
         structureIgnore: g.configFile.structureIgnore,
       };

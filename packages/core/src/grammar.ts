@@ -47,6 +47,19 @@ import type {
   StructureNode,
 } from "./model.ts";
 
+/** One parsed annotation legend row from an `@annotations` block. */
+export interface DocAnnotation {
+  ref: number;
+  text: string;
+}
+
+/** Record-level object-model decorators authored on the record doc comment. */
+export interface DocDecorators {
+  preventExtensions: boolean;
+  sealed: boolean;
+  frozen: boolean;
+  isReadonly: boolean;
+}
 /**
  * The record-opening tags and the {@link CssRecordKind} each selects, as the default boundary map.
  * A doc comment carrying one of these opens a new record; `@name` is an alias for `@component`. A
@@ -170,6 +183,12 @@ export interface ParsedDoc {
   see: string[];
   /** `@usage` prose — how to include the stylesheet / use the component. */
   usage?: string;
+  /** Parsed `@annotations` legend rows, keyed by numeric reference index. */
+  annotations: Map<number, string>;
+  /** Parsed `@ref` values in author order. */
+  refs: number[];
+  /** Record-level object-model decorators. */
+  decorators: DocDecorators;
   /** `@compat` browser-support / feature-compatibility notes. */
   compat: string[];
   /** `@related` component cross-references. */
@@ -284,6 +303,14 @@ export function parseDocComment(
     conditions: [],
     examples: [],
     see: [],
+    annotations: new Map(),
+    refs: [],
+    decorators: {
+      preventExtensions: false,
+      sealed: false,
+      frozen: false,
+      isReadonly: false,
+    },
     compat: [],
     related: [],
     customBlocks: new Map(),
@@ -485,6 +512,27 @@ function applyBlockTag(
     case "usage":
       doc.usage = rest.trim();
       break;
+    case "annotations": {
+      for (const row of parseAnnotationsBody(rest)) doc.annotations.set(row.ref, row.text);
+      break;
+    }
+    case "ref": {
+      const ref = parseRef(rest);
+      if (ref !== undefined) doc.refs.push(ref);
+      break;
+    }
+    case "readonly":
+      doc.decorators.isReadonly = true;
+      break;
+    case "preventExtensions":
+      doc.decorators.preventExtensions = true;
+      break;
+    case "sealed":
+      doc.decorators.sealed = true;
+      break;
+    case "frozen":
+      doc.decorators.frozen = true;
+      break;
     case "compat":
       doc.compat.push(rest.trim());
       break;
@@ -588,6 +636,32 @@ function splitStructureBody(raw: string): { description?: string; css: string } 
   if (/^\s*[.#:[*&>+~]/u.test(lead[0])) return { css: raw };
   const description = lead.join("\n").trim();
   return description ? { description, css: lines.slice(braceLine).join("\n") } : { css: raw };
+}
+
+/** Parse an `@annotations` body into numbered legend rows. */
+function parseAnnotationsBody(raw: string): DocAnnotation[] {
+  const rows: DocAnnotation[] = [];
+  let current: DocAnnotation | undefined;
+  for (const line of raw.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    const marker = trimmed.match(/^(\d+)\.\s*([\s\S]*)$/u);
+    if (marker) {
+      if (current) rows.push(current);
+      current = { ref: Number.parseInt(marker[1], 10), text: marker[2].trim() };
+      continue;
+    }
+    if (current) current.text = current.text ? `${current.text}\n${trimmed}` : trimmed;
+  }
+  if (current) rows.push(current);
+  return rows;
+}
+
+/** Parse `@ref <n>` (optionally with trailing `.`) and return its numeric index. */
+function parseRef(rest: string): number | undefined {
+  const m = rest.match(/^(\d+)\.?\b/u);
+  if (!m) return undefined;
+  return Number.parseInt(m[1], 10);
 }
 
 /**

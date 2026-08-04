@@ -9,6 +9,9 @@ const CSS = `
 /**
  * @component button
  * @summary The primary action control.
+ * @annotations
+ * 1. Keyboard focus stays visible.
+ * @ref 1
  * @modifier -color-secondary — A lower-emphasis action.
  */
 .button { color: red; }
@@ -24,6 +27,9 @@ test("renderPage produces a standalone, escaped HTML document", () => {
   expect(html).toContain("<code>.button</code>");
   expect(html).toContain("<h2>Modifiers</h2>");
   expect(html).toContain(".-color-secondary");
+  expect(html).toContain("<h2>Annotations</h2>");
+  expect(html).toContain("Keyboard focus stays visible.");
+  expect(html).toContain("<strong>Refs:</strong>");
 });
 
 test("renderPage escapes HTML-unsafe prose", () => {

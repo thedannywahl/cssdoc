@@ -28,6 +28,7 @@ export type SectionKey =
   | "demo"
   | "examples"
   | "usage"
+  | "annotations"
   | "modifiers"
   | "parts"
   | "shadowParts"
@@ -52,6 +53,7 @@ export const DEFAULT_SECTION_ORDER: readonly SectionKey[] = [
   "demo",
   "examples",
   "usage",
+  "annotations",
   "modifiers",
   "parts",
   "shadowParts",
@@ -325,6 +327,8 @@ function subcomponentsOf(
 
 /** Render one record to a markdown page. */
 export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}): string {
+  const annotations = entry.annotations ?? [];
+  const refs = entry.refs ?? [];
   const prefix = options.headingPrefix ? `${options.headingPrefix} ` : "";
   const lines: string[] = [`# ${prefix}${entry.name}`, ""];
 
@@ -375,6 +379,21 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
     fragments.usage.push("## Usage", "");
     if (entry.usage) fragments.usage.push(escProse(entry.usage), "");
     if (importSnippet) fragments.usage.push("```css", importSnippet, "```", "");
+  }
+
+  if (annotations.length || refs.length) {
+    fragments.annotations.push("## Annotations", "");
+    if (annotations.length) {
+      fragments.annotations.push(
+        ...table(
+          ["Ref", "Annotation"],
+          annotations.map((a) => [`\`${a.ref}\``, cell(a.text.replace(/\n/gu, "<br>"))]),
+        ),
+      );
+    }
+    if (refs.length) {
+      fragments.annotations.push(`**Refs:** ${refs.map((r) => `\`${r}\``).join(", ")}`, "");
+    }
   }
 
   if (entry.modifiers.length) {

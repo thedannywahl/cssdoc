@@ -69,6 +69,49 @@ interface Collected {
   layers: Map<string, CssLayer>;
   conditions: CssCondition[];
   todos: string[];
+  annotations: Map<number, string>;
+  refs: number[];
+}
+
+/** Parse numbered legend rows (`1. ...`) from plain text. */
+function parseLegendRows(text: string): Map<number, string> {
+  const out = new Map<number, string>();
+  let current: number | undefined;
+  for (const line of text.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    if (/^@[A-Za-z]/u.test(trimmed)) break;
+    const marker = trimmed.match(/^(\d+)\.\s*([\s\S]*)$/u);
+    if (marker) {
+      current = Number.parseInt(marker[1], 10);
+      out.set(current, marker[2].trim());
+      continue;
+    }
+    if (current !== undefined) out.set(current, `${out.get(current) ?? ""}\n${trimmed}`.trim());
+  }
+  return out;
+}
+
+/** Parse inline refs from plain text (`@ref 1`, `@ref 1.`). */
+function parseInlineRefs(text: string): number[] {
+  return [...text.matchAll(/@ref\s+(\d+)\.?/gu)].map((m) => Number.parseInt(m[1], 10));
+}
+
+/**
+ * Parse explicit-gated inline legend content from `/* ... *\/` comments.
+ * Escape hatch: this runs even when inline comments are globally ignored.
+ */
+function parseLegendFromInlineComment(text: string): {
+  annotations: Map<number, string>;
+  refs: number[];
+} {
+  const stripped = stripCommentFraming(text);
+  const lines = stripped.split("\n");
+  const first = lines.find((line) => line.trim().length > 0)?.trim() ?? "";
+  const refs = parseInlineRefs(stripped);
+  if (!/^@(annotations|rule)\b/u.test(first)) return { annotations: new Map(), refs };
+  const body = lines.slice(1).join("\n");
+  return { annotations: parseLegendRows(body), refs };
 }
 
 /** Record a conditional-support block, de-duplicating by type + query. */
@@ -110,6 +153,9 @@ function collect(
 
   for (const node of nodes) {
     if (node.type === "comment") {
+      const legend = parseLegendFromInlineComment(node.text);
+      for (const [ref, text] of legend.annotations) acc.annotations.set(ref, text);
+      for (const ref of legend.refs) acc.refs.push(ref);
       const dep = node.text.match(/@deprecated.*?use\s+(\.[\w-]+|\[[^\]]*\])/u);
       if (dep) {
         pendingCanonical = matcher.normalizeMember(dep[1]);
@@ -323,6 +369,8 @@ function buildEntry(
     layers: new Map(),
     conditions: [],
     todos: [],
+    annotations: new Map(),
+    refs: [],
   };
   const baseNoDot = className.replace(/^\./u, "");
   const prefixNoDot = className.endsWith(name)
@@ -473,6 +521,13 @@ function buildEntry(
     applyWrappers(doc.structure);
   }
 
+  const decorators = [
+    ...(doc.decorators.isReadonly ? (["readonly"] as const) : []),
+    ...(doc.decorators.preventExtensions ? (["preventExtensions"] as const) : []),
+    ...(doc.decorators.sealed ? (["sealed"] as const) : []),
+    ...(doc.decorators.frozen ? (["frozen"] as const) : []),
+  ];
+
   return {
     name,
     kind: doc.kind ?? "component",
@@ -511,6 +566,9 @@ function buildEntry(
     deprecated: doc.deprecated,
     see: doc.see,
     usage: doc.usage,
+    annotations: [...doc.annotations, ...acc.annotations].map(([ref, text]) => ({ ref, text })),
+    refs: [...doc.refs, ...acc.refs],
+    decorators,
     compat: doc.compat,
     related: doc.related,
     ...(source ? { source } : {}),

@@ -24,12 +24,14 @@ import type {
   Diagnostic,
   Hover,
   HoverDetail,
+  RuleOptions,
   HoverSectionKey,
   HoverSectionOrder,
   HoverSections,
   ResolvedNaming,
   UsageOptions,
 } from "./types.ts";
+import { resolveRuleOptions } from "./types.ts";
 
 /** Render a `@property` syntax descriptor with each `<type>` linked to its MDN reference page. */
 const linkedSyntax = (syntax: string): string => {
@@ -124,13 +126,82 @@ export const record = {
     // (all records in one file) works as before; the language server passes the project-wide index so a
     // component can reference a sibling defined in another file (see the prefix-derivation below).
     siblingIndex: CssDocIndex = index,
+    ruleOptions?: RuleOptions,
   ): Diagnostic[] {
+    const options = resolveRuleOptions(ruleOptions);
+    const disallowedKeyword = (value: string): string | undefined => {
+      const mode = options.sealed.mode;
+      const keywords =
+        mode === "compat"
+          ? ["unset", "initial"]
+          : [
+              "unset",
+              "initial",
+              "revert",
+              "revert-layer",
+              ...(options.values.allowInherit ? [] : ["inherit"]),
+            ];
+      return keywords.find((k) => new RegExp(`\\b${k}\\b`, "u").test(value));
+    };
     const out: Diagnostic[] = [];
     const siblingClasses = new Set(siblingIndex.records.map((r) => stripDot(r.entry.className)));
     const siblingNames = new Set(
       siblingIndex.records.flatMap((r) => (r.entry.kind === "component" ? [r.entry.name] : [])),
     );
     for (const info of index.records) {
+      const decoratorSet = new Set(info.entry.decorators ?? []);
+      const readonlyLike = decoratorSet.has("readonly") || decoratorSet.has("frozen");
+      const sealedLike = decoratorSet.has("sealed") || decoratorSet.has("frozen");
+
+      const refs = info.entry.refs ?? [];
+      const annotationRows = info.entry.annotations ?? [];
+      if (refs.length) {
+        const annotations = new Set(annotationRows.map((a) => a.ref));
+        for (const ref of refs) {
+          if (annotations.has(ref)) continue;
+          out.push(
+            warn({
+              aspect: "record",
+              rule: "unknown-annotation-ref",
+              message: `@ref ${ref} has no matching annotation legend entry in "${info.entry.name}".`,
+              record: info.entry.name,
+              span: info.span,
+            }),
+          );
+        }
+      }
+
+      if (readonlyLike) {
+        for (const [property, values] of info.propertyValues ?? new Map<string, Set<string>>()) {
+          if (values.size <= 1) continue;
+          out.push(
+            warn({
+              aspect: "record",
+              rule: "readonly-redefinition",
+              message: `@${decoratorSet.has("frozen") ? "frozen" : "readonly"} record "${info.entry.name}" redefines "${property}" with multiple values (${[...values].map((v) => `\`${v}\``).join(", ")}).`,
+              record: info.entry.name,
+              span: info.span,
+            }),
+          );
+        }
+      }
+
+      if (sealedLike) {
+        for (const usage of info.resetValueUsages ?? []) {
+          const keyword = disallowedKeyword(usage.value);
+          if (!keyword) continue;
+          out.push(
+            warn({
+              aspect: "record",
+              rule: "sealed-reset-value",
+              message: `@${decoratorSet.has("frozen") ? "frozen" : "sealed"} record "${info.entry.name}" uses disallowed reset-like value keyword "${keyword}" on "${usage.property}".`,
+              record: info.entry.name,
+              span: usage.span ?? info.span,
+            }),
+          );
+        }
+      }
+
       if (!info.entry.summary?.trim()) {
         out.push(
           warn({

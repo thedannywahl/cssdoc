@@ -42,6 +42,29 @@ test("hover on a modifier token shows its documentation", () => {
   expect(hover?.contents).toContain("A lower-emphasis action.");
 });
 
+test("hover on @ref shows its local @annotations legend text", () => {
+  const text = [
+    "/**",
+    " * @component card",
+    " * @summary A card.",
+    " * @annotations",
+    " * 1. Focus ring is mandatory.",
+    " * @ref 1.",
+    " */",
+    ".card {}",
+  ].join("\n");
+  const idx = text.indexOf("@ref 1") + 5;
+  const before = text.slice(0, idx);
+  const pos = {
+    line: (before.match(/\n/gu) ?? []).length,
+    character: idx - (before.lastIndexOf("\n") + 1),
+  };
+  const svc = new CssDocLanguageService(createIndex(text));
+  const hover = svc.hover(text, pos, "card.css", "css");
+  expect(hover?.contents).toContain("@ref 1");
+  expect(hover?.contents).toContain("Focus ring is mandatory.");
+});
+
 test("definition on a modifier token points at its rule in the CSS file", () => {
   const text = `<button class="button -color-secondary">x</button>`;
   const def = service.definition(text, at(text.indexOf("-color-secondary") + 2));

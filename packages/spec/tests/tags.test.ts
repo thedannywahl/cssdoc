@@ -40,6 +40,13 @@ test("exposes the groups grammars need", () => {
 
 test("the new hoisted tags are registered with the expected kinds", () => {
   const byName = (name: string) => CSSDOC_TAGS.find((t) => t.name === name);
+  expect(byName("annotations")).toMatchObject({ kind: "block" });
+  expect(byName("ref")).toMatchObject({ kind: "block", allowMultiple: true });
+  expect(byName("readonly")).toMatchObject({ kind: "block" });
+  expect(byName("preventExtensions")).toMatchObject({ kind: "block" });
+  expect(byName("noextend")).toMatchObject({ kind: "block", aliasFor: "preventExtensions" });
+  expect(byName("sealed")).toMatchObject({ kind: "block" });
+  expect(byName("frozen")).toMatchObject({ kind: "block" });
   expect(byName("tokens")).toMatchObject({
     kind: "block",
     allowMultiple: true,

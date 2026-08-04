@@ -46,3 +46,11 @@ test("highlights a bare custom property", () => {
     text: "--tabs-gap",
   });
 });
+
+test("highlights @annotations and @ref payload", () => {
+  const src = "@annotations\n1. Focus ring\n@ref 1.";
+  const toks = label(src);
+  expect(toks).toContainEqual({ type: "tag", text: "@annotations" });
+  expect(toks).toContainEqual({ type: "tag", text: "@ref" });
+  expect(toks).toContainEqual({ type: "ref", text: "1." });
+});

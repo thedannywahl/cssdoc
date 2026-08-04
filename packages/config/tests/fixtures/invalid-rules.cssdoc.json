@@ -1,0 +1,6 @@
+{
+  "$schema": "https://cssdoc.dev/cssdoc.schema.json",
+  "rules": {
+    "unknown-rule": "warn"
+  }
+}

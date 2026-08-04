@@ -49,6 +49,16 @@ export interface RenderConfig {
   groups?: readonly string[];
 }
 
+/** Policy options for rule behavior families (`ruleOptions` in cssdoc.json). */
+export interface RuleOptionsConfig {
+  values?: {
+    allowInherit?: boolean;
+  };
+  sealed?: {
+    mode?: "strict" | "compat";
+  };
+}
+
 /**
  * An upstream cssdoc provider this config consumes. `path` points at the provider's published model
  * (`model.json`, the JSON emitter's output) or a source stylesheet (`.css`/`.scss`/…) — resolved
@@ -78,6 +88,7 @@ interface RawConfig {
   inlineComments?: InlineCommentMode;
   providers?: ProviderRef[];
   rules?: Record<string, RuleSeverityOverride>;
+  ruleOptions?: RuleOptionsConfig;
   naming?: NamingOverride;
   structureIgnore?: string[];
   render?: RenderConfig;
@@ -107,6 +118,7 @@ interface ConfigFileInit {
   inlineComments?: InlineCommentMode;
   providers: ProviderRef[];
   rules: Record<string, RuleSeverityOverride>;
+  ruleOptions: RuleOptionsConfig;
   naming: NamingOverride;
   structureIgnore: string[];
   render: RenderConfig;
@@ -142,6 +154,8 @@ export class CssDocConfigFile {
    * resolved severities — pass these to `resolveRuleSeverities` in `@cssdoc/providers`.
    */
   readonly ruleSeverities: Readonly<Record<string, RuleSeverityOverride>>;
+  /** Rule behavior policy options, merged across `extends` (this file wins). */
+  readonly ruleOptions: Readonly<RuleOptionsConfig>;
   /**
    * The name-case conventions, merged across the `extends` chain (this file wins). Pass to
    * `resolveNaming` in `@cssdoc/providers`.
@@ -172,20 +186,24 @@ export class CssDocConfigFile {
     this.providers = init.providers;
     const severities: Record<string, RuleSeverityOverride> = {};
     const naming: NamingOverride = {};
+    const ruleOptions: RuleOptionsConfig = {};
     const render: RenderConfig = {};
     const structureIgnore = new Set<string>();
     for (const extended of init.extendsFiles) {
       Object.assign(severities, extended.ruleSeverities);
       Object.assign(naming, extended.naming);
+      Object.assign(ruleOptions, extended.ruleOptions);
       Object.assign(render, extended.render);
       for (const g of extended.structureIgnore) structureIgnore.add(g);
     }
     Object.assign(severities, init.rules);
     Object.assign(naming, init.naming);
+    Object.assign(ruleOptions, init.ruleOptions);
     Object.assign(render, init.render);
     for (const g of init.structureIgnore) structureIgnore.add(g);
     this.ruleSeverities = severities;
     this.naming = naming;
+    this.ruleOptions = ruleOptions;
     this.render = render;
     this.structureIgnore = [...structureIgnore];
   }
@@ -277,6 +295,7 @@ export class CssDocConfigFile {
       extendsFiles: [],
       providers: [],
       rules: {},
+      ruleOptions: {},
       naming: {},
       structureIgnore: [],
       render: {},
@@ -296,6 +315,7 @@ export class CssDocConfigFile {
         extendsFiles: [],
         providers: [],
         rules: {},
+        ruleOptions: {},
         naming: {},
         structureIgnore: [],
         render: {},
@@ -365,6 +385,7 @@ export class CssDocConfigFile {
       inlineComments: raw.inlineComments,
       providers: raw.providers ?? [],
       rules: raw.rules ?? {},
+      ruleOptions: raw.ruleOptions ?? {},
       naming: raw.naming ?? {},
       structureIgnore: raw.structureIgnore ?? [],
       render: raw.render ?? {},

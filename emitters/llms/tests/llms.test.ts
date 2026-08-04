@@ -6,6 +6,9 @@ const CSS = `
 /**
  * @component button
  * @summary The primary action control.
+ * @annotations
+ * 1. Focus ring remains visible.
+ * @ref 1
  * @modifier -color-secondary — A lower-emphasis action.
  * @modifier -variant-old — @deprecated {@link -color-secondary}
  * @part .icon — A leading glyph.
@@ -38,6 +41,8 @@ test("summarizes each facet on one line and marks the utility kind", () => {
   expect(out).toContain(
     "- Modifiers: `-color-secondary` (A lower-emphasis action.), `-variant-old` (deprecated → `-color-secondary`)",
   );
+  expect(out).toContain("- Annotations: `1` (Focus ring remains visible.)");
+  expect(out).toContain("- Refs: `1`");
   expect(out).toContain("- Parts: `.icon` (A leading glyph.)");
   expect(out).toContain("- States: `:state(loading)`");
   expect(out).toContain("- Custom properties: `--button-radius` <length>");

@@ -37,6 +37,9 @@ export type RuleId =
   | "invalid-property-value"
   | "invalid-fallback-value"
   | "unknown-custom-property"
+  | "unknown-annotation-ref"
+  | "readonly-redefinition"
+  | "sealed-reset-value"
   | "cssdoc-directive";
 
 /** A resolved severity for every rule. */
@@ -66,9 +69,48 @@ export const DEFAULT_RULE_SEVERITIES: RuleSeverities = {
   "invalid-property-value": "warn",
   "invalid-fallback-value": "warn",
   "unknown-custom-property": "off",
+  "unknown-annotation-ref": "warn",
+  "readonly-redefinition": "warn",
+  "sealed-reset-value": "warn",
   // Fires when a `cssdoc-expect-error` directive matched no problem (like an unused ts-expect-error).
   "cssdoc-directive": "warn",
 };
+
+/** Optional lint behavior knobs for rule families with policy choices. */
+export interface RuleOptions {
+  /** Value-keyword policy used by decorator checks. */
+  values?: {
+    /** Whether `inherit` is allowed where reset-like keywords are otherwise disallowed. */
+    allowInherit?: boolean;
+  };
+  /** Sealed-mode policy placeholder for compatibility tuning. */
+  sealed?: {
+    /** strict: flag all reset-like keywords; compat: keep legacy behavior hooks. */
+    mode?: "strict" | "compat";
+  };
+}
+
+/** Resolved rule options with defaults applied. */
+export interface ResolvedRuleOptions {
+  values: { allowInherit: boolean };
+  sealed: { mode: "strict" | "compat" };
+}
+
+/** Default rule options used when config omits `ruleOptions`. */
+export const DEFAULT_RULE_OPTIONS: ResolvedRuleOptions = {
+  values: { allowInherit: false },
+  sealed: { mode: "strict" },
+};
+
+/** Merge user rule options over defaults. */
+export function resolveRuleOptions(options?: RuleOptions): ResolvedRuleOptions {
+  return {
+    values: {
+      allowInherit: options?.values?.allowInherit ?? DEFAULT_RULE_OPTIONS.values.allowInherit,
+    },
+    sealed: { mode: options?.sealed?.mode ?? DEFAULT_RULE_OPTIONS.sealed.mode },
+  };
+}
 
 /**
  * Merge per-rule overrides over {@link DEFAULT_RULE_SEVERITIES}. A `boolean` override is accepted for

@@ -74,6 +74,9 @@ export const cssDocEntrySchema = {
     "conditions",
     "examples",
     "see",
+    "annotations",
+    "refs",
+    "decorators",
     "compat",
     "related",
   ],
@@ -149,6 +152,23 @@ export const cssDocEntrySchema = {
     deprecated: { type: "string" },
     see: { type: "array", items: { type: "string" } },
     usage: { type: "string" },
+    annotations: {
+      type: "array",
+      items: {
+        type: "object",
+        required: ["ref", "text"],
+        additionalProperties: false,
+        properties: {
+          ref: { type: "number" },
+          text: { type: "string" },
+        },
+      },
+    },
+    refs: { type: "array", items: { type: "number" } },
+    decorators: {
+      type: "array",
+      items: { enum: ["readonly", "preventExtensions", "sealed", "frozen"] },
+    },
     compat: { type: "array", items: { type: "string" } },
     related: { type: "array", items: named },
     source: {

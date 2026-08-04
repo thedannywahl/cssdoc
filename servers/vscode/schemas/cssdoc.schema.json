@@ -183,12 +183,185 @@
     "rules": {
       "description": "Per-rule severity overrides (off/warn/error).",
       "type": "object",
-      "additionalProperties": {
-        "enum": [
-          "off",
-          "warn",
-          "error"
-        ]
+      "additionalProperties": false,
+      "properties": {
+        "missing-summary": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
+        "undocumented-modifier": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
+        "deprecated-requires-canonical": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
+        "name-not-in-css": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
+        "unknown-modifier": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
+        "deprecated-modifier": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
+        "unknown-state": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
+        "unknown-part": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
+        "undocumented-part": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
+        "undocumented-css-part": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
+        "component-name-case": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
+        "part-name-case": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
+        "structure-unknown-selector": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
+        "invalid-default-value": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
+        "invalid-property-value": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
+        "invalid-fallback-value": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
+        "unknown-custom-property": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
+        "unknown-annotation-ref": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
+        "readonly-redefinition": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
+        "sealed-reset-value": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
+        "cssdoc-directive": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        }
+      }
+    },
+    "ruleOptions": {
+      "description": "Policy options for rule behavior families.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "values": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "allowInherit": {
+              "type": "boolean",
+              "description": "Allow `inherit` in sealed/frozen value checks (default false)."
+            }
+          }
+        },
+        "sealed": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "mode": {
+              "enum": [
+                "strict",
+                "compat"
+              ],
+              "description": "strict flags full reset-keyword set; compat limits to unset/initial."
+            }
+          }
+        }
       }
     },
     "naming": {
@@ -224,6 +397,7 @@
               "demo",
               "examples",
               "usage",
+              "annotations",
               "modifiers",
               "parts",
               "shadowParts",

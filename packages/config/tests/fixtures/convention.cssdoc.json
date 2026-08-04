@@ -2,6 +2,7 @@
   "$schema": "https://cssdoc.dev/cssdoc.schema.json",
   "modifierConvention": "rscss",
   "rules": { "unknown-modifier": "off" },
+  "ruleOptions": { "values": { "allowInherit": true }, "sealed": { "mode": "compat" } },
   "naming": { "component": "pascalCase" },
   "structureIgnore": ["util-*", "sr-only"]
 }

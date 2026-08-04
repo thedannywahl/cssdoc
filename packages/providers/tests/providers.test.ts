@@ -525,3 +525,43 @@ test("hover sectionOrder: reorders sections and drops unlisted ones", () => {
   // The fixed header still leads.
   expect(contents.startsWith("$(symbol-class)")).toBe(true);
 });
+
+test("lintModel flags @ref values that have no matching annotation legend row", () => {
+  const css = [
+    "/**",
+    " * @component card",
+    " * @summary A card.",
+    " * @annotations",
+    " * 1. Keep focus ring.",
+    " * @ref 2",
+    " */",
+    ".card {}",
+  ].join("\n");
+  const rules = lintModel(createIndex(css)).map((d) => d.rule);
+  expect(rules).toContain("unknown-annotation-ref");
+});
+
+test("readonly/frozen and sealed checks use declaration values and ruleOptions", () => {
+  const css = [
+    "/**",
+    " * @component card",
+    " * @summary A card.",
+    " * @readonly",
+    " * @sealed",
+    " */",
+    ".card { color: red; padding: unset; margin: inherit; }",
+    ".card { color: blue; }",
+  ].join("\n");
+  const base = lintModel(createIndex(css));
+  expect(base.map((d) => d.rule)).toContain("readonly-redefinition");
+  expect(base.map((d) => d.rule)).toContain("sealed-reset-value");
+
+  // With allowInherit + compat mode, `inherit` no longer flags and compat limits reset checks.
+  const compat = lintModel(createIndex(css), undefined, undefined, undefined, undefined, {
+    values: { allowInherit: true },
+    sealed: { mode: "compat" },
+  });
+  expect(compat.some((d) => d.rule === "sealed-reset-value" && d.message.includes("inherit"))).toBe(
+    false,
+  );
+});

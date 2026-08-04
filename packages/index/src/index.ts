@@ -134,6 +134,10 @@ export interface RecordInfo {
   authoredShadowParts: Set<string>;
   /** The concatenated selector text of the record's rules (used for drift detection). */
   selectorText: string;
+  /** Distinct values seen for each property declared inside this record's rules. */
+  propertyValues: Map<string, Set<string>>;
+  /** Declarations that include reset-like keywords (`unset`/`initial`/`inherit`/`revert`). */
+  resetValueUsages: { property: string; value: string; span?: SourceSpan }[];
 }
 
 /** A serializable snapshot of the index (the model plus its file), for tools that consume JSON. */
@@ -338,6 +342,8 @@ export function indexFromEntries(entries: CssDocEntry[], file?: string): CssDocI
     authoredParts: new Map(),
     authoredShadowParts: new Set(),
     selectorText: "",
+    propertyValues: new Map(),
+    resetValueUsages: [],
   }));
   return new CssDocIndex(records, file);
 }
@@ -350,6 +356,8 @@ interface Build {
   authoredParts: Map<string, string>;
   authoredShadowParts: Set<string>;
   selectorText: string;
+  propertyValues: Map<string, Set<string>>;
+  resetValueUsages: { property: string; value: string; span?: SourceSpan }[];
 }
 
 /** Scan a record's nodes for member spans, recording each member's first occurrence. */
@@ -393,6 +401,17 @@ function scanNodes(nodes: ChildNode[], build: Build, base: string, matcher: Modi
         for (const p of bare.matchAll(CLASS_REF_RE)) {
           if (modNames.has(p[1])) continue; // a modifier, not a part
           set(memberKey("part", p[1]), node);
+        }
+      }
+      for (const child of node.nodes ?? []) {
+        if (child.type !== "decl") continue;
+        const property = child.prop.trim();
+        const value = child.value.trim();
+        const values = build.propertyValues.get(property) ?? new Set<string>();
+        values.add(value);
+        build.propertyValues.set(property, values);
+        if (/\b(?:unset|initial|inherit|revert|revert-layer)\b/u.test(value)) {
+          build.resetValueUsages.push({ property, value, span: spanOf(child) });
         }
       }
       if (node.nodes) scanNodes(node.nodes, build, base, matcher);
@@ -465,6 +484,8 @@ export function createIndex(
           ),
           authoredShadowParts: new Set(doc.cssParts.keys()),
           selectorText: "",
+          propertyValues: new Map(),
+          resetValueUsages: [],
         };
         builds.set(name, current);
         continue;
@@ -482,6 +503,8 @@ export function createIndex(
         authoredParts: new Map(),
         authoredShadowParts: new Set(),
         selectorText: "",
+        propertyValues: new Map(),
+        resetValueUsages: [],
       },
   );
 

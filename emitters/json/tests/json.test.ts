@@ -10,6 +10,10 @@ const CSS = `
 /**
  * @component button
  * @summary The primary action control.
+ * @annotations
+ * 1. Keep the focus ring visible.
+ * @ref 1
+ * @sealed
  * @modifier -color-secondary — A lower-emphasis action.
  * @cssstate loading — Awaiting a response.
  * @tokens --r — The corner radius token.
@@ -34,6 +38,9 @@ test("renderJson produces valid JSON of the model", () => {
     name: "--r",
     description: "The corner radius token.",
   });
+  expect(button.annotations).toEqual([{ ref: 1, text: "Keep the focus ring visible." }]);
+  expect(button.refs).toEqual([1]);
+  expect(button.decorators).toEqual(["sealed"]);
   expect(button.usage).toBe("Import the sheet and apply the class.");
   expect(button.compat).toEqual(["Uses :state(); needs a recent browser."]);
   expect(button.related).toEqual([{ name: "link", description: "A textual action." }]);

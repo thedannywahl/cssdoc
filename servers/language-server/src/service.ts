@@ -6,7 +6,7 @@
  *
  * @module
  */
-import { CssDocConfiguration } from "@cssdoc/core";
+import { CssDocConfiguration, parseDocComment } from "@cssdoc/core";
 import {
   type EmbeddedHost,
   detectEmbeddedHost,
@@ -30,6 +30,7 @@ import {
   type HoverSections,
   type NamingRules,
   type ResolvedNaming,
+  type RuleOptions,
   type RuleSeverities,
   applyDirectives,
   checkClassUsage,
@@ -124,6 +125,63 @@ function positionAt(text: string, offset: number): LspPosition {
 
 function rangeOf(text: string, start: number, end: number): LspRange {
   return { start: positionAt(text, start), end: positionAt(text, end) };
+}
+
+/** Hover for `@ref` inside a doc comment, resolved against local `@annotations`. */
+function refHoverAt(
+  text: string,
+  offset: number,
+  configuration?: CssDocConfiguration,
+): LspHover | undefined {
+  const fallbackLegend = (raw: string): Map<number, string> => {
+    const out = new Map<number, string>();
+    const body = raw
+      .replace(/^\/\*\*?/, "")
+      .replace(/\*\/$/, "")
+      .split("\n")
+      .map((line) => line.replace(/^\s*\*\s?/, ""));
+    const at = body.findIndex((line) => /^\s*@annotations\b/u.test(line));
+    if (at < 0) return out;
+    let current: number | undefined;
+    for (const line of body.slice(at + 1)) {
+      if (/^\s*@[A-Za-z]/u.test(line)) break;
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      const marker = trimmed.match(/^(\d+)\.\s*([\s\S]*)$/u);
+      if (marker) {
+        current = Number.parseInt(marker[1], 10);
+        out.set(current, marker[2].trim());
+        continue;
+      }
+      if (current !== undefined) out.set(current, `${out.get(current) ?? ""}\n${trimmed}`.trim());
+    }
+    return out;
+  };
+
+  const comments = text.matchAll(/\/\*\*[\s\S]*?\*\//gu);
+  for (const block of comments) {
+    const start = block.index ?? 0;
+    const end = start + block[0].length;
+    if (offset < start || offset > end) continue;
+    const local = offset - start;
+    const doc = parseDocComment(block[0], configuration ?? new CssDocConfiguration());
+    const annotations =
+      (doc as { annotations?: Map<number, string> }).annotations instanceof Map
+        ? (doc as { annotations: Map<number, string> }).annotations
+        : fallbackLegend(block[0]);
+    for (const ref of block[0].matchAll(/@ref\s+(\d+)\.?/gu)) {
+      const refStart = ref.index ?? 0;
+      const refEnd = refStart + ref[0].length;
+      if (local < refStart || local > refEnd) continue;
+      const value = Number.parseInt(ref[1], 10);
+      const annotation = annotations.get(value);
+      if (!annotation) return undefined;
+      return {
+        contents: `$(symbol-numeric) @ref ${value}\n\n${annotation}`,
+      };
+    }
+  }
+  return undefined;
 }
 
 function safeCreateIndex(text: string, options: Parameters<typeof createIndex>[1]): CssDocIndex {
@@ -345,6 +403,7 @@ export interface ConfigScope {
   /** A provider component's doc-page URL, from its `baseHref` (for cross-links). */
   providerHref?: (className: string) => string | undefined;
   severities: RuleSeverities;
+  ruleOptions?: RuleOptions;
   naming: ResolvedNaming;
   /** Class names exempt from the `structure-unknown-selector` rule. */
   structureIgnore?: readonly string[];
@@ -361,7 +420,7 @@ export class CssDocLanguageService {
   private hoverSectionOrder: HoverSectionOrder | undefined;
 
   constructor(index: CssDocIndex, severities: RuleSeverities = DEFAULT_RULE_SEVERITIES) {
-    this.scopes = [{ dir: "", index, severities, naming: {} }];
+    this.scopes = [{ dir: "", index, severities, naming: {}, ruleOptions: undefined }];
   }
 
   /** Set the component-hover detail level (`compact` | `full` | `custom`), section map, and order. */
@@ -520,6 +579,8 @@ export class CssDocLanguageService {
     languageId?: string,
   ): LspHover | undefined {
     const offset = offsetAt(text, position);
+    const refHover = refHoverAt(text, offset, this.scopeForPath(path).configuration);
+    if (refHover) return refHover;
 
     // The governing scope supplies two indexes: `project` (the value graph for `var()` resolution and
     // this scope's own components) and `siblings` (that plus any declared providers' components, for
@@ -903,6 +964,7 @@ export class CssDocLanguageService {
             scope.naming,
             scope.structureIgnore,
             scope.siblingIndex ?? scope.index,
+            scope.ruleOptions,
           ),
           ...checkPropertyAssignments(assignments, index, scope.severities),
           ...checkPropertyUsage(usages, index, {}, scope.severities),
