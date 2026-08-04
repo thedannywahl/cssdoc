@@ -50,6 +50,9 @@ const RICH_CSS = `
 /**
  * @component card
  * @summary A surface container.
+ * @annotations
+ * 1. Focus ring stays visible.
+ * @ref 1
  * @tokens --color-bg — The surface background.
  * @tokens --color-fg-indirect — Set on the element by script.
  * @usage Include the sheet, then apply the class.
@@ -59,6 +62,16 @@ const RICH_CSS = `
  */
 .card { background: var(--color-bg); color: var(--color-fg); }
 `;
+
+test("renders an Annotations section with legend rows and refs", () => {
+  const [card] = parseCssDocs(RICH_CSS);
+  const md = renderEntry(card!);
+  expect(md).toContain("## Annotations");
+  expect(md).toContain("| Ref | Annotation |");
+  expect(md).toContain("`1`");
+  expect(md).toContain("Focus ring stays visible.");
+  expect(md).toContain("**Refs:** `1`");
+});
 
 test("Tokens consumed gains a Description column from @tokens, and unions non-var() tokens", () => {
   const [card] = parseCssDocs(RICH_CSS);

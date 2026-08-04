@@ -67,6 +67,8 @@ export function renderLlms(
 
   const sorted = [...entries].sort((a, b) => a.name.localeCompare(b.name));
   for (const e of sorted) {
+    const annotations = e.annotations ?? [];
+    const refs = e.refs ?? [];
     const kind = e.kind === "component" ? "" : ` (${e.kind})`;
     const stage = e.releaseStage ? ` [${e.releaseStage}]` : "";
     lines.push(`## ${e.name}${kind}${stage} — \`${e.className}\``);
@@ -77,6 +79,14 @@ export function renderLlms(
       if (items.length) lines.push(`- ${label}: ${items.join(", ")}`);
     };
     facet("Modifiers", e.modifiers.map(modifier));
+    facet(
+      "Annotations",
+      annotations.map((a) => `\`${a.ref}\`${clean(a.text) ? ` (${clean(a.text)})` : ""}`),
+    );
+    facet(
+      "Refs",
+      refs.map((r) => `\`${r}\``),
+    );
     facet(
       "Parts",
       e.parts.map((p) =>

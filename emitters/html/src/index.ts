@@ -93,6 +93,8 @@ function structureList(nodes: StructureNode[]): string {
 
 /** Render one record to a standalone HTML page. */
 export function renderPage(entry: CssDocEntry, options: { indexHref?: string } = {}): string {
+  const annotations = entry.annotations ?? [];
+  const refs = entry.refs ?? [];
   const parts: string[] = [];
   if (options.indexHref) parts.push(`<p><a href="${esc(options.indexHref)}">← Index</a></p>`);
   const stage = entry.releaseStage ? ` <span class="badge">${esc(entry.releaseStage)}</span>` : "";
@@ -111,6 +113,19 @@ export function renderPage(entry: CssDocEntry, options: { indexHref?: string } =
   const section = (title: string, html: string): void => {
     if (html) parts.push(`<h2>${title}</h2>`, html);
   };
+
+  section(
+    "Annotations",
+    (annotations.length
+      ? table(
+          ["Ref", "Annotation"],
+          annotations.map((a) => [code(String(a.ref)), esc(a.text).replace(/\n/gu, "<br>")]),
+        )
+      : "") +
+      (refs.length
+        ? `<p><strong>Refs:</strong> ${refs.map((r) => code(String(r))).join(", ")}</p>`
+        : ""),
+  );
 
   section(
     "Modifiers",
