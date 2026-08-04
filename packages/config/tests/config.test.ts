@@ -78,6 +78,8 @@ test("modifierConvention and rules load onto the configuration and config file",
   expect(configuration.modifierConvention.structure).toBe("chained");
   expect(configuration.modifierConvention.separator).toBe("-");
   expect(configFile.ruleSeverities["unknown-modifier"]).toBe("off");
+  expect(configFile.ruleOptions.values?.allowInherit).toBe(true);
+  expect(configFile.ruleOptions.sealed?.mode).toBe("compat");
   expect(configFile.naming.component).toBe("pascalCase");
   expect(configFile.structureIgnore).toEqual(["util-*", "sr-only"]);
 
@@ -86,6 +88,12 @@ test("modifierConvention and rules load onto the configuration and config file",
     configuration,
   });
   expect(button.modifiers.map((m) => m.name)).toEqual(["-color-x"]);
+});
+
+test("unknown rule keys are rejected by schema validation", () => {
+  const configFile = CssDocConfigFile.loadFile(fixture("invalid-rules.cssdoc.json"));
+  expect(configFile.hasErrors).toBe(true);
+  expect(configFile.getErrorSummary()).toContain("Schema error");
 });
 
 test("an invalid modifierConvention value is a collected schema error", () => {
