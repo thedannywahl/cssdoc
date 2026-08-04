@@ -4,6 +4,24 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.9.0
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.8.1...v0.9.0)
+
+### 🚀 Enhancements
+
+- **core:** Add annotations/refs parsing and decorator lint semantics ([9134f9e](https://github.com/thedannywahl/cssdoc/commit/9134f9e))
+- **config:** Add strict rule keys and ruleOptions support ([bf3b542](https://github.com/thedannywahl/cssdoc/commit/bf3b542))
+- **emitters:** Render annotations and refs across outputs ([740cdd5](https://github.com/thedannywahl/cssdoc/commit/740cdd5))
+
+### 💅 Refactors
+
+- Clean up code formatting and improve readability in multiple files ([5d7bdf6](https://github.com/thedannywahl/cssdoc/commit/5d7bdf6))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.8.1
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.8.0...v0.8.1)
