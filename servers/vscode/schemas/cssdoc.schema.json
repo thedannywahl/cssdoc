@@ -51,7 +51,8 @@
               "component",
               "utility",
               "rule",
-              "declaration"
+              "declaration",
+              "layout"
             ]
           },
           "aliasFor": {
@@ -227,6 +228,13 @@
             "error"
           ]
         },
+        "disallowed-element": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
         "unknown-state": {
           "enum": [
             "off",
@@ -269,7 +277,35 @@
             "error"
           ]
         },
+        "duplicate-record-id": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
+        "duplicate-record-id-cross-kind": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
         "structure-unknown-selector": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
+        "structure-unknown-record": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
+        "structure-ambiguous-record": {
           "enum": [
             "off",
             "warn",

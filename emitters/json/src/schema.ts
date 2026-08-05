@@ -52,6 +52,20 @@ const part = {
   },
 } as const;
 
+const elementProfile = {
+  type: "object",
+  required: ["any", "allowed", "include", "exclude", "groups", "excludedGroups"],
+  additionalProperties: false,
+  properties: {
+    any: { type: "boolean" },
+    allowed: { type: "array", items: { type: "string" } },
+    include: { type: "array", items: { type: "string" } },
+    exclude: { type: "array", items: { type: "string" } },
+    groups: { type: "array", items: { type: "string" } },
+    excludedGroups: { type: "array", items: { type: "string" } },
+  },
+} as const;
+
 /** JSON Schema for a single {@link @cssdoc/core!CssDocEntry | CssDocEntry}. */
 export const cssDocEntrySchema = {
   type: "object",
@@ -83,7 +97,7 @@ export const cssDocEntrySchema = {
   additionalProperties: false,
   properties: {
     name: { type: "string" },
-    kind: { enum: ["component", "utility", "rule", "declaration"] },
+    kind: { enum: ["component", "utility", "rule", "declaration", "layout"] },
     className: { type: "string" },
     summary: { type: "string" },
     remarks: { type: "string" },
@@ -171,6 +185,18 @@ export const cssDocEntrySchema = {
     },
     compat: { type: "array", items: { type: "string" } },
     related: { type: "array", items: named },
+    elements: {
+      type: "object",
+      required: ["default", "profiles"],
+      additionalProperties: false,
+      properties: {
+        default: elementProfile,
+        profiles: {
+          type: "object",
+          additionalProperties: elementProfile,
+        },
+      },
+    },
     source: {
       type: "object",
       additionalProperties: false,
