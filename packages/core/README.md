@@ -24,6 +24,32 @@ const model = parseCssDocs(readFileSync("dist/components.css", "utf8"));
 writeFileSync("css-docs.json", toJson(model));
 ```
 
+Generate `@custom-media` declarations from `@structure` profile references:
+
+```ts
+import { buildCustomMediaDeclarations, parseCssDocs } from "@cssdoc/core";
+
+const model = parseCssDocs(css);
+const customMedia = buildCustomMediaDeclarations(model, {
+  resolveValue: (profile) => {
+    if (profile === "--top-nav") return "(width >= 64rem)";
+    return true;
+  },
+});
+
+// @custom-media --top-nav (width >= 64rem);
+```
+
+Or compile directly from CSS in one step:
+
+```ts
+import { compileCustomMediaDeclarations } from "@cssdoc/core";
+
+const declarations = compileCustomMediaDeclarations(css, {
+  resolveValue: (profile) => (profile === "--top-nav" ? "(width >= 64rem)" : true),
+});
+```
+
 `parseCssDocs(css)` returns one `CssDocEntry` per record. It is **AST-first** — modifiers, sub-element
 parts, consumed and declared custom properties, and deprecated-alias links are extracted from the
 selectors, so they never drift. Authored doc comments supply only prose (summaries, descriptions) and
@@ -46,6 +72,9 @@ they exist, so it's standards-aligned:
  * @demo self:button
  */
 .button {
+  /* … */
+}
+.button .icon {
   /* … */
 }
 .button.-color-secondary {
