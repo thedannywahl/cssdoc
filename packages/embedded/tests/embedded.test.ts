@@ -168,6 +168,7 @@ test("scanClassUsages reports accurate offsets", () => {
   const [site] = scanClassUsages(src);
   const mod = site.tokens.find((t) => t.token === "btn--x")!;
   expect(src.slice(mod.start, mod.end)).toBe("btn--x");
+  expect(site.elementName).toBe("div");
 });
 
 test('a <style lang="scss"> block parses through the SCSS dialect', () => {

@@ -71,6 +71,7 @@ export const RECORD_TAGS: Record<string, CssRecordKind> = {
   utility: "utility",
   rule: "rule",
   declaration: "declaration",
+  layout: "layout",
 };
 
 /** A custom property documented by a `@cssproperty` tag. */
@@ -161,6 +162,8 @@ export interface ParsedDoc {
   cssStates: Map<string, string>;
   /** `@slot` descriptions, keyed by slot name (empty string for the default slot). */
   slots: Map<string, string>;
+  /** Raw `@element` declarations keyed by profile (`""` for default), in author order. */
+  elements: Map<string, string[]>;
   /** `@function` descriptions, keyed by function name (e.g. `--negate`). */
   functions: Map<string, string>;
   /** `@keyframes`/`@animation` descriptions, keyed by animation name. */
@@ -297,6 +300,7 @@ export function parseDocComment(
     cssProperties: [],
     cssStates: new Map(),
     slots: new Map(),
+    elements: new Map(),
     functions: new Map(),
     animations: new Map(),
     layers: new Map(),
@@ -326,6 +330,12 @@ export function parseDocComment(
     if (tagMatch) {
       const isKnownTag = configuration.tryGetTagDefinition(tagMatch[1]) !== undefined;
       if (isKnownTag) {
+        // Inside `@structure`, indented `@...` lines are CSS content (record refs and at-rules),
+        // not new doc-tag blocks.
+        if (inStructureBlock && tagMatch[1] !== "structure" && /^\s+@/u.test(line)) {
+          if (blocks.length) blocks[blocks.length - 1] += `\n${line}`;
+          continue;
+        }
         blocks.push(line.trim());
         inStructureBlock = tagMatch[1] === "structure";
       } else if (inStructureBlock) {
@@ -471,6 +481,16 @@ function applyBlockTag(
       doc.slots.set(head.replace(/^\./u, ""), description ?? "");
       break;
     }
+    case "element": {
+      const m = rest.match(/^([\w-]+)\s*:\s*([\s\S]+)$/u);
+      const profile = m ? m[1] : "";
+      const body = (m ? m[2] : rest).trim();
+      if (!body) break;
+      const existing = doc.elements.get(profile) ?? [];
+      existing.push(body);
+      doc.elements.set(profile, existing);
+      break;
+    }
     case "function": {
       const nameMatch = rest.match(/^(--[\w-]+)/u);
       const { description } = splitDesc(rest);
@@ -517,8 +537,14 @@ function applyBlockTag(
       break;
     }
     case "ref": {
-      const ref = parseRef(rest);
-      if (ref !== undefined) doc.refs.push(ref);
+      const parsed = parseRef(rest);
+      if (parsed !== undefined) {
+        doc.refs.push(parsed.ref);
+        // Inline prose (@ref 1. Prevent…) populates annotations without needing @annotations.
+        // @annotations block wins if it already set this ref.
+        if (parsed.text && !doc.annotations.has(parsed.ref))
+          doc.annotations.set(parsed.ref, parsed.text);
+      }
       break;
     }
     case "readonly":
@@ -657,11 +683,12 @@ function parseAnnotationsBody(raw: string): DocAnnotation[] {
   return rows;
 }
 
-/** Parse `@ref <n>` (optionally with trailing `.`) and return its numeric index. */
-function parseRef(rest: string): number | undefined {
-  const m = rest.match(/^(\d+)\.?\b/u);
+/** Parse `@ref <n>[. prose]` — returns the numeric index and any trailing description. */
+function parseRef(rest: string): { ref: number; text?: string } | undefined {
+  const m = rest.match(/^(\d+)\.?\s*(.*)$/u);
   if (!m) return undefined;
-  return Number.parseInt(m[1], 10);
+  const text = m[2].trim() || undefined;
+  return { ref: Number.parseInt(m[1], 10), text };
 }
 
 /**
@@ -696,6 +723,45 @@ const CARDINALITY: Record<string, NonNullable<StructureNode["cardinality"]>> = {
   more: "one-or-more",
 };
 const CARD_RE = /:(optional|opt|one-or-more|more|many)\s*$/u;
+const STRUCTURE_REF_RE = /^[a-zA-Z][\w-]*$/u;
+const STRUCTURE_REF_PROFILE_RE = /^:\s*([\w-]+)$/u;
+const STRUCTURE_REF_TYPED_RE = /^([\w-]+)(?::([\w-]+))?$/u;
+const STRUCTURE_REF_CUSTOM_MEDIA_RE = /^\(\s*(--[\w-]+)\s*\)$/u;
+const STRUCTURE_REF_TYPED_CUSTOM_MEDIA_RE = /^([\w-]+)\s+\(\s*(--[\w-]+)\s*\)$/u;
+const STRUCTURE_REF_KINDS = new Set([
+  "component",
+  "name",
+  "utility",
+  "rule",
+  "declaration",
+  "layout",
+]);
+
+function normalizeStructureAtRuleRef(name: string, params: string): string | undefined {
+  if (name.includes(":")) {
+    if (params.trim()) return undefined;
+    const [record, profile] = name.split(":", 2);
+    if (!STRUCTURE_REF_RE.test(record) || !profile || !STRUCTURE_REF_RE.test(profile)) {
+      return undefined;
+    }
+    return `@${record}:${profile}`;
+  }
+  if (!STRUCTURE_REF_RE.test(name)) return undefined;
+  const trimmed = params.trim();
+  if (STRUCTURE_REF_KINDS.has(name)) {
+    const typedMedia = trimmed.match(STRUCTURE_REF_TYPED_CUSTOM_MEDIA_RE);
+    if (typedMedia) return `@${name} ${typedMedia[1]} (${typedMedia[2]})`;
+    const typed = trimmed.match(STRUCTURE_REF_TYPED_RE);
+    if (!typed) return undefined;
+    return `@${name} ${typed[1]}${typed[2] ? `:${typed[2]}` : ""}`;
+  }
+  if (!trimmed) return `@${name}`;
+  const customMedia = trimmed.match(STRUCTURE_REF_CUSTOM_MEDIA_RE);
+  if (customMedia) return `@${name} (${customMedia[1]})`;
+  const profile = trimmed.match(STRUCTURE_REF_PROFILE_RE);
+  if (!profile) return undefined;
+  return `@${name}:${profile[1]}`;
+}
 
 export function parseStructure(raw: string, parse?: CssParse): StructureNode[] {
   if (!parse) return []; // no parser injected → no tree (the grammar module stays parser-free)
@@ -705,6 +771,12 @@ export function parseStructure(raw: string, parse?: CssParse): StructureNode[] {
       if (rule.type === "atrule" && rule.name === "scope") {
         // @scope boundary: emit a wrapper node whose children are the scoped rules.
         out.push({ selector: "", scope: rule.params.trim(), children: build(rule.nodes ?? []) });
+        continue;
+      }
+      if (rule.type === "atrule") {
+        const selector = normalizeStructureAtRuleRef(rule.name, rule.params);
+        if (!selector) continue;
+        out.push({ selector, children: build(rule.nodes ?? []) });
         continue;
       }
       if (rule.type !== "rule") continue;

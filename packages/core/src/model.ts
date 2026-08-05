@@ -161,13 +161,42 @@ export interface CssCondition {
  * `declaration` a custom-property / `@property` registration layer. The record-opening tag chooses it
  * (`@component`/`@utility`/`@rule`/`@declaration`); `@name` is an alias for `component`.
  */
-export type CssRecordKind = "component" | "utility" | "rule" | "declaration";
+export type CssRecordKind = "component" | "utility" | "rule" | "declaration" | "layout";
 
 /**
- * A release stage from a modifier (flag) tag — `@alpha`, `@beta`, `@experimental`, `@internal`, or
- * `@public` — mirroring TSDoc's release-tag semantics.
+ * The resolved element constraints for one `@element` declaration profile.
+ *
+ * - `any=true` means unrestricted elements.
+ * - `allowed` is the effective allow-set after group expansion and negation.
  */
-export type CssReleaseStage = "alpha" | "beta" | "experimental" | "internal" | "public";
+export interface CssElementProfile {
+  /** Whether this profile allows any HTML element. */
+  any: boolean;
+  /** The normalized effective allow-set (sorted, de-duplicated). */
+  allowed: string[];
+  /** Positively authored element names after normalization (sorted, de-duplicated). */
+  include: string[];
+  /** Negated element names after normalization (sorted, de-duplicated). */
+  exclude: string[];
+  /** Positively authored MDN-style group aliases (sorted, de-duplicated). */
+  groups: string[];
+  /** Negated MDN-style group aliases (sorted, de-duplicated). */
+  excludedGroups: string[];
+}
+
+/** Resolved `@element` constraints: the default profile plus optional named profiles. */
+export interface CssElementConstraints {
+  /** The unnamed/default `@element` profile for this record. */
+  default: CssElementProfile;
+  /** Named `@element <profile>: ...` profiles. */
+  profiles: Record<string, CssElementProfile>;
+}
+
+/**
+ * A release stage from a modifier (flag) tag — `@alpha`, `@beta`, `@experimental`, `@internal`,
+ * `@public`, or `@stable` — mirroring TSDoc's release-tag semantics.
+ */
+export type CssReleaseStage = "alpha" | "beta" | "experimental" | "internal" | "public" | "stable";
 
 /**
  * A node in an authored structure tree (`@structure`), written as nested CSS: a compound selector for
@@ -274,6 +303,8 @@ export interface CssDocEntry {
   states: CssState[];
   /** Named slots the component shell exposes, from `@slot`. */
   slots: CssSlot[];
+  /** Allowed HTML elements from `@element` (default + optional named profiles). */
+  elements?: CssElementConstraints;
   /**
    * Internal to-do notes, from `@todo` tags and `/* @todo … *\/` inline comments. Development notes,
    * not public API — emitters may omit them (like {@link CssDocEntry.privateRemarks}).

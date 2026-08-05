@@ -72,6 +72,8 @@ export interface ClassUsage {
   tokens: string[];
   /** The specific token/expression this usage is about (a modifier candidate). */
   token: string;
+  /** The host element tag name for this usage site (lowercase), when known. */
+  elementName?: string;
   /** Where the token sits in the host document. */
   loc?: SourceSpan;
 }
@@ -462,15 +464,20 @@ export function createIndex(
     modifierConvention: options.modifierConvention,
     parse: options.parse,
   });
-  const byName = new Map(entries.map((e) => [e.name, e]));
-  const builds = new Map<string, Build>();
+  const entryQueues = new Map<string, CssDocEntry[]>();
+  for (const entry of entries) {
+    const queue = entryQueues.get(entry.name) ?? [];
+    queue.push(entry);
+    entryQueues.set(entry.name, queue);
+  }
+  const builds = new Map<CssDocEntry, Build>();
 
   const root = (options.parse ?? postcss.parse)(css);
   let current: Build | undefined;
   for (const node of root.nodes) {
     if (node.type === "comment") {
       const name = recordNameOf(node.text, options.configuration);
-      const entry = name ? byName.get(name) : undefined;
+      const entry = name ? entryQueues.get(name)?.shift() : undefined;
       if (name && entry) {
         const doc = parseDocComment(node.text, options.configuration);
         current = {
@@ -487,7 +494,7 @@ export function createIndex(
           propertyValues: new Map(),
           resetValueUsages: [],
         };
-        builds.set(name, current);
+        builds.set(entry, current);
         continue;
       }
     }
@@ -496,7 +503,7 @@ export function createIndex(
 
   const records: RecordInfo[] = entries.map(
     (entry) =>
-      builds.get(entry.name) ?? {
+      builds.get(entry) ?? {
         entry,
         memberSpans: new Map(),
         authoredModifiers: new Set(),
