@@ -72,15 +72,22 @@
  * @modifier card--featured — A promoted card with extra emphasis.
  * @part .card__title — The heading row.
  * @part .card__body — The main content.
+ * @ref 1. Prevent margin collapse between stacked cards.
+ * @ref 2. Overflow must be hidden so the border-radius clips the image.
  * @structure
  * .card {
  *   .card__title {}
  *   .card__body {}
  * }
+ * @sealed
  */
 .card {
   display: block;
   padding: 1em;
+  overflow: hidden; /* @ref 2 */
+}
+.card + .card {
+  margin-top: 0; /* @ref 1 */
 }
 .card--featured {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
@@ -99,4 +106,40 @@
  *   - Delete the whole `@component card` block . "card" and "card--featured" stop
  *     ..........................................  resolving in index.html / App.jsx
  *     (hover, completion, and modifier checks all go quiet for that component)
+ *   - Hover .card { overflow: hidden } to see .. ref annotation prose in the tooltip
+ */
+
+/**
+ * @component nav
+ * @summary Horizontal site navigation bar.
+ * @part .nav__link — One navigation link.
+ * @stable
+ */
+.nav {
+  display: flex;
+  gap: 0.75rem;
+}
+.nav__link {
+  text-decoration: none;
+}
+
+/**
+ * @layout page
+ * @summary Full-page shell with nav and main content area.
+ * @structure
+ * .page {
+ *   @component nav
+ *   .page__main {}
+ * }
+ */
+.page {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+/* TRY these edits to the layout above:
+ *   - Change `@component nav` to `@component nope` in @structure
+ *     ......................................... "structure-unknown-record"
+ *     (typed record refs are validated against known records)
  */
