@@ -63,6 +63,26 @@
           "text.html.basic",
           "text.html.derivative"
         ]
+      },
+      {
+        "scopeName": "source.css.cssdoc.atrules",
+        "path": "./syntaxes/cssdoc.atrules.injection.tmLanguage.json",
+        "injectTo": [
+          "source.css",
+          "source.scss",
+          "source.less",
+          "source.css.styled",
+          "source.ts",
+          "source.tsx",
+          "source.js",
+          "source.jsx",
+          "source.vue",
+          "source.svelte",
+          "source.astro",
+          "text.html.markdown",
+          "text.html.basic",
+          "text.html.derivative"
+        ]
       }
     ],
     "jsonValidation": [

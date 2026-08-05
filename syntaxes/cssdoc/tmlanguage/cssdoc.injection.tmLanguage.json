@@ -65,7 +65,7 @@
       ]
     },
     "record-tag": {
-      "match": "(@(?:component|name|utility|rule|declaration))\\b[ \\t]*(\\.?[A-Za-z][A-Za-z0-9_-]*)?",
+      "match": "(@(?:component|name|utility|rule|declaration|layout))\\b[ \\t]*(\\.?[A-Za-z][A-Za-z0-9_-]*)?",
       "captures": {
         "1": {
           "name": "storage.type.class.cssdoc"
@@ -131,7 +131,7 @@
       }
     },
     "block-tag": {
-      "match": "(@(?:selector|class|summary|remarks|privateRemarks|todo|deprecated|example|see|since|group|category|defaultValue|annotations|ref|readonly|preventExtensions|noextend|sealed|frozen|pseudo|function|keyframes|animation|layer|container|supports|media|responsive|a11y|accessibility|structure|demo|usage|compat|related|alpha|beta|experimental|internal|public))\\b",
+      "match": "(@(?:selector|class|summary|remarks|privateRemarks|todo|deprecated|example|see|since|group|category|defaultValue|annotations|ref|readonly|preventExtensions|noextend|sealed|frozen|pseudo|function|keyframes|animation|layer|container|supports|media|responsive|a11y|accessibility|structure|element|demo|usage|compat|related|alpha|beta|experimental|internal|public|stable))\\b",
       "name": "storage.type.class.cssdoc"
     },
     "structure-tag": {

@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import grammarkdown from "@cssdoc/grammarkdown-tmlanguage";
-import cssdoc from "@cssdoc/tmlanguage";
+import cssdoc, { cssdocAtRules } from "@cssdoc/tmlanguage";
 import type { DefaultTheme } from "vitepress";
 import { defineConfig } from "vitepress";
 import llmstxt from "vitepress-plugin-llms";
@@ -49,10 +49,10 @@ export default defineConfig({
       }) as never,
     ],
   },
-  // Register the grammarkdown grammar (for the Grammar page) and the cssdoc injection grammar (so CSS
-  // examples highlight their doc-comment tags, the way TSDoc does).
+  // Register the grammarkdown grammar (for the Grammar page) and the cssdoc injection grammars (doc
+  // comments + typed record-reference at-rules in CSS examples).
   markdown: {
-    languages: [grammarkdown, cssdoc],
+    languages: [grammarkdown, cssdoc, cssdocAtRules],
     config: (md) => {
       md.use(mermaidPlugin);
     },
@@ -143,6 +143,7 @@ export default defineConfig({
             { text: "Introduction", link: "/guide/introduction" },
             { text: "Getting started", link: "/guide/getting-started" },
             { text: "Authoring doc comments", link: "/guide/authoring" },
+            { text: "Layouts", link: "/guide/layouts" },
             { text: "Modifier conventions", link: "/guide/modifier-conventions" },
             { text: "Configuration", link: "/guide/config" },
             { text: "Embedded CSS", link: "/guide/embedded-css" },

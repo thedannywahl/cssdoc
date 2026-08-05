@@ -1,9 +1,12 @@
 # @cssdoc/tmlanguage
 
-A TextMate **injection** grammar that highlights cssdoc doc-comment tags inside CSS comments — the way
-TSDoc highlights JSDoc tags inside `/** … */`. It layers onto the host CSS grammar's comment scope
-(`comment.block.css`, and the SCSS/Less equivalents), so cssdoc tags light up wherever CSS is
-highlighted, including CSS embedded in HTML `<style>`.
+A pair of TextMate **injection** grammars for cssdoc:
+
+- doc-comment tags inside CSS comments (TSDoc-style), and
+- typed cssdoc record-reference at-rules in source CSS (for example `@component nav (--desktop-nav) {}`).
+
+They layer onto host CSS scopes, so cssdoc tags and refs light up wherever CSS is highlighted,
+including CSS embedded in HTML `<style>`.
 
 It highlights the record and block tags (`@component`, `@modifier`, `@part`, `@cssproperty`, …), the
 release modifiers (`@alpha`, `@beta`, `@public`, …), inline tags (`{@link}`, `{@inheritDoc}`,
@@ -16,18 +19,18 @@ every CSS block pick up the highlighting:
 
 ```ts
 // .vitepress/config.ts
-import cssdoc from "@cssdoc/tmlanguage";
+import cssdoc, { cssdocAtRules } from "@cssdoc/tmlanguage";
 
 export default {
   markdown: {
-    languages: [cssdoc],
+    languages: [cssdoc, cssdocAtRules],
   },
 };
 ```
 
 ## Use in a VS Code extension
 
-Reference the raw grammar from `contributes.grammars` and inject it into CSS:
+Reference the raw grammars from `contributes.grammars` and inject them into CSS:
 
 ```json
 {
@@ -37,10 +40,18 @@ Reference the raw grammar from `contributes.grammars` and inject it into CSS:
         "scopeName": "documentation.cssdoc",
         "path": "./cssdoc.injection.tmLanguage.json",
         "injectTo": ["source.css"]
+      },
+      {
+        "scopeName": "source.css.cssdoc.atrules",
+        "path": "./cssdoc.atrules.injection.tmLanguage.json",
+        "injectTo": ["source.css"]
       }
     ]
   }
 }
 ```
 
-The file is published at `@cssdoc/tmlanguage/cssdoc.injection.tmLanguage.json`.
+The raw files are published at:
+
+- `@cssdoc/tmlanguage/cssdoc.injection.tmLanguage.json`
+- `@cssdoc/tmlanguage/cssdoc.atrules.injection.tmLanguage.json`
