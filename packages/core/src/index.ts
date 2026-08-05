@@ -28,3 +28,5 @@
 // postcss out of their bundle — this entry statically imports it for `parseCssDocs`.
 export * from "./lite.ts";
 export { parseCssDocs } from "./parse.ts";
+export { compileCustomMediaDeclarations } from "./compile.ts";
+export type { CompileCustomMediaOptions } from "./compile.ts";

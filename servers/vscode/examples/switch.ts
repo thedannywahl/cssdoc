@@ -14,6 +14,7 @@ import { LitElement, css, html } from "lit";
  * @csspart track — The rail the thumb slides along, targetable with ::part(track).
  * @csspart thumb — The sliding knob, targetable with ::part(thumb).
  * @cssstate :state(on) — Set on the host while the switch is on.
+ * @sealed
  */
 export class Switch extends LitElement {
   static styles = css`

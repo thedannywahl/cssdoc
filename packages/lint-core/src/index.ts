@@ -38,26 +38,46 @@ export type RuleName =
   | "missing-summary"
   | "undocumented-modifier"
   | "undocumented-part"
+  | "undocumented-css-part"
   | "component-name-case"
   | "part-name-case"
   | "deprecated-requires-canonical"
   | "name-not-in-css"
+  | "duplicate-record-id"
+  | "duplicate-record-id-cross-kind"
+  | "structure-unknown-selector"
+  | "structure-unknown-record"
+  | "structure-ambiguous-record"
+  | "unknown-annotation-ref"
+  | "readonly-redefinition"
+  | "sealed-reset-value"
   | "invalid-default-value"
   | "invalid-property-value"
-  | "invalid-fallback-value";
+  | "invalid-fallback-value"
+  | "cssdoc-directive";
 
 /** Every rule name, in a stable order. */
 export const RULE_NAMES: readonly RuleName[] = [
   "missing-summary",
   "undocumented-modifier",
   "undocumented-part",
+  "undocumented-css-part",
   "component-name-case",
   "part-name-case",
   "deprecated-requires-canonical",
   "name-not-in-css",
+  "duplicate-record-id",
+  "duplicate-record-id-cross-kind",
+  "structure-unknown-selector",
+  "structure-unknown-record",
+  "structure-ambiguous-record",
+  "unknown-annotation-ref",
+  "readonly-redefinition",
+  "sealed-reset-value",
   "invalid-default-value",
   "invalid-property-value",
   "invalid-fallback-value",
+  "cssdoc-directive",
 ];
 
 /** One rule violation. */

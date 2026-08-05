@@ -164,14 +164,50 @@ function indexFor(
   return index;
 }
 
-/** Diagnostics for one `class`/`className` value string (class conventions). */
-function checkClassValue(value: string, index: CssDocIndex): string[] {
-  const tokens = value.split(/\s+/u).filter(Boolean);
-  const base = tokens.find((t) => index.componentForClass(t));
-  const usages = tokens
-    .filter((t) => index.matcher.usageKind(t, base) !== undefined)
-    .map((token) => ({ base, tokens, token }));
-  return checkClassUsage(usages, index).map((d) => `[${d.rule}] ${d.message}`);
+interface ClassUsageLocation {
+  start: number;
+  end: number;
+  message: string;
+}
+
+function classUsageDiagnosticsForSource(source: string, index: CssDocIndex): ClassUsageLocation[] {
+  const out: ClassUsageLocation[] = [];
+  for (const site of scanClassUsages(source)) {
+    const names = site.tokens.map((t) => t.token);
+    const baseToken = site.tokens.find((t) => index.componentForClass(t.token));
+    if (!baseToken) continue;
+    // One base usage per site unlocks element constraints (`@element`) on host tags.
+    for (const d of checkClassUsage(
+      [
+        {
+          base: baseToken.token,
+          tokens: names,
+          token: baseToken.token,
+          elementName: site.elementName,
+        },
+      ],
+      index,
+    )) {
+      out.push({ start: baseToken.start, end: baseToken.end, message: `[${d.rule}] ${d.message}` });
+    }
+    for (const tok of site.tokens) {
+      if (index.matcher.usageKind(tok.token, baseToken.token) === undefined) continue;
+      for (const d of checkClassUsage(
+        [
+          {
+            base: baseToken.token,
+            tokens: names,
+            token: tok.token,
+            elementName: site.elementName,
+          },
+        ],
+        index,
+      )) {
+        out.push({ start: tok.start, end: tok.end, message: `[${d.rule}] ${d.message}` });
+      }
+    }
+  }
+  return out;
 }
 
 interface JsxAttribute {
@@ -180,12 +216,13 @@ interface JsxAttribute {
 }
 
 interface JsxOpeningElement {
+  name?: { name?: string };
   attributes?: JsxAttribute[];
 }
 
-interface HtmlAttribute {
-  key?: { value?: string };
-  value?: { value?: string };
+function jsxTagName(node: JsxOpeningElement): string | undefined {
+  const raw = node.name?.name;
+  return typeof raw === "string" ? raw.toLowerCase() : undefined;
 }
 
 /** The string literal value of a JSX attribute, if it is one. */
@@ -222,18 +259,23 @@ const validClassUsage: RuleModule = {
       return {
         JSXOpeningElement(node: never): void {
           const attrs = (node as JsxOpeningElement).attributes ?? [];
+          const elementName = jsxTagName(node as JsxOpeningElement);
           const tokens = attrs
             .filter((a) => a.name?.name === "class" || a.name?.name === "className")
             .flatMap((a) => (jsxLiteral(a) ?? "").split(/\s+/u).filter(Boolean));
           const base = tokens.find((t) => index.componentForClass(t));
           if (!base) return;
+          // Base usage for `@element` host-tag constraints.
+          for (const d of checkClassUsage([{ base, tokens, token: base, elementName }], index)) {
+            context.report({ node, message: `[${d.rule}] ${d.message}` });
+          }
           for (const a of attrs) {
             const name = a.name?.name;
             const value = jsxLiteral(a);
             if (!name || name === "class" || name === "className" || value === undefined) continue;
             const token = `${name}="${value}"`;
             if (!index.matcher.looksLikeUsage(token, base)) continue;
-            for (const d of checkClassUsage([{ base, tokens, token }], index)) {
+            for (const d of checkClassUsage([{ base, tokens, token, elementName }], index)) {
               context.report({ node: a.value ?? a, message: `[${d.rule}] ${d.message}` });
             }
           }
@@ -247,27 +289,22 @@ const validClassUsage: RuleModule = {
       // matching the language server (`scanClassUsages`). `Program` fires for JS/JSX, not HTML.
       Program(): void {
         const sc = context.sourceCode;
-        for (const site of scanClassUsages(sc.text)) {
-          const names = site.tokens.map((t) => t.token);
-          const base = names.find((t) => index.componentForClass(t));
-          for (const tok of site.tokens) {
-            if (index.matcher.usageKind(tok.token, base) === undefined) continue;
-            for (const d of checkClassUsage([{ base, tokens: names, token: tok.token }], index)) {
-              context.report({
-                loc: { start: sc.getLocFromIndex(tok.start), end: sc.getLocFromIndex(tok.end) },
-                message: `[${d.rule}] ${d.message}`,
-              });
-            }
-          }
+        for (const d of classUsageDiagnosticsForSource(sc.text, index)) {
+          context.report({
+            loc: { start: sc.getLocFromIndex(d.start), end: sc.getLocFromIndex(d.end) },
+            message: d.message,
+          });
         }
       },
-      // HTML (@html-eslint): class="…" — static only (HTML has no dynamic bindings). Its AST root is
-      // `Document`, so the `Program` scan above never double-reports these.
-      Attribute(node: never): void {
-        const attr = node as HtmlAttribute;
-        if (attr.key?.value === "class" && typeof attr.value?.value === "string") {
-          for (const message of checkClassValue(attr.value.value, index))
-            context.report({ node: attr.value, message });
+      // HTML (@html-eslint): class usage scans run on the document source (static classes only), and
+      // now include host tag context for `@element` checks.
+      Document(): void {
+        const sc = context.sourceCode;
+        for (const d of classUsageDiagnosticsForSource(sc.text, index)) {
+          context.report({
+            loc: { start: sc.getLocFromIndex(d.start), end: sc.getLocFromIndex(d.end) },
+            message: d.message,
+          });
         }
       },
     };

@@ -6,6 +6,7 @@
 //     `@modifier badge--success` ...............  badge--success
 //   - Add a `@modifier badge--danger — Bad.` .. badge--danger gains hover and
 //     plus a matching ".badge--danger {}" rule .  completion docs (no warning)
+//   - Hover .badge { padding } to see the ..... ref annotation prose in the tooltip
 
 const css = String.raw; // any tag named `css`/`styled`/… is treated as a CSS template
 
@@ -15,10 +16,11 @@ export const badge = css`
    * @summary A small inline status label.
    * @modifier badge--success — A positive status.
    * @modifier badge--warning — A cautionary status.
+   * @ref 1. Matching browser default so badges align with surrounding text.
    */
   .badge {
     display: inline-block;
-    padding: 0.1em 0.4em;
+    padding: 0.1em 0.4em; /* @ref 1 */
   }
   .badge--success {
     color: #2ecc71;

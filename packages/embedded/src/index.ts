@@ -322,10 +322,12 @@ export interface ClassToken {
 
 /** Every class token found on one element — across `class`/`className`/`:class`/`class:name`. */
 export interface ClassUsageSite {
+  /** The host tag name for the usage site, lowercased when available (e.g. `button`). */
+  elementName?: string;
   tokens: ClassToken[];
 }
 
-const TAG_RE = /<[A-Za-z][\w.-]*\b([^>]*)>/gu;
+const TAG_RE = /<([A-Za-z][\w.-]*)\b([^>]*)>/gu;
 // Static `class="…"` / `className="…"` — not `:class` / `v-bind:class` (excluded by the lookbehind).
 const STATIC_CLASS_RE = /(?<![:\w-])(?:className|class)\s*=\s*("([^"]*)"|'([^']*)')/gu;
 // JSX brace value: `className={ … }` / `class={ … }` (string/template literals inside are class names).
@@ -365,8 +367,9 @@ export function scanClassUsages(source: string): ClassUsageSite[] {
   // `<!-- <div class="tabs tabs--boxed"></div> -->` must not be read as a real usage.
   const scanned = maskComments(source);
   for (const tag of scanned.matchAll(TAG_RE)) {
-    const attrs = tag[1];
+    const attrs = tag[2];
     if (!attrs) continue;
+    const elementName = tag[1]?.toLowerCase();
     const base = (tag.index ?? 0) + tag[0].length - 1 - attrs.length; // absolute start of the attrs
     const tokens: ClassToken[] = [];
     const pushWords = (raw: string, rawBase: number): void => {
@@ -395,7 +398,7 @@ export function scanClassUsages(source: string): ClassUsageSite[] {
       const start = base + (a.index ?? 0) + a[0].length - a[1].length;
       tokens.push({ token: a[1], start, end: start + a[1].length });
     }
-    if (tokens.length) sites.push({ tokens });
+    if (tokens.length) sites.push({ tokens, ...(elementName ? { elementName } : {}) });
   }
   return sites;
 }

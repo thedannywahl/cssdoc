@@ -3,8 +3,14 @@
 // tests assert the committed file stays in sync. Run after building: `pnpm --filter @cssdoc/tmlanguage build && … generate`.
 import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { buildInjectionGrammar } from "../dist/index.mjs";
+import { buildAtRuleInjectionGrammar, buildInjectionGrammar } from "../dist/index.mjs";
 
 const out = fileURLToPath(new URL("../cssdoc.injection.tmLanguage.json", import.meta.url));
 writeFileSync(out, `${JSON.stringify(buildInjectionGrammar(), null, 2)}\n`);
 console.log(`Wrote ${out}`);
+
+const atRuleOut = fileURLToPath(
+  new URL("../cssdoc.atrules.injection.tmLanguage.json", import.meta.url),
+);
+writeFileSync(atRuleOut, `${JSON.stringify(buildAtRuleInjectionGrammar(), null, 2)}\n`);
+console.log(`Wrote ${atRuleOut}`);

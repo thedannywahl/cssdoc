@@ -21,12 +21,14 @@
   },
   "files": [
     "dist",
-    "cssdoc.injection.tmLanguage.json"
+    "cssdoc.injection.tmLanguage.json",
+    "cssdoc.atrules.injection.tmLanguage.json"
   ],
   "type": "module",
   "exports": {
     ".": "./dist/index.mjs",
     "./cssdoc.injection.tmLanguage.json": "./cssdoc.injection.tmLanguage.json",
+    "./cssdoc.atrules.injection.tmLanguage.json": "./cssdoc.atrules.injection.tmLanguage.json",
     "./package.json": "./package.json"
   },
   "publishConfig": {

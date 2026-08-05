@@ -36,6 +36,8 @@ export {
 export type { ModifierConvention, ModifierConventionInput, ModifierHit } from "./modifier.ts";
 export { toMermaid } from "./mermaid.ts";
 export type { MermaidOptions } from "./mermaid.ts";
+export { buildCustomMediaDeclarations, structureCustomMediaRefs } from "./customMedia.ts";
+export type { BuildCustomMediaOptions, StructureCustomMediaRef } from "./customMedia.ts";
 export type {
   CssAnimation,
   CssCondition,

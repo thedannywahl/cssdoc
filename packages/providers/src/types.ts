@@ -26,13 +26,18 @@ export type RuleId =
   | "name-not-in-css"
   | "unknown-modifier"
   | "deprecated-modifier"
+  | "disallowed-element"
   | "unknown-state"
   | "unknown-part"
   | "undocumented-part"
   | "undocumented-css-part"
   | "component-name-case"
   | "part-name-case"
+  | "duplicate-record-id"
+  | "duplicate-record-id-cross-kind"
   | "structure-unknown-selector"
+  | "structure-unknown-record"
+  | "structure-ambiguous-record"
   | "invalid-default-value"
   | "invalid-property-value"
   | "invalid-fallback-value"
@@ -57,6 +62,7 @@ export const DEFAULT_RULE_SEVERITIES: RuleSeverities = {
   "name-not-in-css": "warn",
   "unknown-modifier": "warn",
   "deprecated-modifier": "warn",
+  "disallowed-element": "warn",
   "unknown-state": "warn",
   "unknown-part": "warn",
   "undocumented-part": "warn",
@@ -64,7 +70,11 @@ export const DEFAULT_RULE_SEVERITIES: RuleSeverities = {
   // The name-case rules only fire when a `naming` convention is configured, so `warn` is safe.
   "component-name-case": "warn",
   "part-name-case": "warn",
+  "duplicate-record-id": "error",
+  "duplicate-record-id-cross-kind": "warn",
   "structure-unknown-selector": "warn",
+  "structure-unknown-record": "warn",
+  "structure-ambiguous-record": "warn",
   "invalid-default-value": "warn",
   "invalid-property-value": "warn",
   "invalid-fallback-value": "warn",

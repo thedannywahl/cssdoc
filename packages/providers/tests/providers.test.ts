@@ -97,6 +97,147 @@ test("structure-unknown-selector accepts a sibling component as a child, still f
   expect(structureWarnings[0].message).toContain(".bogus");
 });
 
+test("duplicate record ids flag same-kind as error and cross-kind as warning", () => {
+  const css = [
+    "/**",
+    " * @component badge",
+    " * @summary A badge.",
+    " */",
+    ".badge {}",
+    "/**",
+    " * @component badge",
+    " * @summary Another badge record.",
+    " */",
+    ".badge-alt {}",
+    "/**",
+    " * @layout badge",
+    " * @summary A badge layout.",
+    " */",
+    ".badge-layout {}",
+  ].join("\n");
+
+  const diagnostics = lintModel(createIndex(css));
+  const sameKind = diagnostics.filter((d) => d.rule === "duplicate-record-id");
+  const crossKind = diagnostics.filter((d) => d.rule === "duplicate-record-id-cross-kind");
+
+  expect(sameKind.length).toBeGreaterThan(0);
+  expect(crossKind.length).toBeGreaterThan(0);
+  expect(sameKind.every((d) => d.severity === "error")).toBe(true);
+  expect(crossKind.every((d) => d.severity === "warning")).toBe(true);
+});
+
+test("structure record refs flag unknown and ambiguous records", () => {
+  const css = [
+    "/**",
+    " * @component shell",
+    " * @summary Container.",
+    " * @structure",
+    " * .shell {",
+    " *   @ghost {}",
+    " *   @badge {}",
+    " * }",
+    " */",
+    ".shell {}",
+    "/**",
+    " * @component badge",
+    " * @summary A badge.",
+    " */",
+    ".badge {}",
+    "/**",
+    " * @layout badge",
+    " * @summary Badge layout.",
+    " */",
+    ".badge-layout {}",
+  ].join("\n");
+
+  const diagnostics = lintModel(
+    createIndex(css),
+    resolveRuleSeverities({ "duplicate-record-id-cross-kind": "off" }),
+  );
+
+  expect(diagnostics.map((d) => d.rule)).toContain("structure-unknown-record");
+  expect(diagnostics.map((d) => d.rule)).toContain("structure-ambiguous-record");
+});
+
+test("typed structure record refs resolve by kind", () => {
+  const css = [
+    "/**",
+    " * @component shell",
+    " * @summary Container.",
+    " * @structure",
+    " * .shell {",
+    " *   @component badge {}",
+    " * }",
+    " */",
+    ".shell {}",
+    "/**",
+    " * @component badge",
+    " * @summary A badge.",
+    " */",
+    ".badge {}",
+    "/**",
+    " * @layout badge",
+    " * @summary Badge layout.",
+    " */",
+    ".badge-layout {}",
+  ].join("\n");
+  const diagnostics = lintModel(
+    createIndex(css),
+    resolveRuleSeverities({
+      "duplicate-record-id-cross-kind": "off",
+    }),
+  ).map((d) => d.rule);
+  expect(diagnostics).not.toContain("structure-unknown-record");
+  expect(diagnostics).not.toContain("structure-ambiguous-record");
+});
+
+test("typed structure refs flag mismatched kinds", () => {
+  const css = [
+    "/**",
+    " * @component shell",
+    " * @summary Container.",
+    " * @structure",
+    " * .shell {",
+    " *   @component frame {}",
+    " * }",
+    " */",
+    ".shell {}",
+    "/**",
+    " * @layout frame",
+    " * @summary A frame layout.",
+    " */",
+    ".frame {}",
+  ].join("\n");
+  const diagnostics = lintModel(createIndex(css)).filter(
+    (d) => d.rule === "structure-unknown-record",
+  );
+  expect(diagnostics).toHaveLength(1);
+  expect(diagnostics[0].message).toContain("isn't documented as kind");
+});
+
+test("custom-media-style structure refs parse and resolve typed record references", () => {
+  const css = [
+    "/**",
+    " * @component shell",
+    " * @summary Container.",
+    " * @structure",
+    " * .shell {",
+    " *   @component nav (--top-nav) {}",
+    " * }",
+    " */",
+    ".shell {}",
+    "/**",
+    " * @component nav",
+    " * @summary Top nav.",
+    " */",
+    ".nav {}",
+  ].join("\n");
+
+  const diagnostics = lintModel(createIndex(css)).map((d) => d.rule);
+  expect(diagnostics).not.toContain("structure-unknown-record");
+  expect(diagnostics).not.toContain("structure-ambiguous-record");
+});
+
 test("the hover Structure block carries @wrapper prose as a trailing comment", () => {
   const idx = createIndex(
     [
@@ -374,6 +515,26 @@ test("checkClassUsage flags unknown element and state classes, not documented on
   expect(rules("card__bogus")).toEqual(["unknown-part"]);
   expect(rules("is-open")).toEqual([]); // documented state
   expect(rules("is-frobbed")).toEqual(["unknown-state"]);
+});
+
+test("checkClassUsage flags disallowed host elements from @element constraints", () => {
+  const css = `/**
+ * @component button
+ * @summary A button.
+ * @element button
+ */
+.button {}`;
+  const idx = createIndex(css);
+  const rulesFor = (elementName: string) =>
+    checkClassUsage(
+      [{ base: "button", tokens: ["button"], token: "button", elementName }],
+      idx,
+    ).map((d) => d.rule);
+
+  expect(rulesFor("button")).toEqual([]);
+  expect(rulesFor("div")).toEqual(["disallowed-element"]);
+  // Custom elements are outside the HTML-element vocabulary used by @element.
+  expect(rulesFor("x-button")).toEqual([]);
 });
 
 test("completions: components with no base, modifiers with a base", () => {

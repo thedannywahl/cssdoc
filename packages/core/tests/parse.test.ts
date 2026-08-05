@@ -1,5 +1,13 @@
 import { expect, test } from "vite-plus/test";
-import { CssDocConfiguration, CssDocTagDefinition, parseCssDocs, toMermaid } from "../src/index.ts";
+import {
+  buildCustomMediaDeclarations,
+  compileCustomMediaDeclarations,
+  CssDocConfiguration,
+  CssDocTagDefinition,
+  parseCssDocs,
+  structureCustomMediaRefs,
+  toMermaid,
+} from "../src/index.ts";
 import postcss from "postcss";
 import { parseDocComment, parseStructure } from "../src/grammar.ts";
 
@@ -762,6 +770,35 @@ test("parseCssDocs surfaces annotations, refs, and decorators on entries", () =>
   expect(entry.decorators).toEqual(["readonly", "preventExtensions"]);
 });
 
+test("@ref with inline prose stores the annotation without @annotations block", () => {
+  const [entry] = parseCssDocs(`/**
+ * @component card
+ * @ref 1. Prevent shrinking when used in a flex row.
+ * @ref 2. Focus ring must remain visible.
+ */
+.card {}`);
+  expect(entry.refs).toEqual([1, 2]);
+  expect(entry.annotations).toEqual([
+    { ref: 1, text: "Prevent shrinking when used in a flex row." },
+    { ref: 2, text: "Focus ring must remain visible." },
+  ]);
+});
+
+test("@ref inline prose and @annotations block merge; block row wins on collision", () => {
+  const [entry] = parseCssDocs(`/**
+ * @component card
+ * @annotations
+ * 1. Block prose wins.
+ * @ref 1. Inline prose ignored for ref 1.
+ * @ref 2. Inline prose kept for ref 2.
+ */
+.card {}`);
+  expect(entry.annotations).toEqual([
+    { ref: 1, text: "Block prose wins." },
+    { ref: 2, text: "Inline prose kept for ref 2." },
+  ]);
+});
+
 test("record-opening tags set the kind; @component defaults to component", () => {
   const [comp] = parseCssDocs(`/**\n * @component button\n */\n.button { color: red; }`);
   expect(comp.kind).toBe("component");
@@ -771,6 +808,355 @@ test("record-opening tags set the kind; @component defaults to component", () =>
   expect(rule.kind).toBe("rule");
   const [decl] = parseCssDocs(`/**\n * @declaration tokens\n */\n:root { --x: 1; }`);
   expect(decl.kind).toBe("declaration");
+  const [layout] = parseCssDocs(`/**\n * @layout template\n */\n.wrapper {}`);
+  expect(layout.kind).toBe("layout");
+});
+
+test("@structure keeps record references authored as CSS at-rules", () => {
+  const tree = parseStructure(
+    ".wrapper {\n  @nav:primary {}\n  @nav (--nav) {}\n  @component top-navigation:primary {}\n  @component top-navigation (--top-nav) {}\n}",
+    postcss.parse,
+  );
+  expect(tree).toEqual([
+    {
+      selector: ".wrapper",
+      children: [
+        { selector: "@nav:primary", children: [] },
+        { selector: "@nav (--nav)", children: [] },
+        { selector: "@component top-navigation:primary", children: [] },
+        { selector: "@component top-navigation (--top-nav)", children: [] },
+      ],
+    },
+  ]);
+});
+
+test("@structure record refs do not redefine the record", () => {
+  const [layout] = parseCssDocs(
+    [
+      "/**",
+      " * @layout app-shell",
+      " * @summary App shell layout.",
+      " * @structure",
+      " * .app-shell {",
+      " *   @component top-nav {}",
+      " *   @component filter-chip {}",
+      " * }",
+      " */",
+      ".app-shell {}",
+    ].join("\n"),
+  );
+
+  expect(layout.name).toBe("app-shell");
+  expect(layout.kind).toBe("layout");
+  expect(layout.summary).toBe("App shell layout.");
+  expect(layout.structure).toEqual([
+    {
+      selector: ".app-shell",
+      children: [
+        { selector: "@component top-nav", children: [] },
+        { selector: "@component filter-chip", children: [] },
+      ],
+    },
+  ]);
+});
+
+test("@element resolves implicit any, explicit any, and negation", () => {
+  const [implicit] = parseCssDocs(`/**\n * @component top-navigation\n */\n.topNav {}`);
+  expect(implicit.elements?.default.any).toBe(true);
+  expect(implicit.elements?.default.allowed).toEqual([]);
+
+  const [explicitAny] = parseCssDocs(
+    `/**\n * @component top-navigation\n * @element any\n */\n.topNav {}`,
+  );
+  expect(explicitAny.elements?.default.any).toBe(true);
+
+  const [explicitStar] = parseCssDocs(
+    `/**\n * @component top-navigation\n * @element *\n */\n.topNav {}`,
+  );
+  expect(explicitStar.elements?.default.any).toBe(true);
+
+  const [constrained] = parseCssDocs(
+    `/**\n * @component top-navigation\n * @element <nav>, <div>, !<div>\n */\n.topNav {}`,
+  );
+  expect(constrained.elements?.default.any).toBe(false);
+  expect(constrained.elements?.default.include).toEqual(["div", "nav"]);
+  expect(constrained.elements?.default.exclude).toEqual(["div"]);
+  expect(constrained.elements?.default.allowed).toEqual(["nav"]);
+});
+
+test("@element supports named profiles and MDN-style groups", () => {
+  const [entry] = parseCssDocs(
+    [
+      "/**",
+      " * @component top-navigation",
+      " * @element forms, !<input>",
+      " * @element nav: any, !sectioning-root, !<form>",
+      " */",
+      ".topNav {}",
+    ].join("\n"),
+  );
+  expect(entry.elements?.default.groups).toEqual(["forms"]);
+  expect(entry.elements?.default.allowed).toContain("button");
+  expect(entry.elements?.default.allowed).not.toContain("input");
+  expect(entry.elements?.profiles.nav.any).toBe(true);
+  expect(entry.elements?.profiles.nav.excludedGroups).toEqual(["sectioning-root"]);
+  expect(entry.elements?.profiles.nav.allowed).toContain("html");
+  expect(entry.elements?.profiles.nav.allowed).not.toContain("body");
+  expect(entry.elements?.profiles.nav.allowed).not.toContain("form");
+});
+
+test("layout infers structure from rules below when @structure is absent", () => {
+  const [layout] = parseCssDocs(
+    [
+      "/**",
+      " * @layout template",
+      " * @summary The base template.",
+      " */",
+      "html {",
+      "  body {",
+      "    .wrapper {",
+      "      @nav (--nav) {}",
+      "    }",
+      "  }",
+      "}",
+    ].join("\n"),
+  );
+  expect(layout.kind).toBe("layout");
+  expect(layout.structure?.[0]?.selector).toBe("html");
+  expect(layout.structure?.[0]?.children[0]?.selector).toBe("body");
+  expect(layout.structure?.[0]?.children[0]?.children[0]?.selector).toBe(".wrapper");
+  expect(layout.structure?.[0]?.children[0]?.children[0]?.children[0]?.selector).toBe(
+    "@nav (--nav)",
+  );
+});
+
+test("layout explicit @structure wins over implicit structure inference", () => {
+  const [layout] = parseCssDocs(
+    [
+      "/**",
+      " * @layout template",
+      " * @summary The default layout.",
+      " * @structure",
+      " * .manual { .x {} }",
+      " */",
+      "html { body { .wrapper {} } }",
+    ].join("\n"),
+  );
+  expect(layout.structure).toEqual([
+    { selector: ".manual", children: [{ selector: ".x", children: [] }] },
+  ]);
+});
+
+test("structureCustomMediaRefs: collects custom-media profile references", () => {
+  const entries = parseCssDocs(
+    [
+      "/**",
+      " * @layout app-shell",
+      " * @structure",
+      " * .app-shell {",
+      " *   @nav (--nav) {}",
+      " *   @component nav (--top-nav) {}",
+      " * }",
+      " */",
+      ".app-shell {}",
+      "",
+      "/**",
+      " * @component nav",
+      " */",
+      ".nav {}",
+    ].join("\n"),
+  );
+
+  expect(structureCustomMediaRefs(entries)).toEqual([
+    {
+      sourceRecord: "app-shell",
+      sourceKind: "layout",
+      selector: "@nav (--nav)",
+      record: "nav",
+      recordKind: undefined,
+      profile: "--nav",
+    },
+    {
+      sourceRecord: "app-shell",
+      sourceKind: "layout",
+      selector: "@component nav (--top-nav)",
+      record: "nav",
+      recordKind: "component",
+      profile: "--top-nav",
+    },
+  ]);
+});
+
+test("buildCustomMediaDeclarations: emits deduped @custom-media declarations", () => {
+  const entries = parseCssDocs(
+    [
+      "/**",
+      " * @layout app-shell",
+      " * @structure",
+      " * .app-shell {",
+      " *   @nav (--nav) {}",
+      " *   @component nav (--top-nav) {}",
+      " * }",
+      " */",
+      ".app-shell {}",
+      "",
+      "/**",
+      " * @component header",
+      " * @structure",
+      " * .header {",
+      " *   @nav (--nav) {}",
+      " * }",
+      " */",
+      ".header {}",
+      "",
+      "/**",
+      " * @component nav",
+      " */",
+      ".nav {}",
+    ].join("\n"),
+  );
+
+  expect(buildCustomMediaDeclarations(entries)).toBe(
+    "@custom-media --nav true;\n@custom-media --top-nav true;\n",
+  );
+});
+
+test("buildCustomMediaDeclarations: uses resolveValue output", () => {
+  const entries = parseCssDocs(
+    [
+      "/**",
+      " * @layout app-shell",
+      " * @structure",
+      " * .app-shell {",
+      " *   @component nav (--top-nav) {}",
+      " * }",
+      " */",
+      ".app-shell {}",
+      "",
+      "/**",
+      " * @component nav",
+      " */",
+      ".nav {}",
+    ].join("\n"),
+  );
+
+  expect(
+    buildCustomMediaDeclarations(entries, {
+      resolveValue: (profile) => (profile === "--top-nav" ? "(width >= 64rem)" : true),
+    }),
+  ).toBe("@custom-media --top-nav (width >= 64rem);\n");
+});
+
+test("compileCustomMediaDeclarations: compiles declarations directly from CSS", () => {
+  const css = [
+    "/**",
+    " * @layout app-shell",
+    " * @structure",
+    " * .app-shell {",
+    " *   @nav (--nav) {}",
+    " *   @component nav (--top-nav) {}",
+    " * }",
+    " */",
+    ".app-shell {}",
+    "",
+    "/**",
+    " * @component nav",
+    " */",
+    ".nav {}",
+  ].join("\n");
+
+  expect(compileCustomMediaDeclarations(css)).toBe(
+    "@custom-media --nav true;\n@custom-media --top-nav true;\n",
+  );
+});
+
+test("compileCustomMediaDeclarations: passes parse and resolver options", () => {
+  const css = [
+    "/**",
+    " * @layout app-shell",
+    " * @structure",
+    " * .app-shell {",
+    " *   @component nav (--top-nav) {}",
+    " * }",
+    " */",
+    ".app-shell {}",
+    "",
+    "/**",
+    " * @component nav",
+    " */",
+    ".nav {}",
+  ].join("\n");
+
+  expect(
+    compileCustomMediaDeclarations(css, {
+      resolveValue: (profile) => (profile === "--top-nav" ? "(width >= 64rem)" : true),
+      modifierConvention: "rscss",
+    }),
+  ).toBe("@custom-media --top-nav (width >= 64rem);\n");
+});
+
+test("compileCustomMediaDeclarations: absorbs inline @custom-media declarations", () => {
+  const css = [
+    "@custom-media --desktop-nav (width >= 64rem);",
+    "@custom-media --desktop-filters (width >= 64rem);",
+    "",
+    "/**",
+    " * @layout app-shell",
+    " * @structure",
+    " * .app-shell {",
+    " *   @component top-nav (--desktop-nav) {}",
+    " *   @component filter-chip (--desktop-filters) {}",
+    " * }",
+    " */",
+    ".app-shell {}",
+    "",
+    "/**",
+    " * @component top-nav",
+    " */",
+    ".top-nav {}",
+    "",
+    "/**",
+    " * @component filter-chip",
+    " */",
+    ".filter-chip {}",
+  ].join("\n");
+
+  expect(compileCustomMediaDeclarations(css)).toBe(
+    "@custom-media --desktop-filters (width >= 64rem);\n@custom-media --desktop-nav (width >= 64rem);\n",
+  );
+});
+
+test("compileCustomMediaDeclarations: resolver overrides absorbed inline declarations", () => {
+  const css = [
+    "@custom-media --desktop-nav (width >= 48rem);",
+    "",
+    "/**",
+    " * @layout app-shell",
+    " * @structure",
+    " * .app-shell {",
+    " *   @component top-nav (--desktop-nav) {}",
+    " * }",
+    " */",
+    ".app-shell {}",
+    "",
+    "/**",
+    " * @component top-nav",
+    " */",
+    ".top-nav {}",
+  ].join("\n");
+
+  expect(
+    compileCustomMediaDeclarations(css, {
+      resolveValue: (profile) => (profile === "--desktop-nav" ? "(width >= 64rem)" : undefined),
+    }),
+  ).toBe("@custom-media --desktop-nav (width >= 64rem);\n");
+});
+
+test("layout implicit structure is discarded when multiple top-level roots are present", () => {
+  const [layout] = parseCssDocs(
+    ["/**", " * @layout template", " */", "html {}", "main {}"].join("\n"),
+  );
+  expect(layout.structure).toBeUndefined();
 });
 
 test("@structure parses nested CSS into a tree, and toMermaid renders it", () => {

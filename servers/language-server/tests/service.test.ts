@@ -101,6 +101,34 @@ test("BEM (default): diagnostics flag an undocumented suffix modifier at Warning
   expect(unknown?.message).toContain(".card--bogus");
 });
 
+test("diagnostics flag disallowed-element when @element constraints exclude the host tag", () => {
+  const css = `
+/**
+ * @component button
+ * @summary A primary action.
+ * @element button
+ */
+.button {}`;
+  const svc = new CssDocLanguageService(createIndex(css));
+  const diags = svc.diagnostics(`<div class="button"></div>`, "html");
+  expect(diags.some((d) => d.code === "disallowed-element")).toBe(true);
+  expect(svc.diagnostics(`<button class="button"></button>`, "html")).toEqual([]);
+
+  const strict = new CssDocLanguageService(createIndex(css));
+  strict.setScopes([
+    {
+      dir: "/",
+      index: createIndex(css),
+      severities: { ...DEFAULT_RULE_SEVERITIES, "disallowed-element": "error" },
+      naming: {},
+    },
+  ]);
+  const sev = strict
+    .diagnostics(`<div class="button"></div>`, "html")
+    .find((d) => d.code === "disallowed-element")?.severity;
+  expect(sev).toBe(1);
+});
+
 test("class usage is checked in JSX className, Vue :class, and Svelte class:name", () => {
   const svc = new CssDocLanguageService(createIndex(BEM_CSS));
   // JSX className brace with a string literal.

@@ -111,6 +111,60 @@ test("HTML class: a valid modifier chain produces no messages", () => {
   expect(lintHtml(`<button class="button -color-secondary">x</button>`)).toEqual([]);
 });
 
+test("class usage: @element constraints flag disallowed host tags in JSX and HTML", () => {
+  const constrained = `
+/**
+ * @component button
+ * @summary The primary action control.
+ * @element button
+ */
+.button { color: red; }
+`;
+  const constrainedDir = mkdtempSync(join(tmpdir(), "cssdoc-element-"));
+  const constrainedCss = join(constrainedDir, "components.css");
+  writeFileSync(constrainedCss, constrained);
+  const constrainedRules = {
+    "cssdoc/valid-class-usage": ["warn", { css: [constrainedCss], modifierConvention: "rscss" }],
+  } as const;
+
+  const linter = new Linter();
+  const jsxMsgs = linter
+    .verify(
+      `export const x = <div className="button" />;`,
+      [
+        {
+          files: ["**/*.jsx"],
+          languageOptions: {
+            ecmaVersion: "latest",
+            sourceType: "module",
+            parserOptions: { ecmaFeatures: { jsx: true } },
+          },
+          plugins: { cssdoc: plugin },
+          rules: constrainedRules,
+        },
+      ] as Parameters<Linter["verify"]>[1],
+      "test.jsx",
+    )
+    .map((m) => m.message);
+  expect(jsxMsgs.some((m) => m.includes("disallowed-element") && m.includes("<div>"))).toBe(true);
+
+  const htmlMsgs = linter
+    .verify(
+      `<div class="button"></div>`,
+      [
+        {
+          files: ["**/*.html"],
+          languageOptions: { parser: htmlParser },
+          plugins: { cssdoc: plugin },
+          rules: constrainedRules,
+        },
+      ] as Parameters<Linter["verify"]>[1],
+      "test.html",
+    )
+    .map((m) => m.message);
+  expect(htmlMsgs.some((m) => m.includes("disallowed-element") && m.includes("<div>"))).toBe(true);
+});
+
 // ── CUBE (attribute) convention on JSX ────────────────────────────────────────────────────────────
 
 const CUBE_CSS = `

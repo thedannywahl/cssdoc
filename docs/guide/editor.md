@@ -43,8 +43,9 @@ In CSS (`.css`, `.scss`, `.less`) and host files (HTML, JSX/TSX, Vue, Svelte, As
   terminal value, the way a browser's dev tools do;
 - **Definition** — jump to the CSS rule that defines a class or `@property`;
 - **Diagnostics + quick-fix** — doc-comment hygiene in embedded CSS, and unknown or deprecated
-  modifiers where classes are used (`class`, `className`, `:class`, `class:name`), with a one-click
-  replace-with-canonical fix.
+  modifiers where classes are used (`class`, `className`, `:class`, `class:name`), plus
+  `@element` host-tag enforcement (`disallowed-element`), with a one-click replace-with-canonical fix
+  for deprecated modifiers.
 
 To cover embedded CSS, widen the scan globs to your host files:
 

@@ -48,6 +48,11 @@ export interface InjectionGrammar {
   repository: Record<string, TmRule>;
 }
 
+/** A Shiki/VS Code registration: grammar + inject targets. */
+export interface InjectionLanguageRegistration extends InjectionGrammar {
+  injectTo: string[];
+}
+
 const TAG_SCOPE = "storage.type.class.cssdoc";
 const alt = (names: readonly string[]): string => names.join("|");
 
@@ -179,6 +184,73 @@ export function buildInjectionGrammar(): InjectionGrammar {
 }
 
 /**
+ * Build an injection grammar that highlights cssdoc record-reference at-rules in source CSS, for
+ * examples like `@component top-nav (--desktop-nav) {}` used inside implicit layout blocks.
+ */
+export function buildAtRuleInjectionGrammar(): InjectionGrammar {
+  const recordTags = alt(cssdocTagNamesByKind("record"));
+  const nativeCssAtRules = alt([
+    "charset",
+    "color-profile",
+    "container",
+    "counter-style",
+    "document",
+    "font-face",
+    "font-feature-values",
+    "font-palette-values",
+    "import",
+    "keyframes",
+    "layer",
+    "media",
+    "namespace",
+    "page",
+    "property",
+    "scope",
+    "starting-style",
+    "supports",
+    "view-transition",
+  ]);
+  return {
+    $schema: "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    name: "cssdoc-at-rules",
+    scopeName: "source.css.cssdoc.atrules",
+    injectionSelector: "L:meta.at-rule.css, L:meta.at-rule.scss, L:meta.at-rule.less",
+    patterns: [
+      { include: "#record-ref-atrule" },
+      { include: "#untyped-ref-atrule" },
+      { include: "#custom-property" },
+    ],
+    repository: {
+      // Typed record refs: @component nav, @layout shell, with optional :profile / (--profile).
+      "record-ref-atrule": {
+        match:
+          `(@(?:${recordTags}))\\b(?:[ \\t]+([A-Za-z][A-Za-z0-9_-]*))?` +
+          "(?:[ \\t]+(\\(\\s*--[A-Za-z][A-Za-z0-9-]*\\s*\\)|:[A-Za-z][A-Za-z0-9_-]*))?",
+        captures: {
+          "1": { name: TAG_SCOPE },
+          "2": { name: "entity.name.type.cssdoc" },
+          "3": { name: "support.type.custom-property.cssdoc" },
+        },
+      },
+      // Untyped refs: @nav / @header, with optional profile marker. Excludes native CSS at-rules.
+      "untyped-ref-atrule": {
+        match:
+          `(@(?!(?:${nativeCssAtRules})\\b)(?:[A-Za-z][A-Za-z0-9_-]*))` +
+          "(?:[ \\t]+(\\(\\s*--[A-Za-z][A-Za-z0-9-]*\\s*\\)|:[A-Za-z][A-Za-z0-9_-]*))?",
+        captures: {
+          "1": { name: TAG_SCOPE },
+          "2": { name: "support.type.custom-property.cssdoc" },
+        },
+      },
+      "custom-property": {
+        match: "(?<![\\w-])--[A-Za-z][A-Za-z0-9-]*",
+        name: "support.type.custom-property.cssdoc",
+      },
+    },
+  };
+}
+
+/**
  * The host scopes the injection layers onto. It fires only where `comment.block.css` (etc.) appears —
  * see {@link InjectionGrammar.injectionSelector} — so listing the JS/HTML/Markdown/framework hosts is
  * safe: cssdoc lights up embedded CSS wherever another grammar embeds it, not just in `.css` files.
@@ -201,6 +273,11 @@ export const injectTo = [
 ];
 
 /** The cssdoc doc-comment injection grammar, shaped as a Shiki `LanguageRegistration`. */
-export const cssdoc = { ...buildInjectionGrammar(), injectTo };
+export const cssdoc: InjectionLanguageRegistration = { ...buildInjectionGrammar(), injectTo };
 
+/** The cssdoc record-ref at-rule injection grammar for source CSS. */
+export const cssdocAtRules: InjectionLanguageRegistration = {
+  ...buildAtRuleInjectionGrammar(),
+  injectTo,
+};
 export default cssdoc;

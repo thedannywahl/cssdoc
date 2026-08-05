@@ -38,6 +38,13 @@ copyFileSync(
   new URL("../../../syntaxes/cssdoc/tmlanguage/cssdoc.injection.tmLanguage.json", import.meta.url),
   "syntaxes/cssdoc.injection.tmLanguage.json",
 );
+copyFileSync(
+  new URL(
+    "../../../syntaxes/cssdoc/tmlanguage/cssdoc.atrules.injection.tmLanguage.json",
+    import.meta.url,
+  ),
+  "syntaxes/cssdoc.atrules.injection.tmLanguage.json",
+);
 
 // Vendor the config JSON schema so the editor validates/completes cssdoc.json + cssdoc.jsonc.
 mkdirSync("schemas", { recursive: true });

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "cssdoc-at-rules",
+  "scopeName": "source.css.cssdoc.atrules",
+  "injectionSelector": "L:meta.at-rule.css, L:meta.at-rule.scss, L:meta.at-rule.less",
+  "patterns": [
+    {
+      "include": "#record-ref-atrule"
+    },
+    {
+      "include": "#untyped-ref-atrule"
+    },
+    {
+      "include": "#custom-property"
+    }
+  ],
+  "repository": {
+    "record-ref-atrule": {
+      "match": "(@(?:component|name|utility|rule|declaration|layout))\\b(?:[ \\t]+([A-Za-z][A-Za-z0-9_-]*))?(?:[ \\t]+(\\(\\s*--[A-Za-z][A-Za-z0-9-]*\\s*\\)|:[A-Za-z][A-Za-z0-9_-]*))?",
+      "captures": {
+        "1": {
+          "name": "storage.type.class.cssdoc"
+        },
+        "2": {
+          "name": "entity.name.type.cssdoc"
+        },
+        "3": {
+          "name": "support.type.custom-property.cssdoc"
+        }
+      }
+    },
+    "untyped-ref-atrule": {
+      "match": "(@(?!(?:charset|color-profile|container|counter-style|document|font-face|font-feature-values|font-palette-values|import|keyframes|layer|media|namespace|page|property|scope|starting-style|supports|view-transition)\\b)(?:[A-Za-z][A-Za-z0-9_-]*))(?:[ \\t]+(\\(\\s*--[A-Za-z][A-Za-z0-9-]*\\s*\\)|:[A-Za-z][A-Za-z0-9_-]*))?",
+      "captures": {
+        "1": {
+          "name": "storage.type.class.cssdoc"
+        },
+        "2": {
+          "name": "support.type.custom-property.cssdoc"
+        }
+      }
+    },
+    "custom-property": {
+      "match": "(?<![\\w-])--[A-Za-z][A-Za-z0-9-]*",
+      "name": "support.type.custom-property.cssdoc"
+    }
+  }
+}

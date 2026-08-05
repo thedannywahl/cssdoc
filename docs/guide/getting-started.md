@@ -16,7 +16,7 @@ emitters, linters, the language server — builds on the same model; add those a
 ## Document a component
 
 Put a `/** … */` comment above a component's rules. A record begins at a `@component` (or `@name`,
-`@utility`, `@rule`, `@declaration`) tag and runs until the next one:
+`@layout`, `@utility`, `@rule`, `@declaration`) tag and runs until the next one:
 
 ```css
 /**

@@ -95,3 +95,26 @@ test("resolveCustomProperty follows the var() chain to a terminal value, cycle-s
   );
   expect(idx2.resolveCustomProperty("--p").resolved).toBe("#fff");
 });
+
+test("createIndex preserves same-name records across kinds", () => {
+  const idx = createIndex(
+    [
+      "/**",
+      " * @component badge",
+      " * @summary A badge.",
+      " */",
+      ".badge {}",
+      "/**",
+      " * @layout badge",
+      " * @summary Badge layout.",
+      " */",
+      ".badge-layout {}",
+    ].join("\n"),
+  );
+
+  const badgeKinds = idx.records
+    .filter((r) => r.entry.name === "badge")
+    .map((r) => r.entry.kind)
+    .sort();
+  expect(badgeKinds).toEqual(["component", "layout"]);
+});

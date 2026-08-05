@@ -1,0 +1,251 @@
+# Layouts
+
+`@layout` is for CSSOM-first composition docs: define the structure in CSS, then derive valid HTML from
+that model.
+
+This guide shows a practical flow:
+
+1. Define reusable components in CSS docs.
+2. Define one layout record with `@structure`.
+3. Derive an HTML scaffold that matches the documented structure.
+
+If you want full API details, use the TypeDoc reference. This guide stays focused on author workflow.
+
+## Step 1: Define component records in CSS
+
+Start with reusable pieces, not markup.
+
+```css
+/**
+ * @component site-header
+ * @summary Global page header with brand and primary navigation.
+ * @part .brand - Brand link.
+ */
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/**
+ * @component top-nav
+ * @summary Horizontal link list used in page-level navigation.
+ * @part .top-nav__link - One navigation link.
+ */
+.top-nav {
+  display: flex;
+  gap: 0.75rem;
+}
+.top-nav__link {
+  text-decoration: none;
+}
+
+/**
+ * @component filter-chip
+ * @summary Compact action for toggling list filters.
+ * @modifier -active - Highlights the chip when selected.
+ */
+.filter-chip {
+  border: 1px solid currentcolor;
+}
+.filter-chip.-active {
+  font-weight: 600;
+}
+```
+
+## Step 2: Define the layout record
+
+You can author structure in two ways. Use explicit when you want full control over the docs tree. Use
+implicit when the layout CSS itself already reflects the same single-root shape.
+
+::: code-group
+
+```css [Implicit from CSS rules]
+/**
+ * @layout app-shell
+ * @summary Base application frame with header, content region, and footer.
+ */
+.app-shell {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+
+  @component site-header (--desktop-header) {
+  }
+  @component top-nav (--desktop-nav) {
+  }
+
+  .content-wrap {
+    .side-rail {
+      @component filter-chip (--desktop-filters) {
+      }
+    }
+    .content-panel {
+    }
+  }
+
+  .site-footer {
+  }
+}
+```
+
+```css [Explicit @structure]
+/**
+ * @layout app-shell
+ * @summary Base application frame with header, content region, and footer.
+ * @structure
+ * .app-shell {
+ *   @component site-header
+ *   .content-wrap {
+ *     .side-rail {
+ *       @component filter-chip
+ *     }
+ *     .content-panel {}
+ *   }
+ *   .site-footer {}
+ * }
+ */
+.app-shell {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+.content-wrap {
+  display: grid;
+  grid-template-columns: 18rem 1fr;
+}
+```
+
+:::
+
+With implicit mode, cssdoc infers the structure tree from the layout record's CSS nodes. If inference
+would produce multiple roots, cssdoc drops the inferred tree so docs remain deterministic. In that
+case, switch to explicit `@structure`.
+
+At this point, CSS is the source of truth.
+
+- Component records define reusable pieces.
+- The layout record defines how those pieces compose.
+
+## Step 3: Derive valid HTML from the documented structure
+
+Once records are defined, scaffold markup that matches the structure tree.
+
+```html
+<!doctype html>
+<html lang="en">
+  <body>
+    <div class="app-shell">
+      <header class="site-header">
+        <a class="brand" href="/">Acme</a>
+      </header>
+
+      <main class="content-wrap">
+        <aside class="side-rail">
+          <button class="filter-chip">Open</button>
+        </aside>
+        <section class="content-panel">...</section>
+      </main>
+
+      <footer class="site-footer">...</footer>
+    </div>
+  </body>
+</html>
+```
+
+Because the scaffold comes from `@structure`, docs and markup stay aligned.
+
+## Step 4: Add profiles when composition changes by breakpoint
+
+If composition changes between breakpoints, profile the layout reference.
+
+```css
+/**
+ * @component top-nav
+ * @summary Primary navigation.
+ */
+.top-nav {
+}
+
+/**
+ * @component filter-chip
+ * @summary Filter action chip.
+ */
+.filter-chip {
+}
+
+/**
+ * @layout app-shell
+ * @structure
+ * .app-shell {
+ *   @component top-nav (--desktop-nav) {}
+ *   @component filter-chip (--desktop-filters) {}
+ * }
+ */
+.app-shell {
+}
+```
+
+Then choose one of these paths:
+
+1. Declare profiles directly with [`@custom-media`](https://developer.mozilla.org/docs/Web/CSS/@custom-media).
+2. Or generate them with `compileCustomMediaDeclarations`.
+
+::: code-group
+
+```css [Declare with @custom-media]
+@custom-media --desktop-nav (width >= 64rem);
+@custom-media --desktop-filters (width >= 64rem);
+```
+
+```ts [Generate with compileCustomMediaDeclarations]
+import { compileCustomMediaDeclarations } from "@cssdoc/core";
+
+const declarations = compileCustomMediaDeclarations(css, {
+  resolveValue: (profile) => {
+    if (profile === "--desktop-nav") return "(width >= 64rem)";
+    if (profile === "--desktop-filters") return "(width >= 64rem)";
+    return true;
+  },
+});
+```
+
+:::
+
+Output:
+
+```css
+@custom-media --desktop-filters (width >= 64rem);
+@custom-media --desktop-nav (width >= 64rem);
+```
+
+When inline `@custom-media` declarations already exist in your CSS, `compileCustomMediaDeclarations`
+finds and absorbs those values for matching profiles, so output stays aligned and deduped.
+
+## CSSOM-first workflow
+
+1. Start from component and layout CSS.
+2. Document reusable blocks as `@component` records.
+3. Add one `@layout` record per page shell.
+4. Derive HTML scaffold from the `@structure` tree.
+5. Add profiles only when composition changes.
+
+## Common issues
+
+- `structure-unknown-record`: A `@structure` reference points to a name that has no record yet.
+- `structure-ambiguous-record`: An untyped reference matches more than one record kind.
+- `structure-unknown-selector`: A structure selector does not map to a documented member.
+
+If you intentionally reference external classes, add them to `structureIgnore` in `cssdoc.json`.
+
+## Related guides
+
+- [Authoring doc comments](/guide/authoring)
+- [Configuration](/guide/config)
+- [Linting](/guide/linting)

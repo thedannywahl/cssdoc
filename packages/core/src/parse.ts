@@ -10,6 +10,7 @@
  * @module
  */
 import postcss, { type ChildNode } from "postcss";
+import { HTML_ELEMENT_GROUPS, HTML_ELEMENT_NAMES } from "@cssdoc/spec";
 import { CssDocConfiguration, type InlineCommentMode } from "./configuration.ts";
 import {
   deriveSelectorName,
@@ -23,6 +24,8 @@ import type {
   CssAnimation,
   CssCondition,
   CssDocEntry,
+  CssElementConstraints,
+  CssElementProfile,
   CssFunction,
   CssLayer,
   CssModifier,
@@ -52,8 +55,163 @@ const CLASS_IDENT = String.raw`[A-Za-z_][\w-]*`;
 const CLASS_REF_RE = new RegExp(String.raw`\.(${CLASS_IDENT})`, "gu");
 /** A selector that is exactly one class — the base-class inference candidate filter. */
 const SINGLE_CLASS_RE = new RegExp(String.raw`^\.${CLASS_IDENT}$`, "u");
+const RECORD_REF_NAME_RE = /^[a-zA-Z][\w-]*$/u;
+const RECORD_REF_PROFILE_RE = /^:\s*([\w-]+)$/u;
+const RECORD_REF_TYPED_RE = /^([\w-]+)(?::([\w-]+))?$/u;
+const RECORD_REF_CUSTOM_MEDIA_RE = /^\(\s*(--[\w-]+)\s*\)$/u;
+const RECORD_REF_TYPED_CUSTOM_MEDIA_RE = /^([\w-]+)\s+\(\s*(--[\w-]+)\s*\)$/u;
+const RECORD_REF_KINDS = new Set(["component", "name", "utility", "rule", "declaration", "layout"]);
+const ELEMENT_TAG_RE = /^<?\s*([a-z][a-z0-9-]*)\s*>?$/u;
+const STRUCT_CARDINALITY: Record<string, NonNullable<StructureNode["cardinality"]>> = {
+  optional: "optional",
+  opt: "optional",
+  many: "many",
+  "one-or-more": "one-or-more",
+  more: "one-or-more",
+};
+const STRUCT_CARD_RE = /:(optional|opt|one-or-more|more|many)\s*$/u;
 
 const unquote = (value: string): string => value.trim().replace(/^["']|["']$/gu, "");
+const sortUnique = (values: Iterable<string>): string[] =>
+  [...new Set([...values].map((v) => v.toLowerCase()))].sort((a, b) => a.localeCompare(b));
+
+function normalizeStructureAtRuleRef(name: string, params: string): string | undefined {
+  if (name.includes(":")) {
+    if (params.trim()) return undefined;
+    const [record, profile] = name.split(":", 2);
+    if (!RECORD_REF_NAME_RE.test(record) || !profile || !RECORD_REF_NAME_RE.test(profile)) {
+      return undefined;
+    }
+    return `@${record}:${profile}`;
+  }
+  if (!RECORD_REF_NAME_RE.test(name)) return undefined;
+  const trimmed = params.trim();
+  if (RECORD_REF_KINDS.has(name)) {
+    const typedMedia = trimmed.match(RECORD_REF_TYPED_CUSTOM_MEDIA_RE);
+    if (typedMedia) return `@${name} ${typedMedia[1]} (${typedMedia[2]})`;
+    const typed = trimmed.match(RECORD_REF_TYPED_RE);
+    if (!typed) return undefined;
+    return `@${name} ${typed[1]}${typed[2] ? `:${typed[2]}` : ""}`;
+  }
+  if (!trimmed) return `@${name}`;
+  const customMedia = trimmed.match(RECORD_REF_CUSTOM_MEDIA_RE);
+  if (customMedia) return `@${name} (${customMedia[1]})`;
+  const profile = trimmed.match(RECORD_REF_PROFILE_RE);
+  if (!profile) return undefined;
+  return `@${name}:${profile[1]}`;
+}
+
+function buildStructureFromNodes(nodes: readonly ChildNode[]): StructureNode[] {
+  const out: StructureNode[] = [];
+  for (const node of nodes) {
+    if (node.type === "atrule" && node.name === "scope") {
+      out.push({
+        selector: "",
+        scope: node.params.trim(),
+        children: buildStructureFromNodes(node.nodes ?? []),
+      });
+      continue;
+    }
+    if (node.type === "atrule") {
+      const selector = normalizeStructureAtRuleRef(node.name, node.params);
+      if (!selector) continue;
+      out.push({ selector, children: buildStructureFromNodes(node.nodes ?? []) });
+      continue;
+    }
+    if (node.type !== "rule") continue;
+    const selector = node.selector.trim();
+    const card = selector.match(STRUCT_CARD_RE);
+    const entry: StructureNode = {
+      selector: card ? selector.slice(0, card.index).trim() : selector,
+      children: buildStructureFromNodes(node.nodes ?? []),
+    };
+    if (card) entry.cardinality = STRUCT_CARDINALITY[card[1]];
+    out.push(entry);
+  }
+  return out;
+}
+
+function parseElementToken(
+  token: string,
+):
+  | { kind: "any" }
+  | { kind: "group"; alias: string; members: readonly string[] }
+  | { kind: "tag"; name: string }
+  | undefined {
+  const trimmed = token.trim().toLowerCase();
+  if (!trimmed) return undefined;
+  if (trimmed === "*" || trimmed === "any") return { kind: "any" };
+  const group = HTML_ELEMENT_GROUPS[trimmed];
+  if (group) return { kind: "group", alias: trimmed, members: group };
+  const m = trimmed.match(ELEMENT_TAG_RE);
+  if (m) return { kind: "tag", name: m[1] };
+  return undefined;
+}
+
+function resolveElementProfile(chunks?: string[]): CssElementProfile {
+  if (!chunks?.length) {
+    return {
+      any: true,
+      allowed: [],
+      include: [],
+      exclude: [],
+      groups: [],
+      excludedGroups: [],
+    };
+  }
+
+  let any = false;
+  const include = new Set<string>();
+  const exclude = new Set<string>();
+  const groups = new Set<string>();
+  const excludedGroups = new Set<string>();
+  for (const chunk of chunks) {
+    for (const item of chunk.split(",")) {
+      const term = item.trim();
+      if (!term) continue;
+      const negated = term.startsWith("!");
+      const parsed = parseElementToken(negated ? term.slice(1) : term);
+      if (!parsed) continue;
+      if (parsed.kind === "any") {
+        if (!negated) any = true;
+        continue;
+      }
+      if (parsed.kind === "group") {
+        if (negated) {
+          excludedGroups.add(parsed.alias);
+          for (const member of parsed.members) exclude.add(member);
+        } else {
+          groups.add(parsed.alias);
+          for (const member of parsed.members) include.add(member);
+        }
+        continue;
+      }
+      if (negated) exclude.add(parsed.name);
+      else include.add(parsed.name);
+    }
+  }
+
+  const allowed = new Set<string>(any ? HTML_ELEMENT_NAMES : include);
+  for (const x of exclude) allowed.delete(x);
+
+  return {
+    any,
+    allowed: sortUnique(allowed),
+    include: sortUnique(include),
+    exclude: sortUnique(exclude),
+    groups: sortUnique(groups),
+    excludedGroups: sortUnique(excludedGroups),
+  };
+}
+
+function resolveElementConstraints(profiles: ParsedDoc["elements"]): CssElementConstraints {
+  const named: Record<string, CssElementProfile> = {};
+  for (const [name, chunks] of profiles) {
+    if (!name) continue;
+    named[name] = resolveElementProfile(chunks);
+  }
+  return { default: resolveElementProfile(profiles.get("")), profiles: named };
+}
 
 interface Collected {
   className: string;
@@ -92,9 +250,17 @@ function parseLegendRows(text: string): Map<number, string> {
   return out;
 }
 
-/** Parse inline refs from plain text (`@ref 1`, `@ref 1.`). */
-function parseInlineRefs(text: string): number[] {
-  return [...text.matchAll(/@ref\s+(\d+)\.?/gu)].map((m) => Number.parseInt(m[1], 10));
+/** Parse inline refs from plain text, capturing optional prose (`@ref 1. Prevent…`). */
+function parseInlineRefs(text: string): { refs: number[]; annotations: Map<number, string> } {
+  const refs: number[] = [];
+  const annotations = new Map<number, string>();
+  for (const m of text.matchAll(/@ref\s+(\d+)\.?\s*([^\n]*)/gu)) {
+    const n = Number.parseInt(m[1], 10);
+    refs.push(n);
+    const prose = m[2].trim();
+    if (prose) annotations.set(n, prose);
+  }
+  return { refs, annotations };
 }
 
 /**
@@ -108,10 +274,14 @@ function parseLegendFromInlineComment(text: string): {
   const stripped = stripCommentFraming(text);
   const lines = stripped.split("\n");
   const first = lines.find((line) => line.trim().length > 0)?.trim() ?? "";
-  const refs = parseInlineRefs(stripped);
-  if (!/^@(annotations|rule)\b/u.test(first)) return { annotations: new Map(), refs };
+  const { refs, annotations: inlineAnnotations } = parseInlineRefs(stripped);
+  if (!/^@(annotations|rule)\b/u.test(first)) return { annotations: inlineAnnotations, refs };
   const body = lines.slice(1).join("\n");
-  return { annotations: parseLegendRows(body), refs };
+  const legendAnnotations = parseLegendRows(body);
+  // Merge: legend rows take precedence; inline @ref prose fills in any gaps.
+  for (const [k, v] of inlineAnnotations)
+    if (!legendAnnotations.has(k)) legendAnnotations.set(k, v);
+  return { annotations: legendAnnotations, refs };
 }
 
 /** Record a conditional-support block, de-duplicating by type + query. */
@@ -501,8 +671,18 @@ function buildEntry(
     else consumedTokens.set(tokenName, { name: tokenName, description: description || undefined });
   }
 
+  // Layouts can author `@structure` explicitly, or infer it from the CSS rules under the layout block.
+  const structure =
+    doc.structure ??
+    ((doc.kind ?? "component") === "layout"
+      ? (() => {
+          const inferred = buildStructureFromNodes(nodes);
+          return inferred.length === 1 ? inferred : undefined;
+        })()
+      : undefined);
+
   // Attach `@wrapper` prose to the matching `@structure` node(s) by derived selector name or aliased selector.
-  if (doc.wrappers.size && doc.structure?.length) {
+  if (doc.wrappers.size && structure?.length) {
     const applyWrappers = (nodes: StructureNode[]): void => {
       for (const node of nodes) {
         const derivedName = deriveSelectorName(node.selector);
@@ -518,7 +698,7 @@ function buildEntry(
         applyWrappers(node.children);
       }
     };
-    applyWrappers(doc.structure);
+    applyWrappers(structure);
   }
 
   const decorators = [
@@ -527,6 +707,8 @@ function buildEntry(
     ...(doc.decorators.sealed ? (["sealed"] as const) : []),
     ...(doc.decorators.frozen ? (["frozen"] as const) : []),
   ];
+
+  const elements = resolveElementConstraints(doc.elements);
 
   return {
     name,
@@ -560,7 +742,7 @@ function buildEntry(
     layers: [...acc.layers.values()].sort(byName),
     conditions: acc.conditions,
     examples: doc.examples,
-    structure: doc.structure,
+    structure,
     structureDescription: doc.structureDescription,
     demo: doc.demo,
     deprecated: doc.deprecated,
@@ -571,6 +753,7 @@ function buildEntry(
     decorators,
     compat: doc.compat,
     related: doc.related,
+    elements,
     ...(source ? { source } : {}),
     ...(doc.customBlocks.size > 0 ? { customBlocks: Object.fromEntries(doc.customBlocks) } : {}),
   };
