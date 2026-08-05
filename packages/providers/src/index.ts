@@ -16,6 +16,7 @@ import type {
 import {
   cssPart,
   customProperty,
+  elementUsage,
   func,
   modifier,
   part,
@@ -45,6 +46,7 @@ export { applyDirectives, parseDirectives } from "./directives.ts";
 export {
   cssPart,
   customProperty,
+  elementUsage,
   func,
   modifier,
   part,
@@ -128,10 +130,11 @@ export function checkClassUsage(
 ): Diagnostic[] {
   return applySeverities(
     usages.flatMap((usage) => {
+      const elementDiags = elementUsage(usage, index);
       const kind = usage.base ? index.matcher.usageKind(usage.token, usage.base) : undefined;
-      if (kind === "state") return stateUsage(usage, index);
-      if (kind === "element") return partUsage(usage, index);
-      return modifier.classUsage(usage, index); // modifier (self-guards for anything else)
+      if (kind === "state") return [...elementDiags, ...stateUsage(usage, index)];
+      if (kind === "element") return [...elementDiags, ...partUsage(usage, index)];
+      return [...elementDiags, ...modifier.classUsage(usage, index)]; // modifier (self-guards for anything else)
     }),
     severities,
   );

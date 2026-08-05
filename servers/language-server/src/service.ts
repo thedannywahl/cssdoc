@@ -127,6 +127,15 @@ function rangeOf(text: string, start: number, end: number): LspRange {
   return { start: positionAt(text, start), end: positionAt(text, end) };
 }
 
+function spanFromOffsets(text: string, start: number, end: number): SourceSpan {
+  const s = positionAt(text, start);
+  const e = positionAt(text, end);
+  return {
+    start: { line: s.line + 1, column: s.character + 1 },
+    end: { line: e.line + 1, column: e.character + 1 },
+  };
+}
+
 /** Hover for `@ref` inside a doc comment, resolved against local `@annotations`. */
 function refHoverAt(
   text: string,
@@ -897,23 +906,54 @@ export class CssDocLanguageService {
     const results: { usage: ClassUsage; start: number; end: number }[] = [];
 
     if (matcher.convention.structure === "attribute") {
-      for (const tag of text.matchAll(/<[a-zA-Z][\w-]*(?:\s[^<>]*?)?\/?>/gu)) {
+      for (const tag of text.matchAll(/<([a-zA-Z][\w-]*)([^<>]*?)\/?>/gu)) {
         const tagStart = tag.index ?? 0;
         const attrs = [...tag[0].matchAll(/([:\w-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/gu)];
         const tokens: string[] = [];
+        const classTokens: { token: string; start: number; end: number }[] = [];
+        const elementName = tag[1].toLowerCase();
         for (const a of attrs) {
           if (a[1] === "class" || a[1] === "className") {
-            tokens.push(...(a[2] ?? a[3] ?? "").split(/\s+/u).filter(Boolean));
+            const raw = a[2] ?? a[3] ?? "";
+            const rawStart = tagStart + (a.index ?? 0) + a[0].length - 1 - raw.length;
+            for (const w of raw.matchAll(/\S+/gu)) {
+              const token = w[0];
+              const start = rawStart + (w.index ?? 0);
+              classTokens.push({ token, start, end: start + token.length });
+              tokens.push(token);
+            }
           }
         }
-        const base = tokens.find((t) => scope.index.componentForClass(t));
+        const baseToken = classTokens.find((t) => scope.index.componentForClass(t.token));
+        const base = baseToken?.token;
         if (!base) continue;
+        results.push({
+          usage: {
+            base,
+            tokens,
+            token: base,
+            elementName,
+            loc: spanFromOffsets(text, baseToken!.start, baseToken!.end),
+          },
+          start: baseToken!.start,
+          end: baseToken!.end,
+        });
         for (const a of attrs) {
           if (a[1] === "class" || a[1] === "className") continue;
           const token = `${a[1]}="${a[2] ?? a[3] ?? ""}"`;
           if (!matcher.looksLikeUsage(token, base)) continue;
           const start = tagStart + (a.index ?? 0);
-          results.push({ usage: { base, tokens, token }, start, end: start + a[0].length });
+          results.push({
+            usage: {
+              base,
+              tokens,
+              token,
+              elementName,
+              loc: spanFromOffsets(text, start, start + a[0].length),
+            },
+            start,
+            end: start + a[0].length,
+          });
         }
       }
       return results;
@@ -923,12 +963,30 @@ export class CssDocLanguageService {
     // Svelte, HTML). A documented component among the tokens turns the element into a checkable usage.
     for (const site of scanClassUsages(text)) {
       const tokens = site.tokens.map((t) => t.token);
-      const base = tokens.find((t) => scope.index.componentForClass(t));
+      const baseToken = site.tokens.find((t) => scope.index.componentForClass(t.token));
+      const base = baseToken?.token;
       if (!base) continue; // only check elements that carry a documented component of this scope
+      results.push({
+        usage: {
+          base,
+          tokens,
+          token: base,
+          elementName: site.elementName,
+          loc: spanFromOffsets(text, baseToken!.start, baseToken!.end),
+        },
+        start: baseToken!.start,
+        end: baseToken!.end,
+      });
       for (const member of site.tokens) {
         if (matcher.usageKind(member.token, base) === undefined) continue;
         results.push({
-          usage: { base, tokens, token: member.token },
+          usage: {
+            base,
+            tokens,
+            token: member.token,
+            elementName: site.elementName,
+            loc: spanFromOffsets(text, member.start, member.end),
+          },
           start: member.start,
           end: member.end,
         });

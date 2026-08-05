@@ -43,6 +43,7 @@ const stripDot = (name: string): string => name.replace(/^\./u, "");
 const warn = (d: Omit<Diagnostic, "severity">): Diagnostic => ({ ...d, severity: "warning" });
 
 const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+const CUSTOM_ELEMENT_RE = /^[a-z][a-z0-9._-]*-[a-z0-9._-]+$/u;
 
 /** A `*`-glob name (e.g. `-icon-*`) as a regex source over one class token (`*` → any `[\w-]` run). */
 const globSource = (name: string): string => name.split("*").map(escapeRe).join("[\\w-]*");
@@ -100,6 +101,50 @@ const globMatch = (pattern: string, value: string): boolean => {
   return re.test(value);
 };
 
+const STRUCTURE_REF_KIND_RE = /^(component|name|utility|rule|declaration|layout)$/u;
+
+type StructureRecordRef = { kind?: string; name: string; profile?: string };
+
+const parseStructureRecordRef = (selector: string): StructureRecordRef | undefined => {
+  if (!selector.startsWith("@")) return undefined;
+  const raw = selector.slice(1).trim();
+  if (!raw) return undefined;
+
+  const typed = raw.match(
+    /^(component|name|utility|rule|declaration|layout)\s+([\w-]+)(?::([\w-]+))?$/u,
+  );
+  if (typed) {
+    return {
+      kind: typed[1] === "name" ? "component" : typed[1],
+      name: typed[2],
+      profile: typed[3],
+    };
+  }
+
+  const typedCustomMedia = raw.match(
+    /^(component|name|utility|rule|declaration|layout)\s+([\w-]+)\s+\(\s*(--[\w-]+)\s*\)$/u,
+  );
+  if (typedCustomMedia) {
+    return {
+      kind: typedCustomMedia[1] === "name" ? "component" : typedCustomMedia[1],
+      name: typedCustomMedia[2],
+      profile: typedCustomMedia[3],
+    };
+  }
+
+  const shorthandCustomMedia = raw.match(/^([\w-]+)\s+\(\s*(--[\w-]+)\s*\)$/u);
+  if (shorthandCustomMedia) {
+    if (STRUCTURE_REF_KIND_RE.test(shorthandCustomMedia[1])) return undefined;
+    return { name: shorthandCustomMedia[1], profile: shorthandCustomMedia[2] };
+  }
+
+  const shorthand = raw.match(/^([\w-]+)(?::([\w-]+))?$/u);
+  if (!shorthand) return undefined;
+  // Guard against malformed `@kind` without a name being interpreted as shorthand.
+  if (STRUCTURE_REF_KIND_RE.test(shorthand[1])) return undefined;
+  return { name: shorthand[1], profile: shorthand[2] };
+};
+
 /**
  * Serialize an authored `@structure` tree back to nested CSS for a syntax-highlighted hover block. Leaf
  * selectors are left bare (no `{}`) — VS Code's CSS grammar still colours them, and it reads like the
@@ -144,11 +189,53 @@ export const record = {
       return keywords.find((k) => new RegExp(`\\b${k}\\b`, "u").test(value));
     };
     const out: Diagnostic[] = [];
+    const sameKindCounts = new Map<string, number>();
+    const nameKinds = new Map<string, Set<string>>();
+    for (const r of index.records) {
+      const key = `${r.entry.kind}:${r.entry.name}`;
+      sameKindCounts.set(key, (sameKindCounts.get(key) ?? 0) + 1);
+      const kinds = nameKinds.get(r.entry.name) ?? new Set<string>();
+      kinds.add(r.entry.kind);
+      nameKinds.set(r.entry.name, kinds);
+    }
+
+    const siblingNameKinds = new Map<string, Set<string>>();
+    for (const r of siblingIndex.records) {
+      const kinds = siblingNameKinds.get(r.entry.name) ?? new Set<string>();
+      kinds.add(r.entry.kind);
+      siblingNameKinds.set(r.entry.name, kinds);
+    }
+
     const siblingClasses = new Set(siblingIndex.records.map((r) => stripDot(r.entry.className)));
     const siblingNames = new Set(
       siblingIndex.records.flatMap((r) => (r.entry.kind === "component" ? [r.entry.name] : [])),
     );
     for (const info of index.records) {
+      const kindKey = `${info.entry.kind}:${info.entry.name}`;
+      if ((sameKindCounts.get(kindKey) ?? 0) > 1) {
+        out.push(
+          warn({
+            aspect: "record",
+            rule: "duplicate-record-id",
+            message: `Record id "${info.entry.name}" is duplicated for kind "${info.entry.kind}" in this scope.`,
+            record: info.entry.name,
+            span: info.span,
+          }),
+        );
+      }
+      if ((nameKinds.get(info.entry.name)?.size ?? 0) > 1) {
+        const kinds = [...(nameKinds.get(info.entry.name) ?? new Set<string>())].sort().join(", ");
+        out.push(
+          warn({
+            aspect: "record",
+            rule: "duplicate-record-id-cross-kind",
+            message: `Record id "${info.entry.name}" is shared across kinds (${kinds}); use typed structure refs like @component ${info.entry.name}.`,
+            record: info.entry.name,
+            span: info.span,
+          }),
+        );
+      }
+
       const decoratorSet = new Set(info.entry.decorators ?? []);
       const readonlyLike = decoratorSet.has("readonly") || decoratorSet.has("frozen");
       const sealedLike = decoratorSet.has("sealed") || decoratorSet.has("frozen");
@@ -272,8 +359,53 @@ export const record = {
         const isSibling = (cls: string): boolean =>
           prefix !== "" && cls.startsWith(prefix) && siblingNames.has(cls.slice(prefix.length));
         const seen = new Set<string>();
+        const seenRefs = new Set<string>();
         const walk = (nodes: StructureNode[]): void => {
           for (const node of nodes) {
+            const ref = parseStructureRecordRef(node.selector);
+            if (ref) {
+              const key = `${ref.kind ?? "*"}:${ref.name}:${ref.profile ?? ""}`;
+              if (!seenRefs.has(key)) {
+                seenRefs.add(key);
+                const kinds = siblingNameKinds.get(ref.name);
+                if (!kinds || kinds.size === 0) {
+                  out.push(
+                    warn({
+                      aspect: "record",
+                      rule: "structure-unknown-record",
+                      message: `@structure references "${node.selector}", but no documented record named "${ref.name}" was found.`,
+                      record: info.entry.name,
+                      span: info.span,
+                    }),
+                  );
+                } else if (ref.kind) {
+                  if (!kinds.has(ref.kind)) {
+                    out.push(
+                      warn({
+                        aspect: "record",
+                        rule: "structure-unknown-record",
+                        message: `@structure references "${node.selector}", but "${ref.name}" isn't documented as kind "${ref.kind}".`,
+                        record: info.entry.name,
+                        span: info.span,
+                      }),
+                    );
+                  }
+                } else if (kinds.size > 1) {
+                  out.push(
+                    warn({
+                      aspect: "record",
+                      rule: "structure-ambiguous-record",
+                      message: `@structure reference "${node.selector}" is ambiguous across kinds (${[...kinds].sort().join(", ")}); use a typed ref like @component ${ref.name}.`,
+                      record: info.entry.name,
+                      span: info.span,
+                    }),
+                  );
+                }
+              }
+              walk(node.children);
+              continue;
+            }
+
             for (const m of node.selector.matchAll(/\.([\w-]+)/gu)) {
               const cls = m[1];
               if (
@@ -750,6 +882,35 @@ export const cssPart = {
 };
 
 // ── consumer-side state / element usage ───────────────────────────────────────────────────────
+
+/** A component class used on an element disallowed by the record's default `@element` profile. */
+export function elementUsage(usage: ClassUsage, index: CssDocIndex): Diagnostic[] {
+  if (!usage.base || usage.token !== usage.base) return [];
+  if (!usage.elementName) return [];
+  const entry = index.componentForClass(usage.base);
+  if (!entry) return [];
+  const profile = entry.elements?.default;
+  if (!profile) return [];
+
+  const element = usage.elementName.toLowerCase();
+  // `@element` models HTML elements/groups; custom elements are out of scope.
+  if (CUSTOM_ELEMENT_RE.test(element)) return [];
+
+  const allowed = profile.any
+    ? !profile.exclude.includes(element)
+    : profile.allowed.includes(element);
+  if (allowed) return [];
+
+  return [
+    warn({
+      aspect: "element",
+      rule: "disallowed-element",
+      message: `"${entry.className}" is not documented for <${element}> by @element constraints.`,
+      record: entry.name,
+      span: usage.loc,
+    }),
+  ];
+}
 
 /** A host-document class that looks like a state (via `statePrefixes`) but isn't a documented state. */
 export function stateUsage(usage: ClassUsage, index: CssDocIndex): Diagnostic[] {
