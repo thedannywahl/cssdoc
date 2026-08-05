@@ -17,6 +17,7 @@ One of these opens a record and picks its kind. `@name` is an alias for `@compon
 | Tag                              | Kind          |
 | -------------------------------- | ------------- |
 | `@component <id>` / `@name <id>` | `component`   |
+| `@layout <id>`                   | `layout`      |
 | `@utility <id>`                  | `utility`     |
 | `@rule <id>`                     | `rule`        |
 | `@declaration <id>`              | `declaration` |
@@ -170,9 +171,91 @@ A `/* @todo … */` comment is captured as a to-do, not a description — the na
 note-to-self that shouldn't read as prose. `@todo` also works as a block tag. To-dos are internal:
 they surface in the editor hover but public emitters omit them, like `@privateRemarks`.
 
+`@layout` is a first-class record kind for composition-focused CSS surfaces. For conventions,
+implicit-structure behavior, and record-reference syntax in `@structure`, see [Layouts](/guide/layouts).
+
 ## Modifier (flag) tags
 
-Presence sets the record's release stage: `@alpha`, `@beta`, `@experimental`, `@internal`, `@public`.
+Presence sets the record's release stage: `@alpha`, `@beta`, `@experimental`, `@internal`, `@public`, `@stable`.
+
+Use `@stable` when a record is production-ready but is deployed continuously and does not carry a meaningful `@since` version.
+
+## Annotations and refs
+
+`@annotations` defines a numbered legend for a record — prose rows that describe specific CSS choices
+by number. `@ref` cites one of those entries on the record itself.
+
+Prose can live inline on each `@ref`, or collected up front in an `@annotations` block — both work:
+
+::: code-group
+
+```css [@annotations]
+/**
+ * @component card
+ * @summary A surface container.
+ * @annotations
+ * 1. Prevent shrinking when used in a flex row.
+ * 2. Focus ring must remain visible over all backgrounds.
+ */
+.card {
+  flex-shrink: 0; /* @ref 1 */
+  outline-offset: 2px; /* @ref 2 */
+}
+```
+
+```css [@ref]
+/**
+ * @component card
+ * @summary A surface container.
+ * @ref 1. Prevent shrinking when used in a flex row.
+ * @ref 2. Focus ring must remain visible over all backgrounds.
+ */
+.card {
+  flex-shrink: 0; /* @ref 1 */
+  outline-offset: 2px; /* @ref 2 */
+}
+```
+
+:::
+
+A `/* @ref N */` comment on any member rule cites the annotation inline — the legend text shows in
+hover for that specific rule:
+
+```css
+/* @ref 3. Legacy reset path. */
+.card.-legacy { … }
+```
+
+Annotations are internal guidance — they surface in editor hover and the JSON model. Public emitters
+omit them by default; opt in with `includeAnnotations: true` on the emitter options.
+
+## Object-model decorators
+
+These flag tags constrain how downstream code can use or extend a record. They appear in the model's
+`decorators` field and are used by documentation tooling, scaffolders, and code generators.
+
+| Tag                                | Meaning                                            |
+| ---------------------------------- | -------------------------------------------------- |
+| `@sealed` / `@noextend`            | No new modifiers or parts should be added.         |
+| `@frozen`                          | The record is fully immutable — no changes at all. |
+| `@preventExtensions` / `@noextend` | No new named members can be added to the record.   |
+| `@readonly`                        | The record's tokens may not be reassigned.         |
+
+```css
+/**
+ * @component close-button
+ * @summary A dismiss control with a fixed appearance.
+ * @sealed
+ */
+.close-button { … }
+```
+
+These tags don't change CSS behavior. They are conventions for consumers: a `@sealed` component
+signals that adding modifier chaining is out of scope; a `@frozen` declaration block should not be
+overridden.
+
+Public emitters omit decorators by default; opt in with `includeDecorators: true` on the emitter
+options.
 
 ## Inline tags
 

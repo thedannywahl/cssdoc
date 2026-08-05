@@ -26,8 +26,10 @@ export default {
 ```
 
 It reports the hygiene rules — `missing-summary`, `undocumented-modifier`, `undocumented-part`,
-`deprecated-requires-canonical`, and `name-not-in-css` (a documented modifier/part whose selector
-appears in no CSS rule — drift) — plus the registered-property value rules below.
+`undocumented-css-part`, `deprecated-requires-canonical`, `name-not-in-css`,
+`duplicate-record-id`, `duplicate-record-id-cross-kind`, `structure-unknown-selector`,
+`structure-unknown-record`, `structure-ambiguous-record`, `unknown-annotation-ref`,
+`readonly-redefinition`, and `sealed-reset-value` — plus the registered-property value rules below.
 
 `name-not-in-css` has three deliberate allowances:
 
@@ -44,7 +46,8 @@ Parts defined only in **nested CSS rules** (e.g., `@part .item` where `.item { }
 - **`cssdoc/valid-doc-comments`** — the same hygiene checks, on the `@eslint/css` language.
 - **`cssdoc/valid-class-usage`** — validates the classes your **HTML and JSX** apply against the
   documented surface: it finds the base component among an element's classes and checks each chained
-  `-modifier`, flagging unknown and deprecated ones.
+  `-modifier`, flagging unknown and deprecated ones, and applies `@element` constraints via
+  `disallowed-element` when a component is used on a host tag outside the documented allow-list.
 
 ```sh
 npm i -D @cssdoc/eslint-plugin eslint @eslint/css

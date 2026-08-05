@@ -18,7 +18,7 @@ npm i -D @cssdoc/config @cssdoc/core
   "noStandardTags": false,
   "tagDefinitions": [
     { "tagName": "@token", "syntaxKind": "block", "allowMultiple": true },
-    { "tagName": "@pattern", "syntaxKind": "record", "recordKind": "component" },
+    { "tagName": "@pattern", "syntaxKind": "record", "recordKind": "layout" },
   ],
   "supportForTags": {
     "@privateRemarks": false,
@@ -83,26 +83,31 @@ Each lint rule has a configurable severity — `off`, `warn`, or `error` — set
 
 The rule ids:
 
-| Rule                            | Default | Fires when…                                                                  |
-| ------------------------------- | ------- | ---------------------------------------------------------------------------- |
-| `missing-summary`               | `warn`  | a record has no `@summary`.                                                  |
-| `undocumented-modifier`         | `warn`  | a modifier has no `@modifier` description.                                   |
-| `deprecated-requires-canonical` | `warn`  | a deprecated modifier has no replacement.                                    |
-| `name-not-in-css`               | `warn`  | a documented modifier/part isn't in any selector.                            |
-| `unknown-modifier`              | `warn`  | a consumer uses a modifier candidate that isn't documented.                  |
-| `deprecated-modifier`           | `warn`  | a consumer uses a deprecated modifier.                                       |
-| `unknown-state`                 | `warn`  | a consumer uses a state class (`statePrefixes`) that isn't documented.       |
-| `unknown-part`                  | `warn`  | a consumer uses an element class (`elementSeparator`) that isn't documented. |
-| `undocumented-part`             | `warn`  | a part has no `@part` description.                                           |
-| `undocumented-css-part`         | `warn`  | a shadow part (`@csspart`) has no description.                               |
-| `component-name-case`           | `warn`  | a component class breaks the configured `naming.component` case (see below). |
-| `part-name-case`                | `warn`  | a part class breaks the configured `naming.part` case.                       |
-| `structure-unknown-selector`    | `warn`  | an `@structure` selector names a class that isn't a documented member.       |
-| `invalid-default-value`         | `warn`  | a registered property's default doesn't match its syntax.                    |
-| `invalid-property-value`        | `warn`  | an assignment doesn't match a property's declared syntax.                    |
-| `invalid-fallback-value`        | `warn`  | a `var(--x, …)` fallback doesn't match the declared syntax.                  |
-| `unknown-custom-property`       | `off`   | a `var(--x)` isn't documented (opt-in via a property prefix).                |
-| `cssdoc-directive`              | `warn`  | a `cssdoc-expect-error` directive matched no problem (unused expectation).   |
+| Rule                             | Default | Fires when…                                                                      |
+| -------------------------------- | ------- | -------------------------------------------------------------------------------- |
+| `missing-summary`                | `warn`  | a record has no `@summary`.                                                      |
+| `undocumented-modifier`          | `warn`  | a modifier has no `@modifier` description.                                       |
+| `deprecated-requires-canonical`  | `warn`  | a deprecated modifier has no replacement.                                        |
+| `name-not-in-css`                | `warn`  | a documented modifier/part isn't in any selector.                                |
+| `unknown-modifier`               | `warn`  | a consumer uses a modifier candidate that isn't documented.                      |
+| `deprecated-modifier`            | `warn`  | a consumer uses a deprecated modifier.                                           |
+| `unknown-state`                  | `warn`  | a consumer uses a state class (`statePrefixes`) that isn't documented.           |
+| `unknown-part`                   | `warn`  | a consumer uses an element class (`elementSeparator`) that isn't documented.     |
+| `undocumented-part`              | `warn`  | a part has no `@part` description.                                               |
+| `undocumented-css-part`          | `warn`  | a shadow part (`@csspart`) has no description.                                   |
+| `component-name-case`            | `warn`  | a component class breaks the configured `naming.component` case (see below).     |
+| `part-name-case`                 | `warn`  | a part class breaks the configured `naming.part` case.                           |
+| `disallowed-element`             | `warn`  | a component is used on a host tag outside the documented `@element` allow-list.  |
+| `duplicate-record-id`            | `error` | a record id is duplicated for the same kind in the current scope.                |
+| `duplicate-record-id-cross-kind` | `warn`  | a record id is shared across kinds (for example component + layout).             |
+| `structure-unknown-selector`     | `warn`  | an `@structure` selector names a class that isn't a documented member.           |
+| `structure-unknown-record`       | `warn`  | an `@structure` record reference targets no documented record of that name/kind. |
+| `structure-ambiguous-record`     | `warn`  | an untyped `@structure` record reference matches multiple kinds.                 |
+| `invalid-default-value`          | `warn`  | a registered property's default doesn't match its syntax.                        |
+| `invalid-property-value`         | `warn`  | an assignment doesn't match a property's declared syntax.                        |
+| `invalid-fallback-value`         | `warn`  | a `var(--x, …)` fallback doesn't match the declared syntax.                      |
+| `unknown-custom-property`        | `off`   | a `var(--x)` isn't documented (opt-in via a property prefix).                    |
+| `cssdoc-directive`               | `warn`  | a `cssdoc-expect-error` directive matched no problem (unused expectation).       |
 
 `unknown-modifier` defaults to `warn` because BEM's `--` is an unambiguous signal — only `base--…`
 tokens are candidates. Under weak-signal conventions (`bare`/OOCSS), where every chained class is a
