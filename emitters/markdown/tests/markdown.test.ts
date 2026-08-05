@@ -65,12 +65,17 @@ const RICH_CSS = `
 
 test("renders an Annotations section with legend rows and refs", () => {
   const [card] = parseCssDocs(RICH_CSS);
-  const md = renderEntry(card!);
+  const md = renderEntry(card!, { includeAnnotations: true });
   expect(md).toContain("## Annotations");
   expect(md).toContain("| Ref | Annotation |");
   expect(md).toContain("`1`");
   expect(md).toContain("Focus ring stays visible.");
   expect(md).toContain("**Refs:** `1`");
+});
+
+test("omits the Annotations section by default", () => {
+  const [card] = parseCssDocs(RICH_CSS);
+  expect(renderEntry(card!)).not.toContain("## Annotations");
 });
 
 test("Tokens consumed gains a Description column from @tokens, and unions non-var() tokens", () => {

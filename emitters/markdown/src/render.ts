@@ -97,6 +97,16 @@ export interface RenderEntryOptions {
   resolveComponent?: (className: string) => { name: string; href: string } | undefined;
   /** Reorder (or drop) the `##` sections; defaults to {@link DEFAULT_SECTION_ORDER}. */
   sectionOrder?: readonly SectionKey[];
+  /**
+   * Emit the `## Annotations` section. Annotations are internal guidance (like `@privateRemarks`);
+   * defaults to `false` so public emitters omit them by default.
+   */
+  includeAnnotations?: boolean;
+  /**
+   * Emit object-model decorators (`@sealed`, `@frozen`, `@preventExtensions`, `@readonly`) on the
+   * record meta line. Defaults to `false` so public emitters omit them by default.
+   */
+  includeDecorators?: boolean;
   /** Heading prefix for the page title (defaults to no prefix, i.e. just the record name). */
   headingPrefix?: string;
   /**
@@ -352,6 +362,8 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   const meta: string[] = [];
   if (entry.since) meta.push(`**Since:** ${escProse(entry.since)}`);
   if (entry.group) meta.push(`**Group:** ${escProse(entry.group)}`);
+  if (options.includeDecorators && entry.decorators?.length)
+    meta.push(`**Decorators:** ${entry.decorators.map((d) => `\`@${d}\``).join(" ")}`);
   const src = options.resolveSource?.(entry);
   if (src) meta.push(`**Source:** [${escProse(src.label ?? "source")}](${src.href})`);
   if (meta.length) lines.push(meta.join(" · "), "");
@@ -381,7 +393,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
     if (importSnippet) fragments.usage.push("```css", importSnippet, "```", "");
   }
 
-  if (annotations.length || refs.length) {
+  if ((annotations.length || refs.length) && options.includeAnnotations) {
     fragments.annotations.push("## Annotations", "");
     if (annotations.length) {
       fragments.annotations.push(
