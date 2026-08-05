@@ -4,6 +4,34 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.10.0
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.9.0...v0.10.0)
+
+### 🚀 Enhancements
+
+- Add coverage directory to .gitignore ([bd82044](https://github.com/thedannywahl/cssdoc/commit/bd82044))
+- **core:** Add @layout record kind and implicit structure inference ([b94e6e7](https://github.com/thedannywahl/cssdoc/commit/b94e6e7))
+- **providers:** Add layout/structure/element diagnostics ([3f69c6e](https://github.com/thedannywahl/cssdoc/commit/3f69c6e))
+- **config:** Add layout kind and new diagnostic rule IDs to schema ([2d6ff70](https://github.com/thedannywahl/cssdoc/commit/2d6ff70))
+- **core:** Add custom-media profile syntax and declaration builder ([0aae85c](https://github.com/thedannywahl/cssdoc/commit/0aae85c))
+- **syntax:** Add at-rule injection grammar for cssdoc structure refs ([0e0d7f9](https://github.com/thedannywahl/cssdoc/commit/0e0d7f9))
+- **spec:** Add @stable modifier tag ([1746a38](https://github.com/thedannywahl/cssdoc/commit/1746a38))
+- **markdown:** Add includeAnnotations and includeDecorators render options ([c139421](https://github.com/thedannywahl/cssdoc/commit/c139421))
+
+### 📖 Documentation
+
+- Add layouts guide and update authoring/config/linting docs ([bea8d14](https://github.com/thedannywahl/cssdoc/commit/bea8d14))
+
+### 🏡 Chore
+
+- **examples:** Demonstrate layouts, annotations, refs, decorators, @stable ([9c36191](https://github.com/thedannywahl/cssdoc/commit/9c36191))
+- Update pnpm lockfile and workspace config ([4cdb648](https://github.com/thedannywahl/cssdoc/commit/4cdb648))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.9.0
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.8.1...v0.9.0)
