@@ -13,3 +13,4 @@ servers/vscode/syntaxes
 .DS_Store
 # Local-only agent notes and personal migration seed — never committed.
 docs/internal/
+coverage/
