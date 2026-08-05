@@ -18,7 +18,7 @@
 export type CssdocTagKind = "record" | "block" | "modifier" | "inline";
 
 /** The record kind a `record` tag opens. */
-export type CssdocRecordKind = "component" | "utility" | "rule" | "declaration";
+export type CssdocRecordKind = "component" | "utility" | "rule" | "declaration" | "layout";
 
 /** The argument shape a tag accepts, for grammars that highlight it distinctly. */
 export type CssdocTagArgument = "modifier-name" | "part-name" | "custom-property";
@@ -50,6 +50,7 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
   { name: "utility", kind: "record", recordKind: "utility" },
   { name: "rule", kind: "record", recordKind: "rule" },
   { name: "declaration", kind: "record", recordKind: "declaration" },
+  { name: "layout", kind: "record", recordKind: "layout" },
   // Prose (TSDoc-adopted).
   // `@selector` declares the component's base CSS selector when it isn't a plain class:
   // attribute, ID, compound, or :host/:host-context(). `@class` is its deprecated alias.
@@ -111,6 +112,7 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
   { name: "accessibility", kind: "block", allowMultiple: true, aliasFor: "a11y" },
   // Structure & demo.
   { name: "structure", kind: "block" },
+  { name: "element", kind: "block", allowMultiple: true },
   { name: "demo", kind: "block" },
   // Usage, compatibility & related.
   { name: "usage", kind: "block" },
@@ -122,6 +124,7 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
   { name: "experimental", kind: "modifier" },
   { name: "internal", kind: "modifier" },
   { name: "public", kind: "modifier" },
+  { name: "stable", kind: "modifier" },
   // Inline tags.
   { name: "link", kind: "inline" },
   { name: "inheritDoc", kind: "inline" },
@@ -138,3 +141,145 @@ export const cssdocTagNamesByKind = (kind: CssdocTagKind): string[] =>
 /** The names of the tags that take a given argument shape, in canonical order. */
 export const cssdocTagNamesByArgument = (argument: CssdocTagArgument): string[] =>
   CSSDOC_TAGS.filter((t) => t.argument === argument).map((t) => t.name);
+
+/**
+ * MDN-style HTML element group aliases used by `@element` declarations.
+ *
+ * Keys are kebab-cased aliases; values are the concrete HTML element names in that group.
+ * This is a versioned local snapshot (not live-fetched at runtime) so parsing/linting is deterministic.
+ */
+export const HTML_ELEMENT_GROUPS: Readonly<Record<string, readonly string[]>> = {
+  "main-root": ["html"],
+  "document-metadata": ["base", "head", "link", "meta", "style", "title"],
+  "sectioning-root": ["body"],
+  "content-sectioning": [
+    "address",
+    "article",
+    "aside",
+    "footer",
+    "header",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "hgroup",
+    "main",
+    "nav",
+    "search",
+    "section",
+  ],
+  "text-content": [
+    "blockquote",
+    "dd",
+    "div",
+    "dl",
+    "dt",
+    "figcaption",
+    "figure",
+    "hr",
+    "li",
+    "menu",
+    "ol",
+    "p",
+    "pre",
+    "ul",
+  ],
+  "inline-text-semantics": [
+    "a",
+    "abbr",
+    "b",
+    "bdi",
+    "bdo",
+    "br",
+    "cite",
+    "code",
+    "data",
+    "dfn",
+    "em",
+    "i",
+    "kbd",
+    "mark",
+    "q",
+    "rp",
+    "rt",
+    "ruby",
+    "s",
+    "samp",
+    "small",
+    "span",
+    "strong",
+    "sub",
+    "sup",
+    "time",
+    "u",
+    "var",
+    "wbr",
+  ],
+  "image-and-multimedia": ["area", "audio", "img", "map", "track", "video"],
+  "embedded-content": ["embed", "fencedframe", "iframe", "object", "picture", "source"],
+  "svg-and-mathml": ["svg", "math"],
+  scripting: ["canvas", "noscript", "script"],
+  "demarcating-edits": ["del", "ins"],
+  "table-content": [
+    "caption",
+    "col",
+    "colgroup",
+    "table",
+    "tbody",
+    "td",
+    "tfoot",
+    "th",
+    "thead",
+    "tr",
+  ],
+  forms: [
+    "button",
+    "datalist",
+    "fieldset",
+    "form",
+    "input",
+    "label",
+    "legend",
+    "meter",
+    "optgroup",
+    "option",
+    "output",
+    "progress",
+    "select",
+    "selectedcontent",
+    "textarea",
+  ],
+  "interactive-elements": ["details", "dialog", "geolocation", "summary"],
+  "web-components": ["slot", "template"],
+  "obsolete-and-deprecated-elements": [
+    "acronym",
+    "big",
+    "center",
+    "content",
+    "dir",
+    "font",
+    "frame",
+    "frameset",
+    "image",
+    "marquee",
+    "menuitem",
+    "nobr",
+    "noembed",
+    "noframes",
+    "param",
+    "plaintext",
+    "rb",
+    "rtc",
+    "shadow",
+    "strike",
+    "tt",
+    "xmp",
+  ],
+};
+
+/** All known HTML elements from {@link HTML_ELEMENT_GROUPS}, sorted and de-duplicated. */
+export const HTML_ELEMENT_NAMES: readonly string[] = [
+  ...new Set(Object.values(HTML_ELEMENT_GROUPS).flatMap((v) => v)),
+].sort((a, b) => a.localeCompare(b));
