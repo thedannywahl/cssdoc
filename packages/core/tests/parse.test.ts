@@ -1206,6 +1206,18 @@ test("toMermaid shapes/classes each node by kind, with cardinality on the edge",
   expect(mermaid).toMatch(/n0 -\.->\|0\.\.1\| n\d+/u); // .close-button:optional
 });
 
+test("toMermaid renders a co-located node as a component node with a compound label", () => {
+  const tree = parseStructure(".shell {\n  .tabs-list:is(.pfx-card):optional {}\n}", postcss.parse);
+  const mermaid = toMermaid(tree, {
+    self: "shell",
+    resolveComponent: (c) =>
+      c === "pfx-card" ? { name: "card", href: "/api/card.md" } : undefined,
+  });
+  expect(mermaid).toContain(".tabs-list + card");
+  expect(mermaid).toContain("cssdoc-component");
+  expect(mermaid).toMatch(/click n\d+ "\/api\/card\.md"/u);
+});
+
 test("@structure cardinality pseudos (full + `:opt`/`:more` shorthands) parse and strip", () => {
   const tree = parseStructure(
     ".alert {\n  slot {}\n  .close-button:optional {}\n  .icon:opt {}\n  .item:one-or-more {}\n  .tag:more {}\n  .badge:many {}\n  .body {}\n}",
@@ -1254,6 +1266,79 @@ test("@structure keeps compound selectors verbatim and never throws on a malform
   expect(parseStructure(".tabs {\n  .list {", postcss.parse)).toEqual([]);
   // With no parser injected, the tree is empty (the grammar module carries no CSS-parser dependency).
   expect(parseStructure(".tabs {\n  .panel {}\n}")).toEqual([]);
+});
+
+test("@structure :is(.<class>) extracts a co-located component class from the selector", () => {
+  const basic = parseStructure(".tabs-list:is(.pfx-card) {}", postcss.parse);
+  expect(basic).toEqual([{ selector: ".tabs-list", colocated: ".pfx-card", children: [] }]);
+
+  // Both orderings of cardinality + co-location produce the same result.
+  const cardFirst = parseStructure(".tabs-list:optional:is(.pfx-card) {}", postcss.parse);
+  expect(cardFirst).toEqual([
+    { selector: ".tabs-list", cardinality: "optional", colocated: ".pfx-card", children: [] },
+  ]);
+  const colocFirst = parseStructure(".tabs-list:is(.pfx-card):optional {}", postcss.parse);
+  expect(colocFirst).toEqual([
+    { selector: ".tabs-list", cardinality: "optional", colocated: ".pfx-card", children: [] },
+  ]);
+
+  // Element selector.
+  const elem = parseStructure("button:one-or-more:is(.pfx-button) {}", postcss.parse);
+  expect(elem).toEqual([
+    { selector: "button", cardinality: "one-or-more", colocated: ".pfx-button", children: [] },
+  ]);
+
+  // Bare element type in :is() (co-locating an element-typed component).
+  const elemType = parseStructure(".wrapper:is(nav) {}", postcss.parse);
+  expect(elemType).toEqual([{ selector: ".wrapper", colocated: "nav", children: [] }]);
+
+  // ID selector in :is().
+  const id = parseStructure(".wrapper:is(#dialog) {}", postcss.parse);
+  expect(id).toEqual([{ selector: ".wrapper", colocated: "#dialog", children: [] }]);
+
+  // Attribute selector in :is().
+  const attr = parseStructure('.wrapper:is([data-role="card"]) {}', postcss.parse);
+  expect(attr).toEqual([{ selector: ".wrapper", colocated: '[data-role="card"]', children: [] }]);
+
+  // Complex compound: attribute + class + co-location + cardinality.
+  const complex = parseStructure(
+    'slot[name="trailing"].trailing-content:is(.pfx-card):optional {}',
+    postcss.parse,
+  );
+  expect(complex).toEqual([
+    {
+      selector: 'slot[name="trailing"].trailing-content',
+      cardinality: "optional",
+      colocated: ".pfx-card",
+      children: [],
+    },
+  ]);
+
+  // Multi-selector :is() is NOT treated as co-location — stays verbatim, no colocated set.
+  const multi = parseStructure(".foo:is(.a, .b) {}", postcss.parse);
+  expect(multi[0].selector).toBe(".foo:is(.a, .b)");
+  expect(multi[0].colocated).toBeUndefined();
+});
+
+test("layout implicit structure handles :is() co-location the same as explicit @structure", () => {
+  const [layout] = parseCssDocs(
+    [
+      "/**",
+      " * @layout shell",
+      " * @summary A shell.",
+      " */",
+      ".shell {",
+      "  .utilities:optional { button:one-or-more:is(.pfx-button) {} }",
+      "}",
+    ].join("\n"),
+  );
+  const utilNode = layout.structure?.[0]?.children[0];
+  expect(utilNode?.selector).toBe(".utilities");
+  expect(utilNode?.cardinality).toBe("optional");
+  const btnNode = utilNode?.children[0];
+  expect(btnNode?.selector).toBe("button");
+  expect(btnNode?.cardinality).toBe("one-or-more");
+  expect(btnNode?.colocated).toBe(".pfx-button");
 });
 
 test("expansive prose tags surface on the entry (remarks, since, group, a11y, release stage)", () => {

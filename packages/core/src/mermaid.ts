@@ -84,6 +84,10 @@ const CLASS_DEFS = [
 /** The leading bare class of a compound selector, e.g. `.item.-selected` → `item`. */
 const firstClass = (selector: string): string | undefined => selector.match(/\.([\w-]+)/u)?.[1];
 
+/** Strip a leading `.` or `#` so a co-located selector can be passed to a component resolver. */
+const colocNormalize = (sel: string): string =>
+  sel.startsWith(".") || sel.startsWith("#") ? sel.slice(1) : sel;
+
 /** Escape a label for a quoted Mermaid node body. */
 const esc = (text: string): string => text.replace(/"/gu, "&quot;");
 
@@ -102,7 +106,15 @@ function classify(node: StructureNode, isRoot: boolean, options: MermaidOptions)
     // A root has no incoming edge to carry its cardinality (an optional-ancestor wrapper), so it rides
     // the label instead — matching the text tree.
     const card = node.cardinality ? ` (${CARDINALITY_TOKEN[node.cardinality]})` : "";
-    return { klass: "cssdoc-root", label: `${node.selector}${card}` };
+    const colocSuffix = node.colocated
+      ? ` + ${options.resolveComponent?.(colocNormalize(node.colocated))?.name ?? node.colocated}`
+      : "";
+    return { klass: "cssdoc-root", label: `${node.selector}${colocSuffix}${card}` };
+  }
+  if (node.colocated) {
+    const component = options.resolveComponent?.(colocNormalize(node.colocated));
+    const label = `${node.selector} + ${component?.name ?? node.colocated}`;
+    return { klass: "cssdoc-component", label, href: component?.href };
   }
   const primary = firstClass(node.selector);
   if (primary && primary !== options.self) {

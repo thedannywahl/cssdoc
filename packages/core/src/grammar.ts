@@ -723,6 +723,8 @@ const CARDINALITY: Record<string, NonNullable<StructureNode["cardinality"]>> = {
   more: "one-or-more",
 };
 const CARD_RE = /:(optional|opt|one-or-more|more|many)\s*$/u;
+// A single-class `:is(.<class>)` signals the element itself carries that class (co-location).
+const COLOC_RE = /:is\(\s*([^,)]+?)\s*\)/u;
 const STRUCTURE_REF_RE = /^[a-zA-Z][\w-]*$/u;
 const STRUCTURE_REF_PROFILE_RE = /^:\s*([\w-]+)$/u;
 const STRUCTURE_REF_TYPED_RE = /^([\w-]+)(?::([\w-]+))?$/u;
@@ -780,13 +782,16 @@ export function parseStructure(raw: string, parse?: CssParse): StructureNode[] {
         continue;
       }
       if (rule.type !== "rule") continue;
-      const selector = rule.selector.trim();
-      const card = selector.match(CARD_RE);
+      const rawSel = rule.selector.trim();
+      const coloc = rawSel.match(COLOC_RE);
+      const withoutColoc = coloc ? rawSel.replace(COLOC_RE, "").trim() : rawSel;
+      const card = withoutColoc.match(CARD_RE);
       const node: StructureNode = {
-        selector: card ? selector.slice(0, card.index).trim() : selector,
+        selector: card ? withoutColoc.slice(0, card.index).trim() : withoutColoc,
         children: build(rule.nodes ?? []),
       };
       if (card) node.cardinality = CARDINALITY[card[1]];
+      if (coloc) node.colocated = coloc[1].trim();
       out.push(node);
     }
     return out;
