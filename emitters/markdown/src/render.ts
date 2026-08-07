@@ -222,6 +222,26 @@ export function cell(text: string | undefined): string {
 }
 
 /**
+ * Normalize block-level prose for CommonMark: insert a blank line before any list marker (`- `, `* `,
+ * `+ `, or `\d+. `) when the preceding non-empty line is not already a list item. Without this,
+ * CommonMark treats the list items as paragraph continuation text.
+ */
+export function normalizeProseMarkdown(text: string): string {
+  const lines = text.split("\n");
+  const out: string[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!;
+    if (/^[-*+] |^\d+\. /u.test(line) && out.length > 0) {
+      const prev = out.at(-1)!;
+      // Only insert a blank line when the previous non-empty line is not itself a list item.
+      if (prev !== "" && !/^[-*+] |^\d+\. /u.test(prev)) out.push("");
+    }
+    out.push(line);
+  }
+  return out.join("\n");
+}
+
+/**
  * Render a status marker as a styleable tag. When `cls` is a non-empty class (a
  * {@link RenderEntryOptions.classNames} hook), wrap just the `label` word in `<span class="cls">…</span>`
  * — a compact pill/tag — and leave any surrounding prose (the deprecation reason, etc.) outside it. When
@@ -371,7 +391,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
       "",
     );
   }
-  if (entry.remarks) lines.push(escProse(entry.remarks), "");
+  if (entry.remarks) lines.push(escProse(normalizeProseMarkdown(entry.remarks)), "");
 
   const meta: string[] = [];
   if (entry.since) meta.push(`**Since:** ${escProse(entry.since)}`);
@@ -403,7 +423,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   const importSnippet = options.importSnippet?.(entry);
   if (entry.usage || importSnippet) {
     fragments.usage.push("## Usage", "");
-    if (entry.usage) fragments.usage.push(escProse(entry.usage), "");
+    if (entry.usage) fragments.usage.push(escProse(normalizeProseMarkdown(entry.usage)), "");
     if (importSnippet) fragments.usage.push("```css", importSnippet, "```", "");
   }
 
@@ -638,7 +658,12 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   }
 
   if (entry.accessibility) {
-    fragments.accessibility.push("## Accessibility", "", escProse(entry.accessibility), "");
+    fragments.accessibility.push(
+      "## Accessibility",
+      "",
+      escProse(normalizeProseMarkdown(entry.accessibility)),
+      "",
+    );
   }
 
   if (entry.related.length) {
