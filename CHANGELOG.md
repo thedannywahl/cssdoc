@@ -4,6 +4,22 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.10.2
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.10.1...v0.10.2)
+
+### 🚀 Enhancements
+
+- **prose:** Add normalizeProseMarkdown function and update renderEntry to use it ([b9847bb](https://github.com/thedannywahl/cssdoc/commit/b9847bb))
+
+### 🩹 Fixes
+
+- **tests:** Format multiline expectations for remarks and accessibility ([49804a0](https://github.com/thedannywahl/cssdoc/commit/49804a0))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.10.1
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.10.0...v0.10.1)
