@@ -97,6 +97,70 @@ test("structure-unknown-selector accepts a sibling component as a child, still f
   expect(structureWarnings[0].message).toContain(".bogus");
 });
 
+test(":is() co-location is accepted when the class resolves to a sibling component", () => {
+  const css = [
+    "/**",
+    " * @component shell",
+    " * @summary A shell.",
+    " * @part .tabs-list — The tab row.",
+    " * @structure",
+    " * .shell {",
+    " *   .tabs-list:optional:is(.pfx-card) {}",
+    " * }",
+    " */",
+    ".shell {}",
+    "/**",
+    " * @component pfx-card",
+    " * @summary A card.",
+    " */",
+    ".pfx-card {}",
+  ].join("\n");
+  const rules = lintModel(createIndex(css)).map((d) => d.rule);
+  expect(rules).not.toContain("structure-unknown-selector");
+  expect(rules).not.toContain("structure-unknown-record");
+});
+
+test(":is() co-location emits structure-unknown-record when the class has no matching component", () => {
+  const css = [
+    "/**",
+    " * @component shell",
+    " * @summary A shell.",
+    " * @structure",
+    " * .shell {",
+    " *   .tabs-list:optional:is(.unknown-card) {}",
+    " * }",
+    " */",
+    ".shell {}",
+  ].join("\n");
+  const diagnostics = lintModel(createIndex(css));
+  const unknowns = diagnostics.filter((d) => d.rule === "structure-unknown-record");
+  expect(unknowns).toHaveLength(1);
+  expect(unknowns[0].message).toContain("unknown-card");
+});
+
+test(":is() co-location emits structure-unknown-record when the class is a layout, not a component", () => {
+  const css = [
+    "/**",
+    " * @component shell",
+    " * @summary A shell.",
+    " * @structure",
+    " * .shell {",
+    " *   .tabs-list:is(.pfx-layout) {}",
+    " * }",
+    " */",
+    ".shell {}",
+    "/**",
+    " * @layout pfx-layout",
+    " * @summary A layout.",
+    " */",
+    ".pfx-layout {}",
+  ].join("\n");
+  const diagnostics = lintModel(createIndex(css));
+  const unknowns = diagnostics.filter((d) => d.rule === "structure-unknown-record");
+  expect(unknowns).toHaveLength(1);
+  expect(unknowns[0].message).toContain("isn't documented as a component");
+});
+
 test("duplicate record ids flag same-kind as error and cross-kind as warning", () => {
   const css = [
     "/**",

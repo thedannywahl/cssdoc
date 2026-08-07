@@ -219,6 +219,8 @@ export interface StructureNode {
    * e.g. `(.component)` from `@scope (.component) { … }`.
    */
   scope?: string;
+  /** The full single-selector argument from a `:is(…)` compound — means this element itself carries that selector (co-location, not containment). E.g. `.pfx-card`, `button`, `#id`, `[attr="val"]`. */
+  colocated?: string;
   /** Prose from a `@wrapper` doc tag matching this node's class, when authored (annotates the node). */
   description?: string;
   /** Child nodes (rules nested one brace level deeper). */

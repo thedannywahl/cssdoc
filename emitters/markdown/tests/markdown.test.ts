@@ -161,6 +161,48 @@ test("@structure renders slot content, cardinality, and a linked Subcomponents s
   expect(md).toContain("- [close-button](./close-button.md)"); // derived + cross-linked
 });
 
+test(":is() co-location renders `+ componentName (component)` in text tree and adds to Subcomponents", () => {
+  const [shell] = parseCssDocs(
+    [
+      "/**",
+      " * @component shell",
+      " * @summary A shell.",
+      " * @structure",
+      " * .shell {",
+      " *   .tabs-list:optional:is(.pfx-card) {}",
+      " * }",
+      " */",
+      ".shell {}",
+    ].join("\n"),
+  );
+  const md = renderEntry(shell!, {
+    structureView: "text",
+    resolveComponent: (c) => (c === "pfx-card" ? { name: "card", href: "./card.md" } : undefined),
+  });
+  expect(md).toContain(".tabs-list + card (component, 0..1)");
+  expect(md).toContain("## Subcomponents");
+  expect(md).toContain("- [card](./card.md)");
+});
+
+test(":is() co-location with unresolved class renders bare class name in text tree", () => {
+  const [shell] = parseCssDocs(
+    [
+      "/**",
+      " * @component shell",
+      " * @summary A shell.",
+      " * @structure",
+      " * .shell {",
+      " *   .tabs-list:optional:is(.pfx-card) {}",
+      " * }",
+      " */",
+      ".shell {}",
+    ].join("\n"),
+  );
+  // Without a resolver, co-located selector appears verbatim.
+  const md = renderEntry(shell!, { structureView: "text" });
+  expect(md).toContain(".tabs-list + .pfx-card");
+});
+
 test("structureView selects which Structure representation(s) render (default both)", () => {
   const [alert] = parseCssDocs(
     [

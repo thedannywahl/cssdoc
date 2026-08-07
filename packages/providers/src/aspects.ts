@@ -155,9 +155,11 @@ const renderStructureTree = (nodes: StructureNode[], depth = 0): string[] =>
   nodes.flatMap((n) => {
     const pad = "  ".repeat(depth);
     const note = n.description ? ` /* ${n.description} */` : "";
+    const colocSuffix = n.colocated ? `:is(${n.colocated})` : "";
+    const label = `${n.selector}${colocSuffix}`;
     return n.children.length
-      ? [`${pad}${n.selector} {${note}`, ...renderStructureTree(n.children, depth + 1), `${pad}}`]
-      : [`${pad}${n.selector}${note}`];
+      ? [`${pad}${label} {${note}`, ...renderStructureTree(n.children, depth + 1), `${pad}}`]
+      : [`${pad}${label}${note}`];
   });
 
 // ── record ──────────────────────────────────────────────────────────────────────────────────────
@@ -204,6 +206,13 @@ export const record = {
       const kinds = siblingNameKinds.get(r.entry.name) ?? new Set<string>();
       kinds.add(r.entry.kind);
       siblingNameKinds.set(r.entry.name, kinds);
+    }
+    // Also index by full className so :is(.pfx-card), :is(button), :is(#id), :is([attr]) all resolve.
+    const siblingByClassName = new Map<string, Set<string>>();
+    for (const r of siblingIndex.records) {
+      const kinds = siblingByClassName.get(r.entry.className) ?? new Set<string>();
+      kinds.add(r.entry.kind);
+      siblingByClassName.set(r.entry.className, kinds);
     }
 
     const siblingClasses = new Set(siblingIndex.records.map((r) => stripDot(r.entry.className)));
@@ -362,6 +371,46 @@ export const record = {
         const seenRefs = new Set<string>();
         const walk = (nodes: StructureNode[]): void => {
           for (const node of nodes) {
+            if (node.colocated) {
+              const colocKey = `colocated:${node.colocated}`;
+              if (!seenRefs.has(colocKey)) {
+                seenRefs.add(colocKey);
+                const kinds =
+                  siblingByClassName.get(node.colocated) ?? siblingNameKinds.get(node.colocated);
+                const colocName = node.colocated.replace(/^[.#]/u, "");
+                if (!kinds || kinds.size === 0) {
+                  out.push(
+                    warn({
+                      aspect: "record",
+                      rule: "structure-unknown-record",
+                      message: `@structure co-locates "${node.colocated}" via :is(), but no documented record with selector "${node.colocated}" was found.`,
+                      record: info.entry.name,
+                      span: info.span,
+                    }),
+                  );
+                } else if (!kinds.has("component")) {
+                  out.push(
+                    warn({
+                      aspect: "record",
+                      rule: "structure-unknown-record",
+                      message: `@structure co-locates "${node.colocated}" via :is(), but "${node.colocated}" isn't documented as a component.`,
+                      record: info.entry.name,
+                      span: info.span,
+                    }),
+                  );
+                } else if (kinds.size > 1) {
+                  out.push(
+                    warn({
+                      aspect: "record",
+                      rule: "structure-ambiguous-record",
+                      message: `@structure :is() co-location "${node.colocated}" is ambiguous across kinds (${[...kinds].sort().join(", ")}); use a typed ref like @component ${colocName}.`,
+                      record: info.entry.name,
+                      span: info.span,
+                    }),
+                  );
+                }
+              }
+            }
             const ref = parseStructureRecordRef(node.selector);
             if (ref) {
               const key = `${ref.kind ?? "*"}:${ref.name}:${ref.profile ?? ""}`;

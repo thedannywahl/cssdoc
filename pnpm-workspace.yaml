@@ -16,7 +16,7 @@ catalog:
   vite: npm:@voidzero-dev/vite-plus-core@0.2.7
   vite-plus: 0.2.7
   # Core
-  postcss: ^8.5.25
+  postcss: ^8.5.26
   postcss-value-parser: ^4.2.0
   grammarkdown: ^3.3.2
   # CSS value / @property syntax matching
@@ -41,13 +41,13 @@ catalog:
   "@types/vscode": ^1.125.0
   esbuild: ^0.28.1
   "@vscode/vsce": ^3.9.2
-  ovsx: ^1.0.2
+  ovsx: ^1.1.0
   "@resvg/resvg-js": ^2.6.2
   # Docs site
   vitepress: 2.0.0-alpha.19
   # Quality gates
   "@vitest/coverage-v8": ^4.1.10
-  publint: ^0.3.22
+  publint: ^0.3.23
   # Release
   changelogen: ^0.6.2
   bumpp: ^11.1.0

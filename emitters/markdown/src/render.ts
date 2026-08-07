@@ -261,6 +261,10 @@ const SLOT_NODE = /^slot(?:\[\s*name\s*=\s*["']?([\w-]+)["']?\s*\])?$/u;
 /** The leading bare class of a compound selector, e.g. `.item.-selected` → `item`. */
 const firstClass = (selector: string): string | undefined => selector.match(/\.([\w-]+)/u)?.[1];
 
+/** Strip a leading `.` or `#` so a co-located selector can be passed to a component resolver. */
+const colocNormalize = (sel: string): string =>
+  sel.startsWith(".") || sel.startsWith("#") ? sel.slice(1) : sel;
+
 /**
  * The display label for one structure node, mirroring the flowchart's classification in plain text: a
  * `slot` → ‹content› / ‹content: name›; a sibling component (resolved via `resolveComponent`, and not
@@ -285,6 +289,12 @@ function structureLabel(
       base = component.name;
       kind = "component";
     }
+  }
+  if (node.colocated) {
+    const colocComponent = resolveComponent?.(colocNormalize(node.colocated));
+    const colocName = colocComponent?.name ?? node.colocated;
+    base = `${base} + ${colocName}`;
+    kind = "component";
   }
   const tags = [kind, node.cardinality ? CARDINALITY_TOKEN[node.cardinality] : undefined].filter(
     Boolean,
@@ -326,6 +336,10 @@ function subcomponentsOf(
       for (const m of node.selector.matchAll(/\.([\w-]+)/gu)) {
         if (m[1] === self) continue;
         const c = resolve(m[1]);
+        if (c) byName.set(c.name, c);
+      }
+      if (node.colocated) {
+        const c = resolve(colocNormalize(node.colocated));
         if (c) byName.set(c.name, c);
       }
       walk(node.children);

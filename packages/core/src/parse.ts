@@ -70,6 +70,7 @@ const STRUCT_CARDINALITY: Record<string, NonNullable<StructureNode["cardinality"
   more: "one-or-more",
 };
 const STRUCT_CARD_RE = /:(optional|opt|one-or-more|more|many)\s*$/u;
+const STRUCT_COLOC_RE = /:is\(\s*([^,)]+?)\s*\)/u;
 
 const unquote = (value: string): string => value.trim().replace(/^["']|["']$/gu, "");
 const sortUnique = (values: Iterable<string>): string[] =>
@@ -119,13 +120,16 @@ function buildStructureFromNodes(nodes: readonly ChildNode[]): StructureNode[] {
       continue;
     }
     if (node.type !== "rule") continue;
-    const selector = node.selector.trim();
-    const card = selector.match(STRUCT_CARD_RE);
+    const rawSel = node.selector.trim();
+    const coloc = rawSel.match(STRUCT_COLOC_RE);
+    const withoutColoc = coloc ? rawSel.replace(STRUCT_COLOC_RE, "").trim() : rawSel;
+    const card = withoutColoc.match(STRUCT_CARD_RE);
     const entry: StructureNode = {
-      selector: card ? selector.slice(0, card.index).trim() : selector,
+      selector: card ? withoutColoc.slice(0, card.index).trim() : withoutColoc,
       children: buildStructureFromNodes(node.nodes ?? []),
     };
     if (card) entry.cardinality = STRUCT_CARDINALITY[card[1]];
+    if (coloc) entry.colocated = coloc[1].trim();
     out.push(entry);
   }
   return out;
