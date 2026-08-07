@@ -1354,6 +1354,27 @@ test("expansive prose tags surface on the entry (remarks, since, group, a11y, re
   expect(entry.releaseStage).toBe("beta");
 });
 
+test("multiline @remarks and @accessibility preserve newlines through the parser", () => {
+  const [entry] = parseCssDocs(
+    [
+      "/**",
+      " * @component wrapper",
+      " * @remarks",
+      " * ✅ Use when:",
+      " * - Building a full product page",
+      " * - The page uses GlobalNav",
+      " * @accessibility",
+      " * Guidance:",
+      " * - Map the main area to a landmark",
+      " * - Give the nav a label",
+      " */",
+      ".wrapper {}",
+    ].join("\n"),
+  );
+  expect(entry.remarks).toBe("✅ Use when:\n- Building a full product page\n- The page uses GlobalNav");
+  expect(entry.accessibility).toBe("Guidance:\n- Map the main area to a landmark\n- Give the nav a label");
+});
+
 test("shadow parts and pseudo-class states are captured distinctly from class parts and :state()", () => {
   const [sw] = parseCssDocs(
     `/**\n * @component switch\n * @part .track — The rail.\n * @csspart thumb — The knob.\n */\n` +

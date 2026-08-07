@@ -3,7 +3,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseCssDocs } from "@cssdoc/core";
 import { expect, test } from "vite-plus/test";
-import { buildCssApi, buildSidebar, renderEntry, renderIndex } from "../src/index.ts";
+import {
+  buildCssApi,
+  buildSidebar,
+  normalizeProseMarkdown,
+  renderEntry,
+  renderIndex,
+} from "../src/index.ts";
 
 const CSS = `
 /**
@@ -460,4 +466,60 @@ test("classNames.stage only applies to the record's own stage", () => {
   const md = renderEntry(box!, { classNames: { stage: { beta: "-instui-pill" } } });
   expect(md).toContain(" · `experimental`");
   expect(md).not.toContain("<span class=");
+});
+
+test("normalizeProseMarkdown inserts a blank line before a list that follows a paragraph", () => {
+  const input = "Use when:\n- First item\n- Second item";
+  const out = normalizeProseMarkdown(input);
+  expect(out).toBe("Use when:\n\n- First item\n- Second item");
+});
+
+test("normalizeProseMarkdown does not double-insert blank lines already present", () => {
+  const input = "Use when:\n\n- First item\n- Second item";
+  expect(normalizeProseMarkdown(input)).toBe(input);
+});
+
+test("normalizeProseMarkdown does not insert blanks between consecutive list items", () => {
+  const input = "- First item\n- Second item\n- Third item";
+  expect(normalizeProseMarkdown(input)).toBe(input);
+});
+
+test("multiline @remarks with bullet list renders list items as separate Markdown lines", () => {
+  const [entry] = parseCssDocs(
+    [
+      "/**",
+      " * @component wrapper",
+      " * @summary App-shell row.",
+      " * @remarks",
+      " * ✅ Use when:",
+      " * - Building a full product page",
+      " * - The page uses GlobalNav",
+      " * 🚫 Don't use when:",
+      " * - Building a Modal",
+      " */",
+      ".wrapper {}",
+    ].join("\n"),
+  );
+  const md = renderEntry(entry!);
+  // The blank line must precede each list block so CommonMark recognises the items as a list.
+  expect(md).toContain("✅ Use when:\n\n- Building a full product page");
+  expect(md).toContain("🚫 Don't use when:\n\n- Building a Modal");
+});
+
+test("multiline @accessibility with bullet list renders list items as separate Markdown lines", () => {
+  const [entry] = parseCssDocs(
+    [
+      "/**",
+      " * @component wrapper",
+      " * @summary App-shell row.",
+      " * @accessibility",
+      " * Guidance:",
+      " * - Map the main area to a landmark",
+      " * - Give ContentTabList role=navigation",
+      " */",
+      ".wrapper {}",
+    ].join("\n"),
+  );
+  const md = renderEntry(entry!);
+  expect(md).toContain("Guidance:\n\n- Map the main area to a landmark");
 });

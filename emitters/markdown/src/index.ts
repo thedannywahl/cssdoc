@@ -12,6 +12,7 @@ export {
   cell,
   escProse,
   groupEntries,
+  normalizeProseMarkdown,
   renderEntry,
   renderIndex,
   type EntryGroup,
