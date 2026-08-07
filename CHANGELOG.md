@@ -4,6 +4,30 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.10.1
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.10.0...v0.10.1)
+
+### 🚀 Enhancements
+
+- **core:** Add StructureNode.colocated; parse and classify :is() co-location ([3188a17](https://github.com/thedannywahl/cssdoc/commit/3188a17))
+- **providers:** Lint and hover for :is() co-located structure nodes ([ec96ecc](https://github.com/thedannywahl/cssdoc/commit/ec96ecc))
+- **markdown:** Render :is() co-located nodes in text tree and Subcomponents ([37fb0bf](https://github.com/thedannywahl/cssdoc/commit/37fb0bf))
+- **json:** Add colocated property to StructureNode schema ([901d6c2](https://github.com/thedannywahl/cssdoc/commit/901d6c2))
+
+### 📖 Documentation
+
+- **layouts:** Add co-located component section for :is() syntax ([7526f75](https://github.com/thedannywahl/cssdoc/commit/7526f75))
+- **layouts:** Clarify co-located component containment and usage of :is() pseudo ([daa2a2e](https://github.com/thedannywahl/cssdoc/commit/daa2a2e))
+
+### 🏡 Chore
+
+- Bump deps ([a60f03b](https://github.com/thedannywahl/cssdoc/commit/a60f03b))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.10.0
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.9.0...v0.10.0)
