@@ -658,7 +658,12 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   }
 
   if (entry.accessibility) {
-    fragments.accessibility.push("## Accessibility", "", escProse(normalizeProseMarkdown(entry.accessibility)), "");
+    fragments.accessibility.push(
+      "## Accessibility",
+      "",
+      escProse(normalizeProseMarkdown(entry.accessibility)),
+      "",
+    );
   }
 
   if (entry.related.length) {

@@ -1371,8 +1371,12 @@ test("multiline @remarks and @accessibility preserve newlines through the parser
       ".wrapper {}",
     ].join("\n"),
   );
-  expect(entry.remarks).toBe("✅ Use when:\n- Building a full product page\n- The page uses GlobalNav");
-  expect(entry.accessibility).toBe("Guidance:\n- Map the main area to a landmark\n- Give the nav a label");
+  expect(entry.remarks).toBe(
+    "✅ Use when:\n- Building a full product page\n- The page uses GlobalNav",
+  );
+  expect(entry.accessibility).toBe(
+    "Guidance:\n- Map the main area to a landmark\n- Give the nav a label",
+  );
 });
 
 test("shadow parts and pseudo-class states are captured distinctly from class parts and :state()", () => {
