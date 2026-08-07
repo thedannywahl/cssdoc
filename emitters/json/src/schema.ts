@@ -229,6 +229,7 @@ export const cssDocSchema = {
       properties: {
         selector: { type: "string" },
         cardinality: { enum: ["optional", "many", "one-or-more"] },
+        colocated: { type: "string" },
         description: { type: "string" },
         children: { type: "array", items: { $ref: "#/$defs/StructureNode" } },
       },
