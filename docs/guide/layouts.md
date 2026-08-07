@@ -135,7 +135,7 @@ At this point, CSS is the source of truth.
 
 ## Co-located components
 
-`@component` inside a structure node means *containment* — the named component is a child of that
+`@component` inside a structure node means _containment_ — the named component is a child of that
 slot. Sometimes the slot element itself carries the component class directly. Use a single-selector
 `:is()` pseudo to express this:
 
@@ -148,7 +148,8 @@ slot. Sometimes the slot element itself carries the component class directly. Us
  *   .tabs-list:optional:is(.instui-card) {}
  * }
  */
-.tabs-layout {}
+.tabs-layout {
+}
 ```
 
 cssdoc reads `.tabs-list:optional:is(.instui-card)` as: "this slot element carries `.instui-card`
