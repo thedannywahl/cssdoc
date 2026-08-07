@@ -133,6 +133,67 @@ At this point, CSS is the source of truth.
 - Component records define reusable pieces.
 - The layout record defines how those pieces compose.
 
+## Co-located components
+
+`@component` inside a structure node means *containment* — the named component is a child of that
+slot. Sometimes the slot element itself carries the component class directly. Use a single-selector
+`:is()` pseudo to express this:
+
+```css
+/**
+ * @layout tabs-layout
+ * @summary A tabs layout.
+ * @structure
+ * .tabs-layout {
+ *   .tabs-list:optional:is(.instui-card) {}
+ * }
+ */
+.tabs-layout {}
+```
+
+cssdoc reads `.tabs-list:optional:is(.instui-card)` as: "this slot element carries `.instui-card`
+itself." The scaffold it derives is therefore:
+
+```html
+<nav class="tabs-list instui-card">…</nav>
+```
+
+…not:
+
+```html
+<nav class="tabs-list"><div class="instui-card">…</div></nav>
+```
+
+`:is()` accepts any valid single selector — a class, an element type, an ID, or an attribute
+selector:
+
+```css
+* @structure
+* .panel {
+*   .header:is(.instui-view-header) {}
+*   button:one-or-more:is(.instui-button) {}
+*   nav:optional:is(#primary-nav) {}
+* }
+```
+
+When the `:is()` argument resolves to a known component, cssdoc cross-links it in the Subcomponents
+section the same way a nested `@component` reference does.
+
+**Cardinality and nested nodes work the same way.** A co-located child that's inside an optional
+parent is only required when the parent is present:
+
+```css
+* @structure
+* .utilities:optional {
+*   button:one-or-more:is(.instui-button) {}
+* }
+```
+
+Reads as: if `.utilities` is present, it must contain one or more `button.instui-button` elements.
+
+**Using `:is()` with multiple selectors** (e.g. `:is(.a, .b)`) is not co-location — cssdoc keeps
+the compound verbatim and treats it as a relationship selector, just as `:has()` and `:not()` are.
+
 ## Step 3: Derive valid HTML from the documented structure
 
 Once records are defined, scaffold markup that matches the structure tree.
