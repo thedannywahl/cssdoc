@@ -43,6 +43,23 @@ test("authored names are tracked for drift detection", () => {
   expect(info.selectorText).toContain(".button.-color-secondary");
 });
 
+test("authored modifier/part tag lines point at their own doc-comment line, not the whole block", () => {
+  const info = index.recordInfo("button")!;
+  const line = info.authoredModifierLines.get("-color-secondary");
+  expect(line?.start.line).toBe(5); // the `@modifier -color-secondary` line itself
+  expect(line?.end.line).toBe(5);
+
+  const css = `
+/**
+ * @component card
+ * @part [data-layout="x"] container — The wrapping element.
+ */
+.card { display: block; }
+`;
+  const parts = createIndex(css).recordInfo("card")!.authoredPartLines;
+  expect(parts.get("container")?.start.line).toBe(4);
+});
+
 test("allCustomProperties pairs each property with its record", () => {
   const all = index.allCustomProperties();
   expect(all).toContainEqual({

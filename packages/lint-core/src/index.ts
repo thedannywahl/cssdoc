@@ -12,7 +12,7 @@ import type {
   CssParse,
   ModifierConventionInput,
 } from "@cssdoc/core";
-import { createIndex, cssValueSites, indexFromEntries } from "@cssdoc/index";
+import { createIndex, cssValueSites, indexFromEntries, type SourceSpan } from "@cssdoc/index";
 import {
   applyDirectives,
   checkPropertyAssignments,
@@ -90,6 +90,8 @@ export interface Violation {
   record: string;
   /** The 1-based source line of the violation. */
   line: number;
+  /** The full source range, when known — lets a host highlight just the offending span. */
+  span?: SourceSpan;
   /** The resolved severity (`error` or `warning`). */
   severity: Severity;
 }
@@ -158,6 +160,7 @@ export function lintCssDocs(css: string, options: LintOptions = {}): Violation[]
     message: d.message,
     record: d.record ?? "",
     line: d.span?.start.line ?? 1,
+    span: d.span,
     severity: d.severity,
   }));
 }

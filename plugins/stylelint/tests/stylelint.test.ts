@@ -20,6 +20,16 @@ const lint = (code: string): Promise<{ text: string; rule: string | undefined }[
     })
     .then((r) => r.results[0].warnings.map((w) => ({ text: w.text, rule: w.rule })));
 
+const lintRanged = (code: string): Promise<{ text: string; line: number; endLine?: number }[]> =>
+  stylelint
+    .lint({
+      code,
+      config: { plugins: [plugin], rules: { [ruleName]: [true, { modifierConvention: "rscss" }] } },
+    })
+    .then((r) =>
+      r.results[0].warnings.map((w) => ({ text: w.text, line: w.line, endLine: w.endLine })),
+    );
+
 test("the rule reports doc-hygiene violations from lint-core", async () => {
   const warnings = await lint(CSS);
   const texts = warnings.map((w) => w.text);
@@ -42,6 +52,28 @@ test("a fully documented stylesheet produces no warnings", async () => {
 .chip.-color-info { color: blue; }
 `;
   expect(await lint(clean)).toEqual([]);
+});
+
+test("undocumented-modifier points at the offending CSS rule, not the whole file", async () => {
+  const warnings = await lintRanged(CSS);
+  const w = warnings.find((x) => x.text.includes("undocumented-modifier"));
+  expect(w?.line).toBe(7); // `.button.-size-sm { font-size: small; }`
+  expect(w?.endLine).toBe(7);
+});
+
+test("name-not-in-css points at the @modifier tag's own line, not the whole doc-comment block", async () => {
+  const css = `
+/**
+ * @component chip
+ * @summary A small labelled tag.
+ * @modifier -color-nope — Doesn't exist in any selector.
+ */
+.chip { color: green; }
+`;
+  const warnings = await lintRanged(css);
+  const w = warnings.find((x) => x.text.includes("name-not-in-css"));
+  expect(w?.line).toBe(5); // the `@modifier -color-nope` line
+  expect(w?.endLine).toBe(5);
 });
 
 const lintWith = (code: string, customSyntax: string): Promise<string[]> =>

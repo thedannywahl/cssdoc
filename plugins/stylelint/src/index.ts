@@ -94,6 +94,11 @@ const rule: Rule<boolean, SecondaryOptions> = (primary, secondaryOptions) => (ro
     providerEntries: resolveProviders(configFile).entries,
   });
   for (const violation of violations) {
+    // A full span narrows the reported range to the offending rule/tag; without one, stylelint falls
+    // back to the whole `root` node's range (the entire file).
+    const range = violation.span
+      ? { start: violation.span.start, end: violation.span.end }
+      : undefined;
     utils.report({
       result,
       ruleName,
@@ -101,6 +106,7 @@ const rule: Rule<boolean, SecondaryOptions> = (primary, secondaryOptions) => (ro
         `[${violation.rule}] (line ${violation.line}) ${violation.message}`,
       ),
       node: root,
+      ...range,
     });
   }
 };

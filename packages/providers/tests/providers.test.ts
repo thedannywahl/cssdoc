@@ -38,6 +38,21 @@ test("lintModel reports author-side hygiene (chip missing summary, -size-sm undo
   expect(rules).toContain("button:undocumented-modifier"); // -size-sm
 });
 
+test("name-not-in-css points at the @modifier tag's own line, not the whole doc-comment block", () => {
+  const css = `
+/**
+ * @component chip
+ * @summary A small labelled tag.
+ * @modifier -color-nope — Doesn't exist in any selector.
+ */
+.chip { color: green; }
+`;
+  const idx = createIndex(css, { modifierConvention: "rscss" });
+  const diag = lintModel(idx).find((d) => d.rule === "name-not-in-css");
+  expect(diag?.span?.start.line).toBe(5); // the `@modifier -color-nope` line
+  expect(diag?.span?.end.line).toBe(5);
+});
+
 test("structure-unknown-selector flags a @structure class that isn't a documented member", () => {
   // `.bogus` chained on `.list` is neither the class nor a part; the whole compound is validated.
   const css = `/**

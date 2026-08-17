@@ -620,7 +620,11 @@ export function recordNameOf(
  * @example `@part A > B > C alias — Desc`               → `{ selector: "A > B > C", name: "alias", description: "Desc" }`
  * @example `@part A > B > C — Desc`                     → `{ selector: "A > B > C", name: "<derived from C>", description: "Desc" }`
  */
-function splitPartArg(rest: string): { selector: string; name: string; description?: string } {
+export function splitPartArg(rest: string): {
+  selector: string;
+  name: string;
+  description?: string;
+} {
   // Split on the description separator to isolate selector+alias from description.
   const descM = rest.match(/^([\s\S]*?)\s+(?:—|-{1,2})\s+([\s\S]*)$/u);
   const selectorPlusAlias = (descM ? descM[1] : rest).trim();
@@ -639,7 +643,11 @@ function splitPartArg(rest: string): { selector: string; name: string; descripti
   return { selector: selectorPlusAlias, name: deriveSelectorName(finalSeg), description };
 }
 
-function splitModifierArg(rest: string): { selector: string; name: string; description?: string } {
+export function splitModifierArg(rest: string): {
+  selector: string;
+  name: string;
+  description?: string;
+} {
   // Grab the selector with the same bracket-aware regex as splitPartArg.
   const selMatch = rest.match(/^((?:\[(?:[^\]"']|"[^"]*"|'[^']*')*\]|[^\s[]+)+)/u);
   const selector = selMatch?.[1] ?? "";

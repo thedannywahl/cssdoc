@@ -16,6 +16,8 @@ export {
   parseStructure,
   recordNameOf,
   RECORD_TAGS,
+  splitModifierArg,
+  splitPartArg,
   stripCommentFraming,
 } from "./grammar.ts";
 export type { ParsedDoc, DocCssProperty, DocModifier, DocCondition } from "./grammar.ts";

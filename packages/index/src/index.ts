@@ -28,6 +28,8 @@ import {
   parseDocComment,
   recordNameOf,
   resolveModifierConvention,
+  splitModifierArg,
+  splitPartArg,
 } from "@cssdoc/core";
 import postcss, { type ChildNode } from "postcss";
 import valueParser from "postcss-value-parser";
@@ -134,6 +136,10 @@ export interface RecordInfo {
   authoredParts: Map<string, string>;
   /** Shadow-part names authored via `@csspart` (used for drift detection). */
   authoredShadowParts: Set<string>;
+  /** The single-line span of each `@modifier` tag's own line in the doc comment, keyed by name. */
+  authoredModifierLines: Map<string, SourceSpan>;
+  /** The single-line span of each `@part` tag's own line in the doc comment, keyed by name. */
+  authoredPartLines: Map<string, SourceSpan>;
   /** The concatenated selector text of the record's rules (used for drift detection). */
   selectorText: string;
   /** Distinct values seen for each property declared inside this record's rules. */
@@ -160,6 +166,39 @@ const spanOf = (node: ChildNode): SourceSpan | undefined => {
     end: { line: end.line, column: end.column },
   };
 };
+
+/**
+ * Scan a doc comment's raw text (PostCSS `Comment.text`, still `*`-line-prefixed) for `@modifier`/
+ * `@part` tag-opening lines, deriving each one's name via the same grammar used to parse its
+ * description. Uses the *raw* text (not `stripCommentFraming`'s trimmed output) so line index `i`
+ * stays aligned 1:1 with `startLine + i` — trimming can drop leading blank lines and shift the offset.
+ */
+function scanAuthoredTagLines(
+  text: string,
+  startLine: number,
+): { modifierLines: Map<string, SourceSpan>; partLines: Map<string, SourceSpan> } {
+  const modifierLines = new Map<string, SourceSpan>();
+  const partLines = new Map<string, SourceSpan>();
+  const lines = text.split("\n");
+  for (const [i, line] of lines.entries()) {
+    const stripped = line.replace(/^\s*\*\s?/, "");
+    const m = stripped.match(/^@(modifier|part)\s+([\s\S]*)$/u);
+    if (!m) continue;
+    const lineNumber = startLine + i;
+    const span: SourceSpan = {
+      start: { line: lineNumber, column: 1 },
+      end: { line: lineNumber, column: line.length + 1 },
+    };
+    if (m[1] === "modifier") {
+      const { name } = splitModifierArg(m[2]);
+      if (!modifierLines.has(name)) modifierLines.set(name, span);
+    } else {
+      const { name } = splitPartArg(m[2]);
+      if (!partLines.has(name)) partLines.set(name, span);
+    }
+  }
+  return { modifierLines, partLines };
+}
 
 /**
  * Follow the `var()` references in `value` through `values` to a terminal literal — the resolution a
@@ -343,6 +382,8 @@ export function indexFromEntries(entries: CssDocEntry[], file?: string): CssDocI
     authoredModifiers: new Set(),
     authoredParts: new Map(),
     authoredShadowParts: new Set(),
+    authoredModifierLines: new Map(),
+    authoredPartLines: new Map(),
     selectorText: "",
     propertyValues: new Map(),
     resetValueUsages: [],
@@ -357,6 +398,8 @@ interface Build {
   authoredModifiers: Set<string>;
   authoredParts: Map<string, string>;
   authoredShadowParts: Set<string>;
+  authoredModifierLines: Map<string, SourceSpan>;
+  authoredPartLines: Map<string, SourceSpan>;
   selectorText: string;
   propertyValues: Map<string, Set<string>>;
   resetValueUsages: { property: string; value: string; span?: SourceSpan }[];
@@ -480,6 +523,8 @@ export function createIndex(
       const entry = name ? entryQueues.get(name)?.shift() : undefined;
       if (name && entry) {
         const doc = parseDocComment(node.text, options.configuration);
+        const startLine = spanOf(node)?.start.line ?? 1;
+        const { modifierLines, partLines } = scanAuthoredTagLines(node.text, startLine);
         current = {
           entry,
           span: spanOf(node),
@@ -490,6 +535,8 @@ export function createIndex(
             [...doc.parts.keys()].map((n) => [n, doc.partSelectors.get(n) ?? `.${n}`]),
           ),
           authoredShadowParts: new Set(doc.cssParts.keys()),
+          authoredModifierLines: modifierLines,
+          authoredPartLines: partLines,
           selectorText: "",
           propertyValues: new Map(),
           resetValueUsages: [],
@@ -509,6 +556,8 @@ export function createIndex(
         authoredModifiers: new Set(),
         authoredParts: new Map(),
         authoredShadowParts: new Set(),
+        authoredModifierLines: new Map(),
+        authoredPartLines: new Map(),
         selectorText: "",
         propertyValues: new Map(),
         resetValueUsages: [],

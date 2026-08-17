@@ -128,8 +128,17 @@ const validDocComments: RuleModule = {
           providerEntries: resolveProviders(configFile).entries,
         });
         for (const violation of violations) {
+          // A full span narrows the reported range to the offending rule/tag; without one, fall back
+          // to the record's line (ESLint then highlights just that line's first token). PostCSS
+          // columns are 1-based; ESLint's are 0-based.
+          const loc = violation.span
+            ? {
+                start: { line: violation.span.start.line, column: violation.span.start.column - 1 },
+                end: { line: violation.span.end.line, column: violation.span.end.column - 1 },
+              }
+            : { line: violation.line, column: 0 };
           context.report({
-            loc: { line: violation.line, column: 0 },
+            loc,
             message: `[${violation.rule}] ${violation.message}`,
           });
         }

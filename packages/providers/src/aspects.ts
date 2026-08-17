@@ -731,7 +731,10 @@ export const modifier = {
       const name = info.entry.name;
       for (const m of info.entry.modifiers) {
         const sel = index.matcher.selectorFor(m.name);
-        const span = info.memberSpans.get(memberKey("modifier", m.name)) ?? info.span;
+        const span =
+          info.memberSpans.get(memberKey("modifier", m.name)) ??
+          info.authoredModifierLines.get(m.name) ??
+          info.span;
         if (!m.description?.trim() && !m.deprecated) {
           out.push(
             warn({
@@ -770,7 +773,7 @@ export const modifier = {
               rule: "name-not-in-css",
               message: `Documented modifier "${sel}" of "${name}" is not defined by any selector.`,
               record: name,
-              span: info.span,
+              span: info.authoredModifierLines.get(authored) ?? info.span,
             }),
           );
         }
@@ -871,7 +874,10 @@ export const part = {
               rule: "undocumented-part",
               message: `Part ".${p.name}" of "${name}" has no @part description.`,
               record: name,
-              span: info.memberSpans.get(memberKey("part", p.name)) ?? info.span,
+              span:
+                info.memberSpans.get(memberKey("part", p.name)) ??
+                info.authoredPartLines.get(p.name) ??
+                info.span,
             }),
           );
         }
@@ -887,7 +893,7 @@ export const part = {
           );
         }
       }
-      for (const [, partSel] of info.authoredParts) {
+      for (const [partName, partSel] of info.authoredParts) {
         if (!selectorDefines(info.selectorText, partSel)) {
           out.push(
             warn({
@@ -895,7 +901,7 @@ export const part = {
               rule: "name-not-in-css",
               message: `Documented part "${partSel}" of "${name}" is not defined by any selector.`,
               record: name,
-              span: info.span,
+              span: info.authoredPartLines.get(partName) ?? info.span,
             }),
           );
         }
