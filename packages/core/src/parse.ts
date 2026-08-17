@@ -705,6 +705,10 @@ function buildEntry(
       }
     };
     applyWrappers(structure);
+    // `structure` is only the first variant's nodes; annotate the rest too when `@variant` is used.
+    for (const variant of doc.structureVariants ?? []) {
+      if (variant.nodes !== structure) applyWrappers(variant.nodes);
+    }
   }
 
   const decorators = [
@@ -749,6 +753,7 @@ function buildEntry(
     conditions: acc.conditions,
     examples: doc.examples,
     structure,
+    structureVariants: doc.structureVariants,
     structureDescription: doc.structureDescription,
     demo: doc.demo,
     deprecated: doc.deprecated,

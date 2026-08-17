@@ -329,7 +329,7 @@ export const record = {
       // compound classes and any inside `:has()`/`:is()`/`:not()`), so class order never matters and inner
       // targets are covered too. A sibling component's own members (e.g. its modifiers) belong to that
       // component's docs, so reference it bare (`.close-button`); list other externals under structureIgnore.
-      if (info.entry.structure?.length) {
+      if (info.entry.structure?.length || info.entry.structureVariants?.length) {
         const known = new Set<string>([
           stripDot(info.entry.className),
           // Sibling components are valid children — a component tree composes other components.
@@ -353,8 +353,16 @@ export const record = {
           [...sel.matchAll(/\.([\w-]+)/gu)].map((m) => m[1]);
         const hasSelfBelow = (nodes: StructureNode[]): boolean =>
           nodes.some((n) => classesOf(n.selector).includes(selfClass) || hasSelfBelow(n.children));
-        for (const root of info.entry.structure) {
-          if (hasSelfBelow(root.children)) for (const c of classesOf(root.selector)) known.add(c);
+        // Alternative DOM shapes (`@variant` blocks) are validated independently, each against the
+        // component's own known classes plus its own ancestor-wrapper roots — falls back to the single
+        // `structure` tree when no `@variant` was authored.
+        const groups = info.entry.structureVariants?.length
+          ? info.entry.structureVariants.map((v) => v.nodes)
+          : [info.entry.structure ?? []];
+        for (const roots of groups) {
+          for (const root of roots) {
+            if (hasSelfBelow(root.children)) for (const c of classesOf(root.selector)) known.add(c);
+          }
         }
         // The prefix this record's own class carries in front of its name (e.g. `instui-` in
         // `.instui-alert`, or the masked `aaaa` when an embedded `${p}` is projected). A sibling
@@ -481,7 +489,7 @@ export const record = {
             walk(node.children);
           }
         };
-        walk(info.entry.structure);
+        for (const roots of groups) walk(roots);
       }
     }
     return out;
@@ -675,12 +683,25 @@ export const record = {
     );
 
     {
-      const w = want("structure", Boolean(entry.structure?.length));
+      const w = want(
+        "structure",
+        Boolean(entry.structure?.length || entry.structureVariants?.length),
+      );
       if (w !== "skip") {
         const frag = ["", "**$(list-tree) Structure**"];
         if (w === "content") {
           if (entry.structureDescription) frag.push("", entry.structureDescription);
-          frag.push("", "```css", ...renderStructureTree(entry.structure ?? []), "```");
+          if (entry.structureVariants?.length) {
+            frag.push("", "```css");
+            entry.structureVariants.forEach((variant, i) => {
+              if (i > 0) frag.push("");
+              frag.push(`/* Variant: ${variant.name ?? `Variant ${i + 1}`} */`);
+              frag.push(...renderStructureTree(variant.nodes));
+            });
+            frag.push("```");
+          } else {
+            frag.push("", "```css", ...renderStructureTree(entry.structure ?? []), "```");
+          }
         } else frag.push("", "_—_");
         fragments.structure = frag;
       }

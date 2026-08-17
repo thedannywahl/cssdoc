@@ -148,6 +148,49 @@ function classify(node: StructureNode, isRoot: boolean, options: MermaidOptions)
  */
 export function toMermaid(roots: StructureNode[], options: MermaidOptions = {}): string {
   if (!roots.length) return "";
+  const { nodes, edges, links } = renderTrees([{ roots }], options);
+  return [
+    `flowchart ${options.direction ?? "TD"}`,
+    ...nodes,
+    ...edges,
+    ...links,
+    ...CLASS_DEFS.map((d) => `  ${d}`),
+  ].join("\n");
+}
+
+/**
+ * Convert a component's alternative {@link StructureVariant}s (from top-level `@variant` blocks) to a
+ * single Mermaid flowchart — one labelled `subgraph` per variant (reusing the same mechanism `@scope`
+ * boundary nodes use), read top-to-bottom as "pick one of these". An unlabelled variant is titled
+ * "Variant N" (1-based, in authored order).
+ *
+ * @param variants - The component's {@link StructureVariant}s.
+ * @param options - {@link MermaidOptions}.
+ * @returns Mermaid source, or an empty string when there are no variants with nodes.
+ */
+export function toMermaidVariants(
+  variants: readonly { name?: string; nodes: StructureNode[] }[],
+  options: MermaidOptions = {},
+): string {
+  const groups = variants
+    .filter((v) => v.nodes.length)
+    .map((v, i) => ({ roots: v.nodes, label: v.name ?? `Variant ${i + 1}` }));
+  if (!groups.length) return "";
+  const { nodes, edges, links } = renderTrees(groups, options);
+  return [
+    `flowchart ${options.direction ?? "TD"}`,
+    ...nodes,
+    ...edges,
+    ...links,
+    ...CLASS_DEFS.map((d) => `  ${d}`),
+  ].join("\n");
+}
+
+/** Shared node/edge/link rendering for {@link toMermaid} and {@link toMermaidVariants}. */
+function renderTrees(
+  groups: readonly { roots: StructureNode[]; label?: string }[],
+  options: MermaidOptions,
+): { nodes: string[]; edges: string[]; links: string[] } {
   const nodes: string[] = [];
   const edges: string[] = [];
   const links: string[] = [];
@@ -174,13 +217,17 @@ export function toMermaid(roots: StructureNode[], options: MermaidOptions = {}):
     }
     return id;
   };
-  for (const root of roots) walk(root, true);
 
-  return [
-    `flowchart ${options.direction ?? "TD"}`,
-    ...nodes,
-    ...edges,
-    ...links,
-    ...CLASS_DEFS.map((d) => `  ${d}`),
-  ].join("\n");
+  for (const group of groups) {
+    if (group.label !== undefined) {
+      const id = `sg${counter++}`;
+      nodes.push(`  subgraph ${id} ["${esc(group.label)}"]`);
+      for (const root of group.roots) walk(root, true);
+      nodes.push("  end");
+    } else {
+      for (const root of group.roots) walk(root, true);
+    }
+  }
+
+  return { nodes, edges, links };
 }

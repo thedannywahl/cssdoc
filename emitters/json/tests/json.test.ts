@@ -69,6 +69,36 @@ test("the shipped JSON Schema validates the model output (schema stays in step w
   expect(ok).toBe(true);
 });
 
+test("structureVariants (from @variant blocks) round-trips through JSON and validates against the schema", () => {
+  const VARIANT_CSS = `
+/**
+ * @component progress
+ * @summary An upload progress control.
+ * @structure
+ * @variant wrapped {
+ *   label { progress {} }
+ * }
+ * @variant labelled {
+ *   label {}
+ *   progress {}
+ * }
+ */
+.progress {}
+`;
+  const entries = parseCssDocs(VARIANT_CSS);
+  const parsed = JSON.parse(renderJson(entries));
+  const progress = parsed.find((e: { name: string }) => e.name === "progress");
+  expect(progress.structureVariants).toHaveLength(2);
+  expect(progress.structureVariants[0].name).toBe("wrapped");
+  expect(progress.structureVariants[1].name).toBe("labelled");
+
+  const ajv = new Ajv({ allErrors: true });
+  const validate = ajv.compile(cssDocSchema);
+  const ok = validate(JSON.parse(JSON.stringify(entries)));
+  if (!ok) console.error(validate.errors);
+  expect(ok).toBe(true);
+});
+
 test("writeJson writes the model, per-record files, an index, and the schema", () => {
   const outDir = mkdtempSync(join(tmpdir(), "cssdoc-json-"));
   const result = writeJson({ css: CSS, outDir, perRecord: true, schema: true });

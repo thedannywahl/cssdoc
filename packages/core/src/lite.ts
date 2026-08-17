@@ -14,6 +14,7 @@
 export {
   parseDocComment,
   parseStructure,
+  parseStructureVariants,
   recordNameOf,
   RECORD_TAGS,
   splitModifierArg,
@@ -36,7 +37,7 @@ export {
   resolveModifierConvention,
 } from "./modifier.ts";
 export type { ModifierConvention, ModifierConventionInput, ModifierHit } from "./modifier.ts";
-export { toMermaid } from "./mermaid.ts";
+export { toMermaid, toMermaidVariants } from "./mermaid.ts";
 export type { MermaidOptions } from "./mermaid.ts";
 export { buildCustomMediaDeclarations, structureCustomMediaRefs } from "./customMedia.ts";
 export type { BuildCustomMediaOptions, StructureCustomMediaRef } from "./customMedia.ts";
@@ -59,6 +60,7 @@ export type {
   CssTokenConsumed,
   ParseOptions,
   StructureNode,
+  StructureVariant,
 } from "./model.ts";
 
 import type { CssDocEntry } from "./model.ts";

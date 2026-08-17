@@ -7,6 +7,7 @@ import {
   parseCssDocs,
   structureCustomMediaRefs,
   toMermaid,
+  toMermaidVariants,
 } from "../src/index.ts";
 import postcss from "postcss";
 import { parseDocComment, parseStructure } from "../src/grammar.ts";
@@ -399,6 +400,105 @@ test("@structure parses @scope at-rules as scope-boundary StructureNodes", () =>
   expect(scopeNode.selector).toBe("");
   expect(scopeNode.children).toHaveLength(1);
   expect(scopeNode.children[0].selector).toBe(":scope > .item");
+});
+
+test("@structure @variant blocks split into structureVariants, with structure holding the first for back-compat", () => {
+  const [entry] = parseCssDocs(
+    [
+      "/**",
+      " * @component progress",
+      " * @summary An upload progress control.",
+      " * @structure",
+      " * @variant wrapped {",
+      " *   label {",
+      " *     progress {}",
+      " *   }",
+      " * }",
+      " * @variant labelled {",
+      " *   label {}",
+      " *   progress {}",
+      " * }",
+      " */",
+      ".progress {}",
+    ].join("\n"),
+  );
+
+  expect(entry.structureVariants).toHaveLength(2);
+  expect(entry.structureVariants![0].name).toBe("wrapped");
+  expect(entry.structureVariants![0].nodes[0].selector).toBe("label");
+  expect(entry.structureVariants![0].nodes[0].children[0].selector).toBe("progress");
+  expect(entry.structureVariants![1].name).toBe("labelled");
+  expect(entry.structureVariants![1].nodes).toHaveLength(2);
+
+  // Back-compat: `structure` is the first variant's nodes only.
+  expect(entry.structure).toBe(entry.structureVariants![0].nodes);
+});
+
+test("@structure without @variant leaves structureVariants undefined", () => {
+  const [entry] = parseCssDocs(
+    [
+      "/**",
+      " * @component tabs",
+      " * @summary Tabs.",
+      " * @structure",
+      " * .tabs {}",
+      " */",
+      ".tabs {}",
+    ].join("\n"),
+  );
+
+  expect(entry.structureVariants).toBeUndefined();
+  expect(entry.structure).toHaveLength(1);
+});
+
+test("@structure @variant: an unlabeled @variant block is a variant with no name", () => {
+  const [entry] = parseCssDocs(
+    [
+      "/**",
+      " * @component progress",
+      " * @summary An upload progress control.",
+      " * @structure",
+      " * @variant {",
+      " *   .modern {}",
+      " * }",
+      " * @variant labelled {",
+      " *   .legacy {}",
+      " * }",
+      " */",
+      ".progress {}",
+    ].join("\n"),
+  );
+
+  expect(entry.structureVariants).toHaveLength(2);
+  expect(entry.structureVariants![0].name).toBeUndefined();
+  expect(entry.structureVariants![0].nodes[0].selector).toBe(".modern");
+  expect(entry.structureVariants![1].name).toBe("labelled");
+});
+
+test("toMermaidVariants renders each variant as a labelled subgraph, falling back to positional names", () => {
+  const [entry] = parseCssDocs(
+    [
+      "/**",
+      " * @component progress",
+      " * @summary An upload progress control.",
+      " * @structure",
+      " * @variant {",
+      " *   .modern {}",
+      " * }",
+      " * @variant labelled {",
+      " *   .legacy {}",
+      " * }",
+      " */",
+      ".progress {}",
+    ].join("\n"),
+  );
+
+  const mermaid = toMermaidVariants(entry.structureVariants!);
+  expect(mermaid.startsWith("flowchart TD")).toBe(true);
+  expect(mermaid).toContain(`subgraph sg0 ["Variant 1"]`);
+  expect(mermaid).toContain(`"labelled"]`);
+  expect(mermaid).toContain(`".modern"]:::cssdoc-root`);
+  expect(mermaid).toContain(`".legacy"]:::cssdoc-root`);
 });
 
 test("@example unescapes `\\`` so a fence authored inside a css template becomes a real fence", () => {

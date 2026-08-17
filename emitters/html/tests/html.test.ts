@@ -32,6 +32,29 @@ test("renderPage produces a standalone, escaped HTML document", () => {
   expect(html).toContain("<strong>Refs:</strong>");
 });
 
+test("renderPage renders each @variant block under its own labelled heading", () => {
+  const [progress] = parseCssDocs(
+    [
+      "/**",
+      " * @component progress",
+      " * @summary An upload progress control.",
+      " * @structure",
+      " * @variant wrapped {",
+      " *   label { progress {} }",
+      " * }",
+      " * @variant labelled {",
+      " *   label {}",
+      " *   progress {}",
+      " * }",
+      " */",
+      ".progress {}",
+    ].join("\n"),
+  );
+  const html = renderPage(progress!);
+  expect(html).toContain("<h4>Variant: wrapped</h4>");
+  expect(html).toContain("<h4>Variant: labelled</h4>");
+});
+
 test("renderPage escapes HTML-unsafe prose", () => {
   const [entry] = parseCssDocs(
     `/**\n * @component x\n * @summary A <b> & "y" tag.\n */\n.x { color: red; }`,

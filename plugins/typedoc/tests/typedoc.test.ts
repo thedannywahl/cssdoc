@@ -120,3 +120,32 @@ test("emitCssApi forwards groups so the CSS sidebar orders custom groups", () =>
     "Components",
   ]);
 });
+
+const VARIANT_CSS = `
+/**
+ * @component progress
+ * @summary An upload progress control.
+ * @structure
+ * @variant wrapped {
+ *   label { progress {} }
+ * }
+ * @variant labelled {
+ *   label {}
+ *   progress {}
+ * }
+ */
+.progress {}
+`;
+
+test("emitCssApi forwards structureVariantView so @variant blocks render as labelled sections", () => {
+  const out = mkdtempSync(join(tmpdir(), "cssdoc-td-"));
+  const cssPath = join(out, "progress.css");
+  writeFileSync(cssPath, VARIANT_CSS);
+
+  emitCssApi({ outputDirectory: out, css: [cssPath], structureVariantView: "sections" });
+
+  const page = readFileSync(join(out, "css", "progress.md"), "utf8");
+  // Without forwarding, `structureVariantView` would no-op and default to the combined-diagram view.
+  expect(page).toContain("### Variant: wrapped");
+  expect(page).toContain("### Variant: labelled");
+});

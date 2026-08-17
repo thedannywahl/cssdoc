@@ -42,6 +42,12 @@ export interface RenderConfig {
   /** Which Structure representation(s) to emit: `"text"`, `"diagram"`, or `"both"` (default). */
   structureView?: "text" | "diagram" | "both";
   /**
+   * How alternative DOM shapes (from top-level `@variant` blocks in `@structure`) render, when present:
+   * `"diagram"` (default) emits one combined flowchart with a labelled subgraph per variant;
+   * `"sections"` emits a `### Variant: <name>` subsection per variant.
+   */
+  structureVariantView?: "diagram" | "sections";
+  /**
    * Explicit sidebar/index group order for the CSS API pages. Listed group labels come first, in this
    * order; unlisted groups follow the default order (record kinds, then custom `@group` groups). The
    * emitter validates/uses these.

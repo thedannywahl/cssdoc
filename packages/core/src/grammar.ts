@@ -45,6 +45,7 @@ import type {
   CssRelated,
   CssReleaseStage,
   StructureNode,
+  StructureVariant,
 } from "./model.ts";
 
 /** One parsed annotation legend row from an `@annotations` block. */
@@ -178,6 +179,8 @@ export interface ParsedDoc {
   examples: string[];
   /** `@structure` — the nested-CSS body, parsed into a selector tree by {@link parseStructure}. */
   structure?: StructureNode[];
+  /** Alternative DOM shapes from top-level `@variant` blocks in `@structure`, when authored. */
+  structureVariants?: StructureVariant[];
   /** An optional prose description leading the `@structure` body. */
   structureDescription?: string;
   /** The `<replacement>` argument from a `@deprecated` tag. */
@@ -419,7 +422,9 @@ function applyBlockTag(
       break;
     case "structure": {
       const { description, css } = splitStructureBody(rest);
-      doc.structure = parseStructure(css, parse);
+      const variants = parseStructureVariants(css, parse);
+      doc.structure = variants ? (variants[0]?.nodes ?? []) : parseStructure(css, parse);
+      if (variants) doc.structureVariants = variants;
       if (description) doc.structureDescription = description;
       break;
     }
@@ -780,40 +785,90 @@ function normalizeStructureAtRuleRef(name: string, params: string): string | und
   return `@${name}:${profile[1]}`;
 }
 
+/** Build a {@link StructureNode} tree from one already-parsed level of a `@structure` body. */
+function buildStructureNodes(nodes: readonly ChildNode[]): StructureNode[] {
+  const out: StructureNode[] = [];
+  for (const rule of nodes) {
+    if (rule.type === "atrule" && rule.name === "scope") {
+      // @scope boundary: emit a wrapper node whose children are the scoped rules.
+      out.push({
+        selector: "",
+        scope: rule.params.trim(),
+        children: buildStructureNodes(rule.nodes ?? []),
+      });
+      continue;
+    }
+    if (rule.type === "atrule") {
+      const selector = normalizeStructureAtRuleRef(rule.name, rule.params);
+      if (!selector) continue;
+      out.push({ selector, children: buildStructureNodes(rule.nodes ?? []) });
+      continue;
+    }
+    if (rule.type !== "rule") continue;
+    const rawSel = rule.selector.trim();
+    const coloc = rawSel.match(COLOC_RE);
+    const withoutColoc = coloc ? rawSel.replace(COLOC_RE, "").trim() : rawSel;
+    const card = withoutColoc.match(CARD_RE);
+    const node: StructureNode = {
+      selector: card ? withoutColoc.slice(0, card.index).trim() : withoutColoc,
+      children: buildStructureNodes(rule.nodes ?? []),
+    };
+    if (card) node.cardinality = CARDINALITY[card[1]];
+    if (coloc) node.colocated = coloc[1].trim();
+    out.push(node);
+  }
+  return out;
+}
+
 export function parseStructure(raw: string, parse?: CssParse): StructureNode[] {
   if (!parse) return []; // no parser injected → no tree (the grammar module stays parser-free)
-  const build = (nodes: readonly ChildNode[]): StructureNode[] => {
-    const out: StructureNode[] = [];
-    for (const rule of nodes) {
-      if (rule.type === "atrule" && rule.name === "scope") {
-        // @scope boundary: emit a wrapper node whose children are the scoped rules.
-        out.push({ selector: "", scope: rule.params.trim(), children: build(rule.nodes ?? []) });
-        continue;
-      }
-      if (rule.type === "atrule") {
-        const selector = normalizeStructureAtRuleRef(rule.name, rule.params);
-        if (!selector) continue;
-        out.push({ selector, children: build(rule.nodes ?? []) });
-        continue;
-      }
-      if (rule.type !== "rule") continue;
-      const rawSel = rule.selector.trim();
-      const coloc = rawSel.match(COLOC_RE);
-      const withoutColoc = coloc ? rawSel.replace(COLOC_RE, "").trim() : rawSel;
-      const card = withoutColoc.match(CARD_RE);
-      const node: StructureNode = {
-        selector: card ? withoutColoc.slice(0, card.index).trim() : withoutColoc,
-        children: build(rule.nodes ?? []),
-      };
-      if (card) node.cardinality = CARDINALITY[card[1]];
-      if (coloc) node.colocated = coloc[1].trim();
-      out.push(node);
-    }
-    return out;
-  };
   try {
-    return build(parse(raw).nodes);
+    return buildStructureNodes(parse(raw).nodes);
   } catch {
     return []; // malformed structure → empty, never throws
   }
+}
+
+/**
+ * Split a `@structure` body into alternative {@link StructureVariant}s when it has one or more
+ * top-level `@variant <name>? { … }` blocks — an author saying "pick one of these DOM shapes" (e.g. a
+ * `<label>` wrapping a control vs. a `<label for>` + a sibling control), as opposed to `parseStructure`'s
+ * default of "these roots all coexist". A bare (non-`@variant`) run of top-level nodes becomes an
+ * unnamed variant in place; `@variant` is only recognized at this top level — a nested occurrence is
+ * inert CSS content, same as any other unrecognized at-rule.
+ *
+ * @returns `undefined` when the body has no top-level `@variant` block (the common case).
+ */
+export function parseStructureVariants(
+  raw: string,
+  parse?: CssParse,
+): StructureVariant[] | undefined {
+  if (!parse) return undefined;
+  let topNodes: readonly ChildNode[];
+  try {
+    topNodes = parse(raw).nodes;
+  } catch {
+    return undefined; // malformed structure → no variants, parseStructure will also empty out
+  }
+  if (!topNodes.some((n) => n.type === "atrule" && n.name === "variant")) return undefined;
+
+  const variants: StructureVariant[] = [];
+  let bareRun: ChildNode[] = [];
+  const flushBareRun = (): void => {
+    if (bareRun.length) variants.push({ nodes: buildStructureNodes(bareRun) });
+    bareRun = [];
+  };
+  for (const node of topNodes) {
+    if (node.type === "atrule" && node.name === "variant") {
+      flushBareRun();
+      variants.push({
+        name: node.params.trim() || undefined,
+        nodes: buildStructureNodes(node.nodes ?? []),
+      });
+      continue;
+    }
+    bareRun.push(node);
+  }
+  flushBareRun();
+  return variants;
 }

@@ -43,8 +43,8 @@ export interface EmitCssApiOptions extends RenderEntryOptions {
   /**
    * A loaded `cssdoc.json` (from `@cssdoc/config`). When given, it supplies the parse `configuration`
    * (unless one is passed explicitly) and the render defaults
-   * `sectionOrder`/`headingPrefix`/`baseHref`/`structureView`/`groups` from its `render` block. Any
-   * explicit option above still overrides the config file.
+   * `sectionOrder`/`headingPrefix`/`baseHref`/`structureView`/`structureVariantView`/`groups` from its
+   * `render` block. Any explicit option above still overrides the config file.
    */
   configFile?: CssDocConfigFile;
   /** Base directory the `css` paths are resolved against (default `process.cwd()`). */
@@ -89,6 +89,7 @@ export function emitCssApi(
     options.sectionOrder ?? (render?.sectionOrder as readonly SectionKey[] | undefined);
   const headingPrefix = options.headingPrefix ?? render?.headingPrefix;
   const structureView = options.structureView ?? render?.structureView;
+  const structureVariantView = options.structureVariantView ?? render?.structureVariantView;
   const groups = options.groups ?? render?.groups;
   const cwd = options.cwd ?? process.cwd();
 
@@ -106,6 +107,7 @@ export function emitCssApi(
     sectionOrder,
     headingPrefix,
     structureView,
+    structureVariantView,
     groups,
   });
 

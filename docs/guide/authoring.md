@@ -390,6 +390,33 @@ Using `@scope` inside `@structure`:
 CSS at-rules whose names are not cssdoc tags (`@scope`, `@media`, `@layer`, etc.) are treated as CSS
 content within `@structure` and are never mis-read as new doc-comment tag blocks.
 
+### Alternative structures (`@variant`)
+
+Some elements have more than one valid DOM shape, and only one applies at a time — e.g. a `<progress>`
+wrapped inside its `<label>`, or a `<label for>` pointing at a sibling `<progress id>`. `@structure`'s
+tree has a single root, so express "pick one of these" with a top-level `@variant <name>? { … }` block
+per alternative — the name is optional (an unlabeled `@variant` renders as "Variant N"):
+
+```css
+/**
+ * @structure
+ * @variant wrapped {
+ *   label { progress {} }
+ * }
+ * @variant labelled {
+ *   label {}
+ *   progress {}
+ * }
+ */
+```
+
+Each variant is validated independently against the component's own known classes (parts, modifiers,
+slots, sibling components) — an unknown class in one variant is flagged even if the others are clean.
+By default the rendered Structure section shows one combined diagram with a labelled subgraph per
+variant; set `render.structureVariantView: "sections"` in `cssdoc.json` for separate `### Variant: <name>`
+subsections instead. `@variant` is only recognized at the top level of `@structure` — a nested
+occurrence is inert CSS content, like any other unrecognized at-rule.
+
 Every remaining class named in an `@structure` selector should resolve to the component class, a
 documented member, or another documented component; otherwise `structure-unknown-selector` warns.
 Exempt other externals (utilities) with `structureIgnore` in `cssdoc.json`.

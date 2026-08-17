@@ -75,6 +75,29 @@ test("indexFromEntries works without spans (from a model snapshot)", () => {
   expect(rebuilt.location("button")).toBeUndefined(); // no spans in a snapshot
 });
 
+test("structureVariantsFor returns the @variant blocks for a component", () => {
+  const css = `
+/**
+ * @component progress
+ * @structure
+ * @variant wrapped {
+ *   label { progress {} }
+ * }
+ * @variant labelled {
+ *   label {}
+ *   progress {}
+ * }
+ */
+.progress {}
+`;
+  const idx = createIndex(css);
+  expect(idx.structureFor("progress")).toBeDefined();
+  const variants = idx.structureVariantsFor("progress");
+  expect(variants).toHaveLength(2);
+  expect(variants?.[0].name).toBe("wrapped");
+  expect(variants?.[1].name).toBe("labelled");
+});
+
 test("spans and lookups work for suffix (BEM) and attribute (CUBE) modifiers", () => {
   const bem = createIndex(
     `/**\n * @component card\n */\n.card {}\n.card--featured { color: red; }`,

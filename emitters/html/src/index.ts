@@ -238,7 +238,18 @@ export function renderPage(entry: CssDocEntry, options: { indexHref?: string } =
       ]),
     ),
   );
-  if (entry.structure?.length)
+  if (entry.structureVariants?.length)
+    section(
+      "Structure",
+      (entry.structureDescription ? `<p>${esc(entry.structureDescription)}</p>` : "") +
+        entry.structureVariants
+          .map(
+            (variant, i) =>
+              `<h4>Variant: ${esc(variant.name ?? `Variant ${i + 1}`)}</h4>${structureList(variant.nodes)}`,
+          )
+          .join(""),
+    );
+  else if (entry.structure?.length)
     section(
       "Structure",
       (entry.structureDescription ? `<p>${esc(entry.structureDescription)}</p>` : "") +

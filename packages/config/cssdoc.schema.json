@@ -471,6 +471,13 @@
             "both"
           ]
         },
+        "structureVariantView": {
+          "description": "How alternative DOM shapes (from top-level @variant blocks in @structure) render: \"diagram\" (default) emits one combined flowchart with a labelled subgraph per variant; \"sections\" emits a \"### Variant: <name>\" subsection per variant.",
+          "enum": [
+            "diagram",
+            "sections"
+          ]
+        },
         "groups": {
           "description": "Explicit sidebar/index group order. Listed group labels come first, in this order; unlisted groups follow the default order (record kinds, then custom @group groups).",
           "type": "array",

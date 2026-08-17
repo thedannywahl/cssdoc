@@ -22,6 +22,7 @@ import {
   type CssState,
   type ModifierConventionInput,
   type StructureNode,
+  type StructureVariant,
   DEFAULT_MODIFIER_CONVENTION,
   ModifierMatcher,
   parseCssDocs,
@@ -325,6 +326,10 @@ export class CssDocIndex {
 
   structureFor(name: string): StructureNode[] | undefined {
     return this.byName.get(name)?.entry.structure;
+  }
+
+  structureVariantsFor(name: string): StructureVariant[] | undefined {
+    return this.byName.get(name)?.entry.structureVariants;
   }
 
   /** Whether `modifier` (a class token or attribute expression) is a documented modifier of `base` —

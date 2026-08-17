@@ -44,6 +44,12 @@ npm i -D @cssdoc/config @cssdoc/core
 
 See [Modifier conventions](/guide/modifier-conventions) for the convention forms and the full rule list.
 
+A `render` block configures markdown output: `structureView` chooses which Structure representation(s)
+render (`"text"`/`"diagram"`/`"both"`, default `"both"`); `structureVariantView` chooses how `@variant`
+alternatives render when authored (`"diagram"`, default — one combined flowchart with a labelled
+subgraph per variant — or `"sections"` for separate `### Variant: <name>` subsections). See
+[Authoring → Alternative structures](/guide/authoring#alternative-structures-variant).
+
 ## Consuming another provider
 
 `extends` inherits **configuration** (tags, convention, rules); `providers` imports another provider's

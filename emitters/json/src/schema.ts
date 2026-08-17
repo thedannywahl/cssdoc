@@ -161,6 +161,7 @@ export const cssDocEntrySchema = {
     },
     examples: { type: "array", items: { type: "string" } },
     structure: { type: "array", items: { $ref: "#/$defs/StructureNode" } },
+    structureVariants: { type: "array", items: { $ref: "#/$defs/StructureVariant" } },
     structureDescription: { type: "string" },
     demo: { type: "string" },
     deprecated: { type: "string" },
@@ -232,6 +233,15 @@ export const cssDocSchema = {
         colocated: { type: "string" },
         description: { type: "string" },
         children: { type: "array", items: { $ref: "#/$defs/StructureNode" } },
+      },
+    },
+    StructureVariant: {
+      type: "object",
+      required: ["nodes"],
+      additionalProperties: false,
+      properties: {
+        name: { type: "string" },
+        nodes: { type: "array", items: { $ref: "#/$defs/StructureNode" } },
       },
     },
   },

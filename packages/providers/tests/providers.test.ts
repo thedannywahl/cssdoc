@@ -98,6 +98,53 @@ test("structure-unknown-selector flags a @structure class that isn't a documente
   );
 });
 
+test("structure-unknown-selector validates each @variant block independently", () => {
+  // An unknown class inside the second @variant is flagged even though the first variant is clean.
+  const css = `/**
+ * @component progress
+ * @summary An upload progress control.
+ * @part .label — The caption.
+ * @structure
+ * @variant wrapped {
+ *   .label {}
+ * }
+ * @variant labelled {
+ *   .label {}
+ *   .bogus {}
+ * }
+ */
+.progress {}`;
+  const idx = createIndex(css);
+  const messages = lintModel(idx)
+    .filter((d) => d.rule === "structure-unknown-selector")
+    .map((d) => d.message);
+  expect(messages.join(" ")).toContain(".bogus");
+  expect(messages.join(" ")).not.toContain(".label");
+});
+
+test("hover Structure section labels each @variant block when @variant is authored", () => {
+  const idx = createIndex(
+    [
+      "/**",
+      " * @component progress",
+      " * @summary An upload progress control.",
+      " * @structure",
+      " * @variant wrapped {",
+      " *   label { progress {} }",
+      " * }",
+      " * @variant labelled {",
+      " *   label {}",
+      " *   progress {}",
+      " * }",
+      " */",
+      ".progress {}",
+    ].join("\n"),
+  );
+  const card = hoverForClass("progress", "progress", idx, "full")?.contents ?? "";
+  expect(card).toContain("/* Variant: wrapped */");
+  expect(card).toContain("/* Variant: labelled */");
+});
+
 test("structure-unknown-selector accepts a sibling component as a child, still flags unknowns", () => {
   const css = [
     "/**",

@@ -7,7 +7,7 @@
  * @module
  */
 import type { CssDocEntry, CssReleaseStage, CssRecordKind, StructureNode } from "@cssdoc/core";
-import { toMermaid } from "@cssdoc/core";
+import { toMermaid, toMermaidVariants } from "@cssdoc/core";
 
 /**
  * Resolve a consumed custom property to its type/value for the "Tokens consumed" table. Supplied by the
@@ -114,6 +114,13 @@ export interface RenderEntryOptions {
    * flowchart, or both. Defaults to `"both"`.
    */
   structureView?: "text" | "diagram" | "both";
+  /**
+   * How alternative DOM shapes (from top-level `@variant` blocks in `@structure`) render, when present:
+   * `"diagram"` emits one combined flowchart with a labelled subgraph per variant; `"sections"` emits a
+   * `### Variant: <name>` subsection per variant, each with its own text tree/diagram per
+   * {@link structureView}. Defaults to `"diagram"`. Ignored when no `@variant` was authored.
+   */
+  structureVariantView?: "diagram" | "sections";
   /**
    * Optional CSS classes for HTML-preserving renderers (e.g. VitePress). Each key is opt-in; omit for
    * pure markdown. Values are used verbatim as the `class` attribute (multiple space-separated tokens
@@ -346,9 +353,9 @@ function renderTree(
   return out;
 }
 
-/** The sibling components referenced anywhere in a structure tree, resolved + de-duped by name. */
+/** The sibling components referenced anywhere across one or more structure trees, resolved + de-duped by name. */
 function subcomponentsOf(
-  nodes: StructureNode[],
+  groups: readonly StructureNode[][],
   self: string,
   resolve: (className: string) => { name: string; href: string } | undefined,
 ): { name: string; href: string }[] {
@@ -367,7 +374,7 @@ function subcomponentsOf(
       walk(node.children);
     }
   };
-  walk(nodes);
+  for (const nodes of groups) walk(nodes);
   return [...byName.values()];
 }
 
@@ -523,32 +530,77 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
     );
   }
 
-  if (entry.structure?.length) {
+  if (entry.structure?.length || entry.structureVariants?.length) {
     fragments.structure.push("## Structure", "");
     if (entry.structureDescription) fragments.structure.push(entry.structureDescription, "");
     // Both views classify each node (root / part / slot / sibling component): `self` keeps the record's
     // own class from reading as a sibling, and `resolveComponent` resolves siblings to component names.
     const self = entry.className.replace(/^\./u, "");
     const view = options.structureView ?? "both";
-    if (view !== "diagram") {
-      fragments.structure.push(
-        "```text",
-        ...renderTree(entry.structure, self, options.resolveComponent),
-        "```",
-        "",
-      );
-    }
-    if (view !== "text") {
-      const mermaid = toMermaid(entry.structure, {
-        self,
-        resolveComponent: options.resolveComponent,
+    const variants = entry.structureVariants;
+
+    if (variants?.length && (options.structureVariantView ?? "diagram") === "sections") {
+      // One `### Variant: <name>` subsection per variant, each rendered like a standalone structure.
+      variants.forEach((variant, i) => {
+        fragments.structure.push(`### Variant: ${variant.name ?? `Variant ${i + 1}`}`, "");
+        if (view !== "diagram") {
+          fragments.structure.push(
+            "```text",
+            ...renderTree(variant.nodes, self, options.resolveComponent),
+            "```",
+            "",
+          );
+        }
+        if (view !== "text") {
+          const mermaid = toMermaid(variant.nodes, {
+            self,
+            resolveComponent: options.resolveComponent,
+          });
+          if (mermaid) fragments.structure.push("```mermaid", mermaid, "```", "");
+        }
       });
-      if (mermaid) fragments.structure.push("```mermaid", mermaid, "```", "");
+    } else if (variants?.length) {
+      // Default: one combined diagram, a labelled subgraph per variant ("pick one of these").
+      if (view !== "diagram") {
+        variants.forEach((variant, i) => {
+          fragments.structure.push(`\`// Variant: ${variant.name ?? `Variant ${i + 1}`}\``, "");
+          fragments.structure.push(
+            "```text",
+            ...renderTree(variant.nodes, self, options.resolveComponent),
+            "```",
+            "",
+          );
+        });
+      }
+      if (view !== "text") {
+        const mermaid = toMermaidVariants(variants, {
+          self,
+          resolveComponent: options.resolveComponent,
+        });
+        if (mermaid) fragments.structure.push("```mermaid", mermaid, "```", "");
+      }
+    } else {
+      if (view !== "diagram") {
+        fragments.structure.push(
+          "```text",
+          ...renderTree(entry.structure ?? [], self, options.resolveComponent),
+          "```",
+          "",
+        );
+      }
+      if (view !== "text") {
+        const mermaid = toMermaid(entry.structure ?? [], {
+          self,
+          resolveComponent: options.resolveComponent,
+        });
+        if (mermaid) fragments.structure.push("```mermaid", mermaid, "```", "");
+      }
     }
 
-    // Composition is derived from the structure tree: sibling components referenced as children.
+    // Composition is derived from the structure tree(s): sibling components referenced as children.
     if (options.resolveComponent) {
-      const subs = subcomponentsOf(entry.structure, self, options.resolveComponent);
+      const groups = variants?.length ? variants.map((v) => v.nodes) : [entry.structure ?? []];
+      const subs = subcomponentsOf(groups, self, options.resolveComponent);
       if (subs.length) {
         fragments.subcomponents.push("## Subcomponents", "");
         for (const s of subs) fragments.subcomponents.push(`- [${escProse(s.name)}](${s.href})`);

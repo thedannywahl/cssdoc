@@ -238,6 +238,90 @@ test("structureView selects which Structure representation(s) render (default bo
   });
 });
 
+test("@structure @variant blocks render one combined diagram with a labelled subgraph by default", () => {
+  const [progress] = parseCssDocs(
+    [
+      "/**",
+      " * @component progress",
+      " * @summary An upload progress control.",
+      " * @structure",
+      " * @variant wrapped {",
+      " *   label { progress {} }",
+      " * }",
+      " * @variant labelled {",
+      " *   label {}",
+      " *   progress {}",
+      " * }",
+      " */",
+      ".progress {}",
+    ].join("\n"),
+  );
+  const md = renderEntry(progress!, {});
+  expect(md).toContain("```mermaid");
+  expect(md).toContain(`subgraph`);
+  expect(md).toContain(`"wrapped"`);
+  expect(md).toContain(`"labelled"`);
+  expect(md).not.toContain("### Variant:");
+});
+
+test('structureVariantView: "sections" renders one labelled subsection per @variant', () => {
+  const [progress] = parseCssDocs(
+    [
+      "/**",
+      " * @component progress",
+      " * @summary An upload progress control.",
+      " * @structure",
+      " * @variant wrapped {",
+      " *   label { progress {} }",
+      " * }",
+      " * @variant labelled {",
+      " *   label {}",
+      " *   progress {}",
+      " * }",
+      " */",
+      ".progress {}",
+    ].join("\n"),
+  );
+  const md = renderEntry(progress!, { structureVariantView: "sections" });
+  expect(md).toContain("### Variant: wrapped");
+  expect(md).toContain("### Variant: labelled");
+  // Each variant gets its own tree + diagram (default structureView is "both").
+  const textBlocks = md.split("```text").length - 1;
+  const mermaidBlocks = md.split("```mermaid").length - 1;
+  expect(textBlocks).toBe(2);
+  expect(mermaidBlocks).toBe(2);
+});
+
+test("@structure @variant: Subcomponents scans across all variants", () => {
+  const [shell] = parseCssDocs(
+    [
+      "/**",
+      " * @component shell",
+      " * @summary A shell.",
+      " * @structure",
+      " * @variant a {",
+      " *   .tabs-list:is(.pfx-card) {}",
+      " * }",
+      " * @variant b {",
+      " *   .other:is(.pfx-badge) {}",
+      " * }",
+      " */",
+      ".shell {}",
+    ].join("\n"),
+  );
+  const md = renderEntry(shell!, {
+    resolveComponent: (c) =>
+      c === "pfx-card"
+        ? { name: "card", href: "./card.md" }
+        : c === "pfx-badge"
+          ? { name: "badge", href: "./badge.md" }
+          : undefined,
+  });
+  expect(md).toContain("## Subcomponents");
+  expect(md).toContain("- [card](./card.md)");
+  expect(md).toContain("- [badge](./badge.md)");
+});
+
 test("@example: a fenced block renders as Markdown verbatim; bare code is auto-wrapped", () => {
   const fenced = parseCssDocs(
     [

@@ -235,6 +235,19 @@ export interface StructureNode {
 }
 
 /**
+ * One alternative DOM shape for a component, from a top-level `@variant <name>? { … }` block inside
+ * `@structure` — only present when the author needs to say "pick one of these" (e.g. a `<label>`
+ * wrapping a control vs. a `<label for>` + a sibling control), as opposed to {@link StructureNode}'s
+ * default of "these roots all coexist".
+ */
+export interface StructureVariant {
+  /** The author-supplied name from `@variant <name>`, when given (bare `@variant` omits it). */
+  name?: string;
+  /** This variant's root nodes, parsed the same way a plain `@structure` body is. */
+  nodes: StructureNode[];
+}
+
+/**
  * A design token the component consumes via `var(--*)`. The set is derived from the CSS; an authored
  * `@tokens` tag annotates one with prose (and may add a token not literally found via `var()`). Type and
  * resolved value are not modeled here — an emitter resolves them via its own token source (e.g. a
@@ -337,8 +350,17 @@ export interface CssDocEntry {
   conditions: CssCondition[];
   /** `@example` blocks, verbatim. */
   examples: string[];
-  /** The authored `@structure` element tree (top-level nodes), when present. */
+  /**
+   * The authored `@structure` element tree (top-level nodes), when present. When the `@structure` body
+   * uses `@variant` blocks (see {@link structureVariants}), this holds the first variant's nodes only,
+   * for back-compat with any code that hasn't been updated to read `structureVariants`.
+   */
   structure?: StructureNode[];
+  /**
+   * Alternative DOM shapes for this component, when the authored `@structure` body contains one or
+   * more top-level `@variant` blocks — absent for the common case of a single, non-variant structure.
+   */
+  structureVariants?: StructureVariant[];
   /** An optional prose description leading the `@structure` body, when authored. */
   structureDescription?: string;
   /** `@demo <spec>` (e.g. `self:button`), when authored. */
