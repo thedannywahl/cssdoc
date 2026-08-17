@@ -342,6 +342,20 @@ const WORD_RE = /\S+/gu;
 // form guards against `://` (URLs) so a `href="http://…"` isn't mistaken for a line comment.
 const COMMENT_RES = [/<!--[\s\S]*?-->/gu, /\/\*[\s\S]*?\*\//gu, /(?<![:/])\/\/[^\n]*/gu];
 
+/** Blank every `${ … }` interpolation in a template-literal body to same-length spaces, so a static
+ * prefix like `` `-icon-${icon.name}` `` still tokenizes to `-icon-` instead of the raw expression
+ * text (which would never match a documented modifier or its `*` family). */
+function maskTemplateInterpolations(body: string): string {
+  let out = body;
+  for (let i = 0; i < out.length; i++) {
+    if (out[i] === "$" && out[i + 1] === "{") {
+      const end = skipInterpolation(out, i);
+      out = out.slice(0, i) + " ".repeat(end - i) + out.slice(end);
+    }
+  }
+  return out;
+}
+
 /** Blank every comment's characters to spaces (newlines kept), preserving length and offsets. */
 function maskComments(source: string): string {
   const ranges: Array<[number, number]> = [];
@@ -359,7 +373,9 @@ function maskComments(source: string): string {
  * the consumer-usage rules (unknown-modifier/part/state) can run in templates. Returns one site per
  * element with every class token and its source offset. Dynamic expressions are best-effort — only
  * string/template **literals** are read (a `:class="{ active: x }"` object key or a computed name is
- * not), which is enough for the common `class="…"`, `:class="[ '…' ]"`, and `class:name` forms.
+ * not), which is enough for the common `class="…"`, `:class="[ '…' ]"`, and `class:name` forms. A
+ * template literal's `${…}` interpolations are masked out before tokenizing, so `` `-icon-${x}` ``
+ * reads as the static prefix `-icon-` rather than the raw (unmatchable) expression text.
  */
 export function scanClassUsages(source: string): ClassUsageSite[] {
   const sites: ClassUsageSite[] = [];
@@ -380,7 +396,8 @@ export function scanClassUsages(source: string): ClassUsageSite[] {
     };
     const pushLiterals = (expr: string, exprBase: number): void => {
       for (const s of expr.matchAll(STRING_LITERAL_RE)) {
-        pushWords(s[2], exprBase + (s.index ?? 0) + 1); // +1 skips the opening quote
+        const body = s[1] === "`" ? maskTemplateInterpolations(s[2]) : s[2];
+        pushWords(body, exprBase + (s.index ?? 0) + 1); // +1 skips the opening quote
       }
     };
     for (const a of attrs.matchAll(STATIC_CLASS_RE)) {

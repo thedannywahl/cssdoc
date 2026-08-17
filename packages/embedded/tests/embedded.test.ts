@@ -163,6 +163,12 @@ test("scanClassUsages ignores commented-out markup (HTML and JS comments)", () =
   ]);
 });
 
+test("scanClassUsages masks `${…}` interpolations in a template literal to its static prefix", () => {
+  const toks = (src: string) => scanClassUsages(src).flatMap((s) => s.tokens.map((t) => t.token));
+  // Vue :class bound to a template literal — the dynamic suffix is masked, leaving the static prefix.
+  expect(toks('<span :class="`-icon-${icon.name}`"></span>')).toEqual(["-icon-"]);
+});
+
 test("scanClassUsages reports accurate offsets", () => {
   const src = `<div class="btn btn--x"></div>`;
   const [site] = scanClassUsages(src);

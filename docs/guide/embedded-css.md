@@ -179,7 +179,9 @@ and flags an undocumented modifier, part, or state (`unknown-modifier` / `unknow
 Dynamic bindings are read best-effort: string and template **literals** are scanned (a
 `:class="['card--x']"` array, a `class:card--x` toggle, a ``className={`card--x`}`` template, and a
 quoted object key like `:class="{ 'card--x': on }"`), but a computed name or an unquoted object key
-(`:class="{ cardX: on }"`) isn't. The same checks run in CI via the
+(`:class="{ cardX: on }"`) isn't. A template literal's `${…}` interpolations are masked out, so
+`` `-icon-${icon.name}` `` is read as the static prefix `-icon-` — enough to satisfy a documented `*`
+family (`-icon-*`) without resolving the dynamic part. The same checks run in CI via the
 [`cssdoc/valid-class-usage`](/guide/linting) ESLint rule, which reads these dynamic bindings in JSX too
 (it skips only nested object literals inside `className={…}`, since its brace scan doesn't nest).
 
