@@ -4,6 +4,21 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.11.0
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.10.2...v0.11.0)
+
+### 🚀 Enhancements
+
+- Enhance documentation tracking for modifiers and parts with line spans ([0db7292](https://github.com/thedannywahl/cssdoc/commit/0db7292))
+- Add support for @interaction markers in modifiers, exempting them from CSS checks ([914ac64](https://github.com/thedannywahl/cssdoc/commit/914ac64))
+- Add support for @variant blocks in @structure to enhance component documentation ([0f51a24](https://github.com/thedannywahl/cssdoc/commit/0f51a24))
+- Mask template literal interpolations in scanClassUsages to preserve static prefixes ([829e834](https://github.com/thedannywahl/cssdoc/commit/829e834))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.10.2
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.10.1...v0.10.2)
