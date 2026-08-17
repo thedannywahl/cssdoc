@@ -759,12 +759,13 @@ export const modifier = {
         }
       }
       // Deprecated aliases (`@modifier -x — @deprecated {@link -y}`) are legacy names intentionally not
-      // in the CSS, so they're exempt from the "defined by a selector" check.
-      const deprecated = new Set(
-        info.entry.modifiers.filter((m) => m.deprecated).map((m) => m.name),
+      // in the CSS, and `@interaction`-flagged modifiers (JS-toggled hooks with no styling) never are —
+      // both are exempt from the "defined by a selector" check.
+      const cssExempt = new Set(
+        info.entry.modifiers.filter((m) => m.deprecated || m.interaction).map((m) => m.name),
       );
       for (const authored of info.authoredModifiers) {
-        if (deprecated.has(authored)) continue;
+        if (cssExempt.has(authored)) continue;
         const sel = index.matcher.selectorFor(authored);
         if (!selectorDefines(info.selectorText, sel)) {
           out.push(
@@ -835,6 +836,7 @@ export const modifier = {
     const lines = [
       `\`${index.matcher.selectorFor(m.name)}\` — modifier of \`${entry!.className}\``,
     ];
+    if (m.interaction) lines.push("", "**Interaction** — a JS-toggled hook, not styled directly.");
     if (m.description) lines.push("", m.description);
     if (m.deprecated) {
       const advice = m.deprecated.canonical

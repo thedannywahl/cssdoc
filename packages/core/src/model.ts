@@ -47,6 +47,13 @@ export interface CssModifier {
    * free-text replacement guidance for cases where the replacement isn't itself a modifier.
    */
   deprecated?: { canonical?: string; note?: string };
+  /**
+   * Set via an authored inline `@modifier -x — @interaction …` marker: a class toggled by script (a
+   * JS interaction hook, e.g. `-should-animate`) that carries no CSS declarations of its own. Exempts
+   * the modifier from the "documented modifier isn't defined by any selector" check, since it's
+   * expected to have no CSS backing.
+   */
+  interaction?: boolean;
 }
 
 /** A sub-element ("part") of a component — a scoped child class like `.item` or `.tip`. */

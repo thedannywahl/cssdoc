@@ -354,6 +354,29 @@ test("an authored `@deprecated {@link -x}` sets the modifier's canonical", () =>
   expect(alias.deprecated?.canonical).toBe("-color-danger");
 });
 
+test("an authored `@interaction` marker flags a JS-toggled modifier, even with no CSS rule at all", () => {
+  const [comp] = parseCssDocs(
+    `/**\n * @component progress-circle\n` +
+      ` * @modifier -should-animate — @interaction Toggled by JS while the ring grows.\n */\n` +
+      `.progress-circle {}`,
+    { modifierConvention: "rscss" },
+  );
+  const mod = comp.modifiers.find((m) => m.name === "-should-animate")!;
+  expect(mod.interaction).toBe(true);
+  expect(mod.description).toBe("Toggled by JS while the ring grows.");
+});
+
+test("an `@interaction` marker also merges onto an AST-matched modifier", () => {
+  const [comp] = parseCssDocs(
+    `/**\n * @component progress-circle\n` +
+      ` * @modifier -should-animate — @interaction Toggled while the ring grows.\n */\n` +
+      `.progress-circle {}\n.progress-circle.-should-animate {}`,
+    { modifierConvention: "rscss" },
+  );
+  const mod = comp.modifiers.find((m) => m.name === "-should-animate")!;
+  expect(mod.interaction).toBe(true);
+});
+
 test("@structure parses @scope at-rules as scope-boundary StructureNodes", () => {
   const [entry] = parseCssDocs(
     [

@@ -468,6 +468,18 @@ test("classNames.stage only applies to the record's own stage", () => {
   expect(md).not.toContain("<span class=");
 });
 
+test("an @interaction-flagged modifier renders an Interaction marker in the Modifiers table", () => {
+  const [circle] = parseCssDocs(
+    `/**\n * @component progress-circle\n` +
+      ` * @modifier -should-animate — @interaction Toggled while the ring grows.\n */\n` +
+      `.progress-circle {}`,
+    { modifierConvention: "rscss" },
+  );
+  const md = renderEntry(circle!);
+  expect(md).toContain("_Interaction_");
+  expect(md).toContain("Toggled while the ring grows.");
+});
+
 test("normalizeProseMarkdown inserts a blank line before a list that follows a paragraph", () => {
   const input = "Use when:\n- First item\n- Second item";
   const out = normalizeProseMarkdown(input);

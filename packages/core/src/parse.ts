@@ -569,6 +569,7 @@ function buildEntry(
     if (existing) {
       existing.description = combineDescription(inlineMode, mdoc.description, existing.description);
       if (dep) existing.deprecated = { ...existing.deprecated, ...dep };
+      if (mdoc.interaction) existing.interaction = true;
     } else {
       const { prop, value } = matcher.analyze(modName);
       const modSel = doc.modifierSelectors.get(modName);
@@ -580,6 +581,7 @@ function buildEntry(
         description: mdoc.description,
         deprecated: dep,
         ...(modSel ? { selector: modSel } : {}),
+        ...(mdoc.interaction ? { interaction: true } : {}),
       });
     }
   }

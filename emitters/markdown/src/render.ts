@@ -130,6 +130,8 @@ export interface RenderEntryOptions {
      * analog). Only the current record's stage is applied; omit a stage for pure markdown there.
      */
     stage?: Partial<Record<CssReleaseStage, string>>;
+    /** Wrap the "Interaction" marker on a JS-only (`@interaction`-flagged) modifier row. */
+    interaction?: string;
   };
 }
 
@@ -451,6 +453,11 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
         const tail = m.description ? ` ${m.description}` : "";
         const marker = tag(options.classNames?.deprecated, "Deprecated", "_Deprecated_");
         const cellText = `${marker} — ${escProse(via + tail)}`;
+        return [`\`.${m.name}\``, cellText.replace(/\|/gu, "\\|")];
+      }
+      if (m.interaction) {
+        const marker = tag(options.classNames?.interaction, "Interaction", "_Interaction_");
+        const cellText = m.description ? `${marker} — ${escProse(m.description)}` : marker;
         return [`\`.${m.name}\``, cellText.replace(/\|/gu, "\\|")];
       }
       return [`\`.${m.name}\``, cell(m.description)];

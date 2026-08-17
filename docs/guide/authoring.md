@@ -282,6 +282,23 @@ Mark a modifier deprecated inline and point at its replacement with `{@link}`:
 The deprecation and its canonical replacement flow into the model — and into the lint rules and the
 editor's replace-with-canonical quick-fix.
 
+## Documenting a JS-interaction hook
+
+Some classes are toggled by script and never carry declarations of their own (an animation trigger, a
+loading flag). Mark one inline with `@interaction` — it's still validated as a documented modifier
+against consumer usage, but exempt from the "isn't defined by any selector" check, so it doesn't need
+an empty `{}` rule to satisfy the linter:
+
+```css
+/**
+ * @component progress-circle
+ * @modifier -should-animate — @interaction Toggled by JS while the ring's growth animation runs.
+ */
+.progress-circle {
+  /* … */
+}
+```
+
 ## A fuller example
 
 ```css

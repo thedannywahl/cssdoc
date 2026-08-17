@@ -95,6 +95,8 @@ export interface DocModifier {
    * `deprecated.canonical`, so an authored alias and a generated one resolve to the same reference.
    */
   deprecatedCanonical?: string;
+  /** Set from an inline `@interaction` marker — a JS-toggled class with no CSS of its own. */
+  interaction?: boolean;
 }
 
 /** An authored conditional-support tag (`@container`/`@supports`/`@media`/`@responsive`). */
@@ -266,6 +268,11 @@ function parseModifierBody(description: string | undefined): DocModifier {
     if (!note && !link) return { deprecatedFlag: true };
     return { deprecated: note || undefined, deprecatedCanonical: canonical };
   }
+  // A description beginning `@interaction …` marks a JS-toggled class with no CSS declarations of its
+  // own (e.g. `@modifier -should-animate — @interaction Toggled while the ring grows.`); it's exempt
+  // from the "documented modifier isn't defined by any selector" check.
+  const inter = description?.match(/^@interaction\b\s*([\s\S]*)$/u);
+  if (inter) return { description: inter[1].trim() || undefined, interaction: true };
   return { description: description ?? "" };
 }
 

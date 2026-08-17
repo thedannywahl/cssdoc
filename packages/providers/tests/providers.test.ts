@@ -38,6 +38,20 @@ test("lintModel reports author-side hygiene (chip missing summary, -size-sm undo
   expect(rules).toContain("button:undocumented-modifier"); // -size-sm
 });
 
+test("an @interaction-flagged modifier is exempt from name-not-in-css, even with no CSS rule at all", () => {
+  const css = `
+/**
+ * @component progress-circle
+ * @summary A circular progress indicator.
+ * @modifier -should-animate — @interaction Toggled by JS while the ring grows.
+ */
+.progress-circle {}
+`;
+  const idx = createIndex(css, { modifierConvention: "rscss" });
+  const rules = lintModel(idx).map((d) => d.rule);
+  expect(rules).not.toContain("name-not-in-css");
+});
+
 test("name-not-in-css points at the @modifier tag's own line, not the whole doc-comment block", () => {
   const css = `
 /**

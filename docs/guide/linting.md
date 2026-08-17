@@ -31,9 +31,10 @@ It reports the hygiene rules — `missing-summary`, `undocumented-modifier`, `un
 `structure-unknown-record`, `structure-ambiguous-record`, `unknown-annotation-ref`,
 `readonly-redefinition`, and `sealed-reset-value` — plus the registered-property value rules below.
 
-`name-not-in-css` has three deliberate allowances:
+`name-not-in-css` has four deliberate allowances:
 
 - A **deprecated alias** (`@modifier -x — @deprecated {@link -y}`) is a legacy name intentionally gone from the CSS and is exempt.
+- An **`@interaction`-flagged modifier** (`@modifier -x — @interaction …`) is a JS-toggled hook with no CSS declarations of its own, and is exempt.
 - A **`*` wildcard** name (`@modifier -icon-*`) documents a family — satisfied by a literal instance (`.-icon-foo`) or a `class` attribute selector with its real operator semantics (`[class*="-icon-"]` contains, `[class$="…"]` suffix, `[class~="…"]` exact word; `[class^="…"]` does not count).
 - Parts using **non-class selectors** (`@part [data-layout="x"]`, `@part #root`, `@part :host`) are matched against the selector text as an exact substring search, so `@part [data-layout="lightboxBlank"]` is satisfied when `[data-layout="lightboxBlank"]` appears anywhere in the component's CSS selectors.
 
