@@ -54,6 +54,12 @@ export interface CssModifier {
    * expected to have no CSS backing.
    */
   interaction?: boolean;
+  /**
+   * Set via an authored inline `@modifier -x — @global …` marker: this modifier applies to any
+   * component/layout/rule/declaration (not just its parent record). When set, the modifier is matched
+   * globally during validation and consumption checks.
+   */
+  global?: boolean;
 }
 
 /** A sub-element ("part") of a component — a scoped child class like `.item` or `.tip`. */
@@ -313,6 +319,12 @@ export interface CssDocEntry {
   group?: string;
   /** Accessibility guidance, from `@a11y`/`@accessibility`. */
   accessibility?: string;
+  /**
+   * Set when this record carries a `@global` tag — its modifiers (and per-modifier `@global` flags)
+   * apply to any component/layout/rule/declaration, not just this record's base class. Used during
+   * validation and consumption checks to resolve modifier matches globally.
+   */
+  global?: boolean;
   /** AST-extracted modifiers, annotated with `@modifier` prose where authored. */
   modifiers: CssModifier[];
   /** AST-extracted sub-element parts (class-based), annotated with `@part` prose where authored. */

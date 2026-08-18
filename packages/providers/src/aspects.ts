@@ -778,6 +778,28 @@ export const modifier = {
             }),
           );
         }
+        // Check for conflicting global modifiers: if this record is not global and has a modifier
+        // that also exists in a global record, issue a diagnostic.
+        if (!info.entry.global) {
+          const globalRecordsWithModifier = index.records.filter(
+            (r) =>
+              r.entry.global &&
+              r.entry.modifiers.some((gm) => index.matcher.matchesModifier(gm.name, m.name)),
+          );
+          if (globalRecordsWithModifier.length > 0) {
+            const conflictingGlobals = globalRecordsWithModifier
+              .map((r) => `"${r.entry.name}"`)
+              .join(", ");
+            out.push({
+              aspect: "modifier",
+              rule: "conflicting-global-modifier",
+              severity: "warning",
+              message: `Modifier "${sel}" of "${name}" conflicts with the same modifier in global record(s): ${conflictingGlobals}.`,
+              record: name,
+              span,
+            });
+          }
+        }
       }
       // Deprecated aliases (`@modifier -x — @deprecated {@link -y}`) are legacy names intentionally not
       // in the CSS, and `@interaction`-flagged modifiers (JS-toggled hooks with no styling) never are —

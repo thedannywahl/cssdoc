@@ -98,6 +98,8 @@ export interface DocModifier {
   deprecatedCanonical?: string;
   /** Set from an inline `@interaction` marker — a JS-toggled class with no CSS of its own. */
   interaction?: boolean;
+  /** Set from an inline `@global` marker — this modifier applies to any component/layout/rule/declaration (not just its parent record). */
+  global?: boolean;
 }
 
 /** An authored conditional-support tag (`@container`/`@supports`/`@media`/`@responsive`). */
@@ -201,6 +203,8 @@ export interface ParsedDoc {
   compat: string[];
   /** `@related` component cross-references. */
   related: CssRelated[];
+  /** Set by a record-level `@global` tag — modifiers of this record apply to any other component/layout/rule/declaration. */
+  global?: boolean;
   /** Content of registered custom (block) tags, keyed by tag name without its `@`. */
   customBlocks: Map<string, string[]>;
 }
@@ -276,6 +280,9 @@ function parseModifierBody(description: string | undefined): DocModifier {
   // from the "documented modifier isn't defined by any selector" check.
   const inter = description?.match(/^@interaction\b\s*([\s\S]*)$/u);
   if (inter) return { description: inter[1].trim() || undefined, interaction: true };
+  // A description beginning `@global …` marks this modifier as applying to any component/layout/rule/declaration.
+  const glob = description?.match(/^@global\b\s*([\s\S]*)$/u);
+  if (glob) return { description: glob[1].trim() || undefined, global: true };
   return { description: description ?? "" };
 }
 
@@ -561,6 +568,9 @@ function applyBlockTag(
     }
     case "readonly":
       doc.decorators.isReadonly = true;
+      break;
+    case "global":
+      doc.global = true;
       break;
     case "preventExtensions":
       doc.decorators.preventExtensions = true;

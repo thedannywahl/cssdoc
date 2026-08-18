@@ -570,6 +570,7 @@ function buildEntry(
       existing.description = combineDescription(inlineMode, mdoc.description, existing.description);
       if (dep) existing.deprecated = { ...existing.deprecated, ...dep };
       if (mdoc.interaction) existing.interaction = true;
+      if (mdoc.global) existing.global = true;
     } else {
       const { prop, value } = matcher.analyze(modName);
       const modSel = doc.modifierSelectors.get(modName);
@@ -582,6 +583,7 @@ function buildEntry(
         deprecated: dep,
         ...(modSel ? { selector: modSel } : {}),
         ...(mdoc.interaction ? { interaction: true } : {}),
+        ...(mdoc.global ? { global: true } : {}),
       });
     }
   }
@@ -765,6 +767,7 @@ function buildEntry(
     compat: doc.compat,
     related: doc.related,
     elements,
+    global: doc.global,
     ...(source ? { source } : {}),
     ...(doc.customBlocks.size > 0 ? { customBlocks: Object.fromEntries(doc.customBlocks) } : {}),
   };

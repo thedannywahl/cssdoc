@@ -152,6 +152,7 @@ export const cssDocSchema = {
         "readonly-redefinition": { enum: ["off", "warn", "error"] },
         "sealed-reset-value": { enum: ["off", "warn", "error"] },
         "cssdoc-directive": { enum: ["off", "warn", "error"] },
+        "conflicting-global-modifier": { enum: ["off", "warn", "error"] },
       },
     },
     ruleOptions: {
@@ -196,6 +197,11 @@ export const cssDocSchema = {
         "Class names to exempt from the structure-unknown-selector rule — legitimately-external classes (utilities, cross-component refs) referenced in @structure. Literal names or simple globs where * matches any run of characters (e.g. util-*).",
       type: "array",
       items: { type: "string" },
+    },
+    globalPrecedence: {
+      description:
+        'Precedence model when multiple records define the same modifier, with at least one marked @global: "base" (explicit modifiers override global; default) or "global" (global overrides explicit).',
+      enum: ["base", "global"],
     },
     render: {
       description:

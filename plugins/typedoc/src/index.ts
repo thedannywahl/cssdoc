@@ -56,6 +56,12 @@ export function load(app: Application): void {
     type: ParameterType.String,
     defaultValue: "",
   });
+  app.options.addDeclaration({
+    name: "cssdocGlobalPrecedence",
+    help: 'Precedence model for overlapping global and base modifiers ("base" or "global").',
+    type: ParameterType.String,
+    defaultValue: "base",
+  });
 
   app.renderer.on(RendererEvent.END, (event: RendererEvent) => {
     const css = app.options.getValue("cssdocCss") as string[];
@@ -67,6 +73,9 @@ export function load(app: Application): void {
       outSubdir: app.options.getValue("cssdocOut") as string,
       label: app.options.getValue("cssdocLabel") as string,
       baseHref: baseHref || undefined,
+      globalPrecedence: app.options.getValue("cssdocGlobalPrecedence") as string as
+        | "base"
+        | "global",
     });
   });
 }

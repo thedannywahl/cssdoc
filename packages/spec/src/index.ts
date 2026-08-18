@@ -73,6 +73,7 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
   { name: "ref", kind: "block", allowMultiple: true },
   // Object-model decorators.
   { name: "readonly", kind: "block" },
+  { name: "global", kind: "block" },
   { name: "preventExtensions", kind: "block" },
   { name: "noextend", kind: "block", aliasFor: "preventExtensions" },
   { name: "sealed", kind: "block" },

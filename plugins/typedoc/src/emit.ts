@@ -47,6 +47,11 @@ export interface EmitCssApiOptions extends RenderEntryOptions {
    * `render` block. Any explicit option above still overrides the config file.
    */
   configFile?: CssDocConfigFile;
+  /**
+   * The precedence model when multiple records define the same modifier. Falls back to the `configFile`'s
+   * `globalPrecedence` setting (default `"base"`).
+   */
+  globalPrecedence?: "base" | "global";
   /** Base directory the `css` paths are resolved against (default `process.cwd()`). */
   cwd?: string;
 }

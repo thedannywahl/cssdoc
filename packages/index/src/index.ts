@@ -246,6 +246,8 @@ export class CssDocIndex {
   readonly matcher: ModifierMatcher;
   /** Every custom property's effective value (`--x: value` declarations and `@property` initial-values). */
   readonly customPropertyValues: ReadonlyMap<string, string>;
+  /** The precedence model when multiple records define the same modifier. */
+  readonly globalPrecedence: "base" | "global";
   private readonly byName = new Map<string, RecordInfo>();
   private readonly byClass = new Map<string, RecordInfo>();
 
@@ -254,11 +256,13 @@ export class CssDocIndex {
     file?: string,
     matcher?: ModifierMatcher,
     customPropertyValues: ReadonlyMap<string, string> = new Map(),
+    globalPrecedence: "base" | "global" = "base",
   ) {
     this.records = records;
     this.file = file;
     this.matcher = matcher ?? new ModifierMatcher(DEFAULT_MODIFIER_CONVENTION);
     this.customPropertyValues = customPropertyValues;
+    this.globalPrecedence = globalPrecedence;
     for (const record of records) {
       this.byName.set(record.entry.name, record);
       this.byClass.set(stripDot(record.entry.className), record);
@@ -333,22 +337,55 @@ export class CssDocIndex {
   }
 
   /** Whether `modifier` (a class token or attribute expression) is a documented modifier of `base` —
-   * an exact match, or an instance of a documented `*` family (`-icon-arrow` → `-icon-*`). */
+   * an exact match, or an instance of a documented `*` family (`-icon-arrow` → `-icon-*`).
+   * Checks both base-specific modifiers and global modifiers (applying globalPrecedence logic). */
   isModifier(base: string, modifier: string): boolean {
     const wanted = this.matcher.normalizeMember(modifier);
-    return (
-      this.byClass
-        .get(stripDot(base))
-        ?.entry.modifiers.some((m) => this.matcher.matchesModifier(m.name, wanted)) ?? false
+    const baseModifiers = this.byClass.get(stripDot(base))?.entry.modifiers;
+
+    // Check if base has this modifier.
+    const baseHasModifier = baseModifiers?.some((m) =>
+      this.matcher.matchesModifier(m.name, wanted),
     );
+    if (baseHasModifier) {
+      return true;
+    }
+
+    // Check if any global record has this modifier.
+    const globalHasModifier = this.records
+      .filter((r) => r.entry.global)
+      .some((r) => r.entry.modifiers.some((m) => this.matcher.matchesModifier(m.name, wanted)));
+
+    return globalHasModifier;
   }
 
-  /** The deprecation of a modifier on `base`, if it is deprecated (including via a `*` family). */
+  /** The deprecation of a modifier on `base`, if it is deprecated (including via a `*` family).
+   * Checks both base-specific and global modifiers (applying globalPrecedence logic). */
   deprecationOf(base: string, modifier: string): { canonical?: string; note?: string } | undefined {
     const wanted = this.matcher.normalizeMember(modifier);
-    return this.byClass
-      .get(stripDot(base))
-      ?.entry.modifiers.find((m) => this.matcher.matchesModifier(m.name, wanted))?.deprecated;
+    const baseRecord = this.byClass.get(stripDot(base));
+
+    // Check if base has this modifier.
+    const baseModifier = baseRecord?.entry.modifiers.find((m) =>
+      this.matcher.matchesModifier(m.name, wanted),
+    );
+    if (baseModifier) {
+      return baseModifier.deprecated;
+    }
+
+    // Check if any global record has this modifier.
+    for (const record of this.records) {
+      if (record.entry.global) {
+        const globalModifier = record.entry.modifiers.find((m) =>
+          this.matcher.matchesModifier(m.name, wanted),
+        );
+        if (globalModifier) {
+          return globalModifier.deprecated;
+        }
+      }
+    }
+
+    return undefined;
   }
 
   /** Every declared custom property, paired with the record that declares it (for `var(...)` completion). */
@@ -380,7 +417,11 @@ export class CssDocIndex {
 }
 
 /** Build an index from a model snapshot (no source spans). */
-export function indexFromEntries(entries: CssDocEntry[], file?: string): CssDocIndex {
+export function indexFromEntries(
+  entries: CssDocEntry[],
+  file?: string,
+  globalPrecedence: "base" | "global" = "base",
+): CssDocIndex {
   const records: RecordInfo[] = entries.map((entry) => ({
     entry,
     memberSpans: new Map(),
@@ -393,7 +434,7 @@ export function indexFromEntries(entries: CssDocEntry[], file?: string): CssDocI
     propertyValues: new Map(),
     resetValueUsages: [],
   }));
-  return new CssDocIndex(records, file);
+  return new CssDocIndex(records, file, undefined, new Map(), globalPrecedence);
 }
 
 interface Build {
@@ -582,7 +623,9 @@ export function createIndex(
     if (d.prop.startsWith("--")) customPropertyValues.set(d.prop, d.value);
   });
 
-  return new CssDocIndex(records, options.file, matcher, customPropertyValues);
+  const globalPrecedence = (options.configuration as any)?.globalPrecedence ?? ("base" as const);
+
+  return new CssDocIndex(records, options.file, matcher, customPropertyValues, globalPrecedence);
 }
 
 /**

@@ -367,6 +367,13 @@
             "warn",
             "error"
           ]
+        },
+        "conflicting-global-modifier": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
         }
       }
     },
@@ -419,6 +426,13 @@
       "items": {
         "type": "string"
       }
+    },
+    "globalPrecedence": {
+      "description": "Precedence model when multiple records define the same modifier, with at least one marked @global: \"base\" (explicit modifiers override global; default) or \"global\" (global overrides explicit).",
+      "enum": [
+        "base",
+        "global"
+      ]
     },
     "render": {
       "description": "Markdown render options for the CSS API pages (used by @cssdoc/markdown and @cssdoc/typedoc). Explicit emitter options still override these.",
