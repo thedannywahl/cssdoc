@@ -4,6 +4,18 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.12.0
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.11.0...v0.12.0)
+
+### 🚀 Enhancements
+
+- Add global modifier support and precedence model for CSS documentation ([88f5d3c](https://github.com/thedannywahl/cssdoc/commit/88f5d3c))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.11.0
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.10.2...v0.11.0)
