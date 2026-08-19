@@ -250,6 +250,49 @@ test("member-of-unknown-component flags a @memberOf naming a record that isn't d
   expect(diagnostics.map((d) => d.rule)).toContain("member-of-unknown-component");
 });
 
+test("members-unknown-component flags a @members entry naming a record that isn't documented", () => {
+  const css = [
+    "/**",
+    " * @component tabs",
+    " * @summary Tabs.",
+    " * @members tab, ghost-panel",
+    " */",
+    ".tabs {}",
+    "/**",
+    " * @component tab",
+    " * @summary A tab.",
+    " */",
+    ".tab {}",
+  ].join("\n");
+  const diagnostics = lintModel(createIndex(css));
+  const unknowns = diagnostics.filter((d) => d.rule === "members-unknown-component");
+  expect(unknowns).toHaveLength(1);
+  expect(unknowns[0]!.message).toContain("ghost-panel");
+});
+
+test("members-unknown-component doesn't fire when every declared member is documented", () => {
+  const css = [
+    "/**",
+    " * @component tabs",
+    " * @summary Tabs.",
+    " * @members tab, panel",
+    " */",
+    ".tabs {}",
+    "/**",
+    " * @component tab",
+    " * @summary A tab.",
+    " */",
+    ".tab {}",
+    "/**",
+    " * @component panel",
+    " * @summary A panel.",
+    " */",
+    ".panel {}",
+  ].join("\n");
+  const diagnostics = lintModel(createIndex(css));
+  expect(diagnostics.map((d) => d.rule)).not.toContain("members-unknown-component");
+});
+
 test("member-of-unknown-component doesn't fire when the parent is documented", () => {
   const css = [
     "/**",

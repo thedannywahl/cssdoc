@@ -141,6 +141,15 @@ export function buildCssApi(options: BuildCssApiOptions): BuildCssApiResult {
     list.push({ name: e.name, href: `${baseHref}${e.name}.md` });
     membersByParent.set(e.memberOf.component, list);
   }
+  // `@members` declares the same relationship from the parent's side, for members whose name doesn't
+  // dot off this record — merged in, de-duped by name.
+  for (const e of entries) {
+    for (const name of e.members ?? []) {
+      const list = membersByParent.get(e.name) ?? [];
+      if (!list.some((m) => m.name === name)) list.push({ name, href: `${baseHref}${name}.md` });
+      membersByParent.set(e.name, list);
+    }
+  }
   const renderOptions = { ...options, resolveComponent };
 
   const pages: string[] = [];

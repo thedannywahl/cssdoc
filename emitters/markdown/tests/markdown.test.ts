@@ -512,6 +512,36 @@ test("buildCssApi cross-links @memberOf into the parent's Subcomponents section"
   expect(table).toContain("- [table-cell](/api/table-cell.md)");
 });
 
+test("buildCssApi cross-links @members into the parent's Subcomponents section, without the child declaring @memberOf back", () => {
+  const outDir = mkdtempSync(join(tmpdir(), "cssdoc-members-md-"));
+  buildCssApi({
+    css: [
+      "/**",
+      " * @component tabs",
+      " * @summary Tabs.",
+      " * @members tab, panel",
+      " */",
+      ".tabs {}",
+      "/**",
+      " * @component tab",
+      " * @summary A tab.",
+      " */",
+      ".tab {}",
+      "/**",
+      " * @component panel",
+      " * @summary A panel.",
+      " */",
+      ".panel {}",
+    ].join("\n"),
+    outDir,
+    baseHref: "/api/",
+  });
+  const tabs = readFileSync(join(outDir, "tabs.md"), "utf8");
+  expect(tabs).toContain("## Subcomponents");
+  expect(tabs).toContain("- [tab](/api/tab.md)");
+  expect(tabs).toContain("- [panel](/api/panel.md)");
+});
+
 test("buildCssApi writes per-record pages, an index, and a compatible sidebar", () => {
   const outDir = mkdtempSync(join(tmpdir(), "cssdoc-md-"));
   const result = buildCssApi({ css: CSS, outDir, baseHref: "/api/css/" });

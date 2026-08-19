@@ -47,6 +47,7 @@ export type RuleId =
   | "sealed-reset-value"
   | "member-of-unknown-component"
   | "private-member-orphaned"
+  | "members-unknown-component"
   | "affects-unknown-component"
   | "cssdoc-directive";
 
@@ -87,6 +88,7 @@ export const DEFAULT_RULE_SEVERITIES: RuleSeverities = {
   "sealed-reset-value": "warn",
   "member-of-unknown-component": "warn",
   "private-member-orphaned": "warn",
+  "members-unknown-component": "warn",
   "affects-unknown-component": "warn",
   // Fires when a `cssdoc-expect-error` directive matched no problem (like an unused ts-expect-error).
   "cssdoc-directive": "warn",
