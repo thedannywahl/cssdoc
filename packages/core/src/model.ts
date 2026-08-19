@@ -60,6 +60,14 @@ export interface CssModifier {
    * globally during validation and consumption checks.
    */
   global?: boolean;
+  /**
+   * Set via an authored inline `@modifier -x — @affects <component>.<target> …` marker: this modifier
+   * changes how a *descendant record* (typically a sub-component reached via `@structure`/`@memberOf`)
+   * renders — e.g. `.table.-layout-stacked .table-cell::before {…}`. `target` is a part, pseudo-element,
+   * or state name on `component`; the CSS rule causing the effect lives in that other record's own
+   * stylesheet, not this one, so there'd otherwise be nothing on this modifier pointing a reader there.
+   */
+  affects?: { component: string; target: string; description?: string }[];
 }
 
 /** A sub-element ("part") of a component — a scoped child class like `.item` or `.tip`. */

@@ -548,6 +548,23 @@ export const record = {
           }
         }
       }
+
+      for (const m of info.entry.modifiers) {
+        for (const a of m.affects ?? []) {
+          const kinds = siblingNameKinds.get(a.component);
+          if (!kinds || kinds.size === 0) {
+            out.push(
+              warn({
+                aspect: "record",
+                rule: "affects-unknown-component",
+                message: `Modifier "${m.name}" of "${info.entry.name}" declares @affects "${a.component}", but no documented record with that name was found.`,
+                record: info.entry.name,
+                span: info.span,
+              }),
+            );
+          }
+        }
+      }
     }
     return out;
   },
@@ -937,6 +954,12 @@ export const modifier = {
       `\`${index.matcher.selectorFor(m.name)}\` — modifier of \`${entry!.className}\``,
     ];
     if (m.interaction) lines.push("", "**Interaction** — a JS-toggled hook, not styled directly.");
+    if (m.affects?.length) {
+      const notes = m.affects.map(
+        (a) => `\`${a.component}.${a.target}\`${a.description ? ` — ${a.description}` : ""}`,
+      );
+      lines.push("", `**Affects** — ${notes.join("; ")}`);
+    }
     if (m.description) lines.push("", m.description);
     if (m.deprecated) {
       const advice = m.deprecated.canonical

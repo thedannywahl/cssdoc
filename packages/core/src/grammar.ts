@@ -100,6 +100,8 @@ export interface DocModifier {
   interaction?: boolean;
   /** Set from an inline `@global` marker — this modifier applies to any component/layout/rule/declaration (not just its parent record). */
   global?: boolean;
+  /** Set from an inline `@affects <component>.<target>` marker — a descendant record this modifier changes the rendering of. */
+  affects?: { component: string; target: string; description?: string }[];
 }
 
 /** An authored conditional-support tag (`@container`/`@supports`/`@media`/`@responsive`). */
@@ -285,6 +287,21 @@ function parseModifierBody(description: string | undefined): DocModifier {
   // A description beginning `@global …` marks this modifier as applying to any component/layout/rule/declaration.
   const glob = description?.match(/^@global\b\s*([\s\S]*)$/u);
   if (glob) return { description: glob[1].trim() || undefined, global: true };
+  // A description beginning `@affects <component>.<target> …` names a descendant record (a part, pseudo,
+  // or state on it) whose rendering this modifier changes — e.g. a `-layout-stacked` modifier on `table`
+  // that changes how `table-cell` renders, via `.table.-layout-stacked .table-cell::before {…}` in
+  // table-cell's own stylesheet, which otherwise has nothing on `table`'s side pointing a reader there.
+  const aff = description?.match(/^@affects\b\s*([\s\S]*)$/u);
+  if (aff) {
+    const rest = aff[1].trim();
+    const m = rest.match(/^([\w-]+)\.([\w-]+)\s*(?:(?:—|-{1,2})\s*([\s\S]*))?$/u);
+    if (m) {
+      return {
+        affects: [{ component: m[1], target: m[2], description: m[3]?.trim() || undefined }],
+      };
+    }
+    return { description: rest || undefined };
+  }
   return { description: description ?? "" };
 }
 

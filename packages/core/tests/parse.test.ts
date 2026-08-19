@@ -378,6 +378,19 @@ test("an `@interaction` marker also merges onto an AST-matched modifier", () => 
   expect(mod.interaction).toBe(true);
 });
 
+test("an authored `@affects` marker names the descendant record + target this modifier changes", () => {
+  const [comp] = parseCssDocs(
+    `/**\n * @component table\n` +
+      ` * @modifier -layout-stacked — @affects table-cell.before — Adds a label via ::before.\n */\n` +
+      `.table {}\n.table.-layout-stacked {}`,
+    { modifierConvention: "rscss" },
+  );
+  const mod = comp.modifiers.find((m) => m.name === "-layout-stacked")!;
+  expect(mod.affects).toEqual([
+    { component: "table-cell", target: "before", description: "Adds a label via ::before." },
+  ]);
+});
+
 test("@structure parses @scope at-rules as scope-boundary StructureNodes", () => {
   const [entry] = parseCssDocs(
     [

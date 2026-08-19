@@ -301,6 +301,30 @@ an empty `{}` rule to satisfy the linter:
 }
 ```
 
+## Documenting a modifier's effect on a descendant record
+
+A modifier sometimes changes how a _different, already-documented_ record renders — a `table`'s
+`-layout-stacked` modifier can change how `table-cell` renders (adding a generated label via
+`::before`), through a rule that lives in `table-cell`'s own stylesheet
+(`.table.-layout-stacked .table-cell::before {…}`). Nothing on `table`'s side would otherwise point a
+reader at that effect. Mark it inline with `@affects <component>.<target> — <desc>`, the same pattern as
+`@interaction`/`@global`:
+
+```css
+/**
+ * @component table
+ * @modifier -layout-stacked — @affects table-cell.before — Adds a generated label via ::before.
+ */
+.table.-layout-stacked {
+  /* … */
+}
+```
+
+`<target>` names a part, pseudo-element, or state on `<component>` — it isn't validated against that
+record's own members (only that `<component>` itself is a documented record), so it works for a target
+declared with any tag. Emitters render an "Affects" note on the modifier row, cross-linking to
+`<component>`'s page when resolvable.
+
 ## Declaring family membership with `@memberOf`
 
 `@structure` documents _containment_ — a fixed position inside one parent's own tree, discovered by

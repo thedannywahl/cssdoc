@@ -584,6 +584,7 @@ function buildEntry(
       if (dep) existing.deprecated = { ...existing.deprecated, ...dep };
       if (mdoc.interaction) existing.interaction = true;
       if (mdoc.global) existing.global = true;
+      if (mdoc.affects) existing.affects = [...(existing.affects ?? []), ...mdoc.affects];
     } else {
       const { prop, value } = matcher.analyze(modName);
       const modSel = doc.modifierSelectors.get(modName);
@@ -597,6 +598,7 @@ function buildEntry(
         ...(modSel ? { selector: modSel } : {}),
         ...(mdoc.interaction ? { interaction: true } : {}),
         ...(mdoc.global ? { global: true } : {}),
+        ...(mdoc.affects ? { affects: mdoc.affects } : {}),
       });
     }
   }

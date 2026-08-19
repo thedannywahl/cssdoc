@@ -145,6 +145,8 @@ export interface RenderEntryOptions {
     stage?: Partial<Record<CssReleaseStage, string>>;
     /** Wrap the "Interaction" marker on a JS-only (`@interaction`-flagged) modifier row. */
     interaction?: string;
+    /** Wrap the "Affects" marker on a modifier row carrying an `@affects` descendant note. */
+    affects?: string;
   };
 }
 
@@ -484,6 +486,18 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
       if (m.interaction) {
         const marker = tag(options.classNames?.interaction, "Interaction", "_Interaction_");
         const cellText = m.description ? `${marker} — ${escProse(m.description)}` : marker;
+        return [`\`.${m.name}\``, cellText.replace(/\|/gu, "\\|")];
+      }
+      if (m.affects?.length) {
+        const marker = tag(options.classNames?.affects, "Affects", "_Affects_");
+        const notes = m.affects.map((a) => {
+          const resolved = options.resolveComponent?.(a.component);
+          const target = resolved
+            ? `[${escProse(resolved.name)}](${resolved.href}).${a.target}`
+            : `\`${a.component}.${a.target}\``;
+          return a.description ? `${target} — ${escProse(a.description)}` : target;
+        });
+        const cellText = `${marker}: ${notes.join("; ")}`;
         return [`\`.${m.name}\``, cellText.replace(/\|/gu, "\\|")];
       }
       return [`\`.${m.name}\``, cell(m.description)];

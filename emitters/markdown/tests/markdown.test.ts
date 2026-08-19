@@ -647,6 +647,21 @@ test("an @interaction-flagged modifier renders an Interaction marker in the Modi
   expect(md).toContain("Toggled while the ring grows.");
 });
 
+test("an @affects-flagged modifier renders an Affects marker with a resolved link in the Modifiers table", () => {
+  const [table] = parseCssDocs(
+    `/**\n * @component table\n` +
+      ` * @modifier -layout-stacked — @affects table-cell.before — Adds a label via ::before.\n */\n` +
+      `.table {}\n.table.-layout-stacked {}`,
+    { modifierConvention: "rscss" },
+  );
+  const md = renderEntry(table!, {
+    resolveComponent: (c) =>
+      c === "table-cell" ? { name: "table-cell", href: "./table-cell.md" } : undefined,
+  });
+  expect(md).toContain("_Affects_");
+  expect(md).toContain("[table-cell](./table-cell.md).before — Adds a label via ::before.");
+});
+
 test("normalizeProseMarkdown inserts a blank line before a list that follows a paragraph", () => {
   const input = "Use when:\n- First item\n- Second item";
   const out = normalizeProseMarkdown(input);

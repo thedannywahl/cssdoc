@@ -326,6 +326,39 @@ test("private-member-orphaned doesn't fire for a non-private @memberOf even with
   expect(diagnostics.map((d) => d.rule)).not.toContain("private-member-orphaned");
 });
 
+test("affects-unknown-component flags an @affects target that isn't a documented record", () => {
+  const css = [
+    "/**",
+    " * @component table",
+    " * @summary A data table.",
+    " * @modifier -layout-stacked — @affects ghost-cell.before — Adds a label.",
+    " */",
+    ".table {}",
+    ".table.-layout-stacked {}",
+  ].join("\n");
+  const diagnostics = lintModel(createIndex(css, { modifierConvention: "rscss" }));
+  expect(diagnostics.map((d) => d.rule)).toContain("affects-unknown-component");
+});
+
+test("affects-unknown-component doesn't fire when the @affects target is documented", () => {
+  const css = [
+    "/**",
+    " * @component table",
+    " * @summary A data table.",
+    " * @modifier -layout-stacked — @affects table-cell.before — Adds a label.",
+    " */",
+    ".table {}",
+    ".table.-layout-stacked {}",
+    "/**",
+    " * @component table-cell",
+    " * @summary A table cell.",
+    " */",
+    ".table-cell {}",
+  ].join("\n");
+  const diagnostics = lintModel(createIndex(css, { modifierConvention: "rscss" }));
+  expect(diagnostics.map((d) => d.rule)).not.toContain("affects-unknown-component");
+});
+
 test("duplicate record ids flag same-kind as error and cross-kind as warning", () => {
   const css = [
     "/**",
