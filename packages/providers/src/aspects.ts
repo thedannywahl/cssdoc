@@ -146,6 +146,25 @@ const parseStructureRecordRef = (selector: string): StructureRecordRef | undefin
 };
 
 /**
+ * Whether a `@structure` tree references a class (a plain `.class` selector, a comma-list alternative,
+ * or `:is()` co-location) or a record name (an `@component <name>` at-rule ref) anywhere in the tree.
+ * Used to check that a `private` `@memberOf` member is actually contained in its declared parent's own
+ * structure — the two facts should agree.
+ */
+const structureReferences = (
+  nodes: readonly StructureNode[],
+  className: string,
+  recordName: string,
+): boolean =>
+  nodes.some((node) => {
+    if ([...node.selector.matchAll(/\.([\w-]+)/gu)].some((m) => m[1] === className)) return true;
+    if (node.colocated && node.colocated.replace(/^[.#]/u, "") === className) return true;
+    const ref = parseStructureRecordRef(node.selector);
+    if (ref && ref.name === recordName) return true;
+    return structureReferences(node.children, className, recordName);
+  });
+
+/**
  * Serialize an authored `@structure` tree back to nested CSS for a syntax-highlighted hover block. Leaf
  * selectors are left bare (no `{}`) — VS Code's CSS grammar still colours them, and it reads like the
  * authored `@structure` declaration; only nesting keeps braces. A node's authored prose (`@wrapper`)
@@ -490,6 +509,44 @@ export const record = {
           }
         };
         for (const roots of groups) walk(roots);
+      }
+
+      if (info.entry.memberOf) {
+        const parentName = info.entry.memberOf.component;
+        const parentKinds = siblingNameKinds.get(parentName);
+        if (!parentKinds || parentKinds.size === 0) {
+          out.push(
+            warn({
+              aspect: "record",
+              rule: "member-of-unknown-component",
+              message: `@memberOf references "${parentName}", but no documented record with that name was found.`,
+              record: info.entry.name,
+              span: info.span,
+            }),
+          );
+        } else if (info.entry.memberOf.private) {
+          const parent = siblingIndex.records.find((r) => r.entry.name === parentName);
+          const memberOfBack = parent
+            ? structureReferences(
+                parent.entry.structureVariants?.length
+                  ? parent.entry.structureVariants.flatMap((v) => v.nodes)
+                  : (parent.entry.structure ?? []),
+                stripDot(info.entry.className),
+                info.entry.name,
+              )
+            : false;
+          if (parent && !memberOfBack) {
+            out.push(
+              warn({
+                aspect: "record",
+                rule: "private-member-orphaned",
+                message: `"${info.entry.name}" declares @memberOf "${parentName}" private, but "${parentName}"'s own @structure never references it back.`,
+                record: info.entry.name,
+                span: info.span,
+              }),
+            );
+          }
+        }
       }
     }
     return out;

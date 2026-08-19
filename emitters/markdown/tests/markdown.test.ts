@@ -167,6 +167,36 @@ test("@structure renders slot content, cardinality, and a linked Subcomponents s
   expect(md).toContain("- [close-button](./close-button.md)"); // derived + cross-linked
 });
 
+test("@memberOf feeds the parent's Subcomponents section even without @structure nesting", () => {
+  const [table] = parseCssDocs(
+    `/**\n * @component table\n * @summary A data table.\n */\n.table {}`,
+  );
+  const md = renderEntry(table!, {
+    members: [{ name: "table-cell", href: "./table-cell.md" }],
+  });
+  expect(md).toContain("## Subcomponents");
+  expect(md).toContain("- [table-cell](./table-cell.md)");
+});
+
+test("@memberOf private renders an 'only used within' note on the member's own page", () => {
+  const [item] = parseCssDocs(
+    [
+      "/**",
+      " * @component side-nav-bar-item",
+      " * @summary A side nav item.",
+      " * @memberOf side-nav-bar private",
+      " */",
+      ".side-nav-bar-item {}",
+    ].join("\n"),
+  );
+  const md = renderEntry(item!, {
+    resolveComponent: (c) =>
+      c === "side-nav-bar" ? { name: "side-nav-bar", href: "./side-nav-bar.md" } : undefined,
+  });
+  expect(md).toContain("> [!NOTE]");
+  expect(md).toContain("Only used within [side-nav-bar](./side-nav-bar.md).");
+});
+
 test("@structure comma-separated selector list resolves every alternative in the text tree and Subcomponents", () => {
   const [table] = parseCssDocs(
     [
@@ -456,6 +486,30 @@ test("buildCssApi cross-links a provider component composed in a consumer @struc
   // The composed provider component resolves to its own page (Subcomponents + structure cross-link).
   expect(panel).toContain("## Subcomponents");
   expect(panel).toContain("[widget](https://vendor.dev/widget.md)");
+});
+
+test("buildCssApi cross-links @memberOf into the parent's Subcomponents section", () => {
+  const outDir = mkdtempSync(join(tmpdir(), "cssdoc-memberof-md-"));
+  buildCssApi({
+    css: [
+      "/**",
+      " * @component table",
+      " * @summary A data table.",
+      " */",
+      ".table {}",
+      "/**",
+      " * @component table-cell",
+      " * @summary A table cell.",
+      " * @memberOf table",
+      " */",
+      ".table-cell {}",
+    ].join("\n"),
+    outDir,
+    baseHref: "/api/",
+  });
+  const table = readFileSync(join(outDir, "table.md"), "utf8");
+  expect(table).toContain("## Subcomponents");
+  expect(table).toContain("- [table-cell](/api/table-cell.md)");
 });
 
 test("buildCssApi writes per-record pages, an index, and a compatible sidebar", () => {

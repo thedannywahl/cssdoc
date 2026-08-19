@@ -45,6 +45,8 @@ export type RuleId =
   | "unknown-annotation-ref"
   | "readonly-redefinition"
   | "sealed-reset-value"
+  | "member-of-unknown-component"
+  | "private-member-orphaned"
   | "cssdoc-directive";
 
 /** A resolved severity for every rule. */
@@ -82,6 +84,8 @@ export const DEFAULT_RULE_SEVERITIES: RuleSeverities = {
   "unknown-annotation-ref": "warn",
   "readonly-redefinition": "warn",
   "sealed-reset-value": "warn",
+  "member-of-unknown-component": "warn",
+  "private-member-orphaned": "warn",
   // Fires when a `cssdoc-expect-error` directive matched no problem (like an unused ts-expect-error).
   "cssdoc-directive": "warn",
 };

@@ -132,12 +132,24 @@ export function buildCssApi(options: BuildCssApiOptions): BuildCssApiResult {
   }
   const resolveComponent =
     options.resolveComponent ?? ((className: string) => componentByClass.get(className));
+  // `@memberOf` feeds the parent's Subcomponents section from the inverse direction — a member doesn't
+  // need to be nested in the parent's own `@structure` tree.
+  const membersByParent = new Map<string, { name: string; href: string }[]>();
+  for (const e of entries) {
+    if (!e.memberOf) continue;
+    const list = membersByParent.get(e.memberOf.component) ?? [];
+    list.push({ name: e.name, href: `${baseHref}${e.name}.md` });
+    membersByParent.set(e.memberOf.component, list);
+  }
   const renderOptions = { ...options, resolveComponent };
 
   const pages: string[] = [];
   for (const entry of entries) {
     const pagePath = join(options.outDir, `${entry.name}.md`);
-    writeFileSync(pagePath, renderEntry(entry, renderOptions));
+    writeFileSync(
+      pagePath,
+      renderEntry(entry, { ...renderOptions, members: membersByParent.get(entry.name) }),
+    );
     pages.push(pagePath);
   }
 

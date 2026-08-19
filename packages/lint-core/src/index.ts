@@ -51,6 +51,8 @@ export type RuleName =
   | "unknown-annotation-ref"
   | "readonly-redefinition"
   | "sealed-reset-value"
+  | "member-of-unknown-component"
+  | "private-member-orphaned"
   | "invalid-default-value"
   | "invalid-property-value"
   | "invalid-fallback-value"
@@ -74,6 +76,8 @@ export const RULE_NAMES: readonly RuleName[] = [
   "unknown-annotation-ref",
   "readonly-redefinition",
   "sealed-reset-value",
+  "member-of-unknown-component",
+  "private-member-orphaned",
   "invalid-default-value",
   "invalid-property-value",
   "invalid-fallback-value",

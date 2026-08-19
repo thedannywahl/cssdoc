@@ -81,6 +81,7 @@ modifier conventions (rscss, CUBE, OOCSS, and more) — see [Modifier convention
 | `@usage <text>`                                        | How to include the stylesheet / use the component                     | authored               |
 | `@compat <text>`                                       | A browser-support / feature-compatibility note                        | authored               |
 | `@related <name> — <desc>`                             | A related component cross-reference                                   | authored               |
+| `@memberOf <name> [private]`                           | Declares this record a member of `<name>`'s family                    | authored               |
 
 The `@tokens` tag annotates the auto-derived "Tokens consumed" list: cssdoc already collects every
 `var(--*)` a record references, and `@tokens --x — <desc>` attaches a description (a `@tokens` entry with
@@ -299,6 +300,42 @@ an empty `{}` rule to satisfy the linter:
   /* … */
 }
 ```
+
+## Declaring family membership with `@memberOf`
+
+`@structure` documents _containment_ — a fixed position inside one parent's own tree, discovered by
+nesting a rule inside another record's `@structure` body. `@related` is a loose, undirected "see also"
+cross-reference, and doesn't feed the Subcomponents section at all. `@memberOf` sits between the two: it
+declares a record is part of another record's family — cross-linking into that parent's Subcomponents
+section — without requiring the member to be nested in the parent's own `@structure` at all. Use it when
+a sub-component doesn't have one fixed position (a table's row/cell classes can plausibly be reused
+outside a table), or when it lives in a different file/sheet than its parent.
+
+```css
+/**
+ * @component table-cell
+ * @summary A table data cell.
+ * @memberOf table
+ */
+.table-cell {
+}
+```
+
+A trailing `private` keyword — named after TypeScript's own scoping keyword, "only usable within the
+declaring scope" — marks the member as **never valid standalone or under a different parent**:
+
+```css
+/**
+ * @component side-nav-bar-item
+ * @summary One navigation entry in a side nav rail.
+ * @memberOf side-nav-bar private
+ */
+.side-nav-bar-item {
+}
+```
+
+`private` is independent of `@sealed`/`@noextend` — those constrain whether a record's _own_ API surface
+can be extended; `private` constrains _where the record may appear at all_. A record can be both.
 
 ## A fuller example
 

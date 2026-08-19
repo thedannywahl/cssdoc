@@ -237,6 +237,95 @@ test(":is() co-location emits structure-unknown-record when the class is a layou
   expect(unknowns[0].message).toContain("isn't documented as a component");
 });
 
+test("member-of-unknown-component flags a @memberOf naming a record that isn't documented", () => {
+  const css = [
+    "/**",
+    " * @component table-cell",
+    " * @summary A table cell.",
+    " * @memberOf ghost-table",
+    " */",
+    ".table-cell {}",
+  ].join("\n");
+  const diagnostics = lintModel(createIndex(css));
+  expect(diagnostics.map((d) => d.rule)).toContain("member-of-unknown-component");
+});
+
+test("member-of-unknown-component doesn't fire when the parent is documented", () => {
+  const css = [
+    "/**",
+    " * @component table",
+    " * @summary A data table.",
+    " */",
+    ".table {}",
+    "/**",
+    " * @component table-cell",
+    " * @summary A table cell.",
+    " * @memberOf table",
+    " */",
+    ".table-cell {}",
+  ].join("\n");
+  const diagnostics = lintModel(createIndex(css));
+  expect(diagnostics.map((d) => d.rule)).not.toContain("member-of-unknown-component");
+});
+
+test("private-member-orphaned flags a private member the parent's own @structure never references back", () => {
+  const css = [
+    "/**",
+    " * @component side-nav-bar",
+    " * @summary A side navigation rail.",
+    " */",
+    ".side-nav-bar {}",
+    "/**",
+    " * @component side-nav-bar-item",
+    " * @summary A side nav item.",
+    " * @memberOf side-nav-bar private",
+    " */",
+    ".side-nav-bar-item {}",
+  ].join("\n");
+  const diagnostics = lintModel(createIndex(css));
+  expect(diagnostics.map((d) => d.rule)).toContain("private-member-orphaned");
+});
+
+test("private-member-orphaned doesn't fire when the parent's @structure references the private member back", () => {
+  const css = [
+    "/**",
+    " * @component side-nav-bar",
+    " * @summary A side navigation rail.",
+    " * @structure",
+    " * .side-nav-bar {",
+    " *   .side-nav-bar-item:one-or-more {}",
+    " * }",
+    " */",
+    ".side-nav-bar {}",
+    "/**",
+    " * @component side-nav-bar-item",
+    " * @summary A side nav item.",
+    " * @memberOf side-nav-bar private",
+    " */",
+    ".side-nav-bar-item {}",
+  ].join("\n");
+  const diagnostics = lintModel(createIndex(css));
+  expect(diagnostics.map((d) => d.rule)).not.toContain("private-member-orphaned");
+});
+
+test("private-member-orphaned doesn't fire for a non-private @memberOf even without structural nesting", () => {
+  const css = [
+    "/**",
+    " * @component table",
+    " * @summary A data table.",
+    " */",
+    ".table {}",
+    "/**",
+    " * @component table-cell",
+    " * @summary A table cell.",
+    " * @memberOf table",
+    " */",
+    ".table-cell {}",
+  ].join("\n");
+  const diagnostics = lintModel(createIndex(css));
+  expect(diagnostics.map((d) => d.rule)).not.toContain("private-member-orphaned");
+});
+
 test("duplicate record ids flag same-kind as error and cross-kind as warning", () => {
   const css = [
     "/**",

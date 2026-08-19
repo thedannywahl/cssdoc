@@ -788,6 +788,7 @@ function buildEntry(
     decorators,
     compat: doc.compat,
     related: doc.related,
+    ...(doc.memberOf ? { memberOf: doc.memberOf } : {}),
     elements,
     global: doc.global,
     ...(source ? { source } : {}),

@@ -468,6 +468,14 @@ RelatedTag :
     `@related` WhiteSpace RecordName
     `@related` WhiteSpace RecordName Separator Description
 
+// Declared family membership: distinct from `@structure` containment (fixed position) and from
+// `@related` (loose "see also") — feeds the parent's Subcomponents section even when this record
+// isn't nested in the parent's own `@structure`. A trailing `private` keyword (named after
+// TypeScript's own scoping keyword) means this record must only ever appear inside that parent.
+MemberOfTag :
+    `@memberOf` WhiteSpace RecordName
+    `@memberOf` WhiteSpace RecordName WhiteSpace `private`
+
 // --- Modifier (flag) tags: release stage / traits; presence means true ------------------------
 
 ModifierFlagTag :
@@ -515,6 +523,7 @@ BlockTag :
     UsageTag
     CompatTag
     RelatedTag
+    MemberOfTag
     DeprecatedTag
     SeeTag
     SinceTag

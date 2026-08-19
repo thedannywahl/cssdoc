@@ -121,6 +121,10 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
   { name: "usage", kind: "block" },
   { name: "compat", kind: "block", allowMultiple: true },
   { name: "related", kind: "block", allowMultiple: true },
+  // Declared family membership: distinct from `@structure` containment (fixed position) and from
+  // `@related` (loose "see also") — feeds the parent's Subcomponents section. A trailing `private`
+  // keyword means this record must only ever appear inside that parent.
+  { name: "memberOf", kind: "block" },
   // Modifier (flag) tags — release stage.
   { name: "alpha", kind: "modifier" },
   { name: "beta", kind: "modifier" },

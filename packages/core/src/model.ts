@@ -280,6 +280,23 @@ export interface CssRelated {
   description?: string;
 }
 
+/**
+ * A declared family membership (`@memberOf`) — distinct from `@structure` containment (a fixed position
+ * inside one parent's tree) and from `@related` (a loose, undirected "see also"). Feeds the parent's
+ * Subcomponents section even when this record isn't nested in the parent's own `@structure`.
+ */
+export interface CssMemberOf {
+  /** The parent record's name, e.g. `table`. */
+  component: string;
+  /**
+   * Set by a trailing `private` keyword (`@memberOf side-nav-bar private`): this record must only ever
+   * appear inside `component`, never standalone or under a different parent. Named after TypeScript's
+   * own scoping keyword ("only usable within the declaring scope"), and independent of `@sealed`/
+   * `@noextend` — those constrain a record's own extensibility, this constrains where it may appear.
+   */
+  private: boolean;
+}
+
 /** One annotation legend row from `@annotations`. */
 export interface CssAnnotation {
   /** Numeric reference index, consumed by `@ref`. */
@@ -399,6 +416,11 @@ export interface CssDocEntry {
   compat: string[];
   /** Related components from `@related`. */
   related: CssRelated[];
+  /**
+   * Declared family membership from `@memberOf` — this record is a member of another named record,
+   * optionally `private` (must only ever appear inside that parent). Absent when not authored.
+   */
+  memberOf?: CssMemberOf;
   /** Where the record was authored, when position info is available (for source links). */
   source?: CssSource;
   /**

@@ -1676,6 +1676,21 @@ test("@usage, @compat, and @related populate their fields", () => {
   ]);
 });
 
+test("@memberOf parses the bare and private forms", () => {
+  const [cell] = parseCssDocs(
+    `/**\n * @component table-cell\n * @memberOf table\n */\n.table-cell {}`,
+  );
+  expect(cell!.memberOf).toEqual({ component: "table", private: false });
+
+  const [item] = parseCssDocs(
+    `/**\n * @component side-nav-bar-item\n * @memberOf side-nav-bar private\n */\n.side-nav-bar-item {}`,
+  );
+  expect(item!.memberOf).toEqual({ component: "side-nav-bar", private: true });
+
+  const [plain] = parseCssDocs(`/**\n * @component alert\n */\n.alert {}`);
+  expect(plain!.memberOf).toBeUndefined();
+});
+
 test("entry.source records line/column, and file when fileName is supplied", () => {
   const css = ["", "/**", " * @component card", " */", ".card { color: red; }"].join("\n");
   const [withFile] = parseCssDocs(css, { fileName: "cards.css" });

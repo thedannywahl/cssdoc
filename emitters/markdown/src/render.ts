@@ -95,6 +95,12 @@ export interface RenderEntryOptions {
    * from the full set of records; powers the "Subcomponents" section.
    */
   resolveComponent?: (className: string) => { name: string; href: string } | undefined;
+  /**
+   * Sibling records that declared `@memberOf` naming this record as their parent — the inverse
+   * direction of `@structure` containment. Supplied by `buildCssApi` from the full set of records;
+   * merged into the "Subcomponents" section alongside structurally-nested children.
+   */
+  members?: readonly { name: string; href: string }[];
   /** Reorder (or drop) the `##` sections; defaults to {@link DEFAULT_SECTION_ORDER}. */
   sectionOrder?: readonly SectionKey[];
   /**
@@ -406,6 +412,13 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
       "",
     );
   }
+  if (entry.memberOf?.private) {
+    const parent = options.resolveComponent?.(entry.memberOf.component);
+    const parentLabel = parent
+      ? `[${escProse(parent.name)}](${parent.href})`
+      : `\`${entry.memberOf.component}\``;
+    lines.push("> [!NOTE]", `> Only used within ${parentLabel}.`, "");
+  }
   if (entry.remarks) lines.push(escProse(normalizeProseMarkdown(entry.remarks)), "");
 
   const meta: string[] = [];
@@ -544,6 +557,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
     );
   }
 
+  const structuralSubs: { name: string; href: string }[] = [];
   if (entry.structure?.length || entry.structureVariants?.length) {
     fragments.structure.push("## Structure", "");
     if (entry.structureDescription) fragments.structure.push(entry.structureDescription, "");
@@ -614,13 +628,21 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
     // Composition is derived from the structure tree(s): sibling components referenced as children.
     if (options.resolveComponent) {
       const groups = variants?.length ? variants.map((v) => v.nodes) : [entry.structure ?? []];
-      const subs = subcomponentsOf(groups, self, options.resolveComponent);
-      if (subs.length) {
-        fragments.subcomponents.push("## Subcomponents", "");
-        for (const s of subs) fragments.subcomponents.push(`- [${escProse(s.name)}](${s.href})`);
-        fragments.subcomponents.push("");
-      }
+      structuralSubs.push(...subcomponentsOf(groups, self, options.resolveComponent));
     }
+  }
+
+  // Subcomponents come from two directions: structurally nested/co-located children (above, when this
+  // record has a `@structure`), and sibling records that declared `@memberOf` naming this one as their
+  // parent (below) — a member doesn't need to be nested in this record's own `@structure` tree.
+  const membersByName = new Map(structuralSubs.map((s) => [s.name, s]));
+  for (const m of options.members ?? []) membersByName.set(m.name, m);
+  if (membersByName.size) {
+    fragments.subcomponents.push("## Subcomponents", "");
+    for (const s of [...membersByName.values()].sort((a, b) => a.name.localeCompare(b.name))) {
+      fragments.subcomponents.push(`- [${escProse(s.name)}](${s.href})`);
+    }
+    fragments.subcomponents.push("");
   }
 
   if (entry.cssPropertiesDeclared.length) {
