@@ -9,6 +9,7 @@ test("categorizes cssdoc doc-comment tags", () => {
     "@component tabs\n@part .list\n@slot label\n@cssproperty --tabs-gap\n@modifier -x\n@a11y ok";
   const toks = label(src);
   expect(toks).toContainEqual({ type: "tag", text: "@component" });
+  expect(toks).toContainEqual({ type: "record", text: "tabs" });
   expect(toks).toContainEqual({ type: "tag", text: "@part" });
   expect(toks).toContainEqual({ type: "part", text: ".list" });
   expect(toks).toContainEqual({ type: "part", text: "label" });
@@ -16,6 +17,11 @@ test("categorizes cssdoc doc-comment tags", () => {
   expect(toks).toContainEqual({ type: "property", text: "--tabs-gap" });
   expect(toks).toContainEqual({ type: "modifier", text: "-x" });
   expect(toks).toContainEqual({ type: "tag", text: "@a11y" });
+});
+
+test("highlights a dotted @component name as one qualified record token", () => {
+  const toks = label("@component menu.item\n@memberOf menu");
+  expect(toks).toContainEqual({ type: "record", text: "menu.item" });
 });
 
 test("splits an inline {@link …} into punctuation, tag, and link text", () => {

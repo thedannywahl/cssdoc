@@ -207,6 +207,8 @@ export interface ParsedDoc {
   related: CssRelated[];
   /** `@memberOf <component> [private]`, when authored. */
   memberOf?: { component: string; private: boolean };
+  /** `@members <name>, <name>, …` — the inverse direction, when authored. */
+  members?: string[];
   /** Set by a record-level `@global` tag — modifiers of this record apply to any other component/layout/rule/declaration. */
   global?: boolean;
   /** Content of registered custom (block) tags, keyed by tag name without its `@`. */
@@ -406,6 +408,12 @@ export function parseDocComment(
     if (definition.syntaxKind === "inline") continue; // inline tags live inside descriptions
 
     applyBlockTag(doc, definition.canonicalName, definition.tagNameWithoutAt, rest, parse);
+  }
+  // A dotted component name (`menu.item`) implies membership in its immediate parent (`menu`), unless
+  // an explicit @memberOf already said otherwise.
+  if (!doc.memberOf && doc.component?.includes(".")) {
+    const dot = doc.component.lastIndexOf(".");
+    doc.memberOf = { component: doc.component.slice(0, dot), private: false };
   }
   return doc;
 }
@@ -623,6 +631,13 @@ function applyBlockTag(
     case "memberOf": {
       const m = rest.match(/^([\w-]+)(?:\s+(private))?\s*$/u);
       if (m) doc.memberOf = { component: m[1], private: Boolean(m[2]) };
+      break;
+    }
+    case "members": {
+      doc.members = rest
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
       break;
     }
     default: {

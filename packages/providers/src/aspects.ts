@@ -549,6 +549,21 @@ export const record = {
         }
       }
 
+      for (const memberName of info.entry.members ?? []) {
+        const memberKinds = siblingNameKinds.get(memberName);
+        if (!memberKinds || memberKinds.size === 0) {
+          out.push(
+            warn({
+              aspect: "record",
+              rule: "members-unknown-component",
+              message: `@members references "${memberName}", but no documented record with that name was found.`,
+              record: info.entry.name,
+              span: info.span,
+            }),
+          );
+        }
+      }
+
       for (const m of info.entry.modifiers) {
         for (const a of m.affects ?? []) {
           const kinds = siblingNameKinds.get(a.component);

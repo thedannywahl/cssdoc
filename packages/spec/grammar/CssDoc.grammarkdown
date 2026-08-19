@@ -65,9 +65,11 @@ Identifier ::
     IdentifierStart
     Identifier IdentifierPart
 
-// A record name, e.g. `button` or `progress-circle`.
+// A record name, e.g. `button` or `progress-circle`. A qualified name (`menu.item`) names a member
+// nested under a dotted-off parent — see MemberOfTag.
 RecordName ::
     Identifier
+    RecordName `.` Identifier
 
 // How a modifier is spelled is configurable. Three structural forms are recognized,
 // shown with their default separators and a neutral `.base` component class;

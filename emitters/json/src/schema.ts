@@ -186,6 +186,7 @@ export const cssDocEntrySchema = {
     },
     compat: { type: "array", items: { type: "string" } },
     related: { type: "array", items: named },
+    members: { type: "array", items: { type: "string" } },
     elements: {
       type: "object",
       required: ["default", "profiles"],

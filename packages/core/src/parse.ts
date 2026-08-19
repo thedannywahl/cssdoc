@@ -472,6 +472,7 @@ function collect(
           for (const m of finalBare.matchAll(CLASS_REF_RE)) {
             const part = m[1];
             if (modNames.has(part)) continue; // a modifier, not a part
+            if (part === baseNoDot) continue; // the record's own base class, not a part of itself
             if (prefixNoDot && part.startsWith(prefixNoDot)) continue; // a component ref, not a part
             if (!acc.parts.has(part))
               acc.parts.set(part, { name: part, description: pendingDescription });
@@ -791,6 +792,7 @@ function buildEntry(
     compat: doc.compat,
     related: doc.related,
     ...(doc.memberOf ? { memberOf: doc.memberOf } : {}),
+    ...(doc.members?.length ? { members: doc.members } : {}),
     elements,
     global: doc.global,
     ...(source ? { source } : {}),

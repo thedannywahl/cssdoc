@@ -53,6 +53,7 @@ export type RuleName =
   | "sealed-reset-value"
   | "member-of-unknown-component"
   | "private-member-orphaned"
+  | "members-unknown-component"
   | "affects-unknown-component"
   | "invalid-default-value"
   | "invalid-property-value"
@@ -79,6 +80,7 @@ export const RULE_NAMES: readonly RuleName[] = [
   "sealed-reset-value",
   "member-of-unknown-component",
   "private-member-orphaned",
+  "members-unknown-component",
   "affects-unknown-component",
   "invalid-default-value",
   "invalid-property-value",

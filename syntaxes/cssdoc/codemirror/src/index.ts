@@ -30,7 +30,15 @@ import {
 } from "@codemirror/view";
 
 /** Semantic token kind a doc-comment span maps to. Each becomes a `cm-cssdoc-<kind>` class. */
-export type CssdocTokenType = "tag" | "modifier" | "part" | "property" | "link" | "punct" | "ref";
+export type CssdocTokenType =
+  | "tag"
+  | "modifier"
+  | "part"
+  | "property"
+  | "link"
+  | "punct"
+  | "ref"
+  | "record";
 
 /** A highlighted span within a comment. `from`/`to` are offsets into the scanned comment text. */
 export interface CssdocToken {
@@ -43,16 +51,22 @@ export interface CssdocToken {
 // tags are everything that isn't inline and takes no structured argument.
 const alt = (names: readonly string[]): string => names.join("|");
 const INLINE_TAGS = cssdocTagNamesByKind("inline");
+const RECORD_TAGS = cssdocTagNamesByKind("record");
 const MODIFIER_TAGS = cssdocTagNamesByArgument("modifier-name");
 const PART_TAGS = cssdocTagNamesByArgument("part-name");
 const PROPERTY_TAGS = cssdocTagNamesByArgument("custom-property");
-const PLAIN_TAGS = CSSDOC_TAGS.filter((t) => t.kind !== "inline" && !t.argument).map((t) => t.name);
+const PLAIN_TAGS = CSSDOC_TAGS.filter(
+  (t) => t.kind !== "inline" && t.kind !== "record" && !t.argument,
+).map((t) => t.name);
 
 // One left-to-right alternation, so matches never overlap. The `d` flag exposes per-group offsets.
 const TOKEN = new RegExp(
   [
     // {@link ...} / {@label ...} / {@inheritDoc ...}
     `(?<ibrace>\\{)(?<itag>@(?:${alt(INLINE_TAGS)}))\\b[ \\t]*(?<itext>[^}]*)(?<iend>\\})?`,
+    // @component/@name/@utility/@rule/@declaration/@layout name(.name)* — a dotted name (`menu.item`)
+    // is a qualified member name, highlighted as one unit.
+    `(?<cmptag>@(?:${alt(RECORD_TAGS)}))\\b[ \\t]*(?<cmpname>[A-Za-z][A-Za-z0-9_-]*(?:\\.[A-Za-z][A-Za-z0-9_-]*)*)?`,
     // @modifier -name
     `(?<mtag>@(?:${alt(MODIFIER_TAGS)}))\\b[ \\t]*(?<mname>-[A-Za-z][A-Za-z0-9-]*)?`,
     // @part / @csspart / @slot .name
@@ -74,6 +88,8 @@ const GROUP_TYPE: Record<string, CssdocTokenType> = {
   itag: "tag",
   itext: "link",
   iend: "punct",
+  cmptag: "tag",
+  cmpname: "record",
   mtag: "tag",
   mname: "modifier",
   ptag: "tag",
@@ -156,6 +172,8 @@ const baseTheme = EditorView.baseTheme({
   "&dark .cm-cssdoc-modifier": { color: "#79c0ff" },
   "&light .cm-cssdoc-part": { color: "#116329" },
   "&dark .cm-cssdoc-part": { color: "#7ee787" },
+  "&light .cm-cssdoc-record": { color: "#0550ae", fontWeight: "600" },
+  "&dark .cm-cssdoc-record": { color: "#79c0ff", fontWeight: "600" },
   "&light .cm-cssdoc-property": { color: "#953800" },
   "&dark .cm-cssdoc-property": { color: "#ffa657" },
   "&light .cm-cssdoc-link": { color: "#0969da", textDecoration: "underline" },

@@ -1704,6 +1704,48 @@ test("@memberOf parses the bare and private forms", () => {
   expect(plain!.memberOf).toBeUndefined();
 });
 
+test("@members declares a parent's members directly, comma-separated", () => {
+  const [tabs] = parseCssDocs(
+    `/**\n * @component tabs\n * @members tab, panel, item\n */\n.tabs {}`,
+  );
+  expect(tabs!.members).toEqual(["tab", "panel", "item"]);
+
+  const [plain] = parseCssDocs(`/**\n * @component alert\n */\n.alert {}`);
+  expect(plain!.members).toBeUndefined();
+});
+
+test("a dotted @component name implies @memberOf its immediate parent", () => {
+  const [item] = parseCssDocs(`/**\n * @component foo.bar\n */\n.bar {}`);
+  expect(item!.memberOf).toEqual({ component: "foo", private: false });
+
+  const [nested] = parseCssDocs(`/**\n * @component a.b.c\n */\n.c {}`);
+  expect(nested!.memberOf).toEqual({ component: "a.b", private: false });
+
+  // An explicit @memberOf still wins over the inference.
+  const [explicit] = parseCssDocs(
+    `/**\n * @component foo.bar\n * @memberOf other private\n */\n.bar {}`,
+  );
+  expect(explicit!.memberOf).toEqual({ component: "other", private: true });
+});
+
+test("issue #30: a memberOf record scoped under its parent's @scope doesn't flag its own base class as an undocumented part", () => {
+  const css = [
+    "/**",
+    " * @component menu.item",
+    " * @memberOf menu",
+    " * @selector .item",
+    " * @summary A menu entry.",
+    " */",
+    "@scope (.pfx-menu) {",
+    "  :scope > .item {",
+    "    display: block;",
+    "  }",
+    "}",
+  ].join("\n");
+  const [item] = parseCssDocs(css);
+  expect(item!.parts.map((p) => p.name)).not.toContain("item");
+});
+
 test("entry.source records line/column, and file when fileName is supplied", () => {
   const css = ["", "/**", " * @component card", " */", ".card { color: red; }"].join("\n");
   const [withFile] = parseCssDocs(css, { fileName: "cards.css" });
