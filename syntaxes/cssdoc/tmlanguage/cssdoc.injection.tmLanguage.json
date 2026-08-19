@@ -65,7 +65,7 @@
       ]
     },
     "record-tag": {
-      "match": "(@(?:component|name|utility|rule|declaration|layout))\\b[ \\t]*(\\.?[A-Za-z][A-Za-z0-9_-]*)?",
+      "match": "(@(?:component|name|utility|rule|declaration|layout))\\b[ \\t]*(\\.?[A-Za-z][A-Za-z0-9_-]*(?:\\.[A-Za-z][A-Za-z0-9_-]*)*)?",
       "captures": {
         "1": {
           "name": "storage.type.class.cssdoc"

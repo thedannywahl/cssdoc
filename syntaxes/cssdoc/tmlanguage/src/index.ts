@@ -111,7 +111,9 @@ export function buildInjectionGrammar(): InjectionGrammar {
       // A record's name (`@component button`) reads like a type name. Listed before the bare keyword
       // rule so it claims the tag and colours the identifier that follows.
       "record-tag": {
-        match: `(@(?:${recordTags}))\\b[ \\t]*(\\.?[A-Za-z][A-Za-z0-9_-]*)?`,
+        // A dotted name (`menu.item`) is a qualified member name — highlight it as one unit, not just
+        // the segment before the first dot.
+        match: `(@(?:${recordTags}))\\b[ \\t]*(\\.?[A-Za-z][A-Za-z0-9_-]*(?:\\.[A-Za-z][A-Za-z0-9_-]*)*)?`,
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "entity.name.type.cssdoc" },

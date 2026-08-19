@@ -71,6 +71,13 @@ test("member names get semantic scopes: record name, modifier like part, cssstat
   expect(g.repository["block-tag"]?.match).not.toContain("cssstate");
 });
 
+test("record-tag highlights a dotted qualified name in full, not just the segment before the dot", () => {
+  const g = buildInjectionGrammar();
+  const re = new RegExp(g.repository["record-tag"]?.match ?? "");
+  const m = "@component menu.item".match(re);
+  expect(m?.[2]).toBe("menu.item");
+});
+
 test("@ref has a dedicated numeric capture", () => {
   const g = buildInjectionGrammar();
   expect(g.repository["ref-tag"]?.match).toContain("ref");
