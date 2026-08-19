@@ -4,6 +4,21 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.13.0
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.12.0...v0.13.0)
+
+### 🚀 Enhancements
+
+- **core:** Support attribute-reflected cssstate for ARIA/data-* state hooks ([35e4172](https://github.com/thedannywahl/cssdoc/commit/35e4172))
+- **structure:** Resolve every alternative in a comma-separated @structure selector list ([40e6641](https://github.com/thedannywahl/cssdoc/commit/40e6641))
+- **structure:** Add @memberOf for declared sub-component family membership ([9392ae0](https://github.com/thedannywahl/cssdoc/commit/9392ae0))
+- **modifier:** Add @affects inline marker for cross-record modifier effects ([e324a15](https://github.com/thedannywahl/cssdoc/commit/e324a15))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.12.0
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.11.0...v0.12.0)
