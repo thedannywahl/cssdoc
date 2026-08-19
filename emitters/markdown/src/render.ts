@@ -287,8 +287,9 @@ const CARDINALITY_TOKEN: Record<NonNullable<StructureNode["cardinality"]>, strin
 /** Match a `slot` / `slot[name="x"]` structure node (a light-DOM content region → the default/named slot). */
 const SLOT_NODE = /^slot(?:\[\s*name\s*=\s*["']?([\w-]+)["']?\s*\])?$/u;
 
-/** The leading bare class of a compound selector, e.g. `.item.-selected` → `item`. */
-const firstClass = (selector: string): string | undefined => selector.match(/\.([\w-]+)/u)?.[1];
+/** Every bare class in a selector, e.g. a comma-separated alternation list `.a, .b` → `["a", "b"]`. */
+const allClasses = (selector: string): string[] =>
+  [...selector.matchAll(/\.([\w-]+)/gu)].map((m) => m[1]);
 
 /** Strip a leading `.` or `#` so a co-located selector can be passed to a component resolver. */
 const colocNormalize = (sel: string): string =>
@@ -300,6 +301,9 @@ const colocNormalize = (sel: string): string =>
  * the record's own class `self`) → its component name; anything else → its selector. A trailing `(…)`
  * carries the kind tag (`component`) and/or the cardinality (`0..1` / `0..n` / `1..n`; absent =
  * required).
+ *
+ * A comma-separated selector list (`.col-header, .row-header`) reads as alternation — "one of these" —
+ * so every resolved sibling component is joined with ` | `, not just the first.
  */
 function structureLabel(
   node: StructureNode,
@@ -312,10 +316,12 @@ function structureLabel(
   if (slot) {
     base = slot[1] ? `‹content: ${slot[1]}›` : "‹content›";
   } else {
-    const primary = firstClass(node.selector);
-    const component = primary && primary !== self ? resolveComponent?.(primary) : undefined;
-    if (component) {
-      base = component.name;
+    const resolved = allClasses(node.selector)
+      .filter((c) => c !== self)
+      .map((c) => resolveComponent?.(c))
+      .filter((c): c is NonNullable<typeof c> => Boolean(c));
+    if (resolved.length) {
+      base = resolved.map((c) => c.name).join(" | ");
       kind = "component";
     }
   }

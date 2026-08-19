@@ -81,8 +81,9 @@ const CLASS_DEFS = [
   "classDef cssdoc-component fill:#fff7ed,stroke:#fb923c,color:#7c2d12;",
 ];
 
-/** The leading bare class of a compound selector, e.g. `.item.-selected` → `item`. */
-const firstClass = (selector: string): string | undefined => selector.match(/\.([\w-]+)/u)?.[1];
+/** Every bare class in a selector, e.g. a comma-separated alternation list `.a, .b` → `["a", "b"]`. */
+const allClasses = (selector: string): string[] =>
+  [...selector.matchAll(/\.([\w-]+)/gu)].map((m) => m[1]);
 
 /** Strip a leading `.` or `#` so a co-located selector can be passed to a component resolver. */
 const colocNormalize = (sel: string): string =>
@@ -116,11 +117,20 @@ function classify(node: StructureNode, isRoot: boolean, options: MermaidOptions)
     const label = `${node.selector} + ${component?.name ?? node.colocated}`;
     return { klass: "cssdoc-component", label, href: component?.href };
   }
-  const primary = firstClass(node.selector);
-  if (primary && primary !== options.self) {
-    const component = options.resolveComponent?.(primary);
-    if (component)
-      return { klass: "cssdoc-component", label: component.name, href: component.href };
+  const primary = allClasses(node.selector).filter((c) => c !== options.self);
+  if (primary.length) {
+    const resolved = primary
+      .map((c) => options.resolveComponent?.(c))
+      .filter((c): c is NonNullable<typeof c> => Boolean(c));
+    // A comma-separated alternation list (`.a, .b`) joins every resolved sibling with ` | `; the click
+    // link only makes sense when exactly one component resolved (an ambiguous target links to none).
+    if (resolved.length) {
+      return {
+        klass: "cssdoc-component",
+        label: resolved.map((c) => c.name).join(" | "),
+        href: resolved.length === 1 ? resolved[0].href : undefined,
+      };
+    }
   }
   return { klass: "cssdoc-part", label: node.selector };
 }

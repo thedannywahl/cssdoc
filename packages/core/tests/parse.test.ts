@@ -1341,6 +1341,27 @@ test("toMermaid renders a co-located node as a component node with a compound la
   expect(mermaid).toMatch(/click n\d+ "\/api\/card\.md"/u);
 });
 
+test("toMermaid renders a comma-separated alternation slot as every resolved sibling, joined, without a click link", () => {
+  const tree = parseStructure(
+    ".header-row {\n  .col-header, .row-header:one-or-more {}\n}",
+    postcss.parse,
+  );
+  const mermaid = toMermaid(tree, {
+    self: "header-row",
+    resolveComponent: (c) =>
+      c === "col-header"
+        ? { name: "col-header", href: "/api/col-header.md" }
+        : c === "row-header"
+          ? { name: "row-header", href: "/api/row-header.md" }
+          : undefined,
+  });
+  // Both alternatives resolve and are joined; the shared cardinality rides the edge as usual.
+  expect(mermaid).toContain(`(["col-header | row-header"]):::cssdoc-component`);
+  expect(mermaid).toMatch(/-->\|1\.\.n\| n\d+/u);
+  // Ambiguous target (two resolved components) — no click link is emitted.
+  expect(mermaid).not.toContain("click");
+});
+
 test("@structure cardinality pseudos (full + `:opt`/`:more` shorthands) parse and strip", () => {
   const tree = parseStructure(
     ".alert {\n  slot {}\n  .close-button:optional {}\n  .icon:opt {}\n  .item:one-or-more {}\n  .tag:more {}\n  .badge:many {}\n  .body {}\n}",

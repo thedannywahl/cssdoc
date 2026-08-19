@@ -167,6 +167,35 @@ test("@structure renders slot content, cardinality, and a linked Subcomponents s
   expect(md).toContain("- [close-button](./close-button.md)"); // derived + cross-linked
 });
 
+test("@structure comma-separated selector list resolves every alternative in the text tree and Subcomponents", () => {
+  const [table] = parseCssDocs(
+    [
+      "/**",
+      " * @component table",
+      " * @summary A data table.",
+      " * @structure",
+      " * .table {",
+      " *   .table-col-header, .table-row-header:one-or-more {}",
+      " * }",
+      " */",
+      ".table {}",
+    ].join("\n"),
+  );
+  const md = renderEntry(table!, {
+    resolveComponent: (c) =>
+      c === "table-col-header"
+        ? { name: "table-col-header", href: "./table-col-header.md" }
+        : c === "table-row-header"
+          ? { name: "table-row-header", href: "./table-row-header.md" }
+          : undefined,
+  });
+  // Both alternatives are named, joined by " | ", carrying the shared cardinality.
+  expect(md).toContain("table-col-header | table-row-header (component, 1..n)");
+  expect(md).toContain("## Subcomponents");
+  expect(md).toContain("- [table-col-header](./table-col-header.md)");
+  expect(md).toContain("- [table-row-header](./table-row-header.md)");
+});
+
 test(":is() co-location renders `+ componentName (component)` in text tree and adds to Subcomponents", () => {
   const [shell] = parseCssDocs(
     [

@@ -195,6 +195,42 @@ Reads as: if `.utilities` is present, it must contain one or more `button.instui
 **Using `:is()` with multiple selectors** (e.g. `:is(.a, .b)`) is not co-location — cssdoc keeps
 the compound verbatim and treats it as a relationship selector, just as `:has()` and `:not()` are.
 
+## Choosing between sub-component types
+
+Sometimes a slot holds one of several sibling components rather than a single fixed one — a table's
+header row holds column headers, while its body rows hold row headers and cells. Write this as an
+ordinary CSS **selector list** (comma-separated), the same way you'd write `:is(.a, .b)` — no new tag or
+syntax:
+
+```css
+/**
+ * @component table
+ * @summary A data table.
+ * @structure
+ * .table {
+ *   .table-head {
+ *     .table-row {
+ *       .table-col-header:one-or-more {}
+ *     }
+ *   }
+ *   .table-body {
+ *     .table-row:one-or-more {
+ *       .table-cell, .table-row-header {}
+ *     }
+ *   }
+ * }
+ */
+.table {
+}
+```
+
+Every class named in the list is scanned and cross-linked independently — both `table-cell` and
+`table-row-header` show up in `table`'s Subcomponents section, and the rendered text tree joins every
+resolved sibling with `|` (`table-cell | table-row-header (component, 1..n)`). Since a comma-joined
+selector is one CSS rule, a **shared cardinality marker goes once, at the end of the list**
+(`.table-cell, .table-row-header:one-or-more`) — it applies to the whole alternation, not just the last
+name.
+
 ## Step 3: Derive valid HTML from the documented structure
 
 Once records are defined, scaffold markup that matches the structure tree.
