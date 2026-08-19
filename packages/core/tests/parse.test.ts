@@ -1705,7 +1705,9 @@ test("@memberOf parses the bare and private forms", () => {
 });
 
 test("@members declares a parent's members directly, comma-separated", () => {
-  const [tabs] = parseCssDocs(`/**\n * @component tabs\n * @members tab, panel, item\n */\n.tabs {}`);
+  const [tabs] = parseCssDocs(
+    `/**\n * @component tabs\n * @members tab, panel, item\n */\n.tabs {}`,
+  );
   expect(tabs!.members).toEqual(["tab", "panel", "item"]);
 
   const [plain] = parseCssDocs(`/**\n * @component alert\n */\n.alert {}`);
