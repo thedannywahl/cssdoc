@@ -342,11 +342,13 @@ TokensTag :
     `@tokens` WhiteSpace CustomPropertyName
     `@tokens` WhiteSpace CustomPropertyName Separator Description
 
-// A state name: a bare identifier (a custom `:state(name)` state) or a `:`-prefixed native
-// pseudo-class state, e.g. `:disabled`.
+// A state name: a bare identifier (a custom `:state(name)` state), a `:`-prefixed native
+// pseudo-class state (e.g. `:disabled`), or a bracketed attribute-reflected state (e.g.
+// `[aria-sort="ascending"]`) for ARIA/data-* states that aren't expressed as a pseudo-class.
 StateName :
     Identifier
     `:` Identifier
+    AttributeModifier
 
 CssStateTag :
     `@cssstate` WhiteSpace StateName

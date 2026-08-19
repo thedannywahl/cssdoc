@@ -71,6 +71,13 @@ const STRUCT_CARDINALITY: Record<string, NonNullable<StructureNode["cardinality"
 };
 const STRUCT_CARD_RE = /:(optional|opt|one-or-more|more|many)\s*$/u;
 const STRUCT_COLOC_RE = /:is\(\s*([^,)]+?)\s*\)/u;
+// A curated allow-list of ARIA/data-* attributes that reflect element *state* (not identity or
+// labeling) — avoids false positives on incidental attribute selectors like `[data-testid]`.
+const ATTR_STATE_RE =
+  /\[\s*(aria-[\w-]+|data-state)\s*=\s*("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[\w-]+)\s*\]/gu;
+// The same shape, anchored to the whole (authored) token rather than scanned within a selector.
+const ATTR_STATE_TAG_RE =
+  /^\[\s*(aria-[\w-]+|data-state)\s*=\s*("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[\w-]+)\s*\]$/u;
 
 const unquote = (value: string): string => value.trim().replace(/^["']|["']$/gu, "");
 const sortUnique = (values: Iterable<string>): string[] =>
@@ -416,6 +423,12 @@ function collect(
           if (!acc.states.has(ps.name))
             acc.states.set(ps.name, { name: ps.name, kind: "pseudo-class" });
         }
+        for (const as of selector.matchAll(ATTR_STATE_RE)) {
+          const attrSelector = `[${as[1]}=${as[2]}]`;
+          const name = `${as[1]}=${unquote(as[2])}`;
+          if (!acc.states.has(name))
+            acc.states.set(name, { name, kind: "attribute", selector: attrSelector });
+        }
         for (const sp of selector.matchAll(/::part\(\s*([\w-]+)\s*\)/gu)) {
           if (!acc.shadowParts.has(sp[1])) acc.shadowParts.set(sp[1], { name: sp[1] });
         }
@@ -617,16 +630,25 @@ function buildEntry(
     else acc.pseudoElements.set(pseudo, { name: pseudo, description: description || undefined });
   }
   for (const [rawState, description] of doc.cssStates) {
-    // A `:`-prefixed authored name (`@cssstate :disabled`) is a native pseudo-class state.
+    // A `:`-prefixed authored name (`@cssstate :disabled`) is a native pseudo-class state; a bracketed
+    // authored name (`@cssstate [aria-sort="ascending"]`) is an attribute-reflected state. The stored
+    // name/selector for the attribute form must match the auto-derivation below (`key=unquoted-value`),
+    // so an authored description and a CSS-derived usage merge into one state, not two.
     const isPseudo = rawState.startsWith(":");
-    const state = isPseudo ? rawState.slice(1) : rawState;
+    const attrMatch = rawState.match(ATTR_STATE_TAG_RE);
+    const state = isPseudo
+      ? rawState.slice(1)
+      : attrMatch
+        ? `${attrMatch[1]}=${unquote(attrMatch[2])}`
+        : rawState;
     const existing = acc.states.get(state);
     if (existing) existing.description = description || existing.description;
     else
       acc.states.set(state, {
         name: state,
-        kind: isPseudo ? "pseudo-class" : "custom",
+        kind: isPseudo ? "pseudo-class" : attrMatch ? "attribute" : "custom",
         description: description || undefined,
+        ...(attrMatch ? { selector: `[${attrMatch[1]}=${attrMatch[2]}]` } : {}),
       });
   }
   for (const prop of doc.cssProperties) {

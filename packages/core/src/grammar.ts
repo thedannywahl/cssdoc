@@ -491,6 +491,18 @@ function applyBlockTag(
       break;
     }
     case "cssstate": {
+      // A bracketed attribute expression (`[aria-sort="ascending"]`) needs bracket-aware splitting,
+      // since its value may contain spaces; other forms (`:disabled`, a bare custom-state name) don't.
+      if (rest.startsWith("[")) {
+        const selMatch = rest.match(/^(\[(?:[^\]"']|"[^"]*"|'[^']*')*\])/u);
+        const head = selMatch?.[1] ?? rest;
+        const descMatch = rest
+          .slice(head.length)
+          .trim()
+          .match(/^(?:—|-{1,2})\s+([\s\S]*)$/u);
+        doc.cssStates.set(head, descMatch?.[1].trim() ?? "");
+        break;
+      }
       const { head, description } = splitDesc(rest);
       doc.cssStates.set(head, description ?? "");
       break;

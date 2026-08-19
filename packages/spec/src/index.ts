@@ -91,6 +91,8 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
     aliasFor: "cssproperty",
     argument: "custom-property",
   },
+  // A component state: a custom `:state(x)` state, a native pseudo-class (`:disabled`), or a bracketed
+  // attribute-reflected state (`[aria-sort="ascending"]`, `[data-state="open"]`) for ARIA/data-* states.
   { name: "cssstate", kind: "block", allowMultiple: true },
   // A native pseudo-element the component styles (`::before`, `::marker`, …), named by `::name`.
   { name: "pseudo", kind: "block", allowMultiple: true },

@@ -1517,6 +1517,25 @@ test("shadow parts and pseudo-class states are captured distinctly from class pa
   expect(sw.states.find((s) => s.name === "on")?.kind).toBe("custom");
 });
 
+test("attribute-reflected cssstate is derived from CSS and merges with authored prose", () => {
+  const [entry] = parseCssDocs(
+    `/**\n * @component col-header\n * @cssstate [aria-sort="ascending"] — Column sorted ascending.\n */\n` +
+      `.col-header {}\n.col-header[aria-sort="ascending"] { color: blue; }\n` +
+      `.col-header[aria-sort="descending"] { color: red; }\n` +
+      `.col-header[data-testid="x"] { outline: none; }`,
+  );
+  const asc = entry.states.find((s) => s.name === "aria-sort=ascending");
+  expect(asc?.kind).toBe("attribute");
+  expect(asc?.selector).toBe('[aria-sort="ascending"]');
+  expect(asc?.description).toBe("Column sorted ascending.");
+  // Derived purely from CSS (no authored tag) still becomes a documented state.
+  const desc = entry.states.find((s) => s.name === "aria-sort=descending");
+  expect(desc?.kind).toBe("attribute");
+  expect(desc?.description).toBeUndefined();
+  // Not on the ARIA/data-state allow-list — not auto-derived as a state.
+  expect(entry.states.some((s) => s.name.startsWith("data-testid"))).toBe(false);
+});
+
 test("CSSOM at-rule surfaces are AST-derived (function, keyframes, layer, media, state)", () => {
   const [entry] = parseCssDocs(
     `/**\n * @component spinner\n * @function --spin — Rotation helper.\n */\n` +

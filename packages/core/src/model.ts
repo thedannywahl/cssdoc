@@ -79,19 +79,25 @@ export interface CssPart {
 
 /**
  * How a component state is spelled — the CSSOM custom state `:state(x)`, a native pseudo-class
- * (`:disabled`), or a state class from the convention's `statePrefixes` (`.is-open`). Only `custom`
- * maps to a Custom Elements Manifest `cssStates` entry.
+ * (`:disabled`), a state class from the convention's `statePrefixes` (`.is-open`), or a bracketed
+ * attribute-reflected state (`[aria-sort="ascending"]`). Only `custom` maps to a Custom Elements
+ * Manifest `cssStates` entry.
  */
-export type CssStateKind = "custom" | "pseudo-class" | "class";
+export type CssStateKind = "custom" | "pseudo-class" | "class" | "attribute";
 
-/** A component state — from `:state()`, a native pseudo-class, or a state class (`@cssstate`). */
+/** A component state — from `:state()`, a native pseudo-class, a state class, or an attribute (`@cssstate`). */
 export interface CssState {
-  /** The state name without its punctuation, e.g. `open`, `selected`, or `disabled`. */
+  /**
+   * The state's derived name without its punctuation, e.g. `open`, `selected`, `disabled`, or
+   * `aria-sort="ascending"` for an attribute state.
+   */
   name: string;
   /** How the state is expressed in CSS. */
   kind: CssStateKind;
   /** Prose from a `@cssstate` doc tag, when authored. */
   description?: string;
+  /** The full bracketed selector for an `attribute` state, e.g. `[aria-sort="ascending"]`. */
+  selector?: string;
 }
 
 /**

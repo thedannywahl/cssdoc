@@ -512,7 +512,15 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
       ...table(
         ["State", "Description"],
         entry.states.map((s) => [
-          `\`${s.kind === "custom" ? `:state(${s.name})` : s.kind === "pseudo-class" ? `:${s.name}` : `.${s.name}`}\``,
+          `\`${
+            s.kind === "custom"
+              ? `:state(${s.name})`
+              : s.kind === "pseudo-class"
+                ? `:${s.name}`
+                : s.kind === "attribute"
+                  ? (s.selector ?? `[${s.name}]`)
+                  : `.${s.name}`
+          }\``,
           cell(s.description),
         ]),
       ),

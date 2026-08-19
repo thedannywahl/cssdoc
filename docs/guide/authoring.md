@@ -61,6 +61,7 @@ modifier conventions (rscss, CUBE, OOCSS, and more) — see [Modifier convention
 | `@pseudo ::<x> — <desc>`                               | A native pseudo-element (`::before`, `::marker`, …)                   | `::x` selectors        |
 | `@cssstate <x> — <desc>`                               | A custom `:state(x)` state                                            | `:state(x)` selectors  |
 | `@cssstate :<x> — <desc>`                              | A native pseudo-class state (`:disabled`)                             | pseudo-class selectors |
+| `@cssstate [attr="val"] — <desc>`                      | An attribute-reflected state (ARIA/data-*, e.g. `[aria-sort="asc"]`)  | attribute selectors    |
 | `@slot <x> — <desc>`                                   | A named slot                                                          | authored (CEM)         |
 | `@cssproperty` / `@property --<x> [<syntax>] — <desc>` | A registered custom property                                          | `@property` at-rules   |
 | `@tokens --<x> — <desc>`                               | A consumed design token (annotates the auto-derived list)             | `var(--x)` usages      |
