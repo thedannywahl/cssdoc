@@ -4,6 +4,30 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.13.1
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.13.0...v0.13.1)
+
+### 🚀 Enhancements
+
+- **tmlanguage:** Highlight dotted @component names ([359d3cc](https://github.com/thedannywahl/cssdoc/commit/359d3cc))
+- **spec,core:** Add @members tag ([5a34dd2](https://github.com/thedannywahl/cssdoc/commit/5a34dd2))
+- **providers,lint-core,markdown:** Validate and render @members ([44279e9](https://github.com/thedannywahl/cssdoc/commit/44279e9))
+
+### 🩹 Fixes
+
+- **codemirror:** Highlight record names, including dotted ones ([3794e84](https://github.com/thedannywahl/cssdoc/commit/3794e84))
+- **core:** Don't flag a memberOf record's own base class as an undocumented part in a parent @scope ([234f422](https://github.com/thedannywahl/cssdoc/commit/234f422))
+
+### 🏡 Chore
+
+- **docs,schema:** Document and schema-sync @members and dotted @memberOf inference ([89e75bf](https://github.com/thedannywahl/cssdoc/commit/89e75bf))
+- Fix formatting ([53dd7f0](https://github.com/thedannywahl/cssdoc/commit/53dd7f0))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.13.0
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.12.0...v0.13.0)
