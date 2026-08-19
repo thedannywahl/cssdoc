@@ -82,6 +82,7 @@ modifier conventions (rscss, CUBE, OOCSS, and more) — see [Modifier convention
 | `@compat <text>`                                       | A browser-support / feature-compatibility note                        | authored               |
 | `@related <name> — <desc>`                             | A related component cross-reference                                   | authored               |
 | `@memberOf <name> [private]`                           | Declares this record a member of `<name>`'s family                    | authored               |
+| `@members <name>, <name>, …`                           | Declares this record's members, from the parent's side                | authored               |
 
 The `@tokens` tag annotates the auto-derived "Tokens consumed" list: cssdoc already collects every
 `var(--*)` a record references, and `@tokens --x — <desc>` attaches a description (a `@tokens` entry with
@@ -360,6 +361,29 @@ declaring scope" — marks the member as **never valid standalone or under a dif
 
 `private` is independent of `@sealed`/`@noextend` — those constrain whether a record's _own_ API surface
 can be extended; `private` constrains _where the record may appear at all_. A record can be both.
+
+A dotted `@component` name (`menu.item`) implies `@memberOf` its immediate parent automatically — writing
+`@component menu.item` alone is equivalent to `@component menu.item` + `@memberOf menu`. An explicit
+`@memberOf` still wins if it names a different parent.
+
+### Declaring members from the parent's side with `@members`
+
+`@memberOf` is authored on the child. When a set of members doesn't share a dotted name with their
+parent (so there's nothing to infer from), the parent can declare them directly instead:
+
+```css
+/**
+ * @component tabs
+ * @summary A tabbed panel.
+ * @members tab, panel
+ */
+.tabs {
+}
+```
+
+Each name is validated the same way `@memberOf`'s parent reference is — it must be a documented record,
+or linting flags it. `@members` and `@memberOf` both feed the same Subcomponents section; a member
+doesn't need to declare `@memberOf` back for `@members` to pick it up.
 
 ## A fuller example
 

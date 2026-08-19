@@ -69,6 +69,26 @@ test("the shipped JSON Schema validates the model output (schema stays in step w
   expect(ok).toBe(true);
 });
 
+test("@members round-trips through JSON and validates against the schema", () => {
+  const css = `
+/**
+ * @component tabs
+ * @summary Tabs.
+ * @members tab, panel
+ */
+.tabs {}
+`;
+  const entries = parseCssDocs(css);
+  const parsed = JSON.parse(renderJson(entries));
+  expect(parsed[0].members).toEqual(["tab", "panel"]);
+
+  const ajv = new Ajv({ allErrors: true });
+  const validate = ajv.compile(cssDocSchema);
+  const ok = validate(JSON.parse(JSON.stringify(entries)));
+  if (!ok) console.error(validate.errors);
+  expect(ok).toBe(true);
+});
+
 test("structureVariants (from @variant blocks) round-trips through JSON and validates against the schema", () => {
   const VARIANT_CSS = `
 /**
