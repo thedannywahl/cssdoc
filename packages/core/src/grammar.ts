@@ -407,6 +407,12 @@ export function parseDocComment(
 
     applyBlockTag(doc, definition.canonicalName, definition.tagNameWithoutAt, rest, parse);
   }
+  // A dotted component name (`menu.item`) implies membership in its immediate parent (`menu`), unless
+  // an explicit @memberOf already said otherwise.
+  if (!doc.memberOf && doc.component?.includes(".")) {
+    const dot = doc.component.lastIndexOf(".");
+    doc.memberOf = { component: doc.component.slice(0, dot), private: false };
+  }
   return doc;
 }
 
