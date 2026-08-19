@@ -792,6 +792,7 @@ function buildEntry(
     compat: doc.compat,
     related: doc.related,
     ...(doc.memberOf ? { memberOf: doc.memberOf } : {}),
+    ...(doc.members?.length ? { members: doc.members } : {}),
     elements,
     global: doc.global,
     ...(source ? { source } : {}),

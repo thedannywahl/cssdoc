@@ -125,6 +125,9 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
   // `@related` (loose "see also") — feeds the parent's Subcomponents section. A trailing `private`
   // keyword means this record must only ever appear inside that parent.
   { name: "memberOf", kind: "block" },
+  // The inverse direction of `@memberOf`: a parent declares its members directly, comma-separated —
+  // for members that don't share a dotted name with this record.
+  { name: "members", kind: "block" },
   // Modifier (flag) tags — release stage.
   { name: "alpha", kind: "modifier" },
   { name: "beta", kind: "modifier" },

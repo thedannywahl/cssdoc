@@ -131,7 +131,7 @@
       }
     },
     "block-tag": {
-      "match": "(@(?:selector|class|summary|remarks|privateRemarks|todo|deprecated|example|see|since|group|category|defaultValue|annotations|ref|readonly|global|preventExtensions|noextend|sealed|frozen|pseudo|function|keyframes|animation|layer|container|supports|media|responsive|a11y|accessibility|structure|element|demo|usage|compat|related|memberOf|alpha|beta|experimental|internal|public|stable))\\b",
+      "match": "(@(?:selector|class|summary|remarks|privateRemarks|todo|deprecated|example|see|since|group|category|defaultValue|annotations|ref|readonly|global|preventExtensions|noextend|sealed|frozen|pseudo|function|keyframes|animation|layer|container|supports|media|responsive|a11y|accessibility|structure|element|demo|usage|compat|related|memberOf|members|alpha|beta|experimental|internal|public|stable))\\b",
       "name": "storage.type.class.cssdoc"
     },
     "structure-tag": {

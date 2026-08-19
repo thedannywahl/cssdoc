@@ -1704,6 +1704,14 @@ test("@memberOf parses the bare and private forms", () => {
   expect(plain!.memberOf).toBeUndefined();
 });
 
+test("@members declares a parent's members directly, comma-separated", () => {
+  const [tabs] = parseCssDocs(`/**\n * @component tabs\n * @members tab, panel, item\n */\n.tabs {}`);
+  expect(tabs!.members).toEqual(["tab", "panel", "item"]);
+
+  const [plain] = parseCssDocs(`/**\n * @component alert\n */\n.alert {}`);
+  expect(plain!.members).toBeUndefined();
+});
+
 test("a dotted @component name implies @memberOf its immediate parent", () => {
   const [item] = parseCssDocs(`/**\n * @component foo.bar\n */\n.bar {}`);
   expect(item!.memberOf).toEqual({ component: "foo", private: false });

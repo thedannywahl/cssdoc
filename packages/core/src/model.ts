@@ -429,6 +429,8 @@ export interface CssDocEntry {
    * optionally `private` (must only ever appear inside that parent). Absent when not authored.
    */
   memberOf?: CssMemberOf;
+  /** Member record names from `@members` — the inverse direction, declared on the parent. */
+  members?: string[];
   /** Where the record was authored, when position info is available (for source links). */
   source?: CssSource;
   /**
