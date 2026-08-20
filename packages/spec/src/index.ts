@@ -86,7 +86,12 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
     kind: "block",
     description: "Declares the record's base CSS selector when it isn't a plain class.",
   },
-  { name: "class", kind: "block", aliasFor: "selector", description: "Deprecated alias for @selector." },
+  {
+    name: "class",
+    kind: "block",
+    aliasFor: "selector",
+    description: "Deprecated alias for @selector.",
+  },
   { name: "summary", kind: "block", description: "A one-line description of the record." },
   { name: "remarks", kind: "block", description: "Extended prose beyond the @summary." },
   {
@@ -130,7 +135,11 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
     kind: "block",
     description: "Marks the record's properties as fixed once set.",
   },
-  { name: "global", kind: "block", description: "Marks a modifier as applying to any record kind." },
+  {
+    name: "global",
+    kind: "block",
+    description: "Marks a modifier as applying to any record kind.",
+  },
   {
     name: "preventExtensions",
     kind: "block",
@@ -226,7 +235,12 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
     description: "Documents a design token (custom property) the component consumes.",
   },
   // CSSOM at-rule surfaces.
-  { name: "function", kind: "block", allowMultiple: true, description: "Documents a custom CSS function." },
+  {
+    name: "function",
+    kind: "block",
+    allowMultiple: true,
+    description: "Documents a custom CSS function.",
+  },
   {
     name: "keyframes",
     kind: "block",
@@ -272,7 +286,12 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
     description: "Alias for @media.",
   },
   // Accessibility.
-  { name: "a11y", kind: "block", allowMultiple: true, description: "Accessibility notes for the component." },
+  {
+    name: "a11y",
+    kind: "block",
+    allowMultiple: true,
+    description: "Accessibility notes for the component.",
+  },
   {
     name: "accessibility",
     kind: "block",
@@ -286,7 +305,12 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
     kind: "block",
     description: "The component's DOM shape, authored as a nested selector tree.",
   },
-  { name: "element", kind: "block", allowMultiple: true, description: "An HTML element the component may render as." },
+  {
+    name: "element",
+    kind: "block",
+    allowMultiple: true,
+    description: "An HTML element the component may render as.",
+  },
   { name: "demo", kind: "block", description: "A link to a live demo." },
   // Usage, compatibility & related.
   { name: "usage", kind: "block", description: "Guidance on when and how to use the component." },

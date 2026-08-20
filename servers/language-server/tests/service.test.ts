@@ -528,7 +528,12 @@ test("authoring hover: hovering a selector or property in the CSS source resolve
 
 test("doc-tag completion: `@` inside a /** */ comment in a stylesheet suggests cssdoc tags", () => {
   const svc = new CssDocLanguageService(createIndex(""));
-  const completions = svc.completions("/**\n * @", { line: 1, character: 4 }, "components.css", "css");
+  const completions = svc.completions(
+    "/**\n * @",
+    { line: 1, character: 4 },
+    "components.css",
+    "css",
+  );
   const labels = completions.map((c) => c.label);
   expect(labels).toEqual(expect.arrayContaining(["@component", "@modifier", "@part", "@summary"]));
   // Each suggestion carries a description of the tag's purpose alongside its kind.
@@ -539,7 +544,6 @@ test("doc-tag completion: `@` inside a /** */ comment in a stylesheet suggests c
   expect(svc.completions("@", { line: 0, character: 1 }, "a.css", "css")).toEqual([]);
   expect(svc.completions("/**\n * @", { line: 1, character: 4 }, "a.ts", "typescript")).toEqual([]);
 });
-
 
 test("hover works inside clsx() and inside embedded CSS (css`` template, Markdown fence)", () => {
   const pos = (text: string, needle: string) => {

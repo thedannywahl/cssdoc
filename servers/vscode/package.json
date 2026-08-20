@@ -184,20 +184,6 @@
       }
     }
   },
-  "configurationDefaults": {
-    "[css]": { "editor.quickSuggestions": { "comments": "on" } },
-    "[scss]": { "editor.quickSuggestions": { "comments": "on" } },
-    "[less]": { "editor.quickSuggestions": { "comments": "on" } },
-    "[html]": { "editor.quickSuggestions": { "comments": "on" } },
-    "[vue]": { "editor.quickSuggestions": { "comments": "on" } },
-    "[svelte]": { "editor.quickSuggestions": { "comments": "on" } },
-    "[astro]": { "editor.quickSuggestions": { "comments": "on" } },
-    "[markdown]": { "editor.quickSuggestions": { "comments": "on" } },
-    "[javascript]": { "editor.quickSuggestions": { "comments": "on", "strings": "on" } },
-    "[javascriptreact]": { "editor.quickSuggestions": { "comments": "on", "strings": "on" } },
-    "[typescript]": { "editor.quickSuggestions": { "comments": "on", "strings": "on" } },
-    "[typescriptreact]": { "editor.quickSuggestions": { "comments": "on", "strings": "on" } }
-  },
   "activationEvents": [
     "onLanguage:astro",
     "onLanguage:css",
@@ -215,5 +201,71 @@
   "icon": "icon.png",
   "engines": {
     "vscode": "^1.125.0"
+  },
+  "configurationDefaults": {
+    "[css]": {
+      "editor.quickSuggestions": {
+        "comments": "on"
+      }
+    },
+    "[scss]": {
+      "editor.quickSuggestions": {
+        "comments": "on"
+      }
+    },
+    "[less]": {
+      "editor.quickSuggestions": {
+        "comments": "on"
+      }
+    },
+    "[html]": {
+      "editor.quickSuggestions": {
+        "comments": "on"
+      }
+    },
+    "[vue]": {
+      "editor.quickSuggestions": {
+        "comments": "on"
+      }
+    },
+    "[svelte]": {
+      "editor.quickSuggestions": {
+        "comments": "on"
+      }
+    },
+    "[astro]": {
+      "editor.quickSuggestions": {
+        "comments": "on"
+      }
+    },
+    "[markdown]": {
+      "editor.quickSuggestions": {
+        "comments": "on"
+      }
+    },
+    "[javascript]": {
+      "editor.quickSuggestions": {
+        "comments": "on",
+        "strings": "on"
+      }
+    },
+    "[javascriptreact]": {
+      "editor.quickSuggestions": {
+        "comments": "on",
+        "strings": "on"
+      }
+    },
+    "[typescript]": {
+      "editor.quickSuggestions": {
+        "comments": "on",
+        "strings": "on"
+      }
+    },
+    "[typescriptreact]": {
+      "editor.quickSuggestions": {
+        "comments": "on",
+        "strings": "on"
+      }
+    }
   }
 }
