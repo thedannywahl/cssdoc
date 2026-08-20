@@ -11,12 +11,14 @@ const CSS = `
  * @ref 1
  * @modifier -color-secondary — A lower-emphasis action.
  * @modifier -variant-old — @deprecated {@link -color-secondary}
+ * @modifier -size-small — @alias {@link -size-sm}
  * @part .icon — A leading glyph.
  * @cssstate loading — Awaiting a response.
  */
 .button { color: red; }
 .button.-color-secondary { color: blue; }
 .button.-variant-old { color: gray; }
+.button.-size-sm { font-size: 0.875rem; }
 @scope (.button) { :scope > .icon { width: 1em; } }
 .button:state(loading) { opacity: 0.5; }
 @property --button-radius { syntax: "<length>"; inherits: false; }
@@ -39,7 +41,7 @@ test("renders a compact per-component digest with a title and blockquote", () =>
 test("summarizes each facet on one line and marks the utility kind", () => {
   const out = renderLlms(parseCssDocs(CSS));
   expect(out).toContain(
-    "- Modifiers: `-color-secondary` (A lower-emphasis action.), `-variant-old` (deprecated → `-color-secondary`)",
+    "- Modifiers: `-color-secondary` (A lower-emphasis action.), `-size-small` (alias → `-size-sm`), `-variant-old` (deprecated → `-color-secondary`)",
   );
   expect(out).toContain("- Annotations: `1` (Focus ring remains visible.)");
   expect(out).toContain("- Refs: `1`");

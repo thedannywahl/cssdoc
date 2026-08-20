@@ -569,20 +569,64 @@ function buildEntry(
   // Merge in authored prose; authored @modifier/@part entries also appear even if extraction missed.
   for (const [modName, mdoc] of doc.modifiers) {
     const existing = acc.modifiers.get(modName);
+    const parseCanonicalAndNote = (
+      raw: string,
+      allowBareCanonical: boolean,
+    ): { canonical?: string; note?: string } => {
+      const trimmed = raw.trim();
+      const normalizeCanonical = (value: string): string =>
+        value.replace(/^\./u, "").replace(/^\[/u, "").replace(/\]$/u, "");
+      const link = trimmed.match(/\{@link\s+(\.?[\w-]+|\[[^\]]*\])\s*\}/u);
+      if (link) {
+        const canonical = normalizeCanonical(link[1]);
+        const note = trimmed.replace(/\{@link\s+[^}]*\}/u, "").trim() || undefined;
+        return { canonical, note };
+      }
+      if (allowBareCanonical) {
+        const bare = trimmed.match(/^(\.?[\w-]+|\[[^\]]*\])(.*)$/u);
+        if (bare) {
+          const canonical = normalizeCanonical(bare[1]);
+          const note = bare[2].trim() || undefined;
+          return { canonical, note };
+        }
+      }
+      return { note: trimmed || undefined };
+    };
+    const depInline = mdoc.description?.match(/^(?:[-—]\s*)?@deprecated\b\s*([\s\S]*)$/u);
+    const aliasInline = mdoc.description?.match(/^(?:[-—]\s*)?@alias\b\s*([\s\S]*)$/u);
+    const depInlineParsed = depInline ? parseCanonicalAndNote(depInline[1], false) : undefined;
+    const aliasInlineParsed = aliasInline ? parseCanonicalAndNote(aliasInline[1], true) : undefined;
+    const authoredDescription = depInline || aliasInline ? undefined : mdoc.description;
     // An authored `@deprecated {@link -x}` contributes a canonical; plain text contributes a note. Build
     // with only the defined keys so merging onto an AST-derived deprecation never clobbers with undefined.
     // A bare `@deprecated` (no note, no link) still marks the modifier deprecated — as an empty object —
     // so lint can flag that it lacks a replacement.
     const dep =
-      mdoc.deprecated || mdoc.deprecatedCanonical || mdoc.deprecatedFlag
+      mdoc.deprecated || mdoc.deprecatedCanonical || mdoc.deprecatedFlag || depInline
         ? {
             ...(mdoc.deprecated ? { note: mdoc.deprecated } : {}),
             ...(mdoc.deprecatedCanonical ? { canonical: mdoc.deprecatedCanonical } : {}),
+            ...(depInlineParsed?.note ? { note: depInlineParsed.note } : {}),
+            ...(depInlineParsed?.canonical ? { canonical: depInlineParsed.canonical } : {}),
+          }
+        : undefined;
+    const alias =
+      mdoc.alias || mdoc.aliasCanonical || aliasInline
+        ? {
+            ...(mdoc.alias ? { note: mdoc.alias } : {}),
+            ...(mdoc.aliasCanonical ? { canonical: mdoc.aliasCanonical } : {}),
+            ...(aliasInlineParsed?.note ? { note: aliasInlineParsed.note } : {}),
+            ...(aliasInlineParsed?.canonical ? { canonical: aliasInlineParsed.canonical } : {}),
           }
         : undefined;
     if (existing) {
-      existing.description = combineDescription(inlineMode, mdoc.description, existing.description);
+      existing.description = combineDescription(
+        inlineMode,
+        authoredDescription,
+        existing.description,
+      );
       if (dep) existing.deprecated = { ...existing.deprecated, ...dep };
+      if (alias) existing.alias = { ...existing.alias, ...alias };
       if (mdoc.interaction) existing.interaction = true;
       if (mdoc.global) existing.global = true;
       if (mdoc.affects) existing.affects = [...(existing.affects ?? []), ...mdoc.affects];
@@ -594,8 +638,9 @@ function buildEntry(
         prop,
         value,
         ...(modName.includes("*") ? { pattern: true } : {}),
-        description: mdoc.description,
+        description: authoredDescription,
         deprecated: dep,
+        alias,
         ...(modSel ? { selector: modSel } : {}),
         ...(mdoc.interaction ? { interaction: true } : {}),
         ...(mdoc.global ? { global: true } : {}),

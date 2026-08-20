@@ -132,11 +132,21 @@ export function renderPage(entry: CssDocEntry, options: { indexHref?: string } =
     table(
       ["Modifier", "Description"],
       entry.modifiers.map((m) => {
-        if (m.deprecated) {
-          const via = m.deprecated.canonical
-            ? `use ${code(`.${m.deprecated.canonical}`)}`
-            : esc(m.deprecated.note);
-          return [code(`.${m.name}`), `<em>Deprecated</em> — ${via}`];
+        if (m.deprecated || m.alias) {
+          const details: string[] = [];
+          if (m.deprecated) {
+            const via = m.deprecated.canonical
+              ? `use ${code(`.${m.deprecated.canonical}`)}`
+              : esc(m.deprecated.note);
+            details.push(`<em>Deprecated</em> — ${via}`);
+          }
+          if (m.alias) {
+            const via = m.alias.canonical
+              ? `maps to ${code(`.${m.alias.canonical}`)}`
+              : esc(m.alias.note);
+            details.push(`<em>Alias</em> — ${via}`);
+          }
+          return [code(`.${m.name}`), details.join(" ")];
         }
         return [code(`.${m.name}`), esc(m.description) || "—"];
       }),

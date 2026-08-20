@@ -47,11 +47,21 @@ export interface RenderLlmsOptions {
 const clean = (text: string | undefined): string => (text ?? "").replace(/\s+/gu, " ").trim();
 
 function modifier(m: CssModifier): string {
-  if (m.deprecated) {
-    const via = m.deprecated.canonical
-      ? `→ \`-${m.deprecated.canonical.replace(/^-/u, "")}\``
-      : clean(m.deprecated.note);
-    return `\`-${m.name.replace(/^-/u, "")}\` (deprecated ${via})`.replace(/\s+\)/u, ")");
+  if (m.deprecated || m.alias) {
+    const tags: string[] = [];
+    if (m.deprecated) {
+      const via = m.deprecated.canonical
+        ? `→ \`-${m.deprecated.canonical.replace(/^-/u, "")}\``
+        : clean(m.deprecated.note);
+      tags.push(`deprecated ${via}`.trim());
+    }
+    if (m.alias) {
+      const via = m.alias.canonical
+        ? `→ \`-${m.alias.canonical.replace(/^-/u, "")}\``
+        : clean(m.alias.note);
+      tags.push(`alias ${via}`.trim());
+    }
+    return `\`-${m.name.replace(/^-/u, "")}\` (${tags.join("; ")})`.replace(/\s+\)/u, ")");
   }
   const desc = clean(m.description);
   return desc ? `\`-${m.name.replace(/^-/u, "")}\` (${desc})` : `\`-${m.name.replace(/^-/u, "")}\``;

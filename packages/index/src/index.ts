@@ -388,6 +388,33 @@ export class CssDocIndex {
     return undefined;
   }
 
+  /** The alias mapping of a modifier on `base`, if documented as an alias.
+   * Checks both base-specific and global modifiers (applying globalPrecedence logic). */
+  aliasOf(base: string, modifier: string): { canonical?: string; note?: string } | undefined {
+    const wanted = this.matcher.normalizeMember(modifier);
+    const baseRecord = this.byClass.get(stripDot(base));
+
+    const baseModifier = baseRecord?.entry.modifiers.find((m) =>
+      this.matcher.matchesModifier(m.name, wanted),
+    );
+    if (baseModifier) {
+      return baseModifier.alias;
+    }
+
+    for (const record of this.records) {
+      if (record.entry.global) {
+        const globalModifier = record.entry.modifiers.find((m) =>
+          this.matcher.matchesModifier(m.name, wanted),
+        );
+        if (globalModifier) {
+          return globalModifier.alias;
+        }
+      }
+    }
+
+    return undefined;
+  }
+
   /** Every declared custom property, paired with the record that declares it (for `var(...)` completion). */
   allCustomProperties(): { property: CssPropertyDeclared; record: string }[] {
     return this.records.flatMap((r) =>

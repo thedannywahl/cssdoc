@@ -355,6 +355,25 @@ test("an authored `@deprecated {@link -x}` sets the modifier's canonical", () =>
   expect(alias.deprecated?.canonical).toBe("-color-danger");
 });
 
+test("an authored `@alias {@link -x}` sets the modifier's alias canonical", () => {
+  const [comp] = parseCssDocs(
+    `/**\n * @component breadcrumb\n * @modifier -size-small — @alias {@link -size-sm}\n */\n` +
+      `.breadcrumb.-size-sm { font-size: 0.875rem; }`,
+    { modifierConvention: "rscss" },
+  );
+  const alias = comp.modifiers.find((m) => m.name === "-size-small")!;
+  expect(alias.alias?.canonical).toBe("-size-sm");
+});
+
+test("an authored `@alias` also parses under the default convention", () => {
+  const [comp] = parseCssDocs(
+    `/**\n * @component breadcrumb\n * @modifier -size-small — @alias {@link -size-sm}\n */\n` +
+      `.breadcrumb.-size-sm { font-size: 0.875rem; }`,
+  );
+  const alias = comp.modifiers.find((m) => m.name === "-size-small")!;
+  expect(alias.alias?.canonical).toBe("-size-sm");
+});
+
 test("an authored `@interaction` marker flags a JS-toggled modifier, even with no CSS rule at all", () => {
   const [comp] = parseCssDocs(
     `/**\n * @component progress-circle\n` +
@@ -848,6 +867,7 @@ test("parseDocComment reads the grammar, ignoring unknown tags and comment frami
  * @summary An inline message.
  * @modifier -color-info — Informational.
  * @modifier -render-icon — @deprecated Use the \`-icon-<name>\` glyph form.
+ * @modifier -size-small — @alias {@link -size-sm}
  * @cssproperty --alert-icon-bg <color> — The glyph fill.
  * @bogus this tag is ignored
  */`);
@@ -856,6 +876,9 @@ test("parseDocComment reads the grammar, ignoring unknown tags and comment frami
   expect(doc.modifiers.get("-color-info")).toEqual({ description: "Informational." });
   expect(doc.modifiers.get("-render-icon")).toEqual({
     deprecated: "Use the `-icon-<name>` glyph form.",
+  });
+  expect(doc.modifiers.get("-size-small")).toEqual({
+    aliasCanonical: "-size-sm",
   });
   expect(doc.cssProperties[0]).toEqual({
     name: "--alert-icon-bg",

@@ -23,6 +23,7 @@ export type RuleId =
   | "missing-summary"
   | "undocumented-modifier"
   | "deprecated-requires-canonical"
+  | "alias-requires-canonical"
   | "name-not-in-css"
   | "unknown-modifier"
   | "deprecated-modifier"
@@ -63,6 +64,7 @@ export const DEFAULT_RULE_SEVERITIES: RuleSeverities = {
   "missing-summary": "warn",
   "undocumented-modifier": "warn",
   "deprecated-requires-canonical": "warn",
+  "alias-requires-canonical": "warn",
   "name-not-in-css": "warn",
   "unknown-modifier": "warn",
   "deprecated-modifier": "warn",

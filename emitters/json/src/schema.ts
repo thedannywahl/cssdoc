@@ -38,6 +38,11 @@ const modifier = {
       additionalProperties: false,
       properties: { canonical: { type: "string" }, note: { type: "string" } },
     },
+    alias: {
+      type: "object",
+      additionalProperties: false,
+      properties: { canonical: { type: "string" }, note: { type: "string" } },
+    },
   },
 } as const;
 

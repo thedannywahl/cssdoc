@@ -52,6 +52,21 @@ test("an @interaction-flagged modifier is exempt from name-not-in-css, even with
   expect(rules).not.toContain("name-not-in-css");
 });
 
+test("an @alias-flagged modifier is exempt from name-not-in-css", () => {
+  const css = `
+/**
+ * @component breadcrumb
+ * @summary Breadcrumb navigation.
+ * @modifier -size-small — @alias {@link -size-sm}
+ */
+.breadcrumb {}
+.breadcrumb.-size-sm {}
+`;
+  const idx = createIndex(css, { modifierConvention: "rscss" });
+  const rules = lintModel(idx).map((d) => d.rule);
+  expect(rules).not.toContain("name-not-in-css");
+});
+
 test("name-not-in-css points at the @modifier tag's own line, not the whole doc-comment block", () => {
   const css = `
 /**
@@ -767,6 +782,25 @@ test("checkClassUsage flags an unknown modifier and a deprecated one", () => {
   expect(byRule).not.toContain("__none__");
   const deprecated = diagnostics.find((d) => d.rule === "deprecated-modifier")!;
   expect(deprecated.message).toContain("-color-secondary"); // suggests the canonical
+});
+
+test("checkClassUsage does not flag aliased modifiers as deprecated", () => {
+  const css = `
+/**
+ * @component breadcrumb
+ * @summary Breadcrumb navigation.
+ * @modifier -size-small — @alias {@link -size-sm}
+ */
+.breadcrumb {}
+.breadcrumb.-size-sm {}
+`;
+  const idx = createIndex(css, { modifierConvention: "rscss" });
+  const diagnostics = checkClassUsage(
+    [{ base: "breadcrumb", tokens: ["breadcrumb", "-size-small"], token: "-size-small" }],
+    idx,
+  );
+  const rules = diagnostics.map((d) => d.rule);
+  expect(rules).not.toContain("deprecated-modifier");
 });
 
 test("a concrete usage resolves to a `*` family modifier (AST-derived from a [class*] selector)", () => {

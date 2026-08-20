@@ -207,6 +207,13 @@
             "error"
           ]
         },
+        "alias-requires-canonical": {
+          "enum": [
+            "off",
+            "warn",
+            "error"
+          ]
+        },
         "name-not-in-css": {
           "enum": [
             "off",

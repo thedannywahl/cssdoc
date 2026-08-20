@@ -145,6 +145,8 @@ export interface RenderEntryOptions {
     stage?: Partial<Record<CssReleaseStage, string>>;
     /** Wrap the "Interaction" marker on a JS-only (`@interaction`-flagged) modifier row. */
     interaction?: string;
+    /** Wrap the "Alias" marker on a modifier row carrying an `@alias` mapping. */
+    alias?: string;
     /** Wrap the "Affects" marker on a modifier row carrying an `@affects` descendant note. */
     affects?: string;
   };
@@ -474,14 +476,32 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
 
   if (entry.modifiers.length) {
     const rows = entry.modifiers.map((m) => {
-      if (m.deprecated) {
-        const via = m.deprecated.canonical
-          ? `use \`.${m.deprecated.canonical}\`.`
-          : (m.deprecated.note ?? "");
-        const tail = m.description ? ` ${m.description}` : "";
-        const marker = tag(options.classNames?.deprecated, "Deprecated", "_Deprecated_");
-        const cellText = `${marker} — ${escProse(via + tail)}`;
-        return [`\`.${m.name}\``, cellText.replace(/\|/gu, "\\|")];
+      const aliasFromDescription: { canonical?: string; note?: string } | undefined =
+        !m.alias && m.description?.match(/^@alias\b\s*([\s\S]*)$/u)
+          ? { note: m.description.replace(/^@alias\b\s*/u, "").trim() }
+          : undefined;
+      const alias = m.alias ?? aliasFromDescription;
+      if (m.deprecated || alias) {
+        const notes: string[] = [];
+        if (m.deprecated) {
+          const via = m.deprecated.canonical
+            ? `use \`.${m.deprecated.canonical}\`.`
+            : (m.deprecated.note ?? "");
+          const marker = tag(options.classNames?.deprecated, "Deprecated", "_Deprecated_");
+          notes.push(`${marker} — ${escProse(via)}`);
+        }
+        if (alias) {
+          const canonicalLink = alias.canonical
+            ? alias.canonical
+            : alias.note?.match(/\{@link\s+([^}]+)\}/u)?.[1]?.replace(/^\./u, "");
+          const via = canonicalLink
+            ? `maps to \`.${canonicalLink}\`.`
+            : (alias.note?.replace(/\{@link\s+[^}]+\}/u, "").trim() ?? "");
+          const marker = tag(options.classNames?.alias, "Alias", "_Alias_");
+          notes.push(`${marker} — ${escProse(via)}`);
+        }
+        if (m.description && !aliasFromDescription) notes.push(escProse(m.description));
+        return [`\`.${m.name}\``, notes.join(" ").replace(/\|/gu, "\\|")];
       }
       if (m.interaction) {
         const marker = tag(options.classNames?.interaction, "Interaction", "_Interaction_");

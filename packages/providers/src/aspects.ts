@@ -845,12 +845,23 @@ export const modifier = {
           info.memberSpans.get(memberKey("modifier", m.name)) ??
           info.authoredModifierLines.get(m.name) ??
           info.span;
-        if (!m.description?.trim() && !m.deprecated) {
+        if (!m.description?.trim() && !m.deprecated && !m.alias) {
           out.push(
             warn({
               aspect: "modifier",
               rule: "undocumented-modifier",
               message: `Modifier "${sel}" of "${name}" has no @modifier description.`,
+              record: name,
+              span,
+            }),
+          );
+        }
+        if (m.alias && !m.alias.canonical) {
+          out.push(
+            warn({
+              aspect: "modifier",
+              rule: "alias-requires-canonical",
+              message: `Aliased modifier "${sel}" of "${name}" needs a canonical replacement ({@link}) or an alias target.`,
               record: name,
               span,
             }),
@@ -894,7 +905,9 @@ export const modifier = {
       // in the CSS, and `@interaction`-flagged modifiers (JS-toggled hooks with no styling) never are —
       // both are exempt from the "defined by a selector" check.
       const cssExempt = new Set(
-        info.entry.modifiers.filter((m) => m.deprecated || m.interaction).map((m) => m.name),
+        info.entry.modifiers
+          .filter((m) => m.deprecated || m.alias || m.interaction)
+          .map((m) => m.name),
       );
       for (const authored of info.authoredModifiers) {
         if (cssExempt.has(authored)) continue;
@@ -976,6 +989,12 @@ export const modifier = {
       lines.push("", `**Affects** — ${notes.join("; ")}`);
     }
     if (m.description) lines.push("", m.description);
+    if (m.alias) {
+      const advice = m.alias.canonical
+        ? `maps to \`${index.matcher.selectorFor(m.alias.canonical)}\``
+        : (m.alias.note ?? "");
+      lines.push("", `**Alias** — ${advice}`);
+    }
     if (m.deprecated) {
       const advice = m.deprecated.canonical
         ? `use \`${index.matcher.selectorFor(m.deprecated.canonical)}\``

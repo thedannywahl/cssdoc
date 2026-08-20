@@ -626,9 +626,11 @@ const STATUS_CSS = `
  * @experimental
  * @deprecated Use \`.card\` instead.
  * @modifier -variant-old — @deprecated {@link -color-secondary}
+ * @modifier -size-small — @alias {@link -size-sm}
  */
 .legacy-box { display: block; }
 .legacy-box.-variant-old {}
+.legacy-box.-size-sm {}
 `;
 
 test("classNames is opt-in: deprecation and stage markers stay pure markdown by default", () => {
@@ -675,6 +677,13 @@ test("an @interaction-flagged modifier renders an Interaction marker in the Modi
   const md = renderEntry(circle!);
   expect(md).toContain("_Interaction_");
   expect(md).toContain("Toggled while the ring grows.");
+});
+
+test("an @alias-flagged modifier renders an Alias marker in the Modifiers table", () => {
+  const [box] = parseCssDocs(STATUS_CSS, { modifierConvention: "rscss" });
+  const md = renderEntry(box!);
+  expect(md).toContain("_Alias_");
+  expect(md).toContain("maps to `.-size-sm`.");
 });
 
 test("an @affects-flagged modifier renders an Affects marker with a resolved link in the Modifiers table", () => {

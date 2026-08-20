@@ -96,6 +96,10 @@ export interface DocModifier {
    * `deprecated.canonical`, so an authored alias and a generated one resolve to the same reference.
    */
   deprecatedCanonical?: string;
+  /** Free-text alias guidance from an inline `@alias` tag on the modifier line. */
+  alias?: string;
+  /** The canonical modifier this alias maps to, from `@alias {@link -canonical}` or `@alias -canonical`. */
+  aliasCanonical?: string;
   /** Set from an inline `@interaction` marker — a JS-toggled class with no CSS of its own. */
   interaction?: boolean;
   /** Set from an inline `@global` marker — this modifier applies to any component/layout/rule/declaration (not just its parent record). */
@@ -268,18 +272,45 @@ export function stripCommentFraming(raw: string): string {
 
 /** Parse the inner body of a `@modifier` line's argument into a {@link DocModifier}. */
 function parseModifierBody(description: string | undefined): DocModifier {
+  const normalizeCanonical = (value: string | undefined): string | undefined =>
+    value?.replace(/^\./u, "").replace(/^\[/u, "").replace(/\]$/u, "");
+
+  const parseCanonicalAndNote = (
+    raw: string,
+    allowBareCanonical: boolean,
+  ): { canonical?: string; note?: string } => {
+    const trimmed = raw.trim();
+    const link = trimmed.match(/\{@link\s+(\.?[\w-]+|\[[^\]]*\])\s*\}/u);
+    if (link) {
+      const canonical = normalizeCanonical(link[1]);
+      const note = trimmed.replace(/\{@link\s+[^}]*\}/u, "").trim() || undefined;
+      return { canonical, note };
+    }
+    if (allowBareCanonical) {
+      const bare = trimmed.match(/^(\.?[\w-]+|\[[^\]]*\])(.*)$/u);
+      if (bare) {
+        const canonical = normalizeCanonical(bare[1]);
+        const note = bare[2].trim() || undefined;
+        return { canonical, note };
+      }
+    }
+    return { note: trimmed || undefined };
+  };
+
   // A description beginning `@deprecated …` marks the modifier deprecated. A `{@link -canonical}` in the
   // remainder names the modifier to use instead; any other text is the free-text note.
-  const dep = description?.match(/^@deprecated\b\s*([\s\S]*)$/u);
+  const dep = description?.match(/^(?:[-—]\s*)?@deprecated\b\s*([\s\S]*)$/u);
   if (dep) {
-    const rawNote = dep[1].trim();
-    // A `{@link …}` canonical may be any modifier member: a class (`.card--danger`, `.-color-danger`,
-    // `card--danger`) or an attribute selector (`[data-variant="ok"]`) — convention-agnostic here.
-    const link = rawNote.match(/\{@link\s+(\.?[\w-]+|\[[^\]]*\])\s*\}/u);
-    const canonical = link?.[1].replace(/^\./u, "").replace(/^\[/u, "").replace(/\]$/u, "");
-    const note = rawNote.replace(/\{@link\s+[^}]*\}/u, "").trim();
-    if (!note && !link) return { deprecatedFlag: true };
-    return { deprecated: note || undefined, deprecatedCanonical: canonical };
+    const parsed = parseCanonicalAndNote(dep[1], false);
+    if (!parsed.note && !parsed.canonical) return { deprecatedFlag: true };
+    return { deprecated: parsed.note, deprecatedCanonical: parsed.canonical };
+  }
+  // A description beginning `@alias …` maps this modifier to a canonical one while keeping both names
+  // valid. The canonical may be authored as `{@link -canonical}` or `-canonical` directly.
+  const alias = description?.match(/^(?:[-—]\s*)?@alias\b\s*([\s\S]*)$/u);
+  if (alias) {
+    const parsed = parseCanonicalAndNote(alias[1], true);
+    return { alias: parsed.note, aliasCanonical: parsed.canonical };
   }
   // A description beginning `@interaction …` marks a JS-toggled class with no CSS declarations of its
   // own (e.g. `@modifier -should-animate — @interaction Toggled while the ring grows.`); it's exempt

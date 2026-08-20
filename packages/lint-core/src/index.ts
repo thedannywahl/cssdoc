@@ -42,6 +42,7 @@ export type RuleName =
   | "component-name-case"
   | "part-name-case"
   | "deprecated-requires-canonical"
+  | "alias-requires-canonical"
   | "name-not-in-css"
   | "duplicate-record-id"
   | "duplicate-record-id-cross-kind"
@@ -69,6 +70,7 @@ export const RULE_NAMES: readonly RuleName[] = [
   "component-name-case",
   "part-name-case",
   "deprecated-requires-canonical",
+  "alias-requires-canonical",
   "name-not-in-css",
   "duplicate-record-id",
   "duplicate-record-id-cross-kind",

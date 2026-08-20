@@ -129,6 +129,7 @@ export const cssDocSchema = {
         "missing-summary": { enum: ["off", "warn", "error"] },
         "undocumented-modifier": { enum: ["off", "warn", "error"] },
         "deprecated-requires-canonical": { enum: ["off", "warn", "error"] },
+        "alias-requires-canonical": { enum: ["off", "warn", "error"] },
         "name-not-in-css": { enum: ["off", "warn", "error"] },
         "unknown-modifier": { enum: ["off", "warn", "error"] },
         "deprecated-modifier": { enum: ["off", "warn", "error"] },
