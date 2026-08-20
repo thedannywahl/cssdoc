@@ -35,8 +35,11 @@ governs its own CSS independently, so packages can use different conventions sid
 
 In CSS (`.css`, `.scss`, `.less`) and host files (HTML, JSX/TSX, Vue, Svelte, Astro, Markdown) you get:
 
-- **Completion** — a component's modifiers inside `class`/`className`, and declared custom properties
-  inside `var(--…)`;
+- **Completion** — cssdoc `@tags` (with their description) while typing inside a `/** */` doc
+  comment; a component's modifiers inside `class`/`className`; and declared custom properties
+  inside `var(--…)`. The extension enables `editor.quickSuggestions` for comments (and, in
+  JS/TS, strings) on these languages by default, so the tag menu pops up the same way JSDoc's does
+  — set it back to `off` in your own settings to disable that;
 - **Hover** — a modifier's or custom property's documentation. A `[class*="-icon-"]` attribute
   selector shows its `-icon-*` family; a reference to another documented component shows that
   component's card; and a custom property resolves its `var()` chain through the indexed sheets to a
