@@ -13,6 +13,12 @@ test("every tag has a name and a kind", () => {
   }
 });
 
+test("every tag has a one-line description for editor completions", () => {
+  for (const tag of CSSDOC_TAGS) {
+    expect(tag.description, `${tag.name} has no description`).toBeTruthy();
+  }
+});
+
 test("tag names are unique and match CSSDOC_TAG_NAMES order", () => {
   expect(CSSDOC_TAG_NAMES).toEqual(CSSDOC_TAGS.map((t) => t.name));
   expect(new Set(CSSDOC_TAG_NAMES).size).toBe(CSSDOC_TAG_NAMES.length);

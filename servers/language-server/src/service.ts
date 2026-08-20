@@ -538,7 +538,11 @@ export class CssDocLanguageService {
         const seen = new Set<string>();
         return config.supportedTagDefinitions
           .filter((t) => (seen.has(t.tagName) ? false : seen.add(t.tagName)))
-          .map((t) => ({ label: t.tagName, detail: `${t.syntaxKind} tag` }));
+          .map((t) => ({
+            label: t.tagName,
+            detail: `${t.syntaxKind} tag`,
+            documentation: t.description,
+          }));
       }
     }
 

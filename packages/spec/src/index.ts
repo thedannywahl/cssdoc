@@ -37,6 +37,8 @@ export interface CssdocTag {
   recordKind?: CssdocRecordKind;
   /** For the argument-bearing tags, the shape of the token that follows the tag. */
   argument?: CssdocTagArgument;
+  /** A one-line description of the tag's purpose, surfaced in editor completions/hover. */
+  description?: string;
 }
 
 /**
@@ -45,100 +47,291 @@ export interface CssdocTag {
  */
 export const CSSDOC_TAGS: readonly CssdocTag[] = [
   // Record-opening tags.
-  { name: "component", kind: "record", recordKind: "component" },
-  { name: "name", kind: "record", recordKind: "component" },
-  { name: "utility", kind: "record", recordKind: "utility" },
-  { name: "rule", kind: "record", recordKind: "rule" },
-  { name: "declaration", kind: "record", recordKind: "declaration" },
-  { name: "layout", kind: "record", recordKind: "layout" },
+  {
+    name: "component",
+    kind: "record",
+    recordKind: "component",
+    description: "Opens a component record — the doc comment above its base class rule.",
+  },
+  { name: "name", kind: "record", recordKind: "component", description: "Alias for @component." },
+  {
+    name: "utility",
+    kind: "record",
+    recordKind: "utility",
+    description: "Opens a utility record — a single-purpose class with no variants.",
+  },
+  {
+    name: "rule",
+    kind: "record",
+    recordKind: "rule",
+    description: "Opens a plain CSS rule record.",
+  },
+  {
+    name: "declaration",
+    kind: "record",
+    recordKind: "declaration",
+    description: "Opens a custom-property or custom-function declaration record.",
+  },
+  {
+    name: "layout",
+    kind: "record",
+    recordKind: "layout",
+    description: "Opens a layout record — a container/grid pattern rather than a component.",
+  },
   // Prose (TSDoc-adopted).
   // `@selector` declares the component's base CSS selector when it isn't a plain class:
   // attribute, ID, compound, or :host/:host-context(). `@class` is its deprecated alias.
-  { name: "selector", kind: "block" },
-  { name: "class", kind: "block", aliasFor: "selector" },
-  { name: "summary", kind: "block" },
-  { name: "remarks", kind: "block" },
-  { name: "privateRemarks", kind: "block" },
+  {
+    name: "selector",
+    kind: "block",
+    description: "Declares the record's base CSS selector when it isn't a plain class.",
+  },
+  { name: "class", kind: "block", aliasFor: "selector", description: "Deprecated alias for @selector." },
+  { name: "summary", kind: "block", description: "A one-line description of the record." },
+  { name: "remarks", kind: "block", description: "Extended prose beyond the @summary." },
+  {
+    name: "privateRemarks",
+    kind: "block",
+    description: "Internal prose stripped from public output.",
+  },
   // An internal development note; also recognized in `/* @todo … */` inline comments.
-  { name: "todo", kind: "block", allowMultiple: true },
-  { name: "deprecated", kind: "block" },
-  { name: "example", kind: "block", allowMultiple: true },
-  { name: "see", kind: "block", allowMultiple: true },
-  { name: "since", kind: "block" },
-  { name: "group", kind: "block" },
-  { name: "category", kind: "block", aliasFor: "group" },
-  { name: "defaultValue", kind: "block" },
+  {
+    name: "todo",
+    kind: "block",
+    allowMultiple: true,
+    description: "An internal to-do note.",
+  },
+  {
+    name: "deprecated",
+    kind: "block",
+    description: "Marks the record deprecated, with an optional replacement note.",
+  },
+  { name: "example", kind: "block", allowMultiple: true, description: "A usage example." },
+  { name: "see", kind: "block", allowMultiple: true, description: "A related link or reference." },
+  { name: "since", kind: "block", description: "The version the record was introduced in." },
+  { name: "group", kind: "block", description: "Groups the record under a category heading." },
+  { name: "category", kind: "block", aliasFor: "group", description: "Alias for @group." },
+  { name: "defaultValue", kind: "block", description: "The default value of a property/token." },
   // Annotation legends + local references.
-  { name: "annotations", kind: "block" },
-  { name: "ref", kind: "block", allowMultiple: true },
+  {
+    name: "annotations",
+    kind: "block",
+    description: "A legend defining numbered @ref callouts used elsewhere in the record.",
+  },
+  {
+    name: "ref",
+    kind: "block",
+    allowMultiple: true,
+    description: "A numbered reference into the @annotations legend.",
+  },
   // Object-model decorators.
-  { name: "readonly", kind: "block" },
-  { name: "global", kind: "block" },
-  { name: "preventExtensions", kind: "block" },
-  { name: "noextend", kind: "block", aliasFor: "preventExtensions" },
-  { name: "sealed", kind: "block" },
-  { name: "frozen", kind: "block" },
+  {
+    name: "readonly",
+    kind: "block",
+    description: "Marks the record's properties as fixed once set.",
+  },
+  { name: "global", kind: "block", description: "Marks a modifier as applying to any record kind." },
+  {
+    name: "preventExtensions",
+    kind: "block",
+    description: "Disallows adding new properties beyond those already declared.",
+  },
+  {
+    name: "noextend",
+    kind: "block",
+    aliasFor: "preventExtensions",
+    description: "Alias for @preventExtensions.",
+  },
+  {
+    name: "sealed",
+    kind: "block",
+    description: "Disallows resetting declared properties with CSS-wide keywords.",
+  },
+  { name: "frozen", kind: "block", description: "Combines @readonly and @sealed." },
   // CSS surface (existing + Custom Elements Manifest).
-  { name: "modifier", kind: "block", allowMultiple: true, argument: "modifier-name" },
-  { name: "part", kind: "block", allowMultiple: true, argument: "part-name" },
+  {
+    name: "modifier",
+    kind: "block",
+    allowMultiple: true,
+    argument: "modifier-name",
+    description: "Documents a BEM-style modifier class.",
+  },
+  {
+    name: "part",
+    kind: "block",
+    allowMultiple: true,
+    argument: "part-name",
+    description: "Documents a structural part/element of the component.",
+  },
   // Distinct from `part`: a shadow-DOM exposed part (`::part(name)`), named by a bare identifier.
-  { name: "csspart", kind: "block", allowMultiple: true, argument: "part-name" },
-  { name: "cssproperty", kind: "block", allowMultiple: true, argument: "custom-property" },
+  {
+    name: "csspart",
+    kind: "block",
+    allowMultiple: true,
+    argument: "part-name",
+    description: "Documents a shadow-DOM exposed part (::part()).",
+  },
+  {
+    name: "cssproperty",
+    kind: "block",
+    allowMultiple: true,
+    argument: "custom-property",
+    description: "Documents a consumed or declared custom property.",
+  },
   {
     name: "property",
     kind: "block",
     allowMultiple: true,
     aliasFor: "cssproperty",
     argument: "custom-property",
+    description: "Alias for @cssproperty.",
   },
   // A component state: a custom `:state(x)` state, a native pseudo-class (`:disabled`), or a bracketed
   // attribute-reflected state (`[aria-sort="ascending"]`, `[data-state="open"]`) for ARIA/data-* states.
-  { name: "cssstate", kind: "block", allowMultiple: true },
+  {
+    name: "cssstate",
+    kind: "block",
+    allowMultiple: true,
+    description:
+      "Documents a component state: a :state(), a native pseudo-class, or an ARIA/data-* attribute.",
+  },
   // A native pseudo-element the component styles (`::before`, `::marker`, …), named by `::name`.
-  { name: "pseudo", kind: "block", allowMultiple: true },
+  {
+    name: "pseudo",
+    kind: "block",
+    allowMultiple: true,
+    description: "Documents a native pseudo-element the component styles (::before, ::marker…).",
+  },
   // Prose for an optional-ancestor wrapper named in `@structure` (e.g. `.badge-wrapper`).
-  { name: "wrapper", kind: "block", allowMultiple: true, argument: "part-name" },
-  { name: "slot", kind: "block", allowMultiple: true, argument: "part-name" },
+  {
+    name: "wrapper",
+    kind: "block",
+    allowMultiple: true,
+    argument: "part-name",
+    description: "Documents an optional-ancestor wrapper named in @structure.",
+  },
+  {
+    name: "slot",
+    kind: "block",
+    allowMultiple: true,
+    argument: "part-name",
+    description: "Documents a <slot> the component exposes.",
+  },
   // A design token the component consumes (`var(--*)`); the set is derived from the CSS, this adds prose.
-  { name: "tokens", kind: "block", allowMultiple: true, argument: "custom-property" },
+  {
+    name: "tokens",
+    kind: "block",
+    allowMultiple: true,
+    argument: "custom-property",
+    description: "Documents a design token (custom property) the component consumes.",
+  },
   // CSSOM at-rule surfaces.
-  { name: "function", kind: "block", allowMultiple: true },
-  { name: "keyframes", kind: "block", allowMultiple: true },
-  { name: "animation", kind: "block", allowMultiple: true, aliasFor: "keyframes" },
-  { name: "layer", kind: "block", allowMultiple: true },
-  { name: "container", kind: "block", allowMultiple: true },
-  { name: "supports", kind: "block", allowMultiple: true },
-  { name: "media", kind: "block", allowMultiple: true },
-  { name: "responsive", kind: "block", allowMultiple: true, aliasFor: "media" },
+  { name: "function", kind: "block", allowMultiple: true, description: "Documents a custom CSS function." },
+  {
+    name: "keyframes",
+    kind: "block",
+    allowMultiple: true,
+    description: "Documents a @keyframes animation.",
+  },
+  {
+    name: "animation",
+    kind: "block",
+    allowMultiple: true,
+    aliasFor: "keyframes",
+    description: "Alias for @keyframes.",
+  },
+  {
+    name: "layer",
+    kind: "block",
+    allowMultiple: true,
+    description: "Documents a @layer the component participates in.",
+  },
+  {
+    name: "container",
+    kind: "block",
+    allowMultiple: true,
+    description: "Documents a @container query the component responds to.",
+  },
+  {
+    name: "supports",
+    kind: "block",
+    allowMultiple: true,
+    description: "Documents an @supports feature query the component relies on.",
+  },
+  {
+    name: "media",
+    kind: "block",
+    allowMultiple: true,
+    description: "Documents an @media query the component responds to.",
+  },
+  {
+    name: "responsive",
+    kind: "block",
+    allowMultiple: true,
+    aliasFor: "media",
+    description: "Alias for @media.",
+  },
   // Accessibility.
-  { name: "a11y", kind: "block", allowMultiple: true },
-  { name: "accessibility", kind: "block", allowMultiple: true, aliasFor: "a11y" },
+  { name: "a11y", kind: "block", allowMultiple: true, description: "Accessibility notes for the component." },
+  {
+    name: "accessibility",
+    kind: "block",
+    allowMultiple: true,
+    aliasFor: "a11y",
+    description: "Alias for @a11y.",
+  },
   // Structure & demo.
-  { name: "structure", kind: "block" },
-  { name: "element", kind: "block", allowMultiple: true },
-  { name: "demo", kind: "block" },
+  {
+    name: "structure",
+    kind: "block",
+    description: "The component's DOM shape, authored as a nested selector tree.",
+  },
+  { name: "element", kind: "block", allowMultiple: true, description: "An HTML element the component may render as." },
+  { name: "demo", kind: "block", description: "A link to a live demo." },
   // Usage, compatibility & related.
-  { name: "usage", kind: "block" },
-  { name: "compat", kind: "block", allowMultiple: true },
-  { name: "related", kind: "block", allowMultiple: true },
+  { name: "usage", kind: "block", description: "Guidance on when and how to use the component." },
+  {
+    name: "compat",
+    kind: "block",
+    allowMultiple: true,
+    description: "A browser/engine compatibility note.",
+  },
+  {
+    name: "related",
+    kind: "block",
+    allowMultiple: true,
+    description: "A loosely related record (see-also).",
+  },
   // Declared family membership: distinct from `@structure` containment (fixed position) and from
   // `@related` (loose "see also") — feeds the parent's Subcomponents section. A trailing `private`
   // keyword means this record must only ever appear inside that parent.
-  { name: "memberOf", kind: "block" },
+  {
+    name: "memberOf",
+    kind: "block",
+    description: "Declares this record as a member of a parent record.",
+  },
   // The inverse direction of `@memberOf`: a parent declares its members directly, comma-separated —
   // for members that don't share a dotted name with this record.
-  { name: "members", kind: "block" },
+  {
+    name: "members",
+    kind: "block",
+    description: "Declares a parent's members directly, comma-separated.",
+  },
   // Modifier (flag) tags — release stage.
-  { name: "alpha", kind: "modifier" },
-  { name: "beta", kind: "modifier" },
-  { name: "experimental", kind: "modifier" },
-  { name: "internal", kind: "modifier" },
-  { name: "public", kind: "modifier" },
-  { name: "stable", kind: "modifier" },
+  { name: "alpha", kind: "modifier", description: "Marks the record as alpha-stage." },
+  { name: "beta", kind: "modifier", description: "Marks the record as beta-stage." },
+  { name: "experimental", kind: "modifier", description: "Marks the record as experimental." },
+  { name: "internal", kind: "modifier", description: "Marks the record as internal-only." },
+  { name: "public", kind: "modifier", description: "Marks the record as public API." },
+  { name: "stable", kind: "modifier", description: "Marks the record as stable." },
   // Inline tags.
-  { name: "link", kind: "inline" },
-  { name: "inheritDoc", kind: "inline" },
-  { name: "label", kind: "inline" },
+  { name: "link", kind: "inline", description: "An inline link to another record or a URL." },
+  { name: "inheritDoc", kind: "inline", description: "Inherits prose from another record." },
+  {
+    name: "label",
+    kind: "inline",
+    description: "An inline label for a @structure/@example annotation.",
+  },
 ];
 
 /** The names (without `@`) of every standard tag, in canonical order. */

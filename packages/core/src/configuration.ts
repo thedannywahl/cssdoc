@@ -39,6 +39,8 @@ export interface CssDocTagDefinitionOptions {
   recordKind?: CssRecordKind;
   /** The canonical tag (without `@`) this tag is an alias of, e.g. `@csspart` aliases `part`. */
   aliasFor?: string;
+  /** A one-line description of the tag's purpose, surfaced in editor completions/hover. */
+  description?: string;
 }
 
 const TAG_NAME_RE = /^@?[a-zA-Z][a-zA-Z0-9-]*$/u;
@@ -54,6 +56,8 @@ export class CssDocTagDefinition {
   readonly recordKind?: CssRecordKind;
   /** The canonical tag name (without `@`) this aliases, if any; otherwise its own name. */
   readonly aliasFor?: string;
+  /** A one-line description of the tag's purpose, surfaced in editor completions/hover. */
+  readonly description?: string;
 
   constructor(options: CssDocTagDefinitionOptions) {
     const raw = options.tagName.trim();
@@ -66,6 +70,7 @@ export class CssDocTagDefinition {
     this.allowMultiple = options.allowMultiple ?? false;
     this.recordKind = options.recordKind;
     this.aliasFor = options.aliasFor;
+    this.description = options.description;
   }
 
   /** The tag this definition resolves to when handled — its alias target, or itself. */
@@ -202,6 +207,7 @@ export class CssDocConfiguration {
         ...(tag.recordKind ? { recordKind: tag.recordKind } : {}),
         ...(tag.aliasFor ? { aliasFor: tag.aliasFor } : {}),
         ...(tag.allowMultiple ? { allowMultiple: true } : {}),
+        ...(tag.description ? { description: tag.description } : {}),
       }),
     );
   }
