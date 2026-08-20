@@ -23,9 +23,7 @@
     "check": "vp check",
     "test": "vp test",
     "icon": "node scripts/gen-icon.mjs",
-    "package": "vp run -t build && vsce package --no-dependencies -o cssdoc.vsix",
-    "publish:vsce": "vsce publish --no-dependencies --packagePath cssdoc.vsix",
-    "publish:ovsx": "ovsx publish cssdoc.vsix -p \"$OVSX_PAT\""
+    "package": "vp run -t build && vsce package --no-dependencies -o cssdoc.vsix"
   },
   "dependencies": {
     "@cssdoc/language-server": "workspace:*",
