@@ -4,6 +4,25 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.13.2
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.13.1...v0.13.2)
+
+### 🚀 Enhancements
+
+- Add support for alias modifiers with canonical mapping and update related schema ([d7bd8f4](https://github.com/thedannywahl/cssdoc/commit/d7bd8f4))
+- Add descriptions to CSSDoc tags for improved editor completions ([8a35af1](https://github.com/thedannywahl/cssdoc/commit/8a35af1))
+- Enhance editor support with quick suggestions for various languages ([c26413e](https://github.com/thedannywahl/cssdoc/commit/c26413e))
+- **vscode:** Update configurationDefaults for improved quick suggestions in multiple languages ([8646b88](https://github.com/thedannywahl/cssdoc/commit/8646b88))
+
+### 🩹 Fixes
+
+- **vscode:** Pass the OVSX_PAT token explicitly to ovsx publish ([a331a9c](https://github.com/thedannywahl/cssdoc/commit/a331a9c))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.13.1
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.13.0...v0.13.1)
