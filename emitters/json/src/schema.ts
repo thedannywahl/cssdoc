@@ -191,7 +191,28 @@ export const cssDocEntrySchema = {
     },
     compat: { type: "array", items: { type: "string" } },
     related: { type: "array", items: named },
+    memberOf: {
+      type: "object",
+      required: ["component", "private"],
+      additionalProperties: false,
+      properties: {
+        component: { type: "string" },
+        private: { type: "boolean" },
+      },
+    },
     members: { type: "array", items: { type: "string" } },
+    memberDeclarations: {
+      type: "array",
+      items: {
+        type: "object",
+        required: ["name", "private"],
+        additionalProperties: false,
+        properties: {
+          name: { type: "string" },
+          private: { type: "boolean" },
+        },
+      },
+    },
     elements: {
       type: "object",
       required: ["default", "profiles"],

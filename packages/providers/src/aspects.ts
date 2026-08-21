@@ -103,7 +103,7 @@ const globMatch = (pattern: string, value: string): boolean => {
 
 const STRUCTURE_REF_KIND_RE = /^(component|name|utility|rule|declaration|layout)$/u;
 
-type StructureRecordRef = { kind?: string; name: string; profile?: string };
+type StructureRecordRef = { kind?: string; name: string; profile?: string; private?: boolean };
 
 const parseStructureRecordRef = (selector: string): StructureRecordRef | undefined => {
   if (!selector.startsWith("@")) return undefined;
@@ -111,38 +111,46 @@ const parseStructureRecordRef = (selector: string): StructureRecordRef | undefin
   if (!raw) return undefined;
 
   const typed = raw.match(
-    /^(component|name|utility|rule|declaration|layout)\s+([\w-]+)(?::([\w-]+))?$/u,
+    /^(component|name|utility|rule|declaration|layout)\s+([\w-]+(?:\.[\w-]+)*)(?::([\w-]+))?(?:\s+(private))?$/u,
   );
   if (typed) {
     return {
       kind: typed[1] === "name" ? "component" : typed[1],
       name: typed[2],
       profile: typed[3],
+      private: Boolean(typed[4]),
     };
   }
 
   const typedCustomMedia = raw.match(
-    /^(component|name|utility|rule|declaration|layout)\s+([\w-]+)\s+\(\s*(--[\w-]+)\s*\)$/u,
+    /^(component|name|utility|rule|declaration|layout)\s+([\w-]+(?:\.[\w-]+)*)\s+\(\s*(--[\w-]+)\s*\)(?:\s+(private))?$/u,
   );
   if (typedCustomMedia) {
     return {
       kind: typedCustomMedia[1] === "name" ? "component" : typedCustomMedia[1],
       name: typedCustomMedia[2],
       profile: typedCustomMedia[3],
+      private: Boolean(typedCustomMedia[4]),
     };
   }
 
-  const shorthandCustomMedia = raw.match(/^([\w-]+)\s+\(\s*(--[\w-]+)\s*\)$/u);
+  const shorthandCustomMedia = raw.match(
+    /^([\w-]+(?:\.[\w-]+)*)\s+\(\s*(--[\w-]+)\s*\)(?:\s+(private))?$/u,
+  );
   if (shorthandCustomMedia) {
     if (STRUCTURE_REF_KIND_RE.test(shorthandCustomMedia[1])) return undefined;
-    return { name: shorthandCustomMedia[1], profile: shorthandCustomMedia[2] };
+    return {
+      name: shorthandCustomMedia[1],
+      profile: shorthandCustomMedia[2],
+      private: Boolean(shorthandCustomMedia[3]),
+    };
   }
 
-  const shorthand = raw.match(/^([\w-]+)(?::([\w-]+))?$/u);
+  const shorthand = raw.match(/^([\w-]+(?:\.[\w-]+)*)(?::([\w-]+))?(?:\s+(private))?$/u);
   if (!shorthand) return undefined;
   // Guard against malformed `@kind` without a name being interpreted as shorthand.
   if (STRUCTURE_REF_KIND_RE.test(shorthand[1])) return undefined;
-  return { name: shorthand[1], profile: shorthand[2] };
+  return { name: shorthand[1], profile: shorthand[2], private: Boolean(shorthand[3]) };
 };
 
 /**
@@ -557,6 +565,49 @@ export const record = {
               aspect: "record",
               rule: "members-unknown-component",
               message: `@members references "${memberName}", but no documented record with that name was found.`,
+              record: info.entry.name,
+              span: info.span,
+            }),
+          );
+        }
+      }
+
+      for (const memberDecl of info.entry.memberDeclarations ?? []) {
+        if (!memberDecl.private) continue;
+        const member =
+          siblingIndex.records.find(
+            (r) => r.entry.name === memberDecl.name && r.entry.kind === "component",
+          ) ?? siblingIndex.records.find((r) => r.entry.name === memberDecl.name);
+        if (!member) continue; // unknown names are covered by members-unknown-component
+
+        const declaresPrivateBack =
+          member.entry.memberOf?.component === info.entry.name && member.entry.memberOf.private;
+        if (!declaresPrivateBack) {
+          out.push(
+            warn({
+              aspect: "record",
+              rule: "private-member-orphaned",
+              message: `"${info.entry.name}" declares @member "${memberDecl.name}" private, but "${memberDecl.name}" doesn't declare a matching @memberOf "${info.entry.name}" private.`,
+              record: info.entry.name,
+              span: info.span,
+            }),
+          );
+          continue;
+        }
+
+        const parentReferencesMember = structureReferences(
+          info.entry.structureVariants?.length
+            ? info.entry.structureVariants.flatMap((v) => v.nodes)
+            : (info.entry.structure ?? []),
+          stripDot(member.entry.className),
+          member.entry.name,
+        );
+        if (!parentReferencesMember) {
+          out.push(
+            warn({
+              aspect: "record",
+              rule: "private-member-orphaned",
+              message: `"${info.entry.name}" declares @member "${memberDecl.name}" private, but "${info.entry.name}"'s own @structure never references it back.`,
               record: info.entry.name,
               span: info.span,
             }),

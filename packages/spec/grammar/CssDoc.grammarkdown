@@ -478,6 +478,12 @@ MemberOfTag :
     `@memberOf` WhiteSpace RecordName
     `@memberOf` WhiteSpace RecordName WhiteSpace `private`
 
+// Parent-side member declaration (repeatable): `@member child` (or `@member child private`).
+// Inside `@structure`, `@member child` is treated as local structure content (not a new block tag).
+MemberTag :
+    `@member` WhiteSpace RecordName
+    `@member` WhiteSpace RecordName WhiteSpace `private`
+
 // --- Modifier (flag) tags: release stage / traits; presence means true ------------------------
 
 ModifierFlagTag :
@@ -526,6 +532,7 @@ BlockTag :
     CompatTag
     RelatedTag
     MemberOfTag
+    MemberTag
     DeprecatedTag
     SeeTag
     SinceTag

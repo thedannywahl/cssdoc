@@ -1019,6 +1019,57 @@ test("@structure record refs do not redefine the record", () => {
   ]);
 });
 
+test("@structure resolves @member against the immediate parent scope", () => {
+  const [entry] = parseCssDocs(
+    [
+      "/**",
+      " * @component foo",
+      " * @structure",
+      " * .foo {",
+      " *   @member bar:optional {}",
+      " * }",
+      " */",
+      ".foo {}",
+    ].join("\n"),
+  );
+
+  expect(entry.structure).toEqual([
+    {
+      selector: ".foo",
+      children: [{ selector: "@component foo.bar:optional", children: [] }],
+    },
+  ]);
+});
+
+test("@structure @member uses the closest parent record ref when nested", () => {
+  const [entry] = parseCssDocs(
+    [
+      "/**",
+      " * @component app-shell",
+      " * @structure",
+      " * .app-shell {",
+      " *   @component nav.menu {",
+      " *     @member item {}",
+      " *   }",
+      " * }",
+      " */",
+      ".app-shell {}",
+    ].join("\n"),
+  );
+
+  expect(entry.structure).toEqual([
+    {
+      selector: ".app-shell",
+      children: [
+        {
+          selector: "@component nav.menu",
+          children: [{ selector: "@component nav.menu.item", children: [] }],
+        },
+      ],
+    },
+  ]);
+});
+
 test("@element resolves implicit any, explicit any, and negation", () => {
   const [implicit] = parseCssDocs(`/**\n * @component top-navigation\n */\n.topNav {}`);
   expect(implicit.elements?.default.any).toBe(true);
@@ -1735,6 +1786,29 @@ test("@members declares a parent's members directly, comma-separated", () => {
 
   const [plain] = parseCssDocs(`/**\n * @component alert\n */\n.alert {}`);
   expect(plain!.members).toBeUndefined();
+});
+
+test("@member appends repeatable parent-side member declarations", () => {
+  const [tabs] = parseCssDocs(
+    `/**\n * @component tabs\n * @member tab\n * @member panel private\n */\n.tabs {}`,
+  );
+  expect(tabs!.members).toEqual(["tab", "panel"]);
+  expect(tabs!.memberDeclarations).toEqual([
+    { name: "tab", private: false },
+    { name: "panel", private: true },
+  ]);
+});
+
+test("@members and @member merge in stable order with de-duplication", () => {
+  const [tabs] = parseCssDocs(
+    `/**\n * @component tabs\n * @members tab, panel\n * @member panel private\n * @member item\n */\n.tabs {}`,
+  );
+  expect(tabs!.members).toEqual(["tab", "panel", "item"]);
+  expect(tabs!.memberDeclarations).toEqual([
+    { name: "tab", private: false },
+    { name: "panel", private: true },
+    { name: "item", private: false },
+  ]);
 });
 
 test("a dotted @component name implies @memberOf its immediate parent", () => {

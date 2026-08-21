@@ -341,6 +341,13 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
     kind: "block",
     description: "Declares a parent's members directly, comma-separated.",
   },
+  // A single parent-side member declaration (`@member child [private]`), repeatable.
+  {
+    name: "member",
+    kind: "block",
+    allowMultiple: true,
+    description: "Declares one member record on a parent, optionally private.",
+  },
   // Modifier (flag) tags — release stage.
   { name: "alpha", kind: "modifier", description: "Marks the record as alpha-stage." },
   { name: "beta", kind: "modifier", description: "Marks the record as beta-stage." },

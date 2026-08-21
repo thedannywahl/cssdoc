@@ -213,6 +213,8 @@ export interface ParsedDoc {
   memberOf?: { component: string; private: boolean };
   /** `@members <name>, <name>, …` — the inverse direction, when authored. */
   members?: string[];
+  /** Repeatable `@member <name> [private]` declarations on the parent record. */
+  memberEntries: { name: string; private: boolean }[];
   /** Set by a record-level `@global` tag — modifiers of this record apply to any other component/layout/rule/declaration. */
   global?: boolean;
   /** Content of registered custom (block) tags, keyed by tag name without its `@`. */
@@ -386,6 +388,7 @@ export function parseDocComment(
     },
     compat: [],
     related: [],
+    memberEntries: [],
     customBlocks: new Map(),
   };
 
@@ -487,8 +490,10 @@ function applyBlockTag(
       break;
     case "structure": {
       const { description, css } = splitStructureBody(rest);
-      const variants = parseStructureVariants(css, parse);
-      doc.structure = variants ? (variants[0]?.nodes ?? []) : parseStructure(css, parse);
+      const variants = parseStructureVariants(css, parse, doc.component);
+      doc.structure = variants
+        ? (variants[0]?.nodes ?? [])
+        : parseStructure(css, parse, doc.component);
       if (variants) doc.structureVariants = variants;
       if (description) doc.structureDescription = description;
       break;
@@ -671,6 +676,11 @@ function applyBlockTag(
         .filter(Boolean);
       break;
     }
+    case "member": {
+      const m = rest.match(/^([\w-]+)(?:\s+(private))?\s*$/u);
+      if (m) doc.memberEntries.push({ name: m[1], private: Boolean(m[2]) });
+      break;
+    }
     default: {
       // A supported custom block tag: capture its content, keyed by tag name.
       const list = doc.customBlocks.get(tagName) ?? [];
@@ -837,11 +847,12 @@ const CARDINALITY: Record<string, NonNullable<StructureNode["cardinality"]>> = {
 const CARD_RE = /:(optional|opt|one-or-more|more|many)\s*$/u;
 // A single-class `:is(.<class>)` signals the element itself carries that class (co-location).
 const COLOC_RE = /:is\(\s*([^,)]+?)\s*\)/u;
-const STRUCTURE_REF_RE = /^[a-zA-Z][\w-]*$/u;
+const STRUCTURE_REF_RE = /^[a-zA-Z][\w-]*(?:\.[\w-]+)*$/u;
 const STRUCTURE_REF_PROFILE_RE = /^:\s*([\w-]+)$/u;
-const STRUCTURE_REF_TYPED_RE = /^([\w-]+)(?::([\w-]+))?$/u;
+const STRUCTURE_REF_TYPED_RE = /^([\w-]+(?:\.[\w-]+)*)(?::([\w-]+))?$/u;
 const STRUCTURE_REF_CUSTOM_MEDIA_RE = /^\(\s*(--[\w-]+)\s*\)$/u;
-const STRUCTURE_REF_TYPED_CUSTOM_MEDIA_RE = /^([\w-]+)\s+\(\s*(--[\w-]+)\s*\)$/u;
+const STRUCTURE_REF_TYPED_CUSTOM_MEDIA_RE = /^([\w-]+(?:\.[\w-]+)*)\s+\(\s*(--[\w-]+)\s*\)$/u;
+const STRUCTURE_MEMBER_RE = /^([\w-]+)(?::([\w-]+))?(?:\s+(private))?$/u;
 const STRUCTURE_REF_KINDS = new Set([
   "component",
   "name",
@@ -852,6 +863,9 @@ const STRUCTURE_REF_KINDS = new Set([
 ]);
 
 function normalizeStructureAtRuleRef(name: string, params: string): string | undefined {
+  if (name === "member") {
+    return undefined;
+  }
   if (name.includes(":")) {
     if (params.trim()) return undefined;
     const [record, profile] = name.split(":", 2);
@@ -877,8 +891,33 @@ function normalizeStructureAtRuleRef(name: string, params: string): string | und
   return `@${name}:${profile[1]}`;
 }
 
+function resolveStructureMemberRef(
+  params: string,
+  currentParent: string | undefined,
+): string | undefined {
+  if (!currentParent) return undefined;
+  const m = params.trim().match(STRUCTURE_MEMBER_RE);
+  if (!m) return undefined;
+  const name = m[1];
+  const profile = m[2];
+  const privateFlag = Boolean(m[3]);
+  return `@component ${currentParent}.${name}${profile ? `:${profile}` : ""}${privateFlag ? " private" : ""}`;
+}
+
+function structureReferenceComponentName(selector: string): string | undefined {
+  if (!selector.startsWith("@")) return undefined;
+  const raw = selector.slice(1).trim();
+  const typed = raw.match(
+    /^(component|name|utility|rule|declaration|layout)\s+([\w-]+(?:\.[\w-]+)*)(?::[\w-]+)?(?:\s+private)?$/u,
+  );
+  if (typed) return typed[2];
+  const shorthand = raw.match(/^([\w-]+(?:\.[\w-]+)*)(?::[\w-]+)?(?:\s+private)?$/u);
+  if (!shorthand || STRUCTURE_REF_KINDS.has(shorthand[1])) return undefined;
+  return shorthand[1];
+}
+
 /** Build a {@link StructureNode} tree from one already-parsed level of a `@structure` body. */
-function buildStructureNodes(nodes: readonly ChildNode[]): StructureNode[] {
+function buildStructureNodes(nodes: readonly ChildNode[], currentParent?: string): StructureNode[] {
   const out: StructureNode[] = [];
   for (const rule of nodes) {
     if (rule.type === "atrule" && rule.name === "scope") {
@@ -886,14 +925,22 @@ function buildStructureNodes(nodes: readonly ChildNode[]): StructureNode[] {
       out.push({
         selector: "",
         scope: rule.params.trim(),
-        children: buildStructureNodes(rule.nodes ?? []),
+        children: buildStructureNodes(rule.nodes ?? [], currentParent),
       });
+      continue;
+    }
+    if (rule.type === "atrule" && rule.name === "member") {
+      const selector = resolveStructureMemberRef(rule.params, currentParent);
+      if (!selector) continue;
+      const nextParent = structureReferenceComponentName(selector) ?? currentParent;
+      out.push({ selector, children: buildStructureNodes(rule.nodes ?? [], nextParent) });
       continue;
     }
     if (rule.type === "atrule") {
       const selector = normalizeStructureAtRuleRef(rule.name, rule.params);
       if (!selector) continue;
-      out.push({ selector, children: buildStructureNodes(rule.nodes ?? []) });
+      const nextParent = structureReferenceComponentName(selector) ?? currentParent;
+      out.push({ selector, children: buildStructureNodes(rule.nodes ?? [], nextParent) });
       continue;
     }
     if (rule.type !== "rule") continue;
@@ -903,7 +950,7 @@ function buildStructureNodes(nodes: readonly ChildNode[]): StructureNode[] {
     const card = withoutColoc.match(CARD_RE);
     const node: StructureNode = {
       selector: card ? withoutColoc.slice(0, card.index).trim() : withoutColoc,
-      children: buildStructureNodes(rule.nodes ?? []),
+      children: buildStructureNodes(rule.nodes ?? [], currentParent),
     };
     if (card) node.cardinality = CARDINALITY[card[1]];
     if (coloc) node.colocated = coloc[1].trim();
@@ -912,10 +959,14 @@ function buildStructureNodes(nodes: readonly ChildNode[]): StructureNode[] {
   return out;
 }
 
-export function parseStructure(raw: string, parse?: CssParse): StructureNode[] {
+export function parseStructure(
+  raw: string,
+  parse?: CssParse,
+  ownerRecordName?: string,
+): StructureNode[] {
   if (!parse) return []; // no parser injected → no tree (the grammar module stays parser-free)
   try {
-    return buildStructureNodes(parse(raw).nodes);
+    return buildStructureNodes(parse(raw).nodes, ownerRecordName);
   } catch {
     return []; // malformed structure → empty, never throws
   }
@@ -934,6 +985,7 @@ export function parseStructure(raw: string, parse?: CssParse): StructureNode[] {
 export function parseStructureVariants(
   raw: string,
   parse?: CssParse,
+  ownerRecordName?: string,
 ): StructureVariant[] | undefined {
   if (!parse) return undefined;
   let topNodes: readonly ChildNode[];
@@ -947,7 +999,7 @@ export function parseStructureVariants(
   const variants: StructureVariant[] = [];
   let bareRun: ChildNode[] = [];
   const flushBareRun = (): void => {
-    if (bareRun.length) variants.push({ nodes: buildStructureNodes(bareRun) });
+    if (bareRun.length) variants.push({ nodes: buildStructureNodes(bareRun, ownerRecordName) });
     bareRun = [];
   };
   for (const node of topNodes) {
@@ -955,7 +1007,7 @@ export function parseStructureVariants(
       flushBareRun();
       variants.push({
         name: node.params.trim() || undefined,
-        nodes: buildStructureNodes(node.nodes ?? []),
+        nodes: buildStructureNodes(node.nodes ?? [], ownerRecordName),
       });
       continue;
     }

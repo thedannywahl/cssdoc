@@ -285,6 +285,27 @@ test("members-unknown-component flags a @members entry naming a record that isn'
   expect(unknowns[0]!.message).toContain("ghost-panel");
 });
 
+test("members-unknown-component also validates repeatable @member declarations", () => {
+  const css = [
+    "/**",
+    " * @component tabs",
+    " * @summary Tabs.",
+    " * @member tab",
+    " * @member ghost-panel private",
+    " */",
+    ".tabs {}",
+    "/**",
+    " * @component tab",
+    " * @summary A tab.",
+    " */",
+    ".tab {}",
+  ].join("\n");
+  const diagnostics = lintModel(createIndex(css));
+  const unknowns = diagnostics.filter((d) => d.rule === "members-unknown-component");
+  expect(unknowns).toHaveLength(1);
+  expect(unknowns[0]!.message).toContain("ghost-panel");
+});
+
 test("members-unknown-component doesn't fire when every declared member is documented", () => {
   const css = [
     "/**",
@@ -324,6 +345,29 @@ test("member-of-unknown-component doesn't fire when the parent is documented", (
   ].join("\n");
   const diagnostics = lintModel(createIndex(css));
   expect(diagnostics.map((d) => d.rule)).not.toContain("member-of-unknown-component");
+});
+
+test("@structure @member shorthand resolves to a component record reference", () => {
+  const css = [
+    "/**",
+    " * @component foo",
+    " * @summary Parent.",
+    " * @structure",
+    " * .foo {",
+    " *   @member bar {}",
+    " * }",
+    " */",
+    ".foo {}",
+    "/**",
+    " * @component foo.bar",
+    " * @summary Child.",
+    " */",
+    ".bar {}",
+  ].join("\n");
+
+  const diagnostics = lintModel(createIndex(css));
+  const structureUnknown = diagnostics.filter((d) => d.rule === "structure-unknown-record");
+  expect(structureUnknown).toHaveLength(0);
 });
 
 test("private-member-orphaned flags a private member the parent's own @structure never references back", () => {
@@ -380,6 +424,60 @@ test("private-member-orphaned doesn't fire for a non-private @memberOf even with
     " */",
     ".table-cell {}",
   ].join("\n");
+  const diagnostics = lintModel(createIndex(css));
+  expect(diagnostics.map((d) => d.rule)).not.toContain("private-member-orphaned");
+});
+
+test("private-member-orphaned flags a parent @member private without matching child @memberOf private", () => {
+  const css = [
+    "/**",
+    " * @component tabs",
+    " * @summary Tabs.",
+    " * @member tab private",
+    " * @structure",
+    " * .tabs {",
+    " *   @component tab {}",
+    " * }",
+    " */",
+    ".tabs {}",
+    "/**",
+    " * @component tab",
+    " * @summary Tab.",
+    " */",
+    ".tab {}",
+  ].join("\n");
+
+  const diagnostics = lintModel(createIndex(css));
+  expect(diagnostics.map((d) => d.rule)).toContain("private-member-orphaned");
+  expect(
+    diagnostics.some(
+      (d) =>
+        d.rule === "private-member-orphaned" &&
+        d.message.includes('doesn\'t declare a matching @memberOf "tabs" private'),
+    ),
+  ).toBe(true);
+});
+
+test("parent @member private doesn't fire when child @memberOf private matches and structure references it", () => {
+  const css = [
+    "/**",
+    " * @component tabs",
+    " * @summary Tabs.",
+    " * @member tab private",
+    " * @structure",
+    " * .tabs {",
+    " *   @component tab {}",
+    " * }",
+    " */",
+    ".tabs {}",
+    "/**",
+    " * @component tab",
+    " * @summary Tab.",
+    " * @memberOf tabs private",
+    " */",
+    ".tab {}",
+  ].join("\n");
+
   const diagnostics = lintModel(createIndex(css));
   expect(diagnostics.map((d) => d.rule)).not.toContain("private-member-orphaned");
 });

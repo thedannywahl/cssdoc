@@ -310,6 +310,14 @@ export interface CssMemberOf {
   private: boolean;
 }
 
+/** One parent-side member declaration (`@member <name> [private]`). */
+export interface CssMemberDeclaration {
+  /** The member record's name, e.g. `table-cell`. */
+  name: string;
+  /** Whether this declaration marks the member private to the parent. */
+  private: boolean;
+}
+
 /** One annotation legend row from `@annotations`. */
 export interface CssAnnotation {
   /** Numeric reference index, consumed by `@ref`. */
@@ -436,6 +444,8 @@ export interface CssDocEntry {
   memberOf?: CssMemberOf;
   /** Member record names from `@members` — the inverse direction, declared on the parent. */
   members?: string[];
+  /** Structured parent-side member declarations from repeated `@member` tags. */
+  memberDeclarations?: CssMemberDeclaration[];
   /** Where the record was authored, when position info is available (for source links). */
   source?: CssSource;
   /**

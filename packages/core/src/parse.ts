@@ -792,6 +792,21 @@ function buildEntry(
 
   const elements = resolveElementConstraints(doc.elements);
 
+  const memberDeclsByName = new Map<string, { name: string; private: boolean }>();
+  for (const name of doc.members ?? []) {
+    if (!memberDeclsByName.has(name)) memberDeclsByName.set(name, { name, private: false });
+  }
+  for (const member of doc.memberEntries) {
+    const existing = memberDeclsByName.get(member.name);
+    if (existing) {
+      existing.private = existing.private || member.private;
+      continue;
+    }
+    memberDeclsByName.set(member.name, { ...member });
+  }
+  const memberDeclarations = [...memberDeclsByName.values()];
+  const members = memberDeclarations.map((m) => m.name);
+
   return {
     name,
     kind: doc.kind ?? "component",
@@ -837,7 +852,8 @@ function buildEntry(
     compat: doc.compat,
     related: doc.related,
     ...(doc.memberOf ? { memberOf: doc.memberOf } : {}),
-    ...(doc.members?.length ? { members: doc.members } : {}),
+    ...(members.length ? { members } : {}),
+    ...(memberDeclarations.length ? { memberDeclarations } : {}),
     elements,
     global: doc.global,
     ...(source ? { source } : {}),
