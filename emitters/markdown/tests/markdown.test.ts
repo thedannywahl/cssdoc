@@ -167,6 +167,54 @@ test("@structure renders slot content, cardinality, and a linked Subcomponents s
   expect(md).toContain("- [close-button](./close-button.md)"); // derived + cross-linked
 });
 
+test("@structure @component refs carry cardinality and resolve links", () => {
+  const [layout] = parseCssDocs(
+    [
+      "/**",
+      " * @component drawer-layout",
+      " * @summary A drawer layout.",
+      " * @structure",
+      " * .drawer-layout {",
+      " *   @component close-button:optional {}",
+      " * }",
+      " */",
+      ".drawer-layout {}",
+    ].join("\n"),
+  );
+  const md = renderEntry(layout!, {
+    resolveComponent: (c) =>
+      c === "close-button" ? { name: "close-button", href: "./close-button.md" } : undefined,
+  });
+  expect(md).toContain("close-button (component, 0..1)");
+  expect(md).toContain("## Subcomponents");
+  expect(md).toContain("- [close-button](./close-button.md)");
+});
+
+test("@structure @member refs carry cardinality and resolve links", () => {
+  const [layout] = parseCssDocs(
+    [
+      "/**",
+      " * @component drawer-layout",
+      " * @summary A drawer layout.",
+      " * @structure",
+      " * .drawer-layout {",
+      " *   @member tray:optional {}",
+      " * }",
+      " */",
+      ".drawer-layout {}",
+    ].join("\n"),
+  );
+  const md = renderEntry(layout!, {
+    resolveComponent: (c) =>
+      c === "drawer-layout.tray"
+        ? { name: "drawer-layout.tray", href: "./drawer-layout.tray.md" }
+        : undefined,
+  });
+  expect(md).toContain("drawer-layout.tray (component, 0..1)");
+  expect(md).toContain("## Subcomponents");
+  expect(md).toContain("- [drawer-layout.tray](./drawer-layout.tray.md)");
+});
+
 test("@memberOf feeds the parent's Subcomponents section even without @structure nesting", () => {
   const [table] = parseCssDocs(
     `/**\n * @component table\n * @summary A data table.\n */\n.table {}`,

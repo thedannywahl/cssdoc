@@ -85,6 +85,33 @@ const CLASS_DEFS = [
 const allClasses = (selector: string): string[] =>
   [...selector.matchAll(/\.([\w-]+)/gu)].map((m) => m[1]);
 
+const STRUCTURE_REF_KIND_RE = /^(component|name|utility|rule|declaration|layout)$/u;
+
+const parseStructureRecordRef = (
+  selector: string,
+): { kind?: string; name: string; profile?: string; private?: boolean } | undefined => {
+  if (!selector.startsWith("@")) return undefined;
+  const raw = selector.slice(1).trim();
+  if (!raw) return undefined;
+
+  const typed = raw.match(
+    /^(component|name|utility|rule|declaration|layout)\s+([\w-]+(?:\.[\w-]+)*)(?::([\w-]+))?(?:\s+(private))?$/u,
+  );
+  if (typed) {
+    return {
+      kind: typed[1] === "name" ? "component" : typed[1],
+      name: typed[2],
+      profile: typed[3],
+      private: Boolean(typed[4]),
+    };
+  }
+
+  const shorthand = raw.match(/^([\w-]+(?:\.[\w-]+)*)(?::([\w-]+))?(?:\s+(private))?$/u);
+  if (!shorthand) return undefined;
+  if (STRUCTURE_REF_KIND_RE.test(shorthand[1])) return undefined;
+  return { name: shorthand[1], profile: shorthand[2], private: Boolean(shorthand[3]) };
+};
+
 /** Strip a leading `.` or `#` so a co-located selector can be passed to a component resolver. */
 const colocNormalize = (sel: string): string =>
   sel.startsWith(".") || sel.startsWith("#") ? sel.slice(1) : sel;
@@ -111,6 +138,13 @@ function classify(node: StructureNode, isRoot: boolean, options: MermaidOptions)
       ? ` + ${options.resolveComponent?.(colocNormalize(node.colocated))?.name ?? node.colocated}`
       : "";
     return { klass: "cssdoc-root", label: `${node.selector}${colocSuffix}${card}` };
+  }
+  const ref = parseStructureRecordRef(node.selector);
+  if (ref && (!ref.kind || ref.kind === "component")) {
+    const component = options.resolveComponent?.(ref.name);
+    const base = component?.name ?? ref.name;
+    const label = ref.profile ? `${base}:${ref.profile}` : base;
+    return { klass: "cssdoc-component", label, href: component?.href };
   }
   if (node.colocated) {
     const component = options.resolveComponent?.(colocNormalize(node.colocated));

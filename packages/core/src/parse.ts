@@ -70,6 +70,8 @@ const STRUCT_CARDINALITY: Record<string, NonNullable<StructureNode["cardinality"
   more: "one-or-more",
 };
 const STRUCT_CARD_RE = /:(optional|opt|one-or-more|more|many)\s*$/u;
+const STRUCT_TRAILING_CARD_RE =
+  /^(?<base>[\s\S]*?):(?<card>optional|opt|one-or-more|more|many)(?:\s+(?<private>private))?\s*$/u;
 const STRUCT_COLOC_RE = /:is\(\s*([^,)]+?)\s*\)/u;
 // A curated allow-list of ARIA/data-* attributes that reflect element *state* (not identity or
 // labeling) — avoids false positives on incidental attribute selectors like `[data-testid]`.
@@ -79,34 +81,61 @@ const ATTR_STATE_RE =
 const ATTR_STATE_TAG_RE =
   /^\[\s*(aria-[\w-]+|data-state)\s*=\s*("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[\w-]+)\s*\]$/u;
 
+function splitStructureTrailingCardinality(raw: string): {
+  params: string;
+  cardinality?: NonNullable<StructureNode["cardinality"]>;
+} {
+  const trimmed = raw.trim();
+  const match = trimmed.match(STRUCT_TRAILING_CARD_RE);
+  if (!match?.groups?.card || !match.groups.base) return { params: trimmed };
+  const card = STRUCT_CARDINALITY[match.groups.card];
+  if (!card) return { params: trimmed };
+  const suffix = match.groups.private ? " private" : "";
+  return { params: `${match.groups.base.trim()}${suffix}`.trim(), cardinality: card };
+}
+
 const unquote = (value: string): string => value.trim().replace(/^["']|["']$/gu, "");
 const sortUnique = (values: Iterable<string>): string[] =>
   [...new Set([...values].map((v) => v.toLowerCase()))].sort((a, b) => a.localeCompare(b));
 
-function normalizeStructureAtRuleRef(name: string, params: string): string | undefined {
+function normalizeStructureAtRuleRef(
+  name: string,
+  params: string,
+): { selector: string; cardinality?: NonNullable<StructureNode["cardinality"]> } | undefined {
+  const cardSplit = splitStructureTrailingCardinality(params);
   if (name.includes(":")) {
-    if (params.trim()) return undefined;
+    if (cardSplit.params.trim()) return undefined;
     const [record, profile] = name.split(":", 2);
     if (!RECORD_REF_NAME_RE.test(record) || !profile || !RECORD_REF_NAME_RE.test(profile)) {
       return undefined;
     }
-    return `@${record}:${profile}`;
+    return { selector: `@${record}:${profile}`, cardinality: cardSplit.cardinality };
   }
   if (!RECORD_REF_NAME_RE.test(name)) return undefined;
-  const trimmed = params.trim();
+  const trimmed = cardSplit.params;
   if (RECORD_REF_KINDS.has(name)) {
     const typedMedia = trimmed.match(RECORD_REF_TYPED_CUSTOM_MEDIA_RE);
-    if (typedMedia) return `@${name} ${typedMedia[1]} (${typedMedia[2]})`;
+    if (typedMedia) {
+      return {
+        selector: `@${name} ${typedMedia[1]} (${typedMedia[2]})`,
+        cardinality: cardSplit.cardinality,
+      };
+    }
     const typed = trimmed.match(RECORD_REF_TYPED_RE);
     if (!typed) return undefined;
-    return `@${name} ${typed[1]}${typed[2] ? `:${typed[2]}` : ""}`;
+    return {
+      selector: `@${name} ${typed[1]}${typed[2] ? `:${typed[2]}` : ""}`,
+      cardinality: cardSplit.cardinality,
+    };
   }
-  if (!trimmed) return `@${name}`;
+  if (!trimmed) return { selector: `@${name}`, cardinality: cardSplit.cardinality };
   const customMedia = trimmed.match(RECORD_REF_CUSTOM_MEDIA_RE);
-  if (customMedia) return `@${name} (${customMedia[1]})`;
+  if (customMedia) {
+    return { selector: `@${name} (${customMedia[1]})`, cardinality: cardSplit.cardinality };
+  }
   const profile = trimmed.match(RECORD_REF_PROFILE_RE);
   if (!profile) return undefined;
-  return `@${name}:${profile[1]}`;
+  return { selector: `@${name}:${profile[1]}`, cardinality: cardSplit.cardinality };
 }
 
 function buildStructureFromNodes(nodes: readonly ChildNode[]): StructureNode[] {
@@ -121,9 +150,13 @@ function buildStructureFromNodes(nodes: readonly ChildNode[]): StructureNode[] {
       continue;
     }
     if (node.type === "atrule") {
-      const selector = normalizeStructureAtRuleRef(node.name, node.params);
-      if (!selector) continue;
-      out.push({ selector, children: buildStructureFromNodes(node.nodes ?? []) });
+      const resolved = normalizeStructureAtRuleRef(node.name, node.params);
+      if (!resolved) continue;
+      out.push({
+        selector: resolved.selector,
+        cardinality: resolved.cardinality,
+        children: buildStructureFromNodes(node.nodes ?? []),
+      });
       continue;
     }
     if (node.type !== "rule") continue;

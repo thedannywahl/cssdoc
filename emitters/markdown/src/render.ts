@@ -301,6 +301,68 @@ const SLOT_NODE = /^slot(?:\[\s*name\s*=\s*["']?([\w-]+)["']?\s*\])?$/u;
 const allClasses = (selector: string): string[] =>
   [...selector.matchAll(/\.([\w-]+)/gu)].map((m) => m[1]);
 
+const STRUCTURE_REF_KIND_RE = /^(component|name|utility|rule|declaration|layout)$/u;
+const STRUCTURE_REF_CARDINALITY: Record<string, NonNullable<StructureNode["cardinality"]>> = {
+  optional: "optional",
+  opt: "optional",
+  many: "many",
+  "one-or-more": "one-or-more",
+  more: "one-or-more",
+};
+
+const parseStructureRecordRef = (
+  selector: string,
+): { kind?: string; name: string; profile?: string; private?: boolean } | undefined => {
+  if (!selector.startsWith("@")) return undefined;
+  const raw = selector.slice(1).trim();
+  if (!raw) return undefined;
+
+  const typed = raw.match(
+    /^(component|name|utility|rule|declaration|layout)\s+([\w-]+(?:\.[\w-]+)*)(?::([\w-]+))?(?:\s+(private))?$/u,
+  );
+  if (typed) {
+    return {
+      kind: typed[1] === "name" ? "component" : typed[1],
+      name: typed[2],
+      profile: typed[3],
+      private: Boolean(typed[4]),
+    };
+  }
+
+  const shorthand = raw.match(/^([\w-]+(?:\.[\w-]+)*)(?::([\w-]+))?(?:\s+(private))?$/u);
+  if (!shorthand) return undefined;
+  if (STRUCTURE_REF_KIND_RE.test(shorthand[1])) return undefined;
+  return { name: shorthand[1], profile: shorthand[2], private: Boolean(shorthand[3]) };
+};
+
+const normalizedStructureRefSelector = (ref: {
+  kind?: string;
+  name: string;
+  private?: boolean;
+}): string => {
+  if (ref.kind) return `@${ref.kind} ${ref.name}${ref.private ? " private" : ""}`;
+  return `@${ref.name}${ref.private ? " private" : ""}`;
+};
+
+function normalizeStructureRefCardinality(nodes: readonly StructureNode[]): StructureNode[] {
+  return nodes.map((node) => {
+    const children = normalizeStructureRefCardinality(node.children);
+    const ref = parseStructureRecordRef(node.selector);
+    if (ref && (!ref.kind || ref.kind === "component") && !node.cardinality) {
+      const card = ref.profile ? STRUCTURE_REF_CARDINALITY[ref.profile] : undefined;
+      if (card) {
+        return {
+          ...node,
+          selector: normalizedStructureRefSelector(ref),
+          cardinality: card,
+          children,
+        };
+      }
+    }
+    return { ...node, children };
+  });
+}
+
 /** Strip a leading `.` or `#` so a co-located selector can be passed to a component resolver. */
 const colocNormalize = (sel: string): string =>
   sel.startsWith(".") || sel.startsWith("#") ? sel.slice(1) : sel;
@@ -326,13 +388,21 @@ function structureLabel(
   if (slot) {
     base = slot[1] ? `‹content: ${slot[1]}›` : "‹content›";
   } else {
-    const resolved = allClasses(node.selector)
-      .filter((c) => c !== self)
-      .map((c) => resolveComponent?.(c))
-      .filter((c): c is NonNullable<typeof c> => Boolean(c));
-    if (resolved.length) {
-      base = resolved.map((c) => c.name).join(" | ");
+    const ref = parseStructureRecordRef(node.selector);
+    if (ref && (!ref.kind || ref.kind === "component")) {
+      const resolvedRef = resolveComponent?.(ref.name);
+      const target = resolvedRef?.name ?? ref.name;
+      base = ref.profile ? `${target}:${ref.profile}` : target;
       kind = "component";
+    } else {
+      const resolved = allClasses(node.selector)
+        .filter((c) => c !== self)
+        .map((c) => resolveComponent?.(c))
+        .filter((c): c is NonNullable<typeof c> => Boolean(c));
+      if (resolved.length) {
+        base = resolved.map((c) => c.name).join(" | ");
+        kind = "component";
+      }
     }
   }
   if (node.colocated) {
@@ -378,6 +448,11 @@ function subcomponentsOf(
   const byName = new Map<string, { name: string; href: string }>();
   const walk = (ns: StructureNode[]): void => {
     for (const node of ns) {
+      const ref = parseStructureRecordRef(node.selector);
+      if (ref && (!ref.kind || ref.kind === "component")) {
+        const c = resolve(ref.name);
+        if (c) byName.set(c.name, c);
+      }
       for (const m of node.selector.matchAll(/\.([\w-]+)/gu)) {
         if (m[1] === self) continue;
         const c = resolve(m[1]);
@@ -599,7 +674,11 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
     // own class from reading as a sibling, and `resolveComponent` resolves siblings to component names.
     const self = entry.className.replace(/^\./u, "");
     const view = options.structureView ?? "both";
-    const variants = entry.structureVariants;
+    const variants = entry.structureVariants?.map((variant) => ({
+      ...variant,
+      nodes: normalizeStructureRefCardinality(variant.nodes),
+    }));
+    const normalizedStructure = normalizeStructureRefCardinality(entry.structure ?? []);
 
     if (variants?.length && (options.structureVariantView ?? "diagram") === "sections") {
       // One `### Variant: <name>` subsection per variant, each rendered like a standalone structure.
@@ -645,13 +724,13 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
       if (view !== "diagram") {
         fragments.structure.push(
           "```text",
-          ...renderTree(entry.structure ?? [], self, options.resolveComponent),
+          ...renderTree(normalizedStructure, self, options.resolveComponent),
           "```",
           "",
         );
       }
       if (view !== "text") {
-        const mermaid = toMermaid(entry.structure ?? [], {
+        const mermaid = toMermaid(normalizedStructure, {
           self,
           resolveComponent: options.resolveComponent,
         });
@@ -661,7 +740,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
 
     // Composition is derived from the structure tree(s): sibling components referenced as children.
     if (options.resolveComponent) {
-      const groups = variants?.length ? variants.map((v) => v.nodes) : [entry.structure ?? []];
+      const groups = variants?.length ? variants.map((v) => v.nodes) : [normalizedStructure];
       structuralSubs.push(...subcomponentsOf(groups, self, options.resolveComponent));
     }
   }

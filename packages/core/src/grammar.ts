@@ -845,6 +845,8 @@ const CARDINALITY: Record<string, NonNullable<StructureNode["cardinality"]>> = {
   more: "one-or-more",
 };
 const CARD_RE = /:(optional|opt|one-or-more|more|many)\s*$/u;
+const TRAILING_CARD_RE =
+  /^(?<base>[\s\S]*?):(?<card>optional|opt|one-or-more|more|many)(?:\s+(?<private>private))?\s*$/u;
 // A single-class `:is(.<class>)` signals the element itself carries that class (co-location).
 const COLOC_RE = /:is\(\s*([^,)]+?)\s*\)/u;
 const STRUCTURE_REF_RE = /^[a-zA-Z][\w-]*(?:\.[\w-]+)*$/u;
@@ -862,46 +864,77 @@ const STRUCTURE_REF_KINDS = new Set([
   "layout",
 ]);
 
-function normalizeStructureAtRuleRef(name: string, params: string): string | undefined {
+function splitTrailingCardinality(raw: string): {
+  params: string;
+  cardinality?: NonNullable<StructureNode["cardinality"]>;
+} {
+  const trimmed = raw.trim();
+  const match = trimmed.match(TRAILING_CARD_RE);
+  if (!match?.groups?.card || !match.groups.base) return { params: trimmed };
+  const card = CARDINALITY[match.groups.card];
+  if (!card) return { params: trimmed };
+  const suffix = match.groups.private ? " private" : "";
+  return { params: `${match.groups.base.trim()}${suffix}`.trim(), cardinality: card };
+}
+
+function normalizeStructureAtRuleRef(
+  name: string,
+  params: string,
+): { selector: string; cardinality?: NonNullable<StructureNode["cardinality"]> } | undefined {
   if (name === "member") {
     return undefined;
   }
+  const cardSplit = splitTrailingCardinality(params);
   if (name.includes(":")) {
-    if (params.trim()) return undefined;
+    if (cardSplit.params.trim()) return undefined;
     const [record, profile] = name.split(":", 2);
     if (!STRUCTURE_REF_RE.test(record) || !profile || !STRUCTURE_REF_RE.test(profile)) {
       return undefined;
     }
-    return `@${record}:${profile}`;
+    return { selector: `@${record}:${profile}`, cardinality: cardSplit.cardinality };
   }
   if (!STRUCTURE_REF_RE.test(name)) return undefined;
-  const trimmed = params.trim();
+  const trimmed = cardSplit.params;
   if (STRUCTURE_REF_KINDS.has(name)) {
     const typedMedia = trimmed.match(STRUCTURE_REF_TYPED_CUSTOM_MEDIA_RE);
-    if (typedMedia) return `@${name} ${typedMedia[1]} (${typedMedia[2]})`;
+    if (typedMedia) {
+      return {
+        selector: `@${name} ${typedMedia[1]} (${typedMedia[2]})`,
+        cardinality: cardSplit.cardinality,
+      };
+    }
     const typed = trimmed.match(STRUCTURE_REF_TYPED_RE);
     if (!typed) return undefined;
-    return `@${name} ${typed[1]}${typed[2] ? `:${typed[2]}` : ""}`;
+    return {
+      selector: `@${name} ${typed[1]}${typed[2] ? `:${typed[2]}` : ""}`,
+      cardinality: cardSplit.cardinality,
+    };
   }
-  if (!trimmed) return `@${name}`;
+  if (!trimmed) return { selector: `@${name}`, cardinality: cardSplit.cardinality };
   const customMedia = trimmed.match(STRUCTURE_REF_CUSTOM_MEDIA_RE);
-  if (customMedia) return `@${name} (${customMedia[1]})`;
+  if (customMedia) {
+    return { selector: `@${name} (${customMedia[1]})`, cardinality: cardSplit.cardinality };
+  }
   const profile = trimmed.match(STRUCTURE_REF_PROFILE_RE);
   if (!profile) return undefined;
-  return `@${name}:${profile[1]}`;
+  return { selector: `@${name}:${profile[1]}`, cardinality: cardSplit.cardinality };
 }
 
 function resolveStructureMemberRef(
   params: string,
   currentParent: string | undefined,
-): string | undefined {
+): { selector: string; cardinality?: NonNullable<StructureNode["cardinality"]> } | undefined {
   if (!currentParent) return undefined;
-  const m = params.trim().match(STRUCTURE_MEMBER_RE);
+  const cardSplit = splitTrailingCardinality(params);
+  const m = cardSplit.params.trim().match(STRUCTURE_MEMBER_RE);
   if (!m) return undefined;
   const name = m[1];
   const profile = m[2];
   const privateFlag = Boolean(m[3]);
-  return `@component ${currentParent}.${name}${profile ? `:${profile}` : ""}${privateFlag ? " private" : ""}`;
+  return {
+    selector: `@component ${currentParent}.${name}${profile ? `:${profile}` : ""}${privateFlag ? " private" : ""}`,
+    cardinality: cardSplit.cardinality,
+  };
 }
 
 function structureReferenceComponentName(selector: string): string | undefined {
@@ -930,17 +963,25 @@ function buildStructureNodes(nodes: readonly ChildNode[], currentParent?: string
       continue;
     }
     if (rule.type === "atrule" && rule.name === "member") {
-      const selector = resolveStructureMemberRef(rule.params, currentParent);
-      if (!selector) continue;
-      const nextParent = structureReferenceComponentName(selector) ?? currentParent;
-      out.push({ selector, children: buildStructureNodes(rule.nodes ?? [], nextParent) });
+      const resolved = resolveStructureMemberRef(rule.params, currentParent);
+      if (!resolved) continue;
+      const nextParent = structureReferenceComponentName(resolved.selector) ?? currentParent;
+      out.push({
+        selector: resolved.selector,
+        cardinality: resolved.cardinality,
+        children: buildStructureNodes(rule.nodes ?? [], nextParent),
+      });
       continue;
     }
     if (rule.type === "atrule") {
-      const selector = normalizeStructureAtRuleRef(rule.name, rule.params);
-      if (!selector) continue;
-      const nextParent = structureReferenceComponentName(selector) ?? currentParent;
-      out.push({ selector, children: buildStructureNodes(rule.nodes ?? [], nextParent) });
+      const resolved = normalizeStructureAtRuleRef(rule.name, rule.params);
+      if (!resolved) continue;
+      const nextParent = structureReferenceComponentName(resolved.selector) ?? currentParent;
+      out.push({
+        selector: resolved.selector,
+        cardinality: resolved.cardinality,
+        children: buildStructureNodes(rule.nodes ?? [], nextParent),
+      });
       continue;
     }
     if (rule.type !== "rule") continue;

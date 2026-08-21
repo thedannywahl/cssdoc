@@ -117,18 +117,19 @@ export function buildCssApi(options: BuildCssApiOptions): BuildCssApiResult {
 
   // Resolve an `@structure` sibling-component class to its page (for cross-links + the Subcomponents
   // section), unless the caller supplied its own resolver.
-  const componentByClass = new Map(
-    entries.map((e) => [
-      e.className.replace(/^\./u, ""),
-      { name: e.name, href: `${baseHref}${e.name}.md` },
-    ]),
-  );
+  const componentByClass = new Map<string, { name: string; href: string }>();
+  for (const e of entries) {
+    const info = { name: e.name, href: `${baseHref}${e.name}.md` };
+    componentByClass.set(e.className.replace(/^\./u, ""), info);
+    componentByClass.set(e.name, info);
+  }
   // A referenced upstream provider component links to its own page (via the provider's `href`); local
   // components win a name clash. Providers without a resolvable href aren't cross-linked.
   for (const e of options.providers?.entries ?? []) {
     const cls = e.className.replace(/^\./u, "");
     const href = options.providers?.href(cls);
     if (href && !componentByClass.has(cls)) componentByClass.set(cls, { name: e.name, href });
+    if (href && !componentByClass.has(e.name)) componentByClass.set(e.name, { name: e.name, href });
   }
   const resolveComponent =
     options.resolveComponent ?? ((className: string) => componentByClass.get(className));

@@ -1036,7 +1036,29 @@ test("@structure resolves @member against the immediate parent scope", () => {
   expect(entry.structure).toEqual([
     {
       selector: ".foo",
-      children: [{ selector: "@component foo.bar:optional", children: [] }],
+      children: [{ selector: "@component foo.bar", cardinality: "optional", children: [] }],
+    },
+  ]);
+});
+
+test("@structure parses cardinality pseudos on @component refs", () => {
+  const [entry] = parseCssDocs(
+    [
+      "/**",
+      " * @component tray",
+      " * @structure",
+      " * .tray {",
+      " *   @component close-button:optional {}",
+      " * }",
+      " */",
+      ".tray {}",
+    ].join("\n"),
+  );
+
+  expect(entry.structure).toEqual([
+    {
+      selector: ".tray",
+      children: [{ selector: "@component close-button", cardinality: "optional", children: [] }],
     },
   ]);
 });
@@ -1426,6 +1448,21 @@ test("toMermaid renders a co-located node as a component node with a compound la
   expect(mermaid).toContain(".tabs-list + card");
   expect(mermaid).toContain("cssdoc-component");
   expect(mermaid).toMatch(/click n\d+ "\/api\/card\.md"/u);
+});
+
+test("toMermaid renders @component refs as component nodes with cardinality", () => {
+  const tree = parseStructure(
+    ".tray {\n  @component close-button:optional {}\n}",
+    postcss.parse,
+  );
+  const mermaid = toMermaid(tree, {
+    self: "tray",
+    resolveComponent: (c) =>
+      c === "close-button" ? { name: "close-button", href: "/api/close-button.md" } : undefined,
+  });
+  expect(mermaid).toContain(`(["close-button"]):::cssdoc-component`);
+  expect(mermaid).toMatch(/n0 -\.->\|0\.\.1\| n\d+/u);
+  expect(mermaid).toMatch(/click n\d+ "\/api\/close-button\.md"/u);
 });
 
 test("toMermaid renders a comma-separated alternation slot as every resolved sibling, joined, without a click link", () => {
