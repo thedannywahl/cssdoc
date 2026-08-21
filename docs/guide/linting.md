@@ -31,12 +31,13 @@ It reports the hygiene rules — `missing-summary`, `undocumented-modifier`, `un
 `structure-unknown-record`, `structure-ambiguous-record`, `unknown-annotation-ref`,
 `readonly-redefinition`, and `sealed-reset-value` — plus the registered-property value rules below.
 
-`name-not-in-css` has four deliberate allowances:
+`name-not-in-css` has five deliberate allowances:
 
 - A **deprecated alias** (`@modifier -x — @deprecated {@link -y}`) is a legacy name intentionally gone from the CSS and is exempt.
 - An **`@interaction`-flagged modifier** (`@modifier -x — @interaction …`) is a JS-toggled hook with no CSS declarations of its own, and is exempt.
 - A **`*` wildcard** name (`@modifier -icon-*`) documents a family — satisfied by a literal instance (`.-icon-foo`) or a `class` attribute selector with its real operator semantics (`[class*="-icon-"]` contains, `[class$="…"]` suffix, `[class~="…"]` exact word; `[class^="…"]` does not count).
 - Parts using **non-class selectors** (`@part [data-layout="x"]`, `@part #root`, `@part :host`) are matched against the selector text as an exact substring search, so `@part [data-layout="lightboxBlank"]` is satisfied when `[data-layout="lightboxBlank"]` appears anywhere in the component's CSS selectors.
+- An **`@affects <component>.<target>`-flagged modifier** is also satisfied when the selector is defined in `<component>`'s own CSS, not just the modifier's own record — the rule the modifier describes can live entirely in the descendant's stylesheet.
 
 Parts defined only in **nested CSS rules** (e.g., `@part .item` where `.item { }` is nested inside the component's outer rule) are also recognized — cssdoc now recurses into nested rule blocks when building the selector text index.
 

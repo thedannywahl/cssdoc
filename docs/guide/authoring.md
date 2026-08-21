@@ -326,6 +326,10 @@ record's own members (only that `<component>` itself is a documented record), so
 declared with any tag. Emitters render an "Affects" note on the modifier row, cross-linking to
 `<component>`'s page when resolvable.
 
+`name-not-in-css` also accepts the modifier's selector being defined in `<component>`'s own CSS instead
+of this record's — so a modifier that has _no_ rule of its own (its whole effect is a descendant rule
+like `.table-row.-hover:hover {…}` in `table-row`'s stylesheet) isn't flagged as drift.
+
 ## Declaring family membership with `@memberOf`
 
 `@structure` documents _containment_ — a fixed position inside one parent's own tree, discovered by

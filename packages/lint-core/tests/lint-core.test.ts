@@ -212,6 +212,44 @@ test("name-not-in-css: @part defined only in nested CSS rule is not a false posi
   expect(byRule(lintCssDocs(css), "name-not-in-css")).toHaveLength(0);
 });
 
+test("name-not-in-css: an @affects modifier defined only in the affected record's CSS is not flagged", () => {
+  const css = [
+    "/**",
+    " * @component table",
+    " * @summary A data table.",
+    " * @modifier -hover — @affects table-row.hover — Highlights rows on hover.",
+    " */",
+    ".table {}",
+    "/**",
+    " * @component table-row",
+    " * @summary A table row.",
+    " */",
+    ".table-row.-hover { background: var(--highlight); }",
+  ].join("\n");
+  expect(byRule(lintCssDocs(css, { modifierConvention: "rscss" }), "name-not-in-css")).toHaveLength(
+    0,
+  );
+});
+
+test("name-not-in-css: an @affects modifier still warns when no record defines it", () => {
+  const css = [
+    "/**",
+    " * @component table",
+    " * @summary A data table.",
+    " * @modifier -hover — @affects table-row.hover — Highlights rows on hover.",
+    " */",
+    ".table {}",
+    "/**",
+    " * @component table-row",
+    " * @summary A table row.",
+    " */",
+    ".table-row {}",
+  ].join("\n");
+  expect(byRule(lintCssDocs(css, { modifierConvention: "rscss" }), "name-not-in-css")).toHaveLength(
+    1,
+  );
+});
+
 test("rules can be disabled", () => {
   const v = lintCssDocs(CSS, { rules: { "missing-summary": false } });
   expect(byRule(v, "missing-summary")).toHaveLength(0);

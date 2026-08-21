@@ -417,6 +417,42 @@ test("affects-unknown-component doesn't fire when the @affects target is documen
   expect(diagnostics.map((d) => d.rule)).not.toContain("affects-unknown-component");
 });
 
+test("name-not-in-css: an @affects modifier defined only in the affected record's CSS is not flagged", () => {
+  const css = [
+    "/**",
+    " * @component table",
+    " * @summary A data table.",
+    " * @modifier -hover — @affects table-row.hover — Highlights rows on hover.",
+    " */",
+    ".table {}",
+    "/**",
+    " * @component table-row",
+    " * @summary A table row.",
+    " */",
+    ".table-row.-hover { background: var(--highlight); }",
+  ].join("\n");
+  const diagnostics = lintModel(createIndex(css, { modifierConvention: "rscss" }));
+  expect(diagnostics.map((d) => d.rule)).not.toContain("name-not-in-css");
+});
+
+test("name-not-in-css: an @affects modifier still warns when neither record defines it", () => {
+  const css = [
+    "/**",
+    " * @component table",
+    " * @summary A data table.",
+    " * @modifier -hover — @affects table-row.hover — Highlights rows on hover.",
+    " */",
+    ".table {}",
+    "/**",
+    " * @component table-row",
+    " * @summary A table row.",
+    " */",
+    ".table-row {}",
+  ].join("\n");
+  const diagnostics = lintModel(createIndex(css, { modifierConvention: "rscss" }));
+  expect(diagnostics.map((d) => d.rule)).toContain("name-not-in-css");
+});
+
 test("duplicate record ids flag same-kind as error and cross-kind as warning", () => {
   const css = [
     "/**",

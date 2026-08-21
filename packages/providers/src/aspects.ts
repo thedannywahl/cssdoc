@@ -912,7 +912,16 @@ export const modifier = {
       for (const authored of info.authoredModifiers) {
         if (cssExempt.has(authored)) continue;
         const sel = index.matcher.selectorFor(authored);
-        if (!selectorDefines(info.selectorText, sel)) {
+        if (selectorDefines(info.selectorText, sel)) continue;
+        // An `@affects <component>.<target>` modifier can have its only defining rule in that other,
+        // already-documented record's own stylesheet (not combined into this record's own selectors) —
+        // check there too before flagging drift.
+        const affects = info.entry.modifiers.find((mm) => mm.name === authored)?.affects;
+        const affectsDefines = affects?.some((a) => {
+          const target = index.records.find((r) => r.entry.name === a.component);
+          return target && selectorDefines(target.selectorText, sel);
+        });
+        if (!affectsDefines) {
           out.push(
             warn({
               aspect: "modifier",
