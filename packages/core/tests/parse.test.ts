@@ -1451,10 +1451,7 @@ test("toMermaid renders a co-located node as a component node with a compound la
 });
 
 test("toMermaid renders @component refs as component nodes with cardinality", () => {
-  const tree = parseStructure(
-    ".tray {\n  @component close-button:optional {}\n}",
-    postcss.parse,
-  );
+  const tree = parseStructure(".tray {\n  @component close-button:optional {}\n}", postcss.parse);
   const mermaid = toMermaid(tree, {
     self: "tray",
     resolveComponent: (c) =>
