@@ -4,6 +4,18 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.13.4
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.13.3...v0.13.4)
+
+### 🚀 Enhancements
+
+- **structure:** Add support for parent-side member declarations ([bc4909a](https://github.com/thedannywahl/cssdoc/commit/bc4909a))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.13.3
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.13.2...v0.13.3)
