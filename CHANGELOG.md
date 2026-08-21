@@ -4,6 +4,19 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.13.3
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.13.2...v0.13.3)
+
+### 🚀 Enhancements
+
+- Streamline publish scripts and improve CI ENV handling ([8593221](https://github.com/thedannywahl/cssdoc/commit/8593221))
+- Enhance linting rules for @affects modifiers and update tests ([c5580d9](https://github.com/thedannywahl/cssdoc/commit/c5580d9))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.13.2
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.13.1...v0.13.2)
