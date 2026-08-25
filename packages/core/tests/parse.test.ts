@@ -796,6 +796,19 @@ test("`&` stops meaning the scope root once a combinator introduces a new compou
   expect(tooltip.modifiers.map((m) => m.name)).not.toContain("-placement-bottom");
 });
 
+test("`&` stops meaning the scope root inside a bare nested class selector, not just after a combinator", () => {
+  // Real pantoken pattern (range-input): `.pfx-range-input-value { & {} &.-size-sm {} }`, nested
+  // directly inside `@scope (.pfx-range-input)` — no `&`/`:scope` prefix (and so no combinator either)
+  // on the `.pfx-range-input-value` rule itself, just a bare class selector. `&`/`:scope` inside IT
+  // mean that nested part, not the outer `range-input` scope root.
+  const [rangeInput] = parseCssDocs(
+    `/**\n * @component range-input\n * @selector .pfx-range-input\n */\n` +
+      `@scope (.pfx-range-input) {\n  & {}\n  .pfx-range-input-value {\n    & {}\n    &.-size-sm {}\n  }\n}`,
+    { modifierConvention: "rscss" },
+  );
+  expect(rangeInput.modifiers.map((m) => m.name)).not.toContain("-size-sm");
+});
+
 test("`&` still resolves at scope depth when the base is an authored compound built on the prelude", () => {
   // Real pantoken pattern (the `transition` utility): its `@selector` is the compound
   // `.pfx-transition.-transition-fade-entering`, built ON TOP of the `@scope`'s own `.pfx-transition`
