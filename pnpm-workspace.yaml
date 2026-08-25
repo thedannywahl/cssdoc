@@ -38,8 +38,9 @@ catalog:
   vscode-languageserver: ^10.1.0
   vscode-languageserver-textdocument: ^1.0.12
   vscode-languageclient: ^10.1.0
-  "@types/vscode": ^1.134.0
   esbuild: ^0.28.2
+  # Pinned to the version that vsce 3.9.2 uses
+  "@types/vscode": 1.125.0
   "@vscode/vsce": ^3.9.2
   ovsx: ^1.1.1
   "@resvg/resvg-js": ^2.6.2
