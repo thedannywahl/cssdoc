@@ -22,11 +22,16 @@
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "11.17.0",
+      "version": "11.23.0",
       "onFail": "download"
     }
   },
   "engines": {
-    "node": ">=22.18.0"
+    "node": ">=26.0.0"
+  },
+  "dependencies": {
+    "@codemirror/language": "catalog:",
+    "@codemirror/state": "catalog:",
+    "@codemirror/view": "catalog:"
   }
 }

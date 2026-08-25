@@ -33,7 +33,7 @@
   "devDependencies": {
     "@resvg/resvg-js": "catalog:",
     "@types/node": "catalog:",
-    "@types/vscode": "^1.125.0",
+    "@types/vscode": "catalog:",
     "@vscode/vsce": "catalog:",
     "esbuild": "catalog:",
     "ovsx": "catalog:",
