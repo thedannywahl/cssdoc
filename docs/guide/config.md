@@ -40,7 +40,7 @@ npm i -D @cssdoc/config @cssdoc/core
 | `rules`              | Per-rule severity overrides (`off`/`warn`/`error`).                                                                                                                                                                                                                                         |
 | `naming`             | Name-case to enforce on `component`/`part` class names — a preset (`pascalCase`/`camelCase`/`lowercase`) or a custom regex.                                                                                                                                                                 |
 | `structureIgnore`    | Class names exempt from `structure-unknown-selector` — external classes (utilities, cross-component refs) named in `@structure`. Literal names or simple `*` globs (e.g. `util-*`).                                                                                                         |
-| `providers`          | Upstream cssdoc providers this config consumes — `[{ path, baseHref?, prefix? }]`. Their documented components resolve in this scope's lint and hover. See below.                                                                                                                            |
+| `providers`          | Upstream cssdoc providers this config consumes — `[{ path, baseHref?, prefix? }]`. Their documented components resolve in this scope's lint and hover. See below.                                                                                                                           |
 
 See [Modifier conventions](/guide/modifier-conventions) for the convention forms and the full rule list.
 

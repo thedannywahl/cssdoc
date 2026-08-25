@@ -133,7 +133,7 @@ export const cssDocSchema = {
               to: {
                 type: "string",
                 description:
-                  "The literal replacement text (verbatim, no separator assumed). Omit or use \"\" to strip the prefix to a bare class.",
+                  'The literal replacement text (verbatim, no separator assumed). Omit or use "" to strip the prefix to a bare class.',
               },
               isRegExp: {
                 type: "boolean",
