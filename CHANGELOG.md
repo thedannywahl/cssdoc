@@ -4,6 +4,26 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.14.1
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.14.0...v0.14.1)
+
+### 🚀 Enhancements
+
+- Add scope handling functions and related tests for CSS modifiers ([39cb991](https://github.com/thedannywahl/cssdoc/commit/39cb991))
+
+### 🩹 Fixes
+
+- Update ampBase parameter to be optional in collect function ([c299df6](https://github.com/thedannywahl/cssdoc/commit/c299df6))
+
+### ✅ Tests
+
+- Add case for `&` behavior in nested class selectors within scope ([e92347d](https://github.com/thedannywahl/cssdoc/commit/e92347d))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.14.0
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.13.12...v0.14.0)
