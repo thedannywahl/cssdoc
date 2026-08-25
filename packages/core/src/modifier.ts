@@ -252,8 +252,8 @@ export class ModifierMatcher {
     }
 
     if (this.convention.structure === "attribute") {
-      // `.base[<attr>]…` / `:scope[<attr>]…` — attribute selectors chained onto the base.
-      const chain = new RegExp(`(?:\\.${baseEsc}|:scope)((?:\\[[^\\]]*\\])+)`, "gu");
+      // `.base[<attr>]…` / `:scope[<attr>]…` / `&[<attr>]…` — attribute selectors chained onto the base.
+      const chain = new RegExp(`(?:\\.${baseEsc}|:scope|&)((?:\\[[^\\]]*\\])+)`, "gu");
       for (const m of selector.matchAll(chain)) {
         for (const a of m[1].matchAll(/\[([^\]]*)\]/gu)) {
           const name = this.normalizeAttribute(a[1]);
@@ -265,7 +265,7 @@ export class ModifierMatcher {
 
     // chained: one or more classes chained onto the base, each carrying a separator prefix.
     const cls = `\\.${this.sepAlt}[\\w-]+`;
-    const chain = new RegExp(`(?:\\.${baseEsc}|:scope)((?:${cls})+)`, "gu");
+    const chain = new RegExp(`(?:\\.${baseEsc}|:scope|&)((?:${cls})+)`, "gu");
     const inner = new RegExp(`\\.(${this.sepAlt}[\\w-]+)`, "gu");
     for (const m of selector.matchAll(chain)) {
       for (const c of m[1].matchAll(inner)) if (!this.isStateClass(c[1])) push(c[1]);
@@ -284,7 +284,7 @@ export class ModifierMatcher {
    */
   private classAttrFamilies(selector: string, baseEsc: string): string[] {
     const out: string[] = [];
-    const chain = new RegExp(`(?:\\.${baseEsc}|:scope)((?:\\[[^\\]]*\\])+)`, "gu");
+    const chain = new RegExp(`(?:\\.${baseEsc}|:scope|&)((?:\\[[^\\]]*\\])+)`, "gu");
     const attr = /\[\s*class\s*([~^$*|]?)=\s*(?:"([^"]*)"|'([^']*)'|([^\]\s]*))\s*\]/gu;
     for (const m of selector.matchAll(chain)) {
       for (const a of m[1].matchAll(attr)) {
@@ -356,7 +356,7 @@ export class ModifierMatcher {
     if (this.statePrefixes.length === 0) return [];
     const baseEsc = escapeRe(baseNoDot);
     const prefixAlt = `(?:${this.statePrefixes.map(escapeRe).join("|")})`;
-    const chain = new RegExp(`(?:\\.${baseEsc}|:scope)((?:\\.[\\w-]+)+)`, "gu");
+    const chain = new RegExp(`(?:\\.${baseEsc}|:scope|&)((?:\\.[\\w-]+)+)`, "gu");
     const inner = new RegExp(`\\.(${prefixAlt}[\\w-]+)`, "gu");
     const seen = new Set<string>();
     const out: { name: string }[] = [];

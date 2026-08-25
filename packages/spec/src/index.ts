@@ -141,6 +141,16 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
     description: "Marks a modifier as applying to any record kind.",
   },
   {
+    name: "interaction",
+    kind: "block",
+    description: "Marks a modifier as a JS-toggled hook with no CSS declarations of its own.",
+  },
+  {
+    name: "alias",
+    kind: "block",
+    description: "Marks a modifier as a pure rename of a canonical one.",
+  },
+  {
     name: "preventExtensions",
     kind: "block",
     description: "Disallows adding new properties beyond those already declared.",

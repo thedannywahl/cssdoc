@@ -736,6 +736,39 @@ test("bare/OOCSS convention: any chained class is a modifier, distinct from desc
   expect(card.parts.map((p) => p.name)).toEqual(["title"]);
 });
 
+test("`&` inside @scope is recognized as the base class, purely from the AST (chained)", () => {
+  const [card] = parseCssDocs(
+    `/**\n * @component card\n */\n.card {}\n@scope (.card) { &.-color-danger {} }`,
+    { modifierConvention: "rscss" },
+  );
+  // No authored @modifier doc backs this — it's recognized from `&.-color-danger` alone, the same way
+  // `:scope .-color-danger` already is.
+  expect(card.modifiers.map((m) => m.name)).toEqual(["-color-danger"]);
+});
+
+test("`&` inside @scope is recognized as the base class for attribute/state selectors too", () => {
+  const [card] = parseCssDocs(
+    `/**\n * @component card\n */\n.card {}\n` +
+      `@scope (.card) { &[data-variant="ghost"] {} &.is-open {} }`,
+    { modifierConvention: { structure: "attribute", separator: "data-" } },
+  );
+  expect(card.modifiers.map((m) => m.name)).toEqual(['data-variant="ghost"']);
+
+  const [withState] = parseCssDocs(
+    `/**\n * @component card\n */\n.card {}\n@scope (.card) { &.is-open {} }`,
+    { modifierConvention: { structure: "chained", separator: "", statePrefixes: ["is-"] } },
+  );
+  expect(withState.states.map((s) => s.name)).toContain("is-open");
+});
+
+test("`&` is NOT recognized for BEM suffix concatenation (`&--mod` isn't valid CSS)", () => {
+  // Unlike `.card--mod`, `&--mod` doesn't parse as "the base class with a --mod suffix" — `&` can only
+  // be followed by a proper simple selector (class/id/attribute/pseudo), not a bare identifier tail. We
+  // deliberately don't try to recognize it: this selector contributes no modifier under BEM.
+  const [card] = parseCssDocs(`/**\n * @component card\n */\n.card {}\n&--mod {}`);
+  expect(card.modifiers.map((m) => m.name)).not.toContain("card--mod");
+});
+
 test("attribute (CUBE) convention: data attributes map to prop/value; parts unaffected", () => {
   const card = parseCssDocs(CONVENTION_FIXTURE, {
     modifierConvention: { structure: "attribute", separator: "data-" },
