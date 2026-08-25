@@ -65,6 +65,9 @@ await build({
   ...common,
   entryPoints: ["src/index.ts"],
   external: ["vscode"],
+  // The client also pulls in @cssdoc/config (for provider discovery), which depends on jsonc-parser —
+  // needs the same ESM-build alias as the server bundle below, or activation throws at require time.
+  alias: { "jsonc-parser": jsoncParserEsm },
   outfile: "dist/extension.cjs",
 });
 await build({

@@ -57,7 +57,7 @@ function discoverConfigFiles(root: string, maxDepth: number, currentDepth = 0): 
   try {
     const entries = readdirSync(root, { withFileTypes: true });
     for (const entry of entries) {
-      if (entry.name === "csddoc.json" || entry.name === "csddoc.jsonc") {
+      if (entry.name === "cssdoc.json" || entry.name === "cssdoc.jsonc") {
         configs.push(join(root, entry.name));
       }
       if (entry.isDirectory() && currentDepth < maxDepth && !entry.name.startsWith(".")) {
