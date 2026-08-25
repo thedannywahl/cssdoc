@@ -43,6 +43,54 @@ import type {
 const VAR_RE = /var\(\s*(--[\w-]+)/gu;
 
 /**
+ * Reduce an `@scope` at-rule's `params` (e.g. `(.pfx-alert)`) to a bare class name, or `undefined` for
+ * anything that isn't a single simple class selector (a multi-selector or non-class prelude can't be
+ * resolved to "this is the record's own base" safely, so `&`/`:scope` inside it are left unmatched).
+ */
+export function scopePreludeBase(params: string): string | undefined {
+  const inner = params.trim().replace(/^\(/u, "").replace(/\)$/u, "").trim();
+  return inner.match(/^\.([\w-]+)$/u)?.[1];
+}
+
+/**
+ * Whether an `@scope`'s prelude base is the record's own base — exactly, or as the literal prefix of an
+ * authored compound base selector built on it (e.g. a base of `pfx-transition.-transition-fade-entering`
+ * for a prelude of `pfx-transition`). Only when this holds does `&`/`:scope` inside that `@scope` mean
+ * "this record's own base" — otherwise the `@scope` belongs to a different record (commonly a parent
+ * component reaching into this one as a member, or a sibling part's own scope), and `&`/`:scope` there
+ * refer to THAT selector, not this record's.
+ */
+export function scopeMatchesBase(preludeBase: string | undefined, baseNoDot: string): boolean {
+  return (
+    preludeBase !== undefined &&
+    (preludeBase === baseNoDot || baseNoDot.startsWith(`${preludeBase}.`))
+  );
+}
+
+/**
+ * Whether a single selector branch (no commas) keeps `&`/`:scope` meaning "the same scope root" one
+ * nesting level deeper — true for `&`, `&.-mod`, `&::before`, `&:hover` (chained onto the same compound,
+ * no combinator); false once a combinator introduces a new compound (`& > .part`, `.part &`, …), since
+ * a rule nested inside THAT one would have `&` refer to the new compound, not the original scope root.
+ */
+export function ampStaysAtScope(branch: string): boolean {
+  // Ignore combinators inside a pseudo-class argument (e.g. `:not(a > b)`) — they don't touch this
+  // selector's own structure.
+  const stripped = branch.replace(/:[\w-]+\([^)]*\)/gu, "");
+  const trimmed = stripped.trim();
+  if (!/^(?:&|:scope)/u.test(trimmed)) return false;
+  const rest = trimmed.replace(/^(?:&|:scope)/u, "");
+  return !/[\s>+~]/u.test(rest);
+}
+
+/** Remove `&`/`:scope` tokens from a selector fragment so they can't be mistaken for the record's base
+ * by {@link ModifierMatcher}'s matchers — used when the enclosing `@scope` doesn't resolve to this
+ * record's own base (see {@link scopeMatchesBase}). */
+function neutralizeAmp(selector: string): string {
+  return selector.replace(/&/gu, "").replace(/:scope\b/gu, "");
+}
+
+/**
  * A documented CSS class name (without the leading dot): a letter or `_` start — any case — then word
  * characters or hyphens. CSS idents may also start with `-`/escapes/non-ASCII, but a `-`-led class is a
  * bare modifier here (`.-secondary`), and an unescaped ident can't start with a digit — so those are
@@ -361,6 +409,10 @@ function collect(
   prefixNoDot: string,
   inScope: boolean,
   inlineMode: InlineCommentMode,
+  // The base `&`/`:scope` currently resolve to, or `undefined` if they don't resolve to this record's
+  // own base at all here (see {@link scopeMatchesBase}/{@link ampStaysAtScope}). Always `baseNoDot` or
+  // `undefined` — never a third value.
+  ampBase: string | undefined = undefined,
 ): void {
   let pendingCanonical: string | undefined;
   let pendingDescription: string | undefined;
@@ -442,10 +494,19 @@ function collect(
           prefixNoDot,
           inScope || node.name === "scope",
           inlineMode,
+          node.name === "scope"
+            ? scopeMatchesBase(scopePreludeBase(node.params), baseNoDot)
+              ? baseNoDot
+              : undefined
+            : ampBase,
         );
       continue;
     }
     if (node.type === "rule") {
+      // Only let `&`/`:scope` stand in for the base here when the enclosing `@scope` actually IS this
+      // record's own base — otherwise (a different component's scope, or a sibling part's own nested
+      // scope) neutralize them so they can't be mistaken for it.
+      const ampEnabled = ampBase === baseNoDot;
       for (const selector of node.selector.split(",")) {
         // States, before pseudos are stripped: custom `:state(x)`, native pseudo-classes, and
         // shadow `::part(x)` parts are all read off the raw selector.
@@ -470,7 +531,8 @@ function collect(
             acc.pseudoElements.set(pe.name, { name: pe.name, description: pendingDescription });
         }
         const bare = selector.replace(/::?[\w-]+(\([^)]*\))?/gu, ""); // drop pseudos
-        const mods = matcher.modifiersIn(bare, baseNoDot);
+        const matchable = ampEnabled ? bare : neutralizeAmp(bare);
+        const mods = matcher.modifiersIn(matchable, baseNoDot);
         const modNames = new Set(mods.map((mod) => mod.name));
         for (const mod of mods) {
           const existing = acc.modifiers.get(mod.name);
@@ -496,7 +558,7 @@ function collect(
           }
           acc.parts.set(el.name, part);
         }
-        for (const st of matcher.statesIn(bare, baseNoDot)) {
+        for (const st of matcher.statesIn(matchable, baseNoDot)) {
           if (!acc.states.has(st.name)) acc.states.set(st.name, { name: st.name, kind: "class" });
         }
         if (inScope) {
@@ -516,8 +578,17 @@ function collect(
         if (child.type === "decl")
           for (const m of child.value.matchAll(VAR_RE)) acc.consumed.add(m[1]);
       }
-      if (node.nodes)
-        collect(node.nodes, acc, matcher, baseNoDot, prefixNoDot, inScope, inlineMode);
+      if (node.nodes) {
+        // `&`/`:scope` keep meaning this same scope root one level deeper only while every comma branch
+        // of this rule's own selector is still just the root with no combinator (see ampStaysAtScope);
+        // once a combinator introduces a new compound (`& > .part`), a nested rule's `&` refers to THAT
+        // compound, not this one, so we stop attributing modifiers found there to this record's base.
+        const childAmpBase =
+          ampEnabled && node.selector.split(",").every((branch) => ampStaysAtScope(branch))
+            ? ampBase
+            : undefined;
+        collect(node.nodes, acc, matcher, baseNoDot, prefixNoDot, inScope, inlineMode, childAmpBase);
+      }
       pendingCanonical = undefined;
       pendingDescription = undefined;
     }

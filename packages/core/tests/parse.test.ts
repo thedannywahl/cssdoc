@@ -769,6 +769,45 @@ test("`&` is NOT recognized for BEM suffix concatenation (`&--mod` isn't valid C
   expect(card.modifiers.map((m) => m.name)).not.toContain("card--mod");
 });
 
+test("`&` inside a PARENT's @scope is NOT attributed to a child member record", () => {
+  // A member record's own file/doc-comment can carry a rule block that reaches UP into a parent's
+  // @scope to restyle the member (e.g. `modal.body`'s file styling `.body` from inside
+  // `@scope (.pfx-modal)`) — a real pantoken pattern. `&` there means the PARENT's base
+  // (`.pfx-modal`), not this record's own base (`.body`), so it must not be picked up as this record's
+  // modifier — even though it's a direct child of @scope, same as the positive case above.
+  const [body] = parseCssDocs(
+    `/**\n * @component modal.body\n * @memberOf modal\n * @selector .body\n */\n` +
+      `@scope (.pfx-modal) {\n  :scope {\n    &.-density-compact > .body {}\n  }\n}`,
+    { modifierConvention: "rscss" },
+  );
+  expect(body.modifiers.map((m) => m.name)).not.toContain("-density-compact");
+});
+
+test("`&` stops meaning the scope root once a combinator introduces a new compound (nested part)", () => {
+  // Real pantoken pattern (tooltip): `@scope (.pfx-tooltip) { :scope { > .tip { &.-placement-bottom {} } } }`.
+  // The outer `@scope` DOES match this record's own base, but `&.-placement-bottom` is nested inside
+  // `> .tip` — a combinator that moves `&`'s meaning to the `.tip` part, not the tooltip's own base —
+  // so it must not be picked up as a tooltip modifier.
+  const [tooltip] = parseCssDocs(
+    `/**\n * @component tooltip\n * @selector .pfx-tooltip\n */\n` +
+      `@scope (.pfx-tooltip) {\n  :scope {\n    > .tip {\n      &.-placement-bottom {}\n    }\n  }\n}`,
+    { modifierConvention: "rscss" },
+  );
+  expect(tooltip.modifiers.map((m) => m.name)).not.toContain("-placement-bottom");
+});
+
+test("`&` still resolves at scope depth when the base is an authored compound built on the prelude", () => {
+  // Real pantoken pattern (the `transition` utility): its `@selector` is the compound
+  // `.pfx-transition.-transition-fade-entering`, built ON TOP of the `@scope`'s own `.pfx-transition`
+  // prelude — a prefix match, not exact equality — so `&`-based modifiers there still resolve.
+  const [transition] = parseCssDocs(
+    `/**\n * @utility transition\n * @selector .pfx-transition.-transition-fade-entering\n */\n` +
+      `@scope (.pfx-transition) {\n  & {}\n  &.-transition-fade-exiting {}\n}`,
+    { modifierConvention: "rscss" },
+  );
+  expect(transition.modifiers.map((m) => m.name)).toContain("-transition-fade-exiting");
+});
+
 test("attribute (CUBE) convention: data attributes map to prop/value; parts unaffected", () => {
   const card = parseCssDocs(CONVENTION_FIXTURE, {
     modifierConvention: { structure: "attribute", separator: "data-" },

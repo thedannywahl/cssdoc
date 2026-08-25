@@ -38,6 +38,25 @@ test("lintModel reports author-side hygiene (chip missing summary, -size-sm undo
   expect(rules).toContain("button:undocumented-modifier"); // -size-sm
 });
 
+test("a concrete instance of a documented `*` family is exempt from undocumented-modifier", () => {
+  // `-transition-fade-exiting` is AST-extracted as its own concrete modifier, but `-transition-*` (a
+  // pattern family) already documents the whole family — the concrete instance shouldn't also need its
+  // own description.
+  const css = `
+/**
+ * @utility transition
+ * @modifier -transition-* — Transition type/state class toggled by runtime.
+ */
+@scope (.pfx-transition) {
+  & {}
+  &.-transition-fade-exiting {}
+}
+`;
+  const idx = createIndex(css, { modifierConvention: "rscss" });
+  const rules = lintModel(idx).map((d) => `${d.record}:${d.rule}:${d.message}`);
+  expect(rules.some((r) => r.includes("undocumented-modifier"))).toBe(false);
+});
+
 test("an @interaction-flagged modifier is exempt from name-not-in-css, even with no CSS rule at all", () => {
   const css = `
 /**

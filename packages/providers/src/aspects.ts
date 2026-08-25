@@ -897,15 +897,29 @@ export const modifier = {
           info.authoredModifierLines.get(m.name) ??
           info.span;
         if (!m.description?.trim() && !m.deprecated && !m.alias) {
-          out.push(
-            warn({
-              aspect: "modifier",
-              rule: "undocumented-modifier",
-              message: `Modifier "${sel}" of "${name}" has no @modifier description.`,
-              record: name,
-              span,
-            }),
-          );
+          // A concrete AST-extracted instance of an already-documented `*` family (e.g. `-transition-
+          // fade-exiting` under an authored `-transition-*`) doesn't need its own description — the
+          // family's covers it. Only flag it if no such covering family exists.
+          const coveredByFamily =
+            !m.pattern &&
+            info.entry.modifiers.some(
+              (fam) =>
+                fam.pattern &&
+                fam.name !== m.name &&
+                fam.description?.trim() &&
+                index.matcher.matchesModifier(fam.name, m.name),
+            );
+          if (!coveredByFamily) {
+            out.push(
+              warn({
+                aspect: "modifier",
+                rule: "undocumented-modifier",
+                message: `Modifier "${sel}" of "${name}" has no @modifier description.`,
+                record: name,
+                span,
+              }),
+            );
+          }
         }
         if (m.alias && !m.alias.canonical) {
           out.push(
