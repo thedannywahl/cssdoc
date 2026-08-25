@@ -719,16 +719,21 @@ test("a scope's providers resolve @global modifiers in classUsage diagnostics (n
     "/**\n * @utility spacing\n * @global\n * @modifier --p-lg — Large padding.\n */\n.spacing {}",
     { modifierConvention: "rscss" },
   );
-  const own = createIndex(
-    "/**\n * @component card\n * @summary A card.\n */\n.card {}",
-    { file: "demo.css", modifierConvention: "rscss" },
-  );
+  const own = createIndex("/**\n * @component card\n * @summary A card.\n */\n.card {}", {
+    file: "demo.css",
+    modifierConvention: "rscss",
+  });
   const svc = new CssDocLanguageService(createIndex(""));
   svc.setScopes([
     {
       dir: "",
       index: own,
-      siblingIndex: indexFromEntries([...own.entries, ...providerEntries], undefined, undefined, own.matcher),
+      siblingIndex: indexFromEntries(
+        [...own.entries, ...providerEntries],
+        undefined,
+        undefined,
+        own.matcher,
+      ),
       severities: DEFAULT_RULE_SEVERITIES,
       naming: {},
     },

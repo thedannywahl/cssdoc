@@ -97,7 +97,12 @@ export function startLanguageServer(): void {
       // matcher so a non-BEM convention (rscss, attribute, …) still applies to the merged index.
       const providers = resolveProviders(g.configFile);
       const siblingIndex = providers.entries.length
-        ? indexFromEntries([...index.entries, ...providers.entries], undefined, undefined, index.matcher)
+        ? indexFromEntries(
+            [...index.entries, ...providers.entries],
+            undefined,
+            undefined,
+            index.matcher,
+          )
         : index;
       return {
         dir: g.dir,
