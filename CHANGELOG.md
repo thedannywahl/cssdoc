@@ -4,6 +4,18 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.14.0
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.13.12...v0.14.0)
+
+### 🩹 Fixes
+
+- Pin @types/vscode to version 1.125.0 ([971bd54](https://github.com/thedannywahl/cssdoc/commit/971bd54))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.13.12
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.13.11...v0.13.12)
