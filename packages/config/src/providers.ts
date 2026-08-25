@@ -14,7 +14,7 @@ import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { type CssDocEntry, parseCssDocs } from "@cssdoc/core";
-import { CssDocConfigFile } from "./CssDocConfigFile.ts";
+import { CssDocConfigFile, type ProviderRef } from "./CssDocConfigFile.ts";
 
 /** Options for provider resolution. */
 export interface ResolveProvidersOptions {
