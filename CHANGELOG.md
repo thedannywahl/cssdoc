@@ -4,6 +4,22 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.13.8
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.13.7...v0.13.8)
+
+### 🚀 Enhancements
+
+- Enhance modifier recognition for `&` in @scope ([5aeba50](https://github.com/thedannywahl/cssdoc/commit/5aeba50))
+
+### 🩹 Fixes
+
+- Update scopeName from "documentation.cssdoc" to "text.cssdoc" ([e45b432](https://github.com/thedannywahl/cssdoc/commit/e45b432))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.13.7
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.13.6...v0.13.7)
