@@ -10,6 +10,11 @@
     "url": "git+https://github.com/thedannywahl/cssdoc.git"
   },
   "type": "module",
+  "dependencies": {
+    "@codemirror/language": "catalog:",
+    "@codemirror/state": "catalog:",
+    "@codemirror/view": "catalog:"
+  },
   "devDependencies": {
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
@@ -28,10 +33,5 @@
   },
   "engines": {
     "node": ">=26.0.0"
-  },
-  "dependencies": {
-    "@codemirror/language": "catalog:",
-    "@codemirror/state": "catalog:",
-    "@codemirror/view": "catalog:"
   }
 }
