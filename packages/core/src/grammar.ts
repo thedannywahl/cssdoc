@@ -123,6 +123,13 @@ export interface ParsedDoc {
   kind?: CssRecordKind;
   /** `@selector` / `@class` — an explicit base CSS selector (any valid simple selector; otherwise inferred from the CSS). */
   className?: string;
+  /**
+   * The full, untruncated `@selector` text as authored, before {@link className} truncates it to its
+   * leading token (e.g. `.pfx-list > li` stays whole here even though `className` becomes `.pfx-list`).
+   * Lets callers detect when an authored `@selector` names a descendant compound rather than a plain
+   * base selector, without changing what `className` resolves to elsewhere.
+   */
+  fullSelector?: string;
   /** `@summary` — one-line intro. */
   summary?: string;
   /** `@remarks` — extended prose. */
@@ -464,6 +471,7 @@ function applyBlockTag(
     case "selector":
       // Match a full selector token: consecutive bracket groups, :host(-context(…)), or a plain \S+ token.
       doc.className = rest.match(/^((?:\[(?:[^\]"']|"[^"]*"|'[^']*')*\]|[^\s[]+)+)/u)?.[1] ?? "";
+      doc.fullSelector = rest.trim();
       break;
     case "summary":
       doc.summary = rest.replace(/\s+/gu, " ").trim();

@@ -413,6 +413,12 @@ function collect(
   // own base at all here (see {@link scopeMatchesBase}/{@link ampStaysAtScope}). Always `baseNoDot` or
   // `undefined` — never a third value.
   ampBase?: string,
+  // Whether this record's own `baseNoDot` can EVER be the target of an `&`/`:scope` substitution. False
+  // for a record whose authored `@selector` named a descendant compound (e.g. `.pfx-list > li`) that got
+  // truncated to just its leading class (`.pfx-list`) — that truncated class is indistinguishable from
+  // (often identical to) a PARENT record's own base, so treating `&` there as "this record's base" would
+  // misattribute the parent's modifiers to this member (see `scopeMatchesBase`'s docs).
+  ownScopeEligible = true,
 ): void {
   let pendingCanonical: string | undefined;
   let pendingDescription: string | undefined;
@@ -495,10 +501,11 @@ function collect(
           inScope || node.name === "scope",
           inlineMode,
           node.name === "scope"
-            ? scopeMatchesBase(scopePreludeBase(node.params), baseNoDot)
+            ? ownScopeEligible && scopeMatchesBase(scopePreludeBase(node.params), baseNoDot)
               ? baseNoDot
               : undefined
             : ampBase,
+          ownScopeEligible,
         );
       continue;
     }
@@ -596,6 +603,7 @@ function collect(
           inScope,
           inlineMode,
           childAmpBase,
+          ownScopeEligible,
         );
       }
       pendingCanonical = undefined;
@@ -677,7 +685,11 @@ function buildEntry(
   const prefixNoDot = className.endsWith(name)
     ? className.slice(1, className.length - name.length) // ".button" − "button" → ""
     : "";
-  collect(nodes, acc, matcher, baseNoDot, prefixNoDot, false, inlineMode);
+  // An authored `@selector` naming a descendant compound (e.g. `.pfx-list > li`) truncates to just its
+  // leading class (see the `@selector` grammar case) — that truncated base is indistinguishable from
+  // (often identical to) a PARENT record's own base, so `&`/`:scope` must never resolve to it here.
+  const ownScopeEligible = !doc.fullSelector || !/[\s>+~]/u.test(doc.fullSelector);
+  collect(nodes, acc, matcher, baseNoDot, prefixNoDot, false, inlineMode, undefined, ownScopeEligible);
 
   // Merge in authored prose; authored @modifier/@part entries also appear even if extraction missed.
   for (const [modName, mdoc] of doc.modifiers) {

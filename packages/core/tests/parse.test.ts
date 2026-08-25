@@ -809,6 +809,20 @@ test("`&` stops meaning the scope root inside a bare nested class selector, not 
   expect(rangeInput.modifiers.map((m) => m.name)).not.toContain("-size-sm");
 });
 
+test("`&` is not attributed when an `@selector` descendant compound truncates to the parent's own base", () => {
+  // Real pantoken pattern (`list.item`): `@selector .pfx-list > li` truncates to `.pfx-list` (the
+  // `@selector` grammar only captures the leading token) — identical to the PARENT `list` record's own
+  // base. Without tracking this, `&.-size-sm > li` (list's own modifier, reaching into its `.item`
+  // member) would look exactly like `list.item`'s own base matching its own `@scope`.
+  const [listItem] = parseCssDocs(
+    `/**\n * @component list.item\n * @memberOf list\n * @selector .pfx-list > li\n */\n` +
+      `@scope (.pfx-list) {\n  :scope {\n    > li {}\n    &.-size-sm > li {}\n  }\n}`,
+    { modifierConvention: "rscss" },
+  );
+  expect(listItem.className).toBe(".pfx-list");
+  expect(listItem.modifiers.map((m) => m.name)).not.toContain("-size-sm");
+});
+
 test("`&` still resolves at scope depth when the base is an authored compound built on the prelude", () => {
   // Real pantoken pattern (the `transition` utility): its `@selector` is the compound
   // `.pfx-transition.-transition-fade-entering`, built ON TOP of the `@scope`'s own `.pfx-transition`
