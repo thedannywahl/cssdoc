@@ -689,7 +689,17 @@ function buildEntry(
   // leading class (see the `@selector` grammar case) — that truncated base is indistinguishable from
   // (often identical to) a PARENT record's own base, so `&`/`:scope` must never resolve to it here.
   const ownScopeEligible = !doc.fullSelector || !/[\s>+~]/u.test(doc.fullSelector);
-  collect(nodes, acc, matcher, baseNoDot, prefixNoDot, false, inlineMode, undefined, ownScopeEligible);
+  collect(
+    nodes,
+    acc,
+    matcher,
+    baseNoDot,
+    prefixNoDot,
+    false,
+    inlineMode,
+    undefined,
+    ownScopeEligible,
+  );
 
   // Merge in authored prose; authored @modifier/@part entries also appear even if extraction missed.
   for (const [modName, mdoc] of doc.modifiers) {
