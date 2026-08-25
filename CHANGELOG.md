@@ -4,6 +4,22 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.13.9
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.13.8...v0.13.9)
+
+### 🚀 Enhancements
+
+- Enhance index merging to support non-BEM modifiers ([ce01b60](https://github.com/thedannywahl/cssdoc/commit/ce01b60))
+
+### 💅 Refactors
+
+- Format index merging for improved readability ([e3cb087](https://github.com/thedannywahl/cssdoc/commit/e3cb087))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.13.8
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.13.7...v0.13.8)
