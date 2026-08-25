@@ -15,7 +15,16 @@
  *
  * @module @cssdoc/grammarkdown-tmlanguage
  */
-import grammar from "../grammarkdown.tmLanguage.json" with { type: "json" };
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
+// Loaded via `fs` rather than a `with { type: "json" }` import — tsgo (TypeScript 7's native
+// declaration emitter) can't yet generate a `.d.ts` for an attributed JSON import. Left untyped
+// (JSON.parse's implicit `any`) so it stays structurally assignable to whatever grammar shape a
+// consumer (Shiki's `LanguageInput`, VS Code's TextMate grammar, etc.) expects.
+const grammarPath = fileURLToPath(new URL("../grammarkdown.tmLanguage.json", import.meta.url));
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- see comment above
+const grammar = JSON.parse(readFileSync(grammarPath, "utf8"));
 
 /** The grammarkdown TextMate grammar, shaped as a Shiki `LanguageRegistration`. */
 export const grammarkdown = grammar;

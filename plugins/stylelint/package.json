@@ -52,6 +52,6 @@
     "vite-plus": "catalog:"
   },
   "peerDependencies": {
-    "stylelint": ">=16"
+    "stylelint": ">=17"
   }
 }

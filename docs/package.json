@@ -20,11 +20,11 @@
     "@cssdoc/embedded": "workspace:*"
   },
   "devDependencies": {
-    "@codemirror/lang-css": "^6.3.1",
-    "@codemirror/lang-html": "^6.4.12",
-    "@codemirror/lang-json": "^6.0.2",
-    "@codemirror/state": "^6.7.1",
-    "@codemirror/theme-one-dark": "^6.1.3",
+    "@codemirror/lang-css": "catalog:",
+    "@codemirror/lang-html": "catalog:",
+    "@codemirror/lang-json": "catalog:",
+    "@codemirror/state": "catalog:",
+    "@codemirror/theme-one-dark": "catalog:",
     "@cssdoc/codemirror": "workspace:*",
     "@cssdoc/core": "workspace:*",
     "@cssdoc/grammarkdown-tmlanguage": "workspace:*",
@@ -32,17 +32,17 @@
     "@cssdoc/providers": "workspace:*",
     "@cssdoc/tmlanguage": "workspace:*",
     "@resvg/resvg-js": "catalog:",
-    "@types/markdown-it": "^14.2.0",
     "@types/node": "catalog:",
-    "codemirror": "^6.0.2",
+    "codemirror": "catalog:",
     "jsonc-parser": "catalog:",
-    "markdown-it": "^14.3.0",
-    "mermaid": "^11.17.1",
+    "markdown-it": "catalog:",
+    "mermaid": "catalog:",
     "typedoc": "catalog:",
     "typedoc-plugin-markdown": "catalog:",
     "typedoc-vitepress-theme": "catalog:",
+    "typescript": "^6.0.3",
     "vitepress": "catalog:",
     "vitepress-plugin-llms": "catalog:",
-    "vue": "^3.5.41"
+    "vue": "catalog:"
   }
 }

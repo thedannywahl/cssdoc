@@ -1,3 +1,3 @@
-import type MarkdownIt from "markdown-it";
+import type { MarkdownRenderer } from "vitepress";
 
-export declare const mermaidPlugin: (md: MarkdownIt) => void;
+export declare const mermaidPlugin: (md: MarkdownRenderer) => void;

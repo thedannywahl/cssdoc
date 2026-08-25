@@ -38,8 +38,8 @@
   },
   "dependencies": {
     "postcss": "catalog:",
-    "postcss-less": "^6.0.0",
-    "postcss-scss": "^4.0.9"
+    "postcss-less": "catalog:",
+    "postcss-scss": "catalog:"
   },
   "devDependencies": {
     "@cssdoc/core": "workspace:*",
