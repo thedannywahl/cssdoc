@@ -4,6 +4,22 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.14.2
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.14.1...v0.14.2)
+
+### 🚀 Enhancements
+
+- Add fullSelector to ParsedDoc ([d9662ec](https://github.com/thedannywahl/cssdoc/commit/d9662ec))
+
+### 🎨 Styles
+
+- Format collect function call for better readability ([bf1b86d](https://github.com/thedannywahl/cssdoc/commit/bf1b86d))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.14.1
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.14.0...v0.14.1)
