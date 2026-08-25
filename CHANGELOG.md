@@ -4,6 +4,29 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.13.12
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.13.11...v0.13.12)
+
+### 🚀 Enhancements
+
+- Add sync-schema script and update build command to include fix option ([523a5a5](https://github.com/thedannywahl/cssdoc/commit/523a5a5))
+
+### 🩹 Fixes
+
+- Remove orphaned scripts/sync-schema.d.ts causing flaky formatting check ([df350b6](https://github.com/thedannywahl/cssdoc/commit/df350b6))
+- Update CI workflow to run checks with --fix option for formatting and linting ([788d49b](https://github.com/thedannywahl/cssdoc/commit/788d49b))
+- Remove redundant sync-schema.d.ts, revert ineffective --fix workaround ([f71f90f](https://github.com/thedannywahl/cssdoc/commit/f71f90f))
+- Ignore scripts/sync-schema.d.ts in oxfmt ([0584053](https://github.com/thedannywahl/cssdoc/commit/0584053))
+
+### 🤖 CI
+
+- Re-run with cleared build cache ([52d71a8](https://github.com/thedannywahl/cssdoc/commit/52d71a8))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.13.11
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.13.10...v0.13.11)
