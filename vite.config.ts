@@ -42,7 +42,7 @@ export default defineConfig({
       release: {
         cache: false,
         command:
-          'vp run ready && vp run check:publish && bumpp -r --all --print-commits --execute "node scripts/release-changelog.mjs" --commit "chore(release): v%s" --tag "v%s" --no-push',
+          'vp run ready && vp run check:publish && bumpp -r --all --print-commits --execute "node scripts/release-changelog.mjs" --commit "chore(release): v%s" --tag "v%s" --no-push && git push --follow-tags',
       },
       publish: {
         cache: false,
