@@ -4,6 +4,30 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.13.10
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.13.9...v0.13.10)
+
+### 🚀 Enhancements
+
+- Add prefix rewriting support for provider base-class names ([b896e8a](https://github.com/thedannywahl/cssdoc/commit/b896e8a))
+
+### 🩹 Fixes
+
+- Add git push command to release process ([4b874c6](https://github.com/thedannywahl/cssdoc/commit/4b874c6))
+- Import ProviderRef type for enhanced provider resolution ([2737c66](https://github.com/thedannywahl/cssdoc/commit/2737c66))
+- Correct formatting in config documentation and schema description ([8f35c62](https://github.com/thedannywahl/cssdoc/commit/8f35c62))
+
+### 🏡 Chore
+
+- Update dependencies ([a4af218](https://github.com/thedannywahl/cssdoc/commit/a4af218))
+- **fmt:** Format package and workspace ([713263f](https://github.com/thedannywahl/cssdoc/commit/713263f))
+- Update TypeScript version and add new dependencies ([966ac10](https://github.com/thedannywahl/cssdoc/commit/966ac10))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.13.9
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.13.8...v0.13.9)
