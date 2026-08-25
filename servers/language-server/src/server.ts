@@ -93,10 +93,11 @@ export function startLanguageServer(): void {
         index = createIndex("", { configuration });
       }
       // Declared providers add their components to the sibling set (lint + cross-component hover) — the
-      // real, span-carrying `index` stays the source for `var()` resolution.
+      // real, span-carrying `index` stays the source for `var()` resolution. Pass this scope's own
+      // matcher so a non-BEM convention (rscss, attribute, …) still applies to the merged index.
       const providers = resolveProviders(g.configFile);
       const siblingIndex = providers.entries.length
-        ? indexFromEntries([...index.entries, ...providers.entries])
+        ? indexFromEntries([...index.entries, ...providers.entries], undefined, undefined, index.matcher)
         : index;
       return {
         dir: g.dir,

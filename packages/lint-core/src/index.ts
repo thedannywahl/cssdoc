@@ -157,7 +157,12 @@ export function lintCssDocs(css: string, options: LintOptions = {}): Violation[]
         naming,
         options.structureIgnore,
         options.providerEntries?.length
-          ? indexFromEntries([...index.entries, ...options.providerEntries])
+          ? indexFromEntries(
+              [...index.entries, ...options.providerEntries],
+              undefined,
+              undefined,
+              index.matcher,
+            )
           : index,
       ),
       ...checkPropertyAssignments(assignments, index, severities), // invalid-property-value

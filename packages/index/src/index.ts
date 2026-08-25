@@ -443,11 +443,16 @@ export class CssDocIndex {
   }
 }
 
-/** Build an index from a model snapshot (no source spans). */
+/**
+ * Build an index from a model snapshot (no source spans). `matcher` defaults to BEM when omitted —
+ * pass the governing scope's own `index.matcher` when merging in provider/sibling entries, so a
+ * non-BEM project's modifier convention (rscss, attribute, …) still applies to the merged index.
+ */
 export function indexFromEntries(
   entries: CssDocEntry[],
   file?: string,
   globalPrecedence: "base" | "global" = "base",
+  matcher?: ModifierMatcher,
 ): CssDocIndex {
   const records: RecordInfo[] = entries.map((entry) => ({
     entry,
@@ -461,7 +466,7 @@ export function indexFromEntries(
     propertyValues: new Map(),
     resetValueUsages: [],
   }));
-  return new CssDocIndex(records, file, undefined, new Map(), globalPrecedence);
+  return new CssDocIndex(records, file, matcher, new Map(), globalPrecedence);
 }
 
 interface Build {

@@ -871,16 +871,19 @@ export class CssDocLanguageService {
       out.push(...this.cssDiagnostics(projectCss(text, { host }), path, parse, text));
     }
     // Consumer usage: check against every scope's index — the workspace scopes plus the document's own
-    // embedded components (see `scopesFor`) — deduping identical diagnostics from any overlap.
+    // embedded components (see `scopesFor`) — deduping identical diagnostics from any overlap. Use
+    // `siblingIndex` (providers merged in) so a `@global` modifier documented on a provider's record
+    // (e.g. a spacing utility) resolves against a component from this scope's own files.
     const seen = new Set<string>();
     for (const scope of this.scopesFor(text, path, languageId)) {
+      const usageIndex = scope.siblingIndex ?? scope.index;
       for (const { usage, start, end } of this.modifierUsages(text, scope)) {
-        for (const d of checkClassUsage([usage], scope.index, scope.severities)) {
+        for (const d of checkClassUsage([usage], usageIndex, scope.severities)) {
           const key = `${start}:${end}:${d.rule}:${d.message}`;
           if (seen.has(key)) continue;
           seen.add(key);
           const canonical = usage.base
-            ? scope.index.deprecationOf(usage.base, usage.token)?.canonical
+            ? usageIndex.deprecationOf(usage.base, usage.token)?.canonical
             : undefined;
           out.push({
             range: rangeOf(text, start, end),
@@ -906,7 +909,10 @@ export class CssDocLanguageService {
     text: string,
     scope: ConfigScope,
   ): { usage: ClassUsage; start: number; end: number }[] {
-    const { matcher } = scope.index;
+    // Providers' components count as documented bases too, so a component only reachable via a
+    // `providers` entry (not this scope's own auto-detected files) is still recognized.
+    const usageIndex = scope.siblingIndex ?? scope.index;
+    const { matcher } = usageIndex;
     const results: { usage: ClassUsage; start: number; end: number }[] = [];
 
     if (matcher.convention.structure === "attribute") {
@@ -928,7 +934,7 @@ export class CssDocLanguageService {
             }
           }
         }
-        const baseToken = classTokens.find((t) => scope.index.componentForClass(t.token));
+        const baseToken = classTokens.find((t) => usageIndex.componentForClass(t.token));
         const base = baseToken?.token;
         if (!base) continue;
         results.push({
@@ -967,7 +973,7 @@ export class CssDocLanguageService {
     // Svelte, HTML). A documented component among the tokens turns the element into a checkable usage.
     for (const site of scanClassUsages(text)) {
       const tokens = site.tokens.map((t) => t.token);
-      const baseToken = site.tokens.find((t) => scope.index.componentForClass(t.token));
+      const baseToken = site.tokens.find((t) => usageIndex.componentForClass(t.token));
       const base = baseToken?.token;
       if (!base) continue; // only check elements that carry a documented component of this scope
       results.push({

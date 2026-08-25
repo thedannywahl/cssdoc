@@ -712,6 +712,37 @@ test("a scope's providers let a consumer stylesheet compose an upstream componen
   expect(contents).toContain("A vendor widget.");
 });
 
+test("a scope's providers resolve @global modifiers in classUsage diagnostics (not just structure/hover)", () => {
+  // The upstream provider documents a `@global` spacing utility (like pantoken's spacing/gap/etc.),
+  // never authored anywhere in the consumer's own scope.
+  const providerEntries = parseCssDocs(
+    "/**\n * @utility spacing\n * @global\n * @modifier --p-lg — Large padding.\n */\n.spacing {}",
+    { modifierConvention: "rscss" },
+  );
+  const own = createIndex(
+    "/**\n * @component card\n * @summary A card.\n */\n.card {}",
+    { file: "demo.css", modifierConvention: "rscss" },
+  );
+  const svc = new CssDocLanguageService(createIndex(""));
+  svc.setScopes([
+    {
+      dir: "",
+      index: own,
+      siblingIndex: indexFromEntries([...own.entries, ...providerEntries], undefined, undefined, own.matcher),
+      severities: DEFAULT_RULE_SEVERITIES,
+      naming: {},
+    },
+  ]);
+
+  // The `@global` provider modifier chained onto this scope's own component is NOT flagged unknown.
+  const clean = svc.diagnostics(`<div class="card --p-lg"></div>`, "html");
+  expect(clean.some((d) => d.code === "unknown-modifier")).toBe(false);
+
+  // A genuinely unknown modifier is still flagged.
+  const bogus = svc.diagnostics(`<div class="card --totally-bogus"></div>`, "html");
+  expect(bogus.some((d) => d.code === "unknown-modifier")).toBe(true);
+});
+
 test("rebuild: a PostCSS parse error yields a valid empty scope, not a thrown exception", () => {
   // CssDocLanguageService.setScopes mirrors what server.ts rebuild() does after the try/catch guard.
   const svc = new CssDocLanguageService(createIndex(""));
