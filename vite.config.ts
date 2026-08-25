@@ -35,7 +35,7 @@ export default defineConfig({
       "sync:schema": { cache: false, command: "node scripts/sync-schema.ts" },
       test: { cache: false, command: "vp run -r test" },
       "check:publish": { cache: false, command: "vp run -r publint" },
-      ready: { cache: false, command: "vp run build && vp run check --fix && vp run test" },
+      ready: { cache: false, command: "vp run build && vp run check && vp run test" },
       "docs:dev": { cache: false, command: "vp run @cssdoc/docs#docs:dev" },
       "docs:build": { cache: false, command: "vp run @cssdoc/docs#docs:build" },
       "docs:preview": { cache: false, command: "vp run @cssdoc/docs#docs:preview" },
