@@ -4,6 +4,18 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.13.7
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.13.6...v0.13.7)
+
+### 🩹 Fixes
+
+- Correct typo in config file names from "csddoc" to "cssdoc" ([674968e](https://github.com/thedannywahl/cssdoc/commit/674968e))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.13.6
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.13.5...v0.13.6)
