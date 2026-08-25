@@ -16,7 +16,16 @@ export default defineConfig({
   //     (e.g. `⚠️  ` after a breaking-change entry) doesn't match oxfmt and would fail the release Gate.
   //   - **/cssdoc.schema.json — the JSON Schema mirrors written by scripts/sync-schema.ts from the
   //     `cssDocSchema` source of truth; oxfmt would collapse arrays and break the byte-exact drift check.
-  fmt: { ignorePatterns: ["CHANGELOG.md", "**/cssdoc.schema.json", ...WORKTREE_IGNORE] },
+  //   - scripts/sync-schema.d.ts — unused, but tsgo's experimental type-aware lint pass re-emits it as a
+  //     side effect of type-checking the config package test's relative import, ignoring `noEmit`.
+  fmt: {
+    ignorePatterns: [
+      "CHANGELOG.md",
+      "**/cssdoc.schema.json",
+      "scripts/sync-schema.d.ts",
+      ...WORKTREE_IGNORE,
+    ],
+  },
   lint: {
     ignorePatterns: [...WORKTREE_IGNORE],
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
