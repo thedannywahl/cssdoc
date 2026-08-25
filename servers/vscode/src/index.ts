@@ -80,33 +80,17 @@ function discoverConfigFiles(root: string, maxDepth: number, currentDepth = 0): 
 }
 
 /**
- * Resolve provider paths from a csddoc.json config file, expanding globs if enabled.
+ * Extract provider file paths from a csddoc.json config file.
+ * These are simple path strings that may contain globs; glob expansion
+ * will be handled by the language server when it calls resolveProviders().
  */
-function resolveProviderPaths(configFile: CssDocConfigFile, expandGlobs: boolean): string[] {
-  const { dirname, resolve } = require("node:path");
-  const { createRequire } = require("node:module");
-  const { globSync } = require("node:glob");
-
+function extractProviderPaths(configFile: CssDocConfigFile): string[] {
   const paths: string[] = [];
-  const requireFrom = createRequire(configFile.filePath);
-  const from = dirname(configFile.filePath);
 
   for (const provider of configFile.providers) {
-    try {
-      let resolvedPath = provider.path.startsWith(".")
-        ? resolve(from, provider.path)
-        : requireFrom.resolve(provider.path);
-
-      // If it's a glob pattern and expandGlobs is enabled, expand it
-      if (expandGlobs && /[*?[\]{}()!]/.test(resolvedPath)) {
-        const matches = globSync(resolvedPath, { cwd: from });
-        paths.push(...matches);
-      } else {
-        paths.push(resolvedPath);
-      }
-    } catch {
-      // Skip providers that can't be resolved (they'll be reported by the server)
-    }
+    // Provider paths are relative to the config file or npm specifiers
+    // Pass them as-is; the server will resolve them via resolveProviders()
+    paths.push(provider.path);
   }
 
   return paths;
@@ -135,14 +119,13 @@ async function resolveCssPaths(): Promise<string[]> {
   // Optionally discover and resolve providers from csddoc.json files
   if (root && cfg.get<boolean>("editor.providerDiscovery", true)) {
     const scanDepth = cfg.get<number>("editor.providerScanDepth", 3);
-    const expandGlobs = cfg.get<boolean>("editor.providerGlobs", true);
 
     const configFiles = discoverConfigFiles(root, scanDepth);
     for (const configPath of configFiles) {
       try {
         const configFile = CssDocConfigFile.loadFile(configPath);
         if (!configFile.fileNotFound) {
-          const providerPaths = resolveProviderPaths(configFile, expandGlobs);
+          const providerPaths = extractProviderPaths(configFile);
           for (const path of providerPaths) {
             cssPaths.add(path);
           }

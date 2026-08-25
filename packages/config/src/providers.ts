@@ -67,9 +67,10 @@ function hasGlobPattern(path: string): boolean {
 /** Expand glob patterns using Node's built-in glob module. */
 function expandGlob(pattern: string, cwd: string): string[] {
   try {
-    // Use dynamic require to avoid TypeScript issues with node:glob which has limited type support
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { globSync } = require("node:glob");
+    // Use createRequire to load globSync - this works in both ESM and CJS contexts
+    // without relying on module-level helpers that break when bundled to CJS
+    const requireGlob = createRequire(new URL(import.meta.url).pathname);
+    const { globSync } = requireGlob("node:glob");
     return globSync(pattern, { cwd });
   } catch {
     // If glob fails, return the pattern as-is
