@@ -21,5 +21,9 @@ export {
   type ProviderRef,
   type RuleOptionsConfig,
 } from "./CssDocConfigFile.ts";
-export { resolveProviders, type ResolvedProviders } from "./providers.ts";
+export {
+  resolveProviders,
+  type ResolveProvidersOptions,
+  type ResolvedProviders,
+} from "./providers.ts";
 export { cssDocSchema } from "./schema.ts";

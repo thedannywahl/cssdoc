@@ -26,6 +26,7 @@
     "package": "vp run -t build && vsce package --no-dependencies -o cssdoc.vsix"
   },
   "dependencies": {
+    "@cssdoc/config": "workspace:*",
     "@cssdoc/language-server": "workspace:*",
     "vscode-languageclient": "catalog:"
   },
@@ -178,6 +179,34 @@
             ]
           },
           "default": []
+        },
+        "cssdoc.editor.providerDiscovery": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Enable automatic scanning of `cssdoc.json` files in the workspace for provider entries (CSS files declared in the `providers` config field)."
+        },
+        "cssdoc.editor.providerScanDepth": {
+          "type": "number",
+          "default": 3,
+          "minimum": 0,
+          "markdownDescription": "Maximum directory depth to scan for `cssdoc.json` files relative to the workspace root. Set to `0` to scan only the root."
+        },
+        "cssdoc.editor.providerGlobs": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Expand glob patterns in provider paths (e.g., `generated/*.css`). When `false`, only exact file paths are used."
+        },
+        "cssdoc.editor.circularReferenceMode": {
+          "type": "string",
+          "enum": [
+            "first",
+            "last",
+            "ignore",
+            "warn",
+            "error"
+          ],
+          "default": "warn",
+          "markdownDescription": "How to handle circular provider references: `first` (use first occurrence in dependency tree), `last` (use last), `ignore` (skip silently), `warn` (log and continue), `error` (fail fast)."
         }
       }
     }

@@ -7,6 +7,7 @@
  * @module
  */
 import { isAbsolute, join } from "node:path";
+import { readdirSync } from "node:fs";
 import { type ExtensionContext, workspace } from "vscode";
 import {
   LanguageClient,
@@ -14,6 +15,7 @@ import {
   type ServerOptions,
   TransportKind,
 } from "vscode-languageclient/node";
+import { CssDocConfigFile } from "@cssdoc/config";
 import {
   DEFAULT_EXCLUDE,
   DEFAULT_INCLUDE,
@@ -46,8 +48,74 @@ let restartChain: Promise<void> = Promise.resolve();
 let restartTimer: ReturnType<typeof setTimeout> | undefined;
 
 /**
+ * Discover csddoc.json files in the workspace up to the specified depth, scanning directories
+ * recursively. Returns paths to all csddoc.json/csddoc.jsonc files found.
+ */
+function discoverConfigFiles(root: string, maxDepth: number, currentDepth = 0): string[] {
+  if (currentDepth > maxDepth) return [];
+  const configs: string[] = [];
+  try {
+    const entries = readdirSync(root, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.name === "csddoc.json" || entry.name === "csddoc.jsonc") {
+        configs.push(join(root, entry.name));
+      }
+      if (entry.isDirectory() && currentDepth < maxDepth && !entry.name.startsWith(".")) {
+        // Avoid scanning common non-relevant directories
+        if (!["node_modules", ".git", ".vscode", "dist", "build"].includes(entry.name)) {
+          try {
+            configs.push(
+              ...discoverConfigFiles(join(root, entry.name), maxDepth, currentDepth + 1),
+            );
+          } catch {
+            // Skip directories we can't read
+          }
+        }
+      }
+    }
+  } catch {
+    // Return what we found so far if the directory can't be read
+  }
+  return configs;
+}
+
+/**
+ * Resolve provider paths from a csddoc.json config file, expanding globs if enabled.
+ */
+function resolveProviderPaths(configFile: CssDocConfigFile, expandGlobs: boolean): string[] {
+  const { dirname, resolve } = require("node:path");
+  const { createRequire } = require("node:module");
+  const { globSync } = require("node:glob");
+
+  const paths: string[] = [];
+  const requireFrom = createRequire(configFile.filePath);
+  const from = dirname(configFile.filePath);
+
+  for (const provider of configFile.providers) {
+    try {
+      let resolvedPath = provider.path.startsWith(".")
+        ? resolve(from, provider.path)
+        : requireFrom.resolve(provider.path);
+
+      // If it's a glob pattern and expandGlobs is enabled, expand it
+      if (expandGlobs && /[*?[\]{}()!]/.test(resolvedPath)) {
+        const matches = globSync(resolvedPath, { cwd: from });
+        paths.push(...matches);
+      } else {
+        paths.push(resolvedPath);
+      }
+    } catch {
+      // Skip providers that can't be resolved (they'll be reported by the server)
+    }
+  }
+
+  return paths;
+}
+
+/**
  * Resolve the documented CSS file paths: an explicit `cssdoc.css` list (resolved against the workspace
  * root) when set, otherwise auto-detected from the `cssdoc.include` / `cssdoc.exclude` globs.
+ * Also discovers and resolves provider paths from csddoc.json files if enabled.
  */
 async function resolveCssPaths(): Promise<string[]> {
   const cfg = workspace.getConfiguration("cssdoc");
@@ -62,7 +130,30 @@ async function resolveCssPaths(): Promise<string[]> {
   if (!include) return [];
   const exclude = toGlob(cfg.get<string[]>("exclude", [...DEFAULT_EXCLUDE]));
   const uris = await workspace.findFiles(include, exclude);
-  return uris.map((u) => u.fsPath).sort();
+  const cssPaths = new Set(uris.map((u) => u.fsPath));
+
+  // Optionally discover and resolve providers from csddoc.json files
+  if (root && cfg.get<boolean>("editor.providerDiscovery", true)) {
+    const scanDepth = cfg.get<number>("editor.providerScanDepth", 3);
+    const expandGlobs = cfg.get<boolean>("editor.providerGlobs", true);
+
+    const configFiles = discoverConfigFiles(root, scanDepth);
+    for (const configPath of configFiles) {
+      try {
+        const configFile = CssDocConfigFile.loadFile(configPath);
+        if (!configFile.fileNotFound) {
+          const providerPaths = resolveProviderPaths(configFile, expandGlobs);
+          for (const path of providerPaths) {
+            cssPaths.add(path);
+          }
+        }
+      } catch {
+        // Skip config files that can't be loaded
+      }
+    }
+  }
+
+  return Array.from(cssPaths).sort();
 }
 
 /** Build a language client wired to the bundled server for the given CSS paths. */

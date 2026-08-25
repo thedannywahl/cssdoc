@@ -1022,6 +1022,9 @@ importers:
 
   servers/vscode:
     dependencies:
+      '@cssdoc/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@cssdoc/language-server':
         specifier: workspace:*
         version: link:../language-server
