@@ -64,6 +64,26 @@ function hasGlobPattern(path: string): boolean {
   return /[*?[\]{}()!]/.test(path);
 }
 
+const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+
+/**
+ * Rewrite a `.foo-bar` base-class prefix per {@link ProviderRef.prefix} — anchored to the start of the
+ * bare class name so it can only ever match a genuine prefix, not an incidental substring elsewhere in
+ * it. Non-class base selectors (`[data-x]`, `:host`, `#id`) are left untouched; there's no prefix to
+ * rewrite. `to` is spliced in verbatim, with no separator assumed.
+ */
+function rewriteEntryPrefix(
+  entry: CssDocEntry,
+  prefix: NonNullable<ProviderRef["prefix"]>,
+): CssDocEntry {
+  if (!entry.className?.startsWith(".")) return entry;
+  const bare = entry.className.slice(1);
+  const pattern = prefix.isRegExp ? prefix.from : escapeRe(prefix.from);
+  const re = new RegExp(`^(?:${pattern})`, "u");
+  if (!re.test(bare)) return entry;
+  return { ...entry, className: `.${bare.replace(re, prefix.to ?? "")}` };
+}
+
 /** Expand glob patterns using Node's built-in glob module. */
 function expandGlob(pattern: string, cwd: string): string[] {
   try {
@@ -155,7 +175,8 @@ export function resolveProviders(
 
       // A trailing slash keeps `baseHref` join-safe; the page slug matches the markdown emitter (`<name>.md`).
       const base = provider.baseHref?.replace(/\/?$/u, "/");
-      for (const entry of loaded) {
+      for (const raw of loaded) {
+        const entry = provider.prefix ? rewriteEntryPrefix(raw, provider.prefix) : raw;
         entries.push(entry);
         if (base && entry.className)
           hrefByClass.set(stripDot(entry.className), `${base}${entry.name}.md`);

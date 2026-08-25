@@ -118,6 +118,29 @@ export const cssDocSchema = {
             type: "string",
             description: "URL prefix for links to the provider's rendered doc pages.",
           },
+          prefix: {
+            type: "object",
+            additionalProperties: false,
+            required: ["from"],
+            description:
+              "Rewrite the provider's base-class prefix before merging its records (e.g. a published `instui-` consumed under a different spelling). `to` is used verbatim — no separator is added or assumed.",
+            properties: {
+              from: {
+                type: "string",
+                description:
+                  "The prefix as published, matched from the start of the class name — a literal string, or a regex source when isRegExp is true.",
+              },
+              to: {
+                type: "string",
+                description:
+                  "The literal replacement text (verbatim, no separator assumed). Omit or use \"\" to strip the prefix to a bare class.",
+              },
+              isRegExp: {
+                type: "boolean",
+                description: "Treat `from` as a regex source instead of a literal string.",
+              },
+            },
+          },
         },
       },
     },

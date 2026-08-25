@@ -170,3 +170,43 @@ test("resolveProviders reports an unresolvable provider without throwing", () =>
   expect(entries).toEqual([]);
   expect(messages[0]).toContain("missing.json");
 });
+
+test("resolveProviders' prefix rewrite is verbatim — no separator assumed or added", () => {
+  const dir = mkdtempSync(join(tmpdir(), "cssdoc-prov-prefix-"));
+  const model = parseCssDocs(
+    "/**\n * @component alert\n * @summary An alert.\n * @modifier -color-danger — Danger.\n */\n.instui-alert { color: var(--instui-alert-color); }\n.instui-alert.-color-danger {}",
+  );
+  writeFileSync(join(dir, "model.json"), JSON.stringify(model));
+
+  const resolve = (prefix?: { from: string; to?: string; isRegExp?: boolean }) => {
+    writeFileSync(
+      join(dir, "cssdoc.json"),
+      JSON.stringify({ providers: [{ path: "./model.json", ...(prefix ? { prefix } : {}) }] }),
+    );
+    return resolveProviders(CssDocConfigFile.loadFile(join(dir, "cssdoc.json")));
+  };
+
+  // No `prefix` at all — the default, a no-op. This is the regression guard for "without doing
+  // anything, the published prefix is maintained".
+  expect(resolve().entries[0].className).toBe(".instui-alert");
+
+  // `to` is spliced in verbatim — no "-" (or any separator) is assumed, so this drops the separator
+  // entirely, matching a consumer who built with no separator at all (`ialert`, not `i-alert`).
+  expect(resolve({ from: "instui-", to: "i" }).entries[0].className).toBe(".ialert");
+
+  // An explicit separator in `to` is honored exactly as given.
+  expect(resolve({ from: "instui-", to: "acme-" }).entries[0].className).toBe(".acme-alert");
+
+  // Omitting `to` (or "") strips the prefix to a bare class.
+  expect(resolve({ from: "instui-" }).entries[0].className).toBe(".alert");
+
+  // `isRegExp` treats `from` as a regex source, anchored to the start.
+  expect(resolve({ from: "(?:instui|pfx)-", to: "", isRegExp: true }).entries[0].className).toBe(
+    ".alert",
+  );
+
+  // Modifiers and custom properties are untouched — only the base `className` is rewritten.
+  const rewritten = resolve({ from: "instui-", to: "acme-" }).entries[0];
+  expect(rewritten.modifiers.map((m) => m.name)).toContain("-color-danger");
+  expect(rewritten.cssPropertiesConsumed.map((t) => t.name)).toContain("--instui-alert-color");
+});

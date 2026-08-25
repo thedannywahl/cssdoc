@@ -40,7 +40,7 @@ npm i -D @cssdoc/config @cssdoc/core
 | `rules`              | Per-rule severity overrides (`off`/`warn`/`error`).                                                                                                                                                                                                                                         |
 | `naming`             | Name-case to enforce on `component`/`part` class names — a preset (`pascalCase`/`camelCase`/`lowercase`) or a custom regex.                                                                                                                                                                 |
 | `structureIgnore`    | Class names exempt from `structure-unknown-selector` — external classes (utilities, cross-component refs) named in `@structure`. Literal names or simple `*` globs (e.g. `util-*`).                                                                                                         |
-| `providers`          | Upstream cssdoc providers this config consumes — `[{ path, baseHref? }]`. Their documented components resolve in this scope's lint and hover. See below.                                                                                                                                    |
+| `providers`          | Upstream cssdoc providers this config consumes — `[{ path, baseHref?, prefix? }]`. Their documented components resolve in this scope's lint and hover. See below.                                                                                                                            |
 
 See [Modifier conventions](/guide/modifier-conventions) for the convention forms and the full rule list.
 
@@ -71,6 +71,27 @@ loads a published **model** — the [`@cssdoc/json`](/guide/packages) emitter's 
 `CssDocEntry[]`); any other path is a **source stylesheet**, parsed with the provider's own governing
 `cssdoc.json` convention. `baseHref` prefixes links to the provider's rendered doc pages
 (`<baseHref><name>.md`).
+
+### Rewriting a provider's prefix
+
+A provider's `model.json` is published at one fixed class prefix (e.g. a vendor ships `instui-`), but a
+consumer may build their own copy of the vendor's CSS under a different prefix — or none at all. Add
+`prefix` to rewrite the provider's base classes at load time, without touching the provider's own build:
+
+```jsonc
+{
+  "providers": [
+    // `to` is spliced in verbatim — no separator like "-" is added or assumed. So `{ from: "instui-",
+    // to: "i" }` turns `.instui-alert` into `.ialert`, not `.i-alert`.
+    { "path": "@vendor/ui/model.json", "prefix": { "from": "instui-", "to": "acme-" } },
+  ],
+}
+```
+
+`from` matches the start of each class name — a literal string by default, or a regex source when
+`isRegExp: true` (always anchored to the start). Omit `to` (or use `""`) to strip the prefix to a bare
+class. Only the base `className` is rewritten; modifier names and `--*` custom properties are untouched.
+Omitting `prefix` entirely leaves the provider's classes exactly as published.
 
 ## Rule severities
 
