@@ -412,7 +412,7 @@ function collect(
   // The base `&`/`:scope` currently resolve to, or `undefined` if they don't resolve to this record's
   // own base at all here (see {@link scopeMatchesBase}/{@link ampStaysAtScope}). Always `baseNoDot` or
   // `undefined` — never a third value.
-  ampBase: string | undefined = undefined,
+  ampBase?: string,
 ): void {
   let pendingCanonical: string | undefined;
   let pendingDescription: string | undefined;
@@ -587,7 +587,16 @@ function collect(
           ampEnabled && node.selector.split(",").every((branch) => ampStaysAtScope(branch))
             ? ampBase
             : undefined;
-        collect(node.nodes, acc, matcher, baseNoDot, prefixNoDot, inScope, inlineMode, childAmpBase);
+        collect(
+          node.nodes,
+          acc,
+          matcher,
+          baseNoDot,
+          prefixNoDot,
+          inScope,
+          inlineMode,
+          childAmpBase,
+        );
       }
       pendingCanonical = undefined;
       pendingDescription = undefined;
