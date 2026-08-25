@@ -4,6 +4,18 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.13.11
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.13.10...v0.13.11)
+
+### 🏡 Chore
+
+- Update setup-vp action to v1.18.0 in CI workflows ([bbc631d](https://github.com/thedannywahl/cssdoc/commit/bbc631d))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.13.10
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.13.9...v0.13.10)
