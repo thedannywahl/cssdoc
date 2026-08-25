@@ -5,7 +5,7 @@ import grammar from "../cssdoc.injection.tmLanguage.json" with { type: "json" };
 import atRuleGrammar from "../cssdoc.atrules.injection.tmLanguage.json" with { type: "json" };
 
 test("is a well-formed injection grammar", () => {
-  expect(grammar.scopeName).toBe("documentation.cssdoc");
+  expect(grammar.scopeName).toBe("text.cssdoc");
   expect(grammar.injectionSelector).toContain("comment.block.css");
   expect(Array.isArray(grammar.patterns)).toBe(true);
   expect(grammar.patterns.length).toBeGreaterThan(0);

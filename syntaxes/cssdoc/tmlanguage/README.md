@@ -37,7 +37,7 @@ Reference the raw grammars from `contributes.grammars` and inject them into CSS:
   "contributes": {
     "grammars": [
       {
-        "scopeName": "documentation.cssdoc",
+        "scopeName": "text.cssdoc",
         "path": "./cssdoc.injection.tmLanguage.json",
         "injectTo": ["source.css"]
       },

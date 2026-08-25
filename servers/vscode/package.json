@@ -44,7 +44,7 @@
   "contributes": {
     "grammars": [
       {
-        "scopeName": "documentation.cssdoc",
+        "scopeName": "text.cssdoc",
         "path": "./syntaxes/cssdoc.injection.tmLanguage.json",
         "injectTo": [
           "source.css",

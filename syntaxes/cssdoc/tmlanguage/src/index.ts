@@ -79,7 +79,7 @@ export function buildInjectionGrammar(): InjectionGrammar {
   return {
     $schema: "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
     name: "cssdoc",
-    scopeName: "documentation.cssdoc",
+    scopeName: "text.cssdoc",
     injectionSelector: "L:comment.block.css, L:comment.block.scss, L:comment.block.less",
     patterns: [
       { include: "#inline-tag" },
