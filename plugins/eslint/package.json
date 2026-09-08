@@ -45,11 +45,13 @@
     "@cssdoc/providers": "workspace:*"
   },
   "devDependencies": {
+    "@cssdoc/stylelint-plugin": "workspace:*",
     "@eslint/css": "catalog:",
     "@html-eslint/parser": "catalog:",
     "@types/node": "catalog:",
     "eslint": "catalog:",
     "publint": "catalog:",
+    "stylelint": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vite-plus": "catalog:"
