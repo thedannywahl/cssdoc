@@ -4,6 +4,33 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.15.0
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.14.2...v0.15.0)
+
+### 🚀 Enhancements
+
+- **vscode:** Auto-format CSSDoc comments ([8798a30](https://github.com/thedannywahl/cssdoc/commit/8798a30))
+- **cli:** Add @cssdoc/cli, a host-agnostic cssdoc lint ([#36](https://github.com/thedannywahl/cssdoc/pull/36))
+- Add oxlint dependency ([9561b7e](https://github.com/thedannywahl/cssdoc/commit/9561b7e))
+
+### 🩹 Fixes
+
+- Ignore generated stylelint declaration ([923dfa8](https://github.com/thedannywahl/cssdoc/commit/923dfa8))
+
+### 📖 Documentation
+
+- Explain the oxlint/stylelint split for CSS doc linting ([#35](https://github.com/thedannywahl/cssdoc/pull/35))
+
+### ✅ Tests
+
+- Add stylelint/eslint conformance suite for valid-doc-comments ([#34](https://github.com/thedannywahl/cssdoc/pull/34))
+- **eslint:** Verify valid-class-usage under oxlint jsPlugins ([#37](https://github.com/thedannywahl/cssdoc/pull/37))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.14.2
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.14.1...v0.14.2)
