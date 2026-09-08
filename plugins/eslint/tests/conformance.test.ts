@@ -274,17 +274,18 @@ interface Diagnostic {
   rule: string;
   line: number;
   message: string;
+  severity: "error" | "warning";
 }
 
 /** Strip each host's column base and message decoration down to `{ rule, line, message }`. */
-function normalize(raw: string, line: number): Diagnostic {
+function normalize(raw: string, line: number, severity: "error" | "warning"): Diagnostic {
   const m = raw.match(/^\[([\w-]+)\]\s*(?:\(line \d+\)\s*)?(.*)$/u);
   const rule = m?.[1] ?? "";
   const message = (m?.[2] ?? raw)
     .trim()
     .replace(/\s*\(cssdoc\/valid-doc-comments\)$/u, "") // stylelint's auto-appended rule-name suffix
     .replace(/\.$/u, "");
-  return { rule, line, message };
+  return { rule, line, message, severity };
 }
 
 function runEslint(fixture: Fixture): Diagnostic[] {
@@ -306,7 +307,7 @@ function runEslint(fixture: Fixture): Diagnostic[] {
   const linter = new Linter();
   return linter
     .verify(fixture.css, config as Parameters<Linter["verify"]>[1], filename)
-    .map((m) => normalize(m.message, m.line));
+    .map((m) => normalize(m.message, m.line, m.severity === 2 ? "error" : "warning"));
 }
 
 async function runStylelint(fixture: Fixture): Promise<Diagnostic[]> {
@@ -323,7 +324,7 @@ async function runStylelint(fixture: Fixture): Promise<Diagnostic[]> {
       },
     },
   });
-  return result.results[0].warnings.map((w) => normalize(w.text, w.line));
+  return result.results[0].warnings.map((w) => normalize(w.text, w.line, w.severity));
 }
 
 const sortDiagnostics = (diagnostics: Diagnostic[]): Diagnostic[] =>

@@ -102,6 +102,7 @@ const rule: Rule<boolean, SecondaryOptions> = (primary, secondaryOptions) => (ro
     utils.report({
       result,
       ruleName,
+      severity: violation.severity,
       message: messages.violation(
         `[${violation.rule}] (line ${violation.line}) ${violation.message}`,
       ),

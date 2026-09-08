@@ -41,6 +41,39 @@ test("the rule reports doc-hygiene violations from lint-core", async () => {
   expect(warnings.every((w) => w.rule === ruleName)).toBe(true);
 });
 
+test("the rule preserves lint-core warning severity", async () => {
+  const result = await stylelint.lint({
+    code: CSS,
+    config: { plugins: [plugin], rules: { [ruleName]: [true, { modifierConvention: "rscss" }] } },
+  });
+  expect(result.errored).toBe(false);
+  expect(result.results[0].warnings.map((w) => w.severity)).toEqual([
+    "warning",
+    "warning",
+    "warning",
+  ]);
+});
+
+test("the rule preserves cssdoc-configured error severity", async () => {
+  const result = await stylelint.lint({
+    code: CSS,
+    config: {
+      plugins: [plugin],
+      rules: {
+        [ruleName]: [
+          true,
+          {
+            modifierConvention: "rscss",
+            rules: { "missing-summary": "error", "undocumented-modifier": "off" },
+          },
+        ],
+      },
+    },
+  });
+  expect(result.errored).toBe(true);
+  expect(result.results[0].warnings.map((w) => w.severity)).toEqual(["error", "warning"]);
+});
+
 test("a fully documented stylesheet produces no warnings", async () => {
   const clean = `
 /**
