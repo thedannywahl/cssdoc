@@ -289,6 +289,9 @@ catalogs:
     ovsx:
       specifier: ^1.1.1
       version: 1.1.1
+    oxlint:
+      specifier: 1.81.0
+      version: 1.81.0
     postcss:
       specifier: ^8.5.28
       version: 8.5.28
@@ -996,6 +999,9 @@ importers:
       eslint:
         specifier: 'catalog:'
         version: 10.10.0(jiti@2.7.0)(supports-color@10.2.2)
+      oxlint:
+        specifier: 'catalog:'
+        version: 1.81.0(oxlint-tsgolint@7.0.2001)(vite-plus@0.3.1(@types/node@26.5.0)(@vitest/coverage-v8@4.1.11)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(typescript@7.0.2)(yaml@2.9.0))
       publint:
         specifier: 'catalog:'
         version: 0.3.24
