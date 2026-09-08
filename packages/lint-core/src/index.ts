@@ -20,6 +20,7 @@ import {
   lintModel,
   resolveNaming,
   resolveRuleSeverities,
+  type Diagnostic,
   type NamingRules,
   type RuleSeverity,
   type Severity,
@@ -104,6 +105,8 @@ export interface Violation {
   span?: SourceSpan;
   /** The resolved severity (`error` or `warning`). */
   severity: Severity;
+  /** A deterministic source edit, when the rule can be repaired safely. */
+  fix?: Diagnostic["fix"];
 }
 
 /** Options for {@link lintCssDocs}. */
@@ -177,5 +180,6 @@ export function lintCssDocs(css: string, options: LintOptions = {}): Violation[]
     line: d.span?.start.line ?? 1,
     span: d.span,
     severity: d.severity,
+    fix: d.fix,
   }));
 }

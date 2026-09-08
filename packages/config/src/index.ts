@@ -19,6 +19,8 @@ export {
   CSSDOC_CONFIG_FILENAME,
   CSSDOC_CONFIG_FILENAMES,
   type ProviderRef,
+  type ResolvedRuleOverrideBlock,
+  type RuleOverrideBlock,
   type RuleOptionsConfig,
 } from "./CssDocConfigFile.ts";
 export {

@@ -36,6 +36,10 @@ A toolchain with neither linter (or one that just wants doc-hygiene checks with 
 can reach the same rules with no host at all: see [`@cssdoc/cli`](https://github.com/thedannywahl/cssdoc/tree/main/packages/cli)'s
 `cssdoc lint`.
 
+The CLI accepts the same `cssdoc.jsonc` rule severities as the linter plugins, including per-glob
+`overrides`. It can also apply the safe autofix subset with `--fix`, currently limited to deterministic
+doc-comment scaffolds such as missing `@summary`, `@modifier`, `@part`, and `@csspart` prose.
+
 ## Stylelint — doc-comment hygiene
 
 [`@cssdoc/stylelint-plugin`](https://www.npmjs.com/package/@cssdoc/stylelint-plugin) checks your

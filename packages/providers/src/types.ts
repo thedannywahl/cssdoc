@@ -11,6 +11,20 @@ export type { Location, SourceSpan } from "@cssdoc/index";
 /** Diagnostic severity. */
 export type Severity = "error" | "warning";
 
+/** A source edit a host can apply to repair a diagnostic. */
+export interface TextEdit {
+  /** The range to replace; use a zero-length span for insertion. */
+  span: SourceSpan;
+  /** Replacement text for the range. */
+  text: string;
+}
+
+/** A deterministic fix for a diagnostic. */
+export interface DiagnosticFix {
+  /** One or more edits to apply atomically. */
+  edits: readonly TextEdit[];
+}
+
 /** A configurable per-rule severity — `off` suppresses the rule entirely. */
 export type RuleSeverity = "off" | "warn" | "error";
 
@@ -163,6 +177,8 @@ export interface Diagnostic {
   span?: SourceSpan;
   /** Severity (defaults to `warning`). */
   severity: Severity;
+  /** A deterministic source edit, when the rule can be repaired safely. */
+  fix?: DiagnosticFix;
   /**
    * Optional structured payload for consumers. `maskedName` is the class token as it appears in the
    * linted (possibly projected) source, so the language server can restore an embedded `${…}`

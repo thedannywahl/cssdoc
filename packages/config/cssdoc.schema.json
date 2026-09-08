@@ -406,6 +406,237 @@
         }
       }
     },
+    "overrides": {
+      "description": "Per-glob rule severity overrides. Globs are relative to this config file.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "files",
+          "rules"
+        ],
+        "properties": {
+          "files": {
+            "description": "One or more glob patterns relative to this config file.",
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "rules": {
+            "description": "Per-rule severity overrides for matching files (off/warn/error).",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "missing-summary": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "undocumented-modifier": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "deprecated-requires-canonical": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "alias-requires-canonical": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "name-not-in-css": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "unknown-modifier": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "deprecated-modifier": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "disallowed-element": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "unknown-state": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "unknown-part": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "undocumented-part": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "undocumented-css-part": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "component-name-case": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "part-name-case": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "duplicate-record-id": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "duplicate-record-id-cross-kind": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "structure-unknown-selector": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "structure-unknown-record": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "structure-ambiguous-record": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "invalid-default-value": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "invalid-property-value": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "invalid-fallback-value": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "unknown-custom-property": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "unknown-annotation-ref": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "readonly-redefinition": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "sealed-reset-value": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "cssdoc-directive": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              },
+              "conflicting-global-modifier": {
+                "enum": [
+                  "off",
+                  "warn",
+                  "error"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "ruleOptions": {
       "description": "Policy options for rule behavior families.",
       "type": "object",

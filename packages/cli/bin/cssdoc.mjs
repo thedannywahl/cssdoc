@@ -8,7 +8,7 @@ const [command, ...rest] = process.argv.slice(2);
 
 if (command !== "lint") {
   console.error(
-    `Usage: cssdoc lint <globs...> [--format pretty|json|github] [--quiet] [--max-warnings <n>]`,
+    `Usage: cssdoc lint <globs...> [--format pretty|json|github] [--quiet] [--max-warnings <n>] [--fix]`,
   );
   process.exit(1);
 }
@@ -20,6 +20,7 @@ const { values, positionals } = parseArgs({
     format: { type: "string", default: "pretty" },
     quiet: { type: "boolean", default: false },
     "max-warnings": { type: "string", default: "-1" },
+    fix: { type: "boolean", default: false },
   },
 });
 
@@ -33,6 +34,7 @@ const { exitCode, output } = runLint({
   format: values.format,
   quiet: values.quiet,
   maxWarnings: Number(values["max-warnings"]),
+  fix: values.fix,
 });
 
 if (output) console.log(output);

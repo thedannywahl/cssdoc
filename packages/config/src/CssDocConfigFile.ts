@@ -9,7 +9,7 @@
  */
 import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { dirname, parse as parsePath, resolve } from "node:path";
+import { dirname, matchesGlob, parse as parsePath, relative, resolve, sep } from "node:path";
 import { Ajv } from "ajv";
 import { type ParseError, parse as parseJsonc, printParseErrorCode } from "jsonc-parser";
 import { CssDocConfiguration, CssDocTagDefinition } from "@cssdoc/core";
@@ -23,6 +23,19 @@ import { cssDocSchema } from "./schema.ts";
 
 /** A per-rule severity override, as spelled in `cssdoc.json`. */
 export type RuleSeverityOverride = "off" | "warn" | "error";
+
+/** A per-glob rule override block, as spelled in `cssdoc.json`. */
+export interface RuleOverrideBlock {
+  files: string | readonly string[];
+  rules: Record<string, RuleSeverityOverride>;
+}
+
+/** A loaded per-glob rule override block, with globs normalized to this file's directory. */
+export interface ResolvedRuleOverrideBlock {
+  files: readonly string[];
+  rules: Readonly<Record<string, RuleSeverityOverride>>;
+  basePath: string;
+}
 
 /** The `naming` block: a name case (preset or custom regex) per class kind, as spelled in `cssdoc.json`. */
 export interface NamingOverride {
@@ -105,6 +118,7 @@ interface RawConfig {
   inlineComments?: InlineCommentMode;
   providers?: ProviderRef[];
   rules?: Record<string, RuleSeverityOverride>;
+  overrides?: RuleOverrideBlock[];
   ruleOptions?: RuleOptionsConfig;
   naming?: NamingOverride;
   structureIgnore?: string[];
@@ -136,6 +150,7 @@ interface ConfigFileInit {
   inlineComments?: InlineCommentMode;
   providers: ProviderRef[];
   rules: Record<string, RuleSeverityOverride>;
+  overrides: ResolvedRuleOverrideBlock[];
   ruleOptions: RuleOptionsConfig;
   naming: NamingOverride;
   structureIgnore: string[];
@@ -173,6 +188,8 @@ export class CssDocConfigFile {
    * resolved severities — pass these to `resolveRuleSeverities` in `@cssdoc/providers`.
    */
   readonly ruleSeverities: Readonly<Record<string, RuleSeverityOverride>>;
+  /** Per-glob rule overrides, merged across `extends` before this file's overrides. */
+  readonly ruleOverrides: readonly ResolvedRuleOverrideBlock[];
   /** Rule behavior policy options, merged across `extends` (this file wins). */
   readonly ruleOptions: Readonly<RuleOptionsConfig>;
   /**
@@ -213,10 +230,12 @@ export class CssDocConfigFile {
     const naming: NamingOverride = {};
     const ruleOptions: RuleOptionsConfig = {};
     const render: RenderConfig = {};
+    const overrides: ResolvedRuleOverrideBlock[] = [];
     let globalPrecedence: "base" | "global" = "base";
     const structureIgnore = new Set<string>();
     for (const extended of init.extendsFiles) {
       Object.assign(severities, extended.ruleSeverities);
+      overrides.push(...extended.ruleOverrides);
       Object.assign(naming, extended.naming);
       Object.assign(ruleOptions, extended.ruleOptions);
       Object.assign(render, extended.render);
@@ -224,12 +243,14 @@ export class CssDocConfigFile {
       for (const g of extended.structureIgnore) structureIgnore.add(g);
     }
     Object.assign(severities, init.rules);
+    overrides.push(...init.overrides);
     Object.assign(naming, init.naming);
     Object.assign(ruleOptions, init.ruleOptions);
     Object.assign(render, init.render);
     globalPrecedence = init.globalPrecedence;
     for (const g of init.structureIgnore) structureIgnore.add(g);
     this.ruleSeverities = severities;
+    this.ruleOverrides = overrides;
     this.naming = naming;
     this.ruleOptions = ruleOptions;
     this.render = render;
@@ -287,6 +308,23 @@ export class CssDocConfigFile {
   }
 
   /**
+   * Return this config's rule severities with every matching `overrides` block applied for a file.
+   * Override globs are relative to the config file where the block was authored; later matches win.
+   */
+  ruleSeveritiesForFile(filePath: string): Record<string, RuleSeverityOverride> {
+    const severities = { ...this.ruleSeverities };
+    const absoluteFilePath = resolve(filePath);
+    for (const override of this.ruleOverrides) {
+      const relativeFilePath = relative(override.basePath, absoluteFilePath).split(sep).join("/");
+      if (relativeFilePath.startsWith("../") || relativeFilePath === "..") continue;
+      if (override.files.some((pattern) => matchesGlob(relativeFilePath, pattern))) {
+        Object.assign(severities, override.rules);
+      }
+    }
+    return severities;
+  }
+
+  /**
    * Load a `cssdoc.json` from an exact path. Missing files yield a `fileNotFound` instance (not an
    * error); malformed ones collect messages.
    *
@@ -324,6 +362,7 @@ export class CssDocConfigFile {
       extendsFiles: [],
       providers: [],
       rules: {},
+      overrides: [],
       ruleOptions: {},
       naming: {},
       structureIgnore: [],
@@ -345,6 +384,7 @@ export class CssDocConfigFile {
         extendsFiles: [],
         providers: [],
         rules: {},
+        overrides: [],
         ruleOptions: {},
         naming: {},
         structureIgnore: [],
@@ -416,6 +456,11 @@ export class CssDocConfigFile {
       inlineComments: raw.inlineComments,
       providers: raw.providers ?? [],
       rules: raw.rules ?? {},
+      overrides: (raw.overrides ?? []).map((override) => ({
+        files: Array.isArray(override.files) ? override.files : [override.files],
+        rules: override.rules,
+        basePath: dirname(filePath),
+      })),
       ruleOptions: raw.ruleOptions ?? {},
       naming: raw.naming ?? {},
       structureIgnore: raw.structureIgnore ?? [],

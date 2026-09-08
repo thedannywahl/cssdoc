@@ -14,6 +14,7 @@ import {
   type PropertyAssignment,
   type PropertyUsage,
   type RecordInfo,
+  type SourceSpan,
   memberKey,
 } from "@cssdoc/index";
 import { linkSyntax } from "./mdn.ts";
@@ -41,6 +42,20 @@ const linkedSyntax = (syntax: string): string => {
 
 const stripDot = (name: string): string => name.replace(/^\./u, "");
 const warn = (d: Omit<Diagnostic, "severity">): Diagnostic => ({ ...d, severity: "warning" });
+const scaffoldDocLine = (commentSpan: SourceSpan | undefined, line: string): Diagnostic["fix"] => {
+  if (!commentSpan) return undefined;
+  const column = Math.max(1, commentSpan.start.column);
+  const indentation = " ".repeat(column - 1);
+  const position = { line: commentSpan.end.line, column: 1 };
+  return {
+    edits: [
+      {
+        span: { start: position, end: position },
+        text: `${indentation} * ${line}\n`,
+      },
+    ],
+  };
+};
 
 const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 const CUSTOM_ELEMENT_RE = /^[a-z][a-z0-9._-]*-[a-z0-9._-]+$/u;
@@ -333,6 +348,7 @@ export const record = {
             message: `Record "${info.entry.name}" has no @summary.`,
             record: info.entry.name,
             span: info.span,
+            fix: scaffoldDocLine(info.span, "@summary TODO."),
           }),
         );
       }
@@ -917,6 +933,7 @@ export const modifier = {
                 message: `Modifier "${sel}" of "${name}" has no @modifier description.`,
                 record: name,
                 span,
+                fix: scaffoldDocLine(info.span, `@modifier ${m.name} — TODO.`),
               }),
             );
           }
@@ -1111,6 +1128,7 @@ export const part = {
                 info.memberSpans.get(memberKey("part", p.name)) ??
                 info.authoredPartLines.get(p.name) ??
                 info.span,
+              fix: scaffoldDocLine(info.span, `@part .${p.name} — TODO.`),
             }),
           );
         }
@@ -1160,6 +1178,7 @@ export const cssPart = {
               message: `Shadow part "::part(${p.name})" of "${name}" has no @csspart description.`,
               record: name,
               span: info.memberSpans.get(memberKey("shadow-part", p.name)) ?? info.span,
+              fix: scaffoldDocLine(info.span, `@csspart ${p.name} — TODO.`),
             }),
           );
         }

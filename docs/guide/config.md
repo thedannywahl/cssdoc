@@ -27,6 +27,7 @@ npm i -D @cssdoc/config @cssdoc/core
   "rules": {
     "unknown-modifier": "warn",
   },
+  "overrides": [{ "files": "docs/**/*.css", "rules": { "missing-summary": "off" } }],
 }
 ```
 
@@ -38,6 +39,7 @@ npm i -D @cssdoc/config @cssdoc/core
 | `supportForTags`     | Enable or disable specific tags by name.                                                                                                                                                                                                                                                    |
 | `modifierConvention` | How modifier classes are spelled — a preset (`bem`, `rscss`, `bare`) or a custom object. A custom object can also map BEM elements to parts (`elementSeparator`), state classes to states (`statePrefixes`), and native pseudo-classes to states (`statePseudoClasses`). Defaults to `bem`. |
 | `rules`              | Per-rule severity overrides (`off`/`warn`/`error`).                                                                                                                                                                                                                                         |
+| `overrides`          | Per-glob rule severity overrides (`[{ files, rules }]`). Globs are relative to the config file where they're authored; inherited overrides keep their original base path. Matching overrides apply in order, so later matches win.                                                          |
 | `naming`             | Name-case to enforce on `component`/`part` class names — a preset (`pascalCase`/`camelCase`/`lowercase`) or a custom regex.                                                                                                                                                                 |
 | `structureIgnore`    | Class names exempt from `structure-unknown-selector` — external classes (utilities, cross-component refs) named in `@structure`. Literal names or simple `*` globs (e.g. `util-*`).                                                                                                         |
 | `providers`          | Upstream cssdoc providers this config consumes — `[{ path, baseHref?, prefix? }]`. Their documented components resolve in this scope's lint and hover. See below.                                                                                                                           |

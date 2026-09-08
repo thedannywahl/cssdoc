@@ -26,6 +26,7 @@ test("flags a missing summary", () => {
   const v = byRule(lintCssDocs(CSS), "missing-summary");
   expect(v).toHaveLength(1);
   expect(v[0].record).toBe("button");
+  expect(v[0].fix?.edits[0]?.text).toBe(" * @summary TODO.\n");
 });
 
 test("directives: disable, disable-next-line, and expect-error suppress and verify", () => {
@@ -69,6 +70,7 @@ test("flags an AST modifier without a @modifier description", () => {
   const v = byRule(lintCssDocs(CSS), "undocumented-modifier");
   // -size-sm has no description; -color-secondary is documented; -variant-old is deprecated.
   expect(v.map((x) => x.message)).toEqual([expect.stringContaining("-size-sm")]);
+  expect(v[0].fix?.edits[0]?.text).toBe(" * @modifier -size-sm — TODO.\n");
 });
 
 test("flags a deprecated modifier that lacks a canonical replacement or note", () => {
@@ -91,6 +93,13 @@ test("flags an undocumented part", () => {
 `;
   const v = byRule(lintCssDocs(css), "undocumented-part");
   expect(v.map((x) => x.message)).toEqual([expect.stringContaining(".item")]);
+  expect(v[0].fix?.edits[0]?.text).toBe(" * @part .item — TODO.\n");
+});
+
+test("fix metadata is omitted for non-scaffold rules", () => {
+  const v = byRule(lintCssDocs(CSS), "name-not-in-css");
+  expect(v).toHaveLength(1);
+  expect(v[0].fix).toBeUndefined();
 });
 
 test("undocumented-part: authored chain @part suppresses the warning for its terminal compound", () => {

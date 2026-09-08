@@ -90,8 +90,66 @@ test("modifierConvention and rules load onto the configuration and config file",
   expect(button.modifiers.map((m) => m.name)).toEqual(["-color-x"]);
 });
 
+test("rule overrides apply to matching files in declaration order", () => {
+  const dir = mkdtempSync(join(tmpdir(), "cssdoc-overrides-"));
+  writeFileSync(
+    join(dir, "cssdoc.json"),
+    JSON.stringify({
+      rules: { "missing-summary": "error" },
+      overrides: [
+        { files: "docs/*.css", rules: { "missing-summary": "off" } },
+        { files: ["docs/special.css"], rules: { "missing-summary": "warn" } },
+      ],
+    }),
+  );
+  const configFile = CssDocConfigFile.loadFile(join(dir, "cssdoc.json"));
+  expect(configFile.hasErrors).toBe(false);
+  expect(configFile.ruleSeveritiesForFile(join(dir, "src/a.css"))["missing-summary"]).toBe("error");
+  expect(configFile.ruleSeveritiesForFile(join(dir, "docs/a.css"))["missing-summary"]).toBe("off");
+  expect(configFile.ruleSeveritiesForFile(join(dir, "docs/special.css"))["missing-summary"]).toBe(
+    "warn",
+  );
+});
+
+test("inherited rule overrides stay relative to the file that authored them", () => {
+  const dir = mkdtempSync(join(tmpdir(), "cssdoc-inherited-overrides-"));
+  mkdirSync(join(dir, "base"));
+  mkdirSync(join(dir, "app"));
+  writeFileSync(
+    join(dir, "base", "cssdoc.json"),
+    JSON.stringify({ overrides: [{ files: "legacy/*.css", rules: { "missing-summary": "off" } }] }),
+  );
+  writeFileSync(
+    join(dir, "app", "cssdoc.json"),
+    JSON.stringify({
+      extends: ["../base/cssdoc.json"],
+      rules: { "missing-summary": "error" },
+      overrides: [{ files: "local/*.css", rules: { "missing-summary": "warn" } }],
+    }),
+  );
+  const configFile = CssDocConfigFile.loadFile(join(dir, "app", "cssdoc.json"));
+  expect(configFile.hasErrors).toBe(false);
+  expect(
+    configFile.ruleSeveritiesForFile(join(dir, "base", "legacy", "a.css"))["missing-summary"],
+  ).toBe("off");
+  expect(
+    configFile.ruleSeveritiesForFile(join(dir, "app", "local", "a.css"))["missing-summary"],
+  ).toBe("warn");
+});
+
 test("unknown rule keys are rejected by schema validation", () => {
   const configFile = CssDocConfigFile.loadFile(fixture("invalid-rules.cssdoc.json"));
+  expect(configFile.hasErrors).toBe(true);
+  expect(configFile.getErrorSummary()).toContain("Schema error");
+});
+
+test("unknown override rule keys are rejected by schema validation", () => {
+  const dir = mkdtempSync(join(tmpdir(), "cssdoc-invalid-overrides-"));
+  writeFileSync(
+    join(dir, "cssdoc.json"),
+    JSON.stringify({ overrides: [{ files: "*.css", rules: { nope: "off" } }] }),
+  );
+  const configFile = CssDocConfigFile.loadFile(join(dir, "cssdoc.json"));
   expect(configFile.hasErrors).toBe(true);
   expect(configFile.getErrorSummary()).toContain("Schema error");
 });

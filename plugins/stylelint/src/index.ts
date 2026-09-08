@@ -85,7 +85,7 @@ const rule: Rule<boolean, SecondaryOptions> = (primary, secondaryOptions) => (ro
   const violations = lintCssDocs(css, {
     configuration: configFile.toConfiguration(),
     rules: {
-      ...configFile.ruleSeverities,
+      ...(file ? configFile.ruleSeveritiesForFile(file) : configFile.ruleSeverities),
       ...secondaryOptions?.rules,
     } as SecondaryOptions["rules"],
     modifierConvention: secondaryOptions?.modifierConvention ?? configFile.modifierConvention,

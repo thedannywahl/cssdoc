@@ -26,19 +26,34 @@ Options:
   for GitHub Actions.
 - `--quiet` — drop warning-severity violations from the report (and from the exit-code calculation).
 - `--max-warnings <n>` — fail if more than `n` warnings are reported (default: unlimited).
+- `--fix` — apply deterministic autofixes for the safe doc-scaffold subset before reporting.
 
-Exit code is non-zero when any error-severity violation is reported (or the `--max-warnings` count is
-exceeded).
+Exit code is non-zero when any error-severity violation remains after fixes are applied (or the
+`--max-warnings` count is exceeded).
 
 ```sh
-cssdoc lint "src/**/*.css" --format github --max-warnings 0
+cssdoc lint "src/**/*.css" --fix --format github --max-warnings 0
 ```
 
-## Not yet implemented
+Globs are `.gitignore`-aware from the nearest Git root and always exclude `node_modules`. Root
+`.gitignore` negations are honored; nested `.gitignore` files are not read yet.
 
-- `--fix` for the autofixable rule subset.
-- Per-glob rule overrides in `cssdoc.jsonc` (an `overrides: [{ files, rules }]`-shaped extension).
-- `.gitignore`-aware globbing (globs currently just exclude `node_modules`).
+Per-glob rule overrides live in `cssdoc.jsonc` next to normal rule severities:
+
+```jsonc
+{
+  "rules": {
+    "missing-summary": "error",
+  },
+  "overrides": [
+    { "files": "docs/**/*.css", "rules": { "missing-summary": "off" } },
+    { "files": ["examples/**/*.css"], "rules": { "missing-summary": "warn" } },
+  ],
+}
+```
+
+Override globs are relative to the config file where they're authored. Matching overrides apply in
+declaration order, so later matches win.
 
 ## License
 

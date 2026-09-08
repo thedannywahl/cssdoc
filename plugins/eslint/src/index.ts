@@ -121,7 +121,12 @@ const validDocComments: RuleModule = {
       StyleSheet(): void {
         const violations = lintCssDocs(context.sourceCode.text, {
           configuration: configFile.toConfiguration(),
-          rules: { ...configFile.ruleSeverities, ...options.rules } as DocCommentsOptions["rules"],
+          rules: {
+            ...(context.filename
+              ? configFile.ruleSeveritiesForFile(context.filename)
+              : configFile.ruleSeverities),
+            ...options.rules,
+          } as DocCommentsOptions["rules"],
           modifierConvention: options.modifierConvention ?? configFile.modifierConvention,
           naming: { ...configFile.naming, ...options.naming } as NamingRules,
           structureIgnore: options.structureIgnore ?? configFile.structureIgnore,

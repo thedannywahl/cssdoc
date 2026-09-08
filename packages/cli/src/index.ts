@@ -6,9 +6,10 @@
  *
  * @module @cssdoc/cli
  */
-import { globSync, readFileSync } from "node:fs";
-import { dirname, relative, resolve } from "node:path";
+import { existsSync, globSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, matchesGlob, parse as parsePath, relative, resolve, sep } from "node:path";
 import { CssDocConfigFile, resolveProviders } from "@cssdoc/config";
+import type { SourceSpan } from "@cssdoc/index";
 import { lintCssDocs, type LintOptions, type Violation } from "@cssdoc/lint-core";
 
 /** One file's lint results. */
@@ -28,6 +29,8 @@ export interface LintCliOptions {
   quiet?: boolean;
   /** Fail if more than this many warnings are reported (`-1`, the default, means unlimited). */
   maxWarnings?: number;
+  /** Apply deterministic autofixes before reporting. */
+  fix?: boolean;
   cwd?: string;
 }
 
@@ -42,32 +45,135 @@ function loadConfig(folder: string): CssDocConfigFile {
   return cached;
 }
 
+interface IgnorePattern {
+  pattern: string;
+  negated: boolean;
+}
+
+function posixRelative(from: string, to: string): string {
+  return relative(from, to).split(sep).join("/");
+}
+
+function findIgnoreRoot(cwd: string): string {
+  let current = resolve(cwd);
+  const root = parsePath(current).root;
+  for (;;) {
+    if (existsSync(resolve(current, ".git"))) return current;
+    if (current === root) return resolve(cwd);
+    current = dirname(current);
+  }
+}
+
+function readIgnorePatterns(root: string): IgnorePattern[] {
+  const file = resolve(root, ".gitignore");
+  if (!existsSync(file)) return [];
+  return readFileSync(file, "utf8")
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith("#"))
+    .map((line) => {
+      const negated = line.startsWith("!");
+      return { pattern: negated ? line.slice(1) : line, negated };
+    })
+    .filter((entry) => entry.pattern.length > 0);
+}
+
+function ignorePatternMatches(file: string, pattern: string): boolean {
+  const directoryOnly = pattern.endsWith("/");
+  let glob = pattern.replace(/^\//u, "").replace(/\/$/u, "");
+  if (!glob) return false;
+  if (!glob.includes("/")) glob = `**/${glob}`;
+  if (directoryOnly) glob = `${glob}/**`;
+  return matchesGlob(file, glob) || matchesGlob(file, glob.replace(/^\*\*\//u, ""));
+}
+
+function isIgnored(file: string, ignoreRoot: string, patterns: readonly IgnorePattern[]): boolean {
+  const relativeFile = posixRelative(ignoreRoot, file);
+  if (relativeFile === "node_modules" || relativeFile.startsWith("node_modules/")) return true;
+  if (relativeFile.includes("/node_modules/")) return true;
+  let ignored = false;
+  for (const { pattern, negated } of patterns) {
+    if (ignorePatternMatches(relativeFile, pattern)) ignored = !negated;
+  }
+  return ignored;
+}
+
 /** Resolve globs to a de-duplicated, sorted list of absolute `.css`-like file paths. */
 export function resolveFiles(globs: string[], cwd: string): string[] {
   const found = new Set<string>();
+  const ignoreRoot = findIgnoreRoot(cwd);
+  const ignorePatterns = readIgnorePatterns(ignoreRoot);
   for (const pattern of globs) {
-    for (const match of globSync(pattern, {
-      cwd,
-      exclude: (p: string) => p.includes("node_modules"),
-    })) {
-      found.add(resolve(cwd, match));
+    for (const match of globSync(pattern, { cwd })) {
+      const file = resolve(cwd, match);
+      if (!isIgnored(file, ignoreRoot, ignorePatterns)) found.add(file);
     }
   }
   return [...found].sort();
 }
 
+function offsetAt(source: string, position: SourceSpan["start"]): number {
+  const lineStarts = [0];
+  for (let i = 0; i < source.length; i++) {
+    if (source[i] === "\n") lineStarts.push(i + 1);
+  }
+  const lineStart = lineStarts[position.line - 1] ?? source.length;
+  const nextLineStart = lineStarts[position.line] ?? source.length + 1;
+  return Math.min(lineStart + position.column - 1, nextLineStart - 1);
+}
+
+function applyFixes(source: string, violations: readonly Violation[]): string {
+  const edits = violations.flatMap((violation) => violation.fix?.edits ?? []);
+  if (!edits.length) return source;
+  const ordered = edits
+    .map((edit, index) => ({
+      edit,
+      index,
+      start: offsetAt(source, edit.span.start),
+      end: offsetAt(source, edit.span.end),
+    }))
+    .sort((a, b) => a.start - b.start || a.end - b.end || a.index - b.index);
+  const accepted: { edit: (typeof edits)[number]; start: number; end: number }[] = [];
+  let lastEnd = -1;
+  for (const candidate of ordered) {
+    if (candidate.start < lastEnd) continue;
+    accepted.push(candidate);
+    lastEnd = candidate.end;
+  }
+  let fixed = source;
+  for (let i = accepted.length - 1; i >= 0; i--) {
+    const { edit, start, end } = accepted[i];
+    fixed = `${fixed.slice(0, start)}${edit.text}${fixed.slice(end)}`;
+  }
+  return fixed;
+}
+
 /** Lint every file the globs resolve to, using each file's own nearest `cssdoc.jsonc`. */
-export function lintFiles(globs: string[], cwd: string): FileResult[] {
+export function lintFiles(
+  globs: string[],
+  cwd: string,
+  options: Pick<LintCliOptions, "fix"> = {},
+): FileResult[] {
   return resolveFiles(globs, cwd).map((file) => {
     const configFile = loadConfig(dirname(file));
-    const violations = lintCssDocs(readFileSync(file, "utf8"), {
+    const lintOptions: LintOptions = {
       configuration: configFile.toConfiguration(),
-      rules: configFile.ruleSeverities as LintOptions["rules"],
+      rules: configFile.ruleSeveritiesForFile(file) as LintOptions["rules"],
       modifierConvention: configFile.modifierConvention,
       naming: configFile.naming,
       structureIgnore: configFile.structureIgnore,
       providerEntries: resolveProviders(configFile).entries,
-    });
+    };
+    let source = readFileSync(file, "utf8");
+    let violations = lintCssDocs(source, lintOptions);
+    if (options.fix) {
+      const fixed = applyFixes(source, violations);
+      if (fixed !== source) {
+        writeFileSync(file, fixed);
+        source = fixed;
+        violations = lintCssDocs(source, lintOptions);
+      }
+    }
     return { file: relative(cwd, file), violations };
   });
 }
@@ -114,7 +220,7 @@ export function formatResults(results: FileResult[], format: OutputFormat): stri
 export function runLint(options: LintCliOptions): { exitCode: number; output: string } {
   const cwd = options.cwd ?? process.cwd();
   const format = options.format ?? "pretty";
-  let results = lintFiles(options.globs, cwd);
+  let results = lintFiles(options.globs, cwd, { fix: options.fix });
   if (options.quiet) {
     results = results.map((r) => ({
       file: r.file,

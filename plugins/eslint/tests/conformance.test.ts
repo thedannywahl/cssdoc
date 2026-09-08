@@ -264,6 +264,12 @@ const EXTENDS_FIXTURE: Fixture = {
   css: "/**\n * @component button\n */\n.button { color: red; }",
 };
 
+const OVERRIDES_FIXTURE: Fixture = {
+  name: "nested cssdoc.jsonc scope (overrides)",
+  filename: resolve(FIXTURES_DIR, "overrides/consumer.css"),
+  css: "/**\n * @component button\n */\n.button { color: red; }",
+};
+
 interface Diagnostic {
   rule: string;
   line: number;
@@ -323,7 +329,7 @@ async function runStylelint(fixture: Fixture): Promise<Diagnostic[]> {
 const sortDiagnostics = (diagnostics: Diagnostic[]): Diagnostic[] =>
   [...diagnostics].sort((a, b) => a.line - b.line || a.rule.localeCompare(b.rule));
 
-for (const fixture of [...FIXTURES, SCOPED_FIXTURE, EXTENDS_FIXTURE]) {
+for (const fixture of [...FIXTURES, SCOPED_FIXTURE, EXTENDS_FIXTURE, OVERRIDES_FIXTURE]) {
   test(`stylelint and eslint agree on: ${fixture.name}`, async () => {
     const eslintDiagnostics = sortDiagnostics(runEslint(fixture));
     const stylelintDiagnostics = sortDiagnostics(await runStylelint(fixture));
@@ -348,5 +354,10 @@ test("the scoped fixture's off-list, providers, and structureIgnore all suppress
 
 test("the extends fixture inherits the base's rule off-list", async () => {
   const diagnostics = await runStylelint(EXTENDS_FIXTURE);
+  expect(diagnostics.some((d) => d.rule === "missing-summary")).toBe(false);
+});
+
+test("the overrides fixture applies its matching rule off-list", async () => {
+  const diagnostics = await runStylelint(OVERRIDES_FIXTURE);
   expect(diagnostics.some((d) => d.rule === "missing-summary")).toBe(false);
 });
