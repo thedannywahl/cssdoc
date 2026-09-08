@@ -4,6 +4,20 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.15.1
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.15.0...v0.15.1)
+
+### 🚀 Enhancements
+
+- **cli:** Add per-glob rule severity overrides to cssdoc configuration ([09b16b8](https://github.com/thedannywahl/cssdoc/commit/09b16b8))
+- **stylelint:** Preserve and report warning severity in diagnostics ([8445c93](https://github.com/thedannywahl/cssdoc/commit/8445c93))
+- **cli:** Implement guided lint flow and enhance CLI functionality ([9f8d08f](https://github.com/thedannywahl/cssdoc/commit/9f8d08f))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.15.0
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.14.2...v0.15.0)

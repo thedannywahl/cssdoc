@@ -1,6 +1,6 @@
 {
   "name": "@cssdoc/cli",
-  "version": "0.15.0",
+  "version": "0.15.1",
   "description": "A host-agnostic `cssdoc lint` command line — the @cssdoc/lint-core rules with no ESLint or Stylelint required.",
   "keywords": [
     "cli",
