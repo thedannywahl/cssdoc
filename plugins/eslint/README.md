@@ -78,6 +78,37 @@ export default [
 A `-modifier` on an element with no documented component among its classes is left alone, so unrelated
 utility classes never trip the rule.
 
+## Running under oxlint
+
+`cssdoc/valid-class-usage`'s JS/JSX half loads unchanged through
+[oxlint's `jsPlugins` bridge](https://oxc.rs/docs/guide/usage/linter/js-plugins.html) — it's plain
+ESTree work with no custom parser or type information, and `cssdoc` isn't a reserved oxlint plugin
+name, so no alias is required:
+
+```jsonc
+// .oxlintrc.json
+{
+  "jsPlugins": [{ "name": "cssdoc", "specifier": "@cssdoc/eslint-plugin" }],
+  "rules": {
+    "cssdoc/valid-class-usage": ["error", { "css": ["dist/components.css"] }],
+  },
+}
+```
+
+Two things to know:
+
+- **The HTML half doesn't run under oxlint.** oxlint has no HTML language, so `Document()` (the
+  `@html-eslint/parser` visitor `valid-class-usage` uses for `.html` files) never fires. Check HTML
+  usage with `@cssdoc/eslint-plugin` under ESLint itself, or with the editor extension.
+- **Point `css` at an unminified build.** `valid-class-usage` reads the doc comments in the CSS files
+  named by `css` at lint time — a minified/stripped `dist/*.css` bundle has none, so the option needs
+  an unminified build (or the source stylesheets themselves). This applies under ESLint too, not just
+  oxlint.
+
+`cssdoc/valid-doc-comments` (the CSS doc-hygiene rule) is a separate story — it can't run under oxlint
+at all; see [the linting guide](https://cssdoc.dev/guide/linting) for why, and for the equivalent
+Stylelint path.
+
 ## License
 
 MIT

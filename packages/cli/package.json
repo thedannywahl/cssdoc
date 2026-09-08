@@ -1,13 +1,13 @@
 {
-  "name": "@cssdoc/eslint-plugin",
+  "name": "@cssdoc/cli",
   "version": "0.14.2",
-  "description": "ESLint (@eslint/css) rules that check CSS doc-comment hygiene (undocumented modifiers/parts, deprecations, drift).",
+  "description": "A host-agnostic `cssdoc lint` command line — the @cssdoc/lint-core rules with no ESLint or Stylelint required.",
   "keywords": [
+    "cli",
     "css",
     "cssdoc",
     "documentation",
-    "eslint",
-    "eslint-plugin"
+    "lint"
   ],
   "homepage": "https://cssdoc.dev",
   "bugs": "https://github.com/thedannywahl/cssdoc/issues",
@@ -15,10 +15,14 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/thedannywahl/cssdoc.git",
-    "directory": "plugins/eslint"
+    "directory": "packages/cli"
+  },
+  "bin": {
+    "cssdoc": "./bin/cssdoc.mjs"
   },
   "files": [
-    "dist"
+    "dist",
+    "bin"
   ],
   "type": "module",
   "exports": {
@@ -39,35 +43,14 @@
   "dependencies": {
     "@cssdoc/config": "workspace:*",
     "@cssdoc/core": "workspace:*",
-    "@cssdoc/embedded": "workspace:*",
     "@cssdoc/index": "workspace:*",
-    "@cssdoc/lint-core": "workspace:*",
-    "@cssdoc/providers": "workspace:*"
+    "@cssdoc/lint-core": "workspace:*"
   },
   "devDependencies": {
-    "@cssdoc/stylelint-plugin": "workspace:*",
-    "@eslint/css": "catalog:",
-    "@html-eslint/parser": "catalog:",
     "@types/node": "catalog:",
-    "eslint": "catalog:",
-    "oxlint": "^1.79.0",
     "publint": "catalog:",
-    "stylelint": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vite-plus": "catalog:"
-  },
-  "peerDependencies": {
-    "@eslint/css": ">=1",
-    "@html-eslint/parser": ">=0.65",
-    "eslint": ">=10"
-  },
-  "peerDependenciesMeta": {
-    "@eslint/css": {
-      "optional": true
-    },
-    "@html-eslint/parser": {
-      "optional": true
-    }
   }
 }

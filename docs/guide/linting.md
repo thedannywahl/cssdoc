@@ -4,6 +4,38 @@ cssdoc ships three kinds of lint checks over the same rule core: **author-side**
 documented?), **registered-property value** checks (do values match a property's `@property` syntax?),
 and **consumer-side** usage (do the classes you apply exist?).
 
+## Stylelint or ESLint — which one?
+
+`cssdoc/valid-doc-comments` (the CSS doc-hygiene rule) runs identically under both hosts — the
+[conformance suite](https://github.com/thedannywahl/cssdoc/tree/main/plugins/eslint/tests/conformance.test.ts)
+asserts the Stylelint and ESLint adapters report the same `(rule, line, message)` diagnostics for the
+same `(css, cssdoc.jsonc)` input, including nested-scope config (a rule off-list, `providers`,
+`structureIgnore`, `extends`). Picking one over the other is a host choice, not a coverage trade-off —
+**except** for one structural constraint:
+
+- **`@cssdoc/eslint-plugin`'s `valid-doc-comments` requires ESLint _and_ `@eslint/css`.** It runs on the
+  `@eslint/css` language, and oxlint's [`jsPlugins` API](https://oxc.rs/docs/guide/usage/linter/js-plugins.html#api-support)
+  explicitly doesn't support custom file formats/parsers — oxlint has no CSS language of its own. So this
+  rule has **no oxc-native path at all**; that's structural, not a missing feature that might land later.
+- **`@cssdoc/stylelint-plugin` is the supported path for oxc-based toolchains** (oxlint, Vite+,
+  Biome-adjacent stacks). Stylelint is an independent binary and coexists fine alongside `oxlint`/`vp
+check` — you don't lose oxlint for your JS/TS linting by adding it just for CSS doc hygiene.
+- **`cssdoc/valid-class-usage` is a separate rule** with different portability: its JS/JSX half is plain
+  ESTree work (no custom parser, no type information) and **does load under oxlint's `jsPlugins`
+  bridge**, byte-identical to its ESLint diagnostics (see
+  [`plugins/eslint/tests/oxlint.test.ts`](https://github.com/thedannywahl/cssdoc/tree/main/plugins/eslint/tests/oxlint.test.ts)).
+  Its HTML half doesn't — oxlint has no HTML language, so the `@html-eslint/parser`-driven visitor never
+  fires under it. See [`@cssdoc/eslint-plugin`'s README](https://github.com/thedannywahl/cssdoc/tree/main/plugins/eslint#running-under-oxlint)
+  for the `.oxlintrc.json` shape.
+
+So a toolchain standardized on oxc drops `@cssdoc/eslint-plugin` for CSS doc hygiene (there's no
+alternative — add Stylelint alongside oxlint for that one job), but keeps `valid-class-usage`'s JS/JSX
+checks running through oxlint itself.
+
+A toolchain with neither linter (or one that just wants doc-hygiene checks with nothing else installed)
+can reach the same rules with no host at all: see [`@cssdoc/cli`](https://github.com/thedannywahl/cssdoc/tree/main/packages/cli)'s
+`cssdoc lint`.
+
 ## Stylelint — doc-comment hygiene
 
 [`@cssdoc/stylelint-plugin`](https://www.npmjs.com/package/@cssdoc/stylelint-plugin) checks your

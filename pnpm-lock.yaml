@@ -247,9 +247,6 @@ catalogs:
     '@types/node':
       specifier: ^26.3.0
       version: 26.3.0
-    '@types/vscode':
-      specifier: 1.125.0
-      version: 1.125.0
     '@vitest/coverage-v8':
       specifier: ^4.1.11
       version: 4.1.11
@@ -661,6 +658,37 @@ importers:
         specifier: 'catalog:'
         version: 0.3.0(@types/node@26.3.0)(@vitest/coverage-v8@4.1.11)(@voidzero-dev/vite-plus-core@0.3.0(@types/node@26.3.0)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(typescript@7.0.2)(yaml@2.9.0)
 
+  packages/cli:
+    dependencies:
+      '@cssdoc/config':
+        specifier: workspace:*
+        version: link:../config
+      '@cssdoc/core':
+        specifier: workspace:*
+        version: link:../core
+      '@cssdoc/index':
+        specifier: workspace:*
+        version: link:../index
+      '@cssdoc/lint-core':
+        specifier: workspace:*
+        version: link:../lint-core
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.3.0
+      publint:
+        specifier: 'catalog:'
+        version: 0.3.24
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+      vite:
+        specifier: 'catalog:'
+        version: '@voidzero-dev/vite-plus-core@0.3.0(@types/node@26.3.0)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(typescript@7.0.2)(yaml@2.9.0)'
+      vite-plus:
+        specifier: 'catalog:'
+        version: 0.3.0(@types/node@26.3.0)(@vitest/coverage-v8@4.1.11)(@voidzero-dev/vite-plus-core@0.3.0(@types/node@26.3.0)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(typescript@7.0.2)(yaml@2.9.0)
+
   packages/config:
     dependencies:
       '@cssdoc/core':
@@ -939,6 +967,9 @@ importers:
         specifier: workspace:*
         version: link:../../packages/providers
     devDependencies:
+      '@cssdoc/stylelint-plugin':
+        specifier: workspace:*
+        version: link:../stylelint
       '@eslint/css':
         specifier: 'catalog:'
         version: 1.4.0
@@ -951,9 +982,15 @@ importers:
       eslint:
         specifier: 'catalog:'
         version: 10.9.0(jiti@2.7.0)(supports-color@10.2.2)
+      oxlint:
+        specifier: ^1.79.0
+        version: 1.79.0(oxlint-tsgolint@7.0.2001)(vite-plus@0.3.0(@types/node@26.3.0)(@vitest/coverage-v8@4.1.11)(@voidzero-dev/vite-plus-core@0.3.0(@types/node@26.3.0)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(typescript@7.0.2)(yaml@2.9.0))(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(typescript@7.0.2)(yaml@2.9.0))
       publint:
         specifier: 'catalog:'
         version: 0.3.24
+      stylelint:
+        specifier: 'catalog:'
+        version: 17.14.1(supports-color@10.2.2)(typescript@7.0.2)
       typescript:
         specifier: 'catalog:'
         version: 7.0.2

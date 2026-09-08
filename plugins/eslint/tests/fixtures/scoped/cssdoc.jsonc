@@ -1,0 +1,5 @@
+{
+  "rules": { "name-not-in-css": "off" },
+  "providers": [{ "path": "./_records.css" }],
+  "structureIgnore": ["legacy-*"],
+}
