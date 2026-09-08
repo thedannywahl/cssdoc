@@ -1,9 +1,13 @@
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { expect, test } from "vite-plus/test";
 import { createCssDocProgram, runCli, type CliRuntime } from "../src/cli.ts";
 import { runLint, type LintCliOptions, type LintCliResult } from "../src/index.ts";
 
 const FIXTURES = resolve(import.meta.dirname, "fixtures");
+const { version: packageVersion } = JSON.parse(
+  readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+) as { version: string };
 
 interface HarnessOptions {
   stdinIsTTY?: boolean;
@@ -72,7 +76,7 @@ test("generated root help and version use configured output", async () => {
 
   const version = createHarness();
   await runCli(["--version"], version.runtime);
-  expect(version.out.join("")).toBe("0.15.0\n");
+  expect(version.out.join("")).toBe(`${packageVersion}\n`);
   expect(version.exits.at(-1)).toBe(0);
 });
 
