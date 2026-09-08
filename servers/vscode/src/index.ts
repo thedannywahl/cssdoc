@@ -8,7 +8,7 @@
  */
 import { isAbsolute, join } from "node:path";
 import { readdirSync } from "node:fs";
-import { type ExtensionContext, workspace } from "vscode";
+import { Range, type ExtensionContext, window, workspace } from "vscode";
 import {
   LanguageClient,
   type LanguageClientOptions,
@@ -26,6 +26,7 @@ import {
   initializationOptions,
   toGlob,
 } from "./config.ts";
+import { cssDocEdits } from "./comment-format.ts";
 
 export {
   DEFAULT_EXCLUDE,
@@ -206,6 +207,45 @@ function scheduleRestart(context: ExtensionContext): void {
 /** VS Code entry point: launch the language client and keep the CSS set current. */
 export async function activate(context: ExtensionContext): Promise<void> {
   await restart(context);
+
+  let applyingCommentEdits = false;
+  context.subscriptions.push(
+    workspace.onDidChangeTextDocument((event) => {
+      if (applyingCommentEdits || !new Set(["css", "scss", "less"]).has(event.document.languageId))
+        return;
+      const editor = window.visibleTextEditors.find(
+        (candidate) => candidate.document === event.document,
+      );
+      if (!editor) return;
+      const hasNewline = event.contentChanges.some((change) => /\r?\n/u.test(change.text));
+      const edits = cssDocEdits(event.document.getText(), hasNewline);
+      if (edits.length === 0) return;
+      applyingCommentEdits = true;
+      void editor
+        .edit(
+          (builder) => {
+            for (const edit of [...edits].sort((a, b) => b.start - a.start)) {
+              builder.replace(
+                new Range(
+                  event.document.positionAt(edit.start),
+                  event.document.positionAt(edit.end),
+                ),
+                edit.newText,
+              );
+            }
+          },
+          { undoStopBefore: false, undoStopAfter: false },
+        )
+        .then(
+          () => {
+            applyingCommentEdits = false;
+          },
+          () => {
+            applyingCommentEdits = false;
+          },
+        );
+    }),
+  );
 
   // Re-resolve when a cssdoc setting changes...
   context.subscriptions.push(
