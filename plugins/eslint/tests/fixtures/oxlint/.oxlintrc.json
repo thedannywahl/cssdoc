@@ -1,0 +1,9 @@
+{
+  "jsPlugins": [{ "name": "cssdoc", "specifier": "@cssdoc/eslint-plugin" }],
+  "rules": {
+    "cssdoc/valid-class-usage": [
+      "error",
+      { "css": ["./components.css"], "modifierConvention": "rscss" }
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+/**
+ * @component button
+ * @summary A button.
+ * @modifier -color-secondary — A lower-emphasis action.
+ */
+.button {
+  color: red;
+}
+.button.-color-secondary {
+  color: blue;
+}
