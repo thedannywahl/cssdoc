@@ -40,13 +40,13 @@ and the CSS/HTML language services share one core.
 
 ### Integrations
 
-| Package                                              | Path                      | What it is                                                                                    |
-| ---------------------------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------- |
-| [`@cssdoc/typedoc`](plugins/typedoc)                 | `plugins/typedoc`         | TypeDoc plugin: emits CSS reference pages alongside a TS API-docs build.                      |
-| [`@cssdoc/stylelint-plugin`](plugins/stylelint)      | `plugins/stylelint`       | Stylelint rules for doc-comment hygiene.                                                      |
-| [`@cssdoc/eslint-plugin`](plugins/eslint)            | `plugins/eslint`          | ESLint rules: doc-comment hygiene (`@eslint/css`) and consumer-side class-usage (JSX + HTML). |
-| [`@cssdoc/language-server`](servers/language-server) | `servers/language-server` | An editor-agnostic LSP: completion, hover, definition, and deprecation quick-fixes.           |
-| [`cssdoc-vscode`](servers/vscode)                    | `servers/vscode`          | A thin VS Code extension that runs the language server.                                       |
+| Package                                              | Path                      | What it is                                                                                                                                                           |
+| ---------------------------------------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`@cssdoc/typedoc`](plugins/typedoc)                 | `plugins/typedoc`         | TypeDoc plugin: emits CSS reference pages alongside a TS API-docs build.                                                                                             |
+| [`@cssdoc/stylelint-plugin`](plugins/stylelint)      | `plugins/stylelint`       | Stylelint rules for doc-comment hygiene. The supported path for oxc-based toolchains (oxlint has no CSS language — see [Linting](https://cssdoc.dev/guide/linting)). |
+| [`@cssdoc/eslint-plugin`](plugins/eslint)            | `plugins/eslint`          | ESLint rules: doc-comment hygiene (`@eslint/css`, ESLint-only) and consumer-side class-usage (JSX + HTML; the JSX half also runs under oxlint's `jsPlugins`).        |
+| [`@cssdoc/language-server`](servers/language-server) | `servers/language-server` | An editor-agnostic LSP: completion, hover, definition, and deprecation quick-fixes.                                                                                  |
+| [`cssdoc-vscode`](servers/vscode)                    | `servers/vscode`          | A thin VS Code extension that runs the language server.                                                                                                              |
 
 ## Develop
 
