@@ -4,6 +4,18 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.15.2
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.15.1...v0.15.2)
+
+### 🚀 Enhancements
+
+- **tests:** Update version check to use package version ([42ef403](https://github.com/thedannywahl/cssdoc/commit/42ef403))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.15.1
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.15.0...v0.15.1)
