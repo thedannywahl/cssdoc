@@ -22,6 +22,7 @@ export default defineConfig({
     ignorePatterns: [
       "CHANGELOG.md",
       "**/cssdoc.schema.json",
+      "plugins/stylelint/src/index.d.ts",
       "scripts/sync-schema.d.ts",
       ...WORKTREE_IGNORE,
     ],
