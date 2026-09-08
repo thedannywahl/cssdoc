@@ -50,7 +50,6 @@
     "@html-eslint/parser": "catalog:",
     "@types/node": "catalog:",
     "eslint": "catalog:",
-    "oxlint": "^1.79.0",
     "publint": "catalog:",
     "stylelint": "catalog:",
     "typescript": "catalog:",

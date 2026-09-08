@@ -2,6 +2,7 @@ import { defineConfig } from "vite-plus";
 
 export default defineConfig({
   pack: {
+    deps: { resolveDepSubpath: true },
     dts: true,
     // Hand-managed: we expose an extra ./cssdoc.injection.tmLanguage.json subpath that auto-exports drops.
     exports: false,

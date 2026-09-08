@@ -10,6 +10,9 @@
     "url": "git+https://github.com/thedannywahl/cssdoc.git"
   },
   "type": "module",
+  "scripts": {
+    "prepare": "vp config"
+  },
   "dependencies": {
     "@codemirror/language": "catalog:",
     "@codemirror/state": "catalog:",
