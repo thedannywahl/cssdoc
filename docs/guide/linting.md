@@ -32,6 +32,10 @@ So a toolchain standardized on oxc drops `@cssdoc/eslint-plugin` for CSS doc hyg
 alternative — add Stylelint alongside oxlint for that one job), but keeps `valid-class-usage`'s JS/JSX
 checks running through oxlint itself.
 
+A toolchain with neither linter (or one that just wants doc-hygiene checks with nothing else installed)
+can reach the same rules with no host at all: see [`@cssdoc/cli`](https://github.com/thedannywahl/cssdoc/tree/main/packages/cli)'s
+`cssdoc lint`.
+
 ## Stylelint — doc-comment hygiene
 
 [`@cssdoc/stylelint-plugin`](https://www.npmjs.com/package/@cssdoc/stylelint-plugin) checks your
