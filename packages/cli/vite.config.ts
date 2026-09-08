@@ -1,7 +1,12 @@
 import { defineConfig } from "vite-plus";
 
 export default defineConfig({
-  pack: { deps: { resolveDepSubpath: true }, dts: true, exports: true },
+  pack: {
+    deps: { resolveDepSubpath: true },
+    entry: ["src/index.ts", "src/cli.ts"],
+    dts: true,
+    exports: false,
+  },
   lint: {
     options: {
       typeAware: true,

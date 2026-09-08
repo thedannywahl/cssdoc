@@ -27,6 +27,11 @@ catalog:
   # Config
   ajv: ^8.20.0
   jsonc-parser: ^3.3.1
+  # CLI
+  commander: ^15.0.0
+  "@commander-js/extra-typings": ^15.0.0
+  "@clack/prompts": ^1.8.0
+  "@bomb.sh/tab": ^0.0.22
   # TypeDoc integration
   typedoc: ^0.28.20
   typedoc-plugin-markdown: ^4.13.0
@@ -96,6 +101,8 @@ minimumReleaseAgeExclude:
   - "@voidzero-dev/vite-plus-win32-arm64-msvc@0.3.1"
   - "@voidzero-dev/vite-plus-win32-x64-msvc@0.3.1"
   - vite-plus@0.3.1
+  - "@clack/core@1.5.0"
+  - "@clack/prompts@1.8.0"
 peerDependencyRules:
   allowAny:
     - vite

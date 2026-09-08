@@ -34,6 +34,14 @@ export interface LintCliOptions {
   cwd?: string;
 }
 
+export interface LintCliResult {
+  exitCode: number;
+  output: string;
+  results: FileResult[];
+  errorCount: number;
+  warningCount: number;
+}
+
 /** Cache loaded `cssdoc.json` per start folder — reused across every linted stylesheet. */
 const configCache = new Map<string, CssDocConfigFile>();
 function loadConfig(folder: string): CssDocConfigFile {
@@ -217,7 +225,7 @@ export function formatResults(results: FileResult[], format: OutputFormat): stri
 
 /** Run `cssdoc lint`. Returns the process exit code (`0` clean, `1` on error-severity violations or a
  * `--max-warnings` overage). */
-export function runLint(options: LintCliOptions): { exitCode: number; output: string } {
+export function runLint(options: LintCliOptions): LintCliResult {
   const cwd = options.cwd ?? process.cwd();
   const format = options.format ?? "pretty";
   let results = lintFiles(options.globs, cwd, { fix: options.fix });
@@ -237,5 +245,11 @@ export function runLint(options: LintCliOptions): { exitCode: number; output: st
   );
   const maxWarnings = options.maxWarnings ?? -1;
   const exitCode = errorCount > 0 || (maxWarnings >= 0 && warningCount > maxWarnings) ? 1 : 0;
-  return { exitCode, output: formatResults(results, format) };
+  return {
+    exitCode,
+    output: formatResults(results, format),
+    results,
+    errorCount,
+    warningCount,
+  };
 }

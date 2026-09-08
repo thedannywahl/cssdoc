@@ -13,9 +13,17 @@ npm i -D @cssdoc/cli
 
 ## Use
 
+Run `cssdoc` with no arguments in an interactive terminal for a guided lint flow. It asks which CSS
+path or glob to lint, whether to apply safe fixes, and whether warnings should fail the run.
+
+For scripts and CI, use the explicit command:
+
 ```sh
 cssdoc lint "src/**/*.css"
 ```
+
+`cssdoc lint` always requires at least one file or glob and never prompts. Run `cssdoc --help` or
+`cssdoc lint --help` for generated command help, and `cssdoc --version` for the installed version.
 
 `cssdoc lint` auto-loads the nearest `cssdoc.jsonc`/`cssdoc.json` per file — honoring `extends`,
 `providers`, rule severities, and `structureIgnore` — exactly as the Stylelint and ESLint plugins do.
@@ -30,6 +38,10 @@ Options:
 
 Exit code is non-zero when any error-severity violation remains after fixes are applied (or the
 `--max-warnings` count is exceeded).
+
+In an interactive terminal, the default `pretty` format uses a structured terminal presentation.
+Redirected `pretty` output stays plain text, and `json` and `github` are always undecorated for
+machine consumption.
 
 ```sh
 cssdoc lint "src/**/*.css" --fix --format github --max-warnings 0
@@ -54,6 +66,26 @@ Per-glob rule overrides live in `cssdoc.jsonc` next to normal rule severities:
 
 Override globs are relative to the config file where they're authored. Matching overrides apply in
 declaration order, so later matches win.
+
+## Shell completion
+
+Generate completion scripts with `cssdoc complete <shell>`. Supported shells are `zsh`, `bash`,
+`fish`, and `powershell`.
+
+For a one-time zsh session:
+
+```sh
+source <(cssdoc complete zsh)
+```
+
+To install zsh completion permanently:
+
+```sh
+cssdoc complete zsh > ~/.cssdoc-completion.zsh
+echo 'source ~/.cssdoc-completion.zsh' >> ~/.zshrc
+```
+
+Use the corresponding shell name and startup file for bash, fish, or PowerShell.
 
 ## License
 

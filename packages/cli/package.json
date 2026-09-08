@@ -41,10 +41,14 @@
     "publint": "publint"
   },
   "dependencies": {
+    "@bomb.sh/tab": "catalog:",
+    "@clack/prompts": "catalog:",
+    "@commander-js/extra-typings": "catalog:",
     "@cssdoc/config": "workspace:*",
     "@cssdoc/core": "workspace:*",
     "@cssdoc/index": "workspace:*",
-    "@cssdoc/lint-core": "workspace:*"
+    "@cssdoc/lint-core": "workspace:*",
+    "commander": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",

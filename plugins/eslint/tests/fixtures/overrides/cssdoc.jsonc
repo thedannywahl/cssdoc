@@ -1,4 +1,5 @@
 {
+  "$schema": "../../../../../schemas/cssdoc.schema.json",
   "rules": { "missing-summary": "error" },
   "overrides": [{ "files": "consumer.css", "rules": { "missing-summary": "off" } }],
 }
