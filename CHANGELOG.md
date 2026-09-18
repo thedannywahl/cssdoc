@@ -4,6 +4,43 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.16.0
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.15.2...v0.16.0)
+
+### 🚀 Enhancements
+
+- **comments:** Add tests for closing behavior of CSSDoc records, fixes #41 ([#41](https://github.com/thedannywahl/cssdoc/issues/41))
+- **providers:** Surface @global modifiers in modifier completions ([8a7e755](https://github.com/thedannywahl/cssdoc/commit/8a7e755))
+- **core:** Support bounded max-N cardinality and nested @variant groups in @structure ([6a0f94e](https://github.com/thedannywahl/cssdoc/commit/6a0f94e))
+- **emitters,providers:** Render and lint nested @variant groups and bounded cardinality ([0593283](https://github.com/thedannywahl/cssdoc/commit/0593283))
+- **dependencies:** Add oxlint to ESLint plugin and workspace configurations ([b9ce501](https://github.com/thedannywahl/cssdoc/commit/b9ce501))
+
+### 🩹 Fixes
+
+- **config:** Actually apply cssdoc.json's globalPrecedence setting ([b813abd](https://github.com/thedannywahl/cssdoc/commit/b813abd))
+
+### 📖 Documentation
+
+- **authoring:** Document bounded max-N cardinality and nested @variant groups ([5b768d3](https://github.com/thedannywahl/cssdoc/commit/5b768d3))
+- Update README and example files with enhanced editor capabilities and usage instructions ([79a33a2](https://github.com/thedannywahl/cssdoc/commit/79a33a2))
+- Add demo images ([f06af9f](https://github.com/thedannywahl/cssdoc/commit/f06af9f))
+
+### 🏡 Chore
+
+- Update deps ([d883c53](https://github.com/thedannywahl/cssdoc/commit/d883c53))
+- **docs:** Add demo gifs ([39019ca](https://github.com/thedannywahl/cssdoc/commit/39019ca))
+
+### ✅ Tests
+
+- **core:** Cover bounded max-N cardinality and nested @variant groups ([38bc539](https://github.com/thedannywahl/cssdoc/commit/38bc539))
+- **providers,index,language-server:** Cover global-modifier completions and precedence ([62da995](https://github.com/thedannywahl/cssdoc/commit/62da995))
+- **emitters,providers:** Cover bounded max-N cardinality and nested @variant groups ([f065fd8](https://github.com/thedannywahl/cssdoc/commit/f065fd8))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.15.2
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.15.1...v0.15.2)
