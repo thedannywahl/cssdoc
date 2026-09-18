@@ -55,6 +55,33 @@ test("renderPage renders each @variant block under its own labelled heading", ()
   expect(html).toContain("<h4>Variant: labelled</h4>");
 });
 
+test("renderPage lists a nested @variant group's alternatives under a '(choose one)' item", () => {
+  const [row] = parseCssDocs(
+    [
+      "/**",
+      " * @component action-row",
+      " * @summary A single action, or a small group of them.",
+      " * @structure",
+      " * .action-row {",
+      " *   @variant single {",
+      " *     .action:optional {}",
+      " *   }",
+      " *   @variant group {",
+      " *     .action-group:optional {}",
+      " *   }",
+      " * }",
+      " */",
+      ".action-row {}",
+    ].join("\n"),
+  );
+  const html = renderPage(row!);
+  expect(html).toContain("(choose one)");
+  expect(html).toContain(">single<");
+  expect(html).toContain(">group<");
+  expect(html).toContain("<code>.action</code>");
+  expect(html).toContain("<code>.action-group</code>");
+});
+
 test("renderPage escapes HTML-unsafe prose", () => {
   const [entry] = parseCssDocs(
     `/**\n * @component x\n * @summary A <b> & "y" tag.\n */\n.x { color: red; }`,

@@ -167,6 +167,62 @@ test("@structure renders slot content, cardinality, and a linked Subcomponents s
   expect(md).toContain("- [close-button](./close-button.md)"); // derived + cross-linked
 });
 
+test("@structure bounded `:max-<n>`/`:one-or-more:max-<n>` cardinality renders as a range token", () => {
+  const [group] = parseCssDocs(
+    [
+      "/**",
+      " * @component button-group",
+      " * @summary A row of buttons.",
+      " * @structure",
+      " * .button-group {",
+      " *   @component button:one-or-more:max-2 {}",
+      " * }",
+      " */",
+      ".button-group {}",
+    ].join("\n"),
+  );
+  const md = renderEntry(group!, {
+    resolveComponent: (c) => (c === "button" ? { name: "button", href: "./button.md" } : undefined),
+  });
+  expect(md).toContain("button (component, 1..2)");
+});
+
+test("@structure a nested @variant group renders as a grouped sub-list and still populates Subcomponents", () => {
+  const [row] = parseCssDocs(
+    [
+      "/**",
+      " * @component action-row",
+      " * @summary A single action, or a small group of them.",
+      " * @slot — The row's content.",
+      " * @structure",
+      " * .action-row {",
+      " *   slot {}",
+      " *   @variant single {",
+      " *     @component button:optional {}",
+      " *   }",
+      " *   @variant group {",
+      " *     .button-group:optional {",
+      " *       @component button:one-or-more:max-2 {}",
+      " *     }",
+      " *   }",
+      " * }",
+      " */",
+      ".action-row {}",
+    ].join("\n"),
+  );
+  const md = renderEntry(row!, {
+    structureView: "text",
+    resolveComponent: (c) => (c === "button" ? { name: "button", href: "./button.md" } : undefined),
+  });
+  expect(md).toContain("(choose one)");
+  expect(md).toContain("single");
+  expect(md).toContain("group");
+  expect(md).toContain("button (component, 0..1)");
+  expect(md).toContain("button (component, 1..2)");
+  expect(md).toContain("## Subcomponents");
+  expect(md).toContain("- [button](./button.md)");
+});
+
 test("@structure @component refs carry cardinality and resolve links", () => {
   const [layout] = parseCssDocs(
     [

@@ -157,6 +157,33 @@ test("structure-unknown-selector validates each @variant block independently", (
   expect(messages.join(" ")).not.toContain(".label");
 });
 
+test("structure-unknown-selector flags an unknown class nested inside a local @variant group", () => {
+  // The `@variant` here is nested one level inside `.action-row`, not at the top of `@structure` — a
+  // local choice between two alternatives at that child position, not a whole-tree alternation.
+  const css = `/**
+ * @component action-row
+ * @summary A single action, or a small group of them.
+ * @part .action-group — Wraps more than one action.
+ * @structure
+ * .action-row {
+ *   @variant single {
+ *     .action {}
+ *   }
+ *   @variant group {
+ *     .action-group {
+ *       .bogus {}
+ *     }
+ *   }
+ * }
+ */
+.action-row {}`;
+  const messages = lintModel(createIndex(css))
+    .filter((d) => d.rule === "structure-unknown-selector")
+    .map((d) => d.message);
+  expect(messages.join(" ")).toContain(".bogus");
+  expect(messages.join(" ")).not.toContain(".action-group");
+});
+
 test("hover Structure section labels each @variant block when @variant is authored", () => {
   const idx = createIndex(
     [
@@ -178,6 +205,32 @@ test("hover Structure section labels each @variant block when @variant is author
   const card = hoverForClass("progress", "progress", idx, "full")?.contents ?? "";
   expect(card).toContain("/* Variant: wrapped */");
   expect(card).toContain("/* Variant: labelled */");
+});
+
+test("hover Structure section re-serializes a nested @variant group as @variant blocks", () => {
+  const idx = createIndex(
+    [
+      "/**",
+      " * @component action-row",
+      " * @summary A single action, or a small group of them.",
+      " * @structure",
+      " * .action-row {",
+      " *   @variant single {",
+      " *     .action:optional {}",
+      " *   }",
+      " *   @variant group {",
+      " *     .action-group:optional {}",
+      " *   }",
+      " * }",
+      " */",
+      ".action-row {}",
+    ].join("\n"),
+  );
+  const card = hoverForClass("action-row", "action-row", idx, "full")?.contents ?? "";
+  expect(card).toContain("@variant single {");
+  expect(card).toContain("@variant group {");
+  expect(card).toContain(".action");
+  expect(card).toContain(".action-group");
 });
 
 test("structure-unknown-selector accepts a sibling component as a child, still flags unknowns", () => {

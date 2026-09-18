@@ -119,6 +119,41 @@ test("structureVariants (from @variant blocks) round-trips through JSON and vali
   expect(ok).toBe(true);
 });
 
+test("bounded max-N cardinality and a nested @variant group round-trip through JSON and validate against the schema", () => {
+  const ACTION_ROW_CSS = `
+/**
+ * @component action-row
+ * @summary A single action, or a small group of them.
+ * @structure
+ * .action-row {
+ *   slot {}
+ *   @variant single {
+ *     @component button:optional {}
+ *   }
+ *   @variant group {
+ *     .button-group:optional {
+ *       @component button:one-or-more:max-2 {}
+ *     }
+ *   }
+ * }
+ */
+.action-row {}
+`;
+  const entries = parseCssDocs(ACTION_ROW_CSS);
+  const parsed = JSON.parse(renderJson(entries));
+  const row = parsed.find((e: { name: string }) => e.name === "action-row");
+  const variantGroup = row.structure[0].children[1];
+  expect(variantGroup.selector).toBe("");
+  expect(variantGroup.variants).toHaveLength(2);
+  expect(variantGroup.variants[1].nodes[0].children[0].cardinality).toBe("one-or-more-max-2");
+
+  const ajv = new Ajv({ allErrors: true });
+  const validate = ajv.compile(cssDocSchema);
+  const ok = validate(JSON.parse(JSON.stringify(entries)));
+  if (!ok) console.error(validate.errors);
+  expect(ok).toBe(true);
+});
+
 test("writeJson writes the model, per-record files, an index, and the schema", () => {
   const outDir = mkdtempSync(join(tmpdir(), "cssdoc-json-"));
   const result = writeJson({ css: CSS, outDir, perRecord: true, schema: true });
