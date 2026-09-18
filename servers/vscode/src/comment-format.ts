@@ -47,10 +47,24 @@ export function cssDocEdits(text: string, formatBlankLines: boolean): CssDocEdit
     const newline = text.includes("\r\n") ? "\r\n" : "\n";
 
     if (closeStart < 0) {
+      // Close after the last continuation line of the doc comment (blank lines and lines starting
+      // with `*`), not right after the record tag — a `@summary`/etc. line below it is still part of
+      // the same block, while the CSS the block documents must stay outside the comment.
+      let bodyEnd = recordEnd + 1;
+      while (bodyEnd < text.length) {
+        const end = lineEnd(text, bodyEnd);
+        const line = text.slice(bodyEnd, end).trim();
+        if (line !== "" && !line.startsWith("*")) break;
+        bodyEnd = end + 1;
+      }
+      const insertAt = Math.min(bodyEnd, text.length);
+      const hasTrailingContent = insertAt < text.length;
       edits.push({
-        start: text.length,
-        end: text.length,
-        newText: `${text.endsWith("\n") ? "" : newline}${indent} */`,
+        start: insertAt,
+        end: insertAt,
+        newText: hasTrailingContent
+          ? `${indent} */${newline}`
+          : `${text.endsWith("\n") ? "" : newline}${indent} */`,
       });
       continue;
     }
