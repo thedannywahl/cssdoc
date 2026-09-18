@@ -443,8 +443,10 @@ the first rule is the description, and everything from the first selector on is 
 Three more things a node can express:
 
 - **Cardinality** — a trailing pseudo on the selector: `:optional` (0..1), `:many` (0..n), or
-  `:one-or-more` (1..n), with `:opt` and `:more` as shorthands. No marker means the child is **required**
-  (present when the component is used). It's a pseudo (not a `/* … */` comment) because `@structure`
+  `:one-or-more` (1..n), with `:opt` and `:more` as shorthands. A bare `:max-<n>` bounds `:many` to 0..N
+  (e.g. `:max-2`), and a chained `:one-or-more:max-<n>` (or `:more:max-<n>`) bounds `:one-or-more` to
+  1..N. No marker means the child is **required** (present when the component is used). It's a pseudo
+  (not a `/* … */` comment) because `@structure`
   lives inside a doc comment where CSS comments can't nest.
 - **Content** — a `slot` node (or `slot[name="x"]`) marks where light-DOM content goes; it resolves to
   the component's default (or named) `@slot` and renders as ‹content› rather than a literal element.
@@ -504,8 +506,36 @@ Each variant is validated independently against the component's own known classe
 slots, sibling components) — an unknown class in one variant is flagged even if the others are clean.
 By default the rendered Structure section shows one combined diagram with a labelled subgraph per
 variant; set `render.structureVariantView: "sections"` in `cssdoc.json` for separate `### Variant: <name>`
-subsections instead. `@variant` is only recognized at the top level of `@structure` — a nested
-occurrence is inert CSS content, like any other unrecognized at-rule.
+subsections instead.
+
+A `@variant` block can also nest inside a parent node's body, one level below the top — that's a local
+choice at _one child position_, not a whole-tree alternation: the rest of the tree stays fixed, and only
+that position is filled by exactly one of the alternatives. Useful when one slot holds either a single
+element or a wrapper around several:
+
+```css
+/**
+ * @slot — The row's content.
+ * @structure
+ * .action-row {
+ *   slot {}
+ *   @variant single {
+ *     @component button:optional {}
+ *   }
+ *   @variant group {
+ *     .button-group:optional {
+ *       @component button:one-or-more:max-2 {}
+ *     }
+ *   }
+ * }
+ */
+```
+
+Here `.action-row` always has its content slot, then either a single optional button or an optional
+`.button-group` wrapper holding one to two buttons — never both, and never a button-group with more than
+two. Nested `@variant` renders the same way top-level `@variant` does — a labelled subgraph per
+alternative in the diagram, a grouped sub-list in the text tree — just local to that position instead of
+wrapping the whole diagram.
 
 Every remaining class named in an `@structure` selector should resolve to the component class, a
 documented member, or another documented component; otherwise `structure-unknown-selector` warns.
