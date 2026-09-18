@@ -201,6 +201,8 @@ export interface Completion {
   documentation?: string;
   /** Whether the item is deprecated. */
   deprecated?: boolean;
+  /** Editor sort hint, for grouping (e.g. direct modifiers before global ones). */
+  sortText?: string;
 }
 
 /** Hover content (markdown). */

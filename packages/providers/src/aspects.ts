@@ -1056,13 +1056,43 @@ export const modifier = {
   completions(base: string, index: CssDocIndex): Completion[] {
     const entry = index.componentForClass(base);
     if (!entry) return [];
-    return entry.modifiers.map((m) => ({
+
+    // Modifiers from records marked `@global` apply everywhere; resolve name collisions the same
+    // way lookups do (index.globalPrecedence), then list direct modifiers before global ones.
+    const globalByName = new Map<string, (typeof entry.modifiers)[number]>();
+    for (const record of index.records) {
+      if (!record.entry.global || record.entry === entry) continue;
+      for (const m of record.entry.modifiers) {
+        const key = index.matcher.normalizeMember(m.name);
+        if (!globalByName.has(key)) globalByName.set(key, m);
+      }
+    }
+
+    const direct = entry.modifiers.map((m) => {
+      const key = index.matcher.normalizeMember(m.name);
+      const global = globalByName.get(key);
+      const resolved = global && index.globalPrecedence === "global" ? global : m;
+      globalByName.delete(key);
+      return {
+        label: m.name,
+        kind: "modifier" as const,
+        detail: resolved.prop,
+        documentation: resolved.description,
+        deprecated: Boolean(resolved.deprecated),
+        sortText: `0-${m.name}`,
+      };
+    });
+
+    const global = [...globalByName.values()].map((m) => ({
       label: m.name,
       kind: "modifier" as const,
       detail: m.prop,
-      documentation: m.description,
+      documentation: m.description ? `${m.description} (global)` : "(global)",
       deprecated: Boolean(m.deprecated),
+      sortText: `1-${m.name}`,
     }));
+
+    return [...direct, ...global];
   },
 
   hover(base: string, token: string, index: CssDocIndex): Hover | undefined {

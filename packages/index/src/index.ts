@@ -336,83 +336,42 @@ export class CssDocIndex {
     return this.byName.get(name)?.entry.structureVariants;
   }
 
+  /** The documented modifier matching `wanted` on `base`, preferring the base's own definition or
+   * the global one per `globalPrecedence` when both a base and a global record define it. */
+  private matchedModifier(base: string, wanted: string): CssModifier | undefined {
+    const baseModifier = this.byClass
+      .get(stripDot(base))
+      ?.entry.modifiers.find((m) => this.matcher.matchesModifier(m.name, wanted));
+    let globalModifier: CssModifier | undefined;
+    for (const record of this.records) {
+      if (!record.entry.global) continue;
+      globalModifier = record.entry.modifiers.find((m) =>
+        this.matcher.matchesModifier(m.name, wanted),
+      );
+      if (globalModifier) break;
+    }
+    return this.globalPrecedence === "global"
+      ? (globalModifier ?? baseModifier)
+      : (baseModifier ?? globalModifier);
+  }
+
   /** Whether `modifier` (a class token or attribute expression) is a documented modifier of `base` —
    * an exact match, or an instance of a documented `*` family (`-icon-arrow` → `-icon-*`).
-   * Checks both base-specific modifiers and global modifiers (applying globalPrecedence logic). */
+   * Checks both base-specific modifiers and global modifiers. */
   isModifier(base: string, modifier: string): boolean {
-    const wanted = this.matcher.normalizeMember(modifier);
-    const baseModifiers = this.byClass.get(stripDot(base))?.entry.modifiers;
-
-    // Check if base has this modifier.
-    const baseHasModifier = baseModifiers?.some((m) =>
-      this.matcher.matchesModifier(m.name, wanted),
-    );
-    if (baseHasModifier) {
-      return true;
-    }
-
-    // Check if any global record has this modifier.
-    const globalHasModifier = this.records
-      .filter((r) => r.entry.global)
-      .some((r) => r.entry.modifiers.some((m) => this.matcher.matchesModifier(m.name, wanted)));
-
-    return globalHasModifier;
+    return this.matchedModifier(base, this.matcher.normalizeMember(modifier)) !== undefined;
   }
 
   /** The deprecation of a modifier on `base`, if it is deprecated (including via a `*` family).
    * Checks both base-specific and global modifiers (applying globalPrecedence logic). */
   deprecationOf(base: string, modifier: string): { canonical?: string; note?: string } | undefined {
-    const wanted = this.matcher.normalizeMember(modifier);
-    const baseRecord = this.byClass.get(stripDot(base));
-
-    // Check if base has this modifier.
-    const baseModifier = baseRecord?.entry.modifiers.find((m) =>
-      this.matcher.matchesModifier(m.name, wanted),
-    );
-    if (baseModifier) {
-      return baseModifier.deprecated;
-    }
-
-    // Check if any global record has this modifier.
-    for (const record of this.records) {
-      if (record.entry.global) {
-        const globalModifier = record.entry.modifiers.find((m) =>
-          this.matcher.matchesModifier(m.name, wanted),
-        );
-        if (globalModifier) {
-          return globalModifier.deprecated;
-        }
-      }
-    }
-
-    return undefined;
+    return this.matchedModifier(base, this.matcher.normalizeMember(modifier))?.deprecated;
   }
 
   /** The alias mapping of a modifier on `base`, if documented as an alias.
    * Checks both base-specific and global modifiers (applying globalPrecedence logic). */
   aliasOf(base: string, modifier: string): { canonical?: string; note?: string } | undefined {
-    const wanted = this.matcher.normalizeMember(modifier);
-    const baseRecord = this.byClass.get(stripDot(base));
-
-    const baseModifier = baseRecord?.entry.modifiers.find((m) =>
-      this.matcher.matchesModifier(m.name, wanted),
-    );
-    if (baseModifier) {
-      return baseModifier.alias;
-    }
-
-    for (const record of this.records) {
-      if (record.entry.global) {
-        const globalModifier = record.entry.modifiers.find((m) =>
-          this.matcher.matchesModifier(m.name, wanted),
-        );
-        if (globalModifier) {
-          return globalModifier.alias;
-        }
-      }
-    }
-
-    return undefined;
+    return this.matchedModifier(base, this.matcher.normalizeMember(modifier))?.alias;
   }
 
   /** Every declared custom property, paired with the record that declares it (for `var(...)` completion). */

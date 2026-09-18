@@ -87,6 +87,7 @@ export interface LspCompletion {
   detail?: string;
   documentation?: string;
   deprecated?: boolean;
+  sortText?: string;
 }
 /** Hover content. */
 export interface LspHover {
@@ -1094,11 +1095,13 @@ function toCompletion(c: {
   detail?: string;
   documentation?: string;
   deprecated?: boolean;
+  sortText?: string;
 }): LspCompletion {
   return {
     label: c.label,
     detail: c.detail,
     documentation: c.documentation,
     deprecated: c.deprecated,
+    sortText: c.sortText,
   };
 }

@@ -180,6 +180,7 @@ export function startLanguageServer(): void {
         detail: c.detail,
         documentation: c.documentation,
         tags: c.deprecated ? [CompletionItemTag.Deprecated] : undefined,
+        sortText: c.sortText,
       }));
   });
 
