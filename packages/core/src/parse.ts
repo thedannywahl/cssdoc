@@ -117,9 +117,22 @@ const STRUCT_CARDINALITY: Record<string, NonNullable<StructureNode["cardinality"
   "one-or-more": "one-or-more",
   more: "one-or-more",
 };
-const STRUCT_CARD_RE = /:(optional|opt|one-or-more|more|many)\s*$/u;
-const STRUCT_TRAILING_CARD_RE =
-  /^(?<base>[\s\S]*?):(?<card>optional|opt|one-or-more|more|many)(?:\s+(?<private>private))?\s*$/u;
+const STRUCT_CARD_SUFFIX = String.raw`(?:(?<oomKw>one-or-more|more):max-(?<oomMax>\d+)|max-(?<max>\d+)|(?<kw>optional|opt|one-or-more|more|many))`;
+const STRUCT_CARD_RE = new RegExp(`:${STRUCT_CARD_SUFFIX}\\s*$`, "u");
+const STRUCT_TRAILING_CARD_RE = new RegExp(
+  `^(?<base>[\\s\\S]*?):${STRUCT_CARD_SUFFIX}(?:\\s+(?<private>private))?\\s*$`,
+  "u",
+);
+
+/** Resolve a {@link STRUCT_CARD_RE}/{@link STRUCT_TRAILING_CARD_RE} match's named groups to a stored cardinality. */
+function structureCardinalityFromMatch(
+  groups: Record<string, string | undefined>,
+): NonNullable<StructureNode["cardinality"]> | undefined {
+  if (groups.oomMax) return `one-or-more-max-${groups.oomMax}` as `one-or-more-max-${number}`;
+  if (groups.max) return `max-${groups.max}` as `max-${number}`;
+  if (groups.kw) return STRUCT_CARDINALITY[groups.kw];
+  return undefined;
+}
 const STRUCT_COLOC_RE = /:is\(\s*([^,)]+?)\s*\)/u;
 // A curated allow-list of ARIA/data-* attributes that reflect element *state* (not identity or
 // labeling) — avoids false positives on incidental attribute selectors like `[data-testid]`.
@@ -135,8 +148,8 @@ function splitStructureTrailingCardinality(raw: string): {
 } {
   const trimmed = raw.trim();
   const match = trimmed.match(STRUCT_TRAILING_CARD_RE);
-  if (!match?.groups?.card || !match.groups.base) return { params: trimmed };
-  const card = STRUCT_CARDINALITY[match.groups.card];
+  if (!match?.groups || !match.groups.base) return { params: trimmed };
+  const card = structureCardinalityFromMatch(match.groups);
   if (!card) return { params: trimmed };
   const suffix = match.groups.private ? " private" : "";
   return { params: `${match.groups.base.trim()}${suffix}`.trim(), cardinality: card };
@@ -216,7 +229,7 @@ function buildStructureFromNodes(nodes: readonly ChildNode[]): StructureNode[] {
       selector: card ? withoutColoc.slice(0, card.index).trim() : withoutColoc,
       children: buildStructureFromNodes(node.nodes ?? []),
     };
-    if (card) entry.cardinality = STRUCT_CARDINALITY[card[1]];
+    if (card?.groups) entry.cardinality = structureCardinalityFromMatch(card.groups);
     if (coloc) entry.colocated = coloc[1].trim();
     out.push(entry);
   }
@@ -909,6 +922,8 @@ function buildEntry(
           })();
         if (description) node.description = description;
         applyWrappers(node.children);
+        // A nested `@variant` group has its alternatives in `variants`, not `children`.
+        for (const variant of node.variants ?? []) applyWrappers(variant.nodes);
       }
     };
     applyWrappers(structure);

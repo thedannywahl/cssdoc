@@ -236,21 +236,28 @@ export type CssReleaseStage = "alpha" | "beta" | "experimental" | "internal" | "
  * {@link toMermaid}, a diagram.
  */
 export interface StructureNode {
-  /** The node's compound selector, e.g. `.tabs`, `.tab.-selected`, or `.list:has(.tab)`. Empty string for `@scope` boundary nodes. */
+  /** The node's compound selector, e.g. `.tabs`, `.tab.-selected`, or `.list:has(.tab)`. Empty string for `@scope`/`@variant`-group boundary nodes. */
   selector: string;
   /**
    * How often the child may appear, from a trailing pseudo on the selector: `:optional`/`:opt` (0..1),
-   * `:many` (0..n), or `:one-or-more`/`:more` (1..n). Absent means the child is required (present when
-   * the component is used). A pseudo, not a `/* … *\/` comment, because `@structure` lives inside a doc
-   * comment where comments can't nest; an unknown pseudo is valid selector syntax and is stripped from
-   * the stored selector.
+   * `:many` (0..n), `:one-or-more`/`:more` (1..n), a bare `:max-<n>` (0..n, capped), or a chained
+   * `:one-or-more:max-<n>`/`:more:max-<n>` (1..n, capped). Absent means the child is required (present
+   * when the component is used). A pseudo, not a `/* … *\/` comment, because `@structure` lives inside
+   * a doc comment where comments can't nest; an unknown pseudo is valid selector syntax and is stripped
+   * from the stored selector.
    */
-  cardinality?: "optional" | "many" | "one-or-more";
+  cardinality?: "optional" | "many" | "one-or-more" | `max-${number}` | `one-or-more-max-${number}`;
   /**
    * When present, this node is a `@scope` boundary. The value is the `@scope` prelude,
    * e.g. `(.component)` from `@scope (.component) { … }`.
    */
   scope?: string;
+  /**
+   * When present, this node is a nested `@variant`-group boundary — this position is filled by exactly
+   * one of these alternative subtrees (unlike {@link StructureVariant}'s top-level "the whole tree has
+   * this shape instead", this is local to one child position). `selector` is empty and `children` unused.
+   */
+  variants?: StructureVariant[];
   /** The full single-selector argument from a `:is(…)` compound — means this element itself carries that selector (co-location, not containment). E.g. `.pfx-card`, `button`, `#id`, `[attr="val"]`. */
   colocated?: string;
   /** Prose from a `@wrapper` doc tag matching this node's class, when authored (annotates the node). */

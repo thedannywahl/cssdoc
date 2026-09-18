@@ -840,11 +840,12 @@ function parseRef(rest: string): { ref: number; text?: string } | undefined {
  * @param parse - The CSS parser to build the tree with (the same one `parseCssDocs` uses, or a dialect
  *   parser). Injected so this module carries no runtime CSS-parser dependency; without it the tree is empty.
  */
-// A trailing pseudo marks a child's cardinality: `:optional`/`:opt` (0..1), `:many` (0..n), or
-// `:one-or-more`/`:more` (1..n). No marker means the child is present (required) when the component is
-// used. A pseudo, not a `/* … *\/` comment, because `@structure` lives inside a doc comment where a
-// nested comment would close it early — an unknown pseudo-class is valid selector syntax, and it's
-// stripped from the stored selector here.
+// A trailing pseudo marks a child's cardinality: `:optional`/`:opt` (0..1), `:many` (0..n),
+// `:one-or-more`/`:more` (1..n), a bare `:max-<n>` (0..n, capped), or a chained
+// `:one-or-more:max-<n>`/`:more:max-<n>` (1..n, capped). No marker means the child is present
+// (required) when the component is used. A pseudo, not a `/* … *\/` comment, because `@structure`
+// lives inside a doc comment where a nested comment would close it early — an unknown pseudo-class is
+// valid selector syntax, and it's stripped from the stored selector here.
 const CARDINALITY: Record<string, NonNullable<StructureNode["cardinality"]>> = {
   optional: "optional",
   opt: "optional",
@@ -852,9 +853,22 @@ const CARDINALITY: Record<string, NonNullable<StructureNode["cardinality"]>> = {
   "one-or-more": "one-or-more",
   more: "one-or-more",
 };
-const CARD_RE = /:(optional|opt|one-or-more|more|many)\s*$/u;
-const TRAILING_CARD_RE =
-  /^(?<base>[\s\S]*?):(?<card>optional|opt|one-or-more|more|many)(?:\s+(?<private>private))?\s*$/u;
+const CARD_SUFFIX = String.raw`(?:(?<oomKw>one-or-more|more):max-(?<oomMax>\d+)|max-(?<max>\d+)|(?<kw>optional|opt|one-or-more|more|many))`;
+const CARD_RE = new RegExp(`:${CARD_SUFFIX}\\s*$`, "u");
+const TRAILING_CARD_RE = new RegExp(
+  `^(?<base>[\\s\\S]*?):${CARD_SUFFIX}(?:\\s+(?<private>private))?\\s*$`,
+  "u",
+);
+
+/** Resolve a {@link CARD_RE}/{@link TRAILING_CARD_RE} match's named groups to a stored cardinality. */
+function cardinalityFromMatch(
+  groups: Record<string, string | undefined>,
+): NonNullable<StructureNode["cardinality"]> | undefined {
+  if (groups.oomMax) return `one-or-more-max-${groups.oomMax}` as `one-or-more-max-${number}`;
+  if (groups.max) return `max-${groups.max}` as `max-${number}`;
+  if (groups.kw) return CARDINALITY[groups.kw];
+  return undefined;
+}
 // A single-class `:is(.<class>)` signals the element itself carries that class (co-location).
 const COLOC_RE = /:is\(\s*([^,)]+?)\s*\)/u;
 const STRUCTURE_REF_RE = /^[a-zA-Z][\w-]*(?:\.[\w-]+)*$/u;
@@ -878,8 +892,8 @@ function splitTrailingCardinality(raw: string): {
 } {
   const trimmed = raw.trim();
   const match = trimmed.match(TRAILING_CARD_RE);
-  if (!match?.groups?.card || !match.groups.base) return { params: trimmed };
-  const card = CARDINALITY[match.groups.card];
+  if (!match?.groups || !match.groups.base) return { params: trimmed };
+  const card = cardinalityFromMatch(match.groups);
   if (!card) return { params: trimmed };
   const suffix = match.groups.private ? " private" : "";
   return { params: `${match.groups.base.trim()}${suffix}`.trim(), cardinality: card };
@@ -960,7 +974,27 @@ function structureReferenceComponentName(selector: string): string | undefined {
 /** Build a {@link StructureNode} tree from one already-parsed level of a `@structure` body. */
 function buildStructureNodes(nodes: readonly ChildNode[], currentParent?: string): StructureNode[] {
   const out: StructureNode[] = [];
-  for (const rule of nodes) {
+  for (let i = 0; i < nodes.length; i++) {
+    const rule = nodes[i];
+    if (rule.type === "atrule" && rule.name === "variant") {
+      // A nested `@variant` group: this child position is filled by exactly one of these alternative
+      // subtrees. Collect this rule and any immediately-following `@variant` siblings into one
+      // synthetic boundary node (mirrors how `@scope` gets a synthetic wrapper node above).
+      const variants: StructureVariant[] = [];
+      let next: ChildNode = rule;
+      while (next.type === "atrule" && next.name === "variant") {
+        variants.push({
+          name: next.params.trim() || undefined,
+          nodes: buildStructureNodes(next.nodes ?? [], currentParent),
+        });
+        i++;
+        if (i >= nodes.length) break;
+        next = nodes[i];
+      }
+      i--;
+      out.push({ selector: "", variants, children: [] });
+      continue;
+    }
     if (rule.type === "atrule" && rule.name === "scope") {
       // @scope boundary: emit a wrapper node whose children are the scoped rules.
       out.push({
@@ -1001,7 +1035,7 @@ function buildStructureNodes(nodes: readonly ChildNode[], currentParent?: string
       selector: card ? withoutColoc.slice(0, card.index).trim() : withoutColoc,
       children: buildStructureNodes(rule.nodes ?? [], currentParent),
     };
-    if (card) node.cardinality = CARDINALITY[card[1]];
+    if (card?.groups) node.cardinality = cardinalityFromMatch(card.groups);
     if (coloc) node.colocated = coloc[1].trim();
     out.push(node);
   }
@@ -1026,8 +1060,9 @@ export function parseStructure(
  * top-level `@variant <name>? { … }` blocks — an author saying "pick one of these DOM shapes" (e.g. a
  * `<label>` wrapping a control vs. a `<label for>` + a sibling control), as opposed to `parseStructure`'s
  * default of "these roots all coexist". A bare (non-`@variant`) run of top-level nodes becomes an
- * unnamed variant in place; `@variant` is only recognized at this top level — a nested occurrence is
- * inert CSS content, same as any other unrecognized at-rule.
+ * unnamed variant in place. This only handles the top level (the whole tree alternates); a `@variant`
+ * nested deeper is a local choice at one child position, handled by {@link buildStructureNodes} instead
+ * and stored on that node's {@link StructureNode.variants}.
  *
  * @returns `undefined` when the body has no top-level `@variant` block (the common case).
  */

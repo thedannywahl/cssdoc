@@ -39,6 +39,7 @@ export {
 export type { ModifierConvention, ModifierConventionInput, ModifierHit } from "./modifier.ts";
 export { toMermaid, toMermaidVariants } from "./mermaid.ts";
 export type { MermaidOptions } from "./mermaid.ts";
+export { cardinalityToken, cardinalityIsDashed } from "./cardinality.ts";
 export { buildCustomMediaDeclarations, structureCustomMediaRefs } from "./customMedia.ts";
 export type { BuildCustomMediaOptions, StructureCustomMediaRef } from "./customMedia.ts";
 export type {

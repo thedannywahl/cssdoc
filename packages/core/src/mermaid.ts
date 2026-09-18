@@ -15,12 +15,18 @@
  *   its page when an href is known.
  *
  * Edges carry cardinality from the child's {@link StructureNode.cardinality}: required `-->`, optional
- * `-.->|0..1|` (dashed), many `-->|0..n|`, one-or-more `-->|1..n|`. The four `classDef`s give a
- * readable standalone default; a host can restyle by targeting the class names (e.g. a VitePress theme
- * mapping them to `--vp-c-*`).
+ * `-.->|0..1|` (dashed), and every other cardinality (`many`, `one-or-more`, a bounded `max-<n>`, or
+ * `one-or-more-max-<n>`) a solid `-->` labelled with its range (`0..n`, `1..n`, `0..<n>`, `1..<n>`). The
+ * four `classDef`s give a readable standalone default; a host can restyle by targeting the class names
+ * (e.g. a VitePress theme mapping them to `--vp-c-*`).
+ *
+ * A node with {@link StructureNode.variants} (a nested `@variant` group) renders as an unlabelled
+ * subgraph boundary containing one labelled subgraph per alternative — the same "choose one" device
+ * {@link toMermaidVariants} uses for a whole-tree alternation, just local to one child position.
  *
  * @module
  */
+import { cardinalityIsDashed, cardinalityToken } from "./cardinality.ts";
 import type { StructureNode } from "./model.ts";
 
 /** Resolve a bare class name (no leading dot) to the sibling component it is the base class of. */
@@ -50,20 +56,12 @@ const SLOT_NODE = /^slot(?:\[\s*name\s*=\s*["']?([\w-]+)["']?\s*\])?$/u;
 
 type NodeClass = "cssdoc-root" | "cssdoc-part" | "cssdoc-slot" | "cssdoc-component";
 
-/** The child edge for each cardinality (dashed + `0..1` for optional; a count label for the ranges). */
-const EDGE: Record<NonNullable<StructureNode["cardinality"]> | "required", string> = {
-  required: "-->",
-  optional: "-.->|0..1|",
-  many: "-->|0..n|",
-  "one-or-more": "-->|1..n|",
-};
-
-/** The ER range token for a cardinality — used on the root's label, which has no incoming edge. */
-const CARDINALITY_TOKEN: Record<NonNullable<StructureNode["cardinality"]>, string> = {
-  optional: "0..1",
-  many: "0..n",
-  "one-or-more": "1..n",
-};
+/** The child edge for a cardinality (dashed for `:optional`; a solid, count-labelled arrow otherwise). */
+function edgeFor(cardinality: StructureNode["cardinality"]): string {
+  if (!cardinality) return "-->";
+  if (cardinalityIsDashed(cardinality)) return "-.->|0..1|";
+  return `-->|${cardinalityToken(cardinality)}|`;
+}
 
 /** Wrap a node's label in the shape mermaid draws for its class. */
 const SHAPE: Record<NodeClass, (id: string, label: string) => string> = {
@@ -133,7 +131,7 @@ function classify(node: StructureNode, isRoot: boolean, options: MermaidOptions)
   if (isRoot) {
     // A root has no incoming edge to carry its cardinality (an optional-ancestor wrapper), so it rides
     // the label instead — matching the text tree.
-    const card = node.cardinality ? ` (${CARDINALITY_TOKEN[node.cardinality]})` : "";
+    const card = node.cardinality ? ` (${cardinalityToken(node.cardinality)})` : "";
     const colocSuffix = node.colocated
       ? ` + ${options.resolveComponent?.(colocNormalize(node.colocated))?.name ?? node.colocated}`
       : "";
@@ -249,6 +247,20 @@ function renderTrees(
       nodes.push("  end");
       return id;
     }
+    // A nested `@variant` group: this position is filled by exactly one alternative — render an
+    // unlabelled subgraph boundary containing one labelled subgraph per alternative.
+    if (node.variants !== undefined) {
+      const id = `sg${counter++}`;
+      nodes.push(`  subgraph ${id}`);
+      for (const [i, variant] of node.variants.entries()) {
+        const variantId = `sg${counter++}`;
+        nodes.push(`  subgraph ${variantId} ["${esc(variant.name ?? `Variant ${i + 1}`)}"]`);
+        for (const root of variant.nodes) walk(root, true);
+        nodes.push("  end");
+      }
+      nodes.push("  end");
+      return id;
+    }
     const id = `n${counter++}`;
     const { klass, label, href } = classify(node, isRoot, options);
     // A node's authored prose (`@wrapper`) rides its label, matching the text tree.
@@ -257,7 +269,7 @@ function renderTrees(
     if (href) links.push(`  click ${id} "${href}"`);
     for (const child of node.children) {
       const childId = walk(child, false);
-      edges.push(`  ${id} ${EDGE[child.cardinality ?? "required"]} ${childId}`);
+      edges.push(`  ${id} ${edgeFor(child.cardinality)} ${childId}`);
     }
     return id;
   };

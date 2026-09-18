@@ -76,6 +76,7 @@ export function structureCustomMediaRefs(
         });
       }
       if (node.children.length) visit(source, node.children);
+      for (const variant of node.variants ?? []) visit(source, variant.nodes);
     }
   };
   for (const entry of entries) {
