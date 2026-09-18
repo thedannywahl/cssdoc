@@ -1,3 +1,4 @@
+import { CssDocConfiguration } from "@cssdoc/core";
 import { expect, test } from "vite-plus/test";
 import { type CssDocIndex, createIndex, indexFromEntries, memberKey } from "../src/index.ts";
 
@@ -118,6 +119,38 @@ test("spans and lookups work for suffix (BEM) and attribute (CUBE) modifiers", (
   expect(
     cube.recordInfo("card")?.memberSpans.has(memberKey("modifier", 'data-variant="ghost"')),
   ).toBe(true);
+});
+
+test("globalPrecedence controls which definition wins when a base and a @global record share a modifier name", () => {
+  const css = `
+/**
+ * @component button
+ * @summary Button.
+ * @modifier -color-secondary — A lower-emphasis action.
+ */
+.button {}
+.button.-color-secondary {}
+
+/**
+ * @utility theme
+ * @global
+ * @modifier -color-secondary — @deprecated {@link -color-primary}
+ */
+.theme {}
+.theme.-color-secondary {}
+`;
+  // Default ("base"): the component's own (non-deprecated) definition wins.
+  const base = createIndex(css, { modifierConvention: "rscss" });
+  expect(base.isModifier("button", "-color-secondary")).toBe(true);
+  expect(base.deprecationOf("button", "-color-secondary")).toBeUndefined();
+
+  // "global": the @global record's (deprecated) definition wins instead.
+  const configuration = new CssDocConfiguration();
+  configuration.setGlobalPrecedence("global");
+  const preferGlobal = createIndex(css, { modifierConvention: "rscss", configuration });
+  expect(preferGlobal.deprecationOf("button", "-color-secondary")?.canonical).toBe(
+    "-color-primary",
+  );
 });
 
 test("resolveCustomProperty follows the var() chain to a terminal value, cycle-safe", () => {

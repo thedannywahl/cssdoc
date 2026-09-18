@@ -57,6 +57,7 @@ export type RuleName =
   | "private-member-orphaned"
   | "members-unknown-component"
   | "affects-unknown-component"
+  | "conflicting-global-modifier"
   | "invalid-default-value"
   | "invalid-property-value"
   | "invalid-fallback-value"
@@ -85,6 +86,7 @@ export const RULE_NAMES: readonly RuleName[] = [
   "private-member-orphaned",
   "members-unknown-component",
   "affects-unknown-component",
+  "conflicting-global-modifier",
   "invalid-default-value",
   "invalid-property-value",
   "invalid-fallback-value",

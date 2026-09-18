@@ -30,6 +30,34 @@ test("completions in a class attribute suggest the component's modifiers", () =>
   expect(labels).toEqual(expect.arrayContaining(["-color-secondary", "-variant-old"]));
 });
 
+test("completions carry sortText so a @global modifier sorts after the component's own", () => {
+  const css = `
+/**
+ * @component button
+ * @summary Button.
+ * @modifier -size-sm — Small.
+ */
+.button {}
+.button.-size-sm {}
+
+/**
+ * @utility theme
+ * @global
+ * @modifier -density-compact — Reduces padding everywhere.
+ */
+.theme {}
+.theme.-density-compact {}
+`;
+  const svc = new CssDocLanguageService(createIndex(css, { modifierConvention: "rscss" }));
+  const text = `<button class="button ">x</button>`;
+  const completions = svc.completions(text, at(text.indexOf('">')));
+  const direct = completions.find((c) => c.label === "-size-sm");
+  const global = completions.find((c) => c.label === "-density-compact");
+  expect(direct?.sortText).toBeTruthy();
+  expect(global?.sortText).toBeTruthy();
+  expect(direct!.sortText! < global!.sortText!).toBe(true);
+});
+
 test("completions after var(--…) suggest declared custom properties", () => {
   const text = `.x { color: var(--i`;
   const labels = service.completions(text, at(text.length)).map((c) => c.label);

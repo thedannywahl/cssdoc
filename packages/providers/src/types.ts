@@ -64,6 +64,7 @@ export type RuleId =
   | "private-member-orphaned"
   | "members-unknown-component"
   | "affects-unknown-component"
+  | "conflicting-global-modifier"
   | "cssdoc-directive";
 
 /** A resolved severity for every rule. */
@@ -106,6 +107,7 @@ export const DEFAULT_RULE_SEVERITIES: RuleSeverities = {
   "private-member-orphaned": "warn",
   "members-unknown-component": "warn",
   "affects-unknown-component": "warn",
+  "conflicting-global-modifier": "warn",
   // Fires when a `cssdoc-expect-error` directive matched no problem (like an unused ts-expect-error).
   "cssdoc-directive": "warn",
 };

@@ -1,3 +1,4 @@
+import { CssDocConfiguration } from "@cssdoc/core";
 import { createIndex } from "@cssdoc/index";
 import { expect, test } from "vite-plus/test";
 import {
@@ -1038,6 +1039,107 @@ test("completions: components with no base, modifiers with a base", () => {
     expect.arrayContaining(["-color-secondary", "-size-sm", "-variant-old"]),
   );
   expect(modifiers.find((c) => c.label === "-variant-old")?.deprecated).toBe(true);
+});
+
+test("completions: a @global record's modifiers are listed after the component's own, sorted last", () => {
+  const css = `
+/**
+ * @component button
+ * @summary Button.
+ * @modifier -size-sm — Small.
+ */
+.button {}
+.button.-size-sm {}
+
+/**
+ * @utility theme
+ * @global
+ * @modifier -density-compact — Reduces padding everywhere.
+ */
+.theme {}
+.theme.-density-compact {}
+`;
+  const idx = createIndex(css, { modifierConvention: "rscss" });
+  const completions = completeClasses("button", idx);
+  expect(completions.map((c) => c.label)).toEqual(["-size-sm", "-density-compact"]);
+  expect(completions.find((c) => c.label === "-density-compact")?.documentation).toContain(
+    "(global)",
+  );
+  // Direct modifiers sort before global ones regardless of alphabetical order.
+  const direct = completions.find((c) => c.label === "-size-sm")!;
+  const global = completions.find((c) => c.label === "-density-compact")!;
+  expect(direct.sortText! < global.sortText!).toBe(true);
+});
+
+test("completions: a same-named global modifier is deduped, resolved per globalPrecedence", () => {
+  const css = `
+/**
+ * @component button
+ * @summary Button.
+ * @modifier -color-secondary — A lower-emphasis action.
+ */
+.button {}
+.button.-color-secondary {}
+
+/**
+ * @utility theme
+ * @global
+ * @modifier -color-secondary — @deprecated {@link -color-primary}
+ */
+.theme {}
+.theme.-color-secondary {}
+`;
+  // Default ("base"): the component's own definition wins, and the name appears only once.
+  const base = createIndex(css, { modifierConvention: "rscss" });
+  const baseCompletions = completeClasses("button", base);
+  expect(baseCompletions.map((c) => c.label)).toEqual(["-color-secondary"]);
+  expect(baseCompletions[0].deprecated).toBe(false);
+
+  // "global": the global record's (deprecated) definition wins instead, still deduped to one item.
+  const configuration = new CssDocConfiguration();
+  configuration.setGlobalPrecedence("global");
+  const preferGlobal = createIndex(css, { modifierConvention: "rscss", configuration });
+  const globalCompletions = completeClasses("button", preferGlobal);
+  expect(globalCompletions.map((c) => c.label)).toEqual(["-color-secondary"]);
+  expect(globalCompletions[0].deprecated).toBe(true);
+});
+
+test("conflicting-global-modifier severity is configurable (default warn, off/error)", () => {
+  const css = `
+/**
+ * @component button
+ * @summary Button.
+ * @modifier -color-secondary — A lower-emphasis action.
+ */
+.button {}
+.button.-color-secondary {}
+
+/**
+ * @utility theme
+ * @global
+ * @modifier -color-secondary — Themed override.
+ */
+.theme {}
+.theme.-color-secondary {}
+`;
+  const idx = createIndex(css, { modifierConvention: "rscss" });
+
+  const byDefault = lintModel(idx).filter((d) => d.rule === "conflicting-global-modifier");
+  expect(byDefault).toHaveLength(1);
+  expect(byDefault[0].severity).toBe("warning");
+
+  expect(
+    lintModel(idx, resolveRuleSeverities({ "conflicting-global-modifier": "off" })).filter(
+      (d) => d.rule === "conflicting-global-modifier",
+    ),
+  ).toHaveLength(0);
+
+  const errored = lintModel(
+    idx,
+    resolveRuleSeverities({ "conflicting-global-modifier": "error" }),
+  ).filter((d) => d.rule === "conflicting-global-modifier");
+  expect(errored).toHaveLength(1);
+  expect(errored[0].severity).toBe("error");
 });
 
 test("hover and definition resolve a modifier to its docs and its rule location", () => {
