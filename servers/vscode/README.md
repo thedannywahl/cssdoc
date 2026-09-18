@@ -1,57 +1,51 @@
-# cssdoc for VS Code
+# [![cssdoc: TSDoc, for CSS](https://cssdoc.dev/og.png)](https://cssdoc.dev)
 
-Bring your documented CSS into the editor. This extension adds completion, hover, go-to-definition,
-deprecation quick-fixes, and live diagnostics for the classes, modifiers, and custom properties you
-document with [cssdoc](https://cssdoc.dev) — in your `.css`, `.html`, and JSX/TSX files.
+## cssdoc
 
-## Install
+Document plain CSS with structured comments — parse them plus the CSS AST into a model, then emit docs, catch drift and misuse, and get editor IntelliSense.
 
-- **VS Code Marketplace** — <https://marketplace.visualstudio.com/items?itemName=cssdoc.cssdoc-vscode>
-- **Open VSX** (Cursor, VSCodium, Windsurf, Gitpod, and other non‑Microsoft editors) —
-  <https://open-vsx.org/extension/cssdoc/cssdoc-vscode>
+### Author with a grammar
 
-Or open the Extensions view and search **cssdoc**.
+A small comment vocabulary — `@component`, `@modifier`, `@cssproperty` and more — with the machine facts derived from the selectors.
+
+### Emit anywhere
+
+One model, many outputs — Markdown, standalone HTML, JSON schema, llms.txt — or extend with your own formats.
+
+### Catch drift and misuse
+
+Linter rules flag undocumented or drifted styles, and validate the classes and modifiers your code actually applies with configurable rules.
+
+### Editor IntelliSense
+
+A language server brings completion, hover, go-to-definition, and deprecation quick-fixes to any LSP editor — with a VS Code extension included.
 
 ## Setup
 
-**Zero-config by default.** The extension auto-detects the CSS in your workspace and reads its doc
-comments — no setting required.
+**Zero-config by default.** The extension auto-detects the CSS in your workspace and reads its doc comments — no setting required.
 
-To narrow or widen what it scans, set globs in your workspace settings (`.vscode/settings.json`) or the
-Settings UI:
+- Add a `cssdoc.json` file to customize your configuration for a workspace.
+- Adjust the cssdoc settings in VS Code to customize your editor.
 
-```jsonc
-{
-  "cssdoc.include": ["dist/**/*.css"], // default: ["**/*.css"]
-  "cssdoc.exclude": ["**/node_modules/**"], // default: ["**/node_modules/**"]
-}
-```
+### Completion
 
-Prefer an exact list? `cssdoc.css` takes explicit paths and overrides auto-detection. Either way, the set
-updates automatically when files or settings change — no reload needed.
+Authoring autocomplete suggestions for a component's modifiers or css var statements.
 
-## What you get
+### Hover
 
-In `.css`, `.html`, and JSX/TSX files:
+See the documentation for a modifier or custom property.
 
-- **Completion** — a component's `-modifiers` inside `class`/`className`, and declared custom properties
-  inside `var(--…)`.
-- **Hover** — the documentation for a modifier or custom property.
-- **Go to definition** — jump to the CSS rule (or `@property`) that defines a class or property.
-- **Diagnostics + quick fix** — unknown and deprecated modifiers, with a one-click
-  replace-with-canonical fix. In CSS files it also flags values that don't match a registered
-  `@property` syntax.
+### Go to definition
 
-Everything is powered by the cssdoc language server, driven by the same model the rest of the toolchain
-uses — so your editor and your generated docs never disagree.
+Jump to the CSS rule that defines a class or property.
+
+### Diagnostics + quick fix
+
+Unknown and deprecated modifiers, with a one-click replace-with-canonical fix.
 
 ## Documentation
 
-Full guides, the tag vocabulary, and the API reference are at **[cssdoc.dev](https://cssdoc.dev)**.
-
-## Contributing
-
-Source, issues, and the wider cssdoc toolchain: <https://github.com/thedannywahl/cssdoc>.
+Full guides, the tag vocabulary, API reference, and editor settings are available at **[cssdoc.dev](https://cssdoc.dev)**.
 
 ## License
 

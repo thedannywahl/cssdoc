@@ -30,19 +30,24 @@
   border-radius: var(--button-radius);
   padding: 0.5em 1em;
 }
+
 .button:disabled {
   opacity: 0.5;
 }
+
 .button--secondary {
   background: #eee;
 }
+
 .button--danger {
   background: #c0392b;
   color: #fff;
 }
+
 .button--ghost {
   background: transparent;
 }
+
 .button__icon {
   width: 1em;
   height: 1em;
@@ -84,17 +89,23 @@
 .card {
   display: block;
   padding: 1em;
-  overflow: hidden; /* @ref 2 */
+  overflow: hidden;
+  /* @ref 2 */
 }
+
 .card + .card {
-  margin-top: 0; /* @ref 1 */
+  margin-top: 0;
+  /* @ref 1 */
 }
+
 .card--featured {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
+
 .card__title {
   font-weight: 600;
 }
+
 .card__body {
   margin-top: 0.5em;
 }
@@ -107,6 +118,15 @@
  *     ..........................................  resolving in index.html / App.jsx
  *     (hover, completion, and modifier checks all go quiet for that component)
  *   - Hover .card { overflow: hidden } to see .. ref annotation prose in the tooltip
+ *
+ * TRY these editor capabilities in index.html:
+ *   - Hover `button--secondary` .................. hover shows its summary and docs
+ *   - Press F12 on `button--secondary` ........... Go to Definition jumps to its CSS rule
+ *   - Type inside `class="button |"` and press ... completion lists button modifiers
+ *     Ctrl/Cmd+Space
+ *   - Change it to `button--x` ................... diagnostics report an unknown modifier;
+ *     change it to `button--ghost` and use the .. quick fix replaces it with
+ *     lightbulb (Ctrl/Cmd+.) ..................... `button--secondary`
  */
 
 /**
@@ -119,6 +139,7 @@
   display: flex;
   gap: 0.75rem;
 }
+
 .nav__link {
   text-decoration: none;
 }

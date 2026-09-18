@@ -35,13 +35,13 @@
     <!--
       Consumer markup. The extension checks class usage against components.css and is clean by default.
       Things to TRY on the <button> below:
-        - Hover "button--secondary" ................ shows its summary and docs
-        - Cursor on it, press F12 (Go to Definition) jumps to the rule in components.css
-        - Cursor inside class="button |" (after a .. completion lists button's
-          space), press Ctrl/Cmd+Space .............  modifiers
-        - Change "button--secondary" to "button--x"  "unknown-modifier" warning
-        - Change it to "button--ghost", then open .. "deprecated-modifier" + a
-          the lightbulb (Ctrl/Cmd+.) ...............  "Replace with .button--secondary" fix
+        - Hover "button--secondary" ................ Hover shows its summary and docs
+        - Cursor on it, press F12 ................... Go to Definition jumps to its CSS rule
+        - Cursor inside class="button |" (after a .. Completion lists button modifiers;
+          space), press Ctrl/Cmd+Space .............  invoke it from the editor
+        - Change "button--secondary" to "button--x"  Diagnostics report "unknown-modifier";
+          change it to "button--ghost", then ....... the quick fix replaces it with
+          open the lightbulb (Ctrl/Cmd+.) ..........  ".button--secondary"
     -->
     <button class="button button--secondary">Save</button>
 
