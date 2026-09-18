@@ -31,17 +31,25 @@ A language server brings completion, hover, go-to-definition, and deprecation qu
 
 Authoring autocomplete suggestions for a component's modifiers or css var statements.
 
+![autocomplete demo](https://cssdoc.dev/autocomplete.gif)
+
 ### Hover
 
 See the documentation for a modifier or custom property.
+
+![hover demo](https://cssdoc.dev/hover.gif)
 
 ### Go to definition
 
 Jump to the CSS rule that defines a class or property.
 
+![click to definition demo](https://cssdoc.dev/click-to-def.gif)
+
 ### Diagnostics + quick fix
 
 Unknown and deprecated modifiers, with a one-click replace-with-canonical fix.
+
+![quick fix demo](https://cssdoc.dev/quick-fix.gif)
 
 ## Documentation
 
