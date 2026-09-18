@@ -109,6 +109,7 @@ export class CssDocConfiguration {
   private readonly _supported = new Set<CssDocTagDefinition>();
   private _modifierConvention: ModifierConvention = DEFAULT_MODIFIER_CONVENTION;
   private _inlineComments: InlineCommentMode = "append";
+  private _globalPrecedence: "base" | "global" = "base";
 
   constructor() {
     this.addTagDefinitions(CssDocConfiguration.standardTags(), true);
@@ -132,6 +133,19 @@ export class CssDocConfiguration {
   /** Set the inline-comment combine mode. */
   setInlineComments(mode: InlineCommentMode): void {
     this._inlineComments = mode;
+  }
+
+  /**
+   * Precedence when a base record and a `@global` record both define the same modifier name:
+   * `"base"` (explicit modifiers win; default) or `"global"` (the global one wins).
+   */
+  get globalPrecedence(): "base" | "global" {
+    return this._globalPrecedence;
+  }
+
+  /** Set the global-modifier precedence (see {@link globalPrecedence}). */
+  setGlobalPrecedence(mode: "base" | "global"): void {
+    this._globalPrecedence = mode;
   }
 
   /** Every registered tag definition, in registration order. */

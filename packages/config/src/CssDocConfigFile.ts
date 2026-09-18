@@ -294,6 +294,7 @@ export class CssDocConfigFile {
     if (this.inlineComments !== undefined) {
       configuration.setInlineComments(this.inlineComments);
     }
+    configuration.setGlobalPrecedence(this.globalPrecedence);
   }
 
   /**

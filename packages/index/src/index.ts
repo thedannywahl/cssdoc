@@ -614,7 +614,7 @@ export function createIndex(
     if (d.prop.startsWith("--")) customPropertyValues.set(d.prop, d.value);
   });
 
-  const globalPrecedence = (options.configuration as any)?.globalPrecedence ?? ("base" as const);
+  const globalPrecedence = options.configuration?.globalPrecedence ?? ("base" as const);
 
   return new CssDocIndex(records, options.file, matcher, customPropertyValues, globalPrecedence);
 }
