@@ -256,7 +256,12 @@ export const cssDocSchema = {
       additionalProperties: false,
       properties: {
         selector: { type: "string" },
-        cardinality: { enum: ["optional", "many", "one-or-more"] },
+        cardinality: {
+          type: "string",
+          pattern: "^(optional|many|one-or-more|max-\\d+|one-or-more-max-\\d+)$",
+        },
+        scope: { type: "string" },
+        variants: { type: "array", items: { $ref: "#/$defs/StructureVariant" } },
         colocated: { type: "string" },
         description: { type: "string" },
         children: { type: "array", items: { $ref: "#/$defs/StructureNode" } },

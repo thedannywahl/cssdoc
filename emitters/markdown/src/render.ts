@@ -7,7 +7,7 @@
  * @module
  */
 import type { CssDocEntry, CssReleaseStage, CssRecordKind, StructureNode } from "@cssdoc/core";
-import { toMermaid, toMermaidVariants } from "@cssdoc/core";
+import { cardinalityToken, toMermaid, toMermaidVariants } from "@cssdoc/core";
 
 /**
  * Resolve a consumed custom property to its type/value for the "Tokens consumed" table. Supplied by the
@@ -287,13 +287,6 @@ function table(headers: string[], rows: string[][]): string[] {
   ];
 }
 
-/** ER-style cardinality tokens, shared with the flowchart (absent = required). */
-const CARDINALITY_TOKEN: Record<NonNullable<StructureNode["cardinality"]>, string> = {
-  optional: "0..1",
-  many: "0..n",
-  "one-or-more": "1..n",
-};
-
 /** Match a `slot` / `slot[name="x"]` structure node (a light-DOM content region → the default/named slot). */
 const SLOT_NODE = /^slot(?:\[\s*name\s*=\s*["']?([\w-]+)["']?\s*\])?$/u;
 
@@ -347,6 +340,10 @@ const normalizedStructureRefSelector = (ref: {
 function normalizeStructureRefCardinality(nodes: readonly StructureNode[]): StructureNode[] {
   return nodes.map((node) => {
     const children = normalizeStructureRefCardinality(node.children);
+    const variants = node.variants?.map((variant) => ({
+      ...variant,
+      nodes: normalizeStructureRefCardinality(variant.nodes),
+    }));
     const ref = parseStructureRecordRef(node.selector);
     if (ref && (!ref.kind || ref.kind === "component") && !node.cardinality) {
       const card = ref.profile ? STRUCTURE_REF_CARDINALITY[ref.profile] : undefined;
@@ -356,10 +353,11 @@ function normalizeStructureRefCardinality(nodes: readonly StructureNode[]): Stru
           selector: normalizedStructureRefSelector(ref),
           cardinality: card,
           children,
+          ...(variants ? { variants } : {}),
         };
       }
     }
-    return { ...node, children };
+    return { ...node, children, ...(variants ? { variants } : {}) };
   });
 }
 
@@ -411,7 +409,7 @@ function structureLabel(
     base = `${base} + ${colocName}`;
     kind = "component";
   }
-  const tags = [kind, node.cardinality ? CARDINALITY_TOKEN[node.cardinality] : undefined].filter(
+  const tags = [kind, node.cardinality ? cardinalityToken(node.cardinality) : undefined].filter(
     Boolean,
   );
   const label = tags.length ? `${base} (${tags.join(", ")})` : base;
@@ -431,6 +429,15 @@ function renderTree(
       // @scope boundary: emit a labelled header at the current depth, then recurse into its children.
       out.push(`${"  ".repeat(depth)}@scope ${node.scope}`);
       out.push(...renderTree(node.children, self, resolveComponent, depth + 1));
+      continue;
+    }
+    if (node.variants !== undefined) {
+      // A nested `@variant` group: this position is exactly one of these alternatives.
+      out.push(`${"  ".repeat(depth)}(choose one)`);
+      node.variants.forEach((variant, i) => {
+        out.push(`${"  ".repeat(depth + 1)}${variant.name ?? `Variant ${i + 1}`}`);
+        out.push(...renderTree(variant.nodes, self, resolveComponent, depth + 2));
+      });
       continue;
     }
     out.push(`${"  ".repeat(depth)}${structureLabel(node, self, resolveComponent)}`);
@@ -463,6 +470,7 @@ function subcomponentsOf(
         if (c) byName.set(c.name, c);
       }
       walk(node.children);
+      for (const variant of node.variants ?? []) walk(variant.nodes);
     }
   };
   for (const nodes of groups) walk(nodes);

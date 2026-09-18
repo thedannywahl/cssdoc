@@ -86,7 +86,16 @@ function table(headers: string[], rows: string[][]): string {
 function structureList(nodes: StructureNode[]): string {
   if (!nodes.length) return "";
   const items = nodes
-    .map((n) => `<li>${code(n.selector)}${structureList(n.children)}</li>`)
+    .map((n) => {
+      if (n.variants !== undefined) {
+        // A nested `@variant` group: this position is exactly one of these alternatives.
+        const alts = n.variants
+          .map((v, i) => `<li>${esc(v.name ?? `Variant ${i + 1}`)}${structureList(v.nodes)}</li>`)
+          .join("");
+        return `<li>(choose one)<ul>${alts}</ul></li>`;
+      }
+      return `<li>${code(n.selector)}${structureList(n.children)}</li>`;
+    })
     .join("");
   return `<ul>${items}</ul>`;
 }

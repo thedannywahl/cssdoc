@@ -184,6 +184,8 @@ const structureReferences = (
     if (node.colocated && node.colocated.replace(/^[.#]/u, "") === className) return true;
     const ref = parseStructureRecordRef(node.selector);
     if (ref && ref.name === recordName) return true;
+    if ((node.variants ?? []).some((v) => structureReferences(v.nodes, className, recordName)))
+      return true;
     return structureReferences(node.children, className, recordName);
   });
 
@@ -196,6 +198,14 @@ const structureReferences = (
 const renderStructureTree = (nodes: StructureNode[], depth = 0): string[] =>
   nodes.flatMap((n) => {
     const pad = "  ".repeat(depth);
+    if (n.variants !== undefined) {
+      // A nested `@variant` group re-serializes as the same blocks it was authored with.
+      return n.variants.flatMap((v) => [
+        `${pad}@variant${v.name ? ` ${v.name}` : ""} {`,
+        ...renderStructureTree(v.nodes, depth + 1),
+        `${pad}}`,
+      ]);
+    }
     const note = n.description ? ` /* ${n.description} */` : "";
     const colocSuffix = n.colocated ? `:is(${n.colocated})` : "";
     const label = `${n.selector}${colocSuffix}`;
@@ -395,7 +405,12 @@ export const record = {
         const classesOf = (sel: string): string[] =>
           [...sel.matchAll(/\.([\w-]+)/gu)].map((m) => m[1]);
         const hasSelfBelow = (nodes: StructureNode[]): boolean =>
-          nodes.some((n) => classesOf(n.selector).includes(selfClass) || hasSelfBelow(n.children));
+          nodes.some(
+            (n) =>
+              classesOf(n.selector).includes(selfClass) ||
+              hasSelfBelow(n.children) ||
+              (n.variants ?? []).some((v) => hasSelfBelow(v.nodes)),
+          );
         // Alternative DOM shapes (`@variant` blocks) are validated independently, each against the
         // component's own known classes plus its own ancestor-wrapper roots — falls back to the single
         // `structure` tree when no `@variant` was authored.
@@ -530,6 +545,8 @@ export const record = {
               );
             }
             walk(node.children);
+            // A nested `@variant` group's alternatives live in `variants`, not `children`.
+            for (const variant of node.variants ?? []) walk(variant.nodes);
           }
         };
         for (const roots of groups) walk(roots);
