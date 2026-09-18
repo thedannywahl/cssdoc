@@ -1600,6 +1600,116 @@ test("@structure cardinality pseudos (full + `:opt`/`:more` shorthands) parse an
   });
 });
 
+test("@structure bounded `:max-<n>` and chained `:one-or-more:max-<n>` cardinalities parse and strip", () => {
+  const tree = parseStructure(
+    ".button-group {\n  button:max-2 {}\n  .item:one-or-more:max-3 {}\n  .tag:more:max-4 {}\n}",
+    postcss.parse,
+  );
+  const [group] = tree;
+  const card = Object.fromEntries(group.children.map((c) => [c.selector, c.cardinality]));
+  expect(card).toEqual({
+    button: "max-2",
+    ".item": "one-or-more-max-3",
+    ".tag": "one-or-more-max-4", // `:more` shorthand chains the same as `:one-or-more`
+  });
+});
+
+test("@structure bounded cardinality also parses on `@component` at-rule refs", () => {
+  const [entry] = parseCssDocs(
+    [
+      "/**",
+      " * @component button-group",
+      " * @summary A row of buttons.",
+      " * @structure",
+      " * .button-group {",
+      " *   @component button:one-or-more:max-2 {}",
+      " * }",
+      " */",
+      ".button-group {}",
+    ].join("\n"),
+  );
+  expect(entry.structure).toEqual([
+    {
+      selector: ".button-group",
+      children: [{ selector: "@component button", cardinality: "one-or-more-max-2", children: [] }],
+    },
+  ]);
+});
+
+test("@structure a nested `@variant` group is a local choice between alternative subtrees", () => {
+  const [entry] = parseCssDocs(
+    [
+      "/**",
+      " * @component action-row",
+      " * @summary A single action, or a small group of them.",
+      " * @structure",
+      " * .action-row {",
+      " *   slot {}",
+      " *   @variant single {",
+      " *     @component button:optional {}",
+      " *   }",
+      " *   @variant group {",
+      " *     .button-group:optional {",
+      " *       @component button:one-or-more:max-2 {}",
+      " *     }",
+      " *   }",
+      " * }",
+      " */",
+      ".action-row {}",
+    ].join("\n"),
+  );
+  const [root] = entry.structure!;
+  expect(root.children).toHaveLength(2);
+  const [slot, variantGroup] = root.children;
+  expect(slot).toEqual({ selector: "slot", children: [] });
+  expect(variantGroup.selector).toBe("");
+  expect(variantGroup.children).toEqual([]);
+  expect(variantGroup.variants).toEqual([
+    {
+      name: "single",
+      nodes: [{ selector: "@component button", cardinality: "optional", children: [] }],
+    },
+    {
+      name: "group",
+      nodes: [
+        {
+          selector: ".button-group",
+          cardinality: "optional",
+          children: [
+            { selector: "@component button", cardinality: "one-or-more-max-2", children: [] },
+          ],
+        },
+      ],
+    },
+  ]);
+});
+
+test("@structure a nested `@variant` group renders as a nested subgraph in Mermaid", () => {
+  const [entry] = parseCssDocs(
+    [
+      "/**",
+      " * @component action-row",
+      " * @summary A single action, or a small group of them.",
+      " * @structure",
+      " * .action-row {",
+      " *   @variant single {",
+      " *     .action:optional {}",
+      " *   }",
+      " *   @variant group {",
+      " *     .action-group:optional {}",
+      " *   }",
+      " * }",
+      " */",
+      ".action-row {}",
+    ].join("\n"),
+  );
+  const mermaid = toMermaid(entry.structure!);
+  expect(mermaid).toContain(`subgraph sg2 ["single"]`);
+  expect(mermaid).toContain(`subgraph sg4 ["group"]`);
+  expect(mermaid).toContain(`[".action (0..1)"]:::cssdoc-root`);
+  expect(mermaid).toContain(`[".action-group (0..1)"]:::cssdoc-root`);
+});
+
 test("@structure captures an optional leading description without disturbing the tree", () => {
   const [withDesc] = parseCssDocs(
     `/**\n * @component tabs\n * @summary Tabs.\n` +
