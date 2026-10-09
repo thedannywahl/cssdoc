@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <!-- Colors: Pantoken rebrand aurora and neutral grey primitive scales. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#00190F" />
+      <stop offset="1" stop-color="#051F15" />
+    </linearGradient>
+    <pattern id="diagonal-lines" width="40" height="40" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <path d="M0 0V40" stroke="#2BC692" stroke-width="2" opacity="0.5"/>
+    </pattern>
+    <linearGradient id="pattern-fade">
+      <stop stop-color="black"/>
+      <stop offset="1" stop-color="white"/>
+    </linearGradient>
+    <mask id="pattern-mask" x="280" y="10" width="920" height="620" maskUnits="userSpaceOnUse">
+      <rect x="280" y="10" width="920" height="620" fill="url(#pattern-fade)"/>
+    </mask>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)" />
+
+  <!-- Diagonal Aurora lines fade in across the right side. -->
+  <rect x="280" y="10" width="920" height="620" fill="url(#diagonal-lines)" mask="url(#pattern-mask)"/>
+
+  <!-- Aurora top accent rule. -->
+  <rect x="0" y="0" width="1200" height="10" fill="#06986E" />
+
+  <!-- Logo tile + wordmark. -->
+  
+  <svg x="96" y="150" width="150" height="150" viewBox="0 0 128 128">
+    <mask id="cut">
+      <rect x="8" y="8" width="112" height="112" rx="24" fill="white" />
+      <g fill="none" stroke="black" stroke-linecap="round" stroke-linejoin="round">
+        <g stroke-width="7">
+          <path d="M 84 64 q -6 0 -6 6 l 0 11 q 0 6 -6 6 q 6 0 6 6 l 0 11 q 0 6 6 6" />
+          <path d="M 100 64 q 6 0 6 6 l 0 11 q 0 6 6 6 q -6 0 -6 6 l 0 11 q 0 6 -6 6" />
+        </g>
+        <g stroke-width="5">
+          <path d="M 92 80 L 92 94" />
+          <path d="M 86 83.5 L 98 90.5" />
+          <path d="M 86 90.5 L 98 83.5" />
+        </g>
+      </g>
+    </mask>
+    <rect x="8" y="8" width="112" height="112" rx="24" fill="#2BC692" mask="url(#cut)" />
+  </svg>
+  <text x="270" y="260" font-family="Atkinson Hyperlegible Next, Arial, sans-serif" font-size="100" font-weight="700" fill="#ffffff" letter-spacing="-2">cssdoc</text>
+
+  <!-- Tagline. -->
+  <text x="100" y="388" font-family="Atkinson Hyperlegible Next, Arial, sans-serif" font-size="48" font-weight="700" fill="#2BC692">TSDoc, for CSS</text>
+
+  <!-- Supporting line. -->
+  <text x="100" y="444" font-family="Atkinson Hyperlegible Next, Arial, sans-serif" font-size="29" font-weight="500" fill="#AAB0B5">Document plain CSS with structured comments.</text>
+
+  <!-- Footer URL. -->
+  <text x="100" y="556" font-family="Atkinson Hyperlegible Next, Arial, sans-serif" font-size="24" font-weight="400" fill="#F2F4F5">cssdoc.dev</text>
+</svg>

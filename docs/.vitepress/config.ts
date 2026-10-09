@@ -58,8 +58,64 @@ export default defineConfig({
     },
   },
   head: [
-    ["link", { rel: "icon", href: `${base}icon.svg` }],
-    ["link", { rel: "icon", media: "(prefers-color-scheme: dark)", href: `${base}icon-dark.svg` }],
+    ["link", { rel: "apple-touch-icon", href: `${base}favicon-light.png`, sizes: "512x512" }],
+    ["link", { rel: "icon", href: `${base}favicon.ico`, type: "image/x-icon" }],
+    [
+      "link",
+      {
+        rel: "icon",
+        media: "(prefers-color-scheme: light)",
+        href: `${base}favicon-light.ico`,
+        type: "image/x-icon",
+      },
+    ],
+    [
+      "link",
+      {
+        rel: "icon",
+        media: "(prefers-color-scheme: light)",
+        href: `${base}favicon-light.png`,
+        type: "image/png",
+        sizes: "512x512",
+      },
+    ],
+    [
+      "link",
+      {
+        rel: "icon",
+        media: "(prefers-color-scheme: light)",
+        href: `${base}icon.svg`,
+        type: "image/svg+xml",
+      },
+    ],
+    [
+      "link",
+      {
+        rel: "icon",
+        media: "(prefers-color-scheme: dark)",
+        href: `${base}favicon-dark.ico`,
+        type: "image/x-icon",
+      },
+    ],
+    [
+      "link",
+      {
+        rel: "icon",
+        media: "(prefers-color-scheme: dark)",
+        href: `${base}favicon-dark.png`,
+        type: "image/png",
+        sizes: "512x512",
+      },
+    ],
+    [
+      "link",
+      {
+        rel: "icon",
+        media: "(prefers-color-scheme: dark)",
+        href: `${base}icon-dark.svg`,
+        type: "image/svg+xml",
+      },
+    ],
     ["meta", { name: "author", content: "Danny Wahl" }],
     [
       "meta",

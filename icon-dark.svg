@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-  <!-- cssdoc mark, dark-mode variant: a dark-mode-teal rounded square with `{*}` punched out as a transparent cutout. -->
+  <!-- CSSDoc mark for dark backgrounds: Aurora 50, with transparent cutouts. -->
   <mask id="cut">
     <rect x="8" y="8" width="112" height="112" rx="24" fill="white" />
     <g fill="none" stroke="black" stroke-linecap="round" stroke-linejoin="round">
@@ -14,5 +14,5 @@
       </g>
     </g>
   </mask>
-  <rect x="8" y="8" width="112" height="112" rx="24" fill="#1DC4B6" mask="url(#cut)" />
+  <rect x="8" y="8" width="112" height="112" rx="24" fill="#2BC692" mask="url(#cut)" />
 </svg>
