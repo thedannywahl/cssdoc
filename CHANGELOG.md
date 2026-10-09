@@ -4,6 +4,18 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.16.1
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.16.0...v0.16.1)
+
+### 🚀 Enhancements
+
+- Update favicon and social card assets for light and dark modes ([7cbd3ca](https://github.com/thedannywahl/cssdoc/commit/7cbd3ca))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.16.0
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.15.2...v0.16.0)
