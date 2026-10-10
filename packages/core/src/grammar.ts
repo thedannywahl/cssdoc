@@ -1061,8 +1061,8 @@ export function parseStructure(
  * `<label>` wrapping a control vs. a `<label for>` + a sibling control), as opposed to `parseStructure`'s
  * default of "these roots all coexist". A bare (non-`@variant`) run of top-level nodes becomes an
  * unnamed variant in place. This only handles the top level (the whole tree alternates); a `@variant`
- * nested deeper is a local choice at one child position, handled by {@link buildStructureNodes} instead
- * and stored on that node's {@link StructureNode.variants}.
+ * nested deeper is a local choice at one child position, handled during tree construction and stored
+ * on that node's {@link StructureNode.variants}.
  *
  * @returns `undefined` when the body has no top-level `@variant` block (the common case).
  */
