@@ -12,11 +12,11 @@ catalogMode: prefer
 catalog:
   # Toolchain
   typescript: ^7.0.2
-  "@types/node": ^26.6.1
-  vite: npm:@voidzero-dev/vite-plus-core@0.3.3
-  vite-plus: 0.3.3
+  "@types/node": ^26.6.4
+  vite: npm:@voidzero-dev/vite-plus-core@1.1.0
+  vite-plus: 1.1.0
   # Core
-  postcss: ^8.5.28
+  postcss: ^8.5.29
   postcss-value-parser: ^4.2.0
   grammarkdown: ^3.3.2
   # CSS value / @property syntax matching
@@ -32,17 +32,16 @@ catalog:
   "@bomb.sh/tab": ^0.0.22
   # TypeDoc integration
   typedoc: ^0.28.20
-  typedoc-plugin-markdown: ^4.13.0
+  typedoc-plugin-markdown: ^4.13.1
   typedoc-vitepress-theme: ^1.1.4
-  stylelint: ^17.15.0
-  eslint: ^10.10.0
+  stylelint: ^17.16.0
+  eslint: ^10.12.0
   "@eslint/css": ^1.4.0
   "@html-eslint/parser": ^0.66.1
-  oxlint: 1.83.0
   # Language server + editor
-  vscode-languageserver: ^10.1.1
-  vscode-languageserver-textdocument: ^1.0.14
-  vscode-languageclient: ^10.1.1
+  vscode-languageserver: ^10.1.2
+  vscode-languageserver-textdocument: ^1.0.15
+  vscode-languageclient: ^10.1.2
   esbuild: ^0.28.2
   # Pinned to the version that vsce 3.9.2 uses
   "@types/vscode": 1.125.0
@@ -50,21 +49,25 @@ catalog:
   ovsx: ^1.2.0
   "@resvg/resvg-js": ^2.6.2
   # Docs site
+  "@pantoken/tokens": ^0.8.1
+  "@pantoken/css": ^0.4.3
+  "@pantoken/plugin-prune-custom-props": ^0.1.6
+  "@pantoken/vitepress": ^0.3.0
   vitepress: 2.0.0-alpha.20
   # Quality gates
-  "@vitest/coverage-v8": 4.1.11
-  publint: ^0.3.24
+  "@vitest/coverage-v8": 5.0.3
+  publint: ^0.3.25
   # Release
   changelogen: ^0.6.2
   bumpp: ^12.3.0
-  "@commitlint/cli": ^21.2.2
-  "@commitlint/config-conventional": ^21.2.2
-  postcss-styled-syntax: ^0.7.2
+  "@commitlint/cli": ^21.2.3
+  "@commitlint/config-conventional": ^21.2.3
+  postcss-styled-syntax: ^0.7.3
   postcss-html: ^2.0.0
   vitepress-plugin-llms: ^1.14.0
-  "@codemirror/language": ^6.12.4
-  "@codemirror/state": ^6.7.5
-  "@codemirror/view": ^6.43.12
+  "@codemirror/language": ^6.13.1
+  "@codemirror/state": ^6.7.6
+  "@codemirror/view": ^6.43.14
   "@codemirror/lang-css": ^6.3.1
   "@codemirror/lang-html": ^6.4.12
   "@codemirror/lang-json": ^6.0.2
@@ -75,7 +78,7 @@ catalog:
   mermaid: ^11.17.2
   postcss-less: ^6.0.0
   postcss-scss: ^4.0.9
-  vitest: 4.1.11
+  vitest: 5.0.3
 
 overrides:
   "mermaid@>=11.17.1 <12.0.0-0": 11.17.2

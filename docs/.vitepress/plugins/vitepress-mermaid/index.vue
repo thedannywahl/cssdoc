@@ -19,19 +19,19 @@ const renderDiagram = async (): Promise<void> => {
   const el = diagramRef.value;
   if (!el) return;
 
-  // Theme the diagram to match the site (cssdoc teal on the VitePress surfaces), using the `base`
-  // theme + custom variables so light/dark both look native. Tighter spacing + smaller font keep it
-  // compact; `useMaxWidth` lets the SVG scale down to its container.
+  const brandColor = getComputedStyle(document.documentElement)
+    .getPropertyValue("--vp-c-brand-1")
+    .trim();
   const palette = isDark.value
     ? {
         primaryColor: "#202127",
-        primaryBorderColor: "#1dc4b6",
+        primaryBorderColor: brandColor,
         primaryTextColor: "#dfdfd6",
         lineColor: "#98989f",
       }
     : {
         primaryColor: "#f6f6f7",
-        primaryBorderColor: "#388080",
+        primaryBorderColor: brandColor,
         primaryTextColor: "#3c3c43",
         lineColor: "#8e8e93",
       };

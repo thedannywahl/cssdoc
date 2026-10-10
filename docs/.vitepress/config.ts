@@ -6,6 +6,7 @@ import type { DefaultTheme } from "vitepress";
 import { defineConfig } from "vitepress";
 import llmstxt from "vitepress-plugin-llms";
 import { mermaidPlugin } from "./plugins/vitepress-mermaid/index.js";
+import { expandTheme, pruneThemeBundle } from "./plugins/pantoken-theme.js";
 
 // The site is served at its own apex domain (cssdoc.dev), so it lives at the root. DOCS_BASE can still
 // override this (e.g. to preview under a project-pages subpath).
@@ -39,10 +40,13 @@ export default defineConfig({
   // dist root, so AI agents can read cssdoc without scraping HTML. Covers the guide pages and the
   // generated API reference.
   vite: {
+    css: { postcss: { plugins: [expandTheme()] } },
+    build: { cssCodeSplit: false },
     // The repo aliases `vite` to vite-plus-core, but VitePress types this field against upstream Vite,
     // and llmstxt() carries a third Vite's Plugin types — three incompatible `PluginOption`s. The plugin
     // works at runtime; cast through the bottom type to bridge the type identities.
     plugins: [
+      pruneThemeBundle() as never,
       llmstxt({
         title: "cssdoc",
         description,

@@ -14,3 +14,4 @@ servers/vscode/syntaxes
 # Local-only agent notes and personal migration seed — never committed.
 docs/internal/
 coverage/
+.vitest/

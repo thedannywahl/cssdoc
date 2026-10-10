@@ -19,11 +19,15 @@ export default defineConfig({
     tasks: {
       "publish:vsce": {
         command: "vsce publish --no-dependencies --packagePath cssdoc.vsix",
-        untrackedEnv: ["VSCE_PAT"],
+        cache: {
+          untrackedEnv: ["VSCE_PAT"],
+        },
       },
       "publish:ovsx": {
         command: "ovsx publish cssdoc.vsix",
-        untrackedEnv: ["OVSX_PAT"],
+        cache: {
+          untrackedEnv: ["OVSX_PAT"],
+        },
       },
     },
   },
