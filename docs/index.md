@@ -1,5 +1,6 @@
 ---
 layout: home
+footer: false
 hero:
   name: cssdoc
   text: TSDoc, for CSS
