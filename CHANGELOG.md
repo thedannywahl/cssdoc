@@ -4,6 +4,31 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.16.2
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.16.1...v0.16.2)
+
+### 🚀 Enhancements
+
+- Enhance Pantoken theme with improved SVG handling and background styles ([fd62eaf](https://github.com/thedannywahl/cssdoc/commit/fd62eaf))
+
+### 🩹 Fixes
+
+- Resolve oxlint binary path using vite-plus for correct toolchain integration ([feadf60](https://github.com/thedannywahl/cssdoc/commit/feadf60))
+- Ensure footer visibility is set to false in index.md ([0ad1d78](https://github.com/thedannywahl/cssdoc/commit/0ad1d78))
+
+### 📖 Documentation
+
+- Clarify comments in parseStructure function regarding variant handling ([b7a25c8](https://github.com/thedannywahl/cssdoc/commit/b7a25c8))
+
+### 🏡 Chore
+
+- Update dependencies in pnpm-workspace.yaml and improve VSCE/OVSX publish tasks in vite.config.ts ([d8d7925](https://github.com/thedannywahl/cssdoc/commit/d8d7925))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.16.1
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.16.0...v0.16.1)
