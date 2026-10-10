@@ -33,7 +33,8 @@ function linkPluginIntoFixture(): void {
 /** The real, installed `oxlint` binary (not the Vite+ IDE-only wrapper `.bin/oxlint` shadows it with). */
 function resolveOxlintBin(): string {
   const require = createRequire(import.meta.url);
-  const pkgPath = require.resolve("oxlint/package.json");
+  const toolchainRequire = createRequire(require.resolve("vite-plus/package.json"));
+  const pkgPath = toolchainRequire.resolve("oxlint/package.json");
   return resolve(dirname(pkgPath), "bin/oxlint");
 }
 

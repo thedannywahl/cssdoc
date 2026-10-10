@@ -19,7 +19,7 @@ same `(css, cssdoc.jsonc)` input, including nested-scope config (a rule off-list
   rule has **no oxc-native path at all**; that's structural, not a missing feature that might land later.
 - **`@cssdoc/stylelint-plugin` is the supported path for oxc-based toolchains** (oxlint, Vite+,
   Biome-adjacent stacks). Stylelint is an independent binary and coexists fine alongside `oxlint`/`vp
-check` — you don't lose oxlint for your JS/TS linting by adding it just for CSS doc hygiene.
+  check` — you don't lose oxlint for your JS/TS linting by adding it just for CSS doc hygiene.
 - **`cssdoc/valid-class-usage` is a separate rule** with different portability: its JS/JSX half is plain
   ESTree work (no custom parser, no type information) and **does load under oxlint's `jsPlugins`
   bridge**, byte-identical to its ESLint diagnostics (see
