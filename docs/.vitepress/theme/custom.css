@@ -27,11 +27,29 @@
 }
 
 :root:has(.VPHome) {
+  position: relative;
+  isolation: isolate;
   min-height: 100vh;
   background-image: var(--vp-home-bg-image);
   background-repeat: no-repeat;
-  background-size: cover;
-  background-position: right bottom;
+  background-size: 100% 100%;
+  background-position: right top;
+}
+
+:root:has(.VPHome)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: var(--vp-home-pattern-image);
+  background-size: 56.5685424949px 56.5685424949px;
+  background-repeat: repeat;
+  background-position: right top;
+  mask-image:
+    linear-gradient(to left, black, transparent 66.666667%),
+    linear-gradient(to bottom, black, transparent 66.666667%);
+  mask-composite: intersect;
 }
 
 :root:has(.VPHome) body,

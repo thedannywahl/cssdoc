@@ -27,15 +27,15 @@ describe("Pantoken docs theme", () => {
       decodeURIComponent(match[1]),
     );
     expect(images).toHaveLength(2);
-    expect(images[0]).toContain("#D8FCEB");
-    expect(images[0]).toContain("#C8F3DF");
+    expect(css).toContain("linear-gradient(135deg, #D8FCEB, #C8F3DF)");
     expect(images[0]).toContain("#007352");
-    expect(images[1]).toContain("#00190F");
-    expect(images[1]).toContain("#051F15");
+    expect(css).toContain("linear-gradient(135deg, #00190F, #051F15)");
     expect(images[1]).toContain("#2BC692");
     for (const image of images) {
+      expect(image).toContain('width="56.5685424949" height="56.5685424949"');
+      expect(image).not.toContain('preserveAspectRatio="none"');
       expect(image).toContain('patternTransform="rotate(45)"');
-      expect(image).toContain('mask="url(#mask)"');
+      expect(image).not.toContain("<mask");
       expect(image).not.toContain("<text");
       expect(image).not.toContain("cssdoc");
       expect(image).not.toContain('height="10"');
@@ -67,6 +67,14 @@ describe("Pantoken docs theme", () => {
       [40, 50, 120, 130, 200].map((step) => `--instui-primitive-color-aurora-aurora${step}`).sort(),
     );
     expect(result).toContain(":root:has(.VPHome)");
+    expect(result).toContain("background-size: 56.5685424949px 56.5685424949px");
+    expect(result).toContain("background-position: right top");
+    expect(result).toContain(":root:has(.VPHome)::before");
+    expect(result).toContain("position: absolute");
+    expect(result).toContain("inset: 0");
+    expect(result).toContain("linear-gradient(to left, black, transparent 66.666667%)");
+    expect(result).toContain("linear-gradient(to bottom, black, transparent 66.666667%)");
+    expect(result).toContain("mask-composite: intersect");
     expect(result).toContain(".VPNavBar.home");
     expect(result).not.toContain(".VPHome::before");
     expect(result).toContain("--vp-button-brand-hover-text");

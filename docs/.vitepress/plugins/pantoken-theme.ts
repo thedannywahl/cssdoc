@@ -25,13 +25,13 @@ export function themeCss(tokens: readonly Token[] = byTheme("rebrand")): string 
   };
   const background = (dark: boolean): string => {
     const accent = color(dark ? 50 : 120);
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630"><defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="${color(dark ? 200 : 10)}"/><stop offset="1" stop-color="${color(dark ? 190 : 20)}"/></linearGradient><pattern id="lines" width="40" height="40" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0V40" stroke="${accent}" stroke-width="2" opacity="0.5"/></pattern><linearGradient id="fade"><stop stop-color="black"/><stop offset="1" stop-color="white"/></linearGradient><mask id="mask" x="280" y="0" width="920" height="630" maskUnits="userSpaceOnUse"><rect x="280" y="0" width="920" height="630" fill="url(#fade)"/></mask></defs><rect width="1200" height="630" fill="url(#bg)"/><rect x="280" y="0" width="920" height="630" fill="url(#lines)" mask="url(#mask)"/></svg>`;
-    return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="56.5685424949" height="56.5685424949" viewBox="0 0 56.5685424949 56.5685424949"><defs><pattern id="lines" width="40" height="40" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0V40" stroke="${accent}" stroke-width="2" opacity="0.5"/></pattern></defs><rect width="100%" height="100%" fill="url(#lines)"/></svg>`;
+    return `--vp-home-pattern-image: url("data:image/svg+xml,${encodeURIComponent(svg)}"); --vp-home-bg-image: linear-gradient(135deg, ${color(dark ? 200 : 10)}, ${color(dark ? 190 : 20)});`;
   };
   return `${toCss(aurora, { declareAll: true })}
 ${bridge.toString()}
-:root { --vp-home-bg-image: ${background(false)}; }
-.dark { --vp-home-bg-image: ${background(true)}; }`;
+:root { ${background(false)} }
+.dark { ${background(true)} }`;
 }
 
 export function expandTheme(): PostcssPlugin {
