@@ -131,6 +131,9 @@ interface RawConfig {
 const ajv = new Ajv({ allErrors: true });
 const validateSchema = ajv.compile<RawConfig>(cssDocSchema);
 
+/** Type-safe error check for TypeScript 6 compatibility (Error.isError is ES2026). */
+const isErrorInstance = (error: unknown): error is Error => error instanceof Error;
+
 /**
  * The conventional file names loaders look for, in preference order. Both are parsed the same way
  * (JSON with comments); `.jsonc` just makes the comments explicit.
@@ -436,7 +439,7 @@ export class CssDocConfigFile {
       try {
         resolved = ref.startsWith(".") ? resolve(dirname(filePath), ref) : requireFrom.resolve(ref);
       } catch (error) {
-        const message = Error.isError(error) ? error.message : String(error);
+        const message = isErrorInstance(error) ? error.message : String(error);
         messages.push(`Cannot resolve extends "${ref}": ${message}`);
         continue;
       }
@@ -448,7 +451,7 @@ export class CssDocConfigFile {
       try {
         tagDefinitions.push(new CssDocTagDefinition(raw_));
       } catch (error) {
-        const message = Error.isError(error) ? error.message : String(error);
+        const message = isErrorInstance(error) ? error.message : String(error);
         messages.push(message);
       }
     }

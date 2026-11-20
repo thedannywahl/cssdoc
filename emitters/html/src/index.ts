@@ -46,10 +46,13 @@ const esc = (text: string | undefined): string =>
 
 const code = (text: string | undefined): string => (text ? `<code>${esc(text)}</code>` : "—");
 
+// Base64 encode helper for TypeScript 6 compatibility (Uint8Array.toBase64 is ES2026)
+const toBase64 = (bytes: Uint8Array): string => Buffer.from(bytes).toString("base64");
+
 // Embed the shared mark as a favicon data URI so generated pages stay self-contained.
 const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><mask id="cut"><rect x="8" y="8" width="112" height="112" rx="24" fill="white"/><g fill="none" stroke="black" stroke-linecap="round" stroke-linejoin="round"><g stroke-width="7"><path d="M 84 64 q -6 0 -6 6 l 0 11 q 0 6 -6 6 q 6 0 6 6 l 0 11 q 0 6 6 6"/><path d="M 100 64 q 6 0 6 6 l 0 11 q 0 6 6 6 q -6 0 -6 6 l 0 11 q 0 6 -6 6"/></g><g stroke-width="5"><path d="M 92 80 L 92 94"/><path d="M 86 83.5 L 98 90.5"/><path d="M 86 90.5 L 98 83.5"/></g></g></mask><rect x="8" y="8" width="112" height="112" rx="24" fill="#007352" mask="url(#cut)"/></svg>`;
-const FAVICON = `data:image/svg+xml;base64,${new TextEncoder().encode(ICON_SVG).toBase64()}`;
-const FAVICON_DARK = `data:image/svg+xml;base64,${new TextEncoder().encode(ICON_SVG.replace("#007352", "#2BC692")).toBase64()}`;
+const FAVICON = `data:image/svg+xml;base64,${toBase64(new TextEncoder().encode(ICON_SVG))}`;
+const FAVICON_DARK = `data:image/svg+xml;base64,${toBase64(new TextEncoder().encode(ICON_SVG.replace("#007352", "#2BC692")))}`;
 
 const STYLE = `
 :root { color-scheme: light dark; }

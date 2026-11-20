@@ -503,25 +503,25 @@ importers:
         version: 8.5.33
       typedoc:
         specifier: 'catalog:'
-        version: 0.28.20(typescript@7.0.2)
+        version: 0.28.20(typescript@6.0.3)
       typedoc-plugin-markdown:
         specifier: 'catalog:'
-        version: 4.14.1(typedoc@0.28.20(typescript@7.0.2))
+        version: 4.14.1(typedoc@0.28.20(typescript@6.0.3))
       typedoc-vitepress-theme:
         specifier: 'catalog:'
-        version: 1.1.4(typedoc-plugin-markdown@4.14.1(typedoc@0.28.20(typescript@7.0.2)))(typedoc@0.28.20(typescript@7.0.2))
+        version: 1.1.4(typedoc-plugin-markdown@4.14.1(typedoc@0.28.20(typescript@6.0.3)))(typedoc@0.28.20(typescript@6.0.3))
       typescript:
-        specifier: ^7.0.0
-        version: 7.0.2
+        specifier: ^6.0.3
+        version: 6.0.3
       vitepress:
         specifier: 'catalog:'
-        version: 2.0.0-alpha.21(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(postcss@8.5.33)(publint@0.3.25)(typescript@7.0.2)(yaml@2.9.1)
+        version: 2.0.0-alpha.21(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(postcss@8.5.33)(publint@0.3.25)(typescript@6.0.3)(yaml@2.9.1)
       vitepress-plugin-llms:
         specifier: 'catalog:'
         version: 1.15.0(supports-color@10.2.2)
       vue:
         specifier: 'catalog:'
-        version: 3.5.45(typescript@7.0.2)
+        version: 3.5.45(typescript@6.0.3)
 
   emitters/html:
     dependencies:
@@ -7677,11 +7677,11 @@ snapshots:
       vite: '@voidzero-dev/vite-plus-core@8.3.8000(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.0.2)(yaml@2.9.1)'
       vue: 3.5.45(typescript@7.0.2)
 
-  '@vitejs/plugin-vue@6.0.9(@voidzero-dev/vite-plus-core@8.3.8000(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.0.2)(yaml@2.9.1))(vue@3.5.43(typescript@7.0.2))':
+  '@vitejs/plugin-vue@6.0.9(@voidzero-dev/vite-plus-core@8.3.8000(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@6.0.3)(yaml@2.9.1))(vue@3.5.43(typescript@6.0.3))':
     dependencies:
       '@rolldown/pluginutils': 1.0.1
-      vite: '@voidzero-dev/vite-plus-core@8.3.8000(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.0.2)(yaml@2.9.1)'
-      vue: 3.5.43(typescript@7.0.2)
+      vite: '@voidzero-dev/vite-plus-core@8.3.8000(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@6.0.3)(yaml@2.9.1)'
+      vue: 3.5.43(typescript@6.0.3)
 
   '@vitest/browser-preview@5.1.0(@voidzero-dev/vite-plus-core@8.3.8000(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@6.0.3)(yaml@2.9.1))(vitest@5.1.0)':
     dependencies:
@@ -8193,12 +8193,12 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@vueuse/core@15.0.0(vue@3.5.43(typescript@7.0.2))':
+  '@vueuse/core@15.0.0(vue@3.5.43(typescript@6.0.3))':
     dependencies:
       '@types/web-bluetooth': 0.0.21
       '@vueuse/metadata': 15.0.0
-      '@vueuse/shared': 15.0.0(vue@3.5.43(typescript@7.0.2))
-      vue: 3.5.43(typescript@7.0.2)
+      '@vueuse/shared': 15.0.0(vue@3.5.43(typescript@6.0.3))
+      vue: 3.5.43(typescript@6.0.3)
 
   '@vueuse/integrations@12.8.2(focus-trap@7.8.0)(typescript@7.0.2)':
     dependencies:
@@ -8210,11 +8210,11 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@vueuse/integrations@15.0.0(focus-trap@8.2.3)(vue@3.5.43(typescript@7.0.2))':
+  '@vueuse/integrations@15.0.0(focus-trap@8.2.3)(vue@3.5.43(typescript@6.0.3))':
     dependencies:
-      '@vueuse/core': 15.0.0(vue@3.5.43(typescript@7.0.2))
-      '@vueuse/shared': 15.0.0(vue@3.5.43(typescript@7.0.2))
-      vue: 3.5.43(typescript@7.0.2)
+      '@vueuse/core': 15.0.0(vue@3.5.43(typescript@6.0.3))
+      '@vueuse/shared': 15.0.0(vue@3.5.43(typescript@6.0.3))
+      vue: 3.5.43(typescript@6.0.3)
     optionalDependencies:
       focus-trap: 8.2.3
 
@@ -8228,9 +8228,9 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@vueuse/shared@15.0.0(vue@3.5.43(typescript@7.0.2))':
+  '@vueuse/shared@15.0.0(vue@3.5.43(typescript@6.0.3))':
     dependencies:
-      vue: 3.5.43(typescript@7.0.2)
+      vue: 3.5.43(typescript@6.0.3)
 
   '@yuku-core/binding-android-arm64@0.19.0':
     optional: true
@@ -10461,14 +10461,14 @@ snapshots:
       tunnel: 0.0.6
       underscore: 1.13.8
 
-  typedoc-plugin-markdown@4.14.1(typedoc@0.28.20(typescript@7.0.2)):
+  typedoc-plugin-markdown@4.14.1(typedoc@0.28.20(typescript@6.0.3)):
     dependencies:
-      typedoc: 0.28.20(typescript@7.0.2)
+      typedoc: 0.28.20(typescript@6.0.3)
 
-  typedoc-vitepress-theme@1.1.4(typedoc-plugin-markdown@4.14.1(typedoc@0.28.20(typescript@7.0.2)))(typedoc@0.28.20(typescript@7.0.2)):
+  typedoc-vitepress-theme@1.1.4(typedoc-plugin-markdown@4.14.1(typedoc@0.28.20(typescript@6.0.3)))(typedoc@0.28.20(typescript@6.0.3)):
     dependencies:
-      typedoc: 0.28.20(typescript@7.0.2)
-      typedoc-plugin-markdown: 4.14.1(typedoc@0.28.20(typescript@7.0.2))
+      typedoc: 0.28.20(typescript@6.0.3)
+      typedoc-plugin-markdown: 4.14.1(typedoc@0.28.20(typescript@6.0.3))
 
   typedoc@0.28.20(typescript@6.0.3):
     dependencies:
@@ -10477,15 +10477,6 @@ snapshots:
       markdown-it: 14.3.2
       minimatch: 10.2.6
       typescript: 6.0.3
-      yaml: 2.9.1
-
-  typedoc@0.28.20(typescript@7.0.2):
-    dependencies:
-      '@gerrit0/mini-shiki': 3.23.0
-      lunr: 2.3.9
-      markdown-it: 14.3.2
-      minimatch: 10.2.6
-      typescript: 7.0.2
       yaml: 2.9.1
 
   typescript@6.0.3: {}
@@ -10512,6 +10503,7 @@ snapshots:
       '@typescript/typescript-sunos-x64': 7.0.2
       '@typescript/typescript-win32-arm64': 7.0.2
       '@typescript/typescript-win32-x64': 7.0.2
+    optional: true
 
   typescript@7.1.0-dev.20261119.1:
     optionalDependencies:
@@ -10958,7 +10950,7 @@ snapshots:
       - vue-tsc
       - yaml
 
-  vitepress@2.0.0-alpha.21(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(postcss@8.5.33)(publint@0.3.25)(typescript@7.0.2)(yaml@2.9.1):
+  vitepress@2.0.0-alpha.21(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(postcss@8.5.33)(publint@0.3.25)(typescript@6.0.3)(yaml@2.9.1):
     dependencies:
       '@docsearch/css': 4.7.1
       '@docsearch/js': 4.7.1
@@ -10966,17 +10958,17 @@ snapshots:
       '@iconify-json/simple-icons': 1.2.99
       '@shikijs/transformers': 4.5.0
       '@types/markdown-it': 14.2.0
-      '@vitejs/plugin-vue': 6.0.9(@voidzero-dev/vite-plus-core@8.3.8000(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.0.2)(yaml@2.9.1))(vue@3.5.43(typescript@7.0.2))
+      '@vitejs/plugin-vue': 6.0.9(@voidzero-dev/vite-plus-core@8.3.8000(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@6.0.3)(yaml@2.9.1))(vue@3.5.43(typescript@6.0.3))
       '@vue/devtools-api': 8.2.1
       '@vue/shared': 3.5.43
-      '@vueuse/core': 15.0.0(vue@3.5.43(typescript@7.0.2))
-      '@vueuse/integrations': 15.0.0(focus-trap@8.2.3)(vue@3.5.43(typescript@7.0.2))
+      '@vueuse/core': 15.0.0(vue@3.5.43(typescript@6.0.3))
+      '@vueuse/integrations': 15.0.0(focus-trap@8.2.3)(vue@3.5.43(typescript@6.0.3))
       focus-trap: 8.2.3
       mark.js: 8.11.1
       minisearch: 7.2.0
       shiki: 4.5.0
-      vite: '@voidzero-dev/vite-plus-core@8.3.8000(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.0.2)(yaml@2.9.1)'
-      vue: 3.5.43(typescript@7.0.2)
+      vite: '@voidzero-dev/vite-plus-core@8.3.8000(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@6.0.3)(yaml@2.9.1)'
+      vue: 3.5.43(typescript@6.0.3)
     optionalDependencies:
       postcss: 8.5.33
     transitivePeerDependencies:
@@ -11155,7 +11147,7 @@ snapshots:
     dependencies:
       vscode-languageserver-protocol: 3.18.5
 
-  vue@3.5.43(typescript@7.0.2):
+  vue@3.5.43(typescript@6.0.3):
     dependencies:
       '@vue/compiler-dom': 3.5.43
       '@vue/compiler-sfc': 3.5.43
@@ -11163,7 +11155,17 @@ snapshots:
       '@vue/server-renderer': 3.5.43
       '@vue/shared': 3.5.43
     optionalDependencies:
-      typescript: 7.0.2
+      typescript: 6.0.3
+
+  vue@3.5.45(typescript@6.0.3):
+    dependencies:
+      '@vue/compiler-dom': 3.5.45
+      '@vue/compiler-sfc': 3.5.45
+      '@vue/runtime-dom': 3.5.45
+      '@vue/server-renderer': 3.5.45
+      '@vue/shared': 3.5.45
+    optionalDependencies:
+      typescript: 6.0.3
 
   vue@3.5.45(typescript@7.0.2):
     dependencies:
