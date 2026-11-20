@@ -63,7 +63,7 @@ export const cssDocSchema: Record<string, unknown> = {
           },
           allowMultiple: { type: "boolean" },
           recordKind: {
-            enum: ["component", "utility", "rule", "declaration", "layout"],
+            enum: ["component", "utility", "declaration", "layout"],
           },
           aliasFor: { type: "string" },
         },
@@ -303,6 +303,11 @@ export const cssDocSchema: Record<string, unknown> = {
       type: "object",
       additionalProperties: false,
       properties: {
+        includeInternal: {
+          description: "Include records marked @visibility internal in generated API pages.",
+          type: "boolean",
+          default: false,
+        },
         exampleFilters: {
           type: "object",
           additionalProperties: false,

@@ -110,7 +110,9 @@ export function buildCssApi(options: BuildCssApiOptions): BuildCssApiResult {
           parse,
         })
       : parseCssDocs(css, { configuration: options.configuration, parse });
-  const entries = parsed.toSorted((a, b) => a.name.localeCompare(b.name));
+  const entries = parsed
+    .filter((entry) => options.includeInternal || entry.visibility !== "internal")
+    .toSorted((a, b) => a.name.localeCompare(b.name));
   const baseHref = options.baseHref ?? "/";
 
   mkdirSync(options.outDir, { recursive: true });
@@ -126,6 +128,7 @@ export function buildCssApi(options: BuildCssApiOptions): BuildCssApiResult {
   // A referenced upstream provider component links to its own page (via the provider's `href`); local
   // components win a name clash. Providers without a resolvable href aren't cross-linked.
   for (const e of options.providers?.entries ?? []) {
+    if (!options.includeInternal && e.visibility === "internal") continue;
     const cls = e.className.replace(/^\./u, "");
     const href = options.providers?.href(cls);
     if (href && !componentByClass.has(cls)) componentByClass.set(cls, { name: e.name, href });

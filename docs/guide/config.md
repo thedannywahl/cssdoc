@@ -51,6 +51,8 @@ render (`"text"`/`"diagram"`/`"both"`, default `"both"`); `structureVariantView`
 alternatives render when authored (`"diagram"`, default — one combined flowchart with a labelled
 subgraph per variant — or `"sections"` for separate `### Variant: <name>` subsections). See
 [Authoring → Alternative structures](/guide/authoring#alternative-structures-variant).
+Use `render.includeInternal: true` when generating an author-facing Markdown reference that should
+include records marked `@visibility internal`; generated public references omit them by default.
 
 ## Filtering examples
 
@@ -136,7 +138,7 @@ The rule ids:
 
 | Rule                             | Default | Fires when…                                                                      |
 | -------------------------------- | ------- | -------------------------------------------------------------------------------- |
-| `missing-summary`                | `warn`  | a record has no `@summary`.                                                      |
+| `missing-summary`                | `off`   | a record has no `@summary` (optional; enable it to encourage summaries).         |
 | `undocumented-modifier`          | `warn`  | a modifier has no `@modifier` description.                                       |
 | `deprecated-requires-canonical`  | `warn`  | a deprecated modifier has no replacement.                                        |
 | `name-not-in-css`                | `warn`  | a documented modifier/part isn't in any selector.                                |

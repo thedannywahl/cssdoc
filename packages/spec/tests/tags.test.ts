@@ -61,4 +61,11 @@ test("the new hoisted tags are registered with the expected kinds", () => {
   expect(byName("usage")).toMatchObject({ kind: "block" });
   expect(byName("compat")).toMatchObject({ kind: "block", allowMultiple: true });
   expect(byName("related")).toMatchObject({ kind: "block", allowMultiple: true });
+  expect(byName("stage")).toMatchObject({ kind: "block" });
+  expect(byName("visibility")).toMatchObject({ kind: "block" });
+  expect(byName("rule")).toMatchObject({
+    kind: "record",
+    recordKind: "component",
+    aliasFor: "component",
+  });
 });

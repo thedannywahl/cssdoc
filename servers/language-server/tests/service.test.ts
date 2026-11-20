@@ -1,6 +1,6 @@
 import { parseCssDocs } from "@cssdoc/core";
 import { createIndex, indexFromEntries } from "@cssdoc/index";
-import { DEFAULT_RULE_SEVERITIES } from "@cssdoc/providers";
+import { DEFAULT_RULE_SEVERITIES, resolveRuleSeverities } from "@cssdoc/providers";
 import { expect, test } from "vite-plus/test";
 import { CssDocLanguageService } from "../src/service.ts";
 
@@ -20,6 +20,7 @@ const CSS = `
 const service = new CssDocLanguageService(
   createIndex(CSS, { file: "components.css", modifierConvention: "rscss" }),
 );
+const summaryWarnSeverities = resolveRuleSeverities({ "missing-summary": "warn" });
 
 // Single-line helper: cursor at `character` on line 0.
 const at = (character: number) => ({ line: 0, character });
@@ -293,7 +294,9 @@ test("diagnostics lint the embedded CSS in a Vue <style> block, at absolute line
  */
 .btn { color: red; }
 </style>`;
-  const diags = new CssDocLanguageService(createIndex("")).diagnostics(vue, "vue", "Button.vue");
+  const service = new CssDocLanguageService(createIndex(""));
+  service.setRuleSeverities(summaryWarnSeverities);
+  const diags = service.diagnostics(vue, "vue", "Button.vue");
   const summary = diags.find((d) => d.code === "missing-summary");
   expect(summary).toBeDefined();
   expect(summary?.range.start.line).toBeGreaterThan(1); // inside the <style> block, not line 0
@@ -325,11 +328,9 @@ test("diagnostics see a doc comment authored above a styled-component const (via
 const Button = styled.button\`
   color: red;
 \`;`;
-  const diags = new CssDocLanguageService(createIndex("")).diagnostics(
-    ts,
-    "typescript",
-    "Button.ts",
-  );
+  const service = new CssDocLanguageService(createIndex(""));
+  service.setRuleSeverities(summaryWarnSeverities);
+  const diags = service.diagnostics(ts, "typescript", "Button.ts");
   // stylelint can't see this comment; the LSP can, because the projection keeps it in place.
   expect(diags.some((d) => d.code === "missing-summary")).toBe(true);
 });
@@ -488,7 +489,9 @@ test("diagnostics parse a .scss document through the SCSS dialect", () => {
  * @component card
  */
 .card { color: $brand; }`;
-  const diags = new CssDocLanguageService(createIndex("")).diagnostics(scss, "scss", "card.scss");
+  const service = new CssDocLanguageService(createIndex(""));
+  service.setRuleSeverities(summaryWarnSeverities);
+  const diags = service.diagnostics(scss, "scss", "card.scss");
   // Parses past $vars and // without throwing; card has no @summary.
   expect(diags.some((d) => d.code === "missing-summary")).toBe(true);
 });

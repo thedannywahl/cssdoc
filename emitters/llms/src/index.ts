@@ -42,6 +42,8 @@ export interface RenderLlmsOptions {
   title?: string;
   /** A one-line summary rendered as a blockquote under the title. */
   intro?: string;
+  /** Include records marked `@visibility internal`; defaults to false. */
+  includeInternal?: boolean;
 }
 
 const clean = (text: string | undefined): string => (text ?? "").replace(/\s+/gu, " ").trim();
@@ -75,13 +77,16 @@ export function renderLlms(
   const lines: string[] = [`# ${options.title ?? "CSS components"}`, ""];
   if (options.intro) lines.push(`> ${clean(options.intro)}`, "");
 
-  const sorted = [...entries].toSorted((a, b) => a.name.localeCompare(b.name));
+  const sorted = entries
+    .filter((entry) => options.includeInternal || entry.visibility !== "internal")
+    .toSorted((a, b) => a.name.localeCompare(b.name));
   for (const e of sorted) {
     const annotations = e.annotations ?? [];
     const refs = e.refs ?? [];
     const kind = e.kind === "component" ? "" : ` (${e.kind})`;
     const stage = e.releaseStage ? ` [${e.releaseStage}]` : "";
-    lines.push(`## ${e.name}${kind}${stage} — \`${e.className}\``);
+    const visibility = e.visibility === "internal" ? " [internal]" : "";
+    lines.push(`## ${e.name}${kind}${stage}${visibility} — \`${e.className}\``);
     if (e.summary) lines.push(clean(e.summary));
     if (e.deprecated) lines.push(`Deprecated: ${clean(e.deprecated)}`);
 

@@ -85,8 +85,8 @@ test("the bundled server.cjs starts and answers LSP diagnostics", async () => {
 
   const codes = await promise;
 
-  // A `@component` with no `@summary` must round-trip to a `missing-summary` diagnostic.
-  expect(codes).toContain("missing-summary");
+  // `missing-summary` is opt-in; the server must not report it with default settings.
+  expect(codes).not.toContain("missing-summary");
 }, 20_000);
 
 function ipcServer<T>() {

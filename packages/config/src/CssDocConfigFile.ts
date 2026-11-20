@@ -51,6 +51,8 @@ export interface NamingOverride {
  */
 export interface RenderConfig {
   exampleFilters?: Partial<Record<"markdown" | "html" | "hover", ExampleFilter | null>>;
+  /** Include records marked `@visibility internal` in public-facing Markdown output. */
+  includeInternal?: boolean;
   sectionOrder?: readonly string[];
   headingPrefix?: string;
   baseHref?: string;

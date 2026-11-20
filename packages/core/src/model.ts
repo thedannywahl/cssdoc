@@ -61,7 +61,7 @@ export interface CssModifier {
   interaction?: boolean;
   /**
    * Set via an authored inline `@modifier -x — @global …` marker: this modifier applies to any
-   * component/layout/rule/declaration (not just its parent record). When set, the modifier is matched
+   * any record (not just its parent). When set, the modifier is matched
    * globally during validation and consumption checks.
    */
   global?: boolean;
@@ -188,12 +188,12 @@ export interface CssCondition {
 }
 
 /**
- * What kind of CSS surface a record documents. `component` is a namespaced component class with
- * `-modifier`s and parts; `utility` a single-purpose class family; `rule` bare-element/reset styling;
- * `declaration` a custom-property / `@property` registration layer. The record-opening tag chooses it
- * (`@component`/`@utility`/`@rule`/`@declaration`); `@name` is an alias for `component`.
+ * What kind of CSS surface a record documents. `component` is a component or general selector-based
+ * surface; `utility` is a single-purpose class family; `layout` describes composition; `declaration`
+ * describes custom-property or custom-function declarations. The record-opening tag chooses it;
+ * `@rule` is a compatibility alias for `@component`, and `@name` is an alias for `component`.
  */
-export type CssRecordKind = "component" | "utility" | "rule" | "declaration" | "layout";
+export type CssRecordKind = "component" | "utility" | "declaration" | "layout";
 
 /**
  * The resolved element constraints for one `@element` declaration profile.
@@ -225,10 +225,12 @@ export interface CssElementConstraints {
 }
 
 /**
- * A release stage from a modifier (flag) tag — `@alpha`, `@beta`, `@experimental`, `@internal`,
- * `@public`, or `@stable` — mirroring TSDoc's release-tag semantics.
+ * A release maturity from `@stage` (or its legacy flag-tag aliases).
  */
-export type CssReleaseStage = "alpha" | "beta" | "experimental" | "internal" | "public" | "stable";
+export type CssReleaseStage = "alpha" | "beta" | "experimental" | "stable";
+
+/** Whether a record is intended for public API output or internal author documentation. */
+export type CssVisibility = "public" | "internal";
 
 /**
  * A node in an authored structure tree (`@structure`), written as nested CSS: a compound selector for
@@ -348,7 +350,7 @@ export interface CssSource {
 
 /** One documented CSS record: its base class plus everything derived from the CSS + doc comments. */
 export interface CssDocEntry {
-  /** The record name from `@component`/`@utility`/`@rule`/`@declaration`/`@name`, e.g. `button`. */
+  /** The canonical record name from a record-opening tag, e.g. `button`. */
   name: string;
   /** Which kind of CSS surface this documents (defaults to `component`). */
   kind: CssRecordKind;
@@ -362,8 +364,10 @@ export interface CssDocEntry {
   remarks?: string;
   /** Internal-only prose from `@privateRemarks` (emitters may choose to omit it from public output). */
   privateRemarks?: string;
-  /** The release stage from a modifier flag tag (`@alpha`/`@beta`/`@experimental`/`@internal`/`@public`). */
+  /** Release maturity from `@stage` or a legacy maturity flag tag. */
   releaseStage?: CssReleaseStage;
+  /** Audience visibility; absent means public. */
+  visibility?: CssVisibility;
   /** Version introduced, from `@since`. */
   since?: string;
   /** A documentation group/category, from `@group`/`@category`. */
@@ -372,7 +376,7 @@ export interface CssDocEntry {
   accessibility?: string;
   /**
    * Set when this record carries a `@global` tag — its modifiers (and per-modifier `@global` flags)
-   * apply to any component/layout/rule/declaration, not just this record's base class. Used during
+   * apply to any record, not just this record's base class. Used during
    * validation and consumption checks to resolve modifier matches globally.
    */
   global?: boolean;

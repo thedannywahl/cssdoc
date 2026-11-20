@@ -15,8 +15,10 @@ emitters, linters, the language server — builds on the same model; add those a
 
 ## Document a component
 
-Put a `/** … */` comment above a component's rules. A record begins at a `@component` (or `@name`,
-`@layout`, `@utility`, `@rule`, `@declaration`) tag and runs until the next one:
+Put a `/** … */` comment above a record's CSS. A record begins at a `@component` (or `@name`,
+`@layout`, `@utility`, `@declaration`) tag and runs until the next one. Its required ID is the stable
+documentation name; the base selector is inferred separately. `@summary` is recommended, but
+optional:
 
 ```css
 /**

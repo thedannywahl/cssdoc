@@ -102,6 +102,32 @@ test("emitCssApi still emits pages when no typedoc-sidebar.json is present", () 
   expect(existsSync(join(out, "css", "button.md"))).toBe(true);
 });
 
+test("emitCssApi forwards includeInternal from explicit options and config", () => {
+  const out = mkdtempSync(join(tmpdir(), "cssdoc-typedoc-visibility-"));
+  const cssPath = join(out, "visibility.css");
+  const configPath = join(out, "cssdoc.json");
+  writeFileSync(
+    cssPath,
+    `/** @component public-card */\n.public-card {}\n` +
+      `/** @component author-note\n * @visibility internal\n */\n.author-note {}`,
+  );
+  writeFileSync(configPath, JSON.stringify({ render: { includeInternal: true } }));
+  const options = { outputDirectory: out, css: [cssPath] };
+
+  emitCssApi(options);
+  expect(existsSync(join(out, "css", "author-note.md"))).toBe(false);
+
+  emitCssApi({ ...options, configFile: CssDocConfigFile.loadFile(configPath) });
+  expect(existsSync(join(out, "css", "author-note.md"))).toBe(true);
+
+  emitCssApi({
+    ...options,
+    includeInternal: false,
+    configFile: CssDocConfigFile.loadFile(configPath),
+  });
+  expect(existsSync(join(out, "css", "author-note.md"))).toBe(false);
+});
+
 const DEPRECATED_CSS = `
 /**
  * @component box

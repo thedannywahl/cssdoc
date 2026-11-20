@@ -24,6 +24,9 @@ buildCssApi({
 });
 ```
 
+Records marked `@visibility internal` are omitted from collection output by default. Set
+`includeInternal: true` when generating an author-facing reference.
+
 Pass a `resolveToken` hook to add a Type/Value column for consumed custom properties (e.g. resolve
 `--your-*` against a design-token source); an authored `@tokens` description adds a Description column.
 Other `renderEntry` options: `resolveSource` (a `**Source:**` link from `entry.source` — set `fileName`
@@ -63,7 +66,8 @@ buildHtml({ css, outDir: "docs/api/html", title: "CSS API reference" });
 ```
 
 Pass `exampleFilter` to `buildHtml` or `renderPage` to filter examples, for example
-`exampleFilter: configFile.render.exampleFilters?.html`.
+`exampleFilter: configFile.render.exampleFilters?.html`. Set `includeInternal: true` on `buildHtml`
+to include internal records.
 
 ## JSON
 
@@ -76,6 +80,8 @@ import { writeJson } from "@cssdoc/json";
 writeJson({ css, outDir: "docs/api/json", perRecord: true, schema: true });
 ```
 
+`writeJson` omits internal records by default; pass `includeInternal: true` to include them.
+
 ## llms.txt
 
 [`@cssdoc/llms`](https://www.npmjs.com/package/@cssdoc/llms) writes an
@@ -86,6 +92,8 @@ component's surface, sized for an LLM's context window.
 import { writeLlms } from "@cssdoc/llms";
 writeLlms({ css, outFile: "llms.txt", title: "My CSS" });
 ```
+
+`writeLlms` omits internal records by default; pass `includeInternal: true` to include them.
 
 ## Alongside a TypeDoc site
 

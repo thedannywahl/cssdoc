@@ -50,3 +50,17 @@ test("summarizes each facet on one line and marks the utility kind", () => {
   expect(out).toContain("- Custom properties: `--button-radius` <length>");
   expect(out).toContain("## spacing (utility) — `.m-sm`");
 });
+
+test("omits internal records by default and includes them on request", () => {
+  const entries = parseCssDocs(`
+/** @component public-card */
+.public-card {}
+
+/** @component author-note
+ * @visibility internal
+ */
+.author-note {}
+`);
+  expect(renderLlms(entries)).not.toContain("author-note");
+  expect(renderLlms(entries, { includeInternal: true })).toContain("## author-note [internal]");
+});

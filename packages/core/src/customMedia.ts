@@ -4,6 +4,14 @@ const TYPED_STRUCTURE_MEDIA_RE =
   /^@(component|name|utility|rule|declaration|layout)\s+([\w-]+)\s+\(\s*(--[\w-]+)\s*\)$/u;
 const UNTYPED_STRUCTURE_MEDIA_RE = /^@([\w-]+)\s+\(\s*(--[\w-]+)\s*\)$/u;
 
+function canonicalRecordKind(kind: string): CssRecordKind | undefined {
+  if (kind === "name" || kind === "rule") return "component";
+  if (kind === "component" || kind === "utility" || kind === "declaration" || kind === "layout") {
+    return kind;
+  }
+  return undefined;
+}
+
 /** One `@structure` selector that references a custom-media profile. */
 export interface StructureCustomMediaRef {
   /** The source record that contains the `@structure` node. */
@@ -44,9 +52,11 @@ function parseStructureCustomMediaSelector(selector: string): {
 } | null {
   const typed = selector.match(TYPED_STRUCTURE_MEDIA_RE);
   if (typed) {
+    const recordKind = canonicalRecordKind(typed[1]);
+    if (!recordKind) return null;
     return {
       record: typed[2],
-      recordKind: typed[1] === "name" ? "component" : (typed[1] as CssRecordKind),
+      recordKind,
       profile: typed[3],
     };
   }
