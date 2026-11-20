@@ -75,7 +75,7 @@ export function renderLlms(
   const lines: string[] = [`# ${options.title ?? "CSS components"}`, ""];
   if (options.intro) lines.push(`> ${clean(options.intro)}`, "");
 
-  const sorted = [...entries].sort((a, b) => a.name.localeCompare(b.name));
+  const sorted = [...entries].toSorted((a, b) => a.name.localeCompare(b.name));
   for (const e of sorted) {
     const annotations = e.annotations ?? [];
     const refs = e.refs ?? [];

@@ -158,9 +158,9 @@ const build = (view: EditorView): DecorationSet => {
       },
     });
   }
-  found.sort((a, b) => a.from - b.from || a.to - b.to);
+  const sorted = found.toSorted((a, b) => a.from - b.from || a.to - b.to);
   const builder = new RangeSetBuilder<Decoration>();
-  for (const t of found) builder.add(t.from, t.to, markFor(t.type));
+  for (const t of sorted) builder.add(t.from, t.to, markFor(t.type));
   return builder.finish();
 };
 

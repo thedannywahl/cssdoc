@@ -138,7 +138,8 @@ export function resolveProviders(
         continue;
       }
     } catch (error) {
-      messages.push(`Cannot resolve provider "${provider.path}": ${(error as Error).message}`);
+      const message = Error.isError(error) ? error.message : String(error);
+      messages.push(`Cannot resolve provider "${provider.path}": ${message}`);
       continue;
     }
 
@@ -169,7 +170,8 @@ export function resolveProviders(
           ? loadModel(resolvedPath)
           : loadStylesheet(resolvedPath);
       } catch (error) {
-        messages.push(`Cannot load provider "${resolvedPath}": ${(error as Error).message}`);
+        const message = Error.isError(error) ? error.message : String(error);
+        messages.push(`Cannot load provider "${resolvedPath}": ${message}`);
         continue;
       }
 

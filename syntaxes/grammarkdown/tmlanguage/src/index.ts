@@ -24,9 +24,10 @@ import { fileURLToPath } from "node:url";
 // consumer (Shiki's `LanguageInput`, VS Code's TextMate grammar, etc.) expects.
 const grammarPath = fileURLToPath(new URL("../grammarkdown.tmLanguage.json", import.meta.url));
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- see comment above
-const grammar = JSON.parse(readFileSync(grammarPath, "utf8"));
+const grammar: any = JSON.parse(readFileSync(grammarPath, "utf8"));
 
 /** The grammarkdown TextMate grammar, shaped as a Shiki `LanguageRegistration`. */
-export const grammarkdown = grammar;
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- see comment above
+export const grammarkdown: typeof grammar = grammar;
 
 export default grammar;

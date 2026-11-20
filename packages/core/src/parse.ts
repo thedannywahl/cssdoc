@@ -157,7 +157,7 @@ function splitStructureTrailingCardinality(raw: string): {
 
 const unquote = (value: string): string => value.trim().replace(/^["']|["']$/gu, "");
 const sortUnique = (values: Iterable<string>): string[] =>
-  [...new Set([...values].map((v) => v.toLowerCase()))].sort((a, b) => a.localeCompare(b));
+  [...new Set([...values].map((v) => v.toLowerCase()))].toSorted((a, b) => a.localeCompare(b));
 
 function normalizeStructureAtRuleRef(
   name: string,
@@ -671,7 +671,9 @@ function buildEntry(
     const endsLoose = new RegExp(`${nameEsc}$`, "u");
     className =
       bare.find((sel) => endsWithName.test(sel.slice(1))) ??
-      bare.filter((sel) => endsLoose.test(sel.slice(1))).sort((a, b) => a.length - b.length)[0] ??
+      bare
+        .filter((sel) => endsLoose.test(sel.slice(1)))
+        .toSorted((a, b) => a.length - b.length)[0] ??
       bare[0] ??
       "";
   }
@@ -883,7 +885,7 @@ function buildEntry(
     else acc.conditions.push({ type: cond.type, query: cond.query, description: cond.description });
   }
 
-  const modifiers = [...acc.modifiers.values()].sort(
+  const modifiers = [...acc.modifiers.values()].toSorted(
     (a, b) => a.prop.localeCompare(b.prop) || (a.value ?? "").localeCompare(b.value ?? ""),
   );
 
@@ -970,25 +972,26 @@ function buildEntry(
     accessibility: doc.accessibility,
     modifiers,
     parts: [...acc.parts.values()]
-      .sort(byName)
-      .map((p) => (p.modifiers ? { ...p, modifiers: [...p.modifiers].sort(byName) } : p)),
-    shadowParts: [...acc.shadowParts.values()].sort(byName),
-    pseudoElements: [...acc.pseudoElements.values()].sort(byName),
-    states: [...acc.states.values()].sort(byName),
+      .toSorted(byName)
+      .map((p) => (p.modifiers ? { ...p, modifiers: [...p.modifiers].toSorted(byName) } : p)),
+    shadowParts: [...acc.shadowParts.values()].toSorted(byName),
+    pseudoElements: [...acc.pseudoElements.values()].toSorted(byName),
+    states: [...acc.states.values()].toSorted(byName),
     slots: [...doc.slots]
       .map(([slotName, description]) => ({
         name: slotName,
         description: description || undefined,
       }))
-      .sort(byName),
+      .toSorted(byName),
     todos: [...doc.todos, ...acc.todos],
-    cssPropertiesConsumed: [...consumedTokens.values()].sort(byName),
-    cssPropertiesDeclared: [...acc.declared.values()].sort(byName),
-    functions: [...acc.functions.values()].sort(byName),
-    animations: [...acc.animations.values()].sort(byName),
-    layers: [...acc.layers.values()].sort(byName),
+    cssPropertiesConsumed: [...consumedTokens.values()].toSorted(byName),
+    cssPropertiesDeclared: [...acc.declared.values()].toSorted(byName),
+    functions: [...acc.functions.values()].toSorted(byName),
+    animations: [...acc.animations.values()].toSorted(byName),
+    layers: [...acc.layers.values()].toSorted(byName),
     conditions: acc.conditions,
     examples: doc.examples,
+    ...(doc.exampleLabels ? { exampleLabels: doc.exampleLabels } : {}),
     structure,
     structureVariants: doc.structureVariants,
     structureDescription: doc.structureDescription,

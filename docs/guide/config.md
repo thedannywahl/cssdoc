@@ -52,6 +52,28 @@ alternatives render when authored (`"diagram"`, default — one combined flowcha
 subgraph per variant — or `"sections"` for separate `### Variant: <name>` subsections). See
 [Authoring → Alternative structures](/guide/authoring#alternative-structures-variant).
 
+## Filtering examples
+
+Use `render.exampleFilters` to choose which [labeled examples](./authoring.md) appear on each surface:
+
+```json
+{
+  "render": {
+    "exampleFilters": {
+      "markdown": { "labels": ["docs"] },
+      "html": { "labels": ["docs", "demo"] },
+      "hover": { "labels": ["docs"], "includeUnlabeled": false }
+    }
+  }
+}
+```
+
+An example is included if any of its labels match. Unlabeled examples are included unless
+`includeUnlabeled` is `false`. An empty `labels` list therefore shows only unlabeled examples by
+default. Omitting a surface leaves it unfiltered unless it inherits a filter through `extends`. Each
+surface's filter replaces the inherited filter for that surface; set it to `null` to show all examples.
+Filters don't change the source or the JSON model.
+
 ## Consuming another provider
 
 `extends` inherits **configuration** (tags, convention, rules); `providers` imports another provider's

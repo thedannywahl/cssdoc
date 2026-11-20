@@ -20,7 +20,8 @@ import type { ModifierConventionInput } from "@cssdoc/core";
 import { type NamingRules, type RuleName, type RuleSeverity, lintCssDocs } from "@cssdoc/lint-core";
 import stylelint, { type Rule } from "stylelint";
 
-const { createPlugin, utils } = stylelint;
+const createPlugin: typeof stylelint.createPlugin = stylelint.createPlugin;
+const utils: typeof stylelint.utils = stylelint.utils;
 
 /** Cache loaded `cssdoc.json` per start folder — the same file is reused across every linted stylesheet. */
 const configCache = new Map<string, CssDocConfigFile>();
@@ -36,7 +37,7 @@ const loadConfig = (folder: string): CssDocConfigFile => {
 /** The rule name; enable it as `"cssdoc/valid-doc-comments": true` (optionally with rule toggles). */
 export const ruleName = "cssdoc/valid-doc-comments";
 
-export const messages = utils.ruleMessages(ruleName, {
+export const messages: Record<string, (message: string) => string> = utils.ruleMessages(ruleName, {
   violation: (message: string) => message,
 });
 
@@ -117,11 +118,16 @@ rule.messages = messages;
 rule.meta = meta;
 
 /** A ready-to-spread config that enables the rule. */
-export const configs = {
+export const configs: {
+  readonly recommended: {
+    readonly plugins: readonly string[];
+    readonly rules: Partial<Record<string, boolean>>;
+  };
+} = {
   recommended: {
     plugins: ["@cssdoc/stylelint-plugin"],
     rules: { [ruleName]: true },
   },
 };
 
-export default createPlugin(ruleName, rule);
+export default createPlugin(ruleName, rule) as ReturnType<typeof createPlugin>;

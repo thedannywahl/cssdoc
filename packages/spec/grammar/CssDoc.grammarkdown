@@ -292,7 +292,11 @@ DeprecatedTag :
 ExampleBody :
     > verbatim example text, which may span multiple lines
 
+ExampleLabels :
+    > labels=[docs, demo] on the tag line; one or more comma-separated lowercase alphanumeric labels, with hyphens allowed between segments
+
 ExampleTag :
+    `@example` ExampleLabels ExampleBody
     `@example` ExampleBody
 
 // --- CSS-surface tags (existing + Custom Elements Manifest) ------------------------------------
@@ -549,5 +553,24 @@ TagList :
 // block that runs until the next *known* cssdoc `@tag` (so multi-line @example / @summary bodies are
 // captured). Inside a `@structure` block, CSS at-rules whose names are not cssdoc tags (e.g. `@scope`,
 // `@media`, `@layer`) are treated as CSS content, not new block openers.
+//
+// Multi-line tag descriptions: Many tags accept a description after the `—` or `-` separator
+// (e.g., `@modifier`, `@part`, `@cssproperty`). Long descriptions may span multiple lines by
+// indenting continuation lines. The parser normalizes whitespace, joining continuation lines into
+// a single line except where Markdown structure (like lists or paragraph breaks) is detected and
+// preserved. Example:
+//
+//   @modifier -should-animate — @interaction Toggled by JS
+//     while the ring's growth animation runs.
+//
+// This results in a single-line description: "@interaction Toggled by JS while the ring's growth
+// animation runs." But structured content is preserved:
+//
+//   @remarks
+//   Some notes:
+//   - Point A
+//   - Point B
+//
+// Results in a multi-line description with the list structure intact.
 DocComment :
     CommentOpen TagList CommentClose

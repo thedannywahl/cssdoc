@@ -11,7 +11,7 @@ import {
   resolveRuleSeverities,
 } from "@cssdoc/providers";
 import { type ParseError, parse as parseJsonc, printParseErrorCode } from "jsonc-parser";
-import MarkdownIt from "markdown-it";
+import { MarkdownExit } from "markdown-exit";
 import { computed, ref } from "vue";
 import CodeEditor from "./CodeEditor.vue";
 import { presets } from "./presets.ts";
@@ -19,8 +19,9 @@ import { presets } from "./presets.ts";
 import schemaJson from "../../../packages/config/cssdoc.schema.json?raw";
 
 // Render authored prose (a11y notes, summaries, descriptions) so inline `code`, *emphasis*, and links
-// come through as HTML rather than raw markdown text.
-const md = new MarkdownIt({ html: false, linkify: true });
+// come through as HTML rather than raw markdown text. markdown-exit provides better TypeScript support
+// and async rendering capabilities.
+const md = new MarkdownExit({ html: false, linkify: true });
 const inline = (text?: string): string => (text ? md.renderInline(text) : "");
 const block = (text?: string): string => (text ? md.render(text) : "");
 
@@ -313,8 +314,7 @@ const usage = computed(() => {
             class="pg__diag"
             :class="`pg__diag--${d.severity}`"
           >
-            <code>{{ d.rule }}</code
-            ><br />{{ d.message }}
+            <code>{{ d.rule }}</code><br />{{ d.message }}
           </p>
         </div>
       </div>

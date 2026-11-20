@@ -6,8 +6,28 @@
  * @module
  */
 
+const exampleFilter: Record<string, unknown> = {
+  description: "Select examples by label; null disables an inherited filter.",
+  oneOf: [
+    { type: "null" },
+    {
+      type: "object",
+      additionalProperties: false,
+      required: ["labels"],
+      properties: {
+        labels: {
+          type: "array",
+          uniqueItems: true,
+          items: { type: "string", pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        },
+        includeUnlabeled: { type: "boolean", default: true },
+      },
+    },
+  ],
+};
+
 /** The JSON Schema (draft-07) describing a valid `cssdoc.json`. */
-export const cssDocSchema = {
+export const cssDocSchema: Record<string, unknown> = {
   $schema: "http://json-schema.org/draft-07/schema#",
   $id: "https://cssdoc.dev/cssdoc.schema.json",
   title: "cssdoc.json",
@@ -279,10 +299,15 @@ export const cssDocSchema = {
     },
     render: {
       description:
-        "Markdown render options for the CSS API pages (used by @cssdoc/markdown and @cssdoc/typedoc). Explicit emitter options still override these.",
+        "Presentation options for CSS API pages and editor hovers. Explicit emitter options still override these.",
       type: "object",
       additionalProperties: false,
       properties: {
+        exampleFilters: {
+          type: "object",
+          additionalProperties: false,
+          properties: { markdown: exampleFilter, html: exampleFilter, hover: exampleFilter },
+        },
         sectionOrder: {
           description:
             "Order (and inclusion) of the reorderable ## sections on a record page; omitted keys are dropped.",

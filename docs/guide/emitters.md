@@ -48,6 +48,7 @@ buildCssApi({
   outDir: "docs/api/css",
   baseHref: "/api/css/",
   providers: resolveProviders(configFile), // each provider's `baseHref` prefixes its links
+  exampleFilter: configFile.render.exampleFilters?.markdown,
 });
 ```
 
@@ -60,6 +61,9 @@ one page per record plus an index, styled inline, dark-mode aware, no build step
 import { buildHtml } from "@cssdoc/html";
 buildHtml({ css, outDir: "docs/api/html", title: "CSS API reference" });
 ```
+
+Pass `exampleFilter` to `buildHtml` or `renderPage` to filter examples, for example
+`exampleFilter: configFile.render.exampleFilters?.html`.
 
 ## JSON
 
@@ -94,6 +98,7 @@ sidebar, so CSS docs sit beside your TS API docs.
 {
   "plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme", "@cssdoc/typedoc"],
   "cssdocCss": ["../packages/ui/dist/components.css"],
+  "cssdocConfig": "../packages/ui/cssdoc.json",
   "cssdocBaseHref": "/api/css/",
 }
 ```

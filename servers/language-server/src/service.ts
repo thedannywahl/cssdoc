@@ -6,7 +6,7 @@
  *
  * @module
  */
-import { CssDocConfiguration, parseDocComment } from "@cssdoc/core";
+import { CssDocConfiguration, type ExampleFilter, parseDocComment } from "@cssdoc/core";
 import {
   type EmbeddedHost,
   detectEmbeddedHost,
@@ -110,6 +110,21 @@ export interface LspDiagnostic {
 export interface LspCodeAction {
   title: string;
   edit: { range: LspRange; newText: string };
+}
+/** A semantic token: position, length, token type, and modifiers. */
+export interface LspSemanticToken {
+  line: number;
+  startCharacter: number;
+  length: number;
+  tokenType: number;
+  tokenModifiers: number;
+}
+/** An inlay hint: label and position in the document. */
+export interface LspInlayHint {
+  position: LspPosition;
+  label: string;
+  kind?: 1 | 2; // 1 = type, 2 = parameter
+  tooltip?: string;
 }
 
 function offsetAt(text: string, position: LspPosition): number {
@@ -332,7 +347,9 @@ function resolveCssClass(
   // A part/element/state selector — attribute it to the component whose base is the longest prefix.
   const owner = index.entries
     .filter((e) => token.startsWith(stripLeadingDot(e.className)))
-    .sort((a, b) => stripLeadingDot(b.className).length - stripLeadingDot(a.className).length)[0];
+    .toSorted(
+      (a, b) => stripLeadingDot(b.className).length - stripLeadingDot(a.className).length,
+    )[0];
   return owner ? { base: stripLeadingDot(owner.className), token } : undefined;
 }
 
@@ -404,6 +421,8 @@ export interface ConfigScope {
   /** The configuration (for rebuilding a CSS-doc index from unsaved editor text). */
   configuration?: CssDocConfiguration;
   index: CssDocIndex;
+  /** Source indexes retaining each file’s URI and local spans, loaded only for definition requests. */
+  definitionIndexes?: () => Iterable<CssDocIndex>;
   /**
    * The index used for sibling/cross-component recognition — this scope's own records plus any declared
    * `providers`' components. Defaults to {@link ConfigScope.index}. (Kept separate from `index` so the
@@ -591,6 +610,7 @@ export class CssDocLanguageService {
     position: LspPosition,
     path?: string,
     languageId?: string,
+    exampleFilter?: ExampleFilter | null,
   ): LspHover | undefined {
     const offset = offsetAt(text, position);
     const refHover = refHoverAt(text, offset, this.scopeForPath(path).configuration);
@@ -613,6 +633,7 @@ export class CssDocLanguageService {
         text,
         project,
         siblings,
+        exampleFilter,
       );
     }
     // Authoring embedded CSS in a host document — run the same resolution over the projected CSS,
@@ -628,6 +649,7 @@ export class CssDocLanguageService {
         text,
         project,
         siblings,
+        exampleFilter,
       );
       if (h) return h;
     }
@@ -641,10 +663,12 @@ export class CssDocLanguageService {
         if (h) return { contents: h.contents };
       }
     }
-    const token = this.usageTokenAt(text, offset, scopes);
+    const classScopes = governing.siblingIndex
+      ? [...scopes, { ...governing, index: governing.siblingIndex }]
+      : scopes;
+    const token = this.usageTokenAt(text, offset, classScopes);
     if (token) {
-      const scope =
-        this.scopeForBase([token.base ?? token.token], scopes) ?? this.scopeForPath(path);
+      const scope = this.scopeForBase([token.base ?? token.token], classScopes) ?? governing;
       const h = hoverForClass(
         token.base ?? token.token,
         token.token,
@@ -652,6 +676,7 @@ export class CssDocLanguageService {
         this.hoverDetail,
         this.hoverSections,
         this.hoverSectionOrder,
+        exampleFilter,
       );
       if (h) return { contents: h.contents };
     }
@@ -672,6 +697,7 @@ export class CssDocLanguageService {
     source: string = text,
     project?: CssDocIndex,
     siblings?: CssDocIndex,
+    exampleFilter?: ExampleFilter | null,
   ): LspHover | undefined {
     let index: CssDocIndex;
     try {
@@ -694,6 +720,7 @@ export class CssDocLanguageService {
         this.hoverDetail,
         this.hoverSections,
         this.hoverSectionOrder,
+        exampleFilter,
       );
       return h ? card(h.contents) : undefined;
     };
@@ -737,6 +764,7 @@ export class CssDocLanguageService {
           this.hoverDetail,
           this.hoverSections,
           this.hoverSectionOrder,
+          exampleFilter,
         );
         if (h) return { contents: h.contents };
       }
@@ -750,6 +778,7 @@ export class CssDocLanguageService {
           this.hoverDetail,
           this.hoverSections,
           this.hoverSectionOrder,
+          exampleFilter,
         );
         if (h) return { contents: h.contents };
       }
@@ -805,8 +834,10 @@ export class CssDocLanguageService {
     const prop = propertyAt(text, offset);
     if (prop) {
       for (const scope of scopes) {
-        const loc = definitionForCustomProperty(prop.name, scope.index);
-        if (loc) return this.toLocation(loc);
+        for (const index of scope.definitionIndexes?.() ?? [scope.index]) {
+          const loc = definitionForCustomProperty(prop.name, index);
+          if (loc) return this.toLocation(loc);
+        }
       }
       return undefined;
     }
@@ -814,9 +845,10 @@ export class CssDocLanguageService {
     if (token) {
       const scope =
         this.scopeForBase([token.base ?? token.token], scopes) ?? this.scopeForPath(path);
-      return this.toLocation(
-        definitionForClass(token.base ?? token.token, token.token, scope.index),
-      );
+      for (const index of scope.definitionIndexes?.() ?? [scope.index]) {
+        const loc = definitionForClass(token.base ?? token.token, token.token, index);
+        if (loc) return this.toLocation(loc);
+      }
     }
     return undefined;
   }
@@ -1087,6 +1119,133 @@ export class CssDocLanguageService {
         end: { line: location.span.end.line - 1, character: location.span.end.column - 1 },
       },
     };
+  }
+
+  /**
+   * Semantic tokens for syntax highlighting in doc comments (@component, @modifier, @deprecated, etc).
+   * Returns encoded tokens in LSP format: each token is [line, startChar, length, tokenType, modifiers].
+   */
+  semanticTokens(text: string, _path?: string): LspSemanticToken[] {
+    const tokens: LspSemanticToken[] = [];
+
+    // Token type indices (must match client legend)
+    const tokenTypes = {
+      keyword: 0, // @tags
+      variable: 1, // class/property names
+      type: 2, // modifier names
+      comment: 3, // doc comment content
+      decorator: 4, // @-prefixed tags
+    };
+
+    // Token modifier indices
+    const modifiers = {
+      deprecated: 0,
+      modification: 1,
+      optional: 2,
+    };
+
+    // Parse doc comments in CSS to find cssdoc tags
+    const docComments = text.matchAll(/\/\*\*[\s\S]*?\*\//gu);
+    for (const block of docComments) {
+      const blockText = block[0];
+      const blockStart = block.index ?? 0;
+      const blockLines = blockText.split("\n");
+
+      let currentLine = positionAt(text, blockStart).line;
+      let charInBlock = 0;
+
+      for (const line of blockLines) {
+        const lineStart = charInBlock;
+        charInBlock += line.length + 1; // +1 for newline
+
+        // Find @-tags in this line
+        const tagMatches = line.matchAll(/@([\w-]+)(?:\s+([^\s][^*]*?))?(?=\s*(?:\*|$))/gu);
+        for (const match of tagMatches) {
+          const tagName = match[1];
+          const tagStart = (match.index ?? 0) + 1; // +1 for @
+          const tagEnd = tagStart + tagName.length;
+          const tagValue = match[2];
+
+          // Emit @tag token
+          tokens.push({
+            line: currentLine,
+            startCharacter: lineStart + tagStart,
+            length: tagName.length,
+            tokenType: tokenTypes.decorator,
+            tokenModifiers: 0,
+          });
+
+          // Check for deprecated/modification flags
+          let modifierFlags = 0;
+          if (tagName === "deprecated") modifierFlags |= 1 << modifiers.deprecated;
+          if (tagName === "modifier") modifierFlags |= 1 << modifiers.modification;
+          if (tagName.startsWith("css")) modifierFlags |= 1 << modifiers.optional;
+
+          // Emit value token if present
+          if (tagValue && tagEnd + 1 < line.length) {
+            const valueStart = lineStart + tagEnd + 1;
+            const valueEnd = line.lastIndexOf("*") > 0 ? line.lastIndexOf("*") : line.length;
+            const valueLength = Math.max(0, valueEnd - valueStart);
+            if (valueLength > 0) {
+              tokens.push({
+                line: currentLine,
+                startCharacter: valueStart,
+                length: Math.min(valueLength, 50), // Cap length to avoid massive tokens
+                tokenType: tokenTypes.variable,
+                tokenModifiers: modifierFlags,
+              });
+            }
+          }
+        }
+
+        currentLine++;
+      }
+    }
+
+    return tokens;
+  }
+
+  /**
+   * Inlay hints for custom property metadata inline in CSS rules.
+   * Shows property syntax, default values, and other metadata.
+   */
+  inlayHints(text: string, path?: string): LspInlayHint[] {
+    const hints: LspInlayHint[] = [];
+    const index = this.scopeForPath(path).index;
+
+    // Show custom property metadata when used
+    for (const prop of index.allCustomProperties()) {
+      const propName = prop.property.name;
+      // Use escaped pattern to find all property usages
+      const pattern = propName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const propMatches = text.matchAll(new RegExp(pattern, "gu"));
+
+      for (const match of propMatches) {
+        const propStart = match.index ?? 0;
+        const propPos = positionAt(text, propStart);
+        const hintLabel = prop.property.syntax ? `${prop.property.syntax}` : "custom property";
+
+        const tooltipParts: string[] = [`Property: ${propName}`, `Declared in: ${prop.record}`];
+        if (prop.property.description) {
+          tooltipParts.push(`Description: ${prop.property.description}`);
+        }
+        if (prop.property.defaultValue) {
+          tooltipParts.push(`Default: ${prop.property.defaultValue}`);
+        }
+        if (prop.property.inherits !== undefined) {
+          tooltipParts.push(`Inherits: ${prop.property.inherits ? "yes" : "no"}`);
+        }
+
+        hints.push({
+          position: propPos,
+          label: hintLabel,
+          kind: 1, // type hint
+          tooltip: tooltipParts.join("\n"),
+        });
+      }
+    }
+
+    return hints;
   }
 }
 

@@ -526,4 +526,4 @@ export const HTML_ELEMENT_GROUPS: Readonly<Record<string, readonly string[]>> = 
 /** All known HTML elements from {@link HTML_ELEMENT_GROUPS}, sorted and de-duplicated. */
 export const HTML_ELEMENT_NAMES: readonly string[] = [
   ...new Set(Object.values(HTML_ELEMENT_GROUPS).flatMap((v) => v)),
-].sort((a, b) => a.localeCompare(b));
+].toSorted((a, b) => a.localeCompare(b));

@@ -75,6 +75,11 @@ MDN reference page, and you can tune the card:
 }
 ```
 
+To show only selected examples without hiding the whole hover section, set
+[`render.exampleFilters.hover`](./config.md#filtering-examples) in `cssdoc.json`. The config nearest
+the file you're hovering in controls the selection, even for an example from a provider. The
+`cssdoc.hover.sections.examples` setting can still hide the whole section.
+
 ## Any LSP editor
 
 [`@cssdoc/language-server`](https://www.npmjs.com/package/@cssdoc/language-server) is editor-agnostic.

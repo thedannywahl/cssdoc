@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { parseCssDocs } from "@cssdoc/core";
+import { parseCssDocs, selectExamples } from "@cssdoc/core";
 import { expect, test } from "vite-plus/test";
 import { findSchemaDrift } from "../../../scripts/sync-schema.ts";
 import { CssDocConfigFile, resolveProviders } from "../src/index.ts";
@@ -10,6 +10,45 @@ import { CssDocConfigFile, resolveProviders } from "../src/index.ts";
 const fixture = (name: string): string =>
   fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
 const fixturesDir = fileURLToPath(new URL("./fixtures/", import.meta.url));
+
+test("example filters inherit by surface and select without changing the model", () => {
+  const dir = mkdtempSync(join(tmpdir(), "cssdoc-example-filters-"));
+  const write = (file: string, value: object) =>
+    writeFileSync(join(dir, file), JSON.stringify(value));
+  write("base.json", {
+    render: {
+      exampleFilters: {
+        markdown: { labels: ["docs"], includeUnlabeled: false },
+        html: { labels: ["demo"] },
+        hover: { labels: ["docs"] },
+      },
+    },
+  });
+  write("cssdoc.json", {
+    extends: ["./base.json"],
+    render: { exampleFilters: { markdown: { labels: ["docs"] }, hover: null } },
+  });
+  const file = CssDocConfigFile.loadFile(join(dir, "cssdoc.json"));
+  expect(file.messages).toEqual([]);
+  expect(file.hasErrors).toBe(false);
+  const filters = file.render.exampleFilters;
+  expect(filters).toEqual({
+    markdown: { labels: ["docs"] },
+    html: { labels: ["demo"] },
+    hover: null,
+  });
+  const entry = {
+    examples: ["Unlabeled", "Shared", "Accessibility fixture", "Demo"],
+    exampleLabels: { 1: ["docs", "demo"], 2: ["a11y"], 3: ["demo"] },
+  };
+  expect(selectExamples(entry, filters?.markdown)).toEqual(["Unlabeled", "Shared"]);
+  expect(selectExamples(entry, filters?.html)).toEqual(["Unlabeled", "Shared", "Demo"]);
+  expect(selectExamples(entry, filters?.hover)).toEqual(entry.examples);
+  expect(selectExamples(entry, { labels: [], includeUnlabeled: false })).toEqual([]);
+
+  write("cssdoc.json", { render: { exampleFilters: { hover: { labels: ["INVALID"] } } } });
+  expect(CssDocConfigFile.loadFile(join(dir, "cssdoc.json")).hasErrors).toBe(true);
+});
 
 test("loadFile applies tagDefinitions, extends, and supportForTags to a configuration", () => {
   const configFile = CssDocConfigFile.loadFile(fixture("cssdoc.json"));

@@ -58,6 +58,8 @@ export default defineConfig({
   markdown: {
     languages: [grammarkdown, cssdoc, cssdocAtRules],
     config: (md) => {
+      // markdown-exit v2.0+ is a TypeScript rewrite of markdown-it with enhanced plugin support
+      // and async rendering capabilities. All markdown-it plugins are compatible.
       md.use(mermaidPlugin);
     },
   },
@@ -226,10 +228,6 @@ export default defineConfig({
     },
     outline: "deep",
     search: { provider: "local" },
-    editLink: {
-      pattern: "https://github.com/thedannywahl/cssdoc/edit/main/docs/:path",
-      text: "Edit this page on GitHub",
-    },
     socialLinks: [
       {
         icon: {

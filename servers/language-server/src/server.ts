@@ -9,6 +9,7 @@ import { readFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { CssDocConfigFile, resolveProviders } from "@cssdoc/config";
+import type { ExampleFilter } from "@cssdoc/core";
 import { dialectForFilename, resolveParser } from "@cssdoc/dialects";
 import { detectEmbeddedHost, projectCss } from "@cssdoc/embedded";
 import { createIndex, indexFromEntries } from "@cssdoc/index";
@@ -38,7 +39,18 @@ export function startLanguageServer(): void {
   const connection = createConnection(ProposedFeatures.all);
   const documents = new TextDocuments(TextDocument);
   const service = new CssDocLanguageService(createIndex(""));
+  const hoverFilters = new Map<string, ExampleFilter | null>();
   let cssPaths: string[] = [];
+
+  const hoverFilterFor = (uri: string, path: string | undefined): ExampleFilter | null => {
+    if (!path) return null;
+    if (hoverFilters.has(uri)) return hoverFilters.get(uri) ?? null;
+    const config = CssDocConfigFile.loadForFolder(dirname(path));
+    if (config.hasErrors) connection.console.warn(config.getErrorSummary());
+    const filter = config.render.exampleFilters?.hover ?? null;
+    hoverFilters.set(uri, filter);
+    return filter;
+  };
 
   const readSafe = (p: string): string => {
     try {
@@ -104,10 +116,32 @@ export function startLanguageServer(): void {
             index.matcher,
           )
         : index;
+      // Keep the combined index for cross-file value resolution, but resolve definitions against
+      // individual source files: concatenation loses file URIs and shifts every later file's spans.
+      const definitionCache = new Map<string, ReturnType<typeof createIndex>>();
+      const definitionIndexes = function* (): Iterable<ReturnType<typeof createIndex>> {
+        for (const file of g.files) {
+          let sourceIndex = definitionCache.get(file);
+          if (!sourceIndex) {
+            try {
+              sourceIndex = createIndex(readIndexable(file), {
+                file,
+                configuration,
+                parse: resolveParser(dialectForFilename(file)),
+              });
+              definitionCache.set(file, sourceIndex);
+            } catch {
+              continue;
+            }
+          }
+          yield sourceIndex;
+        }
+      };
       return {
         dir: g.dir,
         configuration,
         index,
+        definitionIndexes,
         siblingIndex,
         providerHref: providers.href,
         severities: resolveRuleSeverities(
@@ -145,6 +179,14 @@ export function startLanguageServer(): void {
         hoverProvider: true,
         definitionProvider: true,
         codeActionProvider: true,
+        semanticTokensProvider: {
+          legend: {
+            tokenTypes: ["keyword", "variable", "type", "comment", "decorator"],
+            tokenModifiers: ["deprecated", "modification", "optional"],
+          },
+          full: true,
+        },
+        inlayHintProvider: true,
       },
     };
   });
@@ -163,6 +205,12 @@ export function startLanguageServer(): void {
   };
   documents.onDidChangeContent((e) => {
     validate(e.document);
+  });
+  documents.onDidClose((e) => {
+    hoverFilters.delete(e.document.uri);
+  });
+  connection.onDidChangeWatchedFiles(() => {
+    hoverFilters.clear();
   });
 
   connection.onCompletion((params) => {
@@ -187,11 +235,13 @@ export function startLanguageServer(): void {
   connection.onHover((params) => {
     const doc = documents.get(params.textDocument.uri);
     if (!doc) return null;
+    const path = fsPathOf(doc.uri);
     const hover = service.hover(
       doc.getText(),
       params.position,
-      fsPathOf(params.textDocument.uri),
+      path,
       doc.languageId,
+      hoverFilterFor(doc.uri, path),
     );
     return hover ? { contents: { kind: "markdown" as const, value: hover.contents } } : null;
   });
@@ -223,6 +273,48 @@ export function startLanguageServer(): void {
       edit: {
         changes: { [params.textDocument.uri]: [{ range: a.edit.range, newText: a.edit.newText }] },
       },
+    }));
+  });
+
+  connection.onRequest(
+    "textDocument/semanticTokens/full",
+    (params: { textDocument: { uri: string } }) => {
+      const doc = documents.get(params.textDocument.uri);
+      if (!doc) return { data: [] };
+      const tokens = service.semanticTokens(doc.getText(), fsPathOf(doc.uri));
+
+      // Encode tokens in LSP format: build a delta array
+      const data: number[] = [];
+      let lastLine = 0;
+      let lastStart = 0;
+
+      for (const token of tokens.toSorted(
+        (a, b) => a.line - b.line || a.startCharacter - b.startCharacter,
+      )) {
+        data.push(
+          token.line - lastLine, // deltaLine
+          token.line === lastLine ? token.startCharacter - lastStart : token.startCharacter, // deltaStart
+          token.length, // length
+          token.tokenType, // tokenType
+          token.tokenModifiers, // tokenModifiers
+        );
+        lastLine = token.line;
+        lastStart = token.startCharacter;
+      }
+
+      return { data };
+    },
+  );
+
+  connection.onRequest("textDocument/inlayHint", (params: { textDocument: { uri: string } }) => {
+    const doc = documents.get(params.textDocument.uri);
+    if (!doc) return [];
+    const hints = service.inlayHints(doc.getText(), fsPathOf(doc.uri));
+    return hints.map((h) => ({
+      position: h.position,
+      label: h.label,
+      kind: h.kind,
+      tooltip: h.tooltip,
     }));
   });
 

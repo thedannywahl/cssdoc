@@ -6,6 +6,7 @@
  *
  * @module @cssdoc/providers
  */
+import type { ExampleFilter } from "@cssdoc/core";
 import type {
   ClassUsage,
   CssDocIndex,
@@ -176,9 +177,11 @@ export function hoverForClass(
   detail: HoverDetail = "full",
   sections?: HoverSections,
   sectionOrder?: HoverSectionOrder,
+  exampleFilter?: ExampleFilter | null,
 ): Hover | undefined {
   return (
-    modifier.hover(base, token, index) ?? record.hover(base, index, detail, sections, sectionOrder)
+    modifier.hover(base, token, index) ??
+    record.hover(base, index, detail, sections, sectionOrder, exampleFilter)
   );
 }
 

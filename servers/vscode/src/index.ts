@@ -137,7 +137,7 @@ async function resolveCssPaths(): Promise<string[]> {
     }
   }
 
-  return Array.from(cssPaths).sort();
+  return Array.from(cssPaths).toSorted();
 }
 
 /** Build a language client wired to the bundled server for the given CSS paths. */
@@ -224,7 +224,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
       void editor
         .edit(
           (builder) => {
-            for (const edit of [...edits].sort((a, b) => b.start - a.start)) {
+            for (const edit of [...edits].toSorted((a, b) => b.start - a.start)) {
               builder.replace(
                 new Range(
                   event.document.positionAt(edit.start),

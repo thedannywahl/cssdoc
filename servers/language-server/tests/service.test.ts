@@ -70,6 +70,53 @@ test("hover on a modifier token shows its documentation", () => {
   expect(hover?.contents).toContain("A lower-emphasis action.");
 });
 
+test("hover filters examples from providers without changing the existing section controls", () => {
+  const providerEntries = parseCssDocs(`
+/** @component widget
+ * @example labels=[docs, demo]
+ * <button>Shared</button>
+ * @example labels=[demo]
+ * <button>Interactive</button>
+ * @example labels=[a11y]
+ * <button>Audit fixture</button>
+ * @example
+ * <button>Unlabeled</button>
+ */
+.widget {}
+`);
+  const svc = new CssDocLanguageService(createIndex(""));
+  svc.setScopes([
+    {
+      dir: "/app",
+      index: createIndex(""),
+      siblingIndex: indexFromEntries(providerEntries),
+      severities: DEFAULT_RULE_SEVERITIES,
+      naming: {},
+    },
+  ]);
+  const markup = `<div class="widget">`;
+  const pos = at(markup.indexOf("widget"));
+  const filter = { labels: ["docs"], includeUnlabeled: false };
+  const card = svc.hover(markup, pos, "/app/page.html", "html", filter)?.contents;
+  expect(card).toContain("**$(book) Example**");
+  expect(card).toContain("Shared");
+  expect(card).not.toMatch(/Interactive|Audit fixture|Unlabeled|labels=\[/u);
+
+  const css = ".widget {}";
+  expect(svc.hover(css, at(2), "/app/page.css", "css", filter)?.contents).toContain("Shared");
+  expect(svc.hover(css, at(2), "/app/page.css", "css", filter)?.contents).not.toContain(
+    "Interactive",
+  );
+  expect(
+    svc.hover(markup, pos, "/app/page.html", "html", { ...filter, labels: [] })?.contents,
+  ).not.toContain("$(book) Example");
+
+  svc.setHoverDetail("custom", { examples: "off" });
+  expect(svc.hover(markup, pos, "/app/page.html", "html", filter)?.contents).not.toContain(
+    "Shared",
+  );
+});
+
 test("hover on @ref shows its local @annotations legend text", () => {
   const text = [
     "/**",
@@ -786,4 +833,76 @@ test("rebuild: a PostCSS parse error yields a valid empty scope, not a thrown ex
   // No diagnostics on clean HTML; service did not crash.
   expect(() => svc.diagnostics("<div></div>", "html")).not.toThrow();
   expect(svc.diagnostics("<div></div>", "html")).toEqual([]);
+});
+
+test("semanticTokens: extracts doc comment tags as tokens", () => {
+  const docCss = `
+/**
+ * @component button
+ * @summary A button component.
+ * @deprecated Use btn-v2 instead.
+ * @modifier -primary
+ * @cssproperty --btn-color
+ */
+.button { }`;
+
+  const svc = new CssDocLanguageService(createIndex(docCss));
+  const tokens = svc.semanticTokens(docCss);
+
+  // Should find tokens for @-tags in the doc comment
+  expect(tokens.length).toBeGreaterThan(0);
+
+  // Tokens should have required fields
+  for (const token of tokens) {
+    expect(typeof token.line).toBe("number");
+    expect(typeof token.startCharacter).toBe("number");
+    expect(typeof token.length).toBe("number");
+    expect(typeof token.tokenType).toBe("number");
+    expect(typeof token.tokenModifiers).toBe("number");
+  }
+
+  // Find a decorator token (for @-prefixed tags)
+  const decoratorToken = tokens.find((t) => t.tokenType === 4); // 4 = decorator
+  expect(decoratorToken).toBeDefined();
+});
+
+test("inlayHints: shows custom property metadata", () => {
+  const docCss = `
+/**
+ * @component button
+ * @cssproperty --btn-color The button background color.
+ * @cssproperty --btn-size
+ */
+.button {
+  background: var(--btn-color, blue);
+  font-size: var(--btn-size, 16px);
+}`;
+
+  const svc = new CssDocLanguageService(createIndex(docCss));
+  const hints = svc.inlayHints(docCss);
+
+  // Should find hints for custom property usages
+  expect(hints.length).toBeGreaterThan(0);
+
+  // Property hints should have type kind (1) and tooltip with metadata
+  const propHints = hints.filter((h) => h.kind === 1 && h.tooltip?.includes("Property"));
+  expect(propHints.length).toBeGreaterThan(0);
+});
+
+test("semanticTokens: returns empty array for CSS without doc comments", () => {
+  const simpleCss = `.button { color: red; }`;
+  const svc = new CssDocLanguageService(createIndex(simpleCss));
+  const tokens = svc.semanticTokens(simpleCss);
+
+  // No doc comments = no semantic tokens
+  expect(tokens).toEqual([]);
+});
+
+test("inlayHints: returns empty array for CSS without custom properties", () => {
+  const simpleCss = `.button { color: red; }`;
+  const svc = new CssDocLanguageService(createIndex(simpleCss));
+  const hints = svc.inlayHints(simpleCss);
+
+  // No custom properties = no inlay hints
+  expect(hints).toEqual([]);
 });

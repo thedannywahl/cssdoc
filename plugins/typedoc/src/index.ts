@@ -22,6 +22,7 @@
  *
  * @module @cssdoc/typedoc
  */
+import { CssDocConfigFile } from "@cssdoc/config";
 import { type Application, ParameterType, RendererEvent } from "typedoc";
 import { emitCssApi } from "./emit.ts";
 
@@ -57,6 +58,12 @@ export function load(app: Application): void {
     defaultValue: "",
   });
   app.options.addDeclaration({
+    name: "cssdocConfig",
+    help: "Path to a cssdoc config file for the CSS reference.",
+    type: ParameterType.Path,
+    defaultValue: "",
+  });
+  app.options.addDeclaration({
     name: "cssdocGlobalPrecedence",
     help: 'Precedence model for overlapping global and base modifiers ("base" or "global").',
     type: ParameterType.String,
@@ -67,12 +74,21 @@ export function load(app: Application): void {
     const css = app.options.getValue("cssdocCss") as string[];
     if (!css.length) return;
     const baseHref = app.options.getValue("cssdocBaseHref") as string;
+    const configPath = app.options.getValue("cssdocConfig") as string;
+    const configFile = configPath ? CssDocConfigFile.loadFile(configPath) : undefined;
+    if (configFile?.hasErrors || configFile?.fileNotFound) {
+      app.logger.error(
+        configFile.getErrorSummary() || `Could not load cssdoc config: ${configPath}`,
+      );
+      return;
+    }
     emitCssApi({
       outputDirectory: event.outputDirectory,
       css,
       outSubdir: app.options.getValue("cssdocOut") as string,
       label: app.options.getValue("cssdocLabel") as string,
       baseHref: baseHref || undefined,
+      configFile,
       globalPrecedence: app.options.getValue("cssdocGlobalPrecedence") as string as
         | "base"
         | "global",

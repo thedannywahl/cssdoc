@@ -7,7 +7,13 @@
  * @module
  */
 import type { CssDocEntry, CssReleaseStage, CssRecordKind, StructureNode } from "@cssdoc/core";
-import { cardinalityToken, toMermaid, toMermaidVariants } from "@cssdoc/core";
+import {
+  type ExampleFilter,
+  cardinalityToken,
+  selectExamples,
+  toMermaid,
+  toMermaidVariants,
+} from "@cssdoc/core";
 
 /**
  * Resolve a consumed custom property to its type/value for the "Tokens consumed" table. Supplied by the
@@ -76,6 +82,8 @@ export const DEFAULT_SECTION_ORDER: readonly SectionKey[] = [
 
 /** Options controlling how one entry renders. */
 export interface RenderEntryOptions {
+  /** Select rendered examples. Omit or pass null to show all examples. */
+  exampleFilter?: ExampleFilter | null;
   /** Resolve a consumed token's type/value (adds Type + Value columns to "Tokens consumed"). */
   resolveToken?: ResolveToken;
   /** Choose the demo spec for an entry (defaults to `entry.demo`). */
@@ -203,7 +211,7 @@ export function groupEntries(
 ): EntryGroup[] {
   const kindLabel = new Map(KIND_GROUPS.map((g) => [g.kind, g.label]));
   const byLabel = new Map<string, CssDocEntry[]>();
-  for (const e of [...entries].sort((a, b) => a.name.localeCompare(b.name))) {
+  for (const e of [...entries].toSorted((a, b) => a.name.localeCompare(b.name))) {
     // An empty `@group` (a bare tag) is treated as absent, matching the per-page meta line's truthy check.
     const label = e.group || kindLabel.get(e.kind) || e.kind;
     const bucket = byLabel.get(label);
@@ -524,9 +532,10 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   const spec = options.resolveDemo ? options.resolveDemo(entry) : entry.demo;
   if (spec) fragments.demo.push("## Demo", "", "```demo", spec, "```", "");
 
-  if (entry.examples.length) {
+  const examples = selectExamples(entry, options.exampleFilter);
+  if (examples.length) {
     fragments.examples.push("## Examples", "");
-    for (const raw of entry.examples) {
+    for (const raw of examples) {
       const ex = raw.trim();
       // An example that already carries a fenced block is Markdown (prose + code) — emit it verbatim.
       // Only bare, fence-less code gets auto-fenced (sniffing markup vs CSS).
@@ -760,7 +769,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   for (const m of options.members ?? []) membersByName.set(m.name, m);
   if (membersByName.size) {
     fragments.subcomponents.push("## Subcomponents", "");
-    for (const s of [...membersByName.values()].sort((a, b) => a.name.localeCompare(b.name))) {
+    for (const s of [...membersByName.values()].toSorted((a, b) => a.name.localeCompare(b.name))) {
       fragments.subcomponents.push(`- [${escProse(s.name)}](${s.href})`);
     }
     fragments.subcomponents.push("");

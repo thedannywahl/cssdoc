@@ -6,7 +6,7 @@
  *
  * @module
  */
-import type { StructureNode } from "@cssdoc/core";
+import { type ExampleFilter, type StructureNode, selectExamples } from "@cssdoc/core";
 import {
   type ClassUsage,
   type CssDocIndex,
@@ -285,7 +285,9 @@ export const record = {
         );
       }
       if ((nameKinds.get(info.entry.name)?.size ?? 0) > 1) {
-        const kinds = [...(nameKinds.get(info.entry.name) ?? new Set<string>())].sort().join(", ");
+        const kinds = [...(nameKinds.get(info.entry.name) ?? new Set<string>())]
+          .toSorted()
+          .join(", ");
         out.push(
           warn({
             aspect: "record",
@@ -469,7 +471,7 @@ export const record = {
                     warn({
                       aspect: "record",
                       rule: "structure-ambiguous-record",
-                      message: `@structure :is() co-location "${node.colocated}" is ambiguous across kinds (${[...kinds].sort().join(", ")}); use a typed ref like @component ${colocName}.`,
+                      message: `@structure :is() co-location "${node.colocated}" is ambiguous across kinds (${[...kinds].toSorted().join(", ")}); use a typed ref like @component ${colocName}.`,
                       record: info.entry.name,
                       span: info.span,
                     }),
@@ -510,7 +512,7 @@ export const record = {
                     warn({
                       aspect: "record",
                       rule: "structure-ambiguous-record",
-                      message: `@structure reference "${node.selector}" is ambiguous across kinds (${[...kinds].sort().join(", ")}); use a typed ref like @component ${ref.name}.`,
+                      message: `@structure reference "${node.selector}" is ambiguous across kinds (${[...kinds].toSorted().join(", ")}); use a typed ref like @component ${ref.name}.`,
                       record: info.entry.name,
                       span: info.span,
                     }),
@@ -684,6 +686,7 @@ export const record = {
     detail: HoverDetail = "full",
     sections?: HoverSections,
     sectionOrder?: HoverSectionOrder,
+    exampleFilter?: ExampleFilter | null,
   ): Hover | undefined {
     const entry = index.componentForClass(base);
     if (!entry) return undefined;
@@ -880,11 +883,12 @@ export const record = {
       }
     }
     {
-      const w = want("examples", entry.examples.length > 0);
+      const examples = selectExamples(entry, exampleFilter);
+      const w = want("examples", examples.length > 0);
       if (w !== "skip") {
-        const frag = ["", `**$(book) Example${entry.examples.length > 1 ? "s" : ""}**`];
+        const frag = ["", `**$(book) Example${examples.length > 1 ? "s" : ""}**`];
         if (w === "content")
-          for (const e of entry.examples) {
+          for (const e of examples) {
             const ex = e.trim();
             // An example that already carries a fenced block is Markdown (prose + code) — emit it
             // verbatim. Only bare, fence-less code gets auto-fenced (sniffing markup vs CSS).
