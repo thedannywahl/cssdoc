@@ -1,0 +1,6 @@
+{
+  "modifierConvention": "bem",
+  "rules": {
+    "undocumented-modifier": "warn",
+  },
+}
