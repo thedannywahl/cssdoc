@@ -4,6 +4,24 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.18.1
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.18.0...v0.18.1)
+
+### 🚀 Enhancements
+
+- Enhance CSS documentation with new visibility and stage tags ([4055bef](https://github.com/thedannywahl/cssdoc/commit/4055bef))
+
+### 🩹 Fixes
+
+- Add cssdoc config to dirty test fixture and update test expectations ([571cd0c](https://github.com/thedannywahl/cssdoc/commit/571cd0c))
+- Resolve includeInternal option precedence and stale entry cleanup ([b7cdcee](https://github.com/thedannywahl/cssdoc/commit/b7cdcee))
+- Remove unused catch parameter ([0cc78d0](https://github.com/thedannywahl/cssdoc/commit/0cc78d0))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.18.0
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.17.1...v0.18.0)
