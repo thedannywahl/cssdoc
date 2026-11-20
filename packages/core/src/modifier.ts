@@ -191,7 +191,9 @@ export class ModifierMatcher {
   constructor(convention: ModifierConvention) {
     this.convention = convention;
     const longestFirst = (value: string | string[]): string[] =>
-      (Array.isArray(value) ? value : [value]).toSorted((a, b) => b.length - a.length);
+      (Array.isArray(value) ? value : [value]).toSorted(
+        (a: string, b: string) => b.length - a.length,
+      );
     this.separators = longestFirst(convention.separator);
     this.sepAlt = `(?:${this.separators.map(escapeRe).join("|")})`;
     this.elementSeparators = convention.elementSeparator
@@ -200,7 +202,9 @@ export class ModifierMatcher {
     this.elementSepAlt = this.elementSeparators.length
       ? `(?:${this.elementSeparators.map(escapeRe).join("|")})`
       : "";
-    this.statePrefixes = (convention.statePrefixes ?? []).toSorted((a, b) => b.length - a.length);
+    this.statePrefixes = (convention.statePrefixes ?? []).toSorted(
+      (a: string, b: string) => b.length - a.length,
+    );
     this.statePseudoClasses = new Set(convention.statePseudoClasses ?? []);
     this.pseudoElements = new Set(convention.pseudoElements ?? []);
   }
