@@ -4,6 +4,25 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.17.0
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.16.2...v0.17.0)
+
+### 🚀 Enhancements
+
+- Implement multi-example support for doc comments ([8a36785](https://github.com/thedannywahl/cssdoc/commit/8a36785))
+- **playground:** Add multi-example examples to the playground ([66b217d](https://github.com/thedannywahl/cssdoc/commit/66b217d))
+- Update TypeScript compatibility to version 6.0.3 and improve error handling ([b858789](https://github.com/thedannywahl/cssdoc/commit/b858789))
+
+### 🩹 Fixes
+
+- **core:** Add explicit type annotations to toSorted comparators ([884689a](https://github.com/thedannywahl/cssdoc/commit/884689a))
+- **dependencies:** Update TypeScript version to ^6.0.3 in package.json and pnpm-lock.yaml ([8c0525a](https://github.com/thedannywahl/cssdoc/commit/8c0525a))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.16.2
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.16.1...v0.16.2)
