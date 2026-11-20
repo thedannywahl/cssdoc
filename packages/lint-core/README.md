@@ -30,6 +30,9 @@ one place.
 
 ## Usage
 
+`missing-summary` is off by default; enable it with `{ rules: { "missing-summary": "warn" } }` if you
+want every record to require a `@summary`.
+
 ```ts
 import { lintCssDocs } from "@cssdoc/lint-core";
 

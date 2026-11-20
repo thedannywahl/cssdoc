@@ -667,6 +667,27 @@ test("buildCssApi writes per-record pages, an index, and a compatible sidebar", 
   });
 });
 
+test("buildCssApi omits internal records by default and includes them on request", () => {
+  const outDir = mkdtempSync(join(tmpdir(), "cssdoc-md-visibility-"));
+  const css = `
+/** @component public-card */
+.public-card {}
+
+/** @component author-note
+ * @visibility internal
+ */
+.author-note {}
+`;
+  const result = buildCssApi({ css, outDir });
+  expect(result.entries.map((entry) => entry.name)).toEqual(["public-card"]);
+  expect(result.pages.map((path) => path.split("/").at(-1))).toEqual(["public-card.md"]);
+  expect(readFileSync(result.indexPath, "utf8")).not.toContain("author-note");
+
+  const internal = buildCssApi({ css, outDir, includeInternal: true });
+  expect(internal.entries.map((entry) => entry.name)).toEqual(["author-note", "public-card"]);
+  expect(readFileSync(join(outDir, "author-note.md"), "utf8")).toContain("`internal`");
+});
+
 test("buildSidebar groups records by kind and lists Overview first", () => {
   const entries = parseCssDocs(CSS);
   const sidebar = buildSidebar(entries, "/api/css/");

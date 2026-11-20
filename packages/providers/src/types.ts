@@ -76,7 +76,7 @@ export type RuleSeverities = Record<RuleId, RuleSeverity>;
  * class is a candidate. `unknown-custom-property` stays `off` (it needs an opt-in `propertyPrefix`).
  */
 export const DEFAULT_RULE_SEVERITIES: RuleSeverities = {
-  "missing-summary": "warn",
+  "missing-summary": "off",
   "undocumented-modifier": "warn",
   "deprecated-requires-canonical": "warn",
   "alias-requires-canonical": "warn",

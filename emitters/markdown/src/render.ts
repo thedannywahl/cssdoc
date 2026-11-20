@@ -174,13 +174,14 @@ export interface RenderIndexOptions {
    * in first-appearance order). Omitted → the default order. See {@link groupEntries}.
    */
   groups?: readonly string[];
+  /** Include records marked `@visibility internal`; defaults to false. */
+  includeInternal?: boolean;
 }
 
 /** Sidebar/index groups, in display order. Only kinds with records appear. */
 export const KIND_GROUPS: readonly { kind: CssRecordKind; label: string }[] = [
   { kind: "component", label: "Components" },
   { kind: "utility", label: "Utilities" },
-  { kind: "rule", label: "Rules" },
   { kind: "declaration", label: "Declarations" },
 ];
 
@@ -323,7 +324,7 @@ const parseStructureRecordRef = (
   );
   if (typed) {
     return {
-      kind: typed[1] === "name" ? "component" : typed[1],
+      kind: typed[1] === "name" || typed[1] === "rule" ? "component" : typed[1],
       name: typed[2],
       profile: typed[3],
       private: Boolean(typed[4]),
@@ -495,8 +496,9 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   const stage = entry.releaseStage
     ? ` · ${tag(options.classNames?.stage?.[entry.releaseStage], entry.releaseStage, `\`${entry.releaseStage}\``)}`
     : "";
+  const visibility = entry.visibility === "internal" ? " · `internal`" : "";
   lines.push(
-    `\`${entry.className}\`${stage}${entry.summary ? ` — ${escProse(entry.summary)}` : ""}`,
+    `\`${entry.className}\`${stage}${visibility}${entry.summary ? ` — ${escProse(entry.summary)}` : ""}`,
     "",
   );
 
@@ -926,9 +928,12 @@ export function renderIndex(
   options: RenderIndexOptions = {},
 ): string {
   const baseHref = options.baseHref ?? "/";
+  const visibleEntries = options.includeInternal
+    ? entries
+    : entries.filter((entry) => entry.visibility !== "internal");
   const lines = [`# ${options.title ?? "CSS API reference"}`, ""];
   if (options.intro) lines.push(escProse(options.intro), "");
-  for (const group of groupEntries(entries, options.groups)) {
+  for (const group of groupEntries(visibleEntries, options.groups)) {
     lines.push(
       `## ${group.label}`,
       "",

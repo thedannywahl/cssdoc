@@ -236,7 +236,7 @@ Description :
     DescriptionAtom
     Description DescriptionAtom
 
-// --- Record-opening tags (choose the CssRecordKind; `@name` is an alias for `@component`) --------
+// --- Record-opening tags (choose the CssRecordKind; aliases keep a stable canonical name) -------
 
 RecordKeyword :
     `@component`
@@ -244,6 +244,7 @@ RecordKeyword :
     `@utility`
     `@rule`
     `@declaration`
+    `@layout`
 
 RecordTag :
     RecordKeyword WhiteSpace RecordName
@@ -262,6 +263,18 @@ ClassTag :
 
 SummaryTag :
     `@summary` WhiteSpace Description
+
+ReleaseStage :: one of
+    `alpha` `beta` `experimental` `stable`
+
+Visibility :: one of
+    `public` `internal`
+
+StageTag :
+    `@stage` WhiteSpace ReleaseStage
+
+VisibilityTag :
+    `@visibility` WhiteSpace Visibility
 
 RemarksTag :
     `@remarks` WhiteSpace Description
@@ -488,7 +501,7 @@ MemberTag :
     `@member` WhiteSpace RecordName
     `@member` WhiteSpace RecordName WhiteSpace `private`
 
-// --- Modifier (flag) tags: release stage / traits; presence means true ------------------------
+// --- Legacy modifier (flag) tags; prefer @stage / @visibility -------------------------------
 
 ModifierFlagTag :
     `@alpha`
@@ -496,6 +509,7 @@ ModifierFlagTag :
     `@experimental`
     `@internal`
     `@public`
+    `@stable`
 
 // --- Custom tags: registered by the host tooling; unregistered tags are ignored ---------------
 
@@ -513,6 +527,8 @@ BlockTag :
     SelectorTag
     ClassTag
     SummaryTag
+    StageTag
+    VisibilityTag
     RemarksTag
     PrivateRemarksTag
     ModifierTag

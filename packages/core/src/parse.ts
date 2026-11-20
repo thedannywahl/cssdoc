@@ -24,6 +24,7 @@ import type {
   CssAnimation,
   CssCondition,
   CssDocEntry,
+  CssRecordKind,
   CssElementConstraints,
   CssElementProfile,
   CssFunction,
@@ -109,6 +110,14 @@ const RECORD_REF_TYPED_RE = /^([\w-]+)(?::([\w-]+))?$/u;
 const RECORD_REF_CUSTOM_MEDIA_RE = /^\(\s*(--[\w-]+)\s*\)$/u;
 const RECORD_REF_TYPED_CUSTOM_MEDIA_RE = /^([\w-]+)\s+\(\s*(--[\w-]+)\s*\)$/u;
 const RECORD_REF_KINDS = new Set(["component", "name", "utility", "rule", "declaration", "layout"]);
+
+function canonicalRecordKind(kind: string): CssRecordKind | undefined {
+  if (kind === "name" || kind === "rule") return "component";
+  if (kind === "component" || kind === "utility" || kind === "declaration" || kind === "layout") {
+    return kind;
+  }
+  return undefined;
+}
 const ELEMENT_TAG_RE = /^<?\s*([a-z][a-z0-9-]*)\s*>?$/u;
 const STRUCT_CARDINALITY: Record<string, NonNullable<StructureNode["cardinality"]>> = {
   optional: "optional",
@@ -177,15 +186,19 @@ function normalizeStructureAtRuleRef(
   if (RECORD_REF_KINDS.has(name)) {
     const typedMedia = trimmed.match(RECORD_REF_TYPED_CUSTOM_MEDIA_RE);
     if (typedMedia) {
+      const kind = canonicalRecordKind(name);
+      if (!kind) return undefined;
       return {
-        selector: `@${name} ${typedMedia[1]} (${typedMedia[2]})`,
+        selector: `@${kind} ${typedMedia[1]} (${typedMedia[2]})`,
         cardinality: cardSplit.cardinality,
       };
     }
     const typed = trimmed.match(RECORD_REF_TYPED_RE);
     if (!typed) return undefined;
+    const kind = canonicalRecordKind(name);
+    if (!kind) return undefined;
     return {
-      selector: `@${name} ${typed[1]}${typed[2] ? `:${typed[2]}` : ""}`,
+      selector: `@${kind} ${typed[1]}${typed[2] ? `:${typed[2]}` : ""}`,
       cardinality: cardSplit.cardinality,
     };
   }
@@ -967,6 +980,7 @@ function buildEntry(
     remarks: doc.remarks,
     privateRemarks: doc.privateRemarks,
     releaseStage: doc.releaseStage,
+    visibility: doc.visibility,
     since: doc.since,
     group: doc.group,
     accessibility: doc.accessibility,

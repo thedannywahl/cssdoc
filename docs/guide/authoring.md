@@ -1,6 +1,6 @@
 # Authoring doc comments
 
-A cssdoc comment is a `/** … */` block above a component's rules. The vocabulary is modeled on TSDoc's
+A cssdoc comment is a `/** … */` block above a record's CSS. The vocabulary is modeled on TSDoc's
 Block / Modifier / Inline kinds, plus a **record** kind that opens a documented record. It adopts the
 Custom Elements Manifest names (`@cssproperty`, `@csspart`, `@cssstate`) where they exist.
 
@@ -12,31 +12,78 @@ template, a `<style>` block, or a Markdown fence. See [Embedded CSS](/guide/embe
 
 ## Record tags
 
-One of these opens a record and picks its kind. `@name` is an alias for `@component`.
+One of these opens a record and picks its kind. The required `<id>` is the stable, human-readable
+name used for references and generated page names; it is not the CSS selector. `@selector` separately
+declares a non-class base selector when inference is insufficient. `@name` is an alias for
+`@component`, and `@rule` remains accepted as a deprecated alias.
 
-| Tag                              | Kind          |
-| -------------------------------- | ------------- |
-| `@component <id>` / `@name <id>` | `component`   |
-| `@layout <id>`                   | `layout`      |
-| `@utility <id>`                  | `utility`     |
-| `@rule <id>`                     | `rule`        |
-| `@declaration <id>`              | `declaration` |
+| Tag                              | Kind                           |
+| -------------------------------- | ------------------------------ |
+| `@component <id>` / `@name <id>` | `component`                    |
+| `@layout <id>`                   | `layout`                       |
+| `@utility <id>`                  | `utility`                      |
+| `@rule <id>`                     | `component` (deprecated alias) |
+| `@declaration <id>`              | `declaration`                  |
+
+Record kinds label the documented surface; they don't change the CSS or limit the record-level
+vocabulary. Prose tags such as `@todo` can be used on any record. Surface tags such as `@part` and
+`@modifier` describe matching selectors, while `@cssproperty` annotates a declared or consumed custom
+property. Use `@structure` when the record describes an element composition.
+
+```css
+/** @component alert
+ * @part .title — The alert heading.
+ */
+.alert {
+}
+.alert .title {
+}
+
+/** @utility visually-hidden
+ * @todo Confirm the clipping values against the design system.
+ */
+.visually-hidden {
+}
+
+/** @layout app-shell
+ * @structure
+ * .app-shell { header {} main {} }
+ */
+.app-shell {
+}
+
+/** @declaration timeout
+ * @cssproperty --timeout — Maximum toast duration, in milliseconds.
+ */
+@property --timeout {
+  syntax: "<integer>";
+  inherits: false;
+  initial-value: 5;
+}
+```
+
+`@utility` remains a reader-facing classification for single-purpose classes. `@rule` was too broad
+to distinguish a meaningful surface, so it now opens a component record and remains only for
+backward compatibility. `@layout` is for composition-oriented records; `@declaration` groups
+registered-property or custom-function declarations.
 
 ## Prose tags
 
-| Tag                                  | Meaning                                                                                                                                          |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `@summary <text>`                    | One-line intro.                                                                                                                                  |
-| `@remarks <text>`                    | Extended description.                                                                                                                            |
-| `@privateRemarks <text>`             | Internal-only notes (emitters may omit).                                                                                                         |
-| `@selector <selector>`               | The component's base CSS selector when it isn't a plain class: an attribute selector, an ID, a compound selector, or `:host`/`:host-context(…)`. |
-| `@class <selector>`                  | Deprecated alias for `@selector`; accepted for backward compatibility.                                                                           |
-| `@since <version>`                   | Version introduced.                                                                                                                              |
-| `@group <name>` / `@category <name>` | Documentation grouping.                                                                                                                          |
-| `@example <markdown>`                | An example: Markdown prose plus fenced code (bare code is auto-fenced).                                                                          |
-| `@see <ref>`                         | A cross-reference.                                                                                                                               |
-| `@deprecated <text>`                 | Marks the record deprecated, with replacement guidance.                                                                                          |
-| `@todo <text>`                       | An internal to-do note (also read from `/* @todo … */` comments).                                                                                |
+| Tag                                  | Meaning                                                                                                                                                     |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@summary <text>`                    | Recommended one-line intro; optional.                                                                                                                       |
+| `@remarks <text>`                    | Extended description.                                                                                                                                       |
+| `@privateRemarks <text>`             | Internal-only notes (emitters may omit).                                                                                                                    |
+| `@selector <selector>`               | The record's base CSS selector when it isn't inferred from a plain class: an attribute selector, an ID, a compound selector, or `:host`/`:host-context(…)`. |
+| `@class <selector>`                  | Deprecated alias for `@selector`; accepted for backward compatibility.                                                                                      |
+| `@stage <value>`                     | Release maturity: `alpha`, `beta`, `experimental`, or `stable`.                                                                                             |
+| `@visibility <value>`                | Audience: `public` (the default) or `internal`. Internal records are omitted from public emitter output by default.                                         |
+| `@since <version>`                   | Version introduced.                                                                                                                                         |
+| `@group <name>` / `@category <name>` | Documentation grouping.                                                                                                                                     |
+| `@example <markdown>`                | An example: Markdown prose plus fenced code (bare code is auto-fenced).                                                                                     |
+| `@see <ref>`                         | A cross-reference.                                                                                                                                          |
+| `@deprecated <text>`                 | Marks the record deprecated, with replacement guidance.                                                                                                     |
+| `@todo <text>`                       | An internal to-do note (also read from `/* @todo … */` comments).                                                                                           |
 
 ## The CSS surface
 
@@ -256,11 +303,13 @@ they surface in the editor hover but public emitters omit them, like `@privateRe
 `@layout` is a first-class record kind for composition-focused CSS surfaces. For conventions,
 implicit-structure behavior, and record-reference syntax in `@structure`, see [Layouts](/guide/layouts).
 
-## Modifier (flag) tags
+## Release stage and visibility
 
-Presence sets the record's release stage: `@alpha`, `@beta`, `@experimental`, `@internal`, `@public`, `@stable`.
-
-Use `@stable` when a record is production-ready but is deployed continuously and does not carry a meaningful `@since` version.
+Use `@stage alpha`, `@stage beta`, `@stage experimental`, or `@stage stable` to describe release
+maturity. Use `@visibility internal` for records intended for author documentation; collection
+emitters omit them by default and accept `includeInternal: true` to include them. Unmarked records
+are public. The legacy flag tags (`@alpha`, `@beta`, `@experimental`, `@stable`, `@internal`, and
+`@public`) remain accepted and map to the corresponding field.
 
 ## Annotations and refs
 

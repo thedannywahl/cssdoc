@@ -46,6 +46,27 @@ test("renderJson produces valid JSON of the model", () => {
   expect(button.related).toEqual([{ name: "link", description: "A textual action." }]);
 });
 
+test("JSON output omits internal records by default and includes them on request", () => {
+  const entries = parseCssDocs(`
+/** @component public-card */
+.public-card {}
+
+/** @component author-note
+ * @visibility internal
+ */
+.author-note {}
+`);
+  expect(JSON.parse(renderJson(entries)).map((entry: { name: string }) => entry.name)).toEqual([
+    "public-card",
+  ]);
+  expect(
+    JSON.parse(renderJson(entries, { includeInternal: true })).map(
+      (entry: { name: string }) => entry.name,
+    ),
+  ).toEqual(["public-card", "author-note"]);
+  expect(entries[1].visibility).toBe("internal");
+});
+
 test('lang: "js" extracts and emits records from a tagged template', () => {
   const outDir = mkdtempSync(join(tmpdir(), "cssdoc-json-js-"));
   const ts = `import styled from "styled-components";

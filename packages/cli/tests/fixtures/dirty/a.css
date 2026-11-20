@@ -1,6 +1,11 @@
 /**
  * @component button
+ * @summary A clickable button component.
  */
 .button {
   color: red;
+}
+
+.button--large {
+  font-size: 20px;
 }

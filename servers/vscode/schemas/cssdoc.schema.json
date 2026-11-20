@@ -50,7 +50,6 @@
             "enum": [
               "component",
               "utility",
-              "rule",
               "declaration",
               "layout"
             ]
@@ -699,6 +698,11 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "includeInternal": {
+          "description": "Include records marked @visibility internal in generated API pages.",
+          "type": "boolean",
+          "default": false
+        },
         "exampleFilters": {
           "type": "object",
           "additionalProperties": false,

@@ -18,7 +18,7 @@
 export type CssdocTagKind = "record" | "block" | "modifier" | "inline";
 
 /** The record kind a `record` tag opens. */
-export type CssdocRecordKind = "component" | "utility" | "rule" | "declaration" | "layout";
+export type CssdocRecordKind = "component" | "utility" | "declaration" | "layout";
 
 /** The argument shape a tag accepts, for grammars that highlight it distinctly. */
 export type CssdocTagArgument = "modifier-name" | "part-name" | "custom-property";
@@ -51,9 +51,15 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
     name: "component",
     kind: "record",
     recordKind: "component",
-    description: "Opens a component record — the doc comment above its base class rule.",
+    description: "Opens a component record with an explicit canonical name.",
   },
-  { name: "name", kind: "record", recordKind: "component", description: "Alias for @component." },
+  {
+    name: "name",
+    kind: "record",
+    recordKind: "component",
+    aliasFor: "component",
+    description: "Alias for @component.",
+  },
   {
     name: "utility",
     kind: "record",
@@ -63,8 +69,9 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
   {
     name: "rule",
     kind: "record",
-    recordKind: "rule",
-    description: "Opens a plain CSS rule record.",
+    recordKind: "component",
+    aliasFor: "component",
+    description: "Deprecated alias for @component.",
   },
   {
     name: "declaration",
@@ -93,6 +100,16 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
     description: "Deprecated alias for @selector.",
   },
   { name: "summary", kind: "block", description: "A one-line description of the record." },
+  {
+    name: "stage",
+    kind: "block",
+    description: "Sets release maturity: alpha, beta, experimental, or stable.",
+  },
+  {
+    name: "visibility",
+    kind: "block",
+    description: "Sets output visibility: public or internal.",
+  },
   { name: "remarks", kind: "block", description: "Extended prose beyond the @summary." },
   {
     name: "privateRemarks",
@@ -358,13 +375,17 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
     allowMultiple: true,
     description: "Declares one member record on a parent, optionally private.",
   },
-  // Modifier (flag) tags — release stage.
-  { name: "alpha", kind: "modifier", description: "Marks the record as alpha-stage." },
-  { name: "beta", kind: "modifier", description: "Marks the record as beta-stage." },
-  { name: "experimental", kind: "modifier", description: "Marks the record as experimental." },
-  { name: "internal", kind: "modifier", description: "Marks the record as internal-only." },
-  { name: "public", kind: "modifier", description: "Marks the record as public API." },
-  { name: "stable", kind: "modifier", description: "Marks the record as stable." },
+  // Legacy flag tags remain accepted as aliases for @stage/@visibility.
+  { name: "alpha", kind: "modifier", description: "Legacy alias for `@stage alpha`." },
+  { name: "beta", kind: "modifier", description: "Legacy alias for `@stage beta`." },
+  {
+    name: "experimental",
+    kind: "modifier",
+    description: "Legacy alias for `@stage experimental`.",
+  },
+  { name: "internal", kind: "modifier", description: "Legacy alias for `@visibility internal`." },
+  { name: "public", kind: "modifier", description: "Legacy alias for `@visibility public`." },
+  { name: "stable", kind: "modifier", description: "Legacy alias for `@stage stable`." },
   // Inline tags.
   { name: "link", kind: "inline", description: "An inline link to another record or a URL." },
   { name: "inheritDoc", kind: "inline", description: "Inherits prose from another record." },

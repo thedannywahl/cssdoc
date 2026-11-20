@@ -6,6 +6,16 @@ import { formatResults, lintFiles, resolveFiles, runLint } from "../src/index.ts
 
 const FIXTURES = resolve(import.meta.dirname, "fixtures");
 
+const missingSummaryFixture = (): string => {
+  const dir = mkdtempSync(join(tmpdir(), "cssdoc-cli-summary-"));
+  writeFileSync(
+    join(dir, "cssdoc.jsonc"),
+    JSON.stringify({ rules: { "missing-summary": "warn" } }),
+  );
+  writeFileSync(join(dir, "a.css"), "/**\n * @component button\n */\n.button {}\n");
+  return dir;
+};
+
 test("resolveFiles expands a glob relative to cwd", () => {
   const files = resolveFiles(["dirty/*.css"], FIXTURES);
   expect(files).toEqual([resolve(FIXTURES, "dirty/a.css")]);
@@ -35,10 +45,10 @@ test("resolveFiles always excludes node_modules", () => {
   expect(files).toEqual(["a.css"]);
 });
 
-test("lintFiles reports a missing-summary violation", () => {
+test("missing-summary is off by default", () => {
   const [result] = lintFiles(["dirty/*.css"], FIXTURES);
   expect(result?.file).toBe("dirty/a.css");
-  expect(result?.violations.some((v) => v.rule === "missing-summary")).toBe(true);
+  expect(result?.violations.some((v) => v.rule === "missing-summary")).toBe(false);
 });
 
 test("lintFiles honors the nearest cssdoc.jsonc's rule off-list", () => {
@@ -70,21 +80,27 @@ test("runLint exits 0 on a clean tree", () => {
   expect(exitCode).toBe(0);
 });
 
-test("runLint exits 1 when a warning is present and severities default to warn", () => {
-  // missing-summary defaults to "warn", so a plain run still exits 0...
-  expect(runLint({ globs: ["dirty/*.css"], cwd: FIXTURES }).exitCode).toBe(0);
+test("runLint applies maxWarnings to an explicitly enabled missing-summary warning", () => {
+  const cwd = missingSummaryFixture();
+  expect(runLint({ globs: ["*.css"], cwd }).exitCode).toBe(0);
   // ...but --max-warnings 0 turns any warning into a failure.
-  expect(runLint({ globs: ["dirty/*.css"], cwd: FIXTURES, maxWarnings: 0 }).exitCode).toBe(1);
+  expect(runLint({ globs: ["*.css"], cwd, maxWarnings: 0 }).exitCode).toBe(1);
 });
 
 test("--quiet drops warnings from the report and from the warning count", () => {
-  const { output } = runLint({ globs: ["dirty/*.css"], cwd: FIXTURES, quiet: true });
+  const { output } = runLint({ globs: ["*.css"], cwd: missingSummaryFixture(), quiet: true });
   expect(output).toBe("");
 });
 
 test("--fix writes deterministic doc-comment scaffolds before reporting", () => {
   const dir = mkdtempSync(join(tmpdir(), "cssdoc-cli-fix-"));
-  writeFileSync(join(dir, "cssdoc.jsonc"), JSON.stringify({ modifierConvention: "rscss" }));
+  writeFileSync(
+    join(dir, "cssdoc.jsonc"),
+    JSON.stringify({
+      modifierConvention: "rscss",
+      rules: { "missing-summary": "warn" },
+    }),
+  );
   writeFileSync(
     join(dir, "a.css"),
     "/**\n * @component button\n */\n.button {}\n.button.-size-sm {}\n",
@@ -104,8 +120,9 @@ test("formatResults: json includes the rule and file", () => {
 });
 
 test("formatResults: github emits an annotation per violation", () => {
-  const results = lintFiles(["dirty/*.css"], FIXTURES);
+  const cwd = missingSummaryFixture();
+  const results = lintFiles(["*.css"], cwd);
   const output = formatResults(results, "github");
-  expect(output).toContain("::warning file=dirty/a.css");
+  expect(output).toContain("::warning file=a.css");
   expect(output).toContain("[missing-summary]");
 });

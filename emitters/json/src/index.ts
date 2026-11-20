@@ -38,8 +38,14 @@ function resolveEntries(input: ModelInput): CssDocEntry[] {
 }
 
 /** Serialize the model to a pretty JSON string. */
-export function renderJson(entries: readonly CssDocEntry[]): string {
-  return `${JSON.stringify(entries, null, 2)}\n`;
+export function renderJson(
+  entries: readonly CssDocEntry[],
+  options: { includeInternal?: boolean } = {},
+): string {
+  const visibleEntries = options.includeInternal
+    ? entries
+    : entries.filter((entry) => entry.visibility !== "internal");
+  return `${JSON.stringify(visibleEntries, null, 2)}\n`;
 }
 
 /** A lightweight index row (name, kind, class, summary) for `index.json`. */
@@ -58,6 +64,8 @@ export interface WriteJsonOptions extends ModelInput {
   perRecord?: boolean;
   /** Also write the model JSON Schema as `model.schema.json` (default `false`). */
   schema?: boolean;
+  /** Include records marked `@visibility internal`; defaults to false. */
+  includeInternal?: boolean;
 }
 
 /** What {@link writeJson} produced. */
@@ -71,11 +79,13 @@ export interface WriteJsonResult {
 
 /** Write the model to `outDir/model.json` (and optionally per-record files, an index, and the schema). */
 export function writeJson(options: WriteJsonOptions): WriteJsonResult {
-  const entries = resolveEntries(options).toSorted((a, b) => a.name.localeCompare(b.name));
+  const entries = resolveEntries(options)
+    .filter((entry) => options.includeInternal || entry.visibility !== "internal")
+    .toSorted((a, b) => a.name.localeCompare(b.name));
   mkdirSync(options.outDir, { recursive: true });
 
   const modelPath = join(options.outDir, "model.json");
-  writeFileSync(modelPath, renderJson(entries));
+  writeFileSync(modelPath, renderJson(entries, { includeInternal: true }));
 
   const result: WriteJsonResult = { entries, modelPath, recordPaths: [] };
 

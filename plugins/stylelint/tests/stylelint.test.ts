@@ -16,7 +16,12 @@ const lint = (code: string): Promise<{ text: string; rule: string | undefined }[
   stylelint
     .lint({
       code,
-      config: { plugins: [plugin], rules: { [ruleName]: [true, { modifierConvention: "rscss" }] } },
+      config: {
+        plugins: [plugin],
+        rules: {
+          [ruleName]: [true, { modifierConvention: "rscss", rules: { "missing-summary": "warn" } }],
+        },
+      },
     })
     .then((r) => r.results[0].warnings.map((w) => ({ text: w.text, rule: w.rule })));
 
@@ -24,7 +29,12 @@ const lintRanged = (code: string): Promise<{ text: string; line: number; endLine
   stylelint
     .lint({
       code,
-      config: { plugins: [plugin], rules: { [ruleName]: [true, { modifierConvention: "rscss" }] } },
+      config: {
+        plugins: [plugin],
+        rules: {
+          [ruleName]: [true, { modifierConvention: "rscss", rules: { "missing-summary": "warn" } }],
+        },
+      },
     })
     .then((r) =>
       r.results[0].warnings.map((w) => ({ text: w.text, line: w.line, endLine: w.endLine })),
@@ -44,7 +54,12 @@ test("the rule reports doc-hygiene violations from lint-core", async () => {
 test("the rule preserves lint-core warning severity", async () => {
   const result = await stylelint.lint({
     code: CSS,
-    config: { plugins: [plugin], rules: { [ruleName]: [true, { modifierConvention: "rscss" }] } },
+    config: {
+      plugins: [plugin],
+      rules: {
+        [ruleName]: [true, { modifierConvention: "rscss", rules: { "missing-summary": "warn" } }],
+      },
+    },
   });
   expect(result.errored).toBe(false);
   expect(result.results[0].warnings.map((w) => w.severity)).toEqual([
@@ -64,7 +79,10 @@ test("the rule preserves cssdoc-configured error severity", async () => {
           true,
           {
             modifierConvention: "rscss",
-            rules: { "missing-summary": "error", "undocumented-modifier": "off" },
+            rules: {
+              "missing-summary": "error",
+              "undocumented-modifier": "off",
+            },
           },
         ],
       },
@@ -114,7 +132,12 @@ const lintWith = (code: string, customSyntax: string): Promise<string[]> =>
     .lint({
       code,
       customSyntax,
-      config: { plugins: [plugin], rules: { [ruleName]: [true, { modifierConvention: "rscss" }] } },
+      config: {
+        plugins: [plugin],
+        rules: {
+          [ruleName]: [true, { modifierConvention: "rscss", rules: { "missing-summary": "warn" } }],
+        },
+      },
     })
     .then((r) => r.results[0].warnings.map((w) => w.text));
 
