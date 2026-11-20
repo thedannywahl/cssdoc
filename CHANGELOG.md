@@ -4,6 +4,18 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.17.1
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.17.0...v0.17.1)
+
+### 🩹 Fixes
+
+- Mark @cssdoc/regex as private to prevent npm publishing ([60cfe8a](https://github.com/thedannywahl/cssdoc/commit/60cfe8a))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.17.0
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.16.2...v0.17.0)
