@@ -4,6 +4,10 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.18.0
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.17.1...v0.18.0)
+
 ## v0.17.1
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.17.0...v0.17.1)
