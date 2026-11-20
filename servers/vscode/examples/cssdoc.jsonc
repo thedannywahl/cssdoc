@@ -58,6 +58,7 @@
   "rules": {
     "missing-summary": "warn", // a documented component has no @summary
     "undocumented-modifier": "warn", // a modifier selector in CSS has no @modifier
+    "incomplete-example": "warn", // an @example is missing a description or content
     "deprecated-requires-canonical": "warn", // @deprecated modifier without a {@link} replacement
     "name-not-in-css": "warn", // a documented name never appears in the stylesheet
     "unknown-modifier": "warn", // a used modifier isn't documented on the component
@@ -74,6 +75,39 @@
     "invalid-fallback-value": "warn", // a var() fallback doesn't match the property syntax
     "unknown-custom-property": "off", // a used --custom-property isn't documented (needs a prefix opt-in)
     "cssdoc-directive": "warn", // a `cssdoc-expect-error` directive matched no problem
+  },
+
+  // Control which example labels appear on different output surfaces (Markdown, HTML, JSON, etc.).
+  // This feature allows different platforms to show different subsets of examples.
+  // - Use example label names (the text after @example) to include specific examples
+  // - Use "*" to include all examples
+  // - Omitted surfaces get all examples by default
+  // Default: {} (all examples everywhere)
+  "exampleFilters": {
+    // For Markdown output (via @cssdoc/markdown), include these labeled examples
+    "markdown": [
+      "Basic",
+      "Default",
+      "Basic Input",
+      "Basic Select",
+      "Size Small",
+      "Size Large",
+      "Variant Outline",
+      "Variant Filled",
+      "Error State",
+      "Success State",
+      "Disabled State",
+      "Styled Parts",
+      "With Label",
+      "Grouped Toggles",
+      "With Icon",
+      "Off State",
+      "On State",
+    ],
+    // For HTML output (via @cssdoc/html), include everything
+    "html": ["*"],
+    // For JSON schema export (via @cssdoc/json), include the most essential examples
+    "json": ["Basic", "Default", "With Icon", "Off State", "On State", "Styled Parts"],
   },
 
   // Enforce a case on names: a preset ("pascalCase", "camelCase", "lowercase") or a custom regex.
