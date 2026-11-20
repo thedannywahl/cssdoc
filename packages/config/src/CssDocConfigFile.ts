@@ -16,6 +16,7 @@ import { CssDocConfiguration, CssDocTagDefinition } from "@cssdoc/core";
 import type {
   CssDocSyntaxKind,
   CssRecordKind,
+  ExampleFilter,
   InlineCommentMode,
   ModifierConventionInput,
 } from "@cssdoc/core";
@@ -49,6 +50,7 @@ export interface NamingOverride {
  * independent of `@cssdoc/markdown`; the emitter validates/uses them).
  */
 export interface RenderConfig {
+  exampleFilters?: Partial<Record<"markdown" | "html" | "hover", ExampleFilter | null>>;
   sectionOrder?: readonly string[];
   headingPrefix?: string;
   baseHref?: string;
@@ -129,6 +131,9 @@ interface RawConfig {
 const ajv = new Ajv({ allErrors: true });
 const validateSchema = ajv.compile<RawConfig>(cssDocSchema);
 
+/** Type-safe error check for TypeScript 6 compatibility (Error.isError is ES2026). */
+const isErrorInstance = (error: unknown): error is Error => error instanceof Error;
+
 /**
  * The conventional file names loaders look for, in preference order. Both are parsed the same way
  * (JSON with comments); `.jsonc` just makes the comments explicit.
@@ -136,7 +141,7 @@ const validateSchema = ajv.compile<RawConfig>(cssDocSchema);
 export const CSSDOC_CONFIG_FILENAMES = ["cssdoc.json", "cssdoc.jsonc"] as const;
 
 /** The primary config file name (`cssdoc.json`). See {@link CSSDOC_CONFIG_FILENAMES} for all names. */
-export const CSSDOC_CONFIG_FILENAME = CSSDOC_CONFIG_FILENAMES[0];
+export const CSSDOC_CONFIG_FILENAME: string = CSSDOC_CONFIG_FILENAMES[0];
 
 interface ConfigFileInit {
   filePath: string;
@@ -209,9 +214,8 @@ export class CssDocConfigFile {
    */
   readonly globalPrecedence: "base" | "global";
   /**
-   * Markdown render options (`sectionOrder`/`headingPrefix`/`baseHref`), merged across the `extends`
-   * chain (this file wins). The emitter (`@cssdoc/markdown`/`@cssdoc/typedoc`) reads these as defaults;
-   * explicit emitter options still override. Not part of the parser `CssDocConfiguration`.
+   * Presentation options merged across the `extends` chain (this file wins). Hosts read these as
+   * defaults; explicit options still override. Not part of the parser `CssDocConfiguration`.
    */
   readonly render: Readonly<RenderConfig>;
 
@@ -230,6 +234,11 @@ export class CssDocConfigFile {
     const naming: NamingOverride = {};
     const ruleOptions: RuleOptionsConfig = {};
     const render: RenderConfig = {};
+    const mergeRender = (next: RenderConfig): void => {
+      const { exampleFilters, ...rest } = next;
+      Object.assign(render, rest);
+      if (exampleFilters) render.exampleFilters = { ...render.exampleFilters, ...exampleFilters };
+    };
     const overrides: ResolvedRuleOverrideBlock[] = [];
     let globalPrecedence: "base" | "global" = "base";
     const structureIgnore = new Set<string>();
@@ -238,7 +247,7 @@ export class CssDocConfigFile {
       overrides.push(...extended.ruleOverrides);
       Object.assign(naming, extended.naming);
       Object.assign(ruleOptions, extended.ruleOptions);
-      Object.assign(render, extended.render);
+      mergeRender(extended.render);
       globalPrecedence = extended.globalPrecedence;
       for (const g of extended.structureIgnore) structureIgnore.add(g);
     }
@@ -246,7 +255,7 @@ export class CssDocConfigFile {
     overrides.push(...init.overrides);
     Object.assign(naming, init.naming);
     Object.assign(ruleOptions, init.ruleOptions);
-    Object.assign(render, init.render);
+    mergeRender(init.render);
     globalPrecedence = init.globalPrecedence;
     for (const g of init.structureIgnore) structureIgnore.add(g);
     this.ruleSeverities = severities;
@@ -430,7 +439,8 @@ export class CssDocConfigFile {
       try {
         resolved = ref.startsWith(".") ? resolve(dirname(filePath), ref) : requireFrom.resolve(ref);
       } catch (error) {
-        messages.push(`Cannot resolve extends "${ref}": ${(error as Error).message}`);
+        const message = isErrorInstance(error) ? error.message : String(error);
+        messages.push(`Cannot resolve extends "${ref}": ${message}`);
         continue;
       }
       extendsFiles.push(CssDocConfigFile._loadFile(resolved, visited));
@@ -441,7 +451,8 @@ export class CssDocConfigFile {
       try {
         tagDefinitions.push(new CssDocTagDefinition(raw_));
       } catch (error) {
-        messages.push((error as Error).message);
+        const message = isErrorInstance(error) ? error.message : String(error);
+        messages.push(message);
       }
     }
 

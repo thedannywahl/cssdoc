@@ -126,6 +126,10 @@ export interface RecordInfo {
   entry: CssDocEntry;
   /** The record's definition span (its base-class rule, else its doc comment). */
   span?: SourceSpan;
+  /** The doc comment span (for diagnostics and directives). */
+  docCommentSpan?: SourceSpan;
+  /** The rule span (for definitions). */
+  ruleSpan?: SourceSpan;
   /** Spans keyed by {@link memberKey}, e.g. `modifier:-color-secondary`, `property:--value`. */
   memberSpans: Map<string, SourceSpan>;
   /** Modifier names authored via `@modifier` (used for drift detection). */
@@ -392,7 +396,13 @@ export class CssDocIndex {
   location(name: string, key = "record"): Location | undefined {
     const record = this.byName.get(name);
     if (!record) return undefined;
-    const span = key === "record" ? record.span : record.memberSpans.get(key);
+    let span: SourceSpan | undefined;
+    if (key === "record") {
+      // For definitions, prefer the rule span; fall back to the main span (which is the doc comment span)
+      span = record.ruleSpan ?? record.span;
+    } else {
+      span = record.memberSpans.get(key);
+    }
     return span ? { file: this.file, span } : undefined;
   }
 
@@ -431,6 +441,8 @@ export function indexFromEntries(
 interface Build {
   entry: CssDocEntry;
   span?: SourceSpan;
+  docCommentSpan?: SourceSpan;
+  ruleSpan?: SourceSpan;
   memberSpans: Map<string, SourceSpan>;
   authoredModifiers: Set<string>;
   authoredParts: Map<string, string>;
@@ -453,7 +465,10 @@ function scanNodes(nodes: ChildNode[], build: Build, base: string, matcher: Modi
   for (const node of nodes) {
     if (node.type === "rule") {
       build.selectorText += ` ${node.selector}`;
-      if (`.${stripDot(node.selector.trim())}` === base && !build.span) build.span = spanOf(node);
+      if (`.${stripDot(node.selector.trim())}` === base) {
+        // Store the rule span separately for definitions; don't overwrite span which holds docCommentSpan
+        if (!build.ruleSpan) build.ruleSpan = spanOf(node);
+      }
       for (const selector of node.selector.split(",")) {
         for (const s of selector.matchAll(/:state\(\s*([\w-]+)\s*\)/gu)) {
           set(memberKey("state", s[1]), node);
@@ -543,6 +558,7 @@ export function createIndex(
     configuration: options.configuration,
     modifierConvention: options.modifierConvention,
     parse: options.parse,
+    fileName: options.file,
   });
   const entryQueues = new Map<string, CssDocEntry[]>();
   for (const entry of entries) {
@@ -562,9 +578,11 @@ export function createIndex(
         const doc = parseDocComment(node.text, options.configuration);
         const startLine = spanOf(node)?.start.line ?? 1;
         const { modifierLines, partLines } = scanAuthoredTagLines(node.text, startLine);
+        const docSpan = spanOf(node);
         current = {
           entry,
-          span: spanOf(node),
+          span: docSpan,
+          docCommentSpan: docSpan,
           memberSpans: new Map(),
           authoredModifiers: new Set(doc.modifiers.keys()),
           // name → selector: non-class parts use their explicit selector; class parts use ".${name}".
@@ -585,21 +603,24 @@ export function createIndex(
     if (current) scanNodes([node], current, current.entry.className, matcher);
   }
 
-  const records: RecordInfo[] = entries.map(
-    (entry) =>
-      builds.get(entry) ?? {
-        entry,
-        memberSpans: new Map(),
-        authoredModifiers: new Set(),
-        authoredParts: new Map(),
-        authoredShadowParts: new Set(),
-        authoredModifierLines: new Map(),
-        authoredPartLines: new Map(),
-        selectorText: "",
-        propertyValues: new Map(),
-        resetValueUsages: [],
-      },
-  );
+  const records: RecordInfo[] = entries.map((entry) => {
+    const build = builds.get(entry);
+    return {
+      entry,
+      span: build?.span,
+      docCommentSpan: build?.docCommentSpan,
+      ruleSpan: build?.ruleSpan,
+      memberSpans: build?.memberSpans ?? new Map(),
+      authoredModifiers: build?.authoredModifiers ?? new Set(),
+      authoredParts: build?.authoredParts ?? new Map(),
+      authoredShadowParts: build?.authoredShadowParts ?? new Set(),
+      authoredModifierLines: build?.authoredModifierLines ?? new Map(),
+      authoredPartLines: build?.authoredPartLines ?? new Map(),
+      selectorText: build?.selectorText ?? "",
+      propertyValues: build?.propertyValues ?? new Map(),
+      resetValueUsages: build?.resetValueUsages ?? [],
+    } as RecordInfo;
+  });
 
   // The custom-property value graph, for dev-tools-style `var()` resolution: seed each `@property`'s
   // `initial-value`, then let plain `--x: value` declarations (the actual assignments) win.

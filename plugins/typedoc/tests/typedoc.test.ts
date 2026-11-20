@@ -1,6 +1,7 @@
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { CssDocConfigFile } from "@cssdoc/config";
 import { expect, test } from "vite-plus/test";
 import { TYPEDOC_SIDEBAR_FILE, emitCssApi, mergeCssSidebar } from "../src/index.ts";
 
@@ -11,6 +12,47 @@ const CSS = `
  */
 .button { color: red; }
 `;
+
+test("emitCssApi forwards the configured Markdown example filter and honors an explicit override", () => {
+  const out = mkdtempSync(join(tmpdir(), "cssdoc-typedoc-examples-"));
+  const cssPath = join(out, "button.css");
+  const configPath = join(out, "cssdoc.json");
+  writeFileSync(
+    cssPath,
+    `
+/** @component button
+ * @example labels=[docs, demo]
+ * <button>Shared</button>
+ * @example labels=[a11y]
+ * <button>Audit fixture</button>
+ * @example
+ * <button>Unlabeled</button>
+ */
+.button {}
+`,
+  );
+  writeFileSync(
+    configPath,
+    JSON.stringify({
+      render: { exampleFilters: { markdown: { labels: ["docs"] } } },
+    }),
+  );
+  const options = {
+    outputDirectory: out,
+    css: [cssPath],
+    configFile: CssDocConfigFile.loadFile(configPath),
+  };
+  const [page] = emitCssApi(options).pages;
+  const markdown = readFileSync(page, "utf8");
+  expect(markdown).toContain("<button>Shared</button>");
+  expect(markdown).toContain("<button>Unlabeled</button>");
+  expect(markdown).not.toContain("Audit fixture");
+  expect(markdown).not.toContain("labels=[");
+  emitCssApi({ ...options, exampleFilter: null });
+  expect(readFileSync(page, "utf8")).toContain("Audit fixture");
+  emitCssApi({ ...options, exampleFilter: { labels: [], includeUnlabeled: false } });
+  expect(readFileSync(page, "utf8")).not.toContain("## Examples");
+});
 
 test("mergeCssSidebar appends a CSS section and replaces a prior one with the same label", () => {
   const existing = [{ text: "Modules", items: [{ text: "core", link: "/api/core.md" }] }];

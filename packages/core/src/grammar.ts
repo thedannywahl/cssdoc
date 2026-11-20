@@ -192,6 +192,7 @@ export interface ParsedDoc {
   conditions: DocCondition[];
   /** `@example` blocks. */
   examples: string[];
+  exampleLabels?: Record<number, readonly string[]>;
   /** `@structure` — the nested-CSS body, parsed into a selector tree by {@link parseStructure}. */
   structure?: StructureNode[];
   /** Alternative DOM shapes from top-level `@variant` blocks in `@structure`, when authored. */
@@ -256,15 +257,15 @@ function deriveModifierKey(sel: string): string {
 
 /** Split a tag's argument into `head` (a selector/name/token) and `description` on ` — ` or ` - `. */
 function splitDesc(rest: string): { head: string; description?: string } {
-  const m = rest.match(/^(\S+)\s+(?:—|-{1,2})\s+(.*)$/u);
-  if (m) return { head: m[1], description: m[2].trim() };
+  const m = rest.match(/^(\S+)\s+(?:—|-{1,2})\s+([\s\S]*)$/u);
+  if (m) return { head: m[1], description: normalizeMultilineDescription(m[2]) };
   return { head: rest.trim() || rest };
 }
 
 /** Split any argument into `query` (everything before the first ` — `/` - `) and `description`. */
 function splitQuery(rest: string): { query: string; description?: string } {
   const m = rest.match(/^([\s\S]*?)\s+(?:—|-{1,2})\s+([\s\S]*)$/u);
-  if (m) return { query: m[1].trim(), description: m[2].trim() };
+  if (m) return { query: m[1].trim(), description: normalizeMultilineDescription(m[2]) };
   return { query: rest.trim() };
 }
 
@@ -430,7 +431,7 @@ export function parseDocComment(
   }
 
   for (const block of blocks) {
-    const m = block.match(/^@([a-zA-Z][\w-]*)\s*([\s\S]*)$/u);
+    const m = block.match(/^@([a-zA-Z][\w-]*)[ \t]*([\s\S]*)$/u);
     if (!m) continue;
     const tagName = m[1];
     const rest = m[2].trim();
@@ -447,6 +448,23 @@ export function parseDocComment(
       continue;
     }
     if (definition.syntaxKind === "inline") continue; // inline tags live inside descriptions
+
+    if (definition.canonicalName === "example") {
+      const header =
+        /^labels=\[([a-z0-9]+(?:-[a-z0-9]+)*(?:[ \t]*,[ \t]*[a-z0-9]+(?:-[a-z0-9]+)*)*)\](?:\n|$)/u.exec(
+          m[2],
+        );
+      if (header) {
+        (doc.exampleLabels ??= {})[doc.examples.length] = [
+          ...new Set(header[1].split(",").map((label) => label.trim())),
+        ];
+      }
+      // Unescape Markdown fences authored inside a JS `css` template.
+      doc.examples.push(
+        (header ? m[2].slice(header[0].length).trim() : rest).replace(/\\`/gu, "`"),
+      );
+      continue;
+    }
 
     applyBlockTag(doc, definition.canonicalName, definition.tagNameWithoutAt, rest, parse);
   }
@@ -477,10 +495,10 @@ function applyBlockTag(
       doc.summary = rest.replace(/\s+/gu, " ").trim();
       break;
     case "remarks":
-      doc.remarks = rest.trim();
+      doc.remarks = normalizeMultilineDescription(rest);
       break;
     case "privateRemarks":
-      doc.privateRemarks = rest.trim();
+      doc.privateRemarks = normalizeMultilineDescription(rest);
       break;
     case "todo": {
       const todo = rest.trim();
@@ -545,12 +563,12 @@ function applyBlockTag(
     }
     case "cssproperty": {
       // `--name [<syntax>] — description`
-      const propMatch = rest.match(/^(--[\w-]+)\s*(<[^>]+>)?\s*(?:(?:—|-{1,2})\s*(.*))?$/u);
+      const propMatch = rest.match(/^(--[\w-]+)\s*(<[^>]+>)?\s*(?:(?:—|-{1,2})\s*([\s\S]*))?$/u);
       if (propMatch) {
         doc.cssProperties.push({
           name: propMatch[1],
           syntax: propMatch[2],
-          description: propMatch[3]?.trim() || undefined,
+          description: propMatch[3] ? normalizeMultilineDescription(propMatch[3]) : undefined,
         });
       }
       break;
@@ -571,7 +589,7 @@ function applyBlockTag(
           .slice(head.length)
           .trim()
           .match(/^(?:—|-{1,2})\s+([\s\S]*)$/u);
-        doc.cssStates.set(head, descMatch?.[1].trim() ?? "");
+        doc.cssStates.set(head, descMatch ? normalizeMultilineDescription(descMatch[1]) : "");
         break;
       }
       const { head, description } = splitDesc(rest);
@@ -616,12 +634,6 @@ function applyBlockTag(
       doc.conditions.push({ type: canonical, query, description });
       break;
     }
-    case "example":
-      // `@example` is Markdown (prose plus fenced code). When authored inside a JS `css` template, a
-      // literal fence must be written `\`\`\`` to avoid closing the template; unescape those backticks
-      // here so the stored example carries real fences. (A no-op for a plain `.css` file.)
-      doc.examples.push(rest.replace(/\\`/gu, "`"));
-      break;
     case "deprecated":
       doc.deprecated = rest;
       break;
@@ -731,6 +743,78 @@ export function recordNameOf(
  * @returns The split `description` (when present) and the `css` to parse.
  */
 /**
+ * Normalize multi-line tag descriptions by collapsing continuation-line whitespace into single spaces
+ * when appropriate, while preserving intentional Markdown structure (like lists and paragraphs).
+ *
+ * When an author wraps a long description across multiple lines, indenting continuation lines for readability:
+ * ```
+ * @modifier -should-animate — @interaction Toggled by JS
+ *   while the ring's growth animation runs.
+ * ```
+ * The leading/trailing whitespace from comment formatting is removed, leaving the words joined on one line.
+ *
+ * But when the description is structured (a list, a paragraph with intentional breaks), the author may
+ * include multi-line content after the tag:
+ * ```
+ * @remarks
+ * ✅ Use when:
+ * - Building a full page
+ * - Using the nav
+ * ```
+ * Those blank lines and line breaks should be preserved as Markdown structure.
+ *
+ * The heuristic: if a line *begins* with punctuation that starts a Markdown structure (like `-` for a list,
+ * or `*` for bold/list), or if there's a blank line, preserve the line break. Otherwise, collapse into a space.
+ *
+ * @param text - The raw tag description (may contain newlines and variable indentation).
+ * @returns The normalized description with collapsed continuation-line spacing but preserved Markdown structure.
+ */
+function normalizeMultilineDescription(text: string): string {
+  const lines = text.split("\n").map((l) => l.trim());
+
+  // Look ahead: does this description contain Markdown structure?
+  const hasMarkdownStructure = lines.some((line) => /^[>*+-]\s|\d+\.\s|^#{1,6}\s/.test(line));
+
+  if (!hasMarkdownStructure) {
+    // No Markdown structure — just join all lines with spaces, skipping blank lines.
+    return lines.filter((l) => l !== "").join(" ");
+  }
+
+  // Markdown structure detected — preserve line breaks for lists, headers, etc.
+  const result: string[] = [];
+  let currentParagraph = "";
+
+  for (const line of lines) {
+    if (line === "") {
+      // Blank line marks a potential paragraph break.
+      if (currentParagraph) {
+        result.push(currentParagraph);
+        currentParagraph = "";
+      }
+      result.push(""); // Preserve blank line for Markdown structure.
+    } else if (/^[>*+-]\s|\d+\.\s|^#{1,6}\s/.test(line)) {
+      // This line starts a Markdown list item, header, blockquote, code block, etc.
+      // Flush the current paragraph and start a new one for the list item.
+      if (currentParagraph) {
+        result.push(currentParagraph);
+      }
+      currentParagraph = "";
+      result.push(line); // Each list item gets its own line.
+    } else {
+      // Regular text — accumulate in the current paragraph.
+      currentParagraph = currentParagraph ? `${currentParagraph} ${line}` : line;
+    }
+  }
+
+  // Flush any remaining paragraph.
+  if (currentParagraph) {
+    result.push(currentParagraph);
+  }
+
+  return result.join("\n").trim();
+}
+
+/**
  * Parse a `@part` argument into its selector, derived name, and optional description.
  * Handles class (`.foo`), attribute (`[foo="bar"]`), ID (`#foo`), `:host`, `:host-context(…)`,
  * descendant chains (`A > B > C`), and an optional author alias. For chained selectors the
@@ -750,7 +834,8 @@ export function splitPartArg(rest: string): {
   // Split on the description separator to isolate selector+alias from description.
   const descM = rest.match(/^([\s\S]*?)\s+(?:—|-{1,2})\s+([\s\S]*)$/u);
   const selectorPlusAlias = (descM ? descM[1] : rest).trim();
-  const description = descM?.[2].trim();
+  const rawDescription = descM?.[2];
+  const description = rawDescription ? normalizeMultilineDescription(rawDescription) : undefined;
 
   // Greedy-match the last bare [\w-]+ token as a potential alias. A CSS selector segment always
   // starts with . # [ : — if the candidate selector ends with a combinator (>, ~, +) the last
@@ -777,10 +862,19 @@ export function splitModifierArg(rest: string): {
 
   // If `after` starts with a word (the alias) before the `—` separator, use it as the name.
   const aliasMatch = after.match(/^([\w-]+)\s+(?:—|-{1,2})\s+([\s\S]*)$/u);
-  if (aliasMatch) return { selector, name: aliasMatch[1], description: aliasMatch[2].trim() };
+  if (aliasMatch)
+    return {
+      selector,
+      name: aliasMatch[1],
+      description: normalizeMultilineDescription(aliasMatch[2]),
+    };
 
   const descMatch = after.match(/^(?:—|-{1,2})\s+([\s\S]*)$/u);
-  return { selector, name: deriveModifierKey(selector), description: descMatch?.[1].trim() };
+  return {
+    selector,
+    name: deriveModifierKey(selector),
+    description: descMatch ? normalizeMultilineDescription(descMatch[1]) : undefined,
+  };
 }
 
 function splitStructureBody(raw: string): { description?: string; css: string } {

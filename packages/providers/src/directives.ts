@@ -84,7 +84,7 @@ export function applyDirectives(diagnostics: Diagnostic[], source: string): Diag
 
   const block = directives
     .filter((d) => d.kind === "disable" || d.kind === "enable")
-    .sort((a, b) => a.startLine - b.startLine);
+    .toSorted((a, b) => a.startLine - b.startLine);
   const perLine = directives.filter((d) => d.kind !== "disable" && d.kind !== "enable");
 
   // Fold block disable/enable up to `line`, tracking a disabled set plus an "all except …" mode.

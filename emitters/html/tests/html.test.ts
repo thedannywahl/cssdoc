@@ -18,6 +18,25 @@ const CSS = `
 .button.-color-secondary { color: blue; }
 `;
 
+test("buildHtml selects examples without filtering the returned model", () => {
+  const outDir = mkdtempSync(join(tmpdir(), "cssdoc-html-examples-"));
+  const css = `
+/** @component button
+ * @example labels=[docs, demo]
+ * <button>Shared</button>
+ * @example labels=[a11y]
+ * <button>Audit fixture</button>
+ */
+.button {}
+`;
+  const { entries, pages } = buildHtml({ css, outDir, exampleFilter: { labels: ["demo"] } });
+  const html = readFileSync(pages[0], "utf8");
+  expect(html).toContain("&lt;button&gt;Shared&lt;/button&gt;");
+  expect(html).not.toContain("Audit fixture");
+  expect(entries[0].examples).toHaveLength(2);
+  expect(renderPage(entries[0], { exampleFilter: { labels: [] } })).not.toContain("<h2>Examples");
+});
+
 test("renderPage produces a standalone, escaped HTML document", () => {
   const [button] = parseCssDocs(CSS);
   const html = renderPage(button!);

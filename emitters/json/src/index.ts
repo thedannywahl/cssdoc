@@ -71,7 +71,7 @@ export interface WriteJsonResult {
 
 /** Write the model to `outDir/model.json` (and optionally per-record files, an index, and the schema). */
 export function writeJson(options: WriteJsonOptions): WriteJsonResult {
-  const entries = resolveEntries(options).sort((a, b) => a.name.localeCompare(b.name));
+  const entries = resolveEntries(options).toSorted((a, b) => a.name.localeCompare(b.name));
   mkdirSync(options.outDir, { recursive: true });
 
   const modelPath = join(options.outDir, "model.json");

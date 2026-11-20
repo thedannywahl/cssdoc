@@ -89,6 +89,23 @@ test("@members round-trips through JSON and validates against the schema", () =>
   expect(ok).toBe(true);
 });
 
+test("example labels round-trip without changing the examples string array", () => {
+  const entries = parseCssDocs(`
+/** @component button
+ * @example Unlabeled.
+ * @example labels=[docs, demo]
+ * ### Primary action
+ */
+.button {}
+`);
+  const model = JSON.parse(renderJson(entries));
+  expect(model[0]).toMatchObject({
+    examples: ["Unlabeled.", "### Primary action"],
+    exampleLabels: { 1: ["docs", "demo"] },
+  });
+  expect(new Ajv().compile(cssDocSchema)(model)).toBe(true);
+});
+
 test("structureVariants (from @variant blocks) round-trips through JSON and validates against the schema", () => {
   const VARIANT_CSS = `
 /**

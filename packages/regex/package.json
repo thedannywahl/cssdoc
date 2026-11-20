@@ -1,0 +1,45 @@
+{
+  "name": "@cssdoc/regex",
+  "version": "0.16.2",
+  "description": "Type-safe, ArkRegex-based pattern library for cssdoc. Centralizes CSS, grammar-driven, and cssdoc-specific regex patterns with modern named capture groups.",
+  "keywords": [
+    "arkregex",
+    "css",
+    "cssdoc",
+    "named-capture-groups",
+    "patterns",
+    "regex",
+    "type-safe"
+  ],
+  "license": "MIT",
+  "author": "cssdoc contributors",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./css": "./dist/css.js",
+    "./css-doc": "./dist/css-doc.js",
+    "./modifiers": "./dist/modifiers.js",
+    "./selectors": "./dist/selectors.js",
+    "./config": "./dist/config.js",
+    "./types": "./dist/types.js"
+  },
+  "scripts": {
+    "build": "vp build",
+    "test": "vp test",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "arkregex": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "peerDependencies": {}
+}

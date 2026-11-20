@@ -16,7 +16,8 @@
   "dependencies": {
     "@codemirror/language": "catalog:",
     "@codemirror/state": "catalog:",
-    "@codemirror/view": "catalog:"
+    "@codemirror/view": "catalog:",
+    "@types/node": "catalog:"
   },
   "devDependencies": {
     "@commitlint/cli": "catalog:",
@@ -25,7 +26,8 @@
     "changelogen": "catalog:",
     "publint": "catalog:",
     "vite": "catalog:",
-    "vite-plus": "catalog:"
+    "vite-plus": "catalog:",
+    "vitepress-plugin-mermaid": "catalog:"
   },
   "devEngines": {
     "packageManager": {

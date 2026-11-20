@@ -83,7 +83,13 @@ interface RuleModule {
 interface Plugin {
   meta: { name: string; version: string };
   rules: Record<string, RuleModule>;
-  configs: Record<string, unknown[]>;
+  configs: Record<string, unknown[] | ((options?: unknown) => unknown[])> & {
+    recommended: unknown[];
+    strict: unknown[];
+    relaxed: unknown[];
+    classUsage: (options?: { css?: string[] }) => unknown[];
+    full: (options?: { css?: string[] }) => unknown[];
+  };
 }
 
 // ── cssdoc/valid-doc-comments (author-side, @eslint/css) ─────────────────────────────────────────
@@ -167,7 +173,7 @@ function indexFor(
   cwd: string,
   modifierConvention?: ModifierConventionInput,
 ): CssDocIndex {
-  const resolved = cssPaths.map((p) => resolve(cwd, p)).sort();
+  const resolved = cssPaths.map((p) => resolve(cwd, p)).toSorted();
   const key = `${JSON.stringify(modifierConvention ?? null)}|${resolved.join("|")}`;
   let index = indexCache.get(key);
   if (!index) {
@@ -325,14 +331,148 @@ const validClassUsage: RuleModule = {
   },
 };
 
+// ── cssdoc/require-component-docs (author-side, @eslint/css) ──────────────────────────────────────
+
+/**
+ * Detects CSS rules that look like components (match naming conventions) but lack documentation.
+ * Helps ensure all major components have at least a `@component` doc comment.
+ */
+const requireComponentDocs: RuleModule = {
+  meta: {
+    type: "suggestion",
+    docs: { description: "Require @component documentation for component-like selectors." },
+    schema: [
+      {
+        type: "object",
+        properties: {
+          pattern: {
+            type: "string",
+            description: "RegExp pattern for component names (default: ^[A-Z])",
+          },
+          skipUtilities: {
+            type: "boolean",
+            description: "Skip rules marked with @utility (default: true)",
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
+  },
+  create(context) {
+    const options = (context.options[0] ?? {}) as { pattern?: string; skipUtilities?: boolean };
+    const pattern = new RegExp(options.pattern ?? "^[A-Z]");
+    const skipUtilities = options.skipUtilities !== false;
+
+    return {
+      Rule(node: never): void {
+        const rule = node as { selector?: { value?: string }; block?: unknown; parent?: unknown };
+        const selector = rule.selector?.value;
+        if (!selector || !selector.startsWith(".")) return;
+
+        const baseName = selector.slice(1).split(/[-:]|(?=[A-Z])/)[0] ?? "";
+        if (!pattern.test(baseName)) return;
+
+        // Check if this rule or its peers have docs
+        const docComment = (rule as never as { raws?: { between?: string } }).raws?.between ?? "";
+        const hasDoc = /\/\*\*[\s\S]*?\*\//.test(docComment);
+        if (hasDoc) return;
+
+        // Check if marked as utility (skip if skipUtilities enabled)
+        if (skipUtilities && docComment.includes("@utility")) return;
+
+        context.report({
+          node,
+          message: `Component \`.${baseName}\` should have a @component doc comment.`,
+        });
+      },
+    };
+  },
+};
+
+// ── cssdoc/valid-custom-properties (author-side, @eslint/css) ────────────────────────────────────
+
+/**
+ * Validates custom property usage against documented syntax and constraints.
+ * Ensures CSS custom properties follow declared @property or @cssproperty specifications.
+ */
+const validCustomProperties: RuleModule = {
+  meta: {
+    type: "problem",
+    docs: { description: "Validate custom property usage against documented syntax." },
+    schema: [],
+  },
+  create(context) {
+    // Load doc configuration to infer defaults for custom properties
+    loadDocConfig(dirname(context.filename ?? process.cwd()));
+
+    return {
+      Declaration(node: never): void {
+        const decl = node as { property?: string; value?: string };
+        const propName = decl.property;
+        if (!propName?.startsWith("--")) return;
+
+        // Check @property syntax validation
+        const regex = /^@property\s+--[\w-]+\s*{[\s\S]*?syntax:\s*"([^"]+)"[\s\S]*?}/gm;
+        let match;
+        const propertyDefs = new Map<string, string>();
+        while ((match = regex.exec(context.sourceCode.text)) !== null) {
+          const name = match[0].match(/--[\w-]+/)?.[0];
+          if (name) propertyDefs.set(name, match[1]);
+        }
+
+        const syntax = propertyDefs.get(propName);
+        if (!syntax) return; // No declared syntax, can't validate
+
+        // Basic syntax validation examples
+        const value = decl.value ?? "";
+        const isColor = syntax === "<color>";
+        const isLength = syntax === "<length>";
+        const isNumber = syntax === "<number>";
+
+        if (isColor && value && !/(#[0-9a-f]{3,8}|rgb|hsl|var)/i.test(value)) {
+          context.report({
+            node,
+            message: `Custom property ${propName} requires a color value (syntax: <color>), got: ${value}`,
+          });
+        }
+
+        if (isLength && value && !/^\d+(\.\d+)?(px|em|rem|%|vh|vw)$|var\(/.test(value)) {
+          context.report({
+            node,
+            message: `Custom property ${propName} requires a length value (syntax: <length>), got: ${value}`,
+          });
+        }
+
+        if (isNumber && value && !/^\d+(\.\d+)?$|var\(/.test(value)) {
+          context.report({
+            node,
+            message: `Custom property ${propName} requires a numeric value (syntax: <number>), got: ${value}`,
+          });
+        }
+      },
+    };
+  },
+};
+
 const plugin: Plugin = {
   meta: { name: "@cssdoc/eslint-plugin", version: "0.0.0" },
   rules: {
     "valid-doc-comments": validDocComments,
     "valid-class-usage": validClassUsage,
+    "require-component-docs": requireComponentDocs,
+    "valid-custom-properties": validCustomProperties,
   },
-  configs: {},
+  configs: {} as Record<string, unknown[] | ((options?: unknown) => unknown[])> & {
+    recommended: unknown[];
+    strict: unknown[];
+    relaxed: unknown[];
+    classUsage: (options?: { css?: string[] }) => unknown[];
+    full: (options?: { css?: string[] }) => unknown[];
+  },
 };
+
+const cssRecommendedRules =
+  ((css.configs.recommended as unknown as unknown[])?.[0] as Record<string, unknown>)?.rules ?? {};
 
 /** A flat-config array that lints `**\/*.css` with the CSS language and enables doc-comment hygiene. */
 plugin.configs.recommended = [
@@ -340,8 +480,124 @@ plugin.configs.recommended = [
     files: ["**/*.css"],
     plugins: { css, cssdoc: plugin },
     language: "css/css",
-    rules: { "cssdoc/valid-doc-comments": "warn" },
+    rules: {
+      "cssdoc/valid-doc-comments": "warn",
+      // Extend @eslint/css recommended rules
+      ...cssRecommendedRules,
+    },
   },
+];
+
+/**
+ * Strict config: recommended rules + doc-comment author hygiene at error level.
+ * Use for projects with strict documentation standards.
+ */
+plugin.configs.strict = [
+  {
+    files: ["**/*.css"],
+    plugins: { css, cssdoc: plugin },
+    language: "css/css",
+    rules: {
+      "cssdoc/valid-doc-comments": [
+        "error",
+        {
+          rules: {
+            "unknown-modifier": "error",
+            "unknown-part": "error",
+            "unknown-pseudo": "error",
+            "unknown-state": "error",
+            "unknown-function": "error",
+            "unknown-layer": "error",
+            "unknown-animation": "error",
+          },
+        },
+      ],
+      // Extend @eslint/css recommended rules
+      ...cssRecommendedRules,
+    },
+  },
+];
+
+/**
+ * Relaxed config: basic doc-comment validation without enforcing all named-entity existence.
+ * Use for projects with lenient documentation standards or early-stage development.
+ */
+plugin.configs.relaxed = [
+  {
+    files: ["**/*.css"],
+    plugins: { css, cssdoc: plugin },
+    language: "css/css",
+    rules: {
+      "cssdoc/valid-doc-comments": [
+        "warn",
+        {
+          rules: {
+            "unknown-modifier": "off",
+            "unknown-part": "off",
+            "unknown-pseudo": "off",
+            "unknown-state": "off",
+            "unknown-function": "off",
+            "unknown-layer": "off",
+            "unknown-animation": "off",
+          },
+        },
+      ],
+      // Extend @eslint/css recommended rules
+      ...cssRecommendedRules,
+    },
+  },
+];
+
+/**
+ * Class-usage config: validates consumer-side class applications in JS/TS/JSX/HTML.
+ * Use in addition to other configs to lint component class usage.
+ *
+ * @example
+ * ```js
+ * // eslint.config.js
+ * import cssdoc from "@cssdoc/eslint-plugin";
+ * import html from "@html-eslint/parser";
+ *
+ * export default [
+ *   ...cssdoc.configs.recommended,
+ *   ...cssdoc.configs.classUsage({ css: ["dist/components.css"] }),
+ *   {
+ *     files: ["**\/*.html"],
+ *     languageOptions: { parser: html },
+ *   },
+ * ];
+ * ```
+ */
+plugin.configs.classUsage = (options?: { css?: string[] }): unknown[] => [
+  {
+    files: ["**/*.{js,jsx,ts,tsx}"],
+    plugins: { cssdoc: plugin },
+    rules: { "cssdoc/valid-class-usage": ["warn", options] },
+  },
+  {
+    files: ["**/*.html"],
+    plugins: { cssdoc: plugin },
+    rules: { "cssdoc/valid-class-usage": ["warn", options] },
+  },
+];
+
+/**
+ * Full preset: recommended doc-comment validation + class-usage checks.
+ * Use for complete cssdoc coverage (authors + consumers).
+ *
+ * @example
+ * ```js
+ * // eslint.config.js
+ * import cssdoc from "@cssdoc/eslint-plugin";
+ *
+ * export default [
+ *   ...cssdoc.configs.full({ css: ["dist/components.css"] }),
+ * ];
+ * ```
+ */
+plugin.configs.full = (options?: { css?: string[] }): unknown[] => [
+  ...plugin.configs.recommended,
+  ...plugin.configs.classUsage(options),
 ];
 
 export default plugin;

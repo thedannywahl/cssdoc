@@ -43,6 +43,12 @@ One of these opens a record and picks its kind. `@name` is an alias for `@compon
 Most of these are **derived from the CSS** — the tag only adds prose. cssdoc reads the selectors and
 at-rules; you don't have to list what's already there.
 
+To label an example for different consumers, write `@example labels=[docs, demo]` on the tag line
+and start the Markdown body on the next line. Labels are lowercase letters and digits, with hyphens
+between segments (for example, `a11y-fixture`). You can reuse a label on multiple examples. Labels
+don't change the example's heading and aren't rendered as part of the example, but they are visible
+in the JSON model.
+
 The `@modifier` example below uses the default **BEM** convention (`.base--x`). cssdoc supports other
 modifier conventions (rscss, CUBE, OOCSS, and more) — see [Modifier conventions](/guide/modifier-conventions).
 
@@ -88,6 +94,79 @@ The `@tokens` tag annotates the auto-derived "Tokens consumed" list: cssdoc alre
 `var(--*)` a record references, and `@tokens --x — <desc>` attaches a description (a `@tokens` entry with
 no matching `var()` is added to the list too). Emitters resolve each token's type and value separately —
 see the markdown emitter's `resolveToken` hook.
+
+## Multi-line tag descriptions
+
+Many tags accept a description after the `—` or `-` separator (e.g., `@modifier`, `@part`, `@cssproperty`).
+When a description is too long for a single line, indent continuation lines for readability — the parser
+normalizes whitespace by joining them into a single line, except where **Markdown structure is detected
+and preserved**.
+
+### Wrapping long descriptions
+
+Continuation lines are joined with spaces unless they form Markdown list items, headers, blockquotes,
+or similar structures:
+
+```css
+/**
+ * @modifier -should-animate — @interaction Toggled by JS
+ *   while the ring's growth animation runs.
+ */
+```
+
+Parses as: `"Toggled by JS while the ring's growth animation runs."` (with `@interaction` marker extracted).
+
+### Preserving Markdown structure
+
+When your description contains Markdown — lists, numbered steps, paragraph breaks — it's automatically
+preserved:
+
+```css
+/**
+ * @remarks
+ * ✅ Use when:
+ * - Building a full product page
+ * - The page includes GlobalNav
+ *
+ * ❌ Don't use when:
+ * - You need a minimal sidebar
+ * - You need maximum flexibility
+ */
+```
+
+Parses as:
+
+```
+✅ Use when:
+- Building a full product page
+- The page includes GlobalNav
+
+❌ Don't use when:
+- You need a minimal sidebar
+- You need maximum flexibility
+```
+
+The blank line is preserved as a paragraph break, and each list item stays on its own line.
+
+### Allowed continuation patterns
+
+Continuation works on any tag that accepts a description: `@modifier`, `@part`, `@cssstate`, `@csspart`,
+`@cssproperty`, `@remarks`, `@accessibility`, `@a11y`, and others. It also works on tags describing
+conditions (`@container`, `@supports`, `@media`) and other constructs.
+
+Just indent continuation lines — the existing comment format (with `*`) handles the formatting:
+
+```css
+/**
+ * @cssproperty --banner-bg <color> — Background color
+ *   for the banner. Accepts any valid CSS color value.
+ * @modifier [data-size="compact"] — Compressed layout for
+ *   space-constrained containers.
+ */
+```
+
+No special syntax needed — the parser automatically detects continuation lines and joins them. This
+makes long descriptions editor-friendly without breaking your code style.
 
 ## Non-class base selectors (`@selector`)
 

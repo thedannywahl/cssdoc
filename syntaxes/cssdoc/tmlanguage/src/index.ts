@@ -257,7 +257,7 @@ export function buildAtRuleInjectionGrammar(): InjectionGrammar {
  * see {@link InjectionGrammar.injectionSelector} — so listing the JS/HTML/Markdown/framework hosts is
  * safe: cssdoc lights up embedded CSS wherever another grammar embeds it, not just in `.css` files.
  */
-export const injectTo = [
+export const injectTo: string[] = [
   "source.css",
   "source.scss",
   "source.less",

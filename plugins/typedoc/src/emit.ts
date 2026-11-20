@@ -109,6 +109,10 @@ export function emitCssApi(
     resolveSource: options.resolveSource,
     importSnippet: options.importSnippet,
     classNames: options.classNames,
+    exampleFilter:
+      options.exampleFilter === undefined
+        ? render?.exampleFilters?.markdown
+        : options.exampleFilter,
     sectionOrder,
     headingPrefix,
     structureView,

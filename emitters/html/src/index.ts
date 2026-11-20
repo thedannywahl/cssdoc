@@ -9,8 +9,10 @@ import { join } from "node:path";
 import {
   type CssDocConfiguration,
   type CssDocEntry,
+  type ExampleFilter,
   type StructureNode,
   parseCssDocs,
+  selectExamples,
 } from "@cssdoc/core";
 import { type CssDialect, resolveParser } from "@cssdoc/dialects";
 import { parseCssDocsFromSource } from "@cssdoc/embedded";
@@ -44,10 +46,13 @@ const esc = (text: string | undefined): string =>
 
 const code = (text: string | undefined): string => (text ? `<code>${esc(text)}</code>` : "—");
 
+// Base64 encode helper for TypeScript 6 compatibility (Uint8Array.toBase64 is ES2026)
+const toBase64 = (bytes: Uint8Array): string => Buffer.from(bytes).toString("base64");
+
 // Embed the shared mark as a favicon data URI so generated pages stay self-contained.
 const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><mask id="cut"><rect x="8" y="8" width="112" height="112" rx="24" fill="white"/><g fill="none" stroke="black" stroke-linecap="round" stroke-linejoin="round"><g stroke-width="7"><path d="M 84 64 q -6 0 -6 6 l 0 11 q 0 6 -6 6 q 6 0 6 6 l 0 11 q 0 6 6 6"/><path d="M 100 64 q 6 0 6 6 l 0 11 q 0 6 6 6 q -6 0 -6 6 l 0 11 q 0 6 -6 6"/></g><g stroke-width="5"><path d="M 92 80 L 92 94"/><path d="M 86 83.5 L 98 90.5"/><path d="M 86 90.5 L 98 83.5"/></g></g></mask><rect x="8" y="8" width="112" height="112" rx="24" fill="#007352" mask="url(#cut)"/></svg>`;
-const FAVICON = `data:image/svg+xml;base64,${Buffer.from(ICON_SVG).toString("base64")}`;
-const FAVICON_DARK = `data:image/svg+xml;base64,${Buffer.from(ICON_SVG.replace("#007352", "#2BC692")).toString("base64")}`;
+const FAVICON = `data:image/svg+xml;base64,${toBase64(new TextEncoder().encode(ICON_SVG))}`;
+const FAVICON_DARK = `data:image/svg+xml;base64,${toBase64(new TextEncoder().encode(ICON_SVG.replace("#007352", "#2BC692")))}`;
 
 const STYLE = `
 :root { color-scheme: light dark; }
@@ -99,7 +104,10 @@ function structureList(nodes: StructureNode[]): string {
 }
 
 /** Render one record to a standalone HTML page. */
-export function renderPage(entry: CssDocEntry, options: { indexHref?: string } = {}): string {
+export function renderPage(
+  entry: CssDocEntry,
+  options: { indexHref?: string; exampleFilter?: ExampleFilter | null } = {},
+): string {
   const annotations = entry.annotations ?? [];
   const refs = entry.refs ?? [];
   const parts: string[] = [];
@@ -272,11 +280,9 @@ export function renderPage(entry: CssDocEntry, options: { indexHref?: string } =
       (entry.structureDescription ? `<p>${esc(entry.structureDescription)}</p>` : "") +
         structureList(entry.structure),
     );
-  if (entry.examples.length)
-    section(
-      "Examples",
-      entry.examples.map((ex) => `<pre><code>${esc(ex)}</code></pre>`).join("\n"),
-    );
+  const examples = selectExamples(entry, options.exampleFilter);
+  if (examples.length)
+    section("Examples", examples.map((ex) => `<pre><code>${esc(ex)}</code></pre>`).join("\n"));
   if (entry.accessibility) section("Accessibility", `<p>${esc(entry.accessibility)}</p>`);
   if (entry.see.length)
     section("See also", `<ul>${entry.see.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>`);
@@ -302,6 +308,7 @@ export function renderIndex(
 export interface BuildHtmlOptions extends ModelInput {
   outDir: string;
   title?: string;
+  exampleFilter?: ExampleFilter | null;
 }
 
 /** What {@link buildHtml} produced. */
@@ -313,12 +320,15 @@ export interface BuildHtmlResult {
 
 /** Parse and write one HTML page per record plus `index.html`. */
 export function buildHtml(options: BuildHtmlOptions): BuildHtmlResult {
-  const entries = resolveEntries(options).sort((a, b) => a.name.localeCompare(b.name));
+  const entries = resolveEntries(options).toSorted((a, b) => a.name.localeCompare(b.name));
   mkdirSync(options.outDir, { recursive: true });
   const pages: string[] = [];
   for (const entry of entries) {
     const path = join(options.outDir, `${entry.name}.html`);
-    writeFileSync(path, renderPage(entry, { indexHref: "index.html" }));
+    writeFileSync(
+      path,
+      renderPage(entry, { indexHref: "index.html", exampleFilter: options.exampleFilter }),
+    );
     pages.push(path);
   }
   const indexPath = join(options.outDir, "index.html");

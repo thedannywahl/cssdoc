@@ -95,9 +95,19 @@ they exist, so it's standards-aligned:
 
 Unknown tags are ignored, so the grammar degrades gracefully.
 
-## Model
+**Multi-line descriptions:** Long tag descriptions can span multiple lines by indenting continuation
+lines. The parser joins them into a single line, except where Markdown structure (lists, headers,
+paragraph breaks) is detected and preserved:
 
-`parseCssDocs` returns `CssDocEntry[]`:
+```css
+/**
+ * @component button
+ * @modifier -should-animate — @interaction Triggered by JS
+ *   while the ring's growth animation runs.
+ */
+```
+
+See the [authoring guide](/guide/authoring.md) for full documentation.
 
 ```ts
 interface CssDocEntry {

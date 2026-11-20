@@ -110,7 +110,7 @@ export function buildCssApi(options: BuildCssApiOptions): BuildCssApiResult {
           parse,
         })
       : parseCssDocs(css, { configuration: options.configuration, parse });
-  const entries = parsed.sort((a, b) => a.name.localeCompare(b.name));
+  const entries = parsed.toSorted((a, b) => a.name.localeCompare(b.name));
   const baseHref = options.baseHref ?? "/";
 
   mkdirSync(options.outDir, { recursive: true });

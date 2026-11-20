@@ -108,14 +108,14 @@ export const DEFAULT_PSEUDO_ELEMENTS: readonly string[] = [
 ];
 
 /** The built-in convention presets. Other schemes use the custom object (see the docs). */
-export const MODIFIER_PRESETS = {
+export const MODIFIER_PRESETS: Record<string, ModifierConvention> = {
   /** BEM / SUIT — `.button--primary`, with `.button__element` sub-elements. The default. */
   bem: { structure: "suffix", separator: "--", elementSeparator: "__", propValue: false },
   /** rscss — `.button.-color-secondary`, split into `prop`/`value`. */
   rscss: { structure: "chained", separator: "-", propValue: true, propValueSeparator: "-" },
   /** OOCSS / bare chained classes — `.button.primary` (any class chained to the base). */
   bare: { structure: "chained", separator: "", propValue: false },
-} as const satisfies Record<string, ModifierConvention>;
+};
 
 /** A preset name, or a full custom {@link ModifierConvention}. */
 export type ModifierConventionInput = keyof typeof MODIFIER_PRESETS | ModifierConvention;
@@ -191,7 +191,9 @@ export class ModifierMatcher {
   constructor(convention: ModifierConvention) {
     this.convention = convention;
     const longestFirst = (value: string | string[]): string[] =>
-      (Array.isArray(value) ? value : [value]).slice().sort((a, b) => b.length - a.length);
+      (Array.isArray(value) ? value : [value]).toSorted(
+        (a: string, b: string) => b.length - a.length,
+      );
     this.separators = longestFirst(convention.separator);
     this.sepAlt = `(?:${this.separators.map(escapeRe).join("|")})`;
     this.elementSeparators = convention.elementSeparator
@@ -200,10 +202,9 @@ export class ModifierMatcher {
     this.elementSepAlt = this.elementSeparators.length
       ? `(?:${this.elementSeparators.map(escapeRe).join("|")})`
       : "";
-    this.statePrefixes = (convention.statePrefixes ?? [])
-      .filter((p) => p !== "")
-      .slice()
-      .sort((a, b) => b.length - a.length);
+    this.statePrefixes = (convention.statePrefixes ?? []).toSorted(
+      (a: string, b: string) => b.length - a.length,
+    );
     this.statePseudoClasses = new Set(convention.statePseudoClasses ?? []);
     this.pseudoElements = new Set(convention.pseudoElements ?? []);
   }

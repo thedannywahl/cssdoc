@@ -33,6 +33,9 @@ export interface ResolveProvidersOptions {
 
 const stripDot = (name: string): string => name.replace(/^\./u, "");
 
+/** Type-safe error check for TypeScript 6 compatibility (Error.isError is ES2026). */
+const isErrorInstance = (error: unknown): error is Error => error instanceof Error;
+
 /** The upstream components a config consumes, plus a resolver for links to their rendered pages. */
 export interface ResolvedProviders {
   /** Every component/record the declared providers document. */
@@ -138,7 +141,8 @@ export function resolveProviders(
         continue;
       }
     } catch (error) {
-      messages.push(`Cannot resolve provider "${provider.path}": ${(error as Error).message}`);
+      const message = isErrorInstance(error) ? error.message : String(error);
+      messages.push(`Cannot resolve provider "${provider.path}": ${message}`);
       continue;
     }
 
@@ -169,7 +173,8 @@ export function resolveProviders(
           ? loadModel(resolvedPath)
           : loadStylesheet(resolvedPath);
       } catch (error) {
-        messages.push(`Cannot load provider "${resolvedPath}": ${(error as Error).message}`);
+        const message = isErrorInstance(error) ? error.message : String(error);
+        messages.push(`Cannot load provider "${resolvedPath}": ${message}`);
         continue;
       }
 

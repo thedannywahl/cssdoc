@@ -5,14 +5,31 @@
  * @module
  */
 
-const named = {
+const named: {
+  readonly type: "object";
+  readonly required: ["name"];
+  readonly additionalProperties: false;
+  readonly properties: {
+    readonly name: { readonly type: "string" };
+    readonly description: { readonly type: "string" };
+  };
+} = {
   type: "object",
   required: ["name"],
   additionalProperties: false,
   properties: { name: { type: "string" }, description: { type: "string" } },
 } as const;
 
-const state = {
+const state: {
+  readonly type: "object";
+  readonly required: ["name", "kind"];
+  readonly additionalProperties: false;
+  readonly properties: {
+    readonly name: { readonly type: "string" };
+    readonly kind: { readonly enum: ["custom", "pseudo-class", "class"] };
+    readonly description: { readonly type: "string" };
+  };
+} = {
   type: "object",
   required: ["name", "kind"],
   additionalProperties: false,
@@ -23,7 +40,34 @@ const state = {
   },
 } as const;
 
-const modifier = {
+const modifier: {
+  readonly type: "object";
+  readonly required: ["name", "prop"];
+  readonly additionalProperties: false;
+  readonly properties: {
+    readonly name: { readonly type: "string" };
+    readonly prop: { readonly type: "string" };
+    readonly value: { readonly type: "string" };
+    readonly pattern: { readonly type: "boolean" };
+    readonly description: { readonly type: "string" };
+    readonly deprecated: {
+      readonly type: "object";
+      readonly additionalProperties: false;
+      readonly properties: {
+        readonly canonical: { readonly type: "string" };
+        readonly note: { readonly type: "string" };
+      };
+    };
+    readonly alias: {
+      readonly type: "object";
+      readonly additionalProperties: false;
+      readonly properties: {
+        readonly canonical: { readonly type: "string" };
+        readonly note: { readonly type: "string" };
+      };
+    };
+  };
+} = {
   type: "object",
   required: ["name", "prop"],
   additionalProperties: false,
@@ -46,7 +90,16 @@ const modifier = {
   },
 } as const;
 
-const part = {
+const part: {
+  readonly type: "object";
+  readonly required: ["name"];
+  readonly additionalProperties: false;
+  readonly properties: {
+    readonly name: { readonly type: "string" };
+    readonly description: { readonly type: "string" };
+    readonly modifiers: { readonly type: "array"; readonly items: typeof modifier };
+  };
+} = {
   type: "object",
   required: ["name"],
   additionalProperties: false,
@@ -57,7 +110,22 @@ const part = {
   },
 } as const;
 
-const elementProfile = {
+const elementProfile: {
+  readonly type: "object";
+  readonly required: ["any", "allowed", "include", "exclude", "groups", "excludedGroups"];
+  readonly additionalProperties: false;
+  readonly properties: {
+    readonly any: { readonly type: "boolean" };
+    readonly allowed: { readonly type: "array"; readonly items: { readonly type: "string" } };
+    readonly include: { readonly type: "array"; readonly items: { readonly type: "string" } };
+    readonly exclude: { readonly type: "array"; readonly items: { readonly type: "string" } };
+    readonly groups: { readonly type: "array"; readonly items: { readonly type: "string" } };
+    readonly excludedGroups: {
+      readonly type: "array";
+      readonly items: { readonly type: "string" };
+    };
+  };
+} = {
   type: "object",
   required: ["any", "allowed", "include", "exclude", "groups", "excludedGroups"],
   additionalProperties: false,
@@ -72,7 +140,12 @@ const elementProfile = {
 } as const;
 
 /** JSON Schema for a single {@link @cssdoc/core!CssDocEntry | CssDocEntry}. */
-export const cssDocEntrySchema = {
+export const cssDocEntrySchema: {
+  readonly type: "object";
+  readonly required: readonly string[];
+  readonly additionalProperties: false;
+  readonly properties: Record<string, any>;
+} = {
   type: "object",
   required: [
     "name",
@@ -165,6 +238,16 @@ export const cssDocEntrySchema = {
       },
     },
     examples: { type: "array", items: { type: "string" } },
+    exampleLabels: {
+      type: "object",
+      propertyNames: { pattern: "^(0|[1-9][0-9]*)$" },
+      additionalProperties: {
+        type: "array",
+        minItems: 1,
+        uniqueItems: true,
+        items: { type: "string", pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+      },
+    },
     structure: { type: "array", items: { $ref: "#/$defs/StructureNode" } },
     structureVariants: { type: "array", items: { $ref: "#/$defs/StructureVariant" } },
     structureDescription: { type: "string" },
@@ -242,7 +325,15 @@ export const cssDocEntrySchema = {
 } as const;
 
 /** JSON Schema (draft-07) for the whole model: a `CssDocEntry[]`. */
-export const cssDocSchema = {
+export const cssDocSchema: {
+  readonly $schema: string;
+  readonly $id: string;
+  readonly title: string;
+  readonly description: string;
+  readonly type: "array";
+  readonly items: typeof cssDocEntrySchema;
+  readonly $defs: Record<string, any>;
+} = {
   $schema: "http://json-schema.org/draft-07/schema#",
   $id: "https://cssdoc.dev/model.schema.json",
   title: "cssdoc model",

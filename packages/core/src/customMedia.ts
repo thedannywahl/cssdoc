@@ -106,8 +106,10 @@ export function buildCustomMediaDeclarations(
     byProfile.set(ref.profile, list);
   }
 
-  const names = [...byProfile.keys()];
-  if (options.sort ?? true) names.sort((a, b) => a.localeCompare(b));
+  const names =
+    (options.sort ?? true)
+      ? [...byProfile.keys()].toSorted((a, b) => a.localeCompare(b))
+      : [...byProfile.keys()];
   const lines: string[] = [];
   for (const profile of names) {
     const value = options.resolveValue?.(profile, byProfile.get(profile) ?? []) ?? true;

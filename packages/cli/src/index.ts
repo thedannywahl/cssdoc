@@ -117,7 +117,7 @@ export function resolveFiles(globs: string[], cwd: string): string[] {
       if (!isIgnored(file, ignoreRoot, ignorePatterns)) found.add(file);
     }
   }
-  return [...found].sort();
+  return [...found].toSorted();
 }
 
 function offsetAt(source: string, position: SourceSpan["start"]): number {
@@ -140,7 +140,7 @@ function applyFixes(source: string, violations: readonly Violation[]): string {
       start: offsetAt(source, edit.span.start),
       end: offsetAt(source, edit.span.end),
     }))
-    .sort((a, b) => a.start - b.start || a.end - b.end || a.index - b.index);
+    .toSorted((a, b) => a.start - b.start || a.end - b.end || a.index - b.index);
   const accepted: { edit: (typeof edits)[number]; start: number; end: number }[] = [];
   let lastEnd = -1;
   for (const candidate of ordered) {

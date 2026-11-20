@@ -12,6 +12,31 @@ import {
 import postcss from "postcss";
 import { parseDocComment, parseStructure } from "../src/grammar.ts";
 
+test("example labels are metadata only when explicitly declared on the tag line", () => {
+  const doc = parseDocComment(`/**
+ * @example [docs](./docs)
+ * @example labels=[docs, interactive-demo, docs]
+ * ### Primary action
+ * \\\`\\\`\\\`html
+ * <button>Continue</button>
+ * \\\`\\\`\\\`
+ * @example labels=[docs]
+ * Another example.
+ * @example
+ * labels=[literal]
+ * @example labels=[BAD]
+ * Kept as authored.
+ */`);
+  expect(doc.exampleLabels).toEqual({ 1: ["docs", "interactive-demo"], 2: ["docs"] });
+  expect(doc.examples).toEqual([
+    "[docs](./docs)",
+    "### Primary action\n```html\n<button>Continue</button>\n```",
+    "Another example.",
+    "labels=[literal]",
+    "labels=[BAD]\nKept as authored.",
+  ]);
+});
+
 // A fixture mirroring the real generated output: authored @component doc comments delimit records; the
 // modifiers / parts / tokens / deprecations are all things the parser must derive from the CSS itself.
 const FIXTURE = `
@@ -2094,4 +2119,187 @@ test("entry.source records line/column, and file when fileName is supplied", () 
   const [withoutFile] = parseCssDocs(css);
   expect(withoutFile!.source?.file).toBeUndefined();
   expect(withoutFile!.source?.line).toBe(2);
+});
+
+test("multi-line tag descriptions: @modifier with wrapped description", () => {
+  const src = [
+    "/**",
+    " * @component progress-circle",
+    " * @modifier -should-animate — @interaction Toggled by JS",
+    " *   while the ring's growth animation runs.",
+    " */",
+    ".progress-circle {}",
+    ".progress-circle.-should-animate {}",
+  ].join("\n");
+  const [circle] = parseCssDocs(src);
+  const modifier = circle.modifiers.find((m) => m.name === "-should-animate");
+  expect(modifier?.description).toBe("Toggled by JS while the ring's growth animation runs.");
+  expect(modifier?.interaction).toBe(true);
+});
+
+test("multi-line tag descriptions: @part with wrapped description", () => {
+  const src = [
+    "/**",
+    " * @component widget",
+    ' * @part [data-slot="content"] — The main content area.',
+    " *   Supports nested components and complex layouts.",
+    " */",
+    ".widget {}",
+    ".widget [data-slot='content'] {}",
+  ].join("\n");
+  const [widget] = parseCssDocs(src);
+  const part = widget.parts.find((p) => p.name === "data-slot");
+  expect(part?.description).toBe(
+    "The main content area. Supports nested components and complex layouts.",
+  );
+});
+
+test("multi-line tag descriptions: @cssproperty with wrapped description", () => {
+  const src = [
+    "/**",
+    " * @component x-banner",
+    " * @cssproperty --banner-bg <color> — Background color for the banner.",
+    " *   Accepts any valid CSS color value.",
+    " */",
+    ".x-banner {}",
+  ].join("\n");
+  const [banner] = parseCssDocs(src);
+  const prop = banner.cssPropertiesDeclared.find((p) => p.name === "--banner-bg");
+  expect(prop?.description).toBe(
+    "Background color for the banner. Accepts any valid CSS color value.",
+  );
+});
+
+test("multi-line tag descriptions: @cssstate with wrapped description", () => {
+  const src = [
+    "/**",
+    " * @component button",
+    " * @cssstate :disabled — The button is disabled and",
+    " *   cannot be interacted with.",
+    " */",
+    ".button {}",
+    ".button:disabled {}",
+  ].join("\n");
+  const [button] = parseCssDocs(src);
+  const state = button.states.find((s) => s.name === "disabled");
+  expect(state?.description).toBe("The button is disabled and cannot be interacted with.");
+});
+
+test("multi-line tag descriptions: @csspart with wrapped description", () => {
+  const src = [
+    "/**",
+    " * @component x-widget",
+    " * @csspart handle — The drag handle, exposing the full",
+    " *   surface area for user interaction.",
+    " */",
+    ".x-widget {}",
+  ].join("\n");
+  const [widget] = parseCssDocs(src);
+  const part = widget.shadowParts.find((p) => p.name === "handle");
+  expect(part?.description).toBe(
+    "The drag handle, exposing the full surface area for user interaction.",
+  );
+});
+
+test("multi-line tag descriptions: preserve Markdown list structure in @remarks", () => {
+  const src = [
+    "/**",
+    " * @component wrapper",
+    " * @remarks",
+    " * ✅ Use when:",
+    " * - Building a full product page",
+    " * - The page uses GlobalNav",
+    " */",
+    ".wrapper {}",
+  ].join("\n");
+  const [wrapper] = parseCssDocs(src);
+  expect(wrapper.remarks).toBe(
+    "✅ Use when:\n- Building a full product page\n- The page uses GlobalNav",
+  );
+});
+
+test("multi-line tag descriptions: preserve Markdown paragraph structure in @accessibility", () => {
+  const src = [
+    "/**",
+    " * @component button",
+    " * @accessibility",
+    " * Map this element to a button role.",
+    " *",
+    " * - Use aria-label for icon-only buttons.",
+    " * - Ensure sufficient color contrast.",
+    " */",
+    ".button {}",
+  ].join("\n");
+  const [button] = parseCssDocs(src);
+  expect(button.accessibility).toContain("\n- Use aria-label");
+  expect(button.accessibility).toContain("\n- Ensure sufficient");
+});
+
+test("multi-line tag descriptions: collapse extra indentation in continuation lines", () => {
+  const src = [
+    "/**",
+    " * @component button",
+    " * @modifier -large — Makes the button large.",
+    " *            Great for call-to-action sections.",
+    " */",
+    ".button {}",
+    ".button.-large {}",
+  ].join("\n");
+  const [button] = parseCssDocs(src);
+  const mod = button.modifiers.find((m) => m.name === "-large");
+  expect(mod?.description).toBe("Makes the button large. Great for call-to-action sections.");
+});
+
+test("multi-line tag descriptions: single-line tags remain unchanged", () => {
+  const src = [
+    "/**",
+    " * @component simple-widget",
+    " * @modifier -compact — A single-line description with no wrapping.",
+    " * @part .header — Also a single line.",
+    " */",
+    ".simple-widget {}",
+    ".simple-widget.-compact {}",
+    ".simple-widget .header {}",
+  ].join("\n");
+  const [widget] = parseCssDocs(src);
+  const modifier = widget.modifiers.find((m) => m.name === "-compact");
+  expect(modifier?.description).toBe("A single-line description with no wrapping.");
+  const part = widget.parts.find((p) => p.name === "header");
+  expect(part?.description).toBe("Also a single line.");
+});
+
+test("multi-line tag descriptions: empty continuation lines are ignored at edges", () => {
+  const src = [
+    "/**",
+    " * @component test-widget",
+    " * @summary This is a summary.",
+    " * ",
+    " * @modifier -test — First line.",
+    " *   ",
+    " *   Second line.",
+    " */",
+    ".test-widget {}",
+    ".test-widget.-test {}",
+  ].join("\n");
+  const [widget] = parseCssDocs(src);
+  const mod = widget.modifiers.find((m) => m.name === "-test");
+  expect(mod?.description).toBe("First line. Second line.");
+});
+
+test("multi-line tag descriptions: numbered and header structures are preserved", () => {
+  const src = [
+    "/**",
+    " * @component steps",
+    " * @remarks",
+    " * Follow these steps:",
+    " * 1. Click the button",
+    " * 2. Wait for confirmation",
+    " * 3. Proceed to the next page",
+    " */",
+    ".steps {}",
+  ].join("\n");
+  const [steps] = parseCssDocs(src);
+  expect(steps.remarks).toContain("1. Click");
+  expect(steps.remarks).toContain("2. Wait");
+  expect(steps.remarks).toContain("3. Proceed");
 });

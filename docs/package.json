@@ -39,7 +39,7 @@
     "@types/node": "catalog:",
     "codemirror": "catalog:",
     "jsonc-parser": "catalog:",
-    "markdown-it": "catalog:",
+    "markdown-exit": "catalog:",
     "mermaid": "catalog:",
     "postcss": "catalog:",
     "typedoc": "catalog:",
