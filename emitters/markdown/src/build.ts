@@ -175,7 +175,7 @@ export function buildCssApi(options: BuildCssApiOptions): BuildCssApiResult {
         rmSync(join(options.outDir, file));
       }
     }
-  } catch (err) {
+  } catch {
     // If outDir doesn't exist or readdirSync fails, ignore
   }
 
