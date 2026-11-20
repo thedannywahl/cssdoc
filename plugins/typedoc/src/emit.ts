@@ -94,7 +94,8 @@ export function emitCssApi(
   const sectionOrder =
     options.sectionOrder ?? (render?.sectionOrder as readonly SectionKey[] | undefined);
   const headingPrefix = options.headingPrefix ?? render?.headingPrefix;
-  const includeInternal = options.includeInternal ?? render?.includeInternal;
+  const includeInternal =
+    "includeInternal" in options ? options.includeInternal : render?.includeInternal;
   const structureView = options.structureView ?? render?.structureView;
   const structureVariantView = options.structureVariantView ?? render?.structureVariantView;
   const groups = options.groups ?? render?.groups;

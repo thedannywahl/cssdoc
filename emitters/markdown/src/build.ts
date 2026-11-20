@@ -5,7 +5,7 @@
  *
  * @module
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { CssDocConfiguration, CssDocEntry } from "@cssdoc/core";
 import { parseCssDocs } from "@cssdoc/core";
@@ -164,6 +164,19 @@ export function buildCssApi(options: BuildCssApiOptions): BuildCssApiResult {
       renderEntry(entry, { ...renderOptions, members: membersByParent.get(entry.name) }),
     );
     pages.push(pagePath);
+  }
+
+  // Clean up stale entry files from previous runs that are no longer being generated
+  // (e.g., internal entries filtered by includeInternal option).
+  try {
+    const currentNames = new Set(entries.map((e) => `${e.name}.md`));
+    for (const file of readdirSync(options.outDir)) {
+      if (file.endsWith(".md") && !currentNames.has(file) && file !== "index.md") {
+        rmSync(join(options.outDir, file));
+      }
+    }
+  } catch (err) {
+    // If outDir doesn't exist or readdirSync fails, ignore
   }
 
   const indexPath = join(options.outDir, "index.md");
