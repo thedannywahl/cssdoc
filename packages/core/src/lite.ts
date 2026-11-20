@@ -56,6 +56,7 @@ export type {
   CssRecordKind,
   CssRelated,
   CssReleaseStage,
+  CssVisibility,
   CssSlot,
   CssSource,
   CssState,

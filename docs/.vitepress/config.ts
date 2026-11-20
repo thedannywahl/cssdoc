@@ -221,6 +221,7 @@ export default defineConfig({
             { text: "Playground", link: "/guide/playground" },
             { text: "Packages", link: "/guide/packages" },
             { text: "Grammar", link: "/guide/grammar" },
+            { text: "Config reference", link: "/guide/config-reference" },
             { text: "API Reference", link: "/reference/" },
           ],
         },

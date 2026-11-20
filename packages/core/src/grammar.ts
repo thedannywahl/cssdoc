@@ -41,9 +41,10 @@ import type { ChildNode } from "postcss";
 import { CssDocConfiguration } from "./configuration.ts";
 import type {
   CssParse,
-  CssRecordKind,
   CssRelated,
+  CssRecordKind,
   CssReleaseStage,
+  CssVisibility,
   StructureNode,
   StructureVariant,
 } from "./model.ts";
@@ -61,16 +62,22 @@ export interface DocDecorators {
   frozen: boolean;
   isReadonly: boolean;
 }
+
+const RELEASE_STAGES: readonly CssReleaseStage[] = ["alpha", "beta", "experimental", "stable"];
+
+function isReleaseStage(value: string): value is CssReleaseStage {
+  return RELEASE_STAGES.includes(value as CssReleaseStage);
+}
 /**
  * The record-opening tags and the {@link CssRecordKind} each selects, as the default boundary map.
- * A doc comment carrying one of these opens a new record; `@name` is an alias for `@component`. A
- * {@link CssDocConfiguration} may add more record tags.
+ * `@name` and legacy `@rule` are aliases for `@component`. A {@link CssDocConfiguration} may add
+ * more record tags.
  */
 export const RECORD_TAGS: Record<string, CssRecordKind> = {
   component: "component",
   name: "component",
   utility: "utility",
-  rule: "rule",
+  rule: "component",
   declaration: "declaration",
   layout: "layout",
 };
@@ -102,7 +109,7 @@ export interface DocModifier {
   aliasCanonical?: string;
   /** Set from an inline `@interaction` marker — a JS-toggled class with no CSS of its own. */
   interaction?: boolean;
-  /** Set from an inline `@global` marker — this modifier applies to any component/layout/rule/declaration (not just its parent record). */
+  /** Set from an inline `@global` marker — this modifier applies to any record (not just its parent). */
   global?: boolean;
   /** Set from an inline `@affects <component>.<target>` marker — a descendant record this modifier changes the rendering of. */
   affects?: { component: string; target: string; description?: string }[];
@@ -117,9 +124,9 @@ export interface DocCondition {
 
 /** The structured content extracted from one doc-comment block. */
 export interface ParsedDoc {
-  /** `@component`/`@utility`/`@rule`/`@declaration`/`@name` — the record name. Marks a record boundary. */
+  /** A record-opening tag's canonical name. Marks a record boundary. */
   component?: string;
-  /** The record kind chosen by the opening tag (`component` unless `@utility`/`@rule`/`@declaration`). */
+  /** The record kind chosen by the opening tag (`@rule` is a compatibility alias for `@component`). */
   kind?: CssRecordKind;
   /** `@selector` / `@class` — an explicit base CSS selector (any valid simple selector; otherwise inferred from the CSS). */
   className?: string;
@@ -142,8 +149,10 @@ export interface ParsedDoc {
   group?: string;
   /** `@a11y`/`@accessibility` — accessibility guidance. */
   accessibility?: string;
-  /** The release stage from a modifier flag tag (`@alpha`/`@beta`/…). */
+  /** Release maturity from `@stage` or a legacy maturity flag tag. */
   releaseStage?: CssReleaseStage;
+  /** Audience visibility from `@visibility` or a legacy visibility flag tag. */
+  visibility?: CssVisibility;
   /** `@modifier` prose, keyed by the derived modifier name (e.g. `-color-secondary`, `data-variant="ghost"`). */
   modifiers: Map<string, DocModifier>;
   /**
@@ -327,7 +336,7 @@ function parseModifierBody(description: string | undefined): DocModifier {
   // from the "documented modifier isn't defined by any selector" check.
   const inter = description?.match(/^@interaction\b\s*([\s\S]*)$/u);
   if (inter) return { description: inter[1].trim() || undefined, interaction: true };
-  // A description beginning `@global …` marks this modifier as applying to any component/layout/rule/declaration.
+  // A description beginning `@global …` marks this modifier as applying to any record.
   const glob = description?.match(/^@global\b\s*([\s\S]*)$/u);
   if (glob) return { description: glob[1].trim() || undefined, global: true };
   // A description beginning `@affects <component>.<target> …` names a descendant record (a part, pseudo,
@@ -444,7 +453,10 @@ export function parseDocComment(
       continue;
     }
     if (definition.syntaxKind === "modifier") {
-      doc.releaseStage = definition.canonicalName as CssReleaseStage;
+      const legacyValue = definition.canonicalName;
+      if (legacyValue === "internal" || legacyValue === "public") {
+        doc.visibility = legacyValue;
+      } else if (isReleaseStage(legacyValue)) doc.releaseStage = legacyValue;
       continue;
     }
     if (definition.syntaxKind === "inline") continue; // inline tags live inside descriptions
@@ -493,6 +505,12 @@ function applyBlockTag(
       break;
     case "summary":
       doc.summary = rest.replace(/\s+/gu, " ").trim();
+      break;
+    case "stage":
+      if (isReleaseStage(rest)) doc.releaseStage = rest;
+      break;
+    case "visibility":
+      if (rest === "internal" || rest === "public") doc.visibility = rest;
       break;
     case "remarks":
       doc.remarks = normalizeMultilineDescription(rest);

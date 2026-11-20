@@ -130,7 +130,7 @@ const parseStructureRecordRef = (selector: string): StructureRecordRef | undefin
   );
   if (typed) {
     return {
-      kind: typed[1] === "name" ? "component" : typed[1],
+      kind: typed[1] === "name" || typed[1] === "rule" ? "component" : typed[1],
       name: typed[2],
       profile: typed[3],
       private: Boolean(typed[4]),
@@ -142,7 +142,10 @@ const parseStructureRecordRef = (selector: string): StructureRecordRef | undefin
   );
   if (typedCustomMedia) {
     return {
-      kind: typedCustomMedia[1] === "name" ? "component" : typedCustomMedia[1],
+      kind:
+        typedCustomMedia[1] === "name" || typedCustomMedia[1] === "rule"
+          ? "component"
+          : typedCustomMedia[1],
       name: typedCustomMedia[2],
       profile: typedCustomMedia[3],
       private: Boolean(typedCustomMedia[4]),

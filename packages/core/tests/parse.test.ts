@@ -1082,13 +1082,13 @@ test("@ref inline prose and @annotations block merge; block row wins on collisio
   ]);
 });
 
-test("record-opening tags set the kind; @component defaults to component", () => {
+test("record-opening tags set the kind; @rule remains a component alias", () => {
   const [comp] = parseCssDocs(`/**\n * @component button\n */\n.button { color: red; }`);
   expect(comp.kind).toBe("component");
   const [util] = parseCssDocs(`/**\n * @utility spacing\n */\n.m-sm { margin: 0.5rem; }`);
   expect(util.kind).toBe("utility");
   const [rule] = parseCssDocs(`/**\n * @rule base\n */\nbody { margin: 0; }`);
-  expect(rule.kind).toBe("rule");
+  expect(rule.kind).toBe("component");
   const [decl] = parseCssDocs(`/**\n * @declaration tokens\n */\n:root { --x: 1; }`);
   expect(decl.kind).toBe("declaration");
   const [layout] = parseCssDocs(`/**\n * @layout template\n */\n.wrapper {}`);
@@ -1840,10 +1840,11 @@ test("layout implicit structure handles :is() co-location the same as explicit @
   expect(btnNode?.colocated).toBe(".pfx-button");
 });
 
-test("expansive prose tags surface on the entry (remarks, since, group, a11y, release stage)", () => {
+test("prose tags surface on the entry, including stage and visibility", () => {
   const [entry] = parseCssDocs(
     `/**\n * @component switch\n * @remarks A longer explanation.\n * @since 2.1.0\n` +
-      ` * @group Forms\n * @a11y Announce state changes with aria-checked.\n * @beta\n */\n` +
+      ` * @group Forms\n * @a11y Announce state changes with aria-checked.\n` +
+      ` * @stage beta\n * @visibility internal\n */\n` +
       `.switch { display: inline-flex; }`,
   );
   expect(entry.remarks).toBe("A longer explanation.");
@@ -1851,6 +1852,15 @@ test("expansive prose tags surface on the entry (remarks, since, group, a11y, re
   expect(entry.group).toBe("Forms");
   expect(entry.accessibility).toBe("Announce state changes with aria-checked.");
   expect(entry.releaseStage).toBe("beta");
+  expect(entry.visibility).toBe("internal");
+});
+
+test("legacy release-stage and visibility flags map to the separated fields", () => {
+  const [entry] = parseCssDocs(
+    `/**\n * @component legacy\n * @experimental\n * @internal\n */\n.legacy {}`,
+  );
+  expect(entry.releaseStage).toBe("experimental");
+  expect(entry.visibility).toBe("internal");
 });
 
 test("multiline @remarks and @accessibility preserve newlines through the parser", () => {

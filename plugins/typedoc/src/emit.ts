@@ -12,6 +12,7 @@ import type { CssDocConfiguration } from "@cssdoc/core";
 import {
   type BuildCssApiResult,
   type RenderEntryOptions,
+  type RenderIndexOptions,
   type SectionKey,
   type SidebarItem,
   buildCssApi,
@@ -22,7 +23,7 @@ import {
 export const TYPEDOC_SIDEBAR_FILE = "typedoc-sidebar.json";
 
 /** Options for {@link emitCssApi}. */
-export interface EmitCssApiOptions extends RenderEntryOptions {
+export interface EmitCssApiOptions extends RenderEntryOptions, RenderIndexOptions {
   /** The TypeDoc output root (where `typedoc-sidebar.json` lives). */
   outputDirectory: string;
   /** CSS source file paths (resolved against `cwd`). */
@@ -93,6 +94,8 @@ export function emitCssApi(
   const sectionOrder =
     options.sectionOrder ?? (render?.sectionOrder as readonly SectionKey[] | undefined);
   const headingPrefix = options.headingPrefix ?? render?.headingPrefix;
+  const includeInternal =
+    "includeInternal" in options ? options.includeInternal : render?.includeInternal;
   const structureView = options.structureView ?? render?.structureView;
   const structureVariantView = options.structureVariantView ?? render?.structureVariantView;
   const groups = options.groups ?? render?.groups;
@@ -115,6 +118,7 @@ export function emitCssApi(
         : options.exampleFilter,
     sectionOrder,
     headingPrefix,
+    includeInternal,
     structureView,
     structureVariantView,
     groups,

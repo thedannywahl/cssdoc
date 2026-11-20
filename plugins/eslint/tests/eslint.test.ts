@@ -22,7 +22,7 @@ test("the recommended config reports doc-hygiene violations on a .css file", () 
   const messages = lint(CSS);
   expect(messages.length).toBeGreaterThan(0);
   expect(messages.every((m) => m.ruleId === "cssdoc/valid-doc-comments")).toBe(true);
-  expect(messages.some((m) => m.message.includes("missing-summary"))).toBe(true);
+  expect(messages.some((m) => m.message.includes("missing-summary"))).toBe(false);
   expect(
     messages.some(
       (m) => m.message.includes("undocumented-modifier") && m.message.includes("button--size-sm"),

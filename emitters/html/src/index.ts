@@ -113,7 +113,8 @@ export function renderPage(
   const parts: string[] = [];
   if (options.indexHref) parts.push(`<p><a href="${esc(options.indexHref)}">← Index</a></p>`);
   const stage = entry.releaseStage ? ` <span class="badge">${esc(entry.releaseStage)}</span>` : "";
-  parts.push(`<h1>${esc(entry.name)}${stage}</h1>`);
+  const visibility = entry.visibility === "internal" ? ' <span class="badge">internal</span>' : "";
+  parts.push(`<h1>${esc(entry.name)}${stage}${visibility}</h1>`);
   parts.push(`<p>${code(entry.className)}${entry.summary ? ` — ${esc(entry.summary)}` : ""}</p>`);
   if (entry.deprecated)
     parts.push(`<p class="warn"><strong>Deprecated</strong> — ${esc(entry.deprecated)}</p>`);
@@ -293,10 +294,13 @@ export function renderPage(
 /** Render the index page linking to every record. */
 export function renderIndex(
   entries: readonly CssDocEntry[],
-  options: { title?: string } = {},
+  options: { title?: string; includeInternal?: boolean } = {},
 ): string {
   const title = options.title ?? "CSS API reference";
-  const rows = entries.map((e) => [
+  const visibleEntries = options.includeInternal
+    ? entries
+    : entries.filter((entry) => entry.visibility !== "internal");
+  const rows = visibleEntries.map((e) => [
     `<a href="${esc(e.name)}.html">${esc(e.name)}</a>`,
     code(e.className),
     esc(e.summary) || "—",
@@ -309,6 +313,8 @@ export interface BuildHtmlOptions extends ModelInput {
   outDir: string;
   title?: string;
   exampleFilter?: ExampleFilter | null;
+  /** Include records marked `@visibility internal`; defaults to false. */
+  includeInternal?: boolean;
 }
 
 /** What {@link buildHtml} produced. */
@@ -320,7 +326,9 @@ export interface BuildHtmlResult {
 
 /** Parse and write one HTML page per record plus `index.html`. */
 export function buildHtml(options: BuildHtmlOptions): BuildHtmlResult {
-  const entries = resolveEntries(options).toSorted((a, b) => a.name.localeCompare(b.name));
+  const entries = resolveEntries(options)
+    .filter((entry) => options.includeInternal || entry.visibility !== "internal")
+    .toSorted((a, b) => a.name.localeCompare(b.name));
   mkdirSync(options.outDir, { recursive: true });
   const pages: string[] = [];
   for (const entry of entries) {
@@ -332,6 +340,6 @@ export function buildHtml(options: BuildHtmlOptions): BuildHtmlResult {
     pages.push(path);
   }
   const indexPath = join(options.outDir, "index.html");
-  writeFileSync(indexPath, renderIndex(entries, { title: options.title }));
+  writeFileSync(indexPath, renderIndex(entries, { title: options.title, includeInternal: true }));
   return { entries, pages, indexPath };
 }

@@ -126,7 +126,10 @@ test("lint violations carry absolute source lines", () => {
  */
 .gadget {}
 </style>`;
-  const v = lintCssDocsFromSource(bare, { host: "html" });
+  const v = lintCssDocsFromSource(bare, {
+    host: "html",
+    rules: { "missing-summary": "warn" },
+  });
   const summary = v.find((d) => d.rule === "missing-summary");
   expect(summary?.record).toBe("gadget");
   expect(summary?.line).toBeGreaterThan(1); // absolute in the source, inside the <style> block

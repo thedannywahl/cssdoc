@@ -120,6 +120,27 @@ test("buildHtml writes a page per record and an index linking to them", () => {
   expect(page).toContain(`<a href="index.html">← Index</a>`);
 });
 
+test("buildHtml omits internal records by default and includes them on request", () => {
+  const outDir = mkdtempSync(join(tmpdir(), "cssdoc-html-visibility-"));
+  const css = `
+/** @component public-card */
+.public-card {}
+
+/** @component author-note
+ * @visibility internal
+ */
+.author-note {}
+`;
+  const result = buildHtml({ css, outDir });
+  expect(result.entries.map((entry) => entry.name)).toEqual(["public-card"]);
+  expect(result.pages).toHaveLength(1);
+  expect(readFileSync(result.indexPath, "utf8")).not.toContain("author-note");
+
+  const internal = buildHtml({ css, outDir, includeInternal: true });
+  expect(internal.entries.map((entry) => entry.name)).toEqual(["author-note", "public-card"]);
+  expect(readFileSync(join(outDir, "author-note.html"), "utf8")).toContain("internal");
+});
+
 test("renderIndex uses a custom title", () => {
   expect(renderIndex(parseCssDocs(CSS), { title: "My CSS" })).toContain("<h1>My CSS</h1>");
 });

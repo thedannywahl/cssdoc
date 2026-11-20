@@ -119,7 +119,8 @@ export interface LintOptions {
   modifierConvention?: ModifierConventionInput;
   /**
    * Per-rule severity (`off`/`warn`/`error`). A `boolean` is accepted for back-compat (`false` → off,
-   * `true` → the rule's default). All rules default to `warn`.
+   * `true` → the rule's default). Rules default to `warn`, except `missing-summary`, which defaults to
+   * `off`.
    */
   rules?: Partial<Record<RuleName, RuleSeverity | boolean>>;
   /** Name-case conventions to enforce (`component`/`part`); drives the `*-name-case` rules. */

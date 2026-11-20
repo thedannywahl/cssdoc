@@ -34,9 +34,16 @@ const CSS = `
 const index = createIndex(CSS, { file: "components.css", modifierConvention: "rscss" });
 
 test("lintModel reports author-side hygiene (chip missing summary, -size-sm undocumented)", () => {
-  const rules = lintModel(index).map((d) => `${d.record}:${d.rule}`);
+  const rules = lintModel(index, resolveRuleSeverities({ "missing-summary": "warn" })).map(
+    (d) => `${d.record}:${d.rule}`,
+  );
   expect(rules).toContain("chip:missing-summary");
   expect(rules).toContain("button:undocumented-modifier"); // -size-sm
+});
+
+test("missing-summary is disabled by default", () => {
+  const rules = lintModel(index).map((d) => d.rule);
+  expect(rules).not.toContain("missing-summary");
 });
 
 test("a concrete instance of a documented `*` family is exempt from undocumented-modifier", () => {

@@ -5,7 +5,7 @@
  *
  * @module
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { CssDocConfiguration, CssDocEntry } from "@cssdoc/core";
 import { parseCssDocs } from "@cssdoc/core";
@@ -110,7 +110,9 @@ export function buildCssApi(options: BuildCssApiOptions): BuildCssApiResult {
           parse,
         })
       : parseCssDocs(css, { configuration: options.configuration, parse });
-  const entries = parsed.toSorted((a, b) => a.name.localeCompare(b.name));
+  const entries = parsed
+    .filter((entry) => options.includeInternal || entry.visibility !== "internal")
+    .toSorted((a, b) => a.name.localeCompare(b.name));
   const baseHref = options.baseHref ?? "/";
 
   mkdirSync(options.outDir, { recursive: true });
@@ -126,6 +128,7 @@ export function buildCssApi(options: BuildCssApiOptions): BuildCssApiResult {
   // A referenced upstream provider component links to its own page (via the provider's `href`); local
   // components win a name clash. Providers without a resolvable href aren't cross-linked.
   for (const e of options.providers?.entries ?? []) {
+    if (!options.includeInternal && e.visibility === "internal") continue;
     const cls = e.className.replace(/^\./u, "");
     const href = options.providers?.href(cls);
     if (href && !componentByClass.has(cls)) componentByClass.set(cls, { name: e.name, href });
@@ -161,6 +164,19 @@ export function buildCssApi(options: BuildCssApiOptions): BuildCssApiResult {
       renderEntry(entry, { ...renderOptions, members: membersByParent.get(entry.name) }),
     );
     pages.push(pagePath);
+  }
+
+  // Clean up stale entry files from previous runs that are no longer being generated
+  // (e.g., internal entries filtered by includeInternal option).
+  try {
+    const currentNames = new Set(entries.map((e) => `${e.name}.md`));
+    for (const file of readdirSync(options.outDir)) {
+      if (file.endsWith(".md") && !currentNames.has(file) && file !== "index.md") {
+        rmSync(join(options.outDir, file));
+      }
+    }
+  } catch (err) {
+    // If outDir doesn't exist or readdirSync fails, ignore
   }
 
   const indexPath = join(options.outDir, "index.md");

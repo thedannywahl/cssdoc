@@ -134,7 +134,7 @@ test("interactive pretty output uses the prompt presenter", async () => {
 
   expect(harness.out).toEqual([]);
   expect(harness.promptEvents).toContain("message:dirty/a.css");
-  expect(harness.promptEvents.some((event) => event.startsWith("warn:1:0"))).toBe(true);
+  expect(harness.promptEvents.some((event) => event.startsWith("warn:9:0"))).toBe(true);
   expect(harness.promptEvents).toContain("info:1 problems (0 errors, 1 warnings)");
 });
 
