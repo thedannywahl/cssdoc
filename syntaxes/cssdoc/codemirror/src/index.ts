@@ -36,6 +36,15 @@ import {
   CSSDOC_STRUCTURE_CLASS,
   CSSDOC_STRUCTURE_BRACE,
   toRegExp,
+  alpha,
+  wordBoundary,
+  spaceTab,
+  TOKEN_QUALIFIED_IDENTIFIER,
+  TOKEN_MODIFIER_NAME,
+  TOKEN_CLASS_SELECTOR,
+  TOKEN_CUSTOM_PROPERTY,
+  TOKEN_REF_NUMBER,
+  TOKEN_INLINE_CONTENT,
 } from "@cssdoc/regex";
 
 /** Semantic token kind a doc-comment span maps to. Each becomes a `cm-cssdoc-<kind>` class. */
@@ -82,26 +91,26 @@ const TOKEN = new RegExp(
   [
     // {@link ...} / {@label ...} / {@inheritDoc ...}
     // Reuses INLINE_TAG_TOKENIZER structure: brace, tag, content, brace
-    `(?<inline>\\{(?<itag>@(?:${alt(INLINE_TAGS)}))\\b[ \\t]*(?<itext>[^}]*)\\}?)`,
+    `(?<inline>\\{(?<itag>@(?:${alt(INLINE_TAGS)}))${wordBoundary}${spaceTab}*(?<itext>${TOKEN_INLINE_CONTENT.source})\\}?)`,
     // @component/@name/@utility/@rule/@declaration/@layout name(.name)*
     // Reuses RECORD_TAG_TOKENIZER structure: tag, qualified-name
-    `(?<record>(?<rtag>@(?:${alt(RECORD_TAGS)}))\\b[ \\t]*(?<rname>[A-Za-z][A-Za-z0-9_-]*(?:\\.[A-Za-z][A-Za-z0-9_-]*)*)?)`,
+    `(?<record>(?<rtag>@(?:${alt(RECORD_TAGS)}))${wordBoundary}${spaceTab}*(?<rname>${TOKEN_QUALIFIED_IDENTIFIER.source})?)`,
     // @modifier -name
     // Reuses MODIFIER_TAG_TOKENIZER structure: tag, optional-dash-name
-    `(?<modifier>(?<mtag>@(?:${alt(MODIFIER_TAGS)}))\\b[ \\t]*(?<mname>-?[A-Za-z][A-Za-z0-9_-]*)?)`,
+    `(?<modifier>(?<mtag>@(?:${alt(MODIFIER_TAGS)}))${wordBoundary}${spaceTab}*(?<mname>${TOKEN_MODIFIER_NAME.source})?)`,
     // @part / @csspart / @slot / @selector / @pseudo / @class .name
     // Reuses PART_TAG_TOKENIZER structure: tag, optional-dot-selector
-    `(?<part>(?<ptag>@(?:${alt(PART_TAGS)}))\\b[ \\t]*(?<pname>\\.?[A-Za-z][A-Za-z0-9_-]*)?)`,
+    `(?<part>(?<ptag>@(?:${alt(PART_TAGS)}))${wordBoundary}${spaceTab}*(?<pname>${TOKEN_CLASS_SELECTOR.source})?)`,
     // @cssproperty / @property --name
     // Reuses PROPERTY_TAG_TOKENIZER structure: tag, custom-property
-    `(?<property>(?<proptag>@(?:${alt(PROPERTY_TAGS)}))\\b[ \\t]*(?<propname>--[A-Za-z][A-Za-z0-9-]*)?)`,
+    `(?<property>(?<proptag>@(?:${alt(PROPERTY_TAGS)}))${wordBoundary}${spaceTab}*(?<propname>${TOKEN_CUSTOM_PROPERTY.source})?)`,
     // @ref 1 / @ref 1.
     // Reuses REF_TAG_TOKENIZER structure: tag, numeric-ref
-    `(?<ref>(?<reftag>@(?:ref))\\b[ \\t]*(?<refnum>\\d+\\.?)?)`,
+    `(?<ref>(?<reftag>@(?:ref))${wordBoundary}${spaceTab}*(?<refnum>${TOKEN_REF_NUMBER.source})?)`,
     // bare block/record/flag tags
-    `(?<btag>@(?:${alt(PLAIN_TAGS)}))\\b`,
+    `(?<btag>@(?:${alt(PLAIN_TAGS)})${wordBoundary})`,
     // a custom property named anywhere in the comment
-    "(?<cprop>--[A-Za-z][A-Za-z0-9-]*)",
+    `(?<cprop>${TOKEN_CUSTOM_PROPERTY.source})`,
   ].join("|"),
   "gd",
 );
@@ -176,7 +185,7 @@ export const tokenizeComment = (text: string): CssdocToken[] => {
   // Second pass: highlight meaningful elements within each `@structure` body (from the tag to the next tag or comment end).
   for (const m of text.matchAll(STRUCTURE_TAG_REGEX)) {
     const start = (m.index ?? 0) + m[0].length;
-    const after = text.slice(start).search(/@[A-Za-z]/u);
+    const after = text.slice(start).search(new RegExp(`@${alpha}`, "u"));
     const end = after === -1 ? text.length : start + after;
     const body = text.slice(start, end);
 

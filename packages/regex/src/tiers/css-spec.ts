@@ -15,7 +15,12 @@
 
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
-import { DIGIT } from "./character-classes.js";
+import {
+  digit,
+  cssIdentifierStart,
+  cssIdentifierCont,
+  cssIdentifierContNoDash,
+} from "./character-classes.js";
 
 /**
  * CSS identifier from W3C formal grammar.
@@ -30,7 +35,7 @@ import { DIGIT } from "./character-classes.js";
 export const CSS_IDENTIFIER: Regex<
   "(?<identifier>[a-zA-Z_\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*)",
   { names: { identifier: string } }
-> = arkRegex.as(String.raw`(?<identifier>[a-zA-Z_\u0080-\uFFFF][\w\-\u0080-\uFFFF]*)`, "u");
+> = arkRegex.as(String.raw`(?<identifier>${cssIdentifierStart}${cssIdentifierCont}*)`, "u");
 
 /**
  * CSS name from W3C formal grammar.
@@ -43,7 +48,7 @@ export const CSS_IDENTIFIER: Regex<
 export const CSS_NAME: Regex<
   "(?<name>[a-zA-Z_\\u0080-\\uFFFF][\\w\\u0080-\\uFFFF]*)",
   { names: { name: string } }
-> = arkRegex.as(String.raw`(?<name>[a-zA-Z_\u0080-\uFFFF][\w\u0080-\uFFFF]*)`, "u");
+> = arkRegex.as(String.raw`(?<name>${cssIdentifierStart}${cssIdentifierContNoDash}*)`, "u");
 
 /**
  * CSS number from W3C formal grammar.
@@ -61,29 +66,27 @@ export const CSS_NAME: Regex<
  * match?.groups?.integer // "3"
  * match?.groups?.decimal // "14"
  */
+const numberLiteralPattern = String.raw`${digit}+(?:\.${digit}+)?`;
 export const CSS_NUMBER: Regex<
   "(?<number>(?<integer>\\d+)(?:\\.(?<decimal>\\d+))?)",
   { names: { number: string; integer: string; decimal?: string } }
-> = arkRegex.as(
-  String.raw`(?<number>(?<integer>${DIGIT.source}+)(?:\.(?<decimal>${DIGIT.source}+))?)`,
-  "u",
-);
+> = arkRegex.as(String.raw`(?<number>(?<integer>${digit}+)(?:\.(?<decimal>${digit}+))?)`, "u");
 
 /**
  * CSS percentage from W3C formal grammar.
  * Number followed by percent sign.
- * Composed from: Tier 0 DIGIT pattern
+ * Composed from: Tier 0 digit pattern
  *
  * @example
  * CSS_PERCENTAGE.exec("50%")?.groups?.value // "50"
  */
 export const CSS_PERCENTAGE: Regex<"(?<value>\\d+(?:\\.\\d+)?)%", { names: { value: string } }> =
-  arkRegex.as(String.raw`(?<value>${DIGIT.source}+(?:\.${DIGIT.source}+)?)%`, "u");
+  arkRegex.as(String.raw`(?<value>${numberLiteralPattern}%)`, "u");
 
 /**
  * CSS dimension from W3C formal grammar.
  * Number immediately followed by identifier (unit).
- * Uses Tier 0 DIGIT pattern for numeric part.
+ * Uses Tier 0 digit pattern for numeric part.
  *
  * @example
  * const match = CSS_DIMENSION.exec("16px");
@@ -94,7 +97,7 @@ export const CSS_DIMENSION: Regex<
   "(?<value>\\d+(?:\\.\\d+)?)(?<unit>[a-zA-Z_\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*)",
   { names: { value: string; unit: string } }
 > = arkRegex.as(
-  String.raw`(?<value>${DIGIT.source}+(?:\.${DIGIT.source}+)?)(?<unit>[a-zA-Z_\u0080-\uFFFF][\w\-\u0080-\uFFFF]*)`,
+  String.raw`(?<value>${numberLiteralPattern})(?<unit>${cssIdentifierStart}${cssIdentifierCont}*)`,
   "u",
 );
 
@@ -123,7 +126,7 @@ export const CSS_HASH_COLOR: Regex<
 export const CSS_FUNCTION: Regex<
   "(?<name>[a-zA-Z_\\-\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*)[\\s\\t]*\\(",
   { names: { name: string } }
-> = arkRegex.as(String.raw`(?<name>[a-zA-Z_\-\u0080-\uFFFF][\w\-\u0080-\uFFFF]*)[ \t]*\(`, "u");
+> = arkRegex.as(String.raw`(?<name>[a-zA-Z_\-\u0080-\uFFFF]${cssIdentifierCont}*)[ \t]*\(`, "u");
 
 /**
  * CSS keyword from W3C formal grammar.
@@ -165,4 +168,19 @@ export const CSS_UNICODE_RANGE: Regex<
 export const CSS_PROPERTY_NAME: Regex<
   "(?<name>(?<custom>--)?[a-zA-Z_\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*)",
   { names: { name: string; custom?: string } }
-> = arkRegex.as(String.raw`(?<name>(?<custom>--)?[a-zA-Z_\u0080-\uFFFF][\w\-\u0080-\uFFFF]*)`, "u");
+> = arkRegex.as(
+  String.raw`(?<name>(?<custom>--)?[a-zA-Z_\u0080-\uFFFF]${cssIdentifierCont}*)`,
+  "u",
+);
+
+// Convenience string exports for use in template literals
+export const cssIdentifier: string = CSS_IDENTIFIER.source;
+export const cssName: string = CSS_NAME.source;
+export const cssNumber: string = CSS_NUMBER.source;
+export const cssPercentage: string = CSS_PERCENTAGE.source;
+export const cssDimension: string = CSS_DIMENSION.source;
+export const cssHashColor: string = CSS_HASH_COLOR.source;
+export const cssFunction: string = CSS_FUNCTION.source;
+export const cssKeyword: string = CSS_KEYWORD.source;
+export const cssUnicodeRange: string = CSS_UNICODE_RANGE.source;
+export const cssPropertyName: string = CSS_PROPERTY_NAME.source;

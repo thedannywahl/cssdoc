@@ -65,6 +65,8 @@ export * as CssdocLocalPatterns from "./tiers/cssdoc-local.js";
 export {
   // Tier 0: Character Class patterns
   ALPHA,
+  ALPHA_LOWER,
+  ALPHA_UPPER,
   ALPHANUMERIC,
   ALPHANUMERIC_EXTENDED,
   DIGIT,
@@ -77,6 +79,30 @@ export {
   PAREN_OPEN,
   PAREN_CLOSE,
   COLON,
+  CSS_IDENTIFIER_START,
+  CSS_IDENTIFIER_CONT,
+  CSS_IDENTIFIER_CONT_NO_DASH,
+  WORD_BOUNDARY,
+  // Convenience string exports for use in template literals
+  alpha,
+  alphaLower,
+  alphaUpper,
+  alphanumeric,
+  alphanumericExtended,
+  digit,
+  dash,
+  doubleDash,
+  dot,
+  spaceTab,
+  braceOpen,
+  braceClose,
+  parenOpen,
+  parenClose,
+  colon,
+  cssIdentifierStart,
+  cssIdentifierCont,
+  cssIdentifierContNoDash,
+  wordBoundary,
 } from "./tiers/character-classes.js";
 
 export {
@@ -91,6 +117,17 @@ export {
   CSS_KEYWORD,
   CSS_UNICODE_RANGE,
   CSS_PROPERTY_NAME,
+  // Convenience string exports for use in template literals
+  cssIdentifier,
+  cssName,
+  cssNumber,
+  cssPercentage,
+  cssDimension,
+  cssHashColor,
+  cssFunction,
+  cssKeyword,
+  cssUnicodeRange,
+  cssPropertyName,
 } from "./tiers/css-spec.js";
 
 export {
@@ -121,6 +158,33 @@ export {
   CSSDOC_PART_TAG_PATTERN,
   CSSDOC_PROPERTY_TAG_PATTERN,
   CSSDOC_REF_TAG_PATTERN,
+  // Convenience string exports for use in template literals
+  cssdocIdentifier,
+  cssdocRecordName,
+  cssdocModifierSuffix,
+  cssdocModifierChained,
+  cssdocModifierAttribute,
+  cssdocTag,
+  cssdocTagArg,
+  cssdocStructureRef,
+  cssdocCardinality,
+  cssdocCustomProperty,
+  cssdocInlineRef,
+  cssdocRefNum,
+  cssdocStateValue,
+  cssdocSelectorValue,
+  cssdocStructureCardinality,
+  cssdocSlotDecl,
+  cssdocStructureClass,
+  cssdocStructureTag,
+  cssdocStructureComponent,
+  cssdocStructureBrace,
+  cssdocInlineTagPattern,
+  cssdocRecordTagPattern,
+  cssdocModifierTagPattern,
+  cssdocPartTagPattern,
+  cssdocPropertyTagPattern,
+  cssdocRefTagPattern,
 } from "./tiers/css-doc-grammar.js";
 
 export {
@@ -140,6 +204,22 @@ export {
   TOKEN_PSEUDO_CLASS,
   TOKEN_PSEUDO_CLASS_OPTIONAL,
   TOKEN_INLINE_CONTENT,
+  // Convenience string exports for use in template literals
+  tokenWhitespace,
+  tokenIdentifier,
+  tokenQualifiedIdentifier,
+  tokenQualifiedIdentifierOptional,
+  tokenModifierName,
+  tokenModifierNameOptional,
+  tokenClassSelector,
+  tokenClassSelectorOptional,
+  tokenCustomProperty,
+  tokenCustomPropertyOptional,
+  tokenRefNumber,
+  tokenRefNumberOptional,
+  tokenPseudoClass,
+  tokenPseudoClassOptional,
+  tokenInlineContent,
 } from "./tiers/cssdoc-token-parts.js";
 
 export {
@@ -152,6 +232,15 @@ export {
   CSSDOC_REF_TAG_TOKENIZER,
   CSSDOC_STATE_TAG_TOKENIZER,
   CSSDOC_STRUCTURE_COMPONENT_TAG_TOKENIZER,
+  // Convenience string exports for use in template literals
+  cssdocInlineTagTokenizer,
+  cssdocRecordTagTokenizer,
+  cssdocModifierTagTokenizer,
+  cssdocPartTagTokenizer,
+  cssdocPropertyTagTokenizer,
+  cssdocRefTagTokenizer,
+  cssdocStateTagTokenizer,
+  cssdocStructureComponentTagTokenizer,
 } from "./tiers/cssdoc-tags.js";
 
 export {
@@ -174,6 +263,25 @@ export {
   RSCSS_COMPONENT,
   RSCSS_ELEMENT,
   RSCSS_HELPER,
+  // Convenience string exports for use in template literals
+  bemBlock,
+  bemElement,
+  bemModifier,
+  classRef,
+  singleClass,
+  ariaState,
+  varReference,
+  globPattern,
+  modifierChain,
+  attributeSelector,
+  pseudoClass,
+  pseudoElement,
+  combinator,
+  scopePreludeBase,
+  rscssVariant,
+  rscssComponent,
+  rscssElement,
+  rscssHelper,
 } from "./tiers/cssdoc-local.js";
 
 // Export type definitions

@@ -404,3 +404,31 @@ export const CSSDOC_REF_TAG_PATTERN: Regex<
   "(@(?:ref))\\b[ \\t]*(\\d+\\.?)?",
   { names: {}; flags: "u" }
 > = arkRegex.as(String.raw`(@(?:ref))\b[ \t]*(\d+\.?)?`, "u");
+
+// Convenience string exports for use in template literals
+export const cssdocIdentifier: string = CSSDOC_IDENTIFIER.source;
+export const cssdocRecordName: string = CSSDOC_RECORD_NAME.source;
+export const cssdocModifierSuffix: string = CSSDOC_MODIFIER_SUFFIX.source;
+export const cssdocModifierChained: string = CSSDOC_MODIFIER_CHAINED.source;
+export const cssdocModifierAttribute: string = CSSDOC_MODIFIER_ATTRIBUTE.source;
+export const cssdocTag: string = CSSDOC_TAG.source;
+export const cssdocTagArg: string = CSSDOC_TAG_ARG.source;
+export const cssdocStructureRef: string = CSSDOC_STRUCTURE_REF.source;
+export const cssdocCardinality: string = CSSDOC_CARDINALITY.source;
+export const cssdocCustomProperty: string = CSSDOC_CUSTOM_PROPERTY.source;
+export const cssdocInlineRef: string = CSSDOC_INLINE_REF.source;
+export const cssdocRefNum: string = CSSDOC_REF_NUM.source;
+export const cssdocStateValue: string = CSSDOC_STATE_VALUE.source;
+export const cssdocSelectorValue: string = CSSDOC_SELECTOR_VALUE.source;
+export const cssdocStructureCardinality: string = CSSDOC_STRUCTURE_CARDINALITY.source;
+export const cssdocSlotDecl: string = CSSDOC_SLOT_DECL.source;
+export const cssdocStructureClass: string = CSSDOC_STRUCTURE_CLASS.source;
+export const cssdocStructureTag: string = CSSDOC_STRUCTURE_TAG.source;
+export const cssdocStructureComponent: string = CSSDOC_STRUCTURE_COMPONENT.source;
+export const cssdocStructureBrace: string = CSSDOC_STRUCTURE_BRACE.source;
+export const cssdocInlineTagPattern: string = CSSDOC_INLINE_TAG_PATTERN.source;
+export const cssdocRecordTagPattern: string = CSSDOC_RECORD_TAG_PATTERN.source;
+export const cssdocModifierTagPattern: string = CSSDOC_MODIFIER_TAG_PATTERN.source;
+export const cssdocPartTagPattern: string = CSSDOC_PART_TAG_PATTERN.source;
+export const cssdocPropertyTagPattern: string = CSSDOC_PROPERTY_TAG_PATTERN.source;
+export const cssdocRefTagPattern: string = CSSDOC_REF_TAG_PATTERN.source;

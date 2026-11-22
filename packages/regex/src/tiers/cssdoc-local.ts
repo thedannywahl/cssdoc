@@ -392,3 +392,23 @@ export const CUSTOM_STATE: Regex<
   ":state\\((?<name>[A-Za-z_][\\w-]*)\\)",
   { names: { name: string }; flags: "u" }
 > = arkRegex.as(String.raw`:state\((?<name>[A-Za-z_][\w-]*)\)`, "u");
+
+// Convenience string exports for use in template literals
+export const bemBlock: string = BEM_BLOCK.source;
+export const bemElement: string = BEM_ELEMENT.source;
+export const bemModifier: string = BEM_MODIFIER.source;
+export const classRef: string = CLASS_REF.source;
+export const singleClass: string = SINGLE_CLASS.source;
+export const ariaState: string = ARIA_STATE.source;
+export const varReference: string = VAR_REFERENCE.source;
+export const globPattern: string = GLOB_PATTERN.source;
+export const modifierChain: string = MODIFIER_CHAIN.source;
+export const attributeSelector: string = ATTRIBUTE_SELECTOR.source;
+export const pseudoClass: string = PSEUDO_CLASS.source;
+export const pseudoElement: string = PSEUDO_ELEMENT.source;
+export const combinator: string = COMBINATOR.source;
+export const scopePreludeBase: string = SCOPE_PRELUDE_BASE.source;
+export const rscssVariant: string = RSCSS_VARIANT.source;
+export const rscssComponent: string = RSCSS_COMPONENT.source;
+export const rscssElement: string = RSCSS_ELEMENT.source;
+export const rscssHelper: string = RSCSS_HELPER.source;

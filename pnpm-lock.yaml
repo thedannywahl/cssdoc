@@ -1280,6 +1280,9 @@ importers:
 
   syntaxes/cssdoc/tmlanguage:
     dependencies:
+      '@cssdoc/regex':
+        specifier: workspace:*
+        version: link:../../../packages/regex
       '@cssdoc/spec':
         specifier: workspace:*
         version: link:../../../packages/spec

@@ -65,7 +65,7 @@
       ]
     },
     "record-tag": {
-      "match": "(@(?:component|name|utility|rule|declaration|layout))\\b[ \\t]*(\\.?[A-Za-z][A-Za-z0-9_-]*(?:\\.[A-Za-z][A-Za-z0-9_-]*)*)?",
+      "match": "(@(?:component|name|utility|rule|declaration|layout))\\b[ \\t]*([A-Za-z][A-Za-z0-9_-]*(?:\\.[A-Za-z][A-Za-z0-9_-]*)*)?",
       "captures": {
         "1": {
           "name": "storage.type.class.cssdoc"
@@ -109,7 +109,7 @@
       }
     },
     "property-tag": {
-      "match": "(@(?:cssproperty|property|tokens))\\b[ \\t]*(--[A-Za-z][A-Za-z0-9-]*)?",
+      "match": "(@(?:cssproperty|property|tokens))\\b[ \\t]*(--[A-Za-z][A-Za-z0-9_-]*)?",
       "captures": {
         "1": {
           "name": "storage.type.class.cssdoc"
@@ -120,7 +120,7 @@
       }
     },
     "ref-tag": {
-      "match": "(@(?:ref))\\b[ \\t]*(\\d+\\.?)?",
+      "match": "(@(?:ref))\\b[ \\t]*([0-9]+\\.?)?",
       "captures": {
         "1": {
           "name": "storage.type.class.cssdoc"
@@ -159,7 +159,7 @@
           "name": "entity.other.attribute-name.part.cssdoc"
         },
         {
-          "match": ":[a-z][a-z0-9-]*(?::max-\\d+)?",
+          "match": ":[a-z][A-Za-z0-9_-]*(?::max-[0-9]+)?",
           "name": "variable.other.modifier.cssdoc"
         },
         {
@@ -173,7 +173,7 @@
       ]
     },
     "custom-property": {
-      "match": "(?<![\\w-])--[A-Za-z][A-Za-z0-9-]*",
+      "match": "(?![\\w-])--[A-Za-z][A-Za-z0-9_-]*",
       "name": "support.type.custom-property.cssdoc"
     }
   }

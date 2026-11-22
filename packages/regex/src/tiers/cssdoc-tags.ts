@@ -165,3 +165,14 @@ export const CSSDOC_STRUCTURE_COMPONENT_TAG_TOKENIZER: Regex<
   String.raw`(@(?:component|variant))\b${TOKEN_WHITESPACE.source}(${TOKEN_QUALIFIED_IDENTIFIER_OPTIONAL.source})`,
   "u",
 );
+
+// Convenience string exports for use in template literals
+export const cssdocInlineTagTokenizer: string = CSSDOC_INLINE_TAG_TOKENIZER.source;
+export const cssdocRecordTagTokenizer: string = CSSDOC_RECORD_TAG_TOKENIZER.source;
+export const cssdocModifierTagTokenizer: string = CSSDOC_MODIFIER_TAG_TOKENIZER.source;
+export const cssdocPartTagTokenizer: string = CSSDOC_PART_TAG_TOKENIZER.source;
+export const cssdocPropertyTagTokenizer: string = CSSDOC_PROPERTY_TAG_TOKENIZER.source;
+export const cssdocRefTagTokenizer: string = CSSDOC_REF_TAG_TOKENIZER.source;
+export const cssdocStateTagTokenizer: string = CSSDOC_STATE_TAG_TOKENIZER.source;
+export const cssdocStructureComponentTagTokenizer: string =
+  CSSDOC_STRUCTURE_COMPONENT_TAG_TOKENIZER.source;

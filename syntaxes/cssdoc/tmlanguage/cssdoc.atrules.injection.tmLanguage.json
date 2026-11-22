@@ -16,7 +16,7 @@
   ],
   "repository": {
     "record-ref-atrule": {
-      "match": "(@(?:component|name|utility|rule|declaration|layout))\\b(?:[ \\t]+([A-Za-z][A-Za-z0-9_-]*))?(?:[ \\t]+(\\(\\s*--[A-Za-z][A-Za-z0-9-]*\\s*\\)|:[A-Za-z][A-Za-z0-9_-]*))?",
+      "match": "(@(?:component|name|utility|rule|declaration|layout))\\b(?:[ \\t]+([A-Za-z][A-Za-z0-9_-]*))?(?:[ \\t]+(?:\\(\\s*--[A-Za-z][A-Za-z0-9_-]*\\s*\\)|:[A-Za-z][A-Za-z0-9_-]*))?",
       "captures": {
         "1": {
           "name": "storage.type.class.cssdoc"
@@ -30,7 +30,7 @@
       }
     },
     "untyped-ref-atrule": {
-      "match": "(@(?!(?:charset|color-profile|container|counter-style|document|font-face|font-feature-values|font-palette-values|import|keyframes|layer|media|namespace|page|property|scope|starting-style|supports|view-transition)\\b)(?:[A-Za-z][A-Za-z0-9_-]*))(?:[ \\t]+(\\(\\s*--[A-Za-z][A-Za-z0-9-]*\\s*\\)|:[A-Za-z][A-Za-z0-9_-]*))?",
+      "match": "(@(?!(?:charset|color-profile|container|counter-style|document|font-face|font-feature-values|font-palette-values|import|keyframes|layer|media|namespace|page|property|scope|starting-style|supports|view-transition)\\b)(?:[A-Za-z][A-Za-z0-9_-]*))(?:[ \\t]+(?:\\(\\s*--[A-Za-z][A-Za-z0-9_-]*\\s*\\)|:[A-Za-z][A-Za-z0-9_-]*))?",
       "captures": {
         "1": {
           "name": "storage.type.class.cssdoc"
@@ -41,7 +41,7 @@
       }
     },
     "custom-property": {
-      "match": "(?<![\\w-])--[A-Za-z][A-Za-z0-9-]*",
+      "match": "(?![\\w-])--[A-Za-z][A-Za-z0-9_-]*",
       "name": "support.type.custom-property.cssdoc"
     }
   }
