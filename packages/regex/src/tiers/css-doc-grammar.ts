@@ -25,6 +25,8 @@ import { regex as arkRegex } from "arkregex";
 export const CSSDOC_IDENTIFIER_PART: Regex<"[A-Za-z_][\\w-]*", { names: {}; flags: "u" }> =
   arkRegex.as(String.raw`[A-Za-z_][\w-]*`, "u");
 
+export const cssdocIdentifierPart: string = CSSDOC_IDENTIFIER_PART.source;
+
 /**
  * CssDoc Identifier from grammar.
  * Starts with ASCII letter or underscore; followed by word chars (ASCII) or hyphens.
@@ -38,7 +40,7 @@ export const CSSDOC_IDENTIFIER_PART: Regex<"[A-Za-z_][\\w-]*", { names: {}; flag
 export const CSSDOC_IDENTIFIER: Regex<
   "(?<identifier>[A-Za-z_][\\w-]*)",
   { names: { identifier: string } }
-> = arkRegex.as(String.raw`(?<identifier>${CSSDOC_IDENTIFIER_PART.source})`, "u");
+> = arkRegex.as(String.raw`(?<identifier>${cssdocIdentifierPart})`, "u");
 
 /**
  * CssDoc Record Name from grammar.
@@ -56,10 +58,7 @@ export const CSSDOC_IDENTIFIER: Regex<
 export const CSSDOC_RECORD_NAME: Regex<
   "(?<parts>[A-Za-z_][\\w-]*(?:\\.[A-Za-z_][\\w-]*)*)",
   { names: { parts: string }; flags: "u" }
-> = arkRegex.as(
-  String.raw`(?<parts>${CSSDOC_IDENTIFIER_PART.source}(?:\.${CSSDOC_IDENTIFIER_PART.source})*)`,
-  "u",
-);
+> = arkRegex.as(String.raw`(?<parts>${cssdocIdentifierPart}(?:\.${cssdocIdentifierPart})*)`, "u");
 
 /**
  * CssDoc Modifier Name - Suffix Form from grammar.
@@ -169,7 +168,7 @@ export const CSSDOC_STRUCTURE_REF: Regex<
   "(?<ref>[A-Za-z_][\\w-]*(?:\\.[A-Za-z_][\\w-]*)*)(?::(?<type>[\\w-]+))?",
   { names: { ref: string; type?: string }; flags: "u" }
 > = arkRegex.as(
-  String.raw`(?<ref>${CSSDOC_IDENTIFIER_PART.source}(?:\.${CSSDOC_IDENTIFIER_PART.source})*)(?::(?<type>[\w-]+))?`,
+  String.raw`(?<ref>${cssdocIdentifierPart}(?:\.${cssdocIdentifierPart})*)(?::(?<type>[\w-]+))?`,
   "u",
 );
 
@@ -418,7 +417,6 @@ export const CSSDOC_REF_TAG_PATTERN: Regex<
 > = arkRegex.as(String.raw`(@(?:ref))\b[ \t]*(\d+\.?)?`, "u");
 
 // Convenience string exports for use in template literals
-export const cssdocIdentifierPart: string = CSSDOC_IDENTIFIER_PART.source;
 export const cssdocIdentifier: string = CSSDOC_IDENTIFIER.source;
 export const cssdocRecordName: string = CSSDOC_RECORD_NAME.source;
 export const cssdocModifierSuffix: string = CSSDOC_MODIFIER_SUFFIX.source;
