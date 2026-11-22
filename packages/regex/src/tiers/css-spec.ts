@@ -18,6 +18,7 @@ import { regex as arkRegex } from "arkregex";
 import {
   digit,
   cssIdentifierStart,
+  cssIdentifierStartWithDash,
   cssIdentifierCont,
   cssIdentifierContNoDash,
 } from "./character-classes.js";
@@ -126,7 +127,10 @@ export const CSS_HASH_COLOR: Regex<
 export const CSS_FUNCTION: Regex<
   "(?<name>[a-zA-Z_\\-\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*)[\\s\\t]*\\(",
   { names: { name: string } }
-> = arkRegex.as(String.raw`(?<name>[a-zA-Z_\-\u0080-\uFFFF]${cssIdentifierCont}*)[ \t]*\(`, "u");
+> = arkRegex.as(
+  String.raw`(?<name>${cssIdentifierStartWithDash}${cssIdentifierCont}*)[ \t]*\(`,
+  "u",
+);
 
 /**
  * CSS keyword from W3C formal grammar.

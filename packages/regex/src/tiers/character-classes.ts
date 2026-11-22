@@ -134,6 +134,16 @@ export const CSS_IDENTIFIER_START: Regex<"[a-zA-Z_\\u0080-\\uFFFF]", { names: {}
   arkRegex.as(String.raw`[a-zA-Z_\u0080-\uFFFF]`, "u");
 
 /**
+ * CSS identifier start with dash: `[a-zA-Z_\-\u0080-\uFFFF]`
+ * Letter, underscore, dash, or non-ASCII character.
+ * Used in contexts like function names where dashes are allowed at the start.
+ */
+export const CSS_IDENTIFIER_START_WITH_DASH: Regex<
+  "[a-zA-Z_\\-\\u0080-\\uFFFF]",
+  { names: {}; flags: "u" }
+> = arkRegex.as(String.raw`[a-zA-Z_\-\u0080-\uFFFF]`, "u");
+
+/**
  * CSS identifier continuation: `[\w\-\u0080-\uFFFF]`
  * Word characters, dash, or non-ASCII character.
  * Used after the first character in CSS identifiers, properties, and function names.
@@ -175,6 +185,7 @@ export const parenOpen: string = PAREN_OPEN.source;
 export const parenClose: string = PAREN_CLOSE.source;
 export const colon: string = COLON.source;
 export const cssIdentifierStart: string = CSS_IDENTIFIER_START.source;
+export const cssIdentifierStartWithDash: string = CSS_IDENTIFIER_START_WITH_DASH.source;
 export const cssIdentifierCont: string = CSS_IDENTIFIER_CONT.source;
 export const cssIdentifierContNoDash: string = CSS_IDENTIFIER_CONT_NO_DASH.source;
 export const wordBoundary: string = WORD_BOUNDARY.source;
