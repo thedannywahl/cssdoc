@@ -15,6 +15,7 @@
 
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
+import { alphanumericExtended, dash } from "./character-classes.js";
 
 /**
  * CssDoc identifier part: `[A-Za-z_][\w-]*`
@@ -78,7 +79,7 @@ export const CSSDOC_RECORD_NAME: Regex<
 export const CSSDOC_MODIFIER_SUFFIX: Regex<
   "(?<name>[\\w-]+(?:-\\*)?)",
   { names: { name: string }; flags: "u" }
-> = arkRegex.as(String.raw`(?<name>[\w-]+(?:-\*)?)`, "u");
+> = arkRegex.as(String.raw`(?<name>${alphanumericExtended}+(?:${dash}\*)?)`, "u");
 
 /**
  * CssDoc Modifier Name - Chained Form from grammar.
@@ -104,7 +105,10 @@ export const CSSDOC_MODIFIER_SUFFIX: Regex<
 export const CSSDOC_MODIFIER_CHAINED: Regex<
   "-(?<prop>[A-Za-z0-9]+)(?:-(?<value>[\\w-]+(?:-\\*)?))?",
   { names: { prop: string; value?: string }; flags: "u" }
-> = arkRegex.as(String.raw`-(?<prop>[A-Za-z0-9]+)(?:-(?<value>[\w-]+(?:-\*)?))?`, "u");
+> = arkRegex.as(
+  String.raw`-(?<prop>[A-Za-z0-9]+)(?:-(?<value>${alphanumericExtended}+(?:${dash}\*)?))?`,
+  "u",
+);
 
 /**
  * CssDoc Modifier Name - Attribute Form from grammar.
@@ -126,7 +130,10 @@ export const CSSDOC_MODIFIER_CHAINED: Regex<
 export const CSSDOC_MODIFIER_ATTRIBUTE: Regex<
   "\\[(?<name>[\\w-]+)(?:=(?<value>[\"']?[^\\]]*?)(?<quote>[\"'])?)\\?\\]",
   { names: { name: string; value?: string; quote?: string }; flags: "u" }
-> = arkRegex.as(String.raw`\[(?<name>[\w-]+)(?:=(?<value>["']?[^\]]*?)(?<quote>["'])?)?\]`, "u");
+> = arkRegex.as(
+  String.raw`\[(?<name>${alphanumericExtended}+)(?:=(?<value>["']?[^\]]*?)(?<quote>["'])?)?\]`,
+  "u",
+);
 
 /**
  * CssDoc Tag from grammar.
