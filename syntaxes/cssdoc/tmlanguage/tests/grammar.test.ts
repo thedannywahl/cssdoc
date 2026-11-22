@@ -71,6 +71,68 @@ test("member names get semantic scopes: record name, modifier like part, cssstat
   expect(g.repository["block-tag"]?.match).not.toContain("cssstate");
 });
 
+test("@selector, @pseudo, @class are in part-tag with value highlighting", () => {
+  const g = buildInjectionGrammar();
+  const partTagMatch = g.repository["part-tag"]?.match ?? "";
+  expect(partTagMatch).toContain("selector");
+  expect(partTagMatch).toContain("pseudo");
+  expect(partTagMatch).toContain("class");
+  // These should NOT be in block-tag since they have values.
+  expect(g.repository["block-tag"]?.match).not.toContain("selector");
+  expect(g.repository["block-tag"]?.match).not.toContain("pseudo");
+  // Note: "class" might appear in scopes, but shouldn't be a bare tag keyword
+});
+
+test("@structure region highlights @component and @variant with names", () => {
+  const g = buildInjectionGrammar();
+  const structurePatterns = g.repository["structure-tag"]?.patterns ?? [];
+  const patternsStr = JSON.stringify(structurePatterns);
+  expect(patternsStr).toContain("component");
+  expect(patternsStr).toContain("variant");
+  // Should capture both tag and name in separate groups
+  const componentPattern = structurePatterns.find(
+    (p: unknown) =>
+      typeof p === "object" &&
+      p !== null &&
+      "match" in p &&
+      (p as Record<string, unknown>).match?.toString().includes("component"),
+  );
+  expect(componentPattern).toBeDefined();
+  expect((componentPattern as Record<string, unknown>)?.captures).toBeDefined();
+});
+
+test("@structure region highlights slot declarations", () => {
+  const g = buildInjectionGrammar();
+  const structurePatterns = g.repository["structure-tag"]?.patterns ?? [];
+  const patternsStr = JSON.stringify(structurePatterns);
+  expect(patternsStr).toContain("slot");
+  // Should handle slot with optional attributes: slot[name="x"]
+  const slotPattern = structurePatterns.find(
+    (p: unknown) =>
+      typeof p === "object" &&
+      p !== null &&
+      "match" in p &&
+      (p as Record<string, unknown>).match?.toString().includes("slot"),
+  );
+  expect(slotPattern).toBeDefined();
+});
+
+test("@structure region highlights cardinality modifiers", () => {
+  const g = buildInjectionGrammar();
+  const structurePatterns = g.repository["structure-tag"]?.patterns ?? [];
+  const patternsStr = JSON.stringify(structurePatterns);
+  // Should have pattern for :optional, :max-N, etc.
+  expect(patternsStr).toContain(":[a-z]");
+  const cardinalityPattern = structurePatterns.find(
+    (p: unknown) =>
+      typeof p === "object" &&
+      p !== null &&
+      "match" in p &&
+      (p as Record<string, unknown>).match?.toString().includes(":"),
+  );
+  expect(cardinalityPattern).toBeDefined();
+});
+
 test("record-tag highlights a dotted qualified name in full, not just the segment before the dot", () => {
   const g = buildInjectionGrammar();
   const re = new RegExp(g.repository["record-tag"]?.match ?? "");

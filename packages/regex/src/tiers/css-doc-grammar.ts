@@ -200,3 +200,204 @@ export const CSSDOC_INLINE_REF: Regex<
   "\\{@(?<tag>[\\w-]+)\\s+(?<ref>\\S+)\\}",
   { names: { tag: string; ref: string }; flags: "u" }
 > = arkRegex.as(String.raw`\{@(?<tag>[\w-]+)\s+(?<ref>\S+)\}`, "u");
+
+/**
+ * CssDoc Ref Number from grammar.
+ * Numeric reference within `@ref` annotation (e.g., `@ref 1`, `@ref 1.`).
+ *
+ * @example
+ * CSSDOC_REF_NUM.exec("1")?.groups?.num // "1"
+ * CSSDOC_REF_NUM.exec("1.")?.groups?.num // "1"
+ */
+export const CSSDOC_REF_NUM: Regex<"(?<num>\\d+)\\.?", { names: { num: string }; flags: "u" }> =
+  arkRegex.as(String.raw`(?<num>\d+)\.?`, "u");
+
+/**
+ * CssDoc State Value from grammar.
+ * State token for `@cssstate` tag (e.g., `:open`, `:state(open)`, `:disabled`).
+ *
+ * @example
+ * CSSDOC_STATE_VALUE.exec(":open")?.groups?.name // "open"
+ * CSSDOC_STATE_VALUE.exec(":state(open)")?.groups // { name: "state", param: "open" }
+ * CSSDOC_STATE_VALUE.exec(":disabled")?.groups?.name // "disabled"
+ */
+export const CSSDOC_STATE_VALUE: Regex<
+  ":?(?<name>[A-Za-z][\\w-]*)(?:\\((?<param>[\\w-]*)\\))?",
+  { names: { name: string; param?: string }; flags: "u" }
+> = arkRegex.as(String.raw`:?(?<name>[A-Za-z][\w-]*)(?:\((?<param>[\w-]*)\))?`, "u");
+
+/**
+ * CssDoc Selector/Pseudo/Class Value from grammar.
+ * Value for `@selector`, `@pseudo`, `@class` tags (e.g., `.alert-box`, `::before`).
+ *
+ * @example
+ * CSSDOC_SELECTOR_VALUE.exec(".alert-box")?.groups?.value // ".alert-box"
+ * CSSDOC_SELECTOR_VALUE.exec("::before")?.groups?.value // "::before"
+ * CSSDOC_SELECTOR_VALUE.exec("alert-container")?.groups?.value // "alert-container"
+ */
+export const CSSDOC_SELECTOR_VALUE: Regex<
+  "(?<value>\\.?[A-Za-z][A-Za-z0-9_-]*)",
+  { names: { value: string }; flags: "u" }
+> = arkRegex.as(String.raw`(?<value>\.?[A-Za-z][A-Za-z0-9_-]*)`, "u");
+
+/**
+ * CssDoc Structure Cardinality Modifier from grammar.
+ * Cardinality suffix on component/variant references in @structure (e.g., `:optional`, `:max-1`).
+ *
+ * @example
+ * CSSDOC_STRUCTURE_CARDINALITY.exec(":optional")?.groups?.keyword // "optional"
+ * CSSDOC_STRUCTURE_CARDINALITY.exec(":max-1")?.groups?.maxValue // "1"
+ * CSSDOC_STRUCTURE_CARDINALITY.exec(":one-or-more:max-2")?.groups // { keyword: "one-or-more", maxValue: "2" }
+ */
+export const CSSDOC_STRUCTURE_CARDINALITY: Regex<
+  ":(?:(?<keyword>optional|one-or-more|many)(?::max-(?<maxValue>\\d+))?|max-(?<justMax>\\d+))",
+  { names: { keyword?: string; maxValue?: string; justMax?: string }; flags: "u" }
+> = arkRegex.as(
+  String.raw`:(?:(?<keyword>optional|one-or-more|many)(?::max-(?<maxValue>\d+))?|max-(?<justMax>\d+))`,
+  "u",
+);
+
+/**
+ * CssDoc Slot Declaration from grammar.
+ * Slot reference in @structure body (e.g., `slot`, `slot[name="x"]`).
+ *
+ * @example
+ * CSSDOC_SLOT_DECL.exec("slot")?.groups?.name // undefined
+ * CSSDOC_SLOT_DECL.exec("slot[name=\"x\"]")?.groups?.name // "x"
+ * CSSDOC_SLOT_DECL.exec("slot[name='content']")?.groups?.name // "content"
+ */
+export const CSSDOC_SLOT_DECL: Regex<
+  "\\bslot(?:\\[name=(?:[\"']?(?<name>[\\w-]*)[\"']?)?\\])?",
+  { names: { name?: string }; flags: "u" }
+> = arkRegex.as(String.raw`\bslot(?:\[name=(?:["']?(?<name>[\w-]*)["']?)?\])?`, "u");
+
+/**
+ * CssDoc Structure Class Selector from grammar.
+ * Class selector within @structure body (e.g., `.pfx-alert`, `.button-group`).
+ *
+ * @example
+ * CSSDOC_STRUCTURE_CLASS.exec(".pfx-alert")?.groups?.class // "pfx-alert"
+ * CSSDOC_STRUCTURE_CLASS.exec(".button-group")?.groups?.class // "button-group"
+ */
+export const CSSDOC_STRUCTURE_CLASS: Regex<
+  "\\.(?<class>[A-Za-z][A-Za-z0-9_-]*)",
+  { names: { class: string }; flags: "u" }
+> = arkRegex.as(String.raw`\.(?<class>[A-Za-z][A-Za-z0-9_-]*)`, "u");
+
+/**
+ * CssDoc Structure Tag (`@structure` body tag).
+ * Marks the opening `@structure` keyword that begins a structure definition.
+ *
+ * @example
+ * CSSDOC_STRUCTURE_TAG.exec("@structure")?.groups?.tag // "structure"
+ */
+export const CSSDOC_STRUCTURE_TAG: Regex<"@structure\\b", { names: {}; flags: "u" }> = arkRegex.as(
+  String.raw`@structure\b`,
+  "u",
+);
+
+/**
+ * CssDoc Structure Component/Variant Reference from grammar.
+ * Reference to a component or variant within a structure body (e.g., `@component button`, `@variant primary`).
+ * Captures the tag and optional name.
+ *
+ * @example
+ * CSSDOC_STRUCTURE_COMPONENT.exec("@component button")?.groups // { tag: "@component", name: "button" }
+ * CSSDOC_STRUCTURE_COMPONENT.exec("@variant primary")?.groups // { tag: "@variant", name: "primary" }
+ */
+export const CSSDOC_STRUCTURE_COMPONENT: Regex<
+  "(@(?:component|variant))\\b[ \\t]*([A-Za-z][\\w-]*)?",
+  { names: { tag: string; name?: string }; flags: "u" }
+> = arkRegex.as(String.raw`(@(?:component|variant))\b[ \t]*([A-Za-z][\w-]*)?`, "u");
+
+/**
+ * CssDoc Structure Braces from grammar.
+ * Opening and closing braces within structure bodies for nesting.
+ *
+ * @example
+ * CSSDOC_STRUCTURE_BRACE.exec("{")?.groups // {} (matches "{" or "}")
+ */
+export const CSSDOC_STRUCTURE_BRACE: Regex<"[{}]", { names: {}; flags: "u" }> = arkRegex.as(
+  String.raw`[{}]`,
+  "u",
+);
+
+/**
+ * Inline Tag Pattern.
+ * Matches inline tags like `{@link}`, `{@label}`, `{@inheritDoc}` within prose.
+ * Captures the opening brace, tag name, text content, and optional closing brace.
+ *
+ * @example
+ * Pattern: `(\{)(@(?:link|label|inheritDoc))\b[ \t]*([^}]*)(\})?`
+ */
+export const CSSDOC_INLINE_TAG_PATTERN: Regex<
+  "(\\{)(@(?:link|label|inheritDoc))\\b[ \\t]*([^}]*)(\\})?",
+  { names: {}; flags: "u" }
+> = arkRegex.as(String.raw`(\{)(@(?:link|label|inheritDoc))\b[ \t]*([^}]*)(\})?`, "u");
+
+/**
+ * Record/Component Tag Pattern.
+ * Matches tags like `@component`, `@name`, `@utility`, `@rule`, etc. with optional qualified name.
+ * Captures the tag and optional dotted name (e.g., `menu.item`).
+ *
+ * @example
+ * Pattern: `(@(?:component|name|utility|rule|declaration|layout))\b[ \t]*([A-Za-z][A-Za-z0-9_-]*(?:\.[A-Za-z][A-Za-z0-9_-]*)*)?`
+ */
+export const CSSDOC_RECORD_TAG_PATTERN: Regex<
+  "(@(?:component|name|utility|rule|declaration|layout))\\b[ \\t]*([A-Za-z][A-Za-z0-9_-]*(?:\\.[A-Za-z][A-Za-z0-9_-]*)*)?",
+  { names: {}; flags: "u" }
+> = arkRegex.as(
+  String.raw`(@(?:component|name|utility|rule|declaration|layout))\b[ \t]*([A-Za-z][A-Za-z0-9_-]*(?:\.[A-Za-z][A-Za-z0-9_-]*)*)?`,
+  "u",
+);
+
+/**
+ * Modifier Tag Pattern.
+ * Matches tags like `@modifier`, `@variant` with optional hyphenated modifier name.
+ *
+ * @example
+ * Pattern: `(@(?:modifier|variant))\b[ \t]*(-[A-Za-z][A-Za-z0-9-]*)?`
+ */
+export const CSSDOC_MODIFIER_TAG_PATTERN: Regex<
+  "(@(?:modifier|variant))\\b[ \\t]*(-[A-Za-z][A-Za-z0-9-]*)?",
+  { names: {}; flags: "u" }
+> = arkRegex.as(String.raw`(@(?:modifier|variant))\b[ \t]*(-[A-Za-z][A-Za-z0-9-]*)?`, "u");
+
+/**
+ * Part Tag Pattern.
+ * Matches tags like `@part`, `@csspart`, `@slot`, `@selector`, `@pseudo`, `@class` with optional value.
+ *
+ * @example
+ * Pattern: `(@(?:part|csspart|slot|selector|pseudo|class))\b[ \t]*(\\.?[A-Za-z][A-Za-z0-9_-]*)?`
+ */
+export const CSSDOC_PART_TAG_PATTERN: Regex<
+  "(@(?:part|csspart|slot|selector|pseudo|class))\\b[ \\t]*(\\\.?[A-Za-z][A-Za-z0-9_-]*)?",
+  { names: {}; flags: "u" }
+> = arkRegex.as(
+  String.raw`(@(?:part|csspart|slot|selector|pseudo|class))\b[ \t]*(\\.?[A-Za-z][A-Za-z0-9_-]*)?`,
+  "u",
+);
+
+/**
+ * Property/Custom Property Tag Pattern.
+ * Matches tags like `@cssproperty`, `@property` with optional CSS custom property reference.
+ *
+ * @example
+ * Pattern: `(@(?:cssproperty|property))\b[ \t]*(--[A-Za-z][A-Za-z0-9-]*)?`
+ */
+export const CSSDOC_PROPERTY_TAG_PATTERN: Regex<
+  "(@(?:cssproperty|property))\\b[ \\t]*(--[A-Za-z][A-Za-z0-9-]*)?",
+  { names: {}; flags: "u" }
+> = arkRegex.as(String.raw`(@(?:cssproperty|property))\b[ \t]*(--[A-Za-z][A-Za-z0-9-]*)?`, "u");
+
+/**
+ * Ref Tag Pattern.
+ * Matches the `@ref` tag with optional numeric reference.
+ *
+ * @example
+ * Pattern: `(@(?:ref))\b[ \t]*(\d+\.?)?`
+ */
+export const CSSDOC_REF_TAG_PATTERN: Regex<
+  "(@(?:ref))\\b[ \\t]*(\\d+\\.?)?",
+  { names: {}; flags: "u" }
+> = arkRegex.as(String.raw`(@(?:ref))\b[ \t]*(\d+\.?)?`, "u");

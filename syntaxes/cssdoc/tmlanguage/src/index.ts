@@ -65,14 +65,21 @@ export function buildInjectionGrammar(): InjectionGrammar {
   const inlineTags = alt(cssdocTagNamesByKind("inline"));
   const recordTags = alt(cssdocTagNamesByKind("record"));
   const modifierTags = alt(cssdocTagNamesByArgument("modifier-name"));
-  const partTags = alt(cssdocTagNamesByArgument("part-name"));
+  const partTags = alt([...cssdocTagNamesByArgument("part-name"), "selector", "class", "pseudo"]);
   const propertyTags = alt(cssdocTagNamesByArgument("custom-property"));
   // Everything argument-less that isn't a record tag or `@cssstate` — those get their own value-colouring
   // rules below (a record's name, a state's `:state(…)`), so they must not fall through to the bare
-  // keyword rule.
+  // keyword rule. Also exclude selector/class/pseudo which are handled in part-tag.
   const blockTags = alt(
     CSSDOC_TAGS.filter(
-      (t) => t.kind !== "inline" && t.kind !== "record" && t.name !== "cssstate" && !t.argument,
+      (t) =>
+        t.kind !== "inline" &&
+        t.kind !== "record" &&
+        t.name !== "cssstate" &&
+        !t.argument &&
+        t.name !== "selector" &&
+        t.name !== "class" &&
+        t.name !== "pseudo",
     ).map((t) => t.name),
   );
 
@@ -162,14 +169,30 @@ export function buildInjectionGrammar(): InjectionGrammar {
         match: `(@(?:${blockTags}))\\b`,
         name: TAG_SCOPE,
       },
-      // The `@structure` body is nested CSS. We light up only the parts (class selectors) and the
-      // braces that show nesting — not a full CSS grammar. The region runs to the next tag or the
-      // comment's end. Listed before `#block-tag` so it claims `@structure` first.
+      // The `@structure` body is nested CSS. We light up the parts (class selectors), @component/@variant
+      // tags and their names, slot declarations, cardinality modifiers, and braces that show nesting.
+      // The region runs to the next tag or the comment's end. Listed before `#block-tag` so it claims
+      // `@structure` first.
       "structure-tag": {
         begin: "(@structure)\\b",
         beginCaptures: { "1": { name: TAG_SCOPE } },
         end: "(?=@)|(?=\\*/)",
         patterns: [
+          {
+            match: "(@(?:component|variant))\\b[ \\t]*([A-Za-z][A-Za-z0-9_-]*)?",
+            captures: {
+              "1": { name: TAG_SCOPE },
+              "2": { name: "entity.other.attribute-name.part.cssdoc" },
+            },
+          },
+          {
+            match: "\\bslot(?:\\[[^\\]]*\\])?",
+            name: "entity.other.attribute-name.part.cssdoc",
+          },
+          {
+            match: ":[a-z][a-z0-9-]*(?::max-\\d+)?",
+            name: "variable.other.modifier.cssdoc",
+          },
           {
             match: "\\.[A-Za-z][A-Za-z0-9_-]*",
             name: "entity.other.attribute-name.part.cssdoc",

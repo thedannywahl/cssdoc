@@ -22,6 +22,12 @@ import {
   CSSDOC_TAG,
   CSSDOC_MODIFIER_SUFFIX,
   CSSDOC_CUSTOM_PROPERTY,
+  CSSDOC_REF_NUM,
+  CSSDOC_STATE_VALUE,
+  CSSDOC_SELECTOR_VALUE,
+  CSSDOC_STRUCTURE_CARDINALITY,
+  CSSDOC_SLOT_DECL,
+  CSSDOC_STRUCTURE_CLASS,
 } from "../src/tiers/css-doc-grammar.js";
 
 // Tier 3: cssdoc-Specific patterns
@@ -89,6 +95,42 @@ describe("@cssdoc/regex - Tier 2: CssDoc Grammar Patterns", () => {
   it("matches CssDoc custom properties", () => {
     const match = CSSDOC_CUSTOM_PROPERTY.exec("--primary-color");
     expect(match?.groups?.name).toBe("primary-color");
+  });
+
+  it("matches CssDoc ref numbers", () => {
+    expect(CSSDOC_REF_NUM.exec("1")?.groups?.num).toBe("1");
+    expect(CSSDOC_REF_NUM.exec("1.")?.groups?.num).toBe("1");
+  });
+
+  it("matches CssDoc state values", () => {
+    expect(CSSDOC_STATE_VALUE.exec(":open")?.groups?.name).toBe("open");
+    expect(CSSDOC_STATE_VALUE.exec(":state(open)")?.groups?.param).toBe("open");
+    expect(CSSDOC_STATE_VALUE.exec(":disabled")?.groups?.name).toBe("disabled");
+  });
+
+  it("matches CssDoc selector/pseudo/class values", () => {
+    expect(CSSDOC_SELECTOR_VALUE.exec(".alert-box")?.groups?.value).toBe(".alert-box");
+    expect(CSSDOC_SELECTOR_VALUE.exec("alert-container")?.groups?.value).toBe("alert-container");
+  });
+
+  it("matches CssDoc structure cardinality modifiers", () => {
+    expect(CSSDOC_STRUCTURE_CARDINALITY.exec(":optional")?.groups?.keyword).toBe("optional");
+    const maxMatch = CSSDOC_STRUCTURE_CARDINALITY.exec(":max-1")?.groups;
+    expect(maxMatch?.justMax || maxMatch?.maxValue).toBe("1");
+    const comboMatch = CSSDOC_STRUCTURE_CARDINALITY.exec(":one-or-more:max-2")?.groups;
+    expect(comboMatch?.keyword).toBe("one-or-more");
+    expect(comboMatch?.maxValue).toBe("2");
+  });
+
+  it("matches CssDoc slot declarations", () => {
+    expect(CSSDOC_SLOT_DECL.test("slot")).toBe(true);
+    expect(CSSDOC_SLOT_DECL.exec('slot[name="x"]')?.groups?.name).toBe("x");
+    expect(CSSDOC_SLOT_DECL.exec("slot[name='content']")?.groups?.name).toBe("content");
+  });
+
+  it("matches CssDoc structure class selectors", () => {
+    expect(CSSDOC_STRUCTURE_CLASS.exec(".pfx-alert")?.groups?.class).toBe("pfx-alert");
+    expect(CSSDOC_STRUCTURE_CLASS.exec(".button-group")?.groups?.class).toBe("button-group");
   });
 });
 

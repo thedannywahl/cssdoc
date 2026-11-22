@@ -8,12 +8,14 @@
  *
  * This package provides a unified library of regex patterns used throughout cssdoc:
  *
+ * - **Tier 0 (Character Classes)**: Generic character class patterns
+ *   - Alphabetic, alphanumeric, digits, punctuation, whitespace
  * - **Tier 1 (W3C CSS)**: Standard CSS patterns from W3C formal grammar
  *   - Identifiers, keywords, colors, functions, properties, units
  * - **Tier 2 (CssDoc Grammar)**: Patterns from CssDoc.grammarkdown specification
  *   - Record names, modifiers, tags, structure references, cardinality
  * - **Tier 3 (cssdoc-Specific)**: Local implementation patterns
- *   - BEM conventions, ARIA attributes, configuration globbing
+ *   - Token parts and tag tokenizers, BEM conventions, ARIA attributes, configuration globbing
  *
  * ## Benefits
  *
@@ -48,12 +50,35 @@
 export { regex } from "arkregex";
 export type { Regex } from "arkregex";
 
+// Utilities for working with any tier of patterns
+export { toRegExp } from "./lib.js";
+
 // Re-export all tier modules
+export * as CharacterClassPatterns from "./tiers/character-classes.js";
 export * as CssSpecPatterns from "./tiers/css-spec.js";
 export * as CssDocGrammarPatterns from "./tiers/css-doc-grammar.js";
+export * as CssdocTokenPartsPatterns from "./tiers/cssdoc-token-parts.js";
+export * as CssdocTagsPatterns from "./tiers/cssdoc-tags.js";
 export * as CssdocLocalPatterns from "./tiers/cssdoc-local.js";
 
 // Convenience re-exports: grouped by usage
+export {
+  // Tier 0: Character Class patterns
+  ALPHA,
+  ALPHANUMERIC,
+  ALPHANUMERIC_EXTENDED,
+  DIGIT,
+  DASH,
+  DOUBLE_DASH,
+  DOT,
+  SPACE_TAB,
+  BRACE_OPEN,
+  BRACE_CLOSE,
+  PAREN_OPEN,
+  PAREN_CLOSE,
+  COLON,
+} from "./tiers/character-classes.js";
+
 export {
   // Tier 1: W3C CSS Spec patterns
   CSS_IDENTIFIER,
@@ -81,10 +106,56 @@ export {
   CSSDOC_CARDINALITY,
   CSSDOC_CUSTOM_PROPERTY,
   CSSDOC_INLINE_REF,
+  CSSDOC_REF_NUM,
+  CSSDOC_STATE_VALUE,
+  CSSDOC_SELECTOR_VALUE,
+  CSSDOC_STRUCTURE_CARDINALITY,
+  CSSDOC_SLOT_DECL,
+  CSSDOC_STRUCTURE_CLASS,
+  CSSDOC_STRUCTURE_TAG,
+  CSSDOC_STRUCTURE_COMPONENT,
+  CSSDOC_STRUCTURE_BRACE,
+  CSSDOC_INLINE_TAG_PATTERN,
+  CSSDOC_RECORD_TAG_PATTERN,
+  CSSDOC_MODIFIER_TAG_PATTERN,
+  CSSDOC_PART_TAG_PATTERN,
+  CSSDOC_PROPERTY_TAG_PATTERN,
+  CSSDOC_REF_TAG_PATTERN,
 } from "./tiers/css-doc-grammar.js";
 
 export {
-  // Tier 3: cssdoc-Specific patterns
+  // Tier 3a: CssDoc Token Parts (atomic patterns for composing tokenizers)
+  TOKEN_WHITESPACE,
+  TOKEN_IDENTIFIER,
+  TOKEN_QUALIFIED_IDENTIFIER,
+  TOKEN_QUALIFIED_IDENTIFIER_OPTIONAL,
+  TOKEN_MODIFIER_NAME,
+  TOKEN_MODIFIER_NAME_OPTIONAL,
+  TOKEN_CLASS_SELECTOR,
+  TOKEN_CLASS_SELECTOR_OPTIONAL,
+  TOKEN_CUSTOM_PROPERTY,
+  TOKEN_CUSTOM_PROPERTY_OPTIONAL,
+  TOKEN_REF_NUMBER,
+  TOKEN_REF_NUMBER_OPTIONAL,
+  TOKEN_PSEUDO_CLASS,
+  TOKEN_PSEUDO_CLASS_OPTIONAL,
+  TOKEN_INLINE_CONTENT,
+} from "./tiers/cssdoc-token-parts.js";
+
+export {
+  // Tier 3b: CssDoc Tag Tokenizer patterns (for syntax highlighters)
+  CSSDOC_INLINE_TAG_TOKENIZER,
+  CSSDOC_RECORD_TAG_TOKENIZER,
+  CSSDOC_MODIFIER_TAG_TOKENIZER,
+  CSSDOC_PART_TAG_TOKENIZER,
+  CSSDOC_PROPERTY_TAG_TOKENIZER,
+  CSSDOC_REF_TAG_TOKENIZER,
+  CSSDOC_STATE_TAG_TOKENIZER,
+  CSSDOC_STRUCTURE_COMPONENT_TAG_TOKENIZER,
+} from "./tiers/cssdoc-tags.js";
+
+export {
+  // Tier 4: cssdoc-Specific patterns
   BEM_BLOCK,
   BEM_ELEMENT,
   BEM_MODIFIER,

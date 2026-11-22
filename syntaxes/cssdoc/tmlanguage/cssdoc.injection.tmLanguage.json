@@ -98,7 +98,7 @@
       }
     },
     "part-tag": {
-      "match": "(@(?:part|csspart|wrapper|slot))\\b[ \\t]*(\\.?[A-Za-z][A-Za-z0-9_-]*)?",
+      "match": "(@(?:part|csspart|wrapper|slot|selector|class|pseudo))\\b[ \\t]*(\\.?[A-Za-z][A-Za-z0-9_-]*)?",
       "captures": {
         "1": {
           "name": "storage.type.class.cssdoc"
@@ -131,7 +131,7 @@
       }
     },
     "block-tag": {
-      "match": "(@(?:selector|class|summary|stage|visibility|remarks|privateRemarks|todo|deprecated|example|see|since|group|category|defaultValue|annotations|ref|readonly|global|interaction|alias|preventExtensions|noextend|sealed|frozen|pseudo|function|keyframes|animation|layer|container|supports|media|responsive|a11y|accessibility|structure|element|demo|usage|compat|related|memberOf|members|member|alpha|beta|experimental|internal|public|stable))\\b",
+      "match": "(@(?:summary|stage|visibility|remarks|privateRemarks|todo|deprecated|example|see|since|group|category|defaultValue|annotations|ref|readonly|global|interaction|alias|preventExtensions|noextend|sealed|frozen|function|keyframes|animation|layer|container|supports|media|responsive|a11y|accessibility|structure|element|demo|usage|compat|related|memberOf|members|member|alpha|beta|experimental|internal|public|stable))\\b",
       "name": "storage.type.class.cssdoc"
     },
     "structure-tag": {
@@ -143,6 +143,25 @@
       },
       "end": "(?=@)|(?=\\*/)",
       "patterns": [
+        {
+          "match": "(@(?:component|variant))\\b[ \\t]*([A-Za-z][A-Za-z0-9_-]*)?",
+          "captures": {
+            "1": {
+              "name": "storage.type.class.cssdoc"
+            },
+            "2": {
+              "name": "entity.other.attribute-name.part.cssdoc"
+            }
+          }
+        },
+        {
+          "match": "\\bslot(?:\\[[^\\]]*\\])?",
+          "name": "entity.other.attribute-name.part.cssdoc"
+        },
+        {
+          "match": ":[a-z][a-z0-9-]*(?::max-\\d+)?",
+          "name": "variable.other.modifier.cssdoc"
+        },
         {
           "match": "\\.[A-Za-z][A-Za-z0-9_-]*",
           "name": "entity.other.attribute-name.part.cssdoc"

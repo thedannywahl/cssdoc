@@ -1,8 +1,8 @@
 /**
  * `@cssdoc/codemirror` — a CodeMirror 6 extension that highlights cssdoc doc-comment tags inside CSS
  * comments, the way TSDoc highlights JSDoc tags inside `/** … *\/` comments. It's the CodeMirror
- * counterpart to the TextMate grammar in `@cssdoc/tmlanguage`, sharing the same tag vocabulary:
- * `@component`, `@modifier`, `@part`/`@slot`, `@cssproperty`, `{@link …}`, and custom properties.
+ * counterpart to the TextMate grammar in `@cssdoc/tmlanguage`, sharing the same tag vocabulary and
+ * regex patterns from `@cssdoc/regex`.
  *
  * Matches are found by walking the CSS syntax tree and scanning **comment nodes only**, so real CSS
  * at-rules like `@property`, `@scope`, and `@media` are never touched. Colours ship as a base theme
@@ -28,6 +28,15 @@ import {
   ViewPlugin,
   type ViewUpdate,
 } from "@codemirror/view";
+import {
+  CSSDOC_STRUCTURE_TAG,
+  CSSDOC_STRUCTURE_COMPONENT,
+  CSSDOC_SLOT_DECL,
+  CSSDOC_STRUCTURE_CARDINALITY,
+  CSSDOC_STRUCTURE_CLASS,
+  CSSDOC_STRUCTURE_BRACE,
+  toRegExp,
+} from "@cssdoc/regex";
 
 /** Semantic token kind a doc-comment span maps to. Each becomes a `cm-cssdoc-<kind>` class. */
 export type CssdocTokenType =
@@ -53,60 +62,90 @@ const alt = (names: readonly string[]): string => names.join("|");
 const INLINE_TAGS = cssdocTagNamesByKind("inline");
 const RECORD_TAGS = cssdocTagNamesByKind("record");
 const MODIFIER_TAGS = cssdocTagNamesByArgument("modifier-name");
-const PART_TAGS = cssdocTagNamesByArgument("part-name");
+const PART_TAGS = [...cssdocTagNamesByArgument("part-name"), "selector", "class", "pseudo"];
 const PROPERTY_TAGS = cssdocTagNamesByArgument("custom-property");
 const PLAIN_TAGS = CSSDOC_TAGS.filter(
-  (t) => t.kind !== "inline" && t.kind !== "record" && !t.argument,
+  (t) =>
+    t.kind !== "inline" &&
+    t.kind !== "record" &&
+    !t.argument &&
+    t.name !== "selector" &&
+    t.name !== "class" &&
+    t.name !== "pseudo",
 ).map((t) => t.name);
 
 // One left-to-right alternation, so matches never overlap. The `d` flag exposes per-group offsets.
+// Patterns are semantically equivalent to tokenizers from @cssdoc/regex/tiers/cssdoc-tags.ts,
+// but with named groups for CodeMirror's `.indices.groups` API. The token parts are from
+// @cssdoc/regex/tiers/cssdoc-token-parts.ts for consistency with other syntax highlighters.
 const TOKEN = new RegExp(
   [
     // {@link ...} / {@label ...} / {@inheritDoc ...}
-    `(?<ibrace>\\{)(?<itag>@(?:${alt(INLINE_TAGS)}))\\b[ \\t]*(?<itext>[^}]*)(?<iend>\\})?`,
-    // @component/@name/@utility/@rule/@declaration/@layout name(.name)* — a dotted name (`menu.item`)
-    // is a qualified member name, highlighted as one unit.
-    `(?<cmptag>@(?:${alt(RECORD_TAGS)}))\\b[ \\t]*(?<cmpname>[A-Za-z][A-Za-z0-9_-]*(?:\\.[A-Za-z][A-Za-z0-9_-]*)*)?`,
+    // Reuses INLINE_TAG_TOKENIZER structure: brace, tag, content, brace
+    `(?<inline>\\{(?<itag>@(?:${alt(INLINE_TAGS)}))\\b[ \\t]*(?<itext>[^}]*)\\}?)`,
+    // @component/@name/@utility/@rule/@declaration/@layout name(.name)*
+    // Reuses RECORD_TAG_TOKENIZER structure: tag, qualified-name
+    `(?<record>(?<rtag>@(?:${alt(RECORD_TAGS)}))\\b[ \\t]*(?<rname>[A-Za-z][A-Za-z0-9_-]*(?:\\.[A-Za-z][A-Za-z0-9_-]*)*)?)`,
     // @modifier -name
-    `(?<mtag>@(?:${alt(MODIFIER_TAGS)}))\\b[ \\t]*(?<mname>-[A-Za-z][A-Za-z0-9-]*)?`,
-    // @part / @csspart / @slot .name
-    `(?<ptag>@(?:${alt(PART_TAGS)}))\\b[ \\t]*(?<pname>\\.?[A-Za-z][A-Za-z0-9_-]*)?`,
+    // Reuses MODIFIER_TAG_TOKENIZER structure: tag, optional-dash-name
+    `(?<modifier>(?<mtag>@(?:${alt(MODIFIER_TAGS)}))\\b[ \\t]*(?<mname>-?[A-Za-z][A-Za-z0-9_-]*)?)`,
+    // @part / @csspart / @slot / @selector / @pseudo / @class .name
+    // Reuses PART_TAG_TOKENIZER structure: tag, optional-dot-selector
+    `(?<part>(?<ptag>@(?:${alt(PART_TAGS)}))\\b[ \\t]*(?<pname>\\.?[A-Za-z][A-Za-z0-9_-]*)?)`,
     // @cssproperty / @property --name
-    `(?<rtag>@(?:${alt(PROPERTY_TAGS)}))\\b[ \\t]*(?<rname>--[A-Za-z][A-Za-z0-9-]*)?`,
+    // Reuses PROPERTY_TAG_TOKENIZER structure: tag, custom-property
+    `(?<property>(?<proptag>@(?:${alt(PROPERTY_TAGS)}))\\b[ \\t]*(?<propname>--[A-Za-z][A-Za-z0-9-]*)?)`,
     // @ref 1 / @ref 1.
-    "(?<xtag>@(?:ref))\\b[ \\t]*(?<xref>\\d+\\.?)?",
+    // Reuses REF_TAG_TOKENIZER structure: tag, numeric-ref
+    `(?<ref>(?<reftag>@(?:ref))\\b[ \\t]*(?<refnum>\\d+\\.?)?)`,
     // bare block/record/flag tags
     `(?<btag>@(?:${alt(PLAIN_TAGS)}))\\b`,
     // a custom property named anywhere in the comment
-    "(?<cprop>(?<![\\w-])--[A-Za-z][A-Za-z0-9-]*)",
+    "(?<cprop>--[A-Za-z][A-Za-z0-9-]*)",
   ].join("|"),
   "gd",
 );
 
 const GROUP_TYPE: Record<string, CssdocTokenType> = {
-  ibrace: "punct",
+  inline: "tag",
   itag: "tag",
   itext: "link",
-  iend: "punct",
-  cmptag: "tag",
-  cmpname: "record",
+  record: "record",
+  rtag: "tag",
+  rname: "record",
+  modifier: "modifier",
   mtag: "tag",
   mname: "modifier",
+  part: "part",
   ptag: "tag",
   pname: "part",
-  rtag: "tag",
-  rname: "property",
-  xtag: "tag",
-  xref: "ref",
+  property: "property",
+  proptag: "tag",
+  propname: "property",
+  ref: "ref",
+  reftag: "tag",
+  refnum: "ref",
   btag: "tag",
   cprop: "property",
 };
 
-// Inside a `@structure` body we lightly highlight the two things that carry meaning — the parts (class
-// selectors) and the braces that show nesting — not a full CSS grammar. Selectors, pseudo-classes, and
-// combinators are otherwise left plain.
-const STRUCTURE_TAG = /@structure\b/gu;
-const STRUCTURE_TOKEN = /\.[A-Za-z][\w-]*|[{}]/gu;
+// Convert ArkRegex patterns to native RegExp for use with String.prototype.matchAll.
+// All patterns are imported from @cssdoc/regex for consistency and reusability.
+const STRUCTURE_TAG_REGEX = toRegExp(CSSDOC_STRUCTURE_TAG);
+const STRUCTURE_COMPONENT_REGEX = toRegExp(CSSDOC_STRUCTURE_COMPONENT);
+const STRUCTURE_SLOT_REGEX = toRegExp(CSSDOC_SLOT_DECL);
+const STRUCTURE_CARDINALITY_REGEX = toRegExp(CSSDOC_STRUCTURE_CARDINALITY);
+const STRUCTURE_CLASS_REGEX = toRegExp(CSSDOC_STRUCTURE_CLASS);
+const STRUCTURE_BRACE_REGEX = toRegExp(CSSDOC_STRUCTURE_BRACE);
+
+// Map structure patterns to token types for consistency
+const STRUCTURE_PATTERNS = [
+  { pattern: STRUCTURE_COMPONENT_REGEX, type: "tag" as const },
+  { pattern: STRUCTURE_SLOT_REGEX, type: "part" as const },
+  { pattern: STRUCTURE_CARDINALITY_REGEX, type: "modifier" as const },
+  { pattern: STRUCTURE_CLASS_REGEX, type: "part" as const },
+  { pattern: STRUCTURE_BRACE_REGEX, type: "punct" as const },
+];
 
 /** Tokenize one CSS comment's text into cssdoc doc-tag spans (offsets are relative to `text`). */
 export const tokenizeComment = (text: string): CssdocToken[] => {
@@ -116,17 +155,37 @@ export const tokenizeComment = (text: string): CssdocToken[] => {
     if (!groups) continue;
     for (const key of Object.keys(groups)) {
       const gi = groups[key];
-      if (gi && gi[0] !== gi[1]) out.push({ from: gi[0], to: gi[1], type: GROUP_TYPE[key] });
+      if (gi && gi[0] !== gi[1]) {
+        // Special handling for inline tags: highlight braces as punctuation
+        if (key === "inline") {
+          const text_at_range = text.slice(gi[0], gi[1]);
+          // Opening brace
+          if (text_at_range[0] === "{") {
+            out.push({ from: gi[0], to: gi[0] + 1, type: "punct" });
+          }
+          // Closing brace (if present)
+          const closeIdx = text_at_range.lastIndexOf("}");
+          if (closeIdx !== -1) {
+            out.push({ from: gi[0] + closeIdx, to: gi[1], type: "punct" });
+          }
+        }
+        out.push({ from: gi[0], to: gi[1], type: GROUP_TYPE[key] });
+      }
     }
   }
-  // Second pass: the body of each `@structure` (from the tag to the next tag or the comment end).
-  for (const m of text.matchAll(STRUCTURE_TAG)) {
+  // Second pass: highlight meaningful elements within each `@structure` body (from the tag to the next tag or comment end).
+  for (const m of text.matchAll(STRUCTURE_TAG_REGEX)) {
     const start = (m.index ?? 0) + m[0].length;
     const after = text.slice(start).search(/@[A-Za-z]/u);
     const end = after === -1 ? text.length : start + after;
-    for (const s of text.slice(start, end).matchAll(STRUCTURE_TOKEN)) {
-      const from = start + (s.index ?? 0);
-      out.push({ from, to: from + s[0].length, type: s[0][0] === "." ? "part" : "punct" });
+    const body = text.slice(start, end);
+
+    // Scan for all structure-specific patterns
+    for (const { pattern, type } of STRUCTURE_PATTERNS) {
+      for (const s of body.matchAll(pattern)) {
+        const from = start + (s.index ?? 0);
+        out.push({ from, to: from + s[0].length, type });
+      }
     }
   }
   return out;

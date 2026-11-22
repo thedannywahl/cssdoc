@@ -1249,6 +1249,9 @@ importers:
       '@codemirror/view':
         specifier: 'catalog:'
         version: 6.43.15
+      '@cssdoc/regex':
+        specifier: workspace:*
+        version: link:../../../packages/regex
       '@cssdoc/spec':
         specifier: workspace:*
         version: link:../../../packages/spec
