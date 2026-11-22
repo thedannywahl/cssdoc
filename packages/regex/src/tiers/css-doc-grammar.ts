@@ -79,7 +79,7 @@ export const CSSDOC_RECORD_NAME: Regex<
 export const CSSDOC_MODIFIER_SUFFIX: Regex<
   "(?<name>[\\w-]+(?:-\\*)?)",
   { names: { name: string }; flags: "u" }
-> = arkRegex.as(String.raw`(?<name>${alphanumericExtended}+(?:${dash}\*)?)`, "u");
+> = arkRegex.as(String.raw`(?<name>${cssdocIdentifierPart}(?:${dash}\*)?)`, "u");
 
 /**
  * CssDoc Modifier Name - Chained Form from grammar.
@@ -106,7 +106,7 @@ export const CSSDOC_MODIFIER_CHAINED: Regex<
   "-(?<prop>[A-Za-z0-9]+)(?:-(?<value>[\\w-]+(?:-\\*)?))?",
   { names: { prop: string; value?: string }; flags: "u" }
 > = arkRegex.as(
-  String.raw`-(?<prop>[A-Za-z0-9]+)(?:-(?<value>${alphanumericExtended}+(?:${dash}\*)?))?`,
+  String.raw`-(?<prop>[A-Za-z0-9]+)(?:-(?<value>${cssdocIdentifierPart}(?:${dash}\*)?))?`,
   "u",
 );
 
