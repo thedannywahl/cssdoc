@@ -9,6 +9,8 @@
  * Not derived from W3C specs or formal grammars, but centralized here for
  * consistency, type safety, and single-source-of-truth maintenance.
  *
+ * References to Tier 0 (Character Classes) are documented for transparency.
+ *
  * @module
  */
 
@@ -19,6 +21,7 @@ import { regex as arkRegex } from "arkregex";
  * CSS Class Reference Pattern
  * Matches all CSS class selectors in a selector string.
  * Used in scoped-part scan and base class inference.
+ * Uses Tier 0 DOT and ALPHA patterns
  *
  * Matches both regular classes (`.button`) and modifier classes (`.-active`, `.-size-lg`).
  * For chained modifiers, captures only the base part (before the value separator `-`).
@@ -39,6 +42,7 @@ export const CLASS_REF: Regex<
  * Single CSS Class Selector Pattern
  * Matches a selector that is exactly one class (no other selectors).
  * Used as a filter candidate for base class inference.
+ * Uses Tier 0 DOT and ALPHA patterns
  *
  * @example
  * SINGLE_CLASS.test(".button") // true

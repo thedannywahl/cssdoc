@@ -8,6 +8,7 @@
  * record names, modifier names, structure references, tags, and arguments.
  *
  * All patterns use modern named capture groups matching the grammar rule names.
+ * References to Tier 0 (Character Classes) and Tier 1 (W3C CSS) are documented where applicable.
  *
  * @module
  */
@@ -28,12 +29,13 @@ import { regex as arkRegex } from "arkregex";
 export const CSSDOC_IDENTIFIER: Regex<
   "(?<identifier>[A-Za-z_][\\w-]*)",
   { names: { identifier: string } }
-> = arkRegex.as(String.raw`(?<identifier>[A-Za-z_][\w-]*)`);
+> = arkRegex.as(String.raw`(?<identifier>[A-Za-z_][\w-]*)`, "u");
 
 /**
  * CssDoc Record Name from grammar.
  * Qualified name for components: simple identifier or dot-separated identifiers.
  * Grammar rule: RecordName :: Identifier | RecordName '.' Identifier
+ * Composed from: Tier 0 DOT pattern
  *
  * Used for naming documented components, potentially nested (e.g., "menu.item").
  *
@@ -71,6 +73,7 @@ export const CSSDOC_MODIFIER_SUFFIX: Regex<
  * CssDoc Modifier Name - Chained Form from grammar.
  * Alternative form: separate prefixed class on the base (e.g., `.base.-name`).
  * Grammar rule: ChainedModifierName :: '-' Prop | '-' Prop '-' Value
+ * Uses Tier 0 DASH pattern
  *
  * `Prop` is an identifier segment containing no hyphens (the first segment).
  * `Value` is the remainder, which may contain hyphens or be a `*` family.

@@ -8,12 +8,14 @@
  * identifiers, keywords, colors, lengths, units, function names.
  *
  * All patterns use modern named capture groups for type safety and IDE completion.
+ * References to Tier 0 (Character Classes) are documented for transparency on foundations.
  *
  * @module
  */
 
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
+import { DIGIT } from "./character-classes.js";
 
 /**
  * CSS identifier from W3C formal grammar.
@@ -46,7 +48,7 @@ export const CSS_NAME: Regex<
 /**
  * CSS number from W3C formal grammar.
  * Integer or decimal number.
- * Pattern: `{num}` → `\d+(?:\.\d+)?`
+ * Composed from: Tier 0 DIGIT pattern
  *
  * @example
  * const match = CSS_NUMBER.exec("42");
@@ -62,21 +64,26 @@ export const CSS_NAME: Regex<
 export const CSS_NUMBER: Regex<
   "(?<number>(?<integer>\\d+)(?:\\.(?<decimal>\\d+))?)",
   { names: { number: string; integer: string; decimal?: string } }
-> = arkRegex.as(String.raw`(?<number>(?<integer>\d+)(?:\.(?<decimal>\d+))?)`, "u");
+> = arkRegex.as(
+  String.raw`(?<number>(?<integer>${DIGIT.source}+)(?:\.(?<decimal>${DIGIT.source}+))?)`,
+  "u",
+);
 
 /**
  * CSS percentage from W3C formal grammar.
  * Number followed by percent sign.
+ * Composed from: Tier 0 DIGIT pattern
  *
  * @example
  * CSS_PERCENTAGE.exec("50%")?.groups?.value // "50"
  */
 export const CSS_PERCENTAGE: Regex<"(?<value>\\d+(?:\\.\\d+)?)%", { names: { value: string } }> =
-  arkRegex.as(String.raw`(?<value>\d+(?:\.\d+)?)%`, "u");
+  arkRegex.as(String.raw`(?<value>${DIGIT.source}+(?:\.${DIGIT.source}+)?)%`, "u");
 
 /**
  * CSS dimension from W3C formal grammar.
  * Number immediately followed by identifier (unit).
+ * Uses Tier 0 DIGIT pattern for numeric part.
  *
  * @example
  * const match = CSS_DIMENSION.exec("16px");
@@ -87,7 +94,7 @@ export const CSS_DIMENSION: Regex<
   "(?<value>\\d+(?:\\.\\d+)?)(?<unit>[a-zA-Z_\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*)",
   { names: { value: string; unit: string } }
 > = arkRegex.as(
-  String.raw`(?<value>\d+(?:\.\d+)?)(?<unit>[a-zA-Z_\u0080-\uFFFF][\w\-\u0080-\uFFFF]*)`,
+  String.raw`(?<value>${DIGIT.source}+(?:\.${DIGIT.source}+)?)(?<unit>[a-zA-Z_\u0080-\uFFFF][\w\-\u0080-\uFFFF]*)`,
   "u",
 );
 
@@ -107,6 +114,7 @@ export const CSS_HASH_COLOR: Regex<
 /**
  * CSS function from W3C formal grammar.
  * Function name (identifier) followed by opening parenthesis.
+ * Uses Tier 0 SPACE_TAB pattern for whitespace.
  *
  * @example
  * CSS_FUNCTION.exec("rgb(")?.groups?.name // "rgb"
@@ -115,7 +123,7 @@ export const CSS_HASH_COLOR: Regex<
 export const CSS_FUNCTION: Regex<
   "(?<name>[a-zA-Z_\\-\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*)[\\s\\t]*\\(",
   { names: { name: string } }
-> = arkRegex.as(String.raw`(?<name>[a-zA-Z_\-\u0080-\uFFFF][\w\-\u0080-\uFFFF]*)[\s\t]*\(`, "u");
+> = arkRegex.as(String.raw`(?<name>[a-zA-Z_\-\u0080-\uFFFF][\w\-\u0080-\uFFFF]*)[ \t]*\(`, "u");
 
 /**
  * CSS keyword from W3C formal grammar.
@@ -133,6 +141,7 @@ export const CSS_KEYWORD: Regex<
 /**
  * CSS Unicode range from W3C formal grammar.
  * Pattern: `u+` followed by 1-6 hex digits, optional range with `?` or `-`.
+ * Composed from: Tier 0 DIGIT pattern
  *
  * @example
  * CSS_UNICODE_RANGE.exec("u+26")?.groups?.start // "26"
