@@ -15,7 +15,13 @@
 
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
-import { alphanumericExtended, dash, quote } from "./character-classes.js";
+import {
+  alphanumericExtended,
+  dash,
+  quote,
+  cssIdentifierStart,
+  cssIdentifierCont,
+} from "./character-classes.js";
 
 /**
  * CssDoc identifier part: `[A-Za-z_][\w-]*`
@@ -65,6 +71,7 @@ export const CSSDOC_RECORD_NAME: Regex<
  * CssDoc Modifier Name - Suffix Form from grammar.
  * The default BEM-like suffix form: base class with `--` separator and modifier name.
  * Grammar rule: SuffixModifierName :: Identifier '--' Value
+ * Uses Tier 1 CSS identifier patterns to accept any valid CSS identifier.
  *
  * Example: `.button--primary`, `.button--size-lg`
  *
@@ -79,7 +86,7 @@ export const CSSDOC_RECORD_NAME: Regex<
 export const CSSDOC_MODIFIER_SUFFIX: Regex<
   "(?<name>[\\w-]+(?:-\\*)?)",
   { names: { name: string }; flags: "u" }
-> = arkRegex.as(String.raw`(?<name>${cssdocIdentifierPart}(?:${dash}\*)?)`, "u");
+> = arkRegex.as(String.raw`(?<name>${cssIdentifierStart}${cssIdentifierCont}*(?:${dash}\*)?)`, "u");
 
 /**
  * CssDoc Modifier Name - Chained Form from grammar.
@@ -106,7 +113,7 @@ export const CSSDOC_MODIFIER_CHAINED: Regex<
   "-(?<prop>[A-Za-z0-9]+)(?:-(?<value>[\\w-]+(?:-\\*)?))?",
   { names: { prop: string; value?: string }; flags: "u" }
 > = arkRegex.as(
-  String.raw`-(?<prop>[A-Za-z0-9]+)(?:-(?<value>${cssdocIdentifierPart}(?:${dash}\*)?))?`,
+  String.raw`-(?<prop>${cssIdentifierStart}${cssIdentifierCont}*)(?:-(?<value>${cssIdentifierStart}${cssIdentifierCont}*(?:${dash}\*)?))?`,
   "u",
 );
 
