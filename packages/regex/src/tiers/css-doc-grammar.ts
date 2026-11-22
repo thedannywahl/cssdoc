@@ -15,7 +15,7 @@
 
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
-import { alphanumericExtended, dash } from "./character-classes.js";
+import { alphanumericExtended, dash, quote } from "./character-classes.js";
 
 /**
  * CssDoc identifier part: `[A-Za-z_][\w-]*`
@@ -131,7 +131,7 @@ export const CSSDOC_MODIFIER_ATTRIBUTE: Regex<
   "\\[(?<name>[\\w-]+)(?:=(?<value>[\"']?[^\\]]*?)(?<quote>[\"'])?)\\?\\]",
   { names: { name: string; value?: string; quote?: string }; flags: "u" }
 > = arkRegex.as(
-  String.raw`\[(?<name>${alphanumericExtended}+)(?:=(?<value>["']?[^\]]*?)(?<quote>["'])?)?\]`,
+  String.raw`\[(?<name>${alphanumericExtended}+)(?:=(?<value>${quote}?[^\]]*?)(?<quote>${quote})?)?\]`,
   "u",
 );
 

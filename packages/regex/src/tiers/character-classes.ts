@@ -126,6 +126,12 @@ export const PAREN_CLOSE: Regex<"\\)", { names: {}; flags: "u" }> = arkRegex.as(
 export const COLON: Regex<":", { names: {}; flags: "u" }> = arkRegex.as(String.raw`:`, "u");
 
 /**
+ * Single or double quote: `["']`
+ * Used in attribute selectors and string values.
+ */
+export const QUOTE: Regex<"[\"']", { names: {}; flags: "u" }> = arkRegex.as(String.raw`["']`, "u");
+
+/**
  * Hexadecimal digit: `[0-9a-fA-F]`
  * Used in color codes and unicode escape sequences.
  */
@@ -202,6 +208,7 @@ export const braceClose: string = BRACE_CLOSE.source;
 export const parenOpen: string = PAREN_OPEN.source;
 export const parenClose: string = PAREN_CLOSE.source;
 export const colon: string = COLON.source;
+export const quote: string = QUOTE.source;
 export const hexDigit: string = HEX_DIGIT.source;
 export const hexDigitOrWildcard: string = HEX_DIGIT_OR_WILDCARD.source;
 export const cssIdentifierStart: string = CSS_IDENTIFIER_START.source;
