@@ -17,6 +17,15 @@ import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 
 /**
+ * CssDoc identifier part: `[A-Za-z_][\w-]*`
+ * ASCII letter or underscore followed by word chars (ASCII) or hyphens.
+ * Used as the core building block for cssdoc identifiers, record names, and structure references.
+ * CssDoc is intentionally ASCII-only (unlike CSS which includes non-ASCII identifiers).
+ */
+export const CSSDOC_IDENTIFIER_PART: Regex<"[A-Za-z_][\\w-]*", { names: {}; flags: "u" }> =
+  arkRegex.as(String.raw`[A-Za-z_][\w-]*`, "u");
+
+/**
  * CssDoc Identifier from grammar.
  * Starts with ASCII letter or underscore; followed by word chars (ASCII) or hyphens.
  * Grammar rule: Identifier :: IdentifierStart IdentifierPart*
@@ -29,7 +38,7 @@ import { regex as arkRegex } from "arkregex";
 export const CSSDOC_IDENTIFIER: Regex<
   "(?<identifier>[A-Za-z_][\\w-]*)",
   { names: { identifier: string } }
-> = arkRegex.as(String.raw`(?<identifier>[A-Za-z_][\w-]*)`, "u");
+> = arkRegex.as(String.raw`(?<identifier>${CSSDOC_IDENTIFIER_PART.source})`, "u");
 
 /**
  * CssDoc Record Name from grammar.
@@ -47,7 +56,10 @@ export const CSSDOC_IDENTIFIER: Regex<
 export const CSSDOC_RECORD_NAME: Regex<
   "(?<parts>[A-Za-z_][\\w-]*(?:\\.[A-Za-z_][\\w-]*)*)",
   { names: { parts: string }; flags: "u" }
-> = arkRegex.as(String.raw`(?<parts>[A-Za-z_][\w-]*(?:\.[A-Za-z_][\w-]*)*)`, "u");
+> = arkRegex.as(
+  String.raw`(?<parts>${CSSDOC_IDENTIFIER_PART.source}(?:\.${CSSDOC_IDENTIFIER_PART.source})*)`,
+  "u",
+);
 
 /**
  * CssDoc Modifier Name - Suffix Form from grammar.
@@ -157,7 +169,7 @@ export const CSSDOC_STRUCTURE_REF: Regex<
   "(?<ref>[A-Za-z_][\\w-]*(?:\\.[A-Za-z_][\\w-]*)*)(?::(?<type>[\\w-]+))?",
   { names: { ref: string; type?: string }; flags: "u" }
 > = arkRegex.as(
-  String.raw`(?<ref>[A-Za-z_][\w-]*(?:\.[A-Za-z_][\w-]*)*)(?::(?<type>[\w-]+))?`,
+  String.raw`(?<ref>${CSSDOC_IDENTIFIER_PART.source}(?:\.${CSSDOC_IDENTIFIER_PART.source})*)(?::(?<type>[\w-]+))?`,
   "u",
 );
 
@@ -406,6 +418,7 @@ export const CSSDOC_REF_TAG_PATTERN: Regex<
 > = arkRegex.as(String.raw`(@(?:ref))\b[ \t]*(\d+\.?)?`, "u");
 
 // Convenience string exports for use in template literals
+export const cssdocIdentifierPart: string = CSSDOC_IDENTIFIER_PART.source;
 export const cssdocIdentifier: string = CSSDOC_IDENTIFIER.source;
 export const cssdocRecordName: string = CSSDOC_RECORD_NAME.source;
 export const cssdocModifierSuffix: string = CSSDOC_MODIFIER_SUFFIX.source;
