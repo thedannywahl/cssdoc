@@ -17,6 +17,8 @@ import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import {
   digit,
+  hexDigit,
+  hexDigitOrWildcard,
   cssIdentifierStart,
   cssIdentifierStartWithDash,
   cssIdentifierCont,
@@ -113,7 +115,7 @@ export const CSS_DIMENSION: Regex<
 export const CSS_HASH_COLOR: Regex<
   "#(?<color>[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?)",
   { names: { color: string } }
-> = arkRegex.as(String.raw`#(?<color>[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?)`, "u");
+> = arkRegex.as(String.raw`#(?<color>${hexDigit}{3}(?:${hexDigit}{3})?)`, "u");
 
 /**
  * CSS function from W3C formal grammar.
@@ -158,7 +160,10 @@ export const CSS_KEYWORD: Regex<
 export const CSS_UNICODE_RANGE: Regex<
   "u\\+(?<start>[0-9a-fA-F?]{1,6})(?:-(?<range>[0-9a-fA-F]{1,6}))?",
   { names: { start: string; range?: string } }
-> = arkRegex.as(String.raw`u\+(?<start>[0-9a-fA-F?]{1,6})(?:-(?<range>[0-9a-fA-F]{1,6}))?`, "u");
+> = arkRegex.as(
+  String.raw`u\+(?<start>${hexDigitOrWildcard}{1,6})(?:-(?<range>${hexDigit}{1,6}))?`,
+  "u",
+);
 
 /**
  * CSS property name from W3C formal grammar.

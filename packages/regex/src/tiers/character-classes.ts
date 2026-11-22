@@ -126,6 +126,24 @@ export const PAREN_CLOSE: Regex<"\\)", { names: {}; flags: "u" }> = arkRegex.as(
 export const COLON: Regex<":", { names: {}; flags: "u" }> = arkRegex.as(String.raw`:`, "u");
 
 /**
+ * Hexadecimal digit: `[0-9a-fA-F]`
+ * Used in color codes and unicode escape sequences.
+ */
+export const HEX_DIGIT: Regex<"[0-9a-fA-F]", { names: {}; flags: "u" }> = arkRegex.as(
+  String.raw`[0-9a-fA-F]`,
+  "u",
+);
+
+/**
+ * Hexadecimal digit or wildcard: `[0-9a-fA-F?]`
+ * Used in unicode range patterns where `?` acts as a wildcard.
+ */
+export const HEX_DIGIT_OR_WILDCARD: Regex<"[0-9a-fA-F?]", { names: {}; flags: "u" }> = arkRegex.as(
+  String.raw`[0-9a-fA-F?]`,
+  "u",
+);
+
+/**
  * CSS identifier start: `[a-zA-Z_\u0080-\uFFFF]`
  * Letter, underscore, or non-ASCII character.
  * Used as the first character of CSS identifiers, properties, and function names.
@@ -184,6 +202,8 @@ export const braceClose: string = BRACE_CLOSE.source;
 export const parenOpen: string = PAREN_OPEN.source;
 export const parenClose: string = PAREN_CLOSE.source;
 export const colon: string = COLON.source;
+export const hexDigit: string = HEX_DIGIT.source;
+export const hexDigitOrWildcard: string = HEX_DIGIT_OR_WILDCARD.source;
 export const cssIdentifierStart: string = CSS_IDENTIFIER_START.source;
 export const cssIdentifierStartWithDash: string = CSS_IDENTIFIER_START_WITH_DASH.source;
 export const cssIdentifierCont: string = CSS_IDENTIFIER_CONT.source;
