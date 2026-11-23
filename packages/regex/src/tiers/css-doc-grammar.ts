@@ -216,7 +216,7 @@ export const CSSDOC_CARDINALITY: Regex<
 export const CSSDOC_CUSTOM_PROPERTY: Regex<
   "--(?<name>[\\w-]+)",
   { names: { name: string }; flags: "u" }
-> = arkRegex.as(String.raw`${doubleDash}(?<name>[\w-]+)`, "u");
+> = arkRegex.as(String.raw`${doubleDash}(?<name>${cssIdentifierStart}${cssIdentifierCont}*)`, "u");
 
 /**
  * CssDoc Inline Reference from grammar.
