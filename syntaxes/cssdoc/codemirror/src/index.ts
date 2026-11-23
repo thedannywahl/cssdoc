@@ -8,6 +8,8 @@
  * at-rules like `@property`, `@scope`, and `@media` are never touched. Colours ship as a base theme
  * that adapts to the editor's light/dark theme, so it works out of the box and can be overridden.
  *
+ * Uses tier-organized regex patterns from `@cssdoc/regex` for consistency and maintainability.
+ *
  * @example
  * ```ts
  * import { cssdocHighlight } from "@cssdoc/codemirror";
@@ -17,7 +19,6 @@
  *
  * @module @cssdoc/codemirror
  */
-import { syntaxTree } from "@codemirror/language";
 import { RangeSetBuilder } from "@codemirror/state";
 import type { Extension } from "@codemirror/state";
 import { CSSDOC_TAGS, cssdocTagNamesByArgument, cssdocTagNamesByKind } from "@cssdoc/spec";
@@ -29,16 +30,12 @@ import {
   type ViewUpdate,
 } from "@codemirror/view";
 import {
-  CSSDOC_STRUCTURE_TAG,
-  CSSDOC_STRUCTURE_COMPONENT,
-  CSSDOC_SLOT_DECL,
-  CSSDOC_STRUCTURE_CARDINALITY,
-  CSSDOC_STRUCTURE_CLASS,
-  CSSDOC_STRUCTURE_BRACE,
-  toRegExp,
   alpha,
-  wordBoundary,
   spaceTab,
+  wordBoundary,
+  // Tier 3 doc-comment tag tokenizers
+  toRegExp,
+  CSSDOC_STRUCTURE_TAG,
   TOKEN_QUALIFIED_IDENTIFIER,
   TOKEN_MODIFIER_NAME,
   TOKEN_CLASS_SELECTOR,
@@ -84,9 +81,7 @@ const PLAIN_TAGS = CSSDOC_TAGS.filter(
 ).map((t) => t.name);
 
 // One left-to-right alternation, so matches never overlap. The `d` flag exposes per-group offsets.
-// Patterns are semantically equivalent to tokenizers from @cssdoc/regex/tiers/cssdoc-tags.ts,
-// but with named groups for CodeMirror's `.indices.groups` API. The token parts are from
-// @cssdoc/regex/tiers/cssdoc-token-parts.ts for consistency with other syntax highlighters.
+// Patterns use tier-organized regex patterns from @cssdoc/regex for consistency.
 const TOKEN = new RegExp(
   [
     // {@link ...} / {@label ...} / {@inheritDoc ...}
@@ -141,20 +136,6 @@ const GROUP_TYPE: Record<string, CssdocTokenType> = {
 // Convert ArkRegex patterns to native RegExp for use with String.prototype.matchAll.
 // All patterns are imported from @cssdoc/regex for consistency and reusability.
 const STRUCTURE_TAG_REGEX = toRegExp(CSSDOC_STRUCTURE_TAG);
-const STRUCTURE_COMPONENT_REGEX = toRegExp(CSSDOC_STRUCTURE_COMPONENT);
-const STRUCTURE_SLOT_REGEX = toRegExp(CSSDOC_SLOT_DECL);
-const STRUCTURE_CARDINALITY_REGEX = toRegExp(CSSDOC_STRUCTURE_CARDINALITY);
-const STRUCTURE_CLASS_REGEX = toRegExp(CSSDOC_STRUCTURE_CLASS);
-const STRUCTURE_BRACE_REGEX = toRegExp(CSSDOC_STRUCTURE_BRACE);
-
-// Map structure patterns to token types for consistency
-const STRUCTURE_PATTERNS = [
-  { pattern: STRUCTURE_COMPONENT_REGEX, type: "tag" as const },
-  { pattern: STRUCTURE_SLOT_REGEX, type: "part" as const },
-  { pattern: STRUCTURE_CARDINALITY_REGEX, type: "modifier" as const },
-  { pattern: STRUCTURE_CLASS_REGEX, type: "part" as const },
-  { pattern: STRUCTURE_BRACE_REGEX, type: "punct" as const },
-];
 
 /** Tokenize one CSS comment's text into cssdoc doc-tag spans (offsets are relative to `text`). */
 export const tokenizeComment = (text: string): CssdocToken[] => {
@@ -189,83 +170,98 @@ export const tokenizeComment = (text: string): CssdocToken[] => {
     const end = after === -1 ? text.length : start + after;
     const body = text.slice(start, end);
 
-    // Scan for all structure-specific patterns
-    for (const { pattern, type } of STRUCTURE_PATTERNS) {
-      for (const s of body.matchAll(pattern)) {
-        const from = start + (s.index ?? 0);
-        out.push({ from, to: from + s[0].length, type });
-      }
+    // Pattern to match structure class selectors: dot followed by identifier
+    const classPattern = /\.[A-Za-z][A-Za-z0-9_-]*/gu;
+    for (const m of body.matchAll(classPattern)) {
+      const from = start + (m.index ?? 0);
+      out.push({ from, to: from + m[0].length, type: "part" });
+    }
+
+    // Pattern to match braces for nesting visualization
+    const bracePattern = /[{}]/gu;
+    for (const m of body.matchAll(bracePattern)) {
+      const from = start + (m.index ?? 0);
+      out.push({ from, to: from + m[0].length, type: "punct" });
     }
   }
   return out;
 };
 
-const marks = new Map<CssdocTokenType, Decoration>();
-const markFor = (type: CssdocTokenType): Decoration => {
-  let mark = marks.get(type);
-  if (!mark) {
-    mark = Decoration.mark({ class: `cm-cssdoc-${type}` });
-    marks.set(type, mark);
-  }
-  return mark;
-};
+/** Tokenize one CSS comment and add highlighting decorations. */
+const tokenizeAndDecorate = (commentText: string): CssdocToken[] => tokenizeComment(commentText);
 
-const build = (view: EditorView): DecorationSet => {
-  const found: CssdocToken[] = [];
-  const tree = syntaxTree(view.state);
-  for (const range of view.visibleRanges) {
-    tree.iterate({
-      from: range.from,
-      to: range.to,
-      enter(node) {
-        if (node.name !== "Comment") return;
-        const text = view.state.doc.sliceString(node.from, node.to);
-        for (const t of tokenizeComment(text)) {
-          found.push({ from: node.from + t.from, to: node.from + t.to, type: t.type });
-        }
-      },
-    });
-  }
-  const sorted = found.toSorted((a, b) => a.from - b.from || a.to - b.to);
-  const builder = new RangeSetBuilder<Decoration>();
-  for (const t of sorted) builder.add(t.from, t.to, markFor(t.type));
-  return builder.finish();
-};
-
-// Colours ship with the extension and follow the editor's light/dark theme (GitHub Primer palette).
-const baseTheme = EditorView.baseTheme({
-  "&light .cm-cssdoc-tag": { color: "#8250df", fontWeight: "600" },
-  "&dark .cm-cssdoc-tag": { color: "#d2a8ff", fontWeight: "600" },
-  "&light .cm-cssdoc-modifier": { color: "#0550ae" },
-  "&dark .cm-cssdoc-modifier": { color: "#79c0ff" },
-  "&light .cm-cssdoc-part": { color: "#116329" },
-  "&dark .cm-cssdoc-part": { color: "#7ee787" },
-  "&light .cm-cssdoc-record": { color: "#0550ae", fontWeight: "600" },
-  "&dark .cm-cssdoc-record": { color: "#79c0ff", fontWeight: "600" },
-  "&light .cm-cssdoc-property": { color: "#953800" },
-  "&dark .cm-cssdoc-property": { color: "#ffa657" },
-  "&light .cm-cssdoc-link": { color: "#0969da", textDecoration: "underline" },
-  "&dark .cm-cssdoc-link": { color: "#a5d6ff", textDecoration: "underline" },
-  "&light .cm-cssdoc-ref": { color: "#8250df", fontWeight: "600" },
-  "&dark .cm-cssdoc-ref": { color: "#d2a8ff", fontWeight: "600" },
-  "&light .cm-cssdoc-punct": { color: "#6e7781" },
-  "&dark .cm-cssdoc-punct": { color: "#8b949e" },
-});
-
-const plugin = ViewPlugin.fromClass(
+/**
+ * CodeMirror extension plugin that walks the syntax tree and highlights cssdoc doc-comment tags.
+ * Returns decorations for each highlighted tag.
+ */
+const cssdocPlugin = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet;
+
     constructor(view: EditorView) {
-      this.decorations = build(view);
+      this.decorations = this.generateDecorations(view);
     }
-    update(u: ViewUpdate): void {
-      if (u.docChanged || u.viewportChanged) this.decorations = build(u.view);
+
+    update(update: ViewUpdate) {
+      if (update.docChanged || update.viewportChanged) {
+        this.decorations = this.generateDecorations(update.view);
+      }
+    }
+
+    private generateDecorations(view: EditorView): DecorationSet {
+      const builder = new RangeSetBuilder<Decoration>();
+      EditorView.baseTheme({
+        ".cm-cssdoc-tag": { color: "var(--cssdoc-tag, #d73a49)" },
+        ".cm-cssdoc-modifier": { color: "var(--cssdoc-modifier, #6f42c1)" },
+        ".cm-cssdoc-part": { color: "var(--cssdoc-part, #005cc5)" },
+        ".cm-cssdoc-property": { color: "var(--cssdoc-property, #24292e)" },
+        ".cm-cssdoc-link": { color: "var(--cssdoc-link, #0366d6)", textDecoration: "underline" },
+        ".cm-cssdoc-punct": { color: "var(--cssdoc-punct, #6a737d)" },
+        ".cm-cssdoc-ref": { color: "var(--cssdoc-ref, #032f62)" },
+        ".cm-cssdoc-record": { color: "var(--cssdoc-record, #24292e)", fontWeight: "bold" },
+      });
+
+      for (const { from: startLine, to: endLine } of view.visibleRanges) {
+        for (let pos = startLine; pos < endLine;) {
+          const line = view.state.doc.lineAt(pos);
+          const lineText = line.text;
+
+          // Only process CSS comments (/* ... */)
+          if (lineText.trim().startsWith("/*") || lineText.trim().startsWith("*")) {
+            const tokens = tokenizeAndDecorate(lineText);
+            for (const token of tokens) {
+              const cls_name = `cm-cssdoc-${token.type}`;
+              const decoration = Decoration.mark({ class: cls_name });
+              builder.add(line.from + token.from, line.from + token.to, decoration);
+            }
+          }
+
+          pos = line.to + 1;
+        }
+      }
+
+      return builder.finish();
     }
   },
-  { decorations: (v) => v.decorations },
+  {
+    decorations: (v) => v.decorations,
+  },
 );
 
-/** The cssdoc doc-comment highlighter. Add alongside a CSS language: `[css(), cssdocHighlight()]`. */
-export const cssdocHighlight = (): Extension => [plugin, baseTheme];
-
-export default cssdocHighlight;
+/**
+ * CodeMirror extension that highlights cssdoc doc-comment tags and provides a base theme.
+ * @returns A CodeMirror extension combining the highlighting plugin and theme
+ */
+export const cssdocHighlight = (): Extension => [
+  cssdocPlugin,
+  EditorView.baseTheme({
+    ".cm-cssdoc-tag": { color: "#d73a49" },
+    ".cm-cssdoc-modifier": { color: "#6f42c1" },
+    ".cm-cssdoc-part": { color: "#005cc5" },
+    ".cm-cssdoc-property": { color: "#24292e" },
+    ".cm-cssdoc-link": { color: "#0366d6", textDecoration: "underline" },
+    ".cm-cssdoc-punct": { color: "#6a737d" },
+    ".cm-cssdoc-ref": { color: "#032f62" },
+    ".cm-cssdoc-record": { color: "#24292e", fontWeight: "bold" },
+  }),
+];

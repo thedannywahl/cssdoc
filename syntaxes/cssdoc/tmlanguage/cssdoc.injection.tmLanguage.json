@@ -159,7 +159,7 @@
           "name": "entity.other.attribute-name.part.cssdoc"
         },
         {
-          "match": ":[a-z][A-Za-z0-9_-]*(?::max-[0-9]+)?",
+          "match": ":[a-z][A-Za-z0-9_-]*(?:-[0-9]+)?",
           "name": "variable.other.modifier.cssdoc"
         },
         {

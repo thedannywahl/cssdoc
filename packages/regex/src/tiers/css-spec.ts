@@ -2,7 +2,7 @@
  * Tier 1: W3C CSS Formal Grammar Patterns
  *
  * Patterns derived from the official W3C CSS specification:
- * https://www.w3.org/TR/CSS2/syndata.html#lexical-units
+ * https://www.w3.org/TR/css-2026/
  *
  * These are standard CSS constructs used across all stylesheets:
  * identifiers, keywords, colors, lengths, units, function names.
@@ -194,3 +194,8 @@ export const cssFunction: string = CSS_FUNCTION.source;
 export const cssKeyword: string = CSS_KEYWORD.source;
 export const cssUnicodeRange: string = CSS_UNICODE_RANGE.source;
 export const cssPropertyName: string = CSS_PROPERTY_NAME.source;
+
+// Inner patterns for reuse in custom capture groups (without capture wrapper)
+export const cssNamePattern: string = `${cssIdentifierStart}${cssIdentifierContNoDash}*`;
+export const cssIdentifierPattern: string = `${cssIdentifierStart}${cssIdentifierCont}*`;
+export const cssPropertyNamePattern: string = `(?:${doubleDash})?${cssIdentifierStart}${cssIdentifierCont}*`;
