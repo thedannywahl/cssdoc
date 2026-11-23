@@ -17,6 +17,7 @@ import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import {
   digit,
+  doubleDash,
   hexDigit,
   hexDigitOrWildcard,
   cssIdentifierStart,
@@ -177,7 +178,10 @@ export const CSS_UNICODE_RANGE: Regex<
 export const CSS_PROPERTY_NAME: Regex<
   "(?<name>(?<custom>--)?[a-zA-Z_\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*)",
   { names: { name: string; custom?: string } }
-> = arkRegex.as(String.raw`(?<name>(?<custom>--)?${cssIdentifierStart}${cssIdentifierCont}*)`, "u");
+> = arkRegex.as(
+  String.raw`(?<name>(?<custom>${doubleDash})?${cssIdentifierStart}${cssIdentifierCont}*)`,
+  "u",
+);
 
 // Convenience string exports for use in template literals
 export const cssIdentifier: string = CSS_IDENTIFIER.source;

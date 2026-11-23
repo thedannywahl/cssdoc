@@ -18,6 +18,7 @@ import { regex as arkRegex } from "arkregex";
 import {
   alphanumericExtended,
   dash,
+  doubleDash,
   quote,
   cssIdentifierStart,
   cssIdentifierCont,
@@ -215,7 +216,7 @@ export const CSSDOC_CARDINALITY: Regex<
 export const CSSDOC_CUSTOM_PROPERTY: Regex<
   "--(?<name>[\\w-]+)",
   { names: { name: string }; flags: "u" }
-> = arkRegex.as(String.raw`--(?<name>[\w-]+)`, "u");
+> = arkRegex.as(String.raw`${doubleDash}(?<name>[\w-]+)`, "u");
 
 /**
  * CssDoc Inline Reference from grammar.
@@ -416,7 +417,10 @@ export const CSSDOC_PART_TAG_PATTERN: Regex<
 export const CSSDOC_PROPERTY_TAG_PATTERN: Regex<
   "(@(?:cssproperty|property))\\b[ \\t]*(--[A-Za-z][A-Za-z0-9-]*)?",
   { names: {}; flags: "u" }
-> = arkRegex.as(String.raw`(@(?:cssproperty|property))\b[ \t]*(--[A-Za-z][A-Za-z0-9-]*)?`, "u");
+> = arkRegex.as(
+  String.raw`(@(?:cssproperty|property))\b[ \t]*(${doubleDash}${cssIdentifierStart}${cssIdentifierCont}*)?`,
+  "u",
+);
 
 /**
  * Ref Tag Pattern.
