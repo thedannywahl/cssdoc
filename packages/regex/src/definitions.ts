@@ -887,6 +887,26 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
         fails: [{ input: "(", reason: "opening" }],
       },
     },
+    BRACE_OPEN: {
+      name: "BRACE_OPEN",
+      tier: 0,
+      source: String.raw`\{`,
+      description: "Opening brace",
+      fixtures: {
+        passes: [{ input: "{" }],
+        fails: [{ input: "}", reason: "closing" }],
+      },
+    },
+    BRACE_CLOSE: {
+      name: "BRACE_CLOSE",
+      tier: 0,
+      source: String.raw`\}`,
+      description: "Closing brace",
+      fixtures: {
+        passes: [{ input: "}" }],
+        fails: [{ input: "{", reason: "opening" }],
+      },
+    },
     // Token patterns for syntax highlighting (Tier 3b: composition building blocks)
     TOKEN_WHITESPACE: {
       name: "TOKEN_WHITESPACE",

@@ -37,6 +37,8 @@ import {
   TOKEN_CLASS_SELECTOR_REQUIRED_DOT,
   COMMENT_START_SOURCE,
   COMMENT_LINE_MARKER_SOURCE,
+  BRACE_OPEN,
+  BRACE_CLOSE,
   TOKEN_QUALIFIED_IDENTIFIER_SOURCE,
   TOKEN_MODIFIER_NAME_SOURCE,
   TOKEN_CLASS_SELECTOR_SOURCE,
@@ -176,7 +178,7 @@ export const tokenizeComment = (text: string): CssdocToken[] => {
     }
 
     // Pattern to match braces for nesting visualization
-    const bracePattern = /[{}]/gu;
+    const bracePattern = new RegExp(`${BRACE_OPEN.source}|${BRACE_CLOSE.source}`, "gu");
     for (const m of body.matchAll(bracePattern)) {
       const from = start + (m.index ?? 0);
       out.push({ from, to: from + m[0].length, type: "punct" });

@@ -177,6 +177,10 @@ export const PAREN_OPEN: Regex = PATTERN_DEFINITIONS.PAREN_OPEN.regex;
 export const PAREN_OPEN_SOURCE: string = PATTERN_DEFINITIONS.PAREN_OPEN.source;
 export const PAREN_CLOSE: Regex = PATTERN_DEFINITIONS.PAREN_CLOSE.regex;
 export const PAREN_CLOSE_SOURCE: string = PATTERN_DEFINITIONS.PAREN_CLOSE.source;
+export const BRACE_OPEN: Regex = PATTERN_DEFINITIONS.BRACE_OPEN.regex;
+export const BRACE_OPEN_SOURCE: string = PATTERN_DEFINITIONS.BRACE_OPEN.source;
+export const BRACE_CLOSE: Regex = PATTERN_DEFINITIONS.BRACE_CLOSE.regex;
+export const BRACE_CLOSE_SOURCE: string = PATTERN_DEFINITIONS.BRACE_CLOSE.source;
 
 // Tier 3-4 - Token patterns for syntax highlighting
 export const TOKEN_WHITESPACE: Regex = PATTERN_DEFINITIONS.TOKEN_WHITESPACE.regex;
