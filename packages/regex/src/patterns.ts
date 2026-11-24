@@ -19,8 +19,12 @@ import { regex as arkRegex } from "arkregex";
  * Metadata for a single regex pattern in the registry.
  */
 export interface PatternDef {
-  /** Pattern string in String.raw format */
-  pattern: string;
+  /**
+   * Pattern definition: either a static string or a function that composes other patterns.
+   * Function receives a `resolve` function to look up other pattern strings by name.
+   * Example: (resolve) => `[${resolve('ALPHA')}0-9]`
+   */
+  pattern: string | ((resolve: (name: string) => string) => string);
 
   /** Named capture groups and their descriptions */
   captures?: Record<string, string>;
@@ -93,20 +97,31 @@ export const PATTERNS: Record<string, PatternDef> = {
   },
 
   ALPHANUMERIC: {
-    pattern: String.raw`[0-9A-Za-z]`,
+    pattern: (resolve) => {
+      const digit = resolve("DIGIT").slice(1, -1); // Strip [ ]
+      const alpha = resolve("ALPHA").slice(1, -1); // Strip [ ]
+      return `[${digit}${alpha}]`;
+    },
     tier: 0,
     description: "Alphanumeric character [0-9A-Za-z]",
     examples: ["0", "a", "Z"],
     status: "stable",
+    composedFrom: ["DIGIT", "ALPHA"],
     source: "character-classes.ts:30",
   },
 
   ALPHANUMERIC_EXTENDED: {
-    pattern: String.raw`[A-Za-z0-9_-]`,
+    pattern: (resolve) => {
+      const alpha = resolve("ALPHA").slice(1, -1); // Strip [ ]
+      const digit = resolve("DIGIT").slice(1, -1); // Strip [ ]
+      const dash = resolve("DASH").slice(1, -1); // Strip [ ]
+      return `[${alpha}${digit}${dash}_]`;
+    },
     tier: 0,
     description: "Alphanumeric with underscore and dash [A-Za-z0-9_-]",
     examples: ["a", "0", "_", "-"],
     status: "stable",
+    composedFrom: ["ALPHA", "DIGIT", "DASH"],
     source: "character-classes.ts:36",
   },
 
@@ -278,7 +293,11 @@ export const PATTERNS: Record<string, PatternDef> = {
   // ============================================================================
 
   CSS_IDENTIFIER: {
-    pattern: String.raw`(?<identifier>[a-zA-Z_\u0080-\uFFFF][\w\-\u0080-\uFFFF]*)`,
+    pattern: (resolve) => {
+      const start = resolve("CSS_IDENTIFIER_START");
+      const cont = resolve("CSS_IDENTIFIER_CONT");
+      return `(?<identifier>${start}${cont}*)`;
+    },
     captures: { identifier: "Full CSS identifier" },
     tier: 1,
     description: "CSS identifier from W3C formal grammar",
@@ -290,7 +309,11 @@ export const PATTERNS: Record<string, PatternDef> = {
   },
 
   CSS_NAME: {
-    pattern: String.raw`(?<name>[a-zA-Z_\u0080-\uFFFF][\w\u0080-\uFFFF]*)`,
+    pattern: (resolve) => {
+      const start = resolve("CSS_IDENTIFIER_START");
+      const cont = resolve("CSS_IDENTIFIER_CONT_NO_DASH");
+      return `(?<name>${start}${cont}*)`;
+    },
     captures: { name: "CSS name without dashes" },
     tier: 1,
     description: "CSS name from W3C formal grammar",
@@ -302,7 +325,10 @@ export const PATTERNS: Record<string, PatternDef> = {
   },
 
   CSS_NUMBER: {
-    pattern: String.raw`(?<number>(?<integer>\d+)(?:\.(?<decimal>\d+))?)`,
+    pattern: (resolve) => {
+      const digit = resolve("DIGIT").slice(1, -1); // Strip [ ]
+      return `(?<number>(?<integer>[${digit}]+)(?:\\.(?<decimal>[${digit}]+))?)`;
+    },
     captures: {
       number: "Full number",
       integer: "Integer part",
@@ -318,7 +344,11 @@ export const PATTERNS: Record<string, PatternDef> = {
   },
 
   CSS_PERCENTAGE: {
-    pattern: String.raw`(?<value>\d+(?:\.\d+)?)%`,
+    pattern: (resolve) => {
+      const digit = resolve("DIGIT").slice(1, -1); // Strip [ ]
+      const numberLiteral = `[${digit}]+(?:\\.[${digit}]+)?`;
+      return `(?<value>${numberLiteral})%`;
+    },
     captures: { value: "Numeric value without percent sign" },
     tier: 1,
     description: "CSS percentage from W3C formal grammar",
@@ -330,7 +360,12 @@ export const PATTERNS: Record<string, PatternDef> = {
   },
 
   CSS_DIMENSION: {
-    pattern: String.raw`(?<value>\d+(?:\.\d+)?)(?<unit>[a-zA-Z_\u0080-\uFFFF][\w\-\u0080-\uFFFF]*)`,
+    pattern: (resolve) => {
+      const digit = resolve("DIGIT").slice(1, -1); // Strip [ ]
+      const start = resolve("CSS_IDENTIFIER_START");
+      const cont = resolve("CSS_IDENTIFIER_CONT");
+      return `(?<value>[${digit}]+(?:\\.[${digit}]+)?)(?<unit>${start}${cont}*)`;
+    },
     captures: { value: "Numeric value", unit: "Unit name (px, em, etc)" },
     tier: 1,
     description: "CSS dimension from W3C formal grammar",
@@ -342,7 +377,10 @@ export const PATTERNS: Record<string, PatternDef> = {
   },
 
   CSS_HASH_COLOR: {
-    pattern: String.raw`#(?<color>[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?)`,
+    pattern: (resolve) => {
+      const hex = resolve("HEX_DIGIT").slice(1, -1); // Strip [ ]
+      return `#(?<color>[${hex}]{3}(?:[${hex}]{3})?)`;
+    },
     captures: { color: "Hex color without #" },
     tier: 1,
     description: "CSS hash color from W3C formal grammar",
@@ -354,7 +392,12 @@ export const PATTERNS: Record<string, PatternDef> = {
   },
 
   CSS_FUNCTION: {
-    pattern: String.raw`(?<name>[a-zA-Z_\-\u0080-\uFFFF][\w\-\u0080-\uFFFF]*)[ \t]*\(`,
+    pattern: (resolve) => {
+      const start = resolve("CSS_IDENTIFIER_START_WITH_DASH");
+      const cont = resolve("CSS_IDENTIFIER_CONT");
+      const space = resolve("SPACE_TAB").slice(1, -1); // Strip [ ]
+      return `(?<name>${start}${cont}*)[${space}]*\\(`;
+    },
     captures: { name: "Function name" },
     tier: 1,
     description: "CSS function from W3C formal grammar",
@@ -378,7 +421,11 @@ export const PATTERNS: Record<string, PatternDef> = {
   },
 
   CSS_UNICODE_RANGE: {
-    pattern: String.raw`u\+(?<start>[0-9a-fA-F?]{1,6})(?:-(?<range>[0-9a-fA-F]{1,6}))?`,
+    pattern: (resolve) => {
+      const hexWild = resolve("HEX_DIGIT_OR_WILDCARD").slice(1, -1); // Strip [ ]
+      const hex = resolve("HEX_DIGIT").slice(1, -1); // Strip [ ]
+      return `u\\+(?<start>[${hexWild}]{1,6})(?:-(?<range>[${hex}]{1,6}))?`;
+    },
     captures: { start: "Start of range", range: "End of range (optional)" },
     tier: 1,
     description: "CSS Unicode range from W3C formal grammar",
@@ -390,7 +437,12 @@ export const PATTERNS: Record<string, PatternDef> = {
   },
 
   CSS_PROPERTY_NAME: {
-    pattern: String.raw`(?<name>(?<custom>--)?[a-zA-Z_\u0080-\uFFFF][\w\-\u0080-\uFFFF]*)`,
+    pattern: (resolve) => {
+      const dash = resolve("DOUBLE_DASH");
+      const start = resolve("CSS_IDENTIFIER_START");
+      const cont = resolve("CSS_IDENTIFIER_CONT");
+      return `(?<name>(?<custom>${dash})?${start}${cont}*)`;
+    },
     captures: { name: "Full property name", custom: "Double dash if custom property" },
     tier: 1,
     description: "CSS property name or custom property",
@@ -406,7 +458,10 @@ export const PATTERNS: Record<string, PatternDef> = {
   // ============================================================================
 
   CSSDOC_IDENTIFIER_PART: {
-    pattern: String.raw`[A-Za-z_][\w-]*`,
+    pattern: (resolve) => {
+      const alpha = resolve("ALPHA").slice(1, -1); // Strip [ ]
+      return `[${alpha}_][\\w-]*`;
+    },
     tier: 2,
     description: "CssDoc identifier part (ASCII-only building block)",
     examples: ["button", "my-component", "_private"],
@@ -416,7 +471,10 @@ export const PATTERNS: Record<string, PatternDef> = {
   },
 
   CSSDOC_IDENTIFIER: {
-    pattern: String.raw`(?<identifier>[A-Za-z_][\w-]*)`,
+    pattern: (resolve) => {
+      const part = resolve("CSSDOC_IDENTIFIER_PART");
+      return `(?<identifier>${part})`;
+    },
     captures: { identifier: "Identifier" },
     tier: 2,
     description: "CssDoc identifier (ASCII-only)",
@@ -428,7 +486,11 @@ export const PATTERNS: Record<string, PatternDef> = {
   },
 
   CSSDOC_RECORD_NAME: {
-    pattern: String.raw`(?<parts>[A-Za-z_][\w-]*(?:\.[A-Za-z_][\w-]*)*)`,
+    pattern: (resolve) => {
+      const part = resolve("CSSDOC_IDENTIFIER_PART");
+      const dot = resolve("DOT");
+      return `(?<parts>${part}(?:${dot}${part})*)`;
+    },
     captures: { parts: "Dot-separated identifier parts" },
     tier: 2,
     description: "CssDoc record name (qualified identifier with dots)",
@@ -521,7 +583,12 @@ export const PATTERNS: Record<string, PatternDef> = {
   },
 
   CSSDOC_CUSTOM_PROPERTY: {
-    pattern: String.raw`--(?<name>[a-zA-Z_\u0080-\uFFFF][\w\-\u0080-\uFFFF]*)`,
+    pattern: (resolve) => {
+      const dash = resolve("DOUBLE_DASH");
+      const start = resolve("CSS_IDENTIFIER_START");
+      const cont = resolve("CSS_IDENTIFIER_CONT");
+      return `${dash}(?<name>${start}${cont}*)`;
+    },
     captures: { name: "Property name without --" },
     tier: 2,
     description: "CSS custom property reference",
@@ -702,6 +769,80 @@ export const PATTERNS: Record<string, PatternDef> = {
 };
 
 // ============================================================================
+// Cache of built Regex objects, keyed by pattern name.
+// Built on-demand by buildPattern().
+// MUST be initialized before createPatternExports() is called.
+// ============================================================================
+const patternCache = new Map<string, Regex<any, any>>();
+const patternStringCache = new Map<string, string>();
+
+/**
+ * Resolve a pattern name to its compiled pattern string.
+ * Handles both static strings and composed patterns.
+ */
+function resolvePatternString(name: string, visited = new Set<string>()): string {
+  if (patternStringCache.has(name)) {
+    return patternStringCache.get(name)!;
+  }
+
+  if (visited.has(name)) {
+    throw new Error(`Circular dependency in pattern: ${name}`);
+  }
+
+  const def = PATTERNS[name];
+  if (!def) {
+    throw new Error(`Pattern not found: ${name}`);
+  }
+
+  visited.add(name);
+
+  let patternStr: string;
+  if (typeof def.pattern === "function") {
+    // Compose pattern by calling resolver function
+    const resolve = (depName: string) => resolvePatternString(depName, new Set(visited));
+    patternStr = def.pattern(resolve);
+  } else {
+    // Static pattern string
+    patternStr = def.pattern;
+  }
+
+  patternStringCache.set(name, patternStr);
+  return patternStr;
+}
+
+/**
+ * Build a Regex object from a pattern definition.
+ * Handles composition and caches the result for performance.
+ *
+ * @throws if pattern name not found or circular dependency detected
+ */
+export function buildPattern(name: string): Regex<any, any> {
+  if (patternCache.has(name)) {
+    return patternCache.get(name)!;
+  }
+
+  const def = PATTERNS[name];
+  if (!def) {
+    throw new Error(`Pattern not found: ${name}`);
+  }
+
+  const patternStr = resolvePatternString(name);
+  const flags = def.flags ?? "u";
+  const regex = arkRegex.as(patternStr, flags) as Regex<any, any>;
+
+  patternCache.set(name, regex);
+  return regex;
+}
+
+/**
+ * Get the compiled pattern string for a pattern (after composition).
+ * @throws if pattern name not found or circular dependency detected
+ */
+export function getPatternString(name: string): string {
+  return resolvePatternString(name);
+}
+
+// ============================================================================
 // Lazy-Evaluated Exports (avoid duplication)
 // ============================================================================
 // Instead of duplicating pattern definitions, we provide getters that
@@ -865,45 +1006,6 @@ export const {
   CSSDOC_REF_TAG_PATTERN,
   cssdocRefTagPattern,
 } = patternExports;
-
-/**
- * Cache of built Regex objects, keyed by pattern name.
- * Built on-demand by buildPattern().
- */
-const patternCache = new Map<string, Regex<any, any>>();
-
-/**
- * Build a Regex object from a pattern definition.
- * Caches the result for performance.
- *
- * @throws if pattern name not found
- */
-export function buildPattern(name: string): Regex<any, any> {
-  if (patternCache.has(name)) {
-    return patternCache.get(name)!;
-  }
-
-  const def = PATTERNS[name];
-  if (!def) {
-    throw new Error(`Pattern not found: ${name}`);
-  }
-
-  const flags = def.flags || "u";
-  const regex = arkRegex.as(def.pattern, flags) as Regex<any, any>;
-  patternCache.set(name, regex);
-  return regex;
-}
-
-/**
- * Get pattern string (for use in template literals).
- */
-export function getPatternString(name: string): string {
-  const def = PATTERNS[name];
-  if (!def) {
-    throw new Error(`Pattern not found: ${name}`);
-  }
-  return def.pattern;
-}
 
 /**
  * Get pattern metadata.
