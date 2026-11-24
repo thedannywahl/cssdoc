@@ -934,6 +934,42 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
         fails: [{ input: ";", reason: "semicolon" }],
       },
     },
+    COLON_CHAR: {
+      name: "COLON_CHAR",
+      tier: 0,
+      source: ":",
+      description: "Colon character (literal)",
+      fixtures: {
+        passes: [{ input: ":" }],
+        fails: [{ input: ";", reason: "semicolon" }],
+      },
+    },
+    DOT_CHAR: {
+      name: "DOT_CHAR",
+      tier: 0,
+      source: ".",
+      description: "Period or dot character (literal)",
+      fixtures: {
+        passes: [{ input: "." }],
+        fails: [
+          { input: "…", reason: "ellipsis" },
+          { input: ",", reason: "comma" },
+        ],
+      },
+    },
+    POUND_CHAR: {
+      name: "POUND_CHAR",
+      tier: 0,
+      source: "#",
+      description: "Hash or pound character (literal)",
+      fixtures: {
+        passes: [{ input: "#" }],
+        fails: [
+          { input: "@", reason: "at sign" },
+          { input: "№", reason: "numero sign" },
+        ],
+      },
+    },
     AT_CHAR: {
       name: "AT_CHAR",
       tier: 0,

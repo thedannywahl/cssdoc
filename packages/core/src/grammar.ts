@@ -41,6 +41,7 @@ import type { ChildNode } from "postcss";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import { CssDocConfiguration } from "./configuration.ts";
+import { DOT_CHAR, POUND_CHAR, BRACKET_OPEN_CHAR, BRACKET_CLOSE_CHAR } from "@cssdoc/regex";
 import type {
   CssParse,
   CssRelated,
@@ -262,10 +263,11 @@ export function deriveSelectorName(sel: string): string {
  * is the convention-normalized form); IDs and `:host` strip their prefix.
  */
 function deriveModifierKey(sel: string): string {
-  if (sel.startsWith(".")) return sel.slice(1);
-  if (sel.startsWith("#")) return sel.slice(1);
+  if (sel.startsWith(DOT_CHAR)) return sel.slice(1);
+  if (sel.startsWith(POUND_CHAR)) return sel.slice(1);
   if (sel.startsWith(":host")) return "host";
-  if (sel.startsWith("[") && sel.endsWith("]")) return sel.slice(1, -1);
+  if (sel.startsWith(BRACKET_OPEN_CHAR) && sel.endsWith(BRACKET_CLOSE_CHAR))
+    return sel.slice(1, -1);
   return sel;
 }
 

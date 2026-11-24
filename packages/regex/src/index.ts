@@ -203,6 +203,9 @@ export const CSSDOC_EXAMPLE_LANG_SOURCE: string = PATTERN_DEFINITIONS.CSSDOC_EXA
 // Punctuation
 export const COLON: Regex = getRegex("COLON");
 export const COLON_SOURCE: string = PATTERN_DEFINITIONS.COLON.source;
+export const COLON_CHAR: string = PATTERN_DEFINITIONS.COLON_CHAR.source;
+export const DOT_CHAR: string = PATTERN_DEFINITIONS.DOT_CHAR.source;
+export const POUND_CHAR: string = PATTERN_DEFINITIONS.POUND_CHAR.source;
 export const AT_CHAR: string = PATTERN_DEFINITIONS.AT_CHAR.source;
 export const AT: Regex = getRegex("AT");
 export const AT_SOURCE: string = PATTERN_DEFINITIONS.AT.source;
