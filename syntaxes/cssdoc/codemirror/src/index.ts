@@ -33,6 +33,8 @@ import {
   ALPHA_SOURCE,
   SPACE_TAB_SOURCE,
   WORD_BOUNDARY_SOURCE,
+  toRegExp,
+  TOKEN_CLASS_SELECTOR_REQUIRED_DOT,
   TOKEN_QUALIFIED_IDENTIFIER_SOURCE,
   TOKEN_MODIFIER_NAME_SOURCE,
   TOKEN_CLASS_SELECTOR_SOURCE,
@@ -164,11 +166,8 @@ export const tokenizeComment = (text: string): CssdocToken[] => {
     const end = after === -1 ? text.length : start + after;
     const body = text.slice(start, end);
 
-    // Pattern to match class selectors: dot followed by identifier
-    // Note: TOKEN_CLASS_SELECTOR_SOURCE allows optional dot, but in structure bodies
-    // we need to match only dot-prefixed selectors to avoid matching bare identifiers
-    // that might appear in pseudo-classes (e.g., "has" in ":has(.tab)")
-    const classPattern = /\.[A-Za-z][A-Za-z0-9_-]*/gu;
+    // Pattern to match class selectors with required dot to avoid matching bare identifiers
+    const classPattern = toRegExp(TOKEN_CLASS_SELECTOR_REQUIRED_DOT);
     for (const m of body.matchAll(classPattern)) {
       const from = start + (m.index ?? 0);
       out.push({ from, to: from + m[0].length, type: "part" });

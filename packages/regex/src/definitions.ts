@@ -929,6 +929,25 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
         fails: [{ input: "", reason: "empty" }],
       },
     },
+    TOKEN_CLASS_SELECTOR_REQUIRED_DOT: {
+      name: "TOKEN_CLASS_SELECTOR_REQUIRED_DOT",
+      tier: 3,
+      pattern: (resolve: PatternResolver) => {
+        const dot = resolve("DOT");
+        const alpha = resolve("ALPHA", true);
+        const extended = resolve("ALPHANUMERIC_EXTENDED");
+        return `${dot}[${alpha}](?:${extended})*`;
+      },
+      description: "Class selector with required leading dot",
+      composedFrom: ["DOT", "ALPHA", "ALPHANUMERIC_EXTENDED"],
+      fixtures: {
+        passes: [{ input: ".name" }],
+        fails: [
+          { input: "name", reason: "missing dot" },
+          { input: ".123", reason: "starts with digit" },
+        ],
+      },
+    },
     TOKEN_CLASS_SELECTOR_OPTIONAL: {
       name: "TOKEN_CLASS_SELECTOR_OPTIONAL",
       tier: 3,
