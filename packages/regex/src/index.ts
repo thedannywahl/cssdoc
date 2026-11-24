@@ -49,31 +49,31 @@ function resolvePattern(name: string): string {
  */
 
 /**
- * Alphabetic characters [a-zA-Z]
+ * Alphabetic character (ASCII letters)
  * @tier 0
  */
 export const ALPHA = new RegExp(resolvePattern("ALPHA"), "");
 
 /**
- * Lowercase alphabetic [a-z]
+ * Lowercase alphabetic character
  * @tier 0
  */
 export const ALPHA_LOWER = new RegExp(resolvePattern("ALPHA_LOWER"), "");
 
 /**
- * Uppercase alphabetic [A-Z]
+ * Uppercase alphabetic character
  * @tier 0
  */
 export const ALPHA_UPPER = new RegExp(resolvePattern("ALPHA_UPPER"), "");
 
 /**
- * Alphanumeric character [0-9A-Za-z]
+ * Alphanumeric character (letter or digit)
  * @tier 0
  */
 export const ALPHANUMERIC = new RegExp(resolvePattern("ALPHANUMERIC"), "");
 
 /**
- * Alphanumeric with underscore and dash [A-Za-z0-9_-]
+ * Alphanumeric with underscore and hyphen
  * @tier 0
  */
 export const ALPHANUMERIC_EXTENDED = new RegExp(resolvePattern("ALPHANUMERIC_EXTENDED"), "");
@@ -109,7 +109,7 @@ export const CSS_IDENTIFIER_START_WITH_DASH = new RegExp(
 );
 
 /**
- * Hyphen-minus character: -
+ * Hyphen-minus character
  * @tier 0
  */
 export const DASH = new RegExp(resolvePattern("DASH"), "");
@@ -127,7 +127,7 @@ export const DIGIT = new RegExp(resolvePattern("DIGIT"), "");
 export const DOT = new RegExp(resolvePattern("DOT"), "");
 
 /**
- * Double hyphen: --
+ * Double hyphen
  * @tier 0
  */
 export const DOUBLE_DASH = new RegExp(resolvePattern("DOUBLE_DASH"), "");
@@ -145,7 +145,7 @@ export const HEX_DIGIT = new RegExp(resolvePattern("HEX_DIGIT"), "");
 export const HEX_DIGIT_OR_WILDCARD = new RegExp(resolvePattern("HEX_DIGIT_OR_WILDCARD"), "");
 
 /**
- * Space or tab character
+ * Space or tab whitespace
  * @tier 0
  */
 export const SPACE_TAB = new RegExp(resolvePattern("SPACE_TAB"), "");
@@ -157,73 +157,73 @@ export const SPACE_TAB = new RegExp(resolvePattern("SPACE_TAB"), "");
 export const WORD_BOUNDARY = new RegExp(resolvePattern("WORD_BOUNDARY"), "");
 
 /**
- * CSS dimension from W3C formal grammar
+ * CSS dimension
  * @tier 1
  */
 export const CSS_DIMENSION = new RegExp(resolvePattern("CSS_DIMENSION"), "");
 
 /**
- * CSS function from W3C formal grammar
+ * CSS function call
  * @tier 1
  */
 export const CSS_FUNCTION = new RegExp(resolvePattern("CSS_FUNCTION"), "");
 
 /**
- * CSS hash color from W3C formal grammar
+ * CSS hex color
  * @tier 1
  */
 export const CSS_HASH_COLOR = new RegExp(resolvePattern("CSS_HASH_COLOR"), "");
 
 /**
- * CSS identifier from W3C formal grammar
+ * CSS identifier
  * @tier 1
  */
 export const CSS_IDENTIFIER = new RegExp(resolvePattern("CSS_IDENTIFIER"), "");
 
 /**
- * CSS reserved keywords
+ * CSS reserved keyword
  * @tier 1
  */
 export const CSS_KEYWORD = new RegExp(resolvePattern("CSS_KEYWORD"), "");
 
 /**
- * CSS name from W3C formal grammar
+ * CSS name
  * @tier 1
  */
 export const CSS_NAME = new RegExp(resolvePattern("CSS_NAME"), "");
 
 /**
- * CSS number from W3C formal grammar
+ * CSS number
  * @tier 1
  */
 export const CSS_NUMBER = new RegExp(resolvePattern("CSS_NUMBER"), "");
 
 /**
- * CSS percentage from W3C formal grammar
+ * CSS percentage
  * @tier 1
  */
 export const CSS_PERCENTAGE = new RegExp(resolvePattern("CSS_PERCENTAGE"), "");
 
 /**
- * CSS property name or custom property
+ * CSS property or custom property name
  * @tier 1
  */
 export const CSS_PROPERTY_NAME = new RegExp(resolvePattern("CSS_PROPERTY_NAME"), "");
 
 /**
- * CSS Unicode range from W3C formal grammar
+ * CSS Unicode range
  * @tier 1
  */
 export const CSS_UNICODE_RANGE = new RegExp(resolvePattern("CSS_UNICODE_RANGE"), "");
 
 /**
- * CssDoc cardinality in structure
+ * Cardinality in structure
  * @tier 2
  */
 export const CSSDOC_CARDINALITY = new RegExp(resolvePattern("CSSDOC_CARDINALITY"), "");
 
 /**
- * CssDoc modifier with attribute selector
+ * Modifier with attribute selector
  * @tier 2
  */
 export const CSSDOC_MODIFIER_ATTRIBUTE = new RegExp(
@@ -232,73 +232,73 @@ export const CSSDOC_MODIFIER_ATTRIBUTE = new RegExp(
 );
 
 /**
- * CssDoc modifier name
+ * Modifier name
  * @tier 2
  */
 export const CSSDOC_MODIFIER_NAME = new RegExp(resolvePattern("CSSDOC_MODIFIER_NAME"), "");
 
 /**
- * CssDoc pseudo selector
+ * Pseudo selector
  * @tier 2
  */
 export const CSSDOC_PSEUDO_SELECTOR = new RegExp(resolvePattern("CSSDOC_PSEUDO_SELECTOR"), "");
 
 /**
- * CSS selector in CssDoc
+ * CSS selector
  * @tier 2
  */
 export const CSSDOC_SELECTOR = new RegExp(resolvePattern("CSSDOC_SELECTOR"), "");
 
 /**
- * CssDoc tag name with @
+ * CssDoc tag name
  * @tier 2
  */
 export const CSSDOC_TAG_NAME = new RegExp(resolvePattern("CSSDOC_TAG_NAME"), "");
 
 /**
- * CssDoc component reference with optional cardinality
+ * Component reference with optional cardinality
  * @tier 3
  */
 export const CSSDOC_COMPONENT_REF = new RegExp(resolvePattern("CSSDOC_COMPONENT_REF"), "");
 
 /**
- * CssDoc custom or standard property name
+ * Property or custom property name
  * @tier 3
  */
 export const CSSDOC_CSSPROP_NAME = new RegExp(resolvePattern("CSSDOC_CSSPROP_NAME"), "");
 
 /**
- * CssDoc custom state name
+ * State name
  * @tier 3
  */
 export const CSSDOC_CSSSTATE_NAME = new RegExp(resolvePattern("CSSDOC_CSSSTATE_NAME"), "");
 
 /**
- * CssDoc @demo URL
+ * @demo URL
  * @tier 3
  */
 export const CSSDOC_DEMO_URL = new RegExp(resolvePattern("CSSDOC_DEMO_URL"), "");
 
 /**
- * CssDoc @example language tag
+ * @example language identifier
  * @tier 3
  */
 export const CSSDOC_EXAMPLE_LANG = new RegExp(resolvePattern("CSSDOC_EXAMPLE_LANG"), "");
 
 /**
- * CssDoc ::part() name
+ * Part name
  * @tier 3
  */
 export const CSSDOC_PART_NAME = new RegExp(resolvePattern("CSSDOC_PART_NAME"), "");
 
 /**
- * CssDoc slot name
+ * Slot name
  * @tier 3
  */
 export const CSSDOC_SLOT_NAME = new RegExp(resolvePattern("CSSDOC_SLOT_NAME"), "");
 
 /**
- * CssDoc variant name in structure
+ * Variant name
  * @tier 3
  */
 export const CSSDOC_VARIANT_NAME = new RegExp(resolvePattern("CSSDOC_VARIANT_NAME"), "");

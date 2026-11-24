@@ -13,148 +13,148 @@
  */
 export const PATTERNS = {
   /**
-   * Alphabetic characters [a-zA-Z]
+   * Alphabetic character (ASCII letters)
    * @tier 0
    */
   ALPHA: {
     source: "[A-Za-z]",
     tier: 0,
-    description: "Alphabetic characters [a-zA-Z]",
+    description: "Alphabetic character (ASCII letters)",
   },
   /**
-   * Lowercase alphabetic [a-z]
+   * Lowercase alphabetic character
    * @tier 0
    */
   ALPHA_LOWER: {
     source: "[a-z]",
     tier: 0,
-    description: "Lowercase alphabetic [a-z]",
+    description: "Lowercase alphabetic character",
   },
   /**
-   * Uppercase alphabetic [A-Z]
+   * Uppercase alphabetic character
    * @tier 0
    */
   ALPHA_UPPER: {
     source: "[A-Z]",
     tier: 0,
-    description: "Uppercase alphabetic [A-Z]",
+    description: "Uppercase alphabetic character",
   },
   /**
-   * Alphanumeric character [0-9A-Za-z] (composed from: DIGIT, ALPHA)
+   * Alphanumeric character (letter or digit) (composed from: DIGIT, ALPHA)
    * @tier 0
    */
   ALPHANUMERIC: {
     source: "[0-9A-Za-z]",
     tier: 0,
-    description: "Alphanumeric character [0-9A-Za-z]",
+    description: "Alphanumeric character (letter or digit)",
   },
   /**
-   * Alphanumeric with underscore and dash [A-Za-z0-9_-] (composed from: ALPHA, DIGIT, DASH)
+   * Alphanumeric with underscore and hyphen (composed from: ALPHA, DIGIT, DASH)
    * @tier 0
    */
   ALPHANUMERIC_EXTENDED: {
     source: "[A-Za-z0-9_]",
     tier: 0,
-    description: "Alphanumeric with underscore and dash [A-Za-z0-9_-]",
+    description: "Alphanumeric with underscore and hyphen",
   },
   /**
-   * CSS identifier continuation character
+   * CSS identifier continuation
    * @tier 0
    */
   CSS_IDENTIFIER_CONT: {
     source: "[\\w\\-\\u0080-\\uFFFF]",
     tier: 0,
-    description: "CSS identifier continuation character",
+    description: "CSS identifier continuation",
   },
   /**
-   * CSS identifier continuation without dash
+   * CSS identifier continuation (no dash)
    * @tier 0
    */
   CSS_IDENTIFIER_CONT_NO_DASH: {
     source: "[\\w\\u0080-\\uFFFF]",
     tier: 0,
-    description: "CSS identifier continuation without dash",
+    description: "CSS identifier continuation (no dash)",
   },
   /**
-   * CSS identifier start character
+   * CSS identifier start
    * @tier 0
    */
   CSS_IDENTIFIER_START: {
     source: "[a-zA-Z_\\u0080-\\uFFFF]",
     tier: 0,
-    description: "CSS identifier start character",
+    description: "CSS identifier start",
   },
   /**
-   * CSS identifier start with dash allowed
+   * CSS identifier start (with dash)
    * @tier 0
    */
   CSS_IDENTIFIER_START_WITH_DASH: {
     source: "[a-zA-Z_\\-\\u0080-\\uFFFF]",
     tier: 0,
-    description: "CSS identifier start with dash allowed",
+    description: "CSS identifier start (with dash)",
   },
   /**
-   * Hyphen-minus character: -
+   * Hyphen-minus character
    * @tier 0
    */
   DASH: {
     source: "-",
     tier: 0,
-    description: "Hyphen-minus character: -",
+    description: "Hyphen-minus character",
   },
   /**
-   * Single digit [0-9]
+   * Single digit
    * @tier 0
    */
   DIGIT: {
     source: "[0-9]",
     tier: 0,
-    description: "Single digit [0-9]",
+    description: "Single digit",
   },
   /**
-   * Period/dot character: .
+   * Period or dot character
    * @tier 0
    */
   DOT: {
     source: "\\.",
     tier: 0,
-    description: "Period/dot character: .",
+    description: "Period or dot character",
   },
   /**
-   * Double hyphen: --
+   * Double hyphen
    * @tier 0
    */
   DOUBLE_DASH: {
     source: "--",
     tier: 0,
-    description: "Double hyphen: --",
+    description: "Double hyphen",
   },
   /**
-   * Hexadecimal digit [0-9a-fA-F]
+   * Hexadecimal digit
    * @tier 0
    */
   HEX_DIGIT: {
     source: "[0-9a-fA-F]",
     tier: 0,
-    description: "Hexadecimal digit [0-9a-fA-F]",
+    description: "Hexadecimal digit",
   },
   /**
-   * Hexadecimal digit or wildcard [0-9a-fA-F?]
+   * Hexadecimal digit or wildcard
    * @tier 0
    */
   HEX_DIGIT_OR_WILDCARD: {
     source: "[0-9a-fA-F?]",
     tier: 0,
-    description: "Hexadecimal digit or wildcard [0-9a-fA-F?]",
+    description: "Hexadecimal digit or wildcard",
   },
   /**
-   * Space or tab character
+   * Space or tab whitespace
    * @tier 0
    */
   SPACE_TAB: {
     source: "[ \\t]",
     tier: 0,
-    description: "Space or tab character",
+    description: "Space or tab whitespace",
   },
   /**
    * Zero-width word boundary
@@ -166,7 +166,7 @@ export const PATTERNS = {
     description: "Zero-width word boundary",
   },
   /**
-   * CSS dimension from W3C formal grammar (composed from: DIGIT, CSS_IDENTIFIER_START, CSS_IDENTIFIER_CONT)
+   * CSS dimension (composed from: DIGIT, CSS_IDENTIFIER_START, CSS_IDENTIFIER_CONT)
    * @tier 1
    * Captures:
    *   value: Numeric value
@@ -176,10 +176,10 @@ export const PATTERNS = {
     source:
       "(?<value>[0-9]+(?:\\.[0-9]+)?)(?<unit>[a-zA-Z_\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*)",
     tier: 1,
-    description: "CSS dimension from W3C formal grammar",
+    description: "CSS dimension",
   },
   /**
-   * CSS function from W3C formal grammar (composed from: CSS_IDENTIFIER_START_WITH_DASH, CSS_IDENTIFIER_CONT, SPACE_TAB)
+   * CSS function call (composed from: CSS_IDENTIFIER_START_WITH_DASH, CSS_IDENTIFIER_CONT, SPACE_TAB)
    * @tier 1
    * Captures:
    *   name: Function name
@@ -187,10 +187,10 @@ export const PATTERNS = {
   CSS_FUNCTION: {
     source: "(?<name>[a-zA-Z_\\-\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*)[ \\t]*\\(",
     tier: 1,
-    description: "CSS function from W3C formal grammar",
+    description: "CSS function call",
   },
   /**
-   * CSS hash color from W3C formal grammar (composed from: HEX_DIGIT)
+   * CSS hex color (composed from: HEX_DIGIT)
    * @tier 1
    * Captures:
    *   color: Hex color without #
@@ -198,10 +198,10 @@ export const PATTERNS = {
   CSS_HASH_COLOR: {
     source: "#(?<color>[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?)",
     tier: 1,
-    description: "CSS hash color from W3C formal grammar",
+    description: "CSS hex color",
   },
   /**
-   * CSS identifier from W3C formal grammar (composed from: CSS_IDENTIFIER_START, CSS_IDENTIFIER_CONT)
+   * CSS identifier (composed from: CSS_IDENTIFIER_START, CSS_IDENTIFIER_CONT)
    * @tier 1
    * Captures:
    *   identifier: Full CSS identifier
@@ -209,10 +209,10 @@ export const PATTERNS = {
   CSS_IDENTIFIER: {
     source: "(?<identifier>[a-zA-Z_\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*)",
     tier: 1,
-    description: "CSS identifier from W3C formal grammar",
+    description: "CSS identifier",
   },
   /**
-   * CSS reserved keywords
+   * CSS reserved keyword
    * @tier 1
    * Captures:
    *   keyword: CSS keyword
@@ -220,10 +220,10 @@ export const PATTERNS = {
   CSS_KEYWORD: {
     source: "(?<keyword>auto|inherit|initial|revert|unset)",
     tier: 1,
-    description: "CSS reserved keywords",
+    description: "CSS reserved keyword",
   },
   /**
-   * CSS name from W3C formal grammar (composed from: CSS_IDENTIFIER_START, CSS_IDENTIFIER_CONT_NO_DASH)
+   * CSS name (composed from: CSS_IDENTIFIER_START, CSS_IDENTIFIER_CONT_NO_DASH)
    * @tier 1
    * Captures:
    *   name: CSS name without dashes
@@ -231,10 +231,10 @@ export const PATTERNS = {
   CSS_NAME: {
     source: "(?<name>[a-zA-Z_\\u0080-\\uFFFF][\\w\\u0080-\\uFFFF]*)",
     tier: 1,
-    description: "CSS name from W3C formal grammar",
+    description: "CSS name",
   },
   /**
-   * CSS number from W3C formal grammar (composed from: DIGIT)
+   * CSS number (composed from: DIGIT)
    * @tier 1
    * Captures:
    *   number: Full number
@@ -244,10 +244,10 @@ export const PATTERNS = {
   CSS_NUMBER: {
     source: "(?<number>(?<integer>[0-9]+)(?:\\.(?<decimal>[0-9]+))?)",
     tier: 1,
-    description: "CSS number from W3C formal grammar",
+    description: "CSS number",
   },
   /**
-   * CSS percentage from W3C formal grammar (composed from: DIGIT)
+   * CSS percentage (composed from: DIGIT)
    * @tier 1
    * Captures:
    *   value: Numeric value without percent sign
@@ -255,10 +255,10 @@ export const PATTERNS = {
   CSS_PERCENTAGE: {
     source: "(?<value>[0-9]+(?:\\.[0-9]+)?)%",
     tier: 1,
-    description: "CSS percentage from W3C formal grammar",
+    description: "CSS percentage",
   },
   /**
-   * CSS property name or custom property (composed from: DOUBLE_DASH, CSS_IDENTIFIER_START, CSS_IDENTIFIER_CONT)
+   * CSS property or custom property name (composed from: DOUBLE_DASH, CSS_IDENTIFIER_START, CSS_IDENTIFIER_CONT)
    * @tier 1
    * Captures:
    *   name: Full property name
@@ -267,10 +267,10 @@ export const PATTERNS = {
   CSS_PROPERTY_NAME: {
     source: "(?<name>(?<custom>--)?[a-zA-Z_\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*)",
     tier: 1,
-    description: "CSS property name or custom property",
+    description: "CSS property or custom property name",
   },
   /**
-   * CSS Unicode range from W3C formal grammar (composed from: HEX_DIGIT_OR_WILDCARD, HEX_DIGIT)
+   * CSS Unicode range (composed from: HEX_DIGIT_OR_WILDCARD, HEX_DIGIT)
    * @tier 1
    * Captures:
    *   start: Start of range
@@ -279,10 +279,10 @@ export const PATTERNS = {
   CSS_UNICODE_RANGE: {
     source: "u\\+(?<start>[0-9a-fA-F?]{1,6})(?:-(?<range>[0-9a-fA-F]{1,6}))?",
     tier: 1,
-    description: "CSS Unicode range from W3C formal grammar",
+    description: "CSS Unicode range",
   },
   /**
-   * CssDoc cardinality in structure
+   * Cardinality in structure
    * @tier 2
    * Captures:
    *   card: Cardinality modifier
@@ -290,10 +290,10 @@ export const PATTERNS = {
   CSSDOC_CARDINALITY: {
     source: "(?<card>(?:one-or-more|zero-or-more|optional|exactly-one|max-\\d+)?)",
     tier: 2,
-    description: "CssDoc cardinality in structure",
+    description: "Cardinality in structure",
   },
   /**
-   * CssDoc modifier with attribute selector (composed from: ALPHA)
+   * Modifier with attribute selector (composed from: ALPHA)
    * @tier 2
    * Captures:
    *   attr: Attribute name
@@ -302,10 +302,10 @@ export const PATTERNS = {
   CSSDOC_MODIFIER_ATTRIBUTE: {
     source: "\\[(?<attr>[A-Za-z]+)\\s*=\\s*(?<value>[^\\]]+)\\]",
     tier: 2,
-    description: "CssDoc modifier with attribute selector",
+    description: "Modifier with attribute selector",
   },
   /**
-   * CssDoc modifier name (composed from: CSS_IDENTIFIER_START, CSS_IDENTIFIER_CONT)
+   * Modifier name (composed from: CSS_IDENTIFIER_START, CSS_IDENTIFIER_CONT)
    * @tier 2
    * Captures:
    *   name: Modifier name
@@ -313,10 +313,10 @@ export const PATTERNS = {
   CSSDOC_MODIFIER_NAME: {
     source: "(?<name>[a-zA-Z_\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*)",
     tier: 2,
-    description: "CssDoc modifier name",
+    description: "Modifier name",
   },
   /**
-   * CssDoc pseudo selector
+   * Pseudo selector
    * @tier 2
    * Captures:
    *   pseudo: Pseudo element
@@ -324,10 +324,10 @@ export const PATTERNS = {
   CSSDOC_PSEUDO_SELECTOR: {
     source: "(?<pseudo>::?(?:before|after|first-letter|first-line|placeholder|selection|backdrop))",
     tier: 2,
-    description: "CssDoc pseudo selector",
+    description: "Pseudo selector",
   },
   /**
-   * CSS selector in CssDoc (composed from: CSS_IDENTIFIER_START_WITH_DASH, CSS_IDENTIFIER_CONT)
+   * CSS selector (composed from: CSS_IDENTIFIER_START_WITH_DASH, CSS_IDENTIFIER_CONT)
    * @tier 2
    * Captures:
    *   selector: CSS selector
@@ -336,10 +336,10 @@ export const PATTERNS = {
     source:
       "(?<selector>(?:[a-zA-Z_\\-\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*|[.#\\[\\]:~+>\\s])+)",
     tier: 2,
-    description: "CSS selector in CssDoc",
+    description: "CSS selector",
   },
   /**
-   * CssDoc tag name with @ (composed from: ALPHA)
+   * CssDoc tag name (composed from: ALPHA)
    * @tier 2
    * Captures:
    *   tag: Tag name without @
@@ -347,10 +347,10 @@ export const PATTERNS = {
   CSSDOC_TAG_NAME: {
     source: "@(?<tag>[A-Za-z][A-Za-z]*(?:-[A-Za-z]+)*)",
     tier: 2,
-    description: "CssDoc tag name with @",
+    description: "CssDoc tag name",
   },
   /**
-   * CssDoc component reference with optional cardinality (composed from: CSS_IDENTIFIER, CSSDOC_CARDINALITY)
+   * Component reference with optional cardinality (composed from: CSS_IDENTIFIER, CSSDOC_CARDINALITY)
    * @tier 3
    * Captures:
    *   ref: Component reference
@@ -359,10 +359,10 @@ export const PATTERNS = {
     source:
       "(?<ref>(?<identifier>[a-zA-Z_\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*)(?::(?<card>(?:one-or-more|zero-or-more|optional|exactly-one|max-\\d+)?))?)",
     tier: 3,
-    description: "CssDoc component reference with optional cardinality",
+    description: "Component reference with optional cardinality",
   },
   /**
-   * CssDoc custom or standard property name (composed from: DOUBLE_DASH, CSS_IDENTIFIER_START, CSS_IDENTIFIER_CONT)
+   * Property or custom property name (composed from: DOUBLE_DASH, CSS_IDENTIFIER_START, CSS_IDENTIFIER_CONT)
    * @tier 3
    * Captures:
    *   name: Full property name
@@ -371,10 +371,10 @@ export const PATTERNS = {
   CSSDOC_CSSPROP_NAME: {
     source: "(?<name>(?<custom>--)?[a-zA-Z_\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*)",
     tier: 3,
-    description: "CssDoc custom or standard property name",
+    description: "Property or custom property name",
   },
   /**
-   * CssDoc custom state name (composed from: CSS_IDENTIFIER_START, CSS_IDENTIFIER_CONT)
+   * State name (composed from: CSS_IDENTIFIER_START, CSS_IDENTIFIER_CONT)
    * @tier 3
    * Captures:
    *   name: State name
@@ -382,10 +382,10 @@ export const PATTERNS = {
   CSSDOC_CSSSTATE_NAME: {
     source: "(?<name>[a-zA-Z_\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*)",
     tier: 3,
-    description: "CssDoc custom state name",
+    description: "State name",
   },
   /**
-   * CssDoc @demo URL
+   * @demo URL
    * @tier 3
    * Captures:
    *   url: URL
@@ -393,10 +393,10 @@ export const PATTERNS = {
   CSSDOC_DEMO_URL: {
     source: "(?<url>https?://[^\\s]+)",
     tier: 3,
-    description: "CssDoc @demo URL",
+    description: "@demo URL",
   },
   /**
-   * CssDoc @example language tag
+   * @example language identifier
    * @tier 3
    * Captures:
    *   lang: Language identifier
@@ -404,10 +404,10 @@ export const PATTERNS = {
   CSSDOC_EXAMPLE_LANG: {
     source: "(?<lang>css|html|javascript|js|typescript|ts|jsx|tsx|json|markdown|md|text|plain)",
     tier: 3,
-    description: "CssDoc @example language tag",
+    description: "@example language identifier",
   },
   /**
-   * CssDoc ::part() name (composed from: CSS_IDENTIFIER_START, CSS_IDENTIFIER_CONT)
+   * Part name (composed from: CSS_IDENTIFIER_START, CSS_IDENTIFIER_CONT)
    * @tier 3
    * Captures:
    *   name: Part name
@@ -415,10 +415,10 @@ export const PATTERNS = {
   CSSDOC_PART_NAME: {
     source: "(?<name>[a-zA-Z_\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*)",
     tier: 3,
-    description: "CssDoc ::part() name",
+    description: "Part name",
   },
   /**
-   * CssDoc slot name (composed from: ALPHA)
+   * Slot name (composed from: ALPHA)
    * @tier 3
    * Captures:
    *   name: Slot name
@@ -426,10 +426,10 @@ export const PATTERNS = {
   CSSDOC_SLOT_NAME: {
     source: "(?<name>[A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*)",
     tier: 3,
-    description: "CssDoc slot name",
+    description: "Slot name",
   },
   /**
-   * CssDoc variant name in structure (composed from: CSS_IDENTIFIER_START, CSS_IDENTIFIER_CONT)
+   * Variant name (composed from: CSS_IDENTIFIER_START, CSS_IDENTIFIER_CONT)
    * @tier 3
    * Captures:
    *   name: Variant name
@@ -437,6 +437,6 @@ export const PATTERNS = {
   CSSDOC_VARIANT_NAME: {
     source: "(?<name>[a-zA-Z_\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*)",
     tier: 3,
-    description: "CssDoc variant name in structure",
+    description: "Variant name",
   },
 };

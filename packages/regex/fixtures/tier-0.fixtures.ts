@@ -453,6 +453,7 @@ describe(`Tier 0 Pattern Fixtures`, () => {
       const regex = new RegExp(def.pattern as string);
       expect(regex.test("")).toBe(true);
     });
+
   });
   describe("CSS_IDENTIFIER_START", () => {
     it(`matches \"${JSON.stringify("a")}\"`, () => {

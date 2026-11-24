@@ -69,7 +69,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
     grammarRule: "Letter",
     tier: 0,
     pattern: String.raw`[A-Za-z]`,
-    description: "Alphabetic characters [a-zA-Z]",
+    description: "Alphabetic character (ASCII letters)",
     fixtures: {
       passes: [{ input: "a" }, { input: "Z" }, { input: "m" }, { input: "A" }],
       fails: [
@@ -85,7 +85,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
     name: "ALPHA_LOWER",
     tier: 0,
     pattern: String.raw`[a-z]`,
-    description: "Lowercase alphabetic [a-z]",
+    description: "Lowercase alphabetic character",
     fixtures: {
       passes: [{ input: "a" }, { input: "z" }, { input: "m" }],
       fails: [
@@ -101,7 +101,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
     name: "ALPHA_UPPER",
     tier: 0,
     pattern: String.raw`[A-Z]`,
-    description: "Uppercase alphabetic [A-Z]",
+    description: "Uppercase alphabetic character",
     fixtures: {
       passes: [{ input: "A" }, { input: "Z" }, { input: "M" }],
       fails: [
@@ -121,7 +121,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
       const alpha = resolve("ALPHA").slice(1, -1);
       return `[${digit}${alpha}]`;
     },
-    description: "Alphanumeric character [0-9A-Za-z]",
+    description: "Alphanumeric character (letter or digit)",
     composedFrom: ["DIGIT", "ALPHA"],
     fixtures: {
       passes: [{ input: "0" }, { input: "a" }, { input: "Z" }],
@@ -142,7 +142,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
       const dash = resolve("DASH").slice(1, -1);
       return `[${alpha}${digit}${dash}_]`;
     },
-    description: "Alphanumeric with underscore and dash [A-Za-z0-9_-]",
+    description: "Alphanumeric with underscore and hyphen",
     composedFrom: ["ALPHA", "DIGIT", "DASH"],
     fixtures: {
       passes: [{ input: "a" }, { input: "0" }, { input: "_" }, { input: "-" }],
@@ -158,7 +158,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
     grammarRule: "Digit",
     tier: 0,
     pattern: String.raw`[0-9]`,
-    description: "Single digit [0-9]",
+    description: "Single digit",
     fixtures: {
       passes: [{ input: "0" }, { input: "5" }, { input: "9" }],
       fails: [
@@ -174,7 +174,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
     name: "DASH",
     tier: 0,
     pattern: String.raw`-`,
-    description: "Hyphen-minus character: -",
+    description: "Hyphen-minus character",
     fixtures: {
       passes: [{ input: "-" }],
       fails: [
@@ -189,7 +189,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
     name: "DOUBLE_DASH",
     tier: 0,
     pattern: String.raw`--`,
-    description: "Double hyphen: --",
+    description: "Double hyphen",
     fixtures: {
       passes: [{ input: "--" }],
       fails: [
@@ -203,7 +203,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
     name: "DOT",
     tier: 0,
     pattern: String.raw`\.`,
-    description: "Period/dot character: .",
+    description: "Period or dot character",
     fixtures: {
       passes: [{ input: "." }],
       fails: [
@@ -218,7 +218,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
     name: "HEX_DIGIT",
     tier: 0,
     pattern: String.raw`[0-9a-fA-F]`,
-    description: "Hexadecimal digit [0-9a-fA-F]",
+    description: "Hexadecimal digit",
     fixtures: {
       passes: [{ input: "0" }, { input: "f" }, { input: "F" }],
       fails: [
@@ -233,7 +233,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
     name: "HEX_DIGIT_OR_WILDCARD",
     tier: 0,
     pattern: String.raw`[0-9a-fA-F?]`,
-    description: "Hexadecimal digit or wildcard [0-9a-fA-F?]",
+    description: "Hexadecimal digit or wildcard",
     fixtures: {
       passes: [{ input: "0" }, { input: "f" }, { input: "?" }],
       fails: [
@@ -248,7 +248,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
     name: "SPACE_TAB",
     tier: 0,
     pattern: String.raw`[ \t]`,
-    description: "Space or tab character",
+    description: "Space or tab whitespace",
     fixtures: {
       passes: [{ input: " " }, { input: "\t" }],
       fails: [
@@ -273,7 +273,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
     name: "CSS_IDENTIFIER_START",
     tier: 0,
     pattern: String.raw`[a-zA-Z_\u0080-\uFFFF]`,
-    description: "CSS identifier start character",
+    description: "CSS identifier start",
     fixtures: {
       passes: [{ input: "a" }, { input: "_" }, { input: "🎨" }],
       fails: [
@@ -288,7 +288,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
     name: "CSS_IDENTIFIER_CONT",
     tier: 0,
     pattern: String.raw`[\w\-\u0080-\uFFFF]`,
-    description: "CSS identifier continuation character",
+    description: "CSS identifier continuation",
     fixtures: {
       passes: [{ input: "a" }, { input: "0" }, { input: "_" }, { input: "-" }, { input: "🎨" }],
       fails: [
@@ -302,7 +302,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
     name: "CSS_IDENTIFIER_CONT_NO_DASH",
     tier: 0,
     pattern: String.raw`[\w\u0080-\uFFFF]`,
-    description: "CSS identifier continuation without dash",
+    description: "CSS identifier continuation (no dash)",
     fixtures: {
       passes: [{ input: "a" }, { input: "0" }, { input: "_" }, { input: "🎨" }],
       fails: [
@@ -317,7 +317,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
     name: "CSS_IDENTIFIER_START_WITH_DASH",
     tier: 0,
     pattern: String.raw`[a-zA-Z_\-\u0080-\uFFFF]`,
-    description: "CSS identifier start with dash allowed",
+    description: "CSS identifier start (with dash)",
     fixtures: {
       passes: [{ input: "a" }, { input: "_" }, { input: "-" }, { input: "🎨" }],
       fails: [
@@ -342,7 +342,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
       return `(?<identifier>${start}${cont}*)`;
     },
     captures: { identifier: "Full CSS identifier" },
-    description: "CSS identifier from W3C formal grammar",
+    description: "CSS identifier",
     composedFrom: ["CSS_IDENTIFIER_START", "CSS_IDENTIFIER_CONT"],
     fixtures: {
       passes: [
@@ -367,7 +367,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
       return `(?<name>${start}${cont}*)`;
     },
     captures: { name: "CSS name without dashes" },
-    description: "CSS name from W3C formal grammar",
+    description: "CSS name",
     composedFrom: ["CSS_IDENTIFIER_START", "CSS_IDENTIFIER_CONT_NO_DASH"],
     fixtures: {
       passes: [
@@ -395,7 +395,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
       integer: "Integer part",
       decimal: "Decimal part (optional)",
     },
-    description: "CSS number from W3C formal grammar",
+    description: "CSS number",
     composedFrom: ["DIGIT"],
     fixtures: {
       passes: [
@@ -420,7 +420,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
       return `(?<value>${numberLiteral})%`;
     },
     captures: { value: "Numeric value without percent sign" },
-    description: "CSS percentage from W3C formal grammar",
+    description: "CSS percentage",
     composedFrom: ["DIGIT"],
     fixtures: {
       passes: [
@@ -446,7 +446,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
       return `(?<value>[${digit}]+(?:\\.[${digit}]+)?)(?<unit>${start}${cont}*)`;
     },
     captures: { value: "Numeric value", unit: "Unit name (px, em, etc)" },
-    description: "CSS dimension from W3C formal grammar",
+    description: "CSS dimension",
     composedFrom: ["DIGIT", "CSS_IDENTIFIER_START", "CSS_IDENTIFIER_CONT"],
     fixtures: {
       passes: [
@@ -470,7 +470,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
       return `#(?<color>[${hex}]{3}(?:[${hex}]{3})?)`;
     },
     captures: { color: "Hex color without #" },
-    description: "CSS hash color from W3C formal grammar",
+    description: "CSS hex color",
     composedFrom: ["HEX_DIGIT"],
     fixtures: {
       passes: [
@@ -497,7 +497,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
       return `(?<name>${start}${cont}*)[${space}]*\\(`;
     },
     captures: { name: "Function name" },
-    description: "CSS function from W3C formal grammar",
+    description: "CSS function call",
     composedFrom: ["CSS_IDENTIFIER_START_WITH_DASH", "CSS_IDENTIFIER_CONT", "SPACE_TAB"],
     fixtures: {
       passes: [
@@ -518,7 +518,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
     tier: 1,
     pattern: String.raw`(?<keyword>auto|inherit|initial|revert|unset)`,
     captures: { keyword: "CSS keyword" },
-    description: "CSS reserved keywords",
+    description: "CSS reserved keyword",
     fixtures: {
       passes: [{ input: "auto" }, { input: "inherit" }, { input: "initial" }],
       fails: [
@@ -538,7 +538,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
       return `u\\+(?<start>[${hexWild}]{1,6})(?:-(?<range>[${hex}]{1,6}))?`;
     },
     captures: { start: "Start of range", range: "End of range (optional)" },
-    description: "CSS Unicode range from W3C formal grammar",
+    description: "CSS Unicode range",
     composedFrom: ["HEX_DIGIT_OR_WILDCARD", "HEX_DIGIT"],
     fixtures: {
       passes: [
@@ -565,7 +565,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
       return `(?<name>(?<custom>${dash})?${start}${cont}*)`;
     },
     captures: { name: "Full property name", custom: "Double dash if custom property" },
-    description: "CSS property name or custom property",
+    description: "CSS property or custom property name",
     composedFrom: ["DOUBLE_DASH", "CSS_IDENTIFIER_START", "CSS_IDENTIFIER_CONT"],
     fixtures: {
       passes: [
@@ -593,7 +593,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
       return `@(?<tag>[${alpha}][${alpha}]*(?:-[${alpha}]+)*)`;
     },
     captures: { tag: "Tag name without @" },
-    description: "CssDoc tag name with @",
+    description: "CssDoc tag name",
     composedFrom: ["ALPHA"],
     fixtures: {
       passes: [{ input: "@component" }, { input: "@name" }, { input: "@css-property" }],
@@ -616,7 +616,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
       return `(?<selector>${selector}+)`;
     },
     captures: { selector: "CSS selector" },
-    description: "CSS selector in CssDoc",
+    description: "CSS selector",
     composedFrom: ["CSS_IDENTIFIER_START_WITH_DASH", "CSS_IDENTIFIER_CONT"],
     fixtures: {
       passes: [
@@ -638,7 +638,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
       return `(?<name>${start}${cont}*)`;
     },
     captures: { name: "Modifier name" },
-    description: "CssDoc modifier name",
+    description: "Modifier name",
     composedFrom: ["CSS_IDENTIFIER_START", "CSS_IDENTIFIER_CONT"],
     fixtures: {
       passes: [{ input: "hover" }, { input: "my-modifier" }, { input: "active" }],
@@ -659,7 +659,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
       return `\\[(?<attr>[${alpha}]+)\\s*=\\s*(?<value>[^\\]]+)\\]`;
     },
     captures: { attr: "Attribute name", value: "Attribute value" },
-    description: "CssDoc modifier with attribute selector",
+    description: "Modifier with attribute selector",
     composedFrom: ["ALPHA"],
     fixtures: {
       passes: [{ input: "[type=button]" }, { input: "[role = tab]", note: "with spaces" }],
@@ -676,7 +676,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
     tier: 2,
     pattern: String.raw`(?<pseudo>::?(?:before|after|first-letter|first-line|placeholder|selection|backdrop))`,
     captures: { pseudo: "Pseudo element" },
-    description: "CssDoc pseudo selector",
+    description: "Pseudo selector",
     fixtures: {
       passes: [
         { input: "::before" },
@@ -696,7 +696,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
     tier: 2,
     pattern: String.raw`(?<card>(?:one-or-more|zero-or-more|optional|exactly-one|max-\d+)?)`,
     captures: { card: "Cardinality modifier" },
-    description: "CssDoc cardinality in structure",
+    description: "Cardinality in structure",
     fixtures: {
       passes: [{ input: "optional" }, { input: "one-or-more" }, { input: "max-5" }],
       fails: [{ input: "many", reason: "not a valid cardinality" }],
@@ -717,7 +717,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
       return `(?<ref>${ident}(?::${card})?)`;
     },
     captures: { ref: "Component reference" },
-    description: "CssDoc component reference with optional cardinality",
+    description: "Component reference with optional cardinality",
     composedFrom: ["CSS_IDENTIFIER", "CSSDOC_CARDINALITY"],
     fixtures: {
       passes: [
@@ -739,7 +739,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
       return `(?<name>${start}${cont}*)`;
     },
     captures: { name: "Part name" },
-    description: "CssDoc ::part() name",
+    description: "Part name",
     composedFrom: ["CSS_IDENTIFIER_START", "CSS_IDENTIFIER_CONT"],
     fixtures: {
       passes: [{ input: "button" }, { input: "my-part" }],
@@ -761,7 +761,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
       return `(?<name>(?<custom>${dash})?${start}${cont}*)`;
     },
     captures: { name: "Full property name", custom: "Double dash if custom" },
-    description: "CssDoc custom or standard property name",
+    description: "Property or custom property name",
     composedFrom: ["DOUBLE_DASH", "CSS_IDENTIFIER_START", "CSS_IDENTIFIER_CONT"],
     fixtures: {
       passes: [{ input: "background-color" }, { input: "--my-color" }],
@@ -782,7 +782,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
       return `(?<name>${start}${cont}*)`;
     },
     captures: { name: "State name" },
-    description: "CssDoc custom state name",
+    description: "State name",
     composedFrom: ["CSS_IDENTIFIER_START", "CSS_IDENTIFIER_CONT"],
     fixtures: {
       passes: [{ input: "active" }, { input: "my-state" }],
@@ -803,7 +803,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
       return `(?<name>${start}${cont}*)`;
     },
     captures: { name: "Variant name" },
-    description: "CssDoc variant name in structure",
+    description: "Variant name",
     composedFrom: ["CSS_IDENTIFIER_START", "CSS_IDENTIFIER_CONT"],
     fixtures: {
       passes: [{ input: "default" }, { input: "button-group" }],
@@ -823,7 +823,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
       return `(?<name>[${alpha}][${alpha}0-9]*(?:-[${alpha}0-9]+)*)`;
     },
     captures: { name: "Slot name" },
-    description: "CssDoc slot name",
+    description: "Slot name",
     composedFrom: ["ALPHA"],
     fixtures: {
       passes: [{ input: "content" }, { input: "my-slot" }, { input: "slot1" }],
@@ -841,7 +841,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
     tier: 3,
     pattern: String.raw`(?<lang>css|html|javascript|js|typescript|ts|jsx|tsx|json|markdown|md|text|plain)`,
     captures: { lang: "Language identifier" },
-    description: "CssDoc @example language tag",
+    description: "@example language identifier",
     fixtures: {
       passes: [{ input: "css" }, { input: "html" }, { input: "javascript" }],
       fails: [
@@ -857,7 +857,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
     tier: 3,
     pattern: String.raw`(?<url>https?://[^\s]+)`,
     captures: { url: "URL" },
-    description: "CssDoc @demo URL",
+    description: "@demo URL",
     fixtures: {
       passes: [{ input: "https://example.com" }, { input: "http://localhost:3000" }],
       fails: [
