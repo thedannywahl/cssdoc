@@ -1,10 +1,15 @@
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import type { CssDocEntry, CssRecordKind, StructureNode } from "./model.ts";
-import { TYPED_STRUCTURE_MEDIA_SOURCE, UNTYPED_STRUCTURE_MEDIA_SOURCE } from "@cssdoc/regex";
+import {
+  STRUCTURE_RECORD_KIND_SOURCE,
+  TYPED_STRUCTURE_MEDIA_SOURCE,
+  UNTYPED_STRUCTURE_MEDIA_SOURCE,
+} from "@cssdoc/regex";
 
 const TYPED_STRUCTURE_MEDIA_RE: Regex = arkRegex.as(`^${TYPED_STRUCTURE_MEDIA_SOURCE}$`, "u");
 const UNTYPED_STRUCTURE_MEDIA_RE: Regex = arkRegex.as(`^${UNTYPED_STRUCTURE_MEDIA_SOURCE}$`, "u");
+const STRUCTURE_RECORD_KIND_RE: Regex = arkRegex.as(`^${STRUCTURE_RECORD_KIND_SOURCE}$`, "u");
 
 function canonicalRecordKind(kind: string): CssRecordKind | undefined {
   if (kind === "name" || kind === "rule") return "component";
@@ -65,7 +70,7 @@ function parseStructureCustomMediaSelector(selector: string): {
   const untyped = selector.match(UNTYPED_STRUCTURE_MEDIA_RE);
   if (!untyped) return null;
   // Guard malformed `@component (--x)` and peers from being treated as untyped record names.
-  if (/^(component|name|utility|rule|declaration|layout)$/u.test(untyped[1])) return null;
+  if (STRUCTURE_RECORD_KIND_RE.test(untyped[1])) return null;
   return { record: untyped[1], profile: untyped[2] };
 }
 
