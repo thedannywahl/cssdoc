@@ -306,6 +306,34 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
         ],
       },
     },
+    FORWARD_SLASH: {
+      name: "FORWARD_SLASH",
+      tier: 0,
+      source: String.raw`\/`,
+      description: "Forward slash punctuation",
+      fixtures: {
+        passes: [{ input: "/" }],
+        fails: [
+          { input: "\\", reason: "backslash" },
+          { input: "|", reason: "pipe" },
+          { input: "", reason: "empty" },
+        ],
+      },
+    },
+    ASTERISK: {
+      name: "ASTERISK",
+      tier: 0,
+      source: String.raw`\*`,
+      description: "Asterisk punctuation",
+      fixtures: {
+        passes: [{ input: "*" }],
+        fails: [
+          { input: "+", reason: "plus" },
+          { input: "×", reason: "multiplication sign" },
+          { input: "", reason: "empty" },
+        ],
+      },
+    },
     CSS_IDENTIFIER: {
       name: "CSS_IDENTIFIER",
       grammarRule: "ident",
@@ -540,6 +568,40 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
         ],
         fails: [
           { input: "-color", reason: "single dash not valid" },
+          { input: "", reason: "empty" },
+        ],
+      },
+    },
+    COMMENT_START: {
+      name: "COMMENT_START",
+      tier: 1,
+      pattern: (resolve: PatternResolver) => {
+        const slash = resolve("FORWARD_SLASH");
+        const asterisk = resolve("ASTERISK");
+        return `${slash}${asterisk}`;
+      },
+      description: "CSS block comment start (/*)",
+      composedFrom: ["FORWARD_SLASH", "ASTERISK"],
+      fixtures: {
+        passes: [{ input: "/*" }],
+        fails: [
+          { input: "/", reason: "single slash" },
+          { input: "*", reason: "single asterisk" },
+          { input: "*/", reason: "comment end" },
+          { input: "", reason: "empty" },
+        ],
+      },
+    },
+    COMMENT_LINE_MARKER: {
+      name: "COMMENT_LINE_MARKER",
+      tier: 1,
+      source: String.raw`\*`,
+      description: "CSS block comment line marker (*)",
+      fixtures: {
+        passes: [{ input: "*" }],
+        fails: [
+          { input: "/", reason: "slash" },
+          { input: "**", reason: "double asterisk" },
           { input: "", reason: "empty" },
         ],
       },

@@ -35,6 +35,8 @@ import {
   WORD_BOUNDARY_SOURCE,
   toRegExp,
   TOKEN_CLASS_SELECTOR_REQUIRED_DOT,
+  COMMENT_START_SOURCE,
+  COMMENT_LINE_MARKER_SOURCE,
   TOKEN_QUALIFIED_IDENTIFIER_SOURCE,
   TOKEN_MODIFIER_NAME_SOURCE,
   TOKEN_CLASS_SELECTOR_SOURCE,
@@ -223,7 +225,11 @@ const cssdocPlugin = ViewPlugin.fromClass(
           const lineText = line.text;
 
           // Only process CSS comments (/* ... */)
-          if (lineText.trim().startsWith("/*") || lineText.trim().startsWith("*")) {
+          const trimmed = lineText.trim();
+          if (
+            trimmed.startsWith(COMMENT_START_SOURCE) ||
+            trimmed.startsWith(COMMENT_LINE_MARKER_SOURCE)
+          ) {
             const tokens = tokenizeAndDecorate(lineText);
             for (const token of tokens) {
               const cls_name = `cm-cssdoc-${token.type}`;
