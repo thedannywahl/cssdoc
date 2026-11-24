@@ -89,6 +89,10 @@ const PLAIN_TAGS = CSSDOC_TAGS.filter(
  */
 const TAG_NAME_PLACEHOLDER: RegExp = /@\\w\+/g;
 
+/** Brace characters for inline tag delimiters (from BRACE_OPEN/BRACE_CLOSE in @cssdoc/regex). */
+const BRACE_OPEN_CHAR = "{";
+const BRACE_CLOSE_CHAR = "}";
+
 /**
  * Inject tag alternations into generic tokenizer patterns.
  * Tokenizer patterns from @cssdoc/regex use `@\w+` as placeholders, which get
@@ -151,11 +155,11 @@ export const tokenizeComment = (text: string): CssdocToken[] => {
         if (key === "inline") {
           const text_at_range = text.slice(gi[0], gi[1]);
           // Opening brace (see BRACE_OPEN in @cssdoc/regex)
-          if (text_at_range[0] === "{") {
+          if (text_at_range[0] === BRACE_OPEN_CHAR) {
             out.push({ from: gi[0], to: gi[0] + 1, type: "punct" });
           }
           // Closing brace (if present) (see BRACE_CLOSE in @cssdoc/regex)
-          const closeIdx = text_at_range.lastIndexOf("}");
+          const closeIdx = text_at_range.lastIndexOf(BRACE_CLOSE_CHAR);
           if (closeIdx !== -1) {
             out.push({ from: gi[0] + closeIdx, to: gi[1], type: "punct" });
           }
