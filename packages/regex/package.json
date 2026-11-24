@@ -30,7 +30,8 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "arkregex": "catalog:"
+    "arkregex": "catalog:",
+    "arktype": "catalog:"
   },
   "devDependencies": {
     "typescript": "catalog:",

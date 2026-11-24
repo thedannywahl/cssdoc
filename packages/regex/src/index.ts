@@ -50,6 +50,18 @@
 export { regex } from "arkregex";
 export type { Regex } from "arkregex";
 
+// Registry and utilities
+export {
+  PATTERN_REGISTRY,
+  getPatternMetadata,
+  getAllPatterns,
+  getPatternsByGrammarRule,
+  getPatternsByTier,
+  getPatternsByStatus,
+  getPatternsBySource,
+} from "./registry.js";
+export type { PatternMetadata } from "./registry.js";
+
 // Utilities for working with any tier of patterns
 export { toRegExp } from "./lib.js";
 

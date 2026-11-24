@@ -17,6 +17,8 @@ catalog:
   vite-plus: 1.7.0
   # Regex patterns (ArkRegex - type-safe regex)
   arkregex: ^0.0.15
+  # Schema validation (ArkType - TypeScript-first schema validation)
+  arktype: ^2.2.10
   # Core
   postcss: ^8.5.33
   postcss-value-parser: ^4.2.0
