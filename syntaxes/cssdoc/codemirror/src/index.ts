@@ -87,7 +87,7 @@ const PLAIN_TAGS = CSSDOC_TAGS.filter(
  * Tokenizer patterns from @cssdoc/regex use `@\w+` as a placeholder,
  * which appears as `@\\w\\+` in the pattern source (with escaped backslashes).
  */
-const TAG_NAME_PLACEHOLDER = /@\\w\+/g;
+const TAG_NAME_PLACEHOLDER: RegExp = /@\\w\+/g;
 
 /**
  * Inject tag alternations into generic tokenizer patterns.
