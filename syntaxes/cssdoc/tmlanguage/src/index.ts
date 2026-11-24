@@ -28,6 +28,7 @@ import {
   ALPHANUMERIC_EXTENDED_SOURCE,
   AT_SOURCE,
   BRACE_OPEN_SOURCE,
+  BRACE_OPEN_CHAR,
   BRACE_CLOSE_SOURCE,
   BRACE_CLOSE_CHAR,
   COLON_SOURCE,
@@ -239,7 +240,10 @@ export function buildInjectionGrammar(): InjectionGrammar {
             match: TOKEN_CLASS_SELECTOR_SOURCE,
             name: "entity.other.attribute-name.part.cssdoc",
           },
-          { match: "[{}]", name: "punctuation.section.structure.cssdoc" },
+          {
+            match: `[${BRACE_OPEN_CHAR}${BRACE_CLOSE_CHAR}]`,
+            name: "punctuation.section.structure.cssdoc",
+          },
         ],
       },
       "custom-property": {
