@@ -38,6 +38,8 @@ import {
   COMMENT_LINE_MARKER_SOURCE,
   BRACE_OPEN,
   BRACE_CLOSE,
+  BRACE_OPEN_CHAR,
+  BRACE_CLOSE_CHAR,
   TOKEN_CUSTOM_PROPERTY_SOURCE,
   TOKENIZER_INLINE_TAG_SOURCE,
   TOKENIZER_RECORD_TAG_SOURCE,
@@ -88,10 +90,6 @@ const PLAIN_TAGS = CSSDOC_TAGS.filter(
  * which appears as `@\\w\\+` in the pattern source (with escaped backslashes).
  */
 const TAG_NAME_PLACEHOLDER: RegExp = /@\\w\+/g;
-
-/** Brace characters for inline tag delimiters (from BRACE_OPEN/BRACE_CLOSE in @cssdoc/regex). */
-const BRACE_OPEN_CHAR = "{";
-const BRACE_CLOSE_CHAR = "}";
 
 /**
  * Inject tag alternations into generic tokenizer patterns.
