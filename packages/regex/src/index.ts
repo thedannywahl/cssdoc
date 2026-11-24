@@ -150,20 +150,8 @@ export {
   cssKeyword,
   cssUnicodeRange,
   cssPropertyName,
-} from "./exports.js";
-
-// Re-export all tier modules (kept for phase 2+)
-export * as CharacterClassPatterns from "./tiers/character-classes.js";
-export * as CssSpecPatterns from "./tiers/css-spec.js";
-export * as CssDocGrammarPatterns from "./tiers/css-doc-grammar.js";
-export * as CssdocTokenPartsPatterns from "./tiers/cssdoc-token-parts.js";
-export * as CssdocTagsPatterns from "./tiers/cssdoc-tags.js";
-export * as CssdocLocalPatterns from "./tiers/cssdoc-local.js";
-export * as CssdocBuildingBlocksPatterns from "./tiers/cssdoc-building-blocks.js";
-
-// Legacy tier re-exports (for Tier 2+, still from tier files)
-export {
-  // Tier 2: CssDoc Grammar patterns
+  // Tier 2
+  CSSDOC_IDENTIFIER_PART,
   CSSDOC_IDENTIFIER,
   CSSDOC_RECORD_NAME,
   CSSDOC_MODIFIER_SUFFIX,
@@ -190,7 +178,8 @@ export {
   CSSDOC_PART_TAG_PATTERN,
   CSSDOC_PROPERTY_TAG_PATTERN,
   CSSDOC_REF_TAG_PATTERN,
-  // Convenience string exports for use in template literals
+  // Tier 2 string exports
+  cssdocIdentifierPart,
   cssdocIdentifier,
   cssdocRecordName,
   cssdocModifierSuffix,
@@ -217,7 +206,16 @@ export {
   cssdocPartTagPattern,
   cssdocPropertyTagPattern,
   cssdocRefTagPattern,
-} from "./tiers/css-doc-grammar.js";
+} from "./exports.js";
+
+// Re-export all tier modules (kept for phase 2+)
+export * as CharacterClassPatterns from "./tiers/character-classes.js";
+export * as CssSpecPatterns from "./tiers/css-spec.js";
+export * as CssDocGrammarPatterns from "./tiers/css-doc-grammar.js";
+export * as CssdocTokenPartsPatterns from "./tiers/cssdoc-token-parts.js";
+export * as CssdocTagsPatterns from "./tiers/cssdoc-tags.js";
+export * as CssdocLocalPatterns from "./tiers/cssdoc-local.js";
+export * as CssdocBuildingBlocksPatterns from "./tiers/cssdoc-building-blocks.js";
 
 export {
   // Tier 3a: CssDoc Token Parts (atomic patterns for composing tokenizers)

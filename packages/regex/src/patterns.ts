@@ -400,6 +400,305 @@ export const PATTERNS: Record<string, PatternDef> = {
     source: "css-spec.ts:184",
     grammarRule: "property-name",
   },
+
+  // ============================================================================
+  // Tier 2: CssDoc Grammar Patterns
+  // ============================================================================
+
+  CSSDOC_IDENTIFIER_PART: {
+    pattern: String.raw`[A-Za-z_][\w-]*`,
+    tier: 2,
+    description: "CssDoc identifier part (ASCII-only building block)",
+    examples: ["button", "my-component", "_private"],
+    status: "stable",
+    source: "css-doc-grammar.ts:30",
+    grammarRule: "IdentifierPart",
+  },
+
+  CSSDOC_IDENTIFIER: {
+    pattern: String.raw`(?<identifier>[A-Za-z_][\w-]*)`,
+    captures: { identifier: "Identifier" },
+    tier: 2,
+    description: "CssDoc identifier (ASCII-only)",
+    examples: ["button", "my-component", "_private"],
+    status: "stable",
+    composedFrom: ["CSSDOC_IDENTIFIER_PART"],
+    source: "css-doc-grammar.ts:50",
+    grammarRule: "Identifier",
+  },
+
+  CSSDOC_RECORD_NAME: {
+    pattern: String.raw`(?<parts>[A-Za-z_][\w-]*(?:\.[A-Za-z_][\w-]*)*)`,
+    captures: { parts: "Dot-separated identifier parts" },
+    tier: 2,
+    description: "CssDoc record name (qualified identifier with dots)",
+    examples: ["button", "menu.item", "form.field.radio"],
+    status: "stable",
+    composedFrom: ["CSSDOC_IDENTIFIER_PART", "DOT"],
+    source: "css-doc-grammar.ts:70",
+    grammarRule: "RecordName",
+  },
+
+  CSSDOC_MODIFIER_SUFFIX: {
+    pattern: String.raw`(?<name>[a-zA-Z_\u0080-\uFFFF][\w\-\u0080-\uFFFF]*(?:-)?)`,
+    captures: { name: "Modifier name" },
+    tier: 2,
+    description: "BEM-like modifier suffix (--name or --name-*)",
+    examples: ["primary", "size-lg", "icon-*"],
+    status: "stable",
+    source: "css-doc-grammar.ts:90",
+    grammarRule: "SuffixModifierName",
+  },
+
+  CSSDOC_MODIFIER_CHAINED: {
+    pattern: String.raw`-(?<prop>[A-Za-z_\u0080-\uFFFF][\w\-\u0080-\uFFFF]*)(?:-(?<value>[A-Za-z_\u0080-\uFFFF][\w\-\u0080-\uFFFF]*(?:-)?))?`,
+    captures: { prop: "First segment", value: "Second segment (optional)" },
+    tier: 2,
+    description: "Chained modifier form (.-prop or .-prop-value)",
+    examples: ["-active", "-size-lg", "-icon-*"],
+    status: "stable",
+    source: "css-doc-grammar.ts:110",
+    grammarRule: "ChainedModifierName",
+  },
+
+  CSSDOC_MODIFIER_ATTRIBUTE: {
+    pattern: String.raw`\[(?<name>[A-Za-z0-9_-]+)(?:=(?<value>[\"']?[^\]]*?)(?<quote>[\"'])?)?\]`,
+    captures: {
+      name: "Attribute name",
+      value: "Attribute value (optional)",
+      quote: "Quote character (optional)",
+    },
+    tier: 2,
+    description: "Attribute-style modifier ([name] or [name=value])",
+    examples: ["[disabled]", "[aria-pressed=true]"],
+    status: "stable",
+    source: "css-doc-grammar.ts:130",
+    grammarRule: "AttributeModifier",
+  },
+
+  CSSDOC_TAG: {
+    pattern: String.raw`@(?<tag>[\w-]+)(?:\s+(?<arg>\S+))?`,
+    captures: { tag: "Tag name", arg: "Tag argument (optional)" },
+    tier: 2,
+    description: "CssDoc tag (@tag or @tag argument)",
+    examples: ["@component", "@modifier active", "@deprecated"],
+    status: "stable",
+    source: "css-doc-grammar.ts:150",
+    grammarRule: "Tag",
+  },
+
+  CSSDOC_TAG_ARG: {
+    pattern: String.raw`(?<arg>\S+)`,
+    captures: { arg: "Argument text" },
+    tier: 2,
+    description: "CssDoc tag argument",
+    examples: ["button", "button.primary"],
+    status: "stable",
+    source: "css-doc-grammar.ts:168",
+    grammarRule: "TagArg",
+  },
+
+  CSSDOC_STRUCTURE_REF: {
+    pattern: String.raw`(?<ref>[A-Za-z_][\w-]*(?:\.[A-Za-z_][\w-]*)*)(?::(?<type>[\w-]+))?`,
+    captures: { ref: "Reference path", type: "Type annotation (optional)" },
+    tier: 2,
+    description: "Structure reference (optionally typed)",
+    examples: ["button", "menu.item", "menu.item:submenu"],
+    status: "stable",
+    source: "css-doc-grammar.ts:185",
+    grammarRule: "StructureRef",
+  },
+
+  CSSDOC_CARDINALITY: {
+    pattern: String.raw`(?:(?<type>max|one-or-more-max)-(?<value>\d+)|(?<keyword>optional|one-or-more|many))`,
+    captures: { type: "Cardinality type", value: "Numeric value", keyword: "Cardinality keyword" },
+    tier: 2,
+    description: "Structure cardinality (optional, many, max-N, one-or-more, one-or-more-max-N)",
+    examples: ["optional", "many", "max-5", "one-or-more"],
+    status: "stable",
+    source: "css-doc-grammar.ts:205",
+    grammarRule: "Cardinality",
+  },
+
+  CSSDOC_CUSTOM_PROPERTY: {
+    pattern: String.raw`--(?<name>[a-zA-Z_\u0080-\uFFFF][\w\-\u0080-\uFFFF]*)`,
+    captures: { name: "Property name without --" },
+    tier: 2,
+    description: "CSS custom property reference",
+    examples: ["--primary-color", "--my-var"],
+    status: "stable",
+    composedFrom: ["DOUBLE_DASH", "CSS_IDENTIFIER_START", "CSS_IDENTIFIER_CONT"],
+    source: "css-doc-grammar.ts:225",
+    grammarRule: "CustomProperty",
+  },
+
+  CSSDOC_INLINE_REF: {
+    pattern: String.raw`\{@(?<tag>[\w-]+)\s+(?<ref>\S+)\}`,
+    captures: { tag: "Inline tag name", ref: "Reference" },
+    tier: 2,
+    description: "Inline reference in prose ({@tag ref})",
+    examples: ["{@link button}", "{@inheritDoc Component}"],
+    status: "stable",
+    source: "css-doc-grammar.ts:245",
+    grammarRule: "InlineRef",
+  },
+
+  CSSDOC_REF_NUM: {
+    pattern: String.raw`(?<num>\d+)\.?`,
+    captures: { num: "Reference number" },
+    tier: 2,
+    description: "Numeric reference (@ref 1)",
+    examples: ["1", "1.", "42"],
+    status: "stable",
+    source: "css-doc-grammar.ts:263",
+    grammarRule: "RefNum",
+  },
+
+  CSSDOC_STATE_VALUE: {
+    pattern: String.raw`:?(?<name>[A-Za-z][\w-]*)(?:\((?<param>[\w-]*)\))?`,
+    captures: { name: "State name", param: "State parameter (optional)" },
+    tier: 2,
+    description: "CSS state value (:open, :state(open), :disabled)",
+    examples: [":open", ":state(open)", ":disabled", "open"],
+    status: "stable",
+    source: "css-doc-grammar.ts:283",
+    grammarRule: "StateValue",
+  },
+
+  CSSDOC_SELECTOR_VALUE: {
+    pattern: String.raw`(?<value>\.?[A-Za-z][A-Za-z0-9_-]*)`,
+    captures: { value: "Selector value" },
+    tier: 2,
+    description: "Selector/pseudo/class value (.alert-box, ::before, alert-container)",
+    examples: [".alert-box", "::before", "alert-container"],
+    status: "stable",
+    source: "css-doc-grammar.ts:303",
+    grammarRule: "SelectorValue",
+  },
+
+  CSSDOC_STRUCTURE_CARDINALITY: {
+    pattern: String.raw`:(?:(?<keyword>optional|one-or-more|many)(?::max-(?<maxValue>\d+))?|max-(?<justMax>\d+))`,
+    captures: { keyword: "Cardinality keyword", maxValue: "Max value", justMax: "Just max value" },
+    tier: 2,
+    description: "Structure cardinality suffix (:optional, :max-1, :one-or-more:max-2)",
+    examples: [":optional", ":max-1", ":one-or-more:max-2"],
+    status: "stable",
+    source: "css-doc-grammar.ts:323",
+    grammarRule: "StructureCardinality",
+  },
+
+  CSSDOC_SLOT_DECL: {
+    pattern: String.raw`\bslot(?:\[name=(?:["']?(?<name>[\w-]*)["']?)?\])?`,
+    captures: { name: "Slot name (optional)" },
+    tier: 2,
+    description: 'Slot declaration in structure (slot or slot[name="x"])',
+    examples: ["slot", 'slot[name="x"]', "slot[name='content']"],
+    status: "stable",
+    source: "css-doc-grammar.ts:343",
+    grammarRule: "SlotDecl",
+  },
+
+  CSSDOC_STRUCTURE_CLASS: {
+    pattern: String.raw`\.(?<class>[A-Za-z][A-Za-z0-9_-]*)`,
+    captures: { class: "Class name" },
+    tier: 2,
+    description: "Class selector in structure body (.pfx-alert)",
+    examples: [".pfx-alert", ".button-group"],
+    status: "stable",
+    source: "css-doc-grammar.ts:361",
+    grammarRule: "StructureClass",
+  },
+
+  CSSDOC_STRUCTURE_TAG: {
+    pattern: String.raw`@structure\b`,
+    tier: 2,
+    description: "Structure tag keyword",
+    examples: ["@structure"],
+    status: "stable",
+    source: "css-doc-grammar.ts:375",
+    grammarRule: "StructureTag",
+  },
+
+  CSSDOC_STRUCTURE_COMPONENT: {
+    pattern: String.raw`(@(?:component|variant))\b[ \t]*([A-Za-z][\w-]*)?`,
+    captures: { tag: "Component/Variant tag", name: "Component name (optional)" },
+    tier: 2,
+    description: "Structure component or variant reference",
+    examples: ["@component button", "@variant primary"],
+    status: "stable",
+    source: "css-doc-grammar.ts:389",
+    grammarRule: "StructureComponent",
+  },
+
+  CSSDOC_STRUCTURE_BRACE: {
+    pattern: String.raw`[{}]`,
+    tier: 2,
+    description: "Opening or closing brace in structure",
+    examples: ["{", "}"],
+    status: "stable",
+    source: "css-doc-grammar.ts:407",
+    grammarRule: "StructureBrace",
+  },
+
+  CSSDOC_INLINE_TAG_PATTERN: {
+    pattern: String.raw`(\{)(@(?:link|label|inheritDoc))\b[ \t]*([^}]*)(\})?`,
+    tier: 2,
+    description: "Inline tag pattern for syntax highlighting ({@link} etc)",
+    examples: ["{@link button}", "{@label", "{@inheritDoc Component}"],
+    status: "stable",
+    source: "css-doc-grammar.ts:421",
+    grammarRule: "InlineTagPattern",
+  },
+
+  CSSDOC_RECORD_TAG_PATTERN: {
+    pattern: String.raw`(@(?:component|name|utility|rule|declaration|layout))\b[ \t]*([A-Za-z][A-Za-z0-9_-]*(?:\.[A-Za-z][A-Za-z0-9_-]*)*)?`,
+    tier: 2,
+    description: "Record/component tag pattern for syntax highlighting",
+    examples: ["@component Button", "@name menu.item"],
+    status: "stable",
+    source: "css-doc-grammar.ts:439",
+    grammarRule: "RecordTagPattern",
+  },
+
+  CSSDOC_MODIFIER_TAG_PATTERN: {
+    pattern: String.raw`(@(?:modifier|variant))\b[ \t]*(-[A-Za-z][A-Za-z0-9-]*)?`,
+    tier: 2,
+    description: "Modifier tag pattern for syntax highlighting",
+    examples: ["@modifier -primary", "@variant -size-lg"],
+    status: "stable",
+    source: "css-doc-grammar.ts:453",
+    grammarRule: "ModifierTagPattern",
+  },
+
+  CSSDOC_PART_TAG_PATTERN: {
+    pattern: String.raw`(@(?:part|csspart|slot|selector|pseudo|class))\b[ \t]*(\\.?[A-Za-z][A-Za-z0-9_-]*)?`,
+    tier: 2,
+    description: "Part tag pattern for syntax highlighting",
+    examples: ["@part header", "@selector .alert-box", "@pseudo ::after"],
+    status: "stable",
+    source: "css-doc-grammar.ts:468",
+    grammarRule: "PartTagPattern",
+  },
+
+  CSSDOC_PROPERTY_TAG_PATTERN: {
+    pattern: String.raw`(@(?:cssproperty|property))\b[ \t]*(--[a-zA-Z_\u0080-\uFFFF][\w\-\u0080-\uFFFF]*)?`,
+    tier: 2,
+    description: "Property tag pattern for syntax highlighting",
+    examples: ["@cssproperty --primary-color", "@property --size"],
+    status: "stable",
+    source: "css-doc-grammar.ts:483",
+    grammarRule: "PropertyTagPattern",
+  },
+
+  CSSDOC_REF_TAG_PATTERN: {
+    pattern: String.raw`(@(?:ref))\b[ \t]*(\d+\.?)?`,
+    tier: 2,
+    description: "Ref tag pattern for syntax highlighting",
+    examples: ["@ref 1", "@ref 1."],
+    status: "stable",
+    source: "css-doc-grammar.ts:498",
+    grammarRule: "RefTagPattern",
+  },
 };
 
 /**
