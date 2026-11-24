@@ -789,6 +789,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@cssdoc/regex':
+        specifier: workspace:*
+        version: link:../regex
       '@cssdoc/spec':
         specifier: workspace:*
         version: link:../spec

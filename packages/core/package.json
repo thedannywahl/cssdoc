@@ -40,6 +40,7 @@
     "publint": "publint"
   },
   "dependencies": {
+    "@cssdoc/regex": "workspace:*",
     "@cssdoc/spec": "workspace:*",
     "postcss": "catalog:"
   },

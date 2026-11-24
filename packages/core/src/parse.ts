@@ -11,6 +11,13 @@
  */
 import postcss, { type ChildNode } from "postcss";
 import { HTML_ELEMENT_GROUPS, HTML_ELEMENT_NAMES } from "@cssdoc/spec";
+import {
+  TOKEN_CUSTOM_PROPERTY,
+  PSEUDO_SELECTOR_FUNCTIONAL,
+  HTML_ELEMENT_NAME,
+  RECORD_REFERENCE_NAME,
+  toRegExp,
+} from "@cssdoc/regex";
 import { CssDocConfiguration, type InlineCommentMode } from "./configuration.ts";
 import {
   deriveSelectorName,
@@ -40,8 +47,11 @@ import type {
   ParseOptions,
 } from "./model.ts";
 
-/** Matches a `var(--name` reference; group 1 is the custom-property name. */
-const VAR_RE = /var\(\s*(--[\w-]+)/gu;
+/**
+ * Matches a `var(--name` reference; group 1 is the custom-property name.
+ * Uses TOKEN_CUSTOM_PROPERTY pattern from @cssdoc/regex.
+ */
+const VAR_RE = new RegExp(`var\\(\\s*(${TOKEN_CUSTOM_PROPERTY.source})`, "gu");
 
 /**
  * Reduce an `@scope` at-rule's `params` (e.g. `(.pfx-alert)`) to a bare class name, or `undefined` for
@@ -76,8 +86,8 @@ export function scopeMatchesBase(preludeBase: string | undefined, baseNoDot: str
  */
 export function ampStaysAtScope(branch: string): boolean {
   // Ignore combinators inside a pseudo-class argument (e.g. `:not(a > b)`) — they don't touch this
-  // selector's own structure.
-  const stripped = branch.replace(/:[\w-]+\([^)]*\)/gu, "");
+  // selector's own structure. Uses PSEUDO_SELECTOR_FUNCTIONAL pattern to match :pseudo(...).
+  const stripped = branch.replace(toRegExp(PSEUDO_SELECTOR_FUNCTIONAL), "");
   const trimmed = stripped.trim();
   if (!/^(?:&|:scope)/u.test(trimmed)) return false;
   const rest = trimmed.replace(/^(?:&|:scope)/u, "");
@@ -104,7 +114,7 @@ const CLASS_IDENT = String.raw`[A-Za-z_][\w-]*`;
 const CLASS_REF_RE = new RegExp(String.raw`\.(${CLASS_IDENT})`, "gu");
 /** A selector that is exactly one class — the base-class inference candidate filter. */
 const SINGLE_CLASS_RE = new RegExp(String.raw`^\.${CLASS_IDENT}$`, "u");
-const RECORD_REF_NAME_RE = /^[a-zA-Z][\w-]*$/u;
+const RECORD_REF_NAME_RE = new RegExp(`^${RECORD_REFERENCE_NAME.source}$`, "u");
 const RECORD_REF_PROFILE_RE = /^:\s*([\w-]+)$/u;
 const RECORD_REF_TYPED_RE = /^([\w-]+)(?::([\w-]+))?$/u;
 const RECORD_REF_CUSTOM_MEDIA_RE = /^\(\s*(--[\w-]+)\s*\)$/u;
@@ -118,7 +128,7 @@ function canonicalRecordKind(kind: string): CssRecordKind | undefined {
   }
   return undefined;
 }
-const ELEMENT_TAG_RE = /^<?\s*([a-z][a-z0-9-]*)\s*>?$/u;
+const ELEMENT_TAG_RE = new RegExp(`^<?\\s*(${HTML_ELEMENT_NAME.source})\\s*>?$`, "u");
 const STRUCT_CARDINALITY: Record<string, NonNullable<StructureNode["cardinality"]>> = {
   optional: "optional",
   opt: "optional",

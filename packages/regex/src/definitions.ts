@@ -572,6 +572,66 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
         ],
       },
     },
+    PSEUDO_SELECTOR_FUNCTIONAL: {
+      name: "PSEUDO_SELECTOR_FUNCTIONAL",
+      tier: 1,
+      pattern: (resolve: PatternResolver) => {
+        const colon = resolve("COLON");
+        const alpha = resolve("ALPHA", true);
+        const extended = resolve("ALPHANUMERIC_EXTENDED");
+        const parenOpen = resolve("PAREN_OPEN");
+        const parenClose = resolve("PAREN_CLOSE");
+        return `${colon}[${alpha}](?:${extended})*${parenOpen}[^)]*${parenClose}`;
+      },
+      description: "Pseudo-selector with arguments like :is(), :has(), :not()",
+      composedFrom: ["COLON", "ALPHA", "ALPHANUMERIC_EXTENDED", "PAREN_OPEN", "PAREN_CLOSE"],
+      fixtures: {
+        passes: [
+          { input: ":is(.foo)" },
+          { input: ":has(.bar)" },
+          { input: ":not(.baz)" },
+          { input: ":where(a, b)" },
+        ],
+        fails: [
+          { input: "is(.foo)", reason: "missing colon" },
+          { input: ":active", reason: "no arguments" },
+          { input: "", reason: "empty" },
+        ],
+      },
+    },
+    HTML_ELEMENT_NAME: {
+      name: "HTML_ELEMENT_NAME",
+      tier: 1,
+      source: String.raw`[a-z][a-z0-9-]*`,
+      description: "HTML element name (lowercase letters, digits, hyphens)",
+      fixtures: {
+        passes: [{ input: "div" }, { input: "button" }, { input: "my-element" }, { input: "h1" }],
+        fails: [
+          { input: "Button", reason: "uppercase" },
+          { input: "-div", reason: "starts with hyphen" },
+          { input: "", reason: "empty" },
+        ],
+      },
+    },
+    RECORD_REFERENCE_NAME: {
+      name: "RECORD_REFERENCE_NAME",
+      tier: 2,
+      pattern: (resolve: PatternResolver) => {
+        const alpha = resolve("ALPHA", true);
+        const extended = resolve("ALPHANUMERIC_EXTENDED");
+        return `[${alpha}](?:${extended})*`;
+      },
+      description: "Record reference name (starts with letter, then alphanumeric with hyphens)",
+      composedFrom: ["ALPHA", "ALPHANUMERIC_EXTENDED"],
+      fixtures: {
+        passes: [{ input: "button" }, { input: "my-component" }, { input: "Alert" }],
+        fails: [
+          { input: "-button", reason: "starts with hyphen" },
+          { input: "1button", reason: "starts with digit" },
+          { input: "", reason: "empty" },
+        ],
+      },
+    },
     COMMENT_START: {
       name: "COMMENT_START",
       tier: 1,
