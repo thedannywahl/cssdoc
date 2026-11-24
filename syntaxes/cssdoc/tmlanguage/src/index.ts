@@ -292,7 +292,7 @@ export function buildAtRuleInjectionGrammar(): InjectionGrammar {
       "record-ref-atrule": {
         match:
           `(${AT_SOURCE}(?:${recordTags}))${WORD_BOUNDARY_SOURCE}(?:${SPACE_TAB_SOURCE}+(${buildIdentifier()}))?` +
-          `(?:${SPACE_TAB_SOURCE}+(?:${PAREN_OPEN_SOURCE}\\s*--${ALPHA_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*\\s*${PAREN_CLOSE_SOURCE}|${COLON_SOURCE}${ALPHA_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*))?`,
+          `(?:${SPACE_TAB_SOURCE}+(?:${PAREN_OPEN_SOURCE}\\s*${DOUBLE_DASH_SOURCE}${ALPHA_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*\\s*${PAREN_CLOSE_SOURCE}|${COLON_SOURCE}${ALPHA_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*))?`,
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "entity.name.type.cssdoc" },
@@ -303,7 +303,7 @@ export function buildAtRuleInjectionGrammar(): InjectionGrammar {
       "untyped-ref-atrule": {
         match:
           `(${AT_SOURCE}(?!(?:${nativeCssAtRules})${WORD_BOUNDARY_SOURCE})(?:${ALPHA_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*))` +
-          `(?:${SPACE_TAB_SOURCE}+(?:${PAREN_OPEN_SOURCE}\\s*--${ALPHA_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*\\s*${PAREN_CLOSE_SOURCE}|${COLON_SOURCE}${ALPHA_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*))?`,
+          `(?:${SPACE_TAB_SOURCE}+(?:${PAREN_OPEN_SOURCE}\\s*${DOUBLE_DASH_SOURCE}${ALPHA_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*\\s*${PAREN_CLOSE_SOURCE}|${COLON_SOURCE}${ALPHA_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*))?`,
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "support.type.custom-property.cssdoc" },
