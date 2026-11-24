@@ -10,6 +10,9 @@
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 
+/** Resolver function type for composed patterns */
+type PatternResolver = (name: string) => string;
+
 /**
  * Unified pattern definition — combines ArkRegex, string, metadata, and fixtures.
  */
@@ -106,7 +109,7 @@ export const PATTERN_DEFINITIONS = (() => {
     ALPHANUMERIC: {
       name: "ALPHANUMERIC",
       tier: 0,
-      pattern: (resolve: (name: string) => string) => {
+      pattern: (resolve: PatternResolver) => {
         const digit = resolve("DIGIT").slice(1, -1);
         const alpha = resolve("ALPHA").slice(1, -1);
         return `[${digit}${alpha}]`;
@@ -125,7 +128,7 @@ export const PATTERN_DEFINITIONS = (() => {
     ALPHANUMERIC_EXTENDED: {
       name: "ALPHANUMERIC_EXTENDED",
       tier: 0,
-      pattern: (resolve: (name: string) => string) => {
+      pattern: (resolve: PatternResolver) => {
         const alpha = resolve("ALPHA").slice(1, -1);
         const digit = resolve("DIGIT").slice(1, -1);
         return `[${alpha}${digit}\\-_]`;
@@ -307,7 +310,7 @@ export const PATTERN_DEFINITIONS = (() => {
       name: "CSS_IDENTIFIER",
       grammarRule: "ident",
       tier: 1,
-      pattern: (resolve: (name: string) => string) => {
+      pattern: (resolve: PatternResolver) => {
         const start = resolve("CSS_IDENTIFIER_START");
         const cont = resolve("CSS_IDENTIFIER_CONT");
         return `(?<identifier>${start}${cont}*)`;
@@ -331,7 +334,7 @@ export const PATTERN_DEFINITIONS = (() => {
       name: "CSS_NAME",
       grammarRule: "name",
       tier: 1,
-      pattern: (resolve: (name: string) => string) => {
+      pattern: (resolve: PatternResolver) => {
         const start = resolve("CSS_IDENTIFIER_START");
         const cont = resolve("CSS_IDENTIFIER_CONT_NO_DASH");
         return `(?<name>${start}${cont}*)`;
@@ -355,7 +358,7 @@ export const PATTERN_DEFINITIONS = (() => {
       name: "CSS_NUMBER",
       grammarRule: "number",
       tier: 1,
-      pattern: (resolve: (name: string) => string) => {
+      pattern: (resolve: PatternResolver) => {
         const digit = resolve("DIGIT").slice(1, -1);
         return `(?<number>(?<integer>[${digit}]+)(?:\\.(?<decimal>[${digit}]+))?)`;
       },
@@ -382,7 +385,7 @@ export const PATTERN_DEFINITIONS = (() => {
       name: "CSS_PERCENTAGE",
       grammarRule: "percentage",
       tier: 1,
-      pattern: (resolve: (name: string) => string) => {
+      pattern: (resolve: PatternResolver) => {
         const digit = resolve("DIGIT").slice(1, -1);
         const numberLiteral = `[${digit}]+(?:\\.[${digit}]+)?`;
         return `(?<value>${numberLiteral})%`;
@@ -406,7 +409,7 @@ export const PATTERN_DEFINITIONS = (() => {
       name: "CSS_DIMENSION",
       grammarRule: "dimension",
       tier: 1,
-      pattern: (resolve: (name: string) => string) => {
+      pattern: (resolve: PatternResolver) => {
         const digit = resolve("DIGIT").slice(1, -1);
         const start = resolve("CSS_IDENTIFIER_START");
         const cont = resolve("CSS_IDENTIFIER_CONT");
@@ -431,7 +434,7 @@ export const PATTERN_DEFINITIONS = (() => {
       name: "CSS_HASH_COLOR",
       grammarRule: "hash",
       tier: 1,
-      pattern: (resolve: (name: string) => string) => {
+      pattern: (resolve: PatternResolver) => {
         const hex = resolve("HEX_DIGIT").slice(1, -1);
         return `#(?<color>[${hex}]{3}(?:[${hex}]{3})?)`;
       },
@@ -455,7 +458,7 @@ export const PATTERN_DEFINITIONS = (() => {
       name: "CSS_FUNCTION",
       grammarRule: "function",
       tier: 1,
-      pattern: (resolve: (name: string) => string) => {
+      pattern: (resolve: PatternResolver) => {
         const start = resolve("CSS_IDENTIFIER_START_WITH_DASH");
         const cont = resolve("CSS_IDENTIFIER_CONT");
         const space = resolve("SPACE_TAB").slice(1, -1);
@@ -495,7 +498,7 @@ export const PATTERN_DEFINITIONS = (() => {
       name: "CSS_UNICODE_RANGE",
       grammarRule: "unicode-range",
       tier: 1,
-      pattern: (resolve: (name: string) => string) => {
+      pattern: (resolve: PatternResolver) => {
         const hexWild = resolve("HEX_DIGIT_OR_WILDCARD").slice(1, -1);
         const hex = resolve("HEX_DIGIT").slice(1, -1);
         return `u\\+(?<start>[${hexWild}]{1,6})(?:-(?<range>[${hex}]{1,6}))?`;
@@ -520,7 +523,7 @@ export const PATTERN_DEFINITIONS = (() => {
       name: "CSS_PROPERTY_NAME",
       grammarRule: "property-name",
       tier: 1,
-      pattern: (resolve: (name: string) => string) => {
+      pattern: (resolve: PatternResolver) => {
         const dash = resolve("DOUBLE_DASH");
         const start = resolve("CSS_IDENTIFIER_START");
         const cont = resolve("CSS_IDENTIFIER_CONT");
@@ -545,7 +548,7 @@ export const PATTERN_DEFINITIONS = (() => {
       name: "CSSDOC_TAG_NAME",
       grammarRule: "TagName",
       tier: 2,
-      pattern: (resolve: (name: string) => string) => {
+      pattern: (resolve: PatternResolver) => {
         const alpha = resolve("ALPHA").slice(1, -1);
         return `@(?<tag>[${alpha}][${alpha}]*(?:-[${alpha}]+)*)`;
       },
@@ -565,7 +568,7 @@ export const PATTERN_DEFINITIONS = (() => {
       name: "CSSDOC_SELECTOR",
       grammarRule: "Selector",
       tier: 2,
-      pattern: (resolve: (name: string) => string) => {
+      pattern: (resolve: PatternResolver) => {
         const start = resolve("CSS_IDENTIFIER_START_WITH_DASH");
         const cont = resolve("CSS_IDENTIFIER_CONT");
         const selector = `(?:${start}${cont}*|[.#\\[\\]:~+>\\s])`;
@@ -587,7 +590,7 @@ export const PATTERN_DEFINITIONS = (() => {
       name: "CSSDOC_MODIFIER_NAME",
       grammarRule: "ModifierName",
       tier: 2,
-      pattern: (resolve: (name: string) => string) => {
+      pattern: (resolve: PatternResolver) => {
         const start = resolve("CSS_IDENTIFIER_START");
         const cont = resolve("CSS_IDENTIFIER_CONT");
         return `(?<name>${start}${cont}*)`;
@@ -608,7 +611,7 @@ export const PATTERN_DEFINITIONS = (() => {
       name: "CSSDOC_MODIFIER_ATTRIBUTE",
       grammarRule: "ModifierAttribute",
       tier: 2,
-      pattern: (resolve: (name: string) => string) => {
+      pattern: (resolve: PatternResolver) => {
         const alpha = resolve("ALPHA").slice(1, -1);
         return `\\[(?<attr>[${alpha}]+)\\s*=\\s*(?<value>[^\\]]+)\\]`;
       },
@@ -658,7 +661,7 @@ export const PATTERN_DEFINITIONS = (() => {
       name: "CSSDOC_COMPONENT_REF",
       grammarRule: "ComponentRef",
       tier: 3,
-      pattern: (resolve: (name: string) => string) => {
+      pattern: (resolve: PatternResolver) => {
         const ident = resolve("CSS_IDENTIFIER");
         const card = resolve("CSSDOC_CARDINALITY");
         return `(?<ref>${ident}(?::${card})?)`;
@@ -679,7 +682,7 @@ export const PATTERN_DEFINITIONS = (() => {
       name: "CSSDOC_PART_NAME",
       grammarRule: "PartName",
       tier: 3,
-      pattern: (resolve: (name: string) => string) => {
+      pattern: (resolve: PatternResolver) => {
         const start = resolve("CSS_IDENTIFIER_START");
         const cont = resolve("CSS_IDENTIFIER_CONT");
         return `(?<name>${start}${cont}*)`;
@@ -699,7 +702,7 @@ export const PATTERN_DEFINITIONS = (() => {
       name: "CSSDOC_CSSPROP_NAME",
       grammarRule: "CssPropertyName",
       tier: 3,
-      pattern: (resolve: (name: string) => string) => {
+      pattern: (resolve: PatternResolver) => {
         const dash = resolve("DOUBLE_DASH");
         const start = resolve("CSS_IDENTIFIER_START");
         const cont = resolve("CSS_IDENTIFIER_CONT");
@@ -720,7 +723,7 @@ export const PATTERN_DEFINITIONS = (() => {
       name: "CSSDOC_CSSSTATE_NAME",
       grammarRule: "CssStateName",
       tier: 3,
-      pattern: (resolve: (name: string) => string) => {
+      pattern: (resolve: PatternResolver) => {
         const start = resolve("CSS_IDENTIFIER_START");
         const cont = resolve("CSS_IDENTIFIER_CONT");
         return `(?<name>${start}${cont}*)`;
@@ -740,7 +743,7 @@ export const PATTERN_DEFINITIONS = (() => {
       name: "CSSDOC_VARIANT_NAME",
       grammarRule: "VariantName",
       tier: 3,
-      pattern: (resolve: (name: string) => string) => {
+      pattern: (resolve: PatternResolver) => {
         const start = resolve("CSS_IDENTIFIER_START");
         const cont = resolve("CSS_IDENTIFIER_CONT");
         return `(?<name>${start}${cont}*)`;
@@ -760,7 +763,7 @@ export const PATTERN_DEFINITIONS = (() => {
       name: "CSSDOC_SLOT_NAME",
       grammarRule: "SlotName",
       tier: 3,
-      pattern: (resolve: (name: string) => string) => {
+      pattern: (resolve: PatternResolver) => {
         const alpha = resolve("ALPHA").slice(1, -1);
         return `(?<name>[${alpha}][${alpha}0-9]*(?:-[${alpha}0-9]+)*)`;
       },
