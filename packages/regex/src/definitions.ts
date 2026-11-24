@@ -1248,6 +1248,112 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
         ],
       },
     },
+    // CodeMirror / TextMate tokenizer patterns for cssdoc doc-comment tags
+    // These are Tier 3 patterns that capture tag structures for syntax highlighting
+    TOKENIZER_INLINE_TAG: {
+      name: "TOKENIZER_INLINE_TAG",
+      tier: 3,
+      pattern: (resolve: PatternResolver) => {
+        const wordBoundary = resolve("WORD_BOUNDARY");
+        const spaceTab = resolve("SPACE_TAB");
+        const inlineContent = resolve("TOKEN_INLINE_CONTENT");
+        return `(?<inline>\\{(?<itag>@\\w+)${wordBoundary}${spaceTab}*(?<itext>${inlineContent})\\}?)`;
+      },
+      description:
+        "Inline tag tokenizer: {@tag content}. Used for capturing inline doc-comment tags.",
+      composedFrom: ["WORD_BOUNDARY", "SPACE_TAB", "TOKEN_INLINE_CONTENT"],
+      fixtures: {
+        passes: [
+          { input: "{@link https://example.com}", note: "with URL" },
+          { input: "{@label foo}", note: "with label" },
+        ],
+        fails: [{ input: "@link text", reason: "missing braces" }],
+      },
+    },
+    TOKENIZER_RECORD_TAG: {
+      name: "TOKENIZER_RECORD_TAG",
+      tier: 3,
+      pattern: (resolve: PatternResolver) => {
+        const wordBoundary = resolve("WORD_BOUNDARY");
+        const spaceTab = resolve("SPACE_TAB");
+        const qualifiedId = resolve("TOKEN_QUALIFIED_IDENTIFIER");
+        return `(?<record>(?<rtag>@\\w+)${wordBoundary}${spaceTab}*(?<rname>${qualifiedId})?)`;
+      },
+      description: "Record tag tokenizer: @tag name or @tag name.name",
+      composedFrom: ["WORD_BOUNDARY", "SPACE_TAB", "TOKEN_QUALIFIED_IDENTIFIER"],
+      fixtures: {
+        passes: [
+          { input: "@component button" },
+          { input: "@component button.variant" },
+          { input: "@component", note: "optional name" },
+        ],
+        fails: [],
+      },
+    },
+    TOKENIZER_MODIFIER_TAG: {
+      name: "TOKENIZER_MODIFIER_TAG",
+      tier: 3,
+      pattern: (resolve: PatternResolver) => {
+        const wordBoundary = resolve("WORD_BOUNDARY");
+        const spaceTab = resolve("SPACE_TAB");
+        const modifierName = resolve("TOKEN_MODIFIER_NAME");
+        return `(?<modifier>(?<mtag>@\\w+)${wordBoundary}${spaceTab}*(?<mname>${modifierName})?)`;
+      },
+      description: "Modifier tag tokenizer: @tag -name",
+      composedFrom: ["WORD_BOUNDARY", "SPACE_TAB", "TOKEN_MODIFIER_NAME"],
+      fixtures: {
+        passes: [{ input: "@modifier -dark" }, { input: "@modifier" }],
+        fails: [],
+      },
+    },
+    TOKENIZER_PART_TAG: {
+      name: "TOKENIZER_PART_TAG",
+      tier: 3,
+      pattern: (resolve: PatternResolver) => {
+        const wordBoundary = resolve("WORD_BOUNDARY");
+        const spaceTab = resolve("SPACE_TAB");
+        const classSelector = resolve("TOKEN_CLASS_SELECTOR");
+        return `(?<part>(?<ptag>@\\w+)${wordBoundary}${spaceTab}*(?<pname>${classSelector})?)`;
+      },
+      description: "Part tag tokenizer: @tag .name or @tag .name[attr]",
+      composedFrom: ["WORD_BOUNDARY", "SPACE_TAB", "TOKEN_CLASS_SELECTOR"],
+      fixtures: {
+        passes: [{ input: "@part .button" }, { input: "@csspart .icon" }, { input: "@slot" }],
+        fails: [],
+      },
+    },
+    TOKENIZER_PROPERTY_TAG: {
+      name: "TOKENIZER_PROPERTY_TAG",
+      tier: 3,
+      pattern: (resolve: PatternResolver) => {
+        const wordBoundary = resolve("WORD_BOUNDARY");
+        const spaceTab = resolve("SPACE_TAB");
+        const customProp = resolve("TOKEN_CUSTOM_PROPERTY");
+        return `(?<property>(?<proptag>@\\w+)${wordBoundary}${spaceTab}*(?<propname>${customProp})?)`;
+      },
+      description: "Custom property tag tokenizer: @tag --name",
+      composedFrom: ["WORD_BOUNDARY", "SPACE_TAB", "TOKEN_CUSTOM_PROPERTY"],
+      fixtures: {
+        passes: [{ input: "@property --color" }, { input: "@cssproperty --size" }],
+        fails: [],
+      },
+    },
+    TOKENIZER_REF_TAG: {
+      name: "TOKENIZER_REF_TAG",
+      tier: 3,
+      pattern: (resolve: PatternResolver) => {
+        const wordBoundary = resolve("WORD_BOUNDARY");
+        const spaceTab = resolve("SPACE_TAB");
+        const refNumber = resolve("TOKEN_REF_NUMBER");
+        return `(?<ref>(?<reftag>@ref)${wordBoundary}${spaceTab}*(?<refnum>${refNumber})?)`;
+      },
+      description: "Ref tag tokenizer: @ref 1 or @ref 1.2",
+      composedFrom: ["WORD_BOUNDARY", "SPACE_TAB", "TOKEN_REF_NUMBER"],
+      fixtures: {
+        passes: [{ input: "@ref 1" }, { input: "@ref 1.2" }],
+        fails: [{ input: "@ref abc", reason: "not a number" }],
+      },
+    },
   };
 
   // Resolver function for composed patterns

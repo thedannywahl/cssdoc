@@ -88,22 +88,16 @@ const PLAIN_TAGS = CSSDOC_TAGS.filter(
 const TOKEN = new RegExp(
   [
     // {@link ...} / {@label ...} / {@inheritDoc ...}
-    // Reuses INLINE_TAG_TOKENIZER structure: brace, tag, content, brace
     `(?<inline>\\{(?<itag>@(?:${alt(INLINE_TAGS)}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(?<itext>${TOKEN_INLINE_CONTENT_SOURCE})\\}?)`,
     // @component/@name/@utility/@rule/@declaration/@layout name(.name)*
-    // Reuses RECORD_TAG_TOKENIZER structure: tag, qualified-name
     `(?<record>(?<rtag>@(?:${alt(RECORD_TAGS)}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(?<rname>${TOKEN_QUALIFIED_IDENTIFIER_SOURCE})?)`,
     // @modifier -name
-    // Reuses MODIFIER_TAG_TOKENIZER structure: tag, optional-dash-name
     `(?<modifier>(?<mtag>@(?:${alt(MODIFIER_TAGS)}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(?<mname>${TOKEN_MODIFIER_NAME_SOURCE})?)`,
     // @part / @csspart / @slot / @selector / @pseudo / @class .name
-    // Reuses PART_TAG_TOKENIZER structure: tag, optional-dot-selector
     `(?<part>(?<ptag>@(?:${alt(PART_TAGS)}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(?<pname>${TOKEN_CLASS_SELECTOR_SOURCE})?)`,
     // @cssproperty / @property --name
-    // Reuses PROPERTY_TAG_TOKENIZER structure: tag, custom-property
     `(?<property>(?<proptag>@(?:${alt(PROPERTY_TAGS)}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(?<propname>${TOKEN_CUSTOM_PROPERTY_SOURCE})?)`,
     // @ref 1 / @ref 1.
-    // Reuses REF_TAG_TOKENIZER structure: tag, numeric-ref
     `(?<ref>(?<reftag>@(?:ref))${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(?<refnum>${TOKEN_REF_NUMBER_SOURCE})?)`,
     // bare block/record/flag tags
     `(?<btag>@(?:${alt(PLAIN_TAGS)})${WORD_BOUNDARY_SOURCE})`,
