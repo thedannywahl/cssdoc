@@ -26,6 +26,17 @@
  * }
  * ```
  *
+ * @example Use toRegExp with anchors for validation
+ * ```typescript
+ * import { RECORD_REFERENCE_NAME, toRegExp } from "@cssdoc/regex";
+ *
+ * // Match entire string from start to end
+ * const validator = toRegExp(RECORD_REFERENCE_NAME, "start-end");
+ * if (validator.test(value)) {
+ *   console.log("Valid record reference name");
+ * }
+ * ```
+ *
  * @example Import regex objects by name
  * ```typescript
  * // All patterns from PATTERN_DEFINITIONS are exported as individual regex objects:
@@ -58,7 +69,7 @@
  */
 
 export { PATTERN_DEFINITIONS, type UnifiedPatternDef } from "./definitions.js";
-export { toRegExp } from "./lib.js";
+export { toRegExp, type AnchorMode } from "./lib.js";
 
 // Dynamic exports of all patterns as regex objects from PATTERN_DEFINITIONS
 // This avoids duplication and ensures all patterns are always available

@@ -114,7 +114,7 @@ const CLASS_IDENT = String.raw`[A-Za-z_][\w-]*`;
 const CLASS_REF_RE = new RegExp(String.raw`\.(${CLASS_IDENT})`, "gu");
 /** A selector that is exactly one class — the base-class inference candidate filter. */
 const SINGLE_CLASS_RE = new RegExp(String.raw`^\.${CLASS_IDENT}$`, "u");
-const RECORD_REF_NAME_RE = new RegExp(`^${RECORD_REFERENCE_NAME.source}$`, "u");
+const RECORD_REF_NAME_RE = toRegExp(RECORD_REFERENCE_NAME, "start-end");
 const RECORD_REF_PROFILE_RE = /^:\s*([\w-]+)$/u;
 const RECORD_REF_TYPED_RE = /^([\w-]+)(?::([\w-]+))?$/u;
 const RECORD_REF_CUSTOM_MEDIA_RE = /^\(\s*(--[\w-]+)\s*\)$/u;
