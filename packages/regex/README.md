@@ -6,200 +6,143 @@ Type-safe, ArkRegex-based pattern library for cssdoc. Centralizes CSS, grammar-d
 
 - **Type Safety**: All patterns use ArkRegex with named capture groups and TypeScript type inference
 - **IDE Completion**: Auto-complete shows all available capture groups
-- **Single Source of Truth**: Each pattern defined once, used everywhere
+- **Single Source of Truth**: Each pattern defined once with metadata and test fixtures in `definitions.ts`
 - **Maintainability**: Patterns traceable to W3C specs and CssDoc grammar
 - **Security**: ArkRegex prevents ReDoS (Regular Expression Denial of Service) vulnerabilities
 - **Zero Overhead**: Compile-time type inference, no runtime cost
+- **Comprehensive Testing**: 296 test cases covering all patterns with pass/fail fixtures
 
-## Three-Tier Architecture
+## Usage
 
-### Tier 1: W3C CSS Specification Patterns
-
-Standard CSS constructs from the official W3C formal grammar:
-
-- CSS identifiers, keywords, colors, functions
-- Property names, units, dimensions
-- Numbers, percentages, unicode ranges
+All patterns are exported from `definitions.ts` as a single `PATTERN_DEFINITIONS` object:
 
 ```typescript
-import { CSS_IDENTIFIER, CSS_HASH_COLOR } from "@cssdoc/regex";
+import { PATTERN_DEFINITIONS } from "@cssdoc/regex";
 
-const match = CSS_HASH_COLOR.exec("#ffffff");
-const color = match?.groups?.color; // "ffffff" (typed)
+// Access any pattern
+const pattern = PATTERN_DEFINITIONS.CSS_IDENTIFIER;
+console.log(pattern.name); // "CSS_IDENTIFIER"
+console.log(pattern.tier); // 1
+console.log(pattern.description); // "CSS identifier"
+console.log(pattern.pattern); // string or function
+console.log(pattern.fixtures); // { passes: [...], fails: [...] }
 ```
 
-### Tier 2: CssDoc Grammar Patterns
+## Pattern Tiers
 
-Patterns derived from the formal `CssDoc.grammarkdown` specification:
+Patterns are organized by tier level:
 
-- Record names and identifiers
-- Modifier names (suffix, chained, attribute forms)
-- Tags and structure references
-- Cardinality keywords
+- **Tier 0**: Character classes (single characters, digits, word boundaries)
+- **Tier 1**: CSS specification patterns (identifiers, colors, functions, dimensions)
+- **Tier 2**: CssDoc grammar patterns (tags, modifiers, cardinality, record names)
+- **Tier 3**: cssdoc-specific patterns (parts, properties, states, variants, slots)
+- **Tier 4**: Complex composite patterns
+
+## Example: CSS Identifier
 
 ```typescript
-import { CSSDOC_TAG, CSSDOC_RECORD_NAME } from "@cssdoc/regex";
+import { PATTERN_DEFINITIONS } from "@cssdoc/regex";
 
-const tagMatch = CSSDOC_TAG.exec("@component Button");
-const { tag, arg } = tagMatch?.groups ?? {}; // "component", "Button"
+const def = PATTERN_DEFINITIONS.CSS_IDENTIFIER;
+const pattern =
+  def.pattern instanceof Function
+    ? def.pattern((name) => PATTERN_DEFINITIONS[name].pattern)
+    : def.pattern;
 
-const nameMatch = CSSDOC_RECORD_NAME.exec("menu.item.action");
-const parts = nameMatch?.groups?.parts; // "menu.item.action"
+const regex = new RegExp(pattern);
+console.log(regex.test("my-class")); // true
+console.log(regex.test("-my-class")); // false (cannot start with dash)
 ```
 
-### Tier 3: cssdoc-Specific Patterns
+## Pattern Structure
 
-Local implementation patterns for cssdoc architecture:
-
-- BEM naming conventions (base, element, modifier)
-- ARIA attribute state matching
-- Configuration glob patterns
-- CSS combinator and pseudo-selector matching
+Each pattern definition includes:
 
 ```typescript
-import { BEM_MODIFIER, ARIA_STATE, VAR_REFERENCE } from "@cssdoc/regex";
+interface UnifiedPatternDef {
+  // Export name (e.g., ALPHA, CSS_IDENTIFIER)
+  name: string;
 
-const bemMatch = BEM_MODIFIER.exec(".button--primary");
-const { base, mod } = bemMatch?.groups ?? {}; // "button", "primary"
+  // Grammar rule name from CssDoc.grammarkdown
+  grammarRule?: string;
 
-const ariaMatch = ARIA_STATE.exec('[aria-expanded="true"]');
-const { attr, value } = ariaMatch?.groups ?? {}; // "aria-expanded", "true"
+  // Tier level (0-4)
+  tier: 0 | 1 | 2 | 3 | 4;
 
-const varMatches = [...".selector".matchAll(VAR_REFERENCE)];
-```
+  // Pattern string or composition function
+  pattern: string | ((resolve: (name: string) => string) => string);
 
-## Pattern Groups & Usage
+  // Unicode flag: 'u' or 'v'
+  flags?: "u" | "v";
 
-### CSS Patterns (Tier 1 + 3)
+  // Named capture groups and their descriptions
+  captures?: Record<string, string>;
 
-Used for CSS selector/class matching and validation:
+  // Human-readable description
+  description: string;
 
-```typescript
-import { CSS_IDENTIFIER, BEM_BASE, CLASS_REF, SINGLE_CLASS } from "@cssdoc/regex";
-```
+  // Test fixtures with passes and fails
+  fixtures: {
+    passes: Array<{ input: string; note?: string }>;
+    fails: Array<{ input: string; reason: string }>;
+  };
 
-### CSS-Doc Patterns (Tier 2)
+  // Names of patterns this composes
+  composedFrom?: string[];
 
-Used for doc-comment parsing and grammar validation:
-
-```typescript
-import {
-  CSSDOC_IDENTIFIER,
-  CSSDOC_TAG,
-  CSSDOC_RECORD_NAME,
-  CSSDOC_MODIFIER_SUFFIX,
-} from "@cssdoc/regex";
-```
-
-### Modifier Patterns (Tier 2 + 3)
-
-Used for modifier extraction and BEM convention matching:
-
-```typescript
-import { CSSDOC_MODIFIER_CHAINED, BEM_MODIFIER, MODIFIER_CHAIN } from "@cssdoc/regex";
-```
-
-### Selector Patterns (Tier 1 + 2 + 3)
-
-Used for selector validation and structure analysis:
-
-```typescript
-import {
-  CSS_FUNCTION,
-  PSEUDO_CLASS,
-  PSEUDO_ELEMENT,
-  ATTRIBUTE_SELECTOR,
-  COMBINATOR,
-} from "@cssdoc/regex";
-```
-
-### Config Patterns (Tier 3)
-
-Used for configuration and globbing:
-
-```typescript
-import { GLOB_PATTERN } from "@cssdoc/regex";
-```
-
-## Type Inference Example
-
-All patterns infer their capture group types at compile time:
-
-```typescript
-import { CSSDOC_TAG } from "@cssdoc/regex";
-
-const pattern = CSSDOC_TAG;
-// Inferred type:
-// Regex<
-//   string,
-//   {
-//     names: {
-//       tag: string;
-//       arg?: string;
-//     }
-//   }
-// >
-
-const match = pattern.exec("@modifier active");
-// Type of match:
-// {
-//   index: number;
-//   input: string;
-//   groups: { tag: string; arg?: string };
-//   ...
-// } | null
-
-const tag = match?.groups?.tag; // string | undefined (typed!)
-const arg = match?.groups?.arg; // string | undefined (typed!)
-
-// TypeScript error: Property 'unknown' does not exist
-match?.groups?.unknown; // ❌ Compile error!
-```
-
-## Why Not Just Native RegExp?
-
-### Before (native RegExp with numbered captures)
-
-```typescript
-const pattern = /^@(\w+)\s+(\S+)?/;
-const match = pattern.exec("@component Button");
-const tag = match?.[1]; // any - could be wrong!
-const arg = match?.[2]; // any - easy to confuse
-```
-
-### After (ArkRegex with named groups)
-
-```typescript
-import { CSSDOC_TAG } from "@cssdoc/regex";
-
-const match = CSSDOC_TAG.exec("@component Button");
-const tag = match?.groups?.tag; // string | undefined (clear!)
-const arg = match?.groups?.arg; // string | undefined (clear!)
-// IDE completion shows exactly what groups are available
+  // Related pattern names
+  relatedPatterns?: string[];
+}
 ```
 
 ## Contributing
 
-When adding new patterns:
+When adding or modifying patterns in `definitions.ts`:
 
-1. **Determine the tier**:
-   - **Tier 1**: Is it in W3C CSS specs? Add to `tiers/css-spec.ts`
-   - **Tier 2**: Is it in `CssDoc.grammarkdown`? Add to `tiers/css-doc-grammar.ts`
-   - **Tier 3**: Is it cssdoc-specific? Add to `tiers/cssdoc-local.ts`
+1. **Choose the right tier**:
+   - **Tier 0**: Character classes and basic building blocks
+   - **Tier 1**: W3C CSS specification patterns
+   - **Tier 2**: CssDoc grammar patterns from CssDoc.grammarkdown
+   - **Tier 3**: cssdoc implementation-specific patterns
+   - **Tier 4**: Complex composite patterns
 
 2. **Use named capture groups**: Always use `(?<groupName>...)` instead of `(...)`
 
-3. **Document with examples**: Include JSDoc comment with usage examples
+3. **Document clearly**:
+   - Provide a descriptive `description` field
+   - Add `note` to complex pass fixtures
+   - Add `reason` to all fail fixtures
 
-4. **Add tests**: Extend `tests/patterns.test.ts` with test cases
+4. **Add comprehensive fixtures**:
+   - Include at least 3-4 passing examples
+   - Include edge cases and boundary conditions in failures
+   - Use composition functions for complex patterns
 
-5. **Update types**: Add entry to `PatternTypes` in `types.ts` if adding new pattern
+5. **Test locally**:
+   ```bash
+   vp test packages/regex/
+   ```
+
+## Testing
+
+All patterns are tested in `tests/definitions.test.ts`. Each pattern includes:
+
+- Compilation check (can be converted to RegExp)
+- Description validation
+- Positive fixture tests (should match)
+- Negative fixture tests (should not match full string)
+
+Run tests with:
+
+```bash
+vp test packages/regex/tests/definitions.test.ts
+```
 
 ## References
 
 - [ArkRegex Documentation](https://arktype.io/docs/regex)
 - [W3C CSS Specification](https://www.w3.org/TR/CSS2/)
-- [CssDoc Grammar](../spec/grammar/CssDoc.grammarkdown)
+- [CssDoc Specification](../spec/grammar/CssDoc.grammarkdown)
 - [MDN CSS Data](https://github.com/mdn/data)
 - [OWASP ReDoS Prevention](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS)
 
