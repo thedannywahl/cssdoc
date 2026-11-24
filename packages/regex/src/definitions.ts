@@ -58,7 +58,7 @@ export interface UnifiedPatternDef {
  * Complete unified pattern definitions.
  * Patterns are resolved lazily to handle composition dependencies.
  */
-export const PATTERN_DEFINITIONS = (() => {
+export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
   const rawDefs: Record<string, any> = {
     ALPHA: {
       name: "ALPHA",
