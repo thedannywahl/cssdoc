@@ -38,6 +38,8 @@
  * @module
  */
 import type { ChildNode } from "postcss";
+import type { Regex } from "arkregex";
+import { regex as arkRegex } from "arkregex";
 import { CssDocConfiguration } from "./configuration.ts";
 import type {
   CssParse,
@@ -68,6 +70,9 @@ const RELEASE_STAGES: readonly CssReleaseStage[] = ["alpha", "beta", "experiment
 function isReleaseStage(value: string): value is CssReleaseStage {
   return RELEASE_STAGES.includes(value as CssReleaseStage);
 }
+
+// Selector attribute key pattern: [attr-name or [attr-name=value or similar
+const SELECTOR_ATTR_KEY_RE: Regex = arkRegex.as(/^\[([^=\s~^$*|[\]]+)/u.source, "u");
 /**
  * The record-opening tags and the {@link CssRecordKind} each selects, as the default boundary map.
  * `@name` and legacy `@rule` are aliases for `@component`. A {@link CssDocConfiguration} may add
@@ -246,7 +251,7 @@ export function deriveSelectorName(sel: string): string {
   if (sel.startsWith(".")) return sel.slice(1);
   if (sel.startsWith("#")) return sel.slice(1);
   if (sel.startsWith(":host")) return "host";
-  const attrKey = sel.match(/^\[([^=\s~^$*|[\]]+)/u)?.[1];
+  const attrKey = sel.match(SELECTOR_ATTR_KEY_RE)?.[1];
   if (attrKey) return attrKey;
   return sel.replace(/^\W+/u, "") || sel;
 }
