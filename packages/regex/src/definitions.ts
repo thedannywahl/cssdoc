@@ -11,7 +11,7 @@ import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 
 /** Resolver function type for composed patterns */
-type PatternResolver = (name: string) => string;
+type PatternResolver = (name: string, unwrap?: boolean) => string;
 
 /**
  * Unified pattern definition — combines ArkRegex, string, metadata, and fixtures.
@@ -110,8 +110,8 @@ export const PATTERN_DEFINITIONS = (() => {
       name: "ALPHANUMERIC",
       tier: 0,
       pattern: (resolve: PatternResolver) => {
-        const digit = resolve("DIGIT").slice(1, -1);
-        const alpha = resolve("ALPHA").slice(1, -1);
+        const digit = resolve("DIGIT", true);
+        const alpha = resolve("ALPHA", true);
         return `[${digit}${alpha}]`;
       },
       description: "Alphanumeric character (letter or digit)",
@@ -129,8 +129,8 @@ export const PATTERN_DEFINITIONS = (() => {
       name: "ALPHANUMERIC_EXTENDED",
       tier: 0,
       pattern: (resolve: PatternResolver) => {
-        const alpha = resolve("ALPHA").slice(1, -1);
-        const digit = resolve("DIGIT").slice(1, -1);
+        const alpha = resolve("ALPHA", true);
+        const digit = resolve("DIGIT", true);
         return `[${alpha}${digit}\\-_]`;
       },
       description: "Alphanumeric with underscore and hyphen",
@@ -359,7 +359,7 @@ export const PATTERN_DEFINITIONS = (() => {
       grammarRule: "number",
       tier: 1,
       pattern: (resolve: PatternResolver) => {
-        const digit = resolve("DIGIT").slice(1, -1);
+        const digit = resolve("DIGIT", true);
         return `(?<number>(?<integer>[${digit}]+)(?:\\.(?<decimal>[${digit}]+))?)`;
       },
       captures: {
@@ -386,7 +386,7 @@ export const PATTERN_DEFINITIONS = (() => {
       grammarRule: "percentage",
       tier: 1,
       pattern: (resolve: PatternResolver) => {
-        const digit = resolve("DIGIT").slice(1, -1);
+        const digit = resolve("DIGIT", true);
         const numberLiteral = `[${digit}]+(?:\\.[${digit}]+)?`;
         return `(?<value>${numberLiteral})%`;
       },
@@ -410,7 +410,7 @@ export const PATTERN_DEFINITIONS = (() => {
       grammarRule: "dimension",
       tier: 1,
       pattern: (resolve: PatternResolver) => {
-        const digit = resolve("DIGIT").slice(1, -1);
+        const digit = resolve("DIGIT", true);
         const start = resolve("CSS_IDENTIFIER_START");
         const cont = resolve("CSS_IDENTIFIER_CONT");
         return `(?<value>[${digit}]+(?:\\.[${digit}]+)?)(?<unit>${start}${cont}*)`;
@@ -435,7 +435,7 @@ export const PATTERN_DEFINITIONS = (() => {
       grammarRule: "hash",
       tier: 1,
       pattern: (resolve: PatternResolver) => {
-        const hex = resolve("HEX_DIGIT").slice(1, -1);
+        const hex = resolve("HEX_DIGIT", true);
         return `#(?<color>[${hex}]{3}(?:[${hex}]{3})?)`;
       },
       captures: { color: "Hex color without #" },
@@ -461,7 +461,7 @@ export const PATTERN_DEFINITIONS = (() => {
       pattern: (resolve: PatternResolver) => {
         const start = resolve("CSS_IDENTIFIER_START_WITH_DASH");
         const cont = resolve("CSS_IDENTIFIER_CONT");
-        const space = resolve("SPACE_TAB").slice(1, -1);
+        const space = resolve("SPACE_TAB", true);
         return `(?<name>${start}${cont}*)[${space}]*\\(`;
       },
       captures: { name: "Function name" },
@@ -499,8 +499,8 @@ export const PATTERN_DEFINITIONS = (() => {
       grammarRule: "unicode-range",
       tier: 1,
       pattern: (resolve: PatternResolver) => {
-        const hexWild = resolve("HEX_DIGIT_OR_WILDCARD").slice(1, -1);
-        const hex = resolve("HEX_DIGIT").slice(1, -1);
+        const hexWild = resolve("HEX_DIGIT_OR_WILDCARD", true);
+        const hex = resolve("HEX_DIGIT", true);
         return `u\\+(?<start>[${hexWild}]{1,6})(?:-(?<range>[${hex}]{1,6}))?`;
       },
       captures: { start: "Start of range", range: "End of range (optional)" },
@@ -549,7 +549,7 @@ export const PATTERN_DEFINITIONS = (() => {
       grammarRule: "TagName",
       tier: 2,
       pattern: (resolve: PatternResolver) => {
-        const alpha = resolve("ALPHA").slice(1, -1);
+        const alpha = resolve("ALPHA", true);
         return `@(?<tag>[${alpha}][${alpha}]*(?:-[${alpha}]+)*)`;
       },
       captures: { tag: "Tag name without @" },
@@ -612,7 +612,7 @@ export const PATTERN_DEFINITIONS = (() => {
       grammarRule: "ModifierAttribute",
       tier: 2,
       pattern: (resolve: PatternResolver) => {
-        const alpha = resolve("ALPHA").slice(1, -1);
+        const alpha = resolve("ALPHA", true);
         return `\\[(?<attr>[${alpha}]+)\\s*=\\s*(?<value>[^\\]]+)\\]`;
       },
       captures: { attr: "Attribute name", value: "Attribute value" },
@@ -764,7 +764,7 @@ export const PATTERN_DEFINITIONS = (() => {
       grammarRule: "SlotName",
       tier: 3,
       pattern: (resolve: PatternResolver) => {
-        const alpha = resolve("ALPHA").slice(1, -1);
+        const alpha = resolve("ALPHA", true);
         return `(?<name>[${alpha}][${alpha}0-9]*(?:-[${alpha}0-9]+)*)`;
       },
       captures: { name: "Slot name" },
@@ -812,18 +812,23 @@ export const PATTERN_DEFINITIONS = (() => {
   };
 
   // Resolver function for composed patterns
-  const resolver = (name: string): string => {
+  const resolver = (name: string, unwrap: boolean = false): string => {
     const def = rawDefs[name];
     if (!def) throw new Error(`Pattern ${name} not found`);
 
+    let source: string;
     if (def.source) {
-      return def.source;
+      source = def.source;
     } else if (def.pattern && typeof def.pattern === "string") {
-      return def.pattern;
+      source = def.pattern;
     } else if (def.pattern && typeof def.pattern === "function") {
-      return def.pattern(resolver);
+      source = def.pattern(resolver);
+    } else {
+      throw new Error(`No pattern source for ${name}`);
     }
-    throw new Error(`No pattern source for ${name}`);
+
+    // Strip outer brackets if requested (for character class composition)
+    return unwrap && source.startsWith("[") && source.endsWith("]") ? source.slice(1, -1) : source;
   };
 
   // Build final definitions with ArkRegex
