@@ -23,11 +23,16 @@ describe("Pattern Definitions", () => {
         expect(def.source.length).toBeGreaterThan(0);
       });
 
-      it("has a compiled ArkRegex", () => {
-        expect(def.regex).toBeDefined();
-        // Note: ArkRegex may normalize the source (e.g., escaping), so we just check existence
-        expect(typeof def.regex.source).toBe("string");
-        expect(def.regex.source.length).toBeGreaterThan(0);
+      it("has a compiled ArkRegex or is Tier 0", () => {
+        if (def.tier === 0) {
+          // Tier 0 patterns are character sources, not regex patterns
+          expect(def.regex).toBeUndefined();
+        } else {
+          expect(def.regex).toBeDefined();
+          // Note: ArkRegex may normalize the source (e.g., escaping), so we just check existence
+          expect(typeof def.regex.source).toBe("string");
+          expect(def.regex.source.length).toBeGreaterThan(0);
+        }
       });
 
       it("has a description", () => {
@@ -35,22 +40,28 @@ describe("Pattern Definitions", () => {
         expect(def.description.length).toBeGreaterThan(0);
       });
 
-      // Test all positive fixtures
-      def.fixtures.passes.forEach((testCase) => {
-        const note = testCase.note ? ` (${testCase.note})` : "";
-        it(`matches "${testCase.input}"${note}`, () => {
-          expect(def.regex.test(testCase.input)).toBe(true);
+      // Test all positive fixtures (only for Tier 1+; Tier 0 are composition primitives)
+      if (def.tier > 0) {
+        def.fixtures.passes.forEach((testCase) => {
+          const note = testCase.note ? ` (${testCase.note})` : "";
+          it(`matches "${testCase.input}"${note}`, () => {
+            // Tier 1+: use the regex anchored to match the full string
+            const regex = new RegExp(`^${def.regex.source}$`, def.regex.flags);
+            expect(regex.test(testCase.input)).toBe(true);
+          });
         });
-      });
+      }
 
-      // Test all negative fixtures
-      def.fixtures.fails.forEach((testCase) => {
-        it(`rejects "${testCase.input}" - ${testCase.reason}`, () => {
-          // For negative cases, the pattern should not match the full string
-          const anchoredRegex = new RegExp(`^${def.source}$`);
-          expect(anchoredRegex.test(testCase.input)).toBe(false);
+      // Test all negative fixtures (only for Tier 1+; Tier 0 are composition primitives)
+      if (def.tier > 0) {
+        def.fixtures.fails.forEach((testCase) => {
+          it(`rejects "${testCase.input}" - ${testCase.reason}`, () => {
+            // Tier 1+: use the regex anchored to match the full string
+            const regex = new RegExp(`^${def.regex.source}$`, def.regex.flags);
+            expect(regex.test(testCase.input)).toBe(false);
+          });
         });
-      });
+      }
     });
   });
 });

@@ -26,12 +26,19 @@ import { CSSDOC_TAGS, cssdocTagNamesByArgument, cssdocTagNamesByKind } from "@cs
 import {
   ALPHA,
   ALPHANUMERIC_EXTENDED_SOURCE,
+  AT_SOURCE,
+  BRACE_OPEN_SOURCE,
+  BRACE_CLOSE_SOURCE,
+  BRACE_CLOSE_CHAR,
   COLON,
   DIGIT,
   DOT,
   PAREN_CLOSE,
   PAREN_OPEN,
+  PIPE_CHAR,
+  PIPE_SOURCE,
   SPACE_TAB,
+  WORD_BOUNDARY_SOURCE,
   CSSDOC_CARDINALITY_SOURCE,
   CSSDOC_SLOT_NAME_SOURCE,
   TOKEN_CLASS_SELECTOR_SOURCE,
@@ -73,6 +80,12 @@ export interface InjectionLanguageRegistration extends InjectionGrammar {
 const TAG_SCOPE = "storage.type.class.cssdoc";
 const alt = (names: readonly string[]): string => names.join("|");
 
+/**
+ * Create a tag alternation pattern for TextMate grammar.
+ * Produces a pattern like `@(?:component|variant|...)` from a list of tag names.
+ */
+const createTagAlternation = (tags: readonly string[]): string => `@(?:${alt(tags)})`;
+
 // Pattern builders for TextMate grammar (simple patterns from Tier 0/1 character classes)
 const buildIdentifier = (): string => `${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*`;
 const buildQualifiedIdentifier = (): string =>
@@ -90,7 +103,6 @@ const buildStateValue = (): string =>
  * that follows; the inline tags open a `{@link …}` rule; every other tag is a bare keyword.
  */
 export function buildInjectionGrammar(): InjectionGrammar {
-  const inlineTags = alt(cssdocTagNamesByKind("inline"));
   const recordTags = alt(cssdocTagNamesByKind("record"));
   const modifierTags = alt(cssdocTagNamesByArgument("modifier-name"));
   const partTags = alt([...cssdocTagNamesByArgument("part-name"), "selector", "class", "pseudo"]);
@@ -131,16 +143,16 @@ export function buildInjectionGrammar(): InjectionGrammar {
     repository: {
       "inline-tag": {
         name: "meta.inline-tag.cssdoc",
-        begin: `(\\{)(@(?:${inlineTags}))\\b`,
+        begin: `(${BRACE_OPEN_SOURCE})(${createTagAlternation(cssdocTagNamesByKind("inline"))})${WORD_BOUNDARY_SOURCE}`,
         beginCaptures: {
           "1": { name: "punctuation.definition.tag.begin.cssdoc" },
           "2": { name: TAG_SCOPE },
         },
-        end: "(\\})",
+        end: `(${BRACE_CLOSE_SOURCE})`,
         endCaptures: { "1": { name: "punctuation.definition.tag.end.cssdoc" } },
         patterns: [
-          { match: "\\|", name: "punctuation.separator.cssdoc" },
-          { match: "[^}|]+", name: "markup.underline.link.cssdoc" },
+          { match: PIPE_SOURCE, name: "punctuation.separator.cssdoc" },
+          { match: `[^${BRACE_CLOSE_CHAR}${PIPE_CHAR}]+`, name: "markup.underline.link.cssdoc" },
         ],
       },
       // A record's name (`@component button`) reads like a type name. Listed before the bare keyword
@@ -148,7 +160,7 @@ export function buildInjectionGrammar(): InjectionGrammar {
       "record-tag": {
         // A dotted name (`menu.item`) is a qualified member name — highlight it as one unit, not just
         // the segment before the first dot.
-        match: `(@(?:${recordTags}))\\b${SPACE_TAB.source}*(${buildQualifiedIdentifier()})?`,
+        match: `(${AT_SOURCE}(?:${recordTags}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB.source}*(${buildQualifiedIdentifier()})?`,
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "entity.name.type.cssdoc" },
@@ -157,7 +169,7 @@ export function buildInjectionGrammar(): InjectionGrammar {
       // Modifiers are spelled many ways (`-color-secondary`, `button--secondary`, `primary`); colour the
       // whole name, using the same scope as parts so a component's members read consistently.
       "modifier-tag": {
-        match: `(@(?:${modifierTags}))\\b${SPACE_TAB.source}*(${buildModifierName()})?`,
+        match: `(${AT_SOURCE}(?:${modifierTags}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB.source}*(${buildModifierName()})?`,
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "entity.other.attribute-name.part.cssdoc" },
@@ -165,21 +177,21 @@ export function buildInjectionGrammar(): InjectionGrammar {
       },
       // `@cssstate :state(open)` / `@cssstate :disabled` — colour the state token like a custom property.
       "state-tag": {
-        match: `(@(?:cssstate))\\b${SPACE_TAB.source}*(${buildStateValue()})?`,
+        match: `(${AT_SOURCE}(?:cssstate))${WORD_BOUNDARY_SOURCE}${SPACE_TAB.source}*(${buildStateValue()})?`,
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "support.type.custom-property.cssdoc" },
         },
       },
       "part-tag": {
-        match: `(@(?:${partTags}))\\b${SPACE_TAB.source}*(${buildClassSelector()})?`,
+        match: `(${AT_SOURCE}(?:${partTags}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB.source}*(${buildClassSelector()})?`,
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "entity.other.attribute-name.part.cssdoc" },
         },
       },
       "property-tag": {
-        match: `(@(?:${propertyTags}))\\b${SPACE_TAB.source}*(${buildCustomProperty()})?`,
+        match: `(${AT_SOURCE}(?:${propertyTags}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB.source}*(${buildCustomProperty()})?`,
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "support.type.custom-property.cssdoc" },
@@ -187,14 +199,14 @@ export function buildInjectionGrammar(): InjectionGrammar {
       },
       // `@ref 1` / `@ref 1.` — numeric annotation reference index.
       "ref-tag": {
-        match: `(@(?:ref))\\b${SPACE_TAB.source}*(${DIGIT.source}+${DOT.source}?)?`,
+        match: `(${AT_SOURCE}(?:ref))${WORD_BOUNDARY_SOURCE}${SPACE_TAB.source}*(${DIGIT.source}+${DOT.source}?)?`,
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "constant.numeric.cssdoc" },
         },
       },
       "block-tag": {
-        match: `(@(?:${blockTags}))\\b`,
+        match: `(${AT_SOURCE}(?:${blockTags}))${WORD_BOUNDARY_SOURCE}`,
         name: TAG_SCOPE,
       },
       // The `@structure` body is nested CSS. We light up the parts (class selectors), @component/@variant
@@ -202,12 +214,12 @@ export function buildInjectionGrammar(): InjectionGrammar {
       // The region runs to the next tag or the comment's end. Listed before `#block-tag` so it claims
       // `@structure` first.
       "structure-tag": {
-        begin: "(@structure)\\b",
+        begin: `(${AT_SOURCE}structure)${WORD_BOUNDARY_SOURCE}`,
         beginCaptures: { "1": { name: TAG_SCOPE } },
         end: "(?=@)|(?=\\*/)",
         patterns: [
           {
-            match: `(${CSSDOC_COMPONENT_REF_SOURCE})\\b${SPACE_TAB.source}*(${TOKEN_IDENTIFIER_SOURCE})?`,
+            match: `(${CSSDOC_COMPONENT_REF_SOURCE})${WORD_BOUNDARY_SOURCE}${SPACE_TAB.source}*(${TOKEN_IDENTIFIER_SOURCE})?`,
             captures: {
               "1": { name: TAG_SCOPE },
               "2": { name: "entity.other.attribute-name.part.cssdoc" },
@@ -277,7 +289,7 @@ export function buildAtRuleInjectionGrammar(): InjectionGrammar {
       // Typed record refs: @component nav, @layout shell, with optional :profile / (--profile).
       "record-ref-atrule": {
         match:
-          `(@(?:${recordTags}))\\b(?:${SPACE_TAB.source}+(${buildIdentifier()}))?` +
+          `(${AT_SOURCE}(?:${recordTags}))${WORD_BOUNDARY_SOURCE}(?:${SPACE_TAB.source}+(${buildIdentifier()}))?` +
           `(?:${SPACE_TAB.source}+(?:${PAREN_OPEN.source}\\s*--${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*\\s*${PAREN_CLOSE.source}|${COLON.source}${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*))?`,
         captures: {
           "1": { name: TAG_SCOPE },
@@ -288,7 +300,7 @@ export function buildAtRuleInjectionGrammar(): InjectionGrammar {
       // Untyped refs: @nav / @header, with optional profile marker. Excludes native CSS at-rules.
       "untyped-ref-atrule": {
         match:
-          `(@(?!(?:${nativeCssAtRules})\\b)(?:${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*))` +
+          `(${AT_SOURCE}(?!(?:${nativeCssAtRules})${WORD_BOUNDARY_SOURCE})(?:${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*))` +
           `(?:${SPACE_TAB.source}+(?:${PAREN_OPEN.source}\\s*--${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*\\s*${PAREN_CLOSE.source}|${COLON.source}${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*))?`,
         captures: {
           "1": { name: TAG_SCOPE },

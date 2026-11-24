@@ -30,16 +30,17 @@ import {
   type ViewUpdate,
 } from "@codemirror/view";
 import {
-  ALPHA_SOURCE,
   WORD_BOUNDARY_SOURCE,
   toRegExp,
   TOKEN_CLASS_SELECTOR_REQUIRED_DOT,
   COMMENT_START_SOURCE,
   COMMENT_LINE_MARKER_SOURCE,
-  BRACE_OPEN,
-  BRACE_CLOSE,
+  BRACE_OPEN_SOURCE,
+  BRACE_CLOSE_SOURCE,
   BRACE_OPEN_CHAR,
   BRACE_CLOSE_CHAR,
+  CSSDOC_STRUCTURE_TAG_KEYWORD,
+  CSSDOC_ANY_TAG_KEYWORD,
   TOKEN_CUSTOM_PROPERTY_SOURCE,
   TOKENIZER_INLINE_TAG_SOURCE,
   TOKENIZER_RECORD_TAG_SOURCE,
@@ -85,19 +86,26 @@ const PLAIN_TAGS = CSSDOC_TAGS.filter(
 ).map((t) => t.name);
 
 /**
- * Placeholder used in tokenizer patterns to match any tag name.
- * Tokenizer patterns from @cssdoc/regex use `@\w+` as a placeholder,
- * which appears as `@\\w\\+` in the pattern source (with escaped backslashes).
+ * Pattern source to find and replace tag name placeholders in tokenizer patterns.
+ * Tokenizer patterns from @cssdoc/regex use `@\w+` as placeholders in their source strings,
+ * which appears as `@\\w+` after escaping. This gets replaced with specific tag alternations
+ * (INLINE_TAGS, RECORD_TAGS, etc.).
  */
-const TAG_NAME_PLACEHOLDER: RegExp = /@\\w\+/g;
+const TAG_NAME_PLACEHOLDER_PATTERN: RegExp = /@\\w\+/g;
+
+/**
+ * Create a tag alternation pattern for injecting into tokenizer patterns.
+ * Produces a pattern like `@(?:component|variant|...)` from a list of tag names.
+ */
+const createTagAlternation = (tags: readonly string[]): string => `@(?:${alt(tags)})`;
 
 /**
  * Inject tag alternations into generic tokenizer patterns.
- * Tokenizer patterns from @cssdoc/regex use `@\w+` as placeholders, which get
+ * Tokenizer patterns from @cssdoc/regex use TAG_NAME_PLACEHOLDER as placeholders, which get
  * replaced with specific tag alternations (INLINE_TAGS, RECORD_TAGS, etc.).
  */
 const injectTags = (pattern: string, tags: readonly string[]): string =>
-  pattern.replace(TAG_NAME_PLACEHOLDER, `@(?:${alt(tags)})`);
+  pattern.replace(TAG_NAME_PLACEHOLDER_PATTERN, createTagAlternation(tags));
 
 // One left-to-right alternation, so matches never overlap. The `d` flag exposes per-group offsets.
 // Token patterns follow structures defined in @cssdoc/regex/TOKENIZER_* patterns.
@@ -167,10 +175,9 @@ export const tokenizeComment = (text: string): CssdocToken[] => {
     }
   }
   // Second pass: highlight meaningful elements within each `@structure` body (from the tag to the next tag or comment end).
-  const structureTagRegex = /@structure\b/gu;
-  for (const m of text.matchAll(structureTagRegex)) {
+  for (const m of text.matchAll(toRegExp(CSSDOC_STRUCTURE_TAG_KEYWORD))) {
     const start = (m.index ?? 0) + m[0].length;
-    const after = text.slice(start).search(new RegExp(`@${ALPHA_SOURCE}`, "u"));
+    const after = text.slice(start).search(toRegExp(CSSDOC_ANY_TAG_KEYWORD));
     const end = after === -1 ? text.length : start + after;
     const body = text.slice(start, end);
 
@@ -182,7 +189,7 @@ export const tokenizeComment = (text: string): CssdocToken[] => {
     }
 
     // Pattern to match braces for nesting visualization
-    const bracePattern = new RegExp(`${BRACE_OPEN.source}|${BRACE_CLOSE.source}`, "gu");
+    const bracePattern = new RegExp(`${BRACE_OPEN_SOURCE}|${BRACE_CLOSE_SOURCE}`, "gu");
     for (const m of body.matchAll(bracePattern)) {
       const from = start + (m.index ?? 0);
       out.push({ from, to: from + m[0].length, type: "punct" });
@@ -214,16 +221,6 @@ const cssdocPlugin = ViewPlugin.fromClass(
 
     private generateDecorations(view: EditorView): DecorationSet {
       const builder = new RangeSetBuilder<Decoration>();
-      EditorView.baseTheme({
-        ".cm-cssdoc-tag": { color: "var(--cssdoc-tag, #d73a49)" },
-        ".cm-cssdoc-modifier": { color: "var(--cssdoc-modifier, #6f42c1)" },
-        ".cm-cssdoc-part": { color: "var(--cssdoc-part, #005cc5)" },
-        ".cm-cssdoc-property": { color: "var(--cssdoc-property, #24292e)" },
-        ".cm-cssdoc-link": { color: "var(--cssdoc-link, #0366d6)", textDecoration: "underline" },
-        ".cm-cssdoc-punct": { color: "var(--cssdoc-punct, #6a737d)" },
-        ".cm-cssdoc-ref": { color: "var(--cssdoc-ref, #032f62)" },
-        ".cm-cssdoc-record": { color: "var(--cssdoc-record, #24292e)", fontWeight: "bold" },
-      });
 
       for (const { from: startLine, to: endLine } of view.visibleRanges) {
         for (let pos = startLine; pos < endLine;) {

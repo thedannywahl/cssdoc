@@ -934,11 +934,74 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
         fails: [{ input: ";", reason: "semicolon" }],
       },
     },
+    AT_CHAR: {
+      name: "AT_CHAR",
+      tier: 0,
+      source: "@",
+      description: "At sign character (literal)",
+      fixtures: {
+        passes: [{ input: "@" }],
+        fails: [{ input: "#", reason: "hash" }],
+      },
+    },
+    PIPE_CHAR: {
+      name: "PIPE_CHAR",
+      tier: 0,
+      source: "|",
+      description: "Pipe character (literal)",
+      fixtures: {
+        passes: [{ input: "|" }],
+        fails: [{ input: "-", reason: "dash" }],
+      },
+    },
+    PAREN_OPEN_CHAR: {
+      name: "PAREN_OPEN_CHAR",
+      tier: 0,
+      source: "(",
+      description: "Opening parenthesis character (literal)",
+      fixtures: {
+        passes: [{ input: "(" }],
+        fails: [{ input: ")", reason: "closing" }],
+      },
+    },
+    PAREN_CLOSE_CHAR: {
+      name: "PAREN_CLOSE_CHAR",
+      tier: 0,
+      source: ")",
+      description: "Closing parenthesis character (literal)",
+      fixtures: {
+        passes: [{ input: ")" }],
+        fails: [{ input: "(", reason: "opening" }],
+      },
+    },
+    AT: {
+      name: "AT",
+      tier: 1,
+      pattern: (resolve: PatternResolver) => resolve("AT_CHAR"),
+      description: "At sign (regex pattern)",
+      composedFrom: ["AT_CHAR"],
+      fixtures: {
+        passes: [{ input: "@" }],
+        fails: [{ input: "#", reason: "hash" }],
+      },
+    },
+    PIPE: {
+      name: "PIPE",
+      tier: 1,
+      pattern: (resolve: PatternResolver) => escapeChar(resolve, "PIPE_CHAR"),
+      description: "Pipe (regex pattern)",
+      composedFrom: ["PIPE_CHAR"],
+      fixtures: {
+        passes: [{ input: "|" }],
+        fails: [{ input: "-", reason: "dash" }],
+      },
+    },
     PAREN_OPEN: {
       name: "PAREN_OPEN",
-      tier: 0,
-      source: String.raw`\(`,
-      description: "Opening parenthesis",
+      tier: 1,
+      pattern: (resolve: PatternResolver) => escapeChar(resolve, "PAREN_OPEN_CHAR"),
+      description: "Opening parenthesis (regex pattern)",
+      composedFrom: ["PAREN_OPEN_CHAR"],
       fixtures: {
         passes: [{ input: "(" }],
         fails: [{ input: ")", reason: "closing" }],
@@ -946,12 +1009,97 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
     },
     PAREN_CLOSE: {
       name: "PAREN_CLOSE",
-      tier: 0,
-      source: String.raw`\)`,
-      description: "Closing parenthesis",
+      tier: 1,
+      pattern: (resolve: PatternResolver) => escapeChar(resolve, "PAREN_CLOSE_CHAR"),
+      description: "Closing parenthesis (regex pattern)",
+      composedFrom: ["PAREN_CLOSE_CHAR"],
       fixtures: {
         passes: [{ input: ")" }],
         fails: [{ input: "(", reason: "opening" }],
+      },
+    },
+    BRACKET_OPEN_CHAR: {
+      name: "BRACKET_OPEN_CHAR",
+      tier: 0,
+      source: "[",
+      description: "Opening square bracket character (literal)",
+      fixtures: {
+        passes: [{ input: "[" }],
+        fails: [{ input: "]", reason: "closing" }],
+      },
+    },
+    BRACKET_CLOSE_CHAR: {
+      name: "BRACKET_CLOSE_CHAR",
+      tier: 0,
+      source: "]",
+      description: "Closing square bracket character (literal)",
+      fixtures: {
+        passes: [{ input: "]" }],
+        fails: [{ input: "[", reason: "opening" }],
+      },
+    },
+    BRACKET_OPEN: {
+      name: "BRACKET_OPEN",
+      tier: 1,
+      pattern: (resolve: PatternResolver) => escapeChar(resolve, "BRACKET_OPEN_CHAR"),
+      description: "Opening square bracket (regex pattern)",
+      composedFrom: ["BRACKET_OPEN_CHAR"],
+      fixtures: {
+        passes: [{ input: "[" }],
+        fails: [{ input: "]", reason: "closing" }],
+      },
+    },
+    BRACKET_CLOSE: {
+      name: "BRACKET_CLOSE",
+      tier: 1,
+      pattern: (resolve: PatternResolver) => escapeChar(resolve, "BRACKET_CLOSE_CHAR"),
+      description: "Closing square bracket (regex pattern)",
+      composedFrom: ["BRACKET_CLOSE_CHAR"],
+      fixtures: {
+        passes: [{ input: "]" }],
+        fails: [{ input: "[", reason: "opening" }],
+      },
+    },
+    QUOTE_SINGLE_CHAR: {
+      name: "QUOTE_SINGLE_CHAR",
+      tier: 0,
+      source: "'",
+      description: "Single quote character (literal)",
+      fixtures: {
+        passes: [{ input: "'" }],
+        fails: [{ input: '"', reason: "double quote" }],
+      },
+    },
+    QUOTE_DOUBLE_CHAR: {
+      name: "QUOTE_DOUBLE_CHAR",
+      tier: 0,
+      source: '"',
+      description: "Double quote character (literal)",
+      fixtures: {
+        passes: [{ input: '"' }],
+        fails: [{ input: "'", reason: "single quote" }],
+      },
+    },
+    QUOTE_SINGLE: {
+      name: "QUOTE_SINGLE",
+      tier: 1,
+      pattern: (resolve: PatternResolver) => escapeChar(resolve, "QUOTE_SINGLE_CHAR"),
+      description: "Single quote (regex pattern)",
+      composedFrom: ["QUOTE_SINGLE_CHAR"],
+      fixtures: {
+        passes: [{ input: "'" }],
+        fails: [{ input: '"', reason: "double quote" }],
+      },
+    },
+    QUOTE_DOUBLE: {
+      name: "QUOTE_DOUBLE",
+      tier: 1,
+      pattern: (resolve: PatternResolver) => escapeChar(resolve, "QUOTE_DOUBLE_CHAR"),
+      description: "Double quote (regex pattern)",
+      composedFrom: ["QUOTE_DOUBLE_CHAR"],
+      fixtures: {
+        passes: [{ input: '"' }],
+        fails: [{ input: "'", reason: "single quote" }],
       },
     },
     BRACE_OPEN_CHAR: {
@@ -977,10 +1125,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
     BRACE_OPEN: {
       name: "BRACE_OPEN",
       tier: 1,
-      pattern: (resolve: PatternResolver) => {
-        const char = resolve("BRACE_OPEN_CHAR");
-        return `\\${char}`;
-      },
+      pattern: (resolve: PatternResolver) => escapeChar(resolve, "BRACE_OPEN_CHAR"),
       description: "Opening brace (regex pattern)",
       composedFrom: ["BRACE_OPEN_CHAR"],
       fixtures: {
@@ -991,10 +1136,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
     BRACE_CLOSE: {
       name: "BRACE_CLOSE",
       tier: 1,
-      pattern: (resolve: PatternResolver) => {
-        const char = resolve("BRACE_CLOSE_CHAR");
-        return `\\${char}`;
-      },
+      pattern: (resolve: PatternResolver) => escapeChar(resolve, "BRACE_CLOSE_CHAR"),
       description: "Closing brace (regex pattern)",
       composedFrom: ["BRACE_CLOSE_CHAR"],
       fixtures: {
@@ -1051,7 +1193,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
         const alpha = resolve("ALPHA", true);
         const extended = resolve("ALPHANUMERIC_EXTENDED", true);
         const dot = resolve("DOT");
-        return `(?:[${alpha}]${extended}*(?:${dot}[${alpha}]${extended}*)*)?`;
+        return `(?:[${alpha}][${extended}]*(?:${dot}[${alpha}][${extended}]*)*)?`;
       },
       description: "Optional qualified identifier",
       composedFrom: ["ALPHA", "ALPHANUMERIC_EXTENDED", "DOT"],
@@ -1179,13 +1321,16 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
       pattern: (resolve: PatternResolver) => {
         const digit = resolve("DIGIT");
         const dot = resolve("DOT");
-        return `(?:${digit})+${dot}?`;
+        return `(?:${digit})+(?:${dot}(?:${digit})*)?`;
       },
-      description: "Numeric reference (digits with optional trailing dot)",
+      description: "Numeric reference (digits with optional dot and more digits)",
       composedFrom: ["DIGIT", "DOT"],
       fixtures: {
-        passes: [{ input: "1" }, { input: "42" }, { input: "2." }],
-        fails: [{ input: "", reason: "empty" }],
+        passes: [{ input: "1" }, { input: "42" }, { input: "1.2" }, { input: "2." }],
+        fails: [
+          { input: "", reason: "empty" },
+          { input: ".", reason: "just a dot" },
+        ],
       },
     },
     TOKEN_REF_NUMBER_OPTIONAL: {
@@ -1250,6 +1395,61 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
       },
     },
     // Additional structure-specific patterns
+    CSSDOC_STRUCTURE_TAG_KEYWORD: {
+      name: "CSSDOC_STRUCTURE_TAG_KEYWORD",
+      tier: 2,
+      pattern: (resolve: PatternResolver) => {
+        const at = resolve("AT");
+        const wordBoundary = resolve("WORD_BOUNDARY");
+        return `${at}structure${wordBoundary}`;
+      },
+      description: "The @structure tag keyword",
+      composedFrom: ["AT", "WORD_BOUNDARY"],
+      fixtures: {
+        passes: [{ input: "@structure" }],
+        fails: [
+          { input: "@structure_foo", reason: "not a word boundary" },
+          { input: "structure", reason: "no @" },
+        ],
+      },
+    },
+    CSSDOC_ANY_TAG_KEYWORD: {
+      name: "CSSDOC_ANY_TAG_KEYWORD",
+      tier: 2,
+      pattern: (resolve: PatternResolver) => {
+        const at = resolve("AT");
+        const alpha = resolve("ALPHA");
+        const wordBoundary = resolve("WORD_BOUNDARY");
+        return `${at}${alpha}+${wordBoundary}`;
+      },
+      description: "Any @-prefixed tag keyword",
+      composedFrom: ["AT", "ALPHA", "WORD_BOUNDARY"],
+      fixtures: {
+        passes: [{ input: "@structure" }, { input: "@component" }],
+        fails: [
+          { input: "@123", reason: "not alphabetic" },
+          { input: "structure", reason: "no @" },
+        ],
+      },
+    },
+    TAG_NAME_PLACEHOLDER: {
+      name: "TAG_NAME_PLACEHOLDER",
+      tier: 2,
+      pattern: (resolve: PatternResolver) => {
+        const at = resolve("AT");
+        const alpha = resolve("ALPHA");
+        return `${at}${alpha}+`;
+      },
+      description: "Tag name placeholder for text replacement (@tagname)",
+      composedFrom: ["AT", "ALPHA"],
+      fixtures: {
+        passes: [{ input: "@structure" }, { input: "@component" }, { input: "@ref" }],
+        fails: [
+          { input: "@123", reason: "not alphabetic" },
+          { input: "structure", reason: "no @" },
+        ],
+      },
+    },
     CSSDOC_STRUCTURE_TAG: {
       name: "CSSDOC_STRUCTURE_TAG",
       grammarRule: "StructureTagName",
@@ -1384,6 +1584,12 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
     },
   };
 
+  // Helper to escape a single character with a backslash
+  const escapeChar = (resolve: PatternResolver, charName: string): string => {
+    const char = resolve(charName);
+    return `\\${char}`;
+  };
+
   // Resolver function for composed patterns
   const resolver = (name: string, unwrap: boolean = false): string => {
     const def = rawDefs[name];
@@ -1414,7 +1620,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
       ...def,
       name,
       source,
-      regex: arkRegex.as(source, flags as "u" | "v"),
+      ...(def.tier === 0 ? {} : { regex: arkRegex.as(source, flags as "u" | "v") }),
     };
   }
 
