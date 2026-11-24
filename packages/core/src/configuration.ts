@@ -51,6 +51,8 @@ const TAG_NAME_RE: Regex = arkRegex.as(
   "u",
 );
 
+const LEADING_AT_RE: Regex = arkRegex.as(String.raw`^${AT_SOURCE}`, "u");
+
 /** One tag in the vocabulary: its name, kind, and how it may be used. */
 export class CssDocTagDefinition {
   /** The normalized tag name, always with a leading `@` (e.g. `@modifier`). */
@@ -70,7 +72,7 @@ export class CssDocTagDefinition {
     if (!TAG_NAME_RE.test(raw)) {
       throw new Error(`Invalid CSS-doc tag name: ${JSON.stringify(options.tagName)}`);
     }
-    this.tagNameWithoutAt = raw.replace(/^@/u, "");
+    this.tagNameWithoutAt = raw.replace(LEADING_AT_RE, "");
     this.tagName = `@${this.tagNameWithoutAt}`;
     this.syntaxKind = options.syntaxKind;
     this.allowMultiple = options.allowMultiple ?? false;
