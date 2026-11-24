@@ -85,7 +85,7 @@ export const CSS_NUMBER: Regex<
  * CSS_PERCENTAGE.exec("50%")?.groups?.value // "50"
  */
 export const CSS_PERCENTAGE: Regex<"(?<value>\\d+(?:\\.\\d+)?)%", { names: { value: string } }> =
-  arkRegex.as(String.raw`(?<value>${numberLiteralPattern}%)`, "u");
+  arkRegex.as(String.raw`(?<value>${numberLiteralPattern})%`, "u");
 
 /**
  * CSS dimension from W3C formal grammar.
