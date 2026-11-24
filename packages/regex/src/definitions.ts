@@ -954,26 +954,6 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
         fails: [{ input: "(", reason: "opening" }],
       },
     },
-    BRACE_OPEN: {
-      name: "BRACE_OPEN",
-      tier: 0,
-      source: String.raw`\{`,
-      description: "Opening brace",
-      fixtures: {
-        passes: [{ input: "{" }],
-        fails: [{ input: "}", reason: "closing" }],
-      },
-    },
-    BRACE_CLOSE: {
-      name: "BRACE_CLOSE",
-      tier: 0,
-      source: String.raw`\}`,
-      description: "Closing brace",
-      fixtures: {
-        passes: [{ input: "}" }],
-        fails: [{ input: "{", reason: "opening" }],
-      },
-    },
     BRACE_OPEN_CHAR: {
       name: "BRACE_OPEN_CHAR",
       tier: 0,
@@ -989,6 +969,34 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
       tier: 0,
       source: "}",
       description: "Closing brace character (literal)",
+      fixtures: {
+        passes: [{ input: "}" }],
+        fails: [{ input: "{", reason: "opening" }],
+      },
+    },
+    BRACE_OPEN: {
+      name: "BRACE_OPEN",
+      tier: 1,
+      pattern: (resolve: PatternResolver) => {
+        const char = resolve("BRACE_OPEN_CHAR");
+        return `\\${char}`;
+      },
+      description: "Opening brace (regex pattern)",
+      composedFrom: ["BRACE_OPEN_CHAR"],
+      fixtures: {
+        passes: [{ input: "{" }],
+        fails: [{ input: "}", reason: "closing" }],
+      },
+    },
+    BRACE_CLOSE: {
+      name: "BRACE_CLOSE",
+      tier: 1,
+      pattern: (resolve: PatternResolver) => {
+        const char = resolve("BRACE_CLOSE_CHAR");
+        return `\\${char}`;
+      },
+      description: "Closing brace (regex pattern)",
+      composedFrom: ["BRACE_CLOSE_CHAR"],
       fixtures: {
         passes: [{ input: "}" }],
         fails: [{ input: "{", reason: "opening" }],
