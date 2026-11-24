@@ -10,25 +10,6 @@
 import { describe, it, expect } from "vite-plus/test";
 import { PATTERN_DEFINITIONS } from "../src/definitions.js";
 
-/**
- * Resolve a pattern to its regex string.
- */
-function resolvePattern(
-  def: (typeof PATTERN_DEFINITIONS)[keyof typeof PATTERN_DEFINITIONS],
-): string {
-  if (typeof def.pattern === "string") {
-    return def.pattern;
-  }
-
-  const resolver = (depName: string): string => {
-    const depDef = PATTERN_DEFINITIONS[depName];
-    if (!depDef) throw new Error(`Pattern ${depName} not found`);
-    return resolvePattern(depDef);
-  };
-
-  return def.pattern(resolver);
-}
-
 describe("Pattern Definitions", () => {
   it("exports at least 40 patterns", () => {
     expect(Object.keys(PATTERN_DEFINITIONS).length).toBeGreaterThanOrEqual(40);
@@ -36,10 +17,17 @@ describe("Pattern Definitions", () => {
 
   Object.entries(PATTERN_DEFINITIONS).forEach(([name, def]) => {
     describe(`${name} (Tier ${def.tier})`, () => {
-      it("can be compiled to a RegExp", () => {
-        expect(() => {
-          new RegExp(resolvePattern(def));
-        }).not.toThrow();
+      it("has a source string", () => {
+        expect(def.source).toBeDefined();
+        expect(typeof def.source).toBe("string");
+        expect(def.source.length).toBeGreaterThan(0);
+      });
+
+      it("has a compiled ArkRegex", () => {
+        expect(def.regex).toBeDefined();
+        // Note: ArkRegex may normalize the source (e.g., escaping), so we just check existence
+        expect(typeof def.regex.source).toBe("string");
+        expect(def.regex.source.length).toBeGreaterThan(0);
       });
 
       it("has a description", () => {
@@ -51,8 +39,7 @@ describe("Pattern Definitions", () => {
       def.fixtures.passes.forEach((testCase) => {
         const note = testCase.note ? ` (${testCase.note})` : "";
         it(`matches "${testCase.input}"${note}`, () => {
-          const regex = new RegExp(resolvePattern(def));
-          expect(regex.test(testCase.input)).toBe(true);
+          expect(def.regex.test(testCase.input)).toBe(true);
         });
       });
 
@@ -60,8 +47,7 @@ describe("Pattern Definitions", () => {
       def.fixtures.fails.forEach((testCase) => {
         it(`rejects "${testCase.input}" - ${testCase.reason}`, () => {
           // For negative cases, the pattern should not match the full string
-          const pattern = resolvePattern(def);
-          const anchoredRegex = new RegExp(`^${pattern}$`);
+          const anchoredRegex = new RegExp(`^${def.source}$`);
           expect(anchoredRegex.test(testCase.input)).toBe(false);
         });
       });
