@@ -794,6 +794,277 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
         ],
       },
     },
+    // Single character patterns (for syntax highlighting)
+    COLON: {
+      name: "COLON",
+      tier: 0,
+      source: String.raw`:`,
+      description: "Colon character",
+      fixtures: {
+        passes: [{ input: ":" }],
+        fails: [{ input: ";", reason: "semicolon" }],
+      },
+    },
+    PAREN_OPEN: {
+      name: "PAREN_OPEN",
+      tier: 0,
+      source: String.raw`\(`,
+      description: "Opening parenthesis",
+      fixtures: {
+        passes: [{ input: "(" }],
+        fails: [{ input: ")", reason: "closing" }],
+      },
+    },
+    PAREN_CLOSE: {
+      name: "PAREN_CLOSE",
+      tier: 0,
+      source: String.raw`\)`,
+      description: "Closing parenthesis",
+      fixtures: {
+        passes: [{ input: ")" }],
+        fails: [{ input: "(", reason: "opening" }],
+      },
+    },
+    // Token patterns for syntax highlighting (Tier 3b: composition building blocks)
+    TOKEN_WHITESPACE: {
+      name: "TOKEN_WHITESPACE",
+      tier: 3,
+      source: String.raw`[ \t]*`,
+      description: "Horizontal whitespace (space or tab)",
+      fixtures: {
+        passes: [{ input: " " }, { input: "\t" }],
+        fails: [{ input: "\n", reason: "newline" }],
+      },
+    },
+    TOKEN_IDENTIFIER: {
+      name: "TOKEN_IDENTIFIER",
+      tier: 3,
+      pattern: (resolve: PatternResolver) => {
+        const alpha = resolve("ALPHA", true);
+        const extended = resolve("ALPHANUMERIC_EXTENDED");
+        return `[${alpha}](?:${extended})*`;
+      },
+      description: "Base identifier (letter, then alphanumeric with dash/underscore)",
+      composedFrom: ["ALPHA", "ALPHANUMERIC_EXTENDED"],
+      fixtures: {
+        passes: [{ input: "name" }, { input: "my_name" }, { input: "my-name" }],
+        fails: [{ input: "-name", reason: "starts with dash" }],
+      },
+    },
+    TOKEN_QUALIFIED_IDENTIFIER: {
+      name: "TOKEN_QUALIFIED_IDENTIFIER",
+      tier: 3,
+      pattern: (resolve: PatternResolver) => {
+        const alpha = resolve("ALPHA", true);
+        const extended = resolve("ALPHANUMERIC_EXTENDED");
+        const dot = resolve("DOT");
+        return `[${alpha}](?:${extended})*(?:${dot}[${alpha}](?:${extended})*)*`;
+      },
+      description: "Qualified identifier (dot-separated)",
+      composedFrom: ["ALPHA", "ALPHANUMERIC_EXTENDED", "DOT"],
+      fixtures: {
+        passes: [{ input: "name" }, { input: "menu.item" }],
+        fails: [{ input: "menu.", reason: "trailing dot" }],
+      },
+    },
+    TOKEN_QUALIFIED_IDENTIFIER_OPTIONAL: {
+      name: "TOKEN_QUALIFIED_IDENTIFIER_OPTIONAL",
+      tier: 3,
+      pattern: (resolve: PatternResolver) => {
+        const alpha = resolve("ALPHA", true);
+        const extended = resolve("ALPHANUMERIC_EXTENDED", true);
+        const dot = resolve("DOT");
+        return `(?:[${alpha}]${extended}*(?:${dot}[${alpha}]${extended}*)*)?`;
+      },
+      description: "Optional qualified identifier",
+      composedFrom: ["ALPHA", "ALPHANUMERIC_EXTENDED", "DOT"],
+      fixtures: {
+        passes: [{ input: "name" }, { input: "" }],
+        fails: [],
+      },
+    },
+    TOKEN_MODIFIER_NAME: {
+      name: "TOKEN_MODIFIER_NAME",
+      tier: 3,
+      pattern: (resolve: PatternResolver) => {
+        const alpha = resolve("ALPHA", true);
+        const extended = resolve("ALPHANUMERIC_EXTENDED");
+        return `-?[${alpha}](?:${extended})*`;
+      },
+      description: "Modifier name (optional leading dash)",
+      composedFrom: ["ALPHA", "ALPHANUMERIC_EXTENDED"],
+      fixtures: {
+        passes: [{ input: "name" }, { input: "-name" }],
+        fails: [{ input: "", reason: "empty" }],
+      },
+    },
+    TOKEN_MODIFIER_NAME_OPTIONAL: {
+      name: "TOKEN_MODIFIER_NAME_OPTIONAL",
+      tier: 3,
+      pattern: (resolve: PatternResolver) => {
+        const alpha = resolve("ALPHA", true);
+        const extended = resolve("ALPHANUMERIC_EXTENDED");
+        return `(?:-?[${alpha}](?:${extended})*)?`;
+      },
+      description: "Optional modifier name",
+      composedFrom: ["ALPHA", "ALPHANUMERIC_EXTENDED"],
+      fixtures: {
+        passes: [{ input: "name" }, { input: "" }],
+        fails: [],
+      },
+    },
+    TOKEN_CLASS_SELECTOR: {
+      name: "TOKEN_CLASS_SELECTOR",
+      tier: 3,
+      pattern: (resolve: PatternResolver) => {
+        const dot = resolve("DOT");
+        const alpha = resolve("ALPHA", true);
+        const extended = resolve("ALPHANUMERIC_EXTENDED");
+        return `${dot}?[${alpha}](?:${extended})*`;
+      },
+      description: "Class selector (optional leading dot)",
+      composedFrom: ["DOT", "ALPHA", "ALPHANUMERIC_EXTENDED"],
+      fixtures: {
+        passes: [{ input: "name" }, { input: ".name" }],
+        fails: [{ input: "", reason: "empty" }],
+      },
+    },
+    TOKEN_CLASS_SELECTOR_OPTIONAL: {
+      name: "TOKEN_CLASS_SELECTOR_OPTIONAL",
+      tier: 3,
+      pattern: (resolve: PatternResolver) => {
+        const dot = resolve("DOT");
+        const alpha = resolve("ALPHA", true);
+        const extended = resolve("ALPHANUMERIC_EXTENDED");
+        return `(?:${dot}?[${alpha}](?:${extended})*)?`;
+      },
+      description: "Optional class selector",
+      composedFrom: ["DOT", "ALPHA", "ALPHANUMERIC_EXTENDED"],
+      fixtures: {
+        passes: [{ input: "name" }, { input: "" }],
+        fails: [],
+      },
+    },
+    TOKEN_CUSTOM_PROPERTY: {
+      name: "TOKEN_CUSTOM_PROPERTY",
+      tier: 3,
+      pattern: (resolve: PatternResolver) => {
+        const dash = resolve("DOUBLE_DASH");
+        const alpha = resolve("ALPHA", true);
+        const extended = resolve("ALPHANUMERIC_EXTENDED");
+        return `${dash}[${alpha}](?:${extended})*`;
+      },
+      description: "Custom CSS property (--name)",
+      composedFrom: ["DOUBLE_DASH", "ALPHA", "ALPHANUMERIC_EXTENDED"],
+      fixtures: {
+        passes: [{ input: "--color" }],
+        fails: [{ input: "color", reason: "no dash" }],
+      },
+    },
+    TOKEN_CUSTOM_PROPERTY_OPTIONAL: {
+      name: "TOKEN_CUSTOM_PROPERTY_OPTIONAL",
+      tier: 3,
+      pattern: (resolve: PatternResolver) => {
+        const dash = resolve("DOUBLE_DASH");
+        const alpha = resolve("ALPHA", true);
+        const extended = resolve("ALPHANUMERIC_EXTENDED");
+        return `(?:${dash}[${alpha}](?:${extended})*)?`;
+      },
+      description: "Optional custom CSS property",
+      composedFrom: ["DOUBLE_DASH", "ALPHA", "ALPHANUMERIC_EXTENDED"],
+      fixtures: {
+        passes: [{ input: "--color" }, { input: "" }],
+        fails: [],
+      },
+    },
+    TOKEN_REF_NUMBER: {
+      name: "TOKEN_REF_NUMBER",
+      tier: 3,
+      pattern: (resolve: PatternResolver) => {
+        const digit = resolve("DIGIT");
+        const dot = resolve("DOT");
+        return `(?:${digit})+${dot}?`;
+      },
+      description: "Numeric reference (digits with optional trailing dot)",
+      composedFrom: ["DIGIT", "DOT"],
+      fixtures: {
+        passes: [{ input: "1" }, { input: "42" }, { input: "2." }],
+        fails: [{ input: "", reason: "empty" }],
+      },
+    },
+    TOKEN_REF_NUMBER_OPTIONAL: {
+      name: "TOKEN_REF_NUMBER_OPTIONAL",
+      tier: 3,
+      pattern: (resolve: PatternResolver) => {
+        const digit = resolve("DIGIT");
+        const dot = resolve("DOT");
+        return `(?:(?:${digit})+${dot}?)?`;
+      },
+      description: "Optional numeric reference",
+      composedFrom: ["DIGIT", "DOT"],
+      fixtures: {
+        passes: [{ input: "1" }, { input: "" }],
+        fails: [],
+      },
+    },
+    TOKEN_PSEUDO_CLASS: {
+      name: "TOKEN_PSEUDO_CLASS",
+      tier: 3,
+      pattern: (resolve: PatternResolver) => {
+        const colon = resolve("COLON");
+        const alpha = resolve("ALPHA", true);
+        const extended = resolve("ALPHANUMERIC_EXTENDED");
+        const parenOpen = resolve("PAREN_OPEN");
+        const parenClose = resolve("PAREN_CLOSE");
+        return `${colon}?[${alpha}](?:${extended})*(?:${parenOpen}(?:${extended})*${parenClose})?`;
+      },
+      description: "Pseudo-class or state (optional colon, optional parens)",
+      composedFrom: ["COLON", "ALPHA", "ALPHANUMERIC_EXTENDED", "PAREN_OPEN", "PAREN_CLOSE"],
+      fixtures: {
+        passes: [{ input: "active" }, { input: ":active" }, { input: "state(open)" }],
+        fails: [{ input: "", reason: "empty" }],
+      },
+    },
+    TOKEN_PSEUDO_CLASS_OPTIONAL: {
+      name: "TOKEN_PSEUDO_CLASS_OPTIONAL",
+      tier: 3,
+      pattern: (resolve: PatternResolver) => {
+        const colon = resolve("COLON");
+        const alpha = resolve("ALPHA", true);
+        const extended = resolve("ALPHANUMERIC_EXTENDED");
+        const parenOpen = resolve("PAREN_OPEN");
+        const parenClose = resolve("PAREN_CLOSE");
+        return `(?:${colon}?[${alpha}](?:${extended})*(?:${parenOpen}(?:${extended})*${parenClose})?)?`;
+      },
+      description: "Optional pseudo-class or state",
+      composedFrom: ["COLON", "ALPHA", "ALPHANUMERIC_EXTENDED", "PAREN_OPEN", "PAREN_CLOSE"],
+      fixtures: {
+        passes: [{ input: "active" }, { input: "" }],
+        fails: [],
+      },
+    },
+    TOKEN_INLINE_CONTENT: {
+      name: "TOKEN_INLINE_CONTENT",
+      tier: 3,
+      source: String.raw`[^}]*`,
+      description: "Inline content (anything except closing brace)",
+      fixtures: {
+        passes: [{ input: "link text" }],
+        fails: [],
+      },
+    },
+    // Additional structure-specific patterns
+    CSSDOC_STRUCTURE_TAG: {
+      name: "CSSDOC_STRUCTURE_TAG",
+      grammarRule: "StructureTagName",
+      tier: 3,
+      source: String.raw`(?:@component|@variant|@modifier|@state|@part)`,
+      description: "Structure tag keyword (@component, @variant, etc.)",
+      fixtures: {
+        passes: [{ input: "@component" }, { input: "@variant" }],
+        fails: [{ input: "component", reason: "no @" }],
+      },
+    },
     CSSDOC_DEMO_URL: {
       name: "CSSDOC_DEMO_URL",
       grammarRule: "DemoURL",
