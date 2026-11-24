@@ -16,7 +16,7 @@ import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import { CSSDOC_TAGS, CSSDOC_TAG_NAMES } from "@cssdoc/spec";
 import type { CssRecordKind } from "./model.ts";
-import { AT_SOURCE, ALPHA_SOURCE, ALPHANUMERIC_SOURCE } from "@cssdoc/regex";
+import { AT_SOURCE, AT_CHAR, ALPHA_SOURCE, ALPHANUMERIC_SOURCE } from "@cssdoc/regex";
 import {
   DEFAULT_MODIFIER_CONVENTION,
   resolveModifierConvention,
@@ -73,7 +73,7 @@ export class CssDocTagDefinition {
       throw new Error(`Invalid CSS-doc tag name: ${JSON.stringify(options.tagName)}`);
     }
     this.tagNameWithoutAt = raw.replace(LEADING_AT_RE, "");
-    this.tagName = `@${this.tagNameWithoutAt}`;
+    this.tagName = `${AT_CHAR}${this.tagNameWithoutAt}`;
     this.syntaxKind = options.syntaxKind;
     this.allowMultiple = options.allowMultiple ?? false;
     this.recordKind = options.recordKind;
