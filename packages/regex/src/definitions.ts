@@ -186,20 +186,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
         ],
       },
     },
-    DOT: {
-      name: "DOT",
-      tier: 0,
-      source: String.raw`\.`,
-      description: "Period or dot character",
-      fixtures: {
-        passes: [{ input: "." }],
-        fails: [
-          { input: "…", reason: "ellipsis" },
-          { input: ",", reason: "comma" },
-          { input: "", reason: "empty" },
-        ],
-      },
-    },
+    // DOT moved to tier 1 after DOT_CHAR definition
     HEX_DIGIT: {
       name: "HEX_DIGIT",
       tier: 0,
@@ -924,16 +911,6 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
       },
     },
     // Single character patterns (for syntax highlighting)
-    COLON: {
-      name: "COLON",
-      tier: 0,
-      source: String.raw`:`,
-      description: "Colon character",
-      fixtures: {
-        passes: [{ input: ":" }],
-        fails: [{ input: ";", reason: "semicolon" }],
-      },
-    },
     COLON_CHAR: {
       name: "COLON_CHAR",
       tier: 0,
@@ -1052,6 +1029,45 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
       fixtures: {
         passes: [{ input: ")" }],
         fails: [{ input: "(", reason: "opening" }],
+      },
+    },
+    COLON: {
+      name: "COLON",
+      tier: 1,
+      pattern: (resolve: PatternResolver) => resolve("COLON_CHAR"),
+      description: "Colon (regex pattern)",
+      composedFrom: ["COLON_CHAR"],
+      fixtures: {
+        passes: [{ input: ":" }],
+        fails: [{ input: ";", reason: "semicolon" }],
+      },
+    },
+    DOT: {
+      name: "DOT",
+      tier: 1,
+      pattern: (resolve: PatternResolver) => escapeChar(resolve, "DOT_CHAR"),
+      description: "Period or dot (regex pattern)",
+      composedFrom: ["DOT_CHAR"],
+      fixtures: {
+        passes: [{ input: "." }],
+        fails: [
+          { input: "…", reason: "ellipsis" },
+          { input: ",", reason: "comma" },
+        ],
+      },
+    },
+    POUND: {
+      name: "POUND",
+      tier: 1,
+      pattern: (resolve: PatternResolver) => resolve("POUND_CHAR"),
+      description: "Hash or pound (regex pattern)",
+      composedFrom: ["POUND_CHAR"],
+      fixtures: {
+        passes: [{ input: "#" }],
+        fails: [
+          { input: "@", reason: "at sign" },
+          { input: "№", reason: "numero sign" },
+        ],
       },
     },
     BRACKET_OPEN_CHAR: {
