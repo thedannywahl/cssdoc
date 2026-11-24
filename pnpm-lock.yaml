@@ -978,6 +978,9 @@ importers:
       '@cssdoc/index':
         specifier: workspace:*
         version: link:../index
+      '@cssdoc/regex':
+        specifier: workspace:*
+        version: link:../regex
       css-tree:
         specifier: 'catalog:'
         version: 3.2.1

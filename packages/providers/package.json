@@ -38,6 +38,7 @@
   "dependencies": {
     "@cssdoc/core": "workspace:*",
     "@cssdoc/index": "workspace:*",
+    "@cssdoc/regex": "workspace:*",
     "css-tree": "catalog:"
   },
   "devDependencies": {

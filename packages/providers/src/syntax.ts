@@ -7,12 +7,17 @@
  * @module
  */
 import { type Lexer, fork } from "css-tree";
+import { CSS_KEYWORD, CSS_FUNCTION } from "@cssdoc/regex";
 
 // css-tree matches values against *property* grammars, so we register the syntax under a throwaway
 // property name and match against that. Forked lexers are cached per syntax string.
 const PROBE = "-cssdoc-syntax-probe";
-const CSS_WIDE = /^(?:initial|inherit|unset|revert|revert-layer)$/iu;
-const SUBSTITUTION = /\b(?:var|env)\(/iu;
+// CSS-wide keywords: initial, inherit, unset, revert, revert-layer (from CSS_KEYWORD pattern)
+// Use new RegExp with start-end anchors, no global flag (for use with .test())
+const CSS_WIDE = new RegExp(`^${CSS_KEYWORD.source}$`, "ui");
+// var() or env() substitution: use CSS_FUNCTION pattern which matches function calls
+// Use new RegExp without global flag (for use with .test())
+const SUBSTITUTION = new RegExp(`\\b${CSS_FUNCTION.source}`, "ui");
 
 const lexerCache = new Map<string, Lexer | null>();
 

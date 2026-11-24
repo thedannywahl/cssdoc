@@ -511,11 +511,18 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
       name: "CSS_KEYWORD",
       grammarRule: "keyword",
       tier: 1,
-      source: String.raw`(?<keyword>auto|inherit|initial|revert|unset)`,
+      source: String.raw`(?<keyword>auto|inherit|initial|revert|revert-layer|unset)`,
       captures: { keyword: "CSS keyword" },
       description: "CSS reserved keyword",
       fixtures: {
-        passes: [{ input: "auto" }, { input: "inherit" }, { input: "initial" }],
+        passes: [
+          { input: "auto" },
+          { input: "inherit" },
+          { input: "initial" },
+          { input: "revert" },
+          { input: "revert-layer" },
+          { input: "unset" },
+        ],
         fails: [
           { input: "normal", reason: "not a reserved keyword" },
           { input: "", reason: "empty" },
