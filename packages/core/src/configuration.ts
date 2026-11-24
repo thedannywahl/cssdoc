@@ -190,7 +190,7 @@ export class CssDocConfiguration {
 
   /** Look up a tag definition by name (with or without a leading `@`). */
   tryGetTagDefinition(tagName: string): CssDocTagDefinition | undefined {
-    return this._byName.get(tagName.replace(/^@/u, ""));
+    return this._byName.get(tagName.replace(LEADING_AT_RE, ""));
   }
 
   /** Whether a tag definition is supported. */
