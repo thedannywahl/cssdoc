@@ -83,12 +83,19 @@ const PLAIN_TAGS = CSSDOC_TAGS.filter(
 ).map((t) => t.name);
 
 /**
+ * Placeholder used in tokenizer patterns to match any tag name.
+ * Tokenizer patterns from @cssdoc/regex use `@\w+` as a placeholder,
+ * which appears as `@\\w\\+` in the pattern source (with escaped backslashes).
+ */
+const TAG_NAME_PLACEHOLDER = /@\\w\+/g;
+
+/**
  * Inject tag alternations into generic tokenizer patterns.
  * Tokenizer patterns from @cssdoc/regex use `@\w+` as placeholders, which get
  * replaced with specific tag alternations (INLINE_TAGS, RECORD_TAGS, etc.).
  */
 const injectTags = (pattern: string, tags: readonly string[]): string =>
-  pattern.replace(/@\\w\+/g, `@(?:${alt(tags)})`);
+  pattern.replace(TAG_NAME_PLACEHOLDER, `@(?:${alt(tags)})`);
 
 // One left-to-right alternation, so matches never overlap. The `d` flag exposes per-group offsets.
 // Token patterns follow structures defined in @cssdoc/regex/TOKENIZER_* patterns.
