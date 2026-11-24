@@ -12,8 +12,11 @@
  *
  * @module
  */
+import type { Regex } from "arkregex";
+import { regex as arkRegex } from "arkregex";
 import { CSSDOC_TAGS, CSSDOC_TAG_NAMES } from "@cssdoc/spec";
 import type { CssRecordKind } from "./model.ts";
+import { AT_SOURCE, ALPHA_SOURCE, ALPHANUMERIC_SOURCE } from "@cssdoc/regex";
 import {
   DEFAULT_MODIFIER_CONVENTION,
   resolveModifierConvention,
@@ -43,7 +46,10 @@ export interface CssDocTagDefinitionOptions {
   description?: string;
 }
 
-const TAG_NAME_RE = /^@?[a-zA-Z][a-zA-Z0-9-]*$/u;
+const TAG_NAME_RE: Regex = arkRegex.as(
+  String.raw`^${AT_SOURCE}?${ALPHA_SOURCE}(?:${ALPHANUMERIC_SOURCE}|-)*$`,
+  "u",
+);
 
 /** One tag in the vocabulary: its name, kind, and how it may be used. */
 export class CssDocTagDefinition {
