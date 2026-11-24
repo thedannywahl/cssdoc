@@ -3,8 +3,14 @@ import { parseCssDocs } from "./parse.ts";
 import { buildCustomMediaDeclarations } from "./customMedia.ts";
 import type { BuildCustomMediaOptions } from "./customMedia.ts";
 import postcss from "postcss";
+import type { Regex } from "arkregex";
+import { regex as arkRegex } from "arkregex";
+import { TOKEN_CUSTOM_PROPERTY_SOURCE, SPACE_TAB_SOURCE } from "@cssdoc/regex";
 
-const INLINE_CUSTOM_MEDIA_PARAMS_RE = /^(--[\w-]+)\s+(.+)$/u;
+const INLINE_CUSTOM_MEDIA_PARAMS_RE: Regex = arkRegex.as(
+  String.raw`^(${TOKEN_CUSTOM_PROPERTY_SOURCE})${SPACE_TAB_SOURCE}+(.+)$`,
+  "u",
+);
 
 function inlineCustomMediaMap(
   css: string,
