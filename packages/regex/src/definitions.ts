@@ -12,5 +12,5 @@
  * @module
  */
 
-export { type PatternResolver, type UnifiedPatternDef } from "./definitions/types.ts";
+export { type PatternResolver, type UnifiedPatternDef } from "./types.ts";
 export { PATTERN_DEFINITIONS } from "./definitions/patterns.ts";
