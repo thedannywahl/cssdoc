@@ -139,11 +139,10 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
     pattern: (resolve) => {
       const alpha = resolve("ALPHA").slice(1, -1);
       const digit = resolve("DIGIT").slice(1, -1);
-      const dash = resolve("DASH").slice(1, -1);
-      return `[${alpha}${digit}${dash}_]`;
+      return `[${alpha}${digit}\\-_]`;
     },
     description: "Alphanumeric with underscore and hyphen",
-    composedFrom: ["ALPHA", "DIGIT", "DASH"],
+    composedFrom: ["ALPHA", "DIGIT"],
     fixtures: {
       passes: [{ input: "a" }, { input: "0" }, { input: "_" }, { input: "-" }],
       fails: [
@@ -264,8 +263,8 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
     pattern: String.raw`\b`,
     description: "Zero-width word boundary",
     fixtures: {
-      passes: [{ input: "", note: "boundary between word and non-word" }],
-      fails: [],
+      passes: [{ input: "a ", note: "boundary after word char" }],
+      fails: [{ input: "aa", reason: "no boundary between letters" }],
     },
   },
 
@@ -452,10 +451,10 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = {
       passes: [
         { input: "16px", note: "pixels" },
         { input: "2.5em", note: "decimal em" },
-        { input: "100%", note: "percent is dimension" },
       ],
       fails: [
         { input: "px16", reason: "unit after number" },
+        { input: "100%", reason: "percent is not a standard dimension unit" },
         { input: "", reason: "empty" },
       ],
     },
