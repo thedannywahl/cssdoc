@@ -701,6 +701,171 @@ export const PATTERNS: Record<string, PatternDef> = {
   },
 };
 
+// ============================================================================
+// Lazy-Evaluated Exports (avoid duplication)
+// ============================================================================
+// Instead of duplicating pattern definitions, we provide getters that
+// dynamically build/retrieve patterns from PATTERNS registry.
+// All pattern names are automatically exported using getters below.
+
+/** @internal Dynamically build regex exports from PATTERNS registry */
+export const createPatternExports = () => {
+  const exports: Record<string, any> = {};
+
+  for (const name of Object.keys(PATTERNS)) {
+    // Add Regex export (cached by buildPattern)
+    Object.defineProperty(exports, name, {
+      get: () => buildPattern(name),
+      enumerable: true,
+    });
+
+    // Add string export (camelCase version)
+    const camelCase = name
+      .split("_")
+      .map((part, i) =>
+        i === 0 ? part.toLowerCase() : part.charAt(0) + part.slice(1).toLowerCase(),
+      )
+      .join("");
+
+    Object.defineProperty(exports, camelCase, {
+      get: () => getPatternString(name),
+      enumerable: true,
+    });
+  }
+
+  return exports;
+};
+
+// Pre-computed exports object with all pattern names
+const patternExports = createPatternExports();
+
+// Re-export all patterns as named exports
+export const {
+  // Tier 0 exports
+  ALPHA,
+  alpha,
+  ALPHA_LOWER,
+  alphaLower,
+  ALPHA_UPPER,
+  alphaUpper,
+  ALPHANUMERIC,
+  alphanumeric,
+  ALPHANUMERIC_EXTENDED,
+  alphanumericExtended,
+  DIGIT,
+  digit,
+  DASH,
+  dash,
+  DOUBLE_DASH,
+  doubleDash,
+  DOT,
+  dot,
+  SPACE_TAB,
+  spaceTab,
+  BRACE_OPEN,
+  braceOpen,
+  BRACE_CLOSE,
+  braceClose,
+  PAREN_OPEN,
+  parenOpen,
+  PAREN_CLOSE,
+  parenClose,
+  COLON,
+  colon,
+  QUOTE,
+  quote,
+  HEX_DIGIT,
+  hexDigit,
+  HEX_DIGIT_OR_WILDCARD,
+  hexDigitOrWildcard,
+  CSS_IDENTIFIER_START,
+  cssIdentifierStart,
+  CSS_IDENTIFIER_START_WITH_DASH,
+  cssIdentifierStartWithDash,
+  CSS_IDENTIFIER_CONT,
+  cssIdentifierCont,
+  CSS_IDENTIFIER_CONT_NO_DASH,
+  cssIdentifierContNoDash,
+  WORD_BOUNDARY,
+  wordBoundary,
+  // Tier 1 exports
+  CSS_IDENTIFIER,
+  cssIdentifier,
+  CSS_NAME,
+  cssName,
+  CSS_NUMBER,
+  cssNumber,
+  CSS_PERCENTAGE,
+  cssPercentage,
+  CSS_DIMENSION,
+  cssDimension,
+  CSS_HASH_COLOR,
+  cssHashColor,
+  CSS_FUNCTION,
+  cssFunction,
+  CSS_KEYWORD,
+  cssKeyword,
+  CSS_UNICODE_RANGE,
+  cssUnicodeRange,
+  CSS_PROPERTY_NAME,
+  cssPropertyName,
+  // Tier 2 exports
+  CSSDOC_IDENTIFIER_PART,
+  cssdocIdentifierPart,
+  CSSDOC_IDENTIFIER,
+  cssdocIdentifier,
+  CSSDOC_RECORD_NAME,
+  cssdocRecordName,
+  CSSDOC_MODIFIER_SUFFIX,
+  cssdocModifierSuffix,
+  CSSDOC_MODIFIER_CHAINED,
+  cssdocModifierChained,
+  CSSDOC_MODIFIER_ATTRIBUTE,
+  cssdocModifierAttribute,
+  CSSDOC_TAG,
+  cssdocTag,
+  CSSDOC_TAG_ARG,
+  cssdocTagArg,
+  CSSDOC_STRUCTURE_REF,
+  cssdocStructureRef,
+  CSSDOC_CARDINALITY,
+  cssdocCardinality,
+  CSSDOC_CUSTOM_PROPERTY,
+  cssdocCustomProperty,
+  CSSDOC_INLINE_REF,
+  cssdocInlineRef,
+  CSSDOC_REF_NUM,
+  cssdocRefNum,
+  CSSDOC_STATE_VALUE,
+  cssdocStateValue,
+  CSSDOC_SELECTOR_VALUE,
+  cssdocSelectorValue,
+  CSSDOC_STRUCTURE_CARDINALITY,
+  cssdocStructureCardinality,
+  CSSDOC_SLOT_DECL,
+  cssdocSlotDecl,
+  CSSDOC_STRUCTURE_CLASS,
+  cssdocStructureClass,
+  CSSDOC_STRUCTURE_TAG,
+  cssdocStructureTag,
+  CSSDOC_STRUCTURE_COMPONENT,
+  cssdocStructureComponent,
+  CSSDOC_STRUCTURE_BRACE,
+  cssdocStructureBrace,
+  CSSDOC_INLINE_TAG_PATTERN,
+  cssdocInlineTagPattern,
+  CSSDOC_RECORD_TAG_PATTERN,
+  cssdocRecordTagPattern,
+  CSSDOC_MODIFIER_TAG_PATTERN,
+  cssdocModifierTagPattern,
+  CSSDOC_PART_TAG_PATTERN,
+  cssdocPartTagPattern,
+  CSSDOC_PROPERTY_TAG_PATTERN,
+  cssdocPropertyTagPattern,
+  CSSDOC_REF_TAG_PATTERN,
+  cssdocRefTagPattern,
+} = patternExports;
+
 /**
  * Cache of built Regex objects, keyed by pattern name.
  * Built on-demand by buildPattern().
