@@ -24,20 +24,21 @@
  */
 import { CSSDOC_TAGS, cssdocTagNamesByArgument, cssdocTagNamesByKind } from "@cssdoc/spec";
 import {
-  ALPHA,
+  ALPHA_SOURCE,
   ALPHANUMERIC_EXTENDED_SOURCE,
   AT_SOURCE,
   BRACE_OPEN_SOURCE,
   BRACE_CLOSE_SOURCE,
   BRACE_CLOSE_CHAR,
-  COLON,
-  DIGIT,
-  DOT,
-  PAREN_CLOSE,
-  PAREN_OPEN,
+  COLON_SOURCE,
+  DIGIT_SOURCE,
+  DOT_SOURCE,
+  DOUBLE_DASH_SOURCE,
+  PAREN_CLOSE_SOURCE,
+  PAREN_OPEN_SOURCE,
   PIPE_CHAR,
   PIPE_SOURCE,
-  SPACE_TAB,
+  SPACE_TAB_SOURCE,
   WORD_BOUNDARY_SOURCE,
   CSSDOC_CARDINALITY_SOURCE,
   CSSDOC_SLOT_NAME_SOURCE,
@@ -87,15 +88,16 @@ const alt = (names: readonly string[]): string => names.join("|");
 const createTagAlternation = (tags: readonly string[]): string => `@(?:${alt(tags)})`;
 
 // Pattern builders for TextMate grammar (simple patterns from Tier 0/1 character classes)
-const buildIdentifier = (): string => `${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*`;
+const buildIdentifier = (): string => `${ALPHA_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*`;
 const buildQualifiedIdentifier = (): string =>
-  `${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*(?:${DOT.source}${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*)*`;
-const buildModifierName = (): string => `-?${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*`;
+  `${ALPHA_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*(?:${DOT_SOURCE}${ALPHA_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*)*`;
+const buildModifierName = (): string => `-?${ALPHA_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*`;
 const buildClassSelector = (): string =>
-  `${DOT.source}?${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*`;
-const buildCustomProperty = (): string => `--${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*`;
+  `${DOT_SOURCE}?${ALPHA_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*`;
+const buildCustomProperty = (): string =>
+  `${DOUBLE_DASH_SOURCE}${ALPHA_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*`;
 const buildStateValue = (): string =>
-  `${COLON.source}?${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*(?:${PAREN_OPEN.source}${ALPHANUMERIC_EXTENDED_SOURCE}*${PAREN_CLOSE.source})?`;
+  `${COLON_SOURCE}?${ALPHA_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*(?:${PAREN_OPEN_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*${PAREN_CLOSE_SOURCE})?`;
 
 /**
  * Build the cssdoc injection grammar from the canonical `@cssdoc/spec` vocabulary. The argument-bearing
@@ -160,7 +162,7 @@ export function buildInjectionGrammar(): InjectionGrammar {
       "record-tag": {
         // A dotted name (`menu.item`) is a qualified member name — highlight it as one unit, not just
         // the segment before the first dot.
-        match: `(${AT_SOURCE}(?:${recordTags}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB.source}*(${buildQualifiedIdentifier()})?`,
+        match: `(${AT_SOURCE}(?:${recordTags}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(${buildQualifiedIdentifier()})?`,
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "entity.name.type.cssdoc" },
@@ -169,7 +171,7 @@ export function buildInjectionGrammar(): InjectionGrammar {
       // Modifiers are spelled many ways (`-color-secondary`, `button--secondary`, `primary`); colour the
       // whole name, using the same scope as parts so a component's members read consistently.
       "modifier-tag": {
-        match: `(${AT_SOURCE}(?:${modifierTags}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB.source}*(${buildModifierName()})?`,
+        match: `(${AT_SOURCE}(?:${modifierTags}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(${buildModifierName()})?`,
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "entity.other.attribute-name.part.cssdoc" },
@@ -177,21 +179,21 @@ export function buildInjectionGrammar(): InjectionGrammar {
       },
       // `@cssstate :state(open)` / `@cssstate :disabled` — colour the state token like a custom property.
       "state-tag": {
-        match: `(${AT_SOURCE}(?:cssstate))${WORD_BOUNDARY_SOURCE}${SPACE_TAB.source}*(${buildStateValue()})?`,
+        match: `(${AT_SOURCE}(?:cssstate))${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(${buildStateValue()})?`,
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "support.type.custom-property.cssdoc" },
         },
       },
       "part-tag": {
-        match: `(${AT_SOURCE}(?:${partTags}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB.source}*(${buildClassSelector()})?`,
+        match: `(${AT_SOURCE}(?:${partTags}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(${buildClassSelector()})?`,
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "entity.other.attribute-name.part.cssdoc" },
         },
       },
       "property-tag": {
-        match: `(${AT_SOURCE}(?:${propertyTags}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB.source}*(${buildCustomProperty()})?`,
+        match: `(${AT_SOURCE}(?:${propertyTags}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(${buildCustomProperty()})?`,
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "support.type.custom-property.cssdoc" },
@@ -199,7 +201,7 @@ export function buildInjectionGrammar(): InjectionGrammar {
       },
       // `@ref 1` / `@ref 1.` — numeric annotation reference index.
       "ref-tag": {
-        match: `(${AT_SOURCE}(?:ref))${WORD_BOUNDARY_SOURCE}${SPACE_TAB.source}*(${DIGIT.source}+${DOT.source}?)?`,
+        match: `(${AT_SOURCE}(?:ref))${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(${DIGIT_SOURCE}+${DOT_SOURCE}?)?`,
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "constant.numeric.cssdoc" },
@@ -219,7 +221,7 @@ export function buildInjectionGrammar(): InjectionGrammar {
         end: "(?=@)|(?=\\*/)",
         patterns: [
           {
-            match: `(${CSSDOC_COMPONENT_REF_SOURCE})${WORD_BOUNDARY_SOURCE}${SPACE_TAB.source}*(${TOKEN_IDENTIFIER_SOURCE})?`,
+            match: `(${CSSDOC_COMPONENT_REF_SOURCE})${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(${TOKEN_IDENTIFIER_SOURCE})?`,
             captures: {
               "1": { name: TAG_SCOPE },
               "2": { name: "entity.other.attribute-name.part.cssdoc" },
@@ -241,7 +243,7 @@ export function buildInjectionGrammar(): InjectionGrammar {
         ],
       },
       "custom-property": {
-        match: `(?![\\w-])--${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*`,
+        match: `(?![\\w-])${DOUBLE_DASH_SOURCE}${ALPHA_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*`,
         name: "support.type.custom-property.cssdoc",
       },
     },
@@ -289,8 +291,8 @@ export function buildAtRuleInjectionGrammar(): InjectionGrammar {
       // Typed record refs: @component nav, @layout shell, with optional :profile / (--profile).
       "record-ref-atrule": {
         match:
-          `(${AT_SOURCE}(?:${recordTags}))${WORD_BOUNDARY_SOURCE}(?:${SPACE_TAB.source}+(${buildIdentifier()}))?` +
-          `(?:${SPACE_TAB.source}+(?:${PAREN_OPEN.source}\\s*--${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*\\s*${PAREN_CLOSE.source}|${COLON.source}${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*))?`,
+          `(${AT_SOURCE}(?:${recordTags}))${WORD_BOUNDARY_SOURCE}(?:${SPACE_TAB_SOURCE}+(${buildIdentifier()}))?` +
+          `(?:${SPACE_TAB_SOURCE}+(?:${PAREN_OPEN_SOURCE}\\s*--${ALPHA_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*\\s*${PAREN_CLOSE_SOURCE}|${COLON_SOURCE}${ALPHA_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*))?`,
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "entity.name.type.cssdoc" },
@@ -300,15 +302,15 @@ export function buildAtRuleInjectionGrammar(): InjectionGrammar {
       // Untyped refs: @nav / @header, with optional profile marker. Excludes native CSS at-rules.
       "untyped-ref-atrule": {
         match:
-          `(${AT_SOURCE}(?!(?:${nativeCssAtRules})${WORD_BOUNDARY_SOURCE})(?:${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*))` +
-          `(?:${SPACE_TAB.source}+(?:${PAREN_OPEN.source}\\s*--${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*\\s*${PAREN_CLOSE.source}|${COLON.source}${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*))?`,
+          `(${AT_SOURCE}(?!(?:${nativeCssAtRules})${WORD_BOUNDARY_SOURCE})(?:${ALPHA_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*))` +
+          `(?:${SPACE_TAB_SOURCE}+(?:${PAREN_OPEN_SOURCE}\\s*--${ALPHA_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*\\s*${PAREN_CLOSE_SOURCE}|${COLON_SOURCE}${ALPHA_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*))?`,
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "support.type.custom-property.cssdoc" },
         },
       },
       "custom-property": {
-        match: `(?![\\w-])--${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*`,
+        match: `(?![\\w-])${DOUBLE_DASH_SOURCE}${ALPHA_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*`,
         name: "support.type.custom-property.cssdoc",
       },
     },
