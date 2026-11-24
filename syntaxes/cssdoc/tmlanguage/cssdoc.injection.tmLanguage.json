@@ -65,7 +65,7 @@
       ]
     },
     "record-tag": {
-      "match": "(@(?:component|name|utility|rule|declaration|layout))\\b[ \\t]*([A-Za-z][A-Za-z0-9_-]*(?:\\.[A-Za-z][A-Za-z0-9_-]*)*)?",
+      "match": "(@(?:component|name|utility|rule|declaration|layout))\\b[ \\t]*([A-Za-z][A-Za-z0-9\\-_]*(?:\\.[A-Za-z][A-Za-z0-9\\-_]*)*)?",
       "captures": {
         "1": {
           "name": "storage.type.class.cssdoc"
@@ -76,7 +76,7 @@
       }
     },
     "modifier-tag": {
-      "match": "(@(?:modifier))\\b[ \\t]*(-?[A-Za-z][A-Za-z0-9_-]*)?",
+      "match": "(@(?:modifier))\\b[ \\t]*(-?[A-Za-z][A-Za-z0-9\\-_]*)?",
       "captures": {
         "1": {
           "name": "storage.type.class.cssdoc"
@@ -87,7 +87,7 @@
       }
     },
     "state-tag": {
-      "match": "(@(?:cssstate))\\b[ \\t]*(:?[A-Za-z][A-Za-z0-9_-]*(?:\\([A-Za-z0-9_-]*\\))?)?",
+      "match": "(@(?:cssstate))\\b[ \\t]*(:?[A-Za-z][A-Za-z0-9\\-_]*(?:\\([A-Za-z0-9\\-_]*\\))?)?",
       "captures": {
         "1": {
           "name": "storage.type.class.cssdoc"
@@ -98,7 +98,7 @@
       }
     },
     "part-tag": {
-      "match": "(@(?:part|csspart|wrapper|slot|selector|class|pseudo))\\b[ \\t]*(\\.?[A-Za-z][A-Za-z0-9_-]*)?",
+      "match": "(@(?:part|csspart|wrapper|slot|selector|class|pseudo))\\b[ \\t]*(\\.?[A-Za-z][A-Za-z0-9\\-_]*)?",
       "captures": {
         "1": {
           "name": "storage.type.class.cssdoc"
@@ -109,7 +109,7 @@
       }
     },
     "property-tag": {
-      "match": "(@(?:cssproperty|property|tokens))\\b[ \\t]*(--[A-Za-z][A-Za-z0-9_-]*)?",
+      "match": "(@(?:cssproperty|property|tokens))\\b[ \\t]*(--[A-Za-z][A-Za-z0-9\\-_]*)?",
       "captures": {
         "1": {
           "name": "storage.type.class.cssdoc"
@@ -144,7 +144,7 @@
       "end": "(?=@)|(?=\\*/)",
       "patterns": [
         {
-          "match": "(@(?:component|variant))\\b[ \\t]*([A-Za-z][A-Za-z0-9_-]*)?",
+          "match": "((?<ref>(?<identifier>[a-zA-Z_\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*)(?::(?<card>(?:one-or-more|zero-or-more|optional|exactly-one|max-\\d+)?))?))\\b[ \\t]*([A-Za-z](?:[A-Za-z0-9\\-_])*)?",
           "captures": {
             "1": {
               "name": "storage.type.class.cssdoc"
@@ -155,15 +155,15 @@
           }
         },
         {
-          "match": "\\bslot(?:\\[[^\\]]*\\])?",
+          "match": "(?<name>[A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*)",
           "name": "entity.other.attribute-name.part.cssdoc"
         },
         {
-          "match": ":[a-z][A-Za-z0-9_-]*(?:-[0-9]+)?",
+          "match": "(?<card>(?:one-or-more|zero-or-more|optional|exactly-one|max-\\d+)?)",
           "name": "variable.other.modifier.cssdoc"
         },
         {
-          "match": "\\.[A-Za-z][A-Za-z0-9_-]*",
+          "match": "\\.?[A-Za-z](?:[A-Za-z0-9\\-_])*",
           "name": "entity.other.attribute-name.part.cssdoc"
         },
         {
@@ -173,7 +173,7 @@
       ]
     },
     "custom-property": {
-      "match": "(?![\\w-])--[A-Za-z][A-Za-z0-9_-]*",
+      "match": "(?![\\w-])--[A-Za-z][A-Za-z0-9\\-_]*",
       "name": "support.type.custom-property.cssdoc"
     }
   }

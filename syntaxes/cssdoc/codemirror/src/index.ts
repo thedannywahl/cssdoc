@@ -30,18 +30,15 @@ import {
   type ViewUpdate,
 } from "@codemirror/view";
 import {
-  alpha,
-  spaceTab,
-  wordBoundary,
-  // Tier 3 doc-comment tag tokenizers
-  toRegExp,
-  CSSDOC_STRUCTURE_TAG,
-  TOKEN_QUALIFIED_IDENTIFIER,
-  TOKEN_MODIFIER_NAME,
-  TOKEN_CLASS_SELECTOR,
-  TOKEN_CUSTOM_PROPERTY,
-  TOKEN_REF_NUMBER,
-  TOKEN_INLINE_CONTENT,
+  ALPHA_SOURCE,
+  SPACE_TAB_SOURCE,
+  WORD_BOUNDARY_SOURCE,
+  TOKEN_QUALIFIED_IDENTIFIER_SOURCE,
+  TOKEN_MODIFIER_NAME_SOURCE,
+  TOKEN_CLASS_SELECTOR_SOURCE,
+  TOKEN_CUSTOM_PROPERTY_SOURCE,
+  TOKEN_REF_NUMBER_SOURCE,
+  TOKEN_INLINE_CONTENT_SOURCE,
 } from "@cssdoc/regex";
 
 /** Semantic token kind a doc-comment span maps to. Each becomes a `cm-cssdoc-<kind>` class. */
@@ -86,26 +83,26 @@ const TOKEN = new RegExp(
   [
     // {@link ...} / {@label ...} / {@inheritDoc ...}
     // Reuses INLINE_TAG_TOKENIZER structure: brace, tag, content, brace
-    `(?<inline>\\{(?<itag>@(?:${alt(INLINE_TAGS)}))${wordBoundary}${spaceTab}*(?<itext>${TOKEN_INLINE_CONTENT.source})\\}?)`,
+    `(?<inline>\\{(?<itag>@(?:${alt(INLINE_TAGS)}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(?<itext>${TOKEN_INLINE_CONTENT_SOURCE})\\}?)`,
     // @component/@name/@utility/@rule/@declaration/@layout name(.name)*
     // Reuses RECORD_TAG_TOKENIZER structure: tag, qualified-name
-    `(?<record>(?<rtag>@(?:${alt(RECORD_TAGS)}))${wordBoundary}${spaceTab}*(?<rname>${TOKEN_QUALIFIED_IDENTIFIER.source})?)`,
+    `(?<record>(?<rtag>@(?:${alt(RECORD_TAGS)}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(?<rname>${TOKEN_QUALIFIED_IDENTIFIER_SOURCE})?)`,
     // @modifier -name
     // Reuses MODIFIER_TAG_TOKENIZER structure: tag, optional-dash-name
-    `(?<modifier>(?<mtag>@(?:${alt(MODIFIER_TAGS)}))${wordBoundary}${spaceTab}*(?<mname>${TOKEN_MODIFIER_NAME.source})?)`,
+    `(?<modifier>(?<mtag>@(?:${alt(MODIFIER_TAGS)}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(?<mname>${TOKEN_MODIFIER_NAME_SOURCE})?)`,
     // @part / @csspart / @slot / @selector / @pseudo / @class .name
     // Reuses PART_TAG_TOKENIZER structure: tag, optional-dot-selector
-    `(?<part>(?<ptag>@(?:${alt(PART_TAGS)}))${wordBoundary}${spaceTab}*(?<pname>${TOKEN_CLASS_SELECTOR.source})?)`,
+    `(?<part>(?<ptag>@(?:${alt(PART_TAGS)}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(?<pname>${TOKEN_CLASS_SELECTOR_SOURCE})?)`,
     // @cssproperty / @property --name
     // Reuses PROPERTY_TAG_TOKENIZER structure: tag, custom-property
-    `(?<property>(?<proptag>@(?:${alt(PROPERTY_TAGS)}))${wordBoundary}${spaceTab}*(?<propname>${TOKEN_CUSTOM_PROPERTY.source})?)`,
+    `(?<property>(?<proptag>@(?:${alt(PROPERTY_TAGS)}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(?<propname>${TOKEN_CUSTOM_PROPERTY_SOURCE})?)`,
     // @ref 1 / @ref 1.
     // Reuses REF_TAG_TOKENIZER structure: tag, numeric-ref
-    `(?<ref>(?<reftag>@(?:ref))${wordBoundary}${spaceTab}*(?<refnum>${TOKEN_REF_NUMBER.source})?)`,
+    `(?<ref>(?<reftag>@(?:ref))${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(?<refnum>${TOKEN_REF_NUMBER_SOURCE})?)`,
     // bare block/record/flag tags
-    `(?<btag>@(?:${alt(PLAIN_TAGS)})${wordBoundary})`,
+    `(?<btag>@(?:${alt(PLAIN_TAGS)})${WORD_BOUNDARY_SOURCE})`,
     // a custom property named anywhere in the comment
-    `(?<cprop>${TOKEN_CUSTOM_PROPERTY.source})`,
+    `(?<cprop>${TOKEN_CUSTOM_PROPERTY_SOURCE})`,
   ].join("|"),
   "gd",
 );
@@ -132,10 +129,6 @@ const GROUP_TYPE: Record<string, CssdocTokenType> = {
   btag: "tag",
   cprop: "property",
 };
-
-// Convert ArkRegex patterns to native RegExp for use with String.prototype.matchAll.
-// All patterns are imported from @cssdoc/regex for consistency and reusability.
-const STRUCTURE_TAG_REGEX = toRegExp(CSSDOC_STRUCTURE_TAG);
 
 /** Tokenize one CSS comment's text into cssdoc doc-tag spans (offsets are relative to `text`). */
 export const tokenizeComment = (text: string): CssdocToken[] => {
@@ -164,9 +157,10 @@ export const tokenizeComment = (text: string): CssdocToken[] => {
     }
   }
   // Second pass: highlight meaningful elements within each `@structure` body (from the tag to the next tag or comment end).
-  for (const m of text.matchAll(STRUCTURE_TAG_REGEX)) {
+  const structureTagRegex = /@structure\b/gu;
+  for (const m of text.matchAll(structureTagRegex)) {
     const start = (m.index ?? 0) + m[0].length;
-    const after = text.slice(start).search(new RegExp(`@${alpha}`, "u"));
+    const after = text.slice(start).search(new RegExp(`@${ALPHA_SOURCE}`, "u"));
     const end = after === -1 ? text.length : start + after;
     const body = text.slice(start, end);
 

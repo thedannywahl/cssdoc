@@ -24,20 +24,19 @@
  */
 import { CSSDOC_TAGS, cssdocTagNamesByArgument, cssdocTagNamesByKind } from "@cssdoc/spec";
 import {
-  alpha,
-  alphanumericExtended,
-  colon,
-  digit,
-  dot,
-  parenClose,
-  parenOpen,
-  spaceTab,
-  // Tier 3 structure-specific building block strings
-  cardinalityModifier,
-  slotDeclaration,
-  structureClassSelector,
-  structureComponentTag,
-  structureIdentifier,
+  ALPHA,
+  ALPHANUMERIC_EXTENDED_SOURCE,
+  COLON,
+  DIGIT,
+  DOT,
+  PAREN_CLOSE,
+  PAREN_OPEN,
+  SPACE_TAB,
+  CSSDOC_CARDINALITY_SOURCE,
+  CSSDOC_SLOT_NAME_SOURCE,
+  TOKEN_CLASS_SELECTOR_SOURCE,
+  CSSDOC_COMPONENT_REF_SOURCE,
+  TOKEN_IDENTIFIER_SOURCE,
 } from "@cssdoc/regex";
 
 /** A TextMate capture assignment (`{ "1": { name } }`). */
@@ -75,14 +74,15 @@ const TAG_SCOPE = "storage.type.class.cssdoc";
 const alt = (names: readonly string[]): string => names.join("|");
 
 // Pattern builders for TextMate grammar (simple patterns from Tier 0/1 character classes)
-const buildIdentifier = (): string => `${alpha}${alphanumericExtended}*`;
+const buildIdentifier = (): string => `${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*`;
 const buildQualifiedIdentifier = (): string =>
-  `${alpha}${alphanumericExtended}*(?:${dot}${alpha}${alphanumericExtended}*)*`;
-const buildModifierName = (): string => `-?${alpha}${alphanumericExtended}*`;
-const buildClassSelector = (): string => `${dot}?${alpha}${alphanumericExtended}*`;
-const buildCustomProperty = (): string => `--${alpha}${alphanumericExtended}*`;
+  `${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*(?:${DOT.source}${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*)*`;
+const buildModifierName = (): string => `-?${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*`;
+const buildClassSelector = (): string =>
+  `${DOT.source}?${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*`;
+const buildCustomProperty = (): string => `--${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*`;
 const buildStateValue = (): string =>
-  `${colon}?${alpha}${alphanumericExtended}*(?:${parenOpen}${alphanumericExtended}*${parenClose})?`;
+  `${COLON.source}?${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*(?:${PAREN_OPEN.source}${ALPHANUMERIC_EXTENDED_SOURCE}*${PAREN_CLOSE.source})?`;
 
 /**
  * Build the cssdoc injection grammar from the canonical `@cssdoc/spec` vocabulary. The argument-bearing
@@ -148,7 +148,7 @@ export function buildInjectionGrammar(): InjectionGrammar {
       "record-tag": {
         // A dotted name (`menu.item`) is a qualified member name — highlight it as one unit, not just
         // the segment before the first dot.
-        match: `(@(?:${recordTags}))\\b${spaceTab}*(${buildQualifiedIdentifier()})?`,
+        match: `(@(?:${recordTags}))\\b${SPACE_TAB.source}*(${buildQualifiedIdentifier()})?`,
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "entity.name.type.cssdoc" },
@@ -157,7 +157,7 @@ export function buildInjectionGrammar(): InjectionGrammar {
       // Modifiers are spelled many ways (`-color-secondary`, `button--secondary`, `primary`); colour the
       // whole name, using the same scope as parts so a component's members read consistently.
       "modifier-tag": {
-        match: `(@(?:${modifierTags}))\\b${spaceTab}*(${buildModifierName()})?`,
+        match: `(@(?:${modifierTags}))\\b${SPACE_TAB.source}*(${buildModifierName()})?`,
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "entity.other.attribute-name.part.cssdoc" },
@@ -165,21 +165,21 @@ export function buildInjectionGrammar(): InjectionGrammar {
       },
       // `@cssstate :state(open)` / `@cssstate :disabled` — colour the state token like a custom property.
       "state-tag": {
-        match: `(@(?:cssstate))\\b${spaceTab}*(${buildStateValue()})?`,
+        match: `(@(?:cssstate))\\b${SPACE_TAB.source}*(${buildStateValue()})?`,
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "support.type.custom-property.cssdoc" },
         },
       },
       "part-tag": {
-        match: `(@(?:${partTags}))\\b${spaceTab}*(${buildClassSelector()})?`,
+        match: `(@(?:${partTags}))\\b${SPACE_TAB.source}*(${buildClassSelector()})?`,
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "entity.other.attribute-name.part.cssdoc" },
         },
       },
       "property-tag": {
-        match: `(@(?:${propertyTags}))\\b${spaceTab}*(${buildCustomProperty()})?`,
+        match: `(@(?:${propertyTags}))\\b${SPACE_TAB.source}*(${buildCustomProperty()})?`,
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "support.type.custom-property.cssdoc" },
@@ -187,7 +187,7 @@ export function buildInjectionGrammar(): InjectionGrammar {
       },
       // `@ref 1` / `@ref 1.` — numeric annotation reference index.
       "ref-tag": {
-        match: `(@(?:ref))\\b${spaceTab}*(${digit}+${dot}?)?`,
+        match: `(@(?:ref))\\b${SPACE_TAB.source}*(${DIGIT.source}+${DOT.source}?)?`,
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "constant.numeric.cssdoc" },
@@ -207,29 +207,29 @@ export function buildInjectionGrammar(): InjectionGrammar {
         end: "(?=@)|(?=\\*/)",
         patterns: [
           {
-            match: `(${structureComponentTag})\\b${spaceTab}*(${structureIdentifier})?`,
+            match: `(${CSSDOC_COMPONENT_REF_SOURCE})\\b${SPACE_TAB.source}*(${TOKEN_IDENTIFIER_SOURCE})?`,
             captures: {
               "1": { name: TAG_SCOPE },
               "2": { name: "entity.other.attribute-name.part.cssdoc" },
             },
           },
           {
-            match: slotDeclaration,
+            match: CSSDOC_SLOT_NAME_SOURCE,
             name: "entity.other.attribute-name.part.cssdoc",
           },
           {
-            match: cardinalityModifier,
+            match: CSSDOC_CARDINALITY_SOURCE,
             name: "variable.other.modifier.cssdoc",
           },
           {
-            match: structureClassSelector,
+            match: TOKEN_CLASS_SELECTOR_SOURCE,
             name: "entity.other.attribute-name.part.cssdoc",
           },
           { match: "[{}]", name: "punctuation.section.structure.cssdoc" },
         ],
       },
       "custom-property": {
-        match: `(?![\\w-])--${alpha}${alphanumericExtended}*`,
+        match: `(?![\\w-])--${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*`,
         name: "support.type.custom-property.cssdoc",
       },
     },
@@ -277,8 +277,8 @@ export function buildAtRuleInjectionGrammar(): InjectionGrammar {
       // Typed record refs: @component nav, @layout shell, with optional :profile / (--profile).
       "record-ref-atrule": {
         match:
-          `(@(?:${recordTags}))\\b(?:${spaceTab}+(${buildIdentifier()}))?` +
-          `(?:${spaceTab}+(?:${parenOpen}\\s*--${alpha}${alphanumericExtended}*\\s*${parenClose}|${colon}${alpha}${alphanumericExtended}*))?`,
+          `(@(?:${recordTags}))\\b(?:${SPACE_TAB.source}+(${buildIdentifier()}))?` +
+          `(?:${SPACE_TAB.source}+(?:${PAREN_OPEN.source}\\s*--${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*\\s*${PAREN_CLOSE.source}|${COLON.source}${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*))?`,
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "entity.name.type.cssdoc" },
@@ -288,15 +288,15 @@ export function buildAtRuleInjectionGrammar(): InjectionGrammar {
       // Untyped refs: @nav / @header, with optional profile marker. Excludes native CSS at-rules.
       "untyped-ref-atrule": {
         match:
-          `(@(?!(?:${nativeCssAtRules})\\b)(?:${alpha}${alphanumericExtended}*))` +
-          `(?:${spaceTab}+(?:${parenOpen}\\s*--${alpha}${alphanumericExtended}*\\s*${parenClose}|${colon}${alpha}${alphanumericExtended}*))?`,
+          `(@(?!(?:${nativeCssAtRules})\\b)(?:${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*))` +
+          `(?:${SPACE_TAB.source}+(?:${PAREN_OPEN.source}\\s*--${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*\\s*${PAREN_CLOSE.source}|${COLON.source}${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*))?`,
         captures: {
           "1": { name: TAG_SCOPE },
           "2": { name: "support.type.custom-property.cssdoc" },
         },
       },
       "custom-property": {
-        match: `(?![\\w-])--${alpha}${alphanumericExtended}*`,
+        match: `(?![\\w-])--${ALPHA.source}${ALPHANUMERIC_EXTENDED_SOURCE}*`,
         name: "support.type.custom-property.cssdoc",
       },
     },
