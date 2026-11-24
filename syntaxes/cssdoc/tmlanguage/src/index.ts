@@ -41,11 +41,9 @@ import {
   PIPE_SOURCE,
   SPACE_TAB_SOURCE,
   WORD_BOUNDARY_SOURCE,
-  CSSDOC_CARDINALITY_SOURCE,
-  CSSDOC_SLOT_NAME_SOURCE,
+  CSSDOC_STRUCTURE_TAG_SOURCE,
   TOKEN_CLASS_SELECTOR_SOURCE,
   CSSDOC_COMPONENT_REF_SOURCE,
-  TOKEN_IDENTIFIER_SOURCE,
 } from "@cssdoc/regex";
 
 /** A TextMate capture assignment (`{ "1": { name } }`). */
@@ -222,18 +220,18 @@ export function buildInjectionGrammar(): InjectionGrammar {
         end: "(?=@)|(?=\\*/)",
         patterns: [
           {
-            match: `(${CSSDOC_COMPONENT_REF_SOURCE})${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(${TOKEN_IDENTIFIER_SOURCE})?`,
+            match: `(${CSSDOC_STRUCTURE_TAG_SOURCE})${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(${CSSDOC_COMPONENT_REF_SOURCE})?`,
             captures: {
               "1": { name: TAG_SCOPE },
-              "2": { name: "entity.other.attribute-name.part.cssdoc" },
+              "2": { name: TAG_SCOPE },
             },
           },
           {
-            match: CSSDOC_SLOT_NAME_SOURCE,
+            match: `\\bslot\\b`,
             name: "entity.other.attribute-name.part.cssdoc",
           },
           {
-            match: CSSDOC_CARDINALITY_SOURCE,
+            match: `:[a-z]+|:max-\\d+`,
             name: "variable.other.modifier.cssdoc",
           },
           {

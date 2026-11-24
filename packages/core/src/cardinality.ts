@@ -6,12 +6,15 @@
  *
  * @module
  */
+import type { Regex } from "arkregex";
+import { regex as arkRegex } from "arkregex";
+import { DIGIT_SOURCE } from "@cssdoc/regex";
 import type { StructureNode } from "./model.ts";
 
 type Cardinality = NonNullable<StructureNode["cardinality"]>;
 
-const BOUNDED_MAX_RE = /^max-(\d+)$/u;
-const BOUNDED_ONE_OR_MORE_MAX_RE = /^one-or-more-max-(\d+)$/u;
+const BOUNDED_MAX_RE: Regex = arkRegex.as(`^max-(${DIGIT_SOURCE}+)$`, "u");
+const BOUNDED_ONE_OR_MORE_MAX_RE: Regex = arkRegex.as(`^one-or-more-max-(${DIGIT_SOURCE}+)$`, "u");
 
 /** The ER-style range token for a cardinality, e.g. `0..1`, `0..n`, `1..n`, `0..2`, `1..2`. */
 export function cardinalityToken(cardinality: Cardinality): string {

@@ -795,6 +795,9 @@ importers:
       '@cssdoc/spec':
         specifier: workspace:*
         version: link:../spec
+      arkregex:
+        specifier: 'catalog:'
+        version: 0.0.15
       postcss:
         specifier: 'catalog:'
         version: 8.5.33

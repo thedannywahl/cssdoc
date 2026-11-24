@@ -144,22 +144,22 @@
       "end": "(?=@)|(?=\\*/)",
       "patterns": [
         {
-          "match": "((?<ref>(?<identifier>[a-zA-Z_\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*)(?::(?<card>(?:one-or-more|zero-or-more|optional|exactly-one|max-\\d+)?))?))\\b[ \\t]*([A-Za-z](?:[A-Za-z0-9\\-_])*)?",
+          "match": "((?:@component|@variant|@modifier|@state|@part))\\b[ \\t]*((?<ref>(?<identifier>[a-zA-Z_\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*)(?::(?<card>(?:one-or-more|zero-or-more|optional|exactly-one|max-\\d+)?))?))?",
           "captures": {
             "1": {
               "name": "storage.type.class.cssdoc"
             },
             "2": {
-              "name": "entity.other.attribute-name.part.cssdoc"
+              "name": "storage.type.class.cssdoc"
             }
           }
         },
         {
-          "match": "(?<name>[A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*)",
+          "match": "\\bslot\\b",
           "name": "entity.other.attribute-name.part.cssdoc"
         },
         {
-          "match": "(?<card>(?:one-or-more|zero-or-more|optional|exactly-one|max-\\d+)?)",
+          "match": ":[a-z]+|:max-\\d+",
           "name": "variable.other.modifier.cssdoc"
         },
         {

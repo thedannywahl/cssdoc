@@ -42,6 +42,7 @@
   "dependencies": {
     "@cssdoc/regex": "workspace:*",
     "@cssdoc/spec": "workspace:*",
+    "arkregex": "catalog:",
     "postcss": "catalog:"
   },
   "devDependencies": {
