@@ -143,11 +143,11 @@ export const tokenizeComment = (text: string): CssdocToken[] => {
         // Special handling for inline tags: highlight braces as punctuation
         if (key === "inline") {
           const text_at_range = text.slice(gi[0], gi[1]);
-          // Opening brace
+          // Opening brace (see BRACE_OPEN in @cssdoc/regex)
           if (text_at_range[0] === "{") {
             out.push({ from: gi[0], to: gi[0] + 1, type: "punct" });
           }
-          // Closing brace (if present)
+          // Closing brace (if present) (see BRACE_CLOSE in @cssdoc/regex)
           const closeIdx = text_at_range.lastIndexOf("}");
           if (closeIdx !== -1) {
             out.push({ from: gi[0] + closeIdx, to: gi[1], type: "punct" });
