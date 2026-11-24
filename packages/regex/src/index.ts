@@ -50,14 +50,27 @@
 export { regex } from "arkregex";
 export type { Regex } from "arkregex";
 
-// Registry and utilities
+// New pattern registry (single source of truth)
+export {
+  PATTERNS,
+  buildPattern,
+  getPatternString,
+  getPatternMetadata,
+  getPatternsByTier,
+  getPatternsByGrammarRule,
+  getPatternsByStatus,
+  getPatternsComposingOf,
+} from "./patterns.js";
+export type { PatternDef } from "./patterns.js";
+
+// Legacy registry (deprecated, kept for now during migration)
 export {
   PATTERN_REGISTRY,
-  getPatternMetadata,
+  getPatternMetadata as getPatternMetadataLegacy,
   getAllPatterns,
-  getPatternsByGrammarRule,
-  getPatternsByTier,
-  getPatternsByStatus,
+  getPatternsByGrammarRule as getPatternsByGrammarRuleLegacy,
+  getPatternsByTier as getPatternsByTierLegacy,
+  getPatternsByStatus as getPatternsByStatusLegacy,
   getPatternsBySource,
 } from "./registry.js";
 export type { PatternMetadata } from "./registry.js";
@@ -65,17 +78,9 @@ export type { PatternMetadata } from "./registry.js";
 // Utilities for working with any tier of patterns
 export { toRegExp } from "./lib.js";
 
-// Re-export all tier modules
-export * as CharacterClassPatterns from "./tiers/character-classes.js";
-export * as CssSpecPatterns from "./tiers/css-spec.js";
-export * as CssDocGrammarPatterns from "./tiers/css-doc-grammar.js";
-export * as CssdocTokenPartsPatterns from "./tiers/cssdoc-token-parts.js";
-export * as CssdocTagsPatterns from "./tiers/cssdoc-tags.js";
-export * as CssdocLocalPatterns from "./tiers/cssdoc-local.js";
-
-// Convenience re-exports: grouped by usage
+// Convenience re-exports from unified registry (Tier 0 & Tier 1)
 export {
-  // Tier 0: Character Class patterns
+  // Tier 0
   ALPHA,
   ALPHA_LOWER,
   ALPHA_UPPER,
@@ -91,11 +96,15 @@ export {
   PAREN_OPEN,
   PAREN_CLOSE,
   COLON,
+  QUOTE,
+  HEX_DIGIT,
+  HEX_DIGIT_OR_WILDCARD,
   CSS_IDENTIFIER_START,
+  CSS_IDENTIFIER_START_WITH_DASH,
   CSS_IDENTIFIER_CONT,
   CSS_IDENTIFIER_CONT_NO_DASH,
   WORD_BOUNDARY,
-  // Convenience string exports for use in template literals
+  // Tier 0 string exports
   alpha,
   alphaLower,
   alphaUpper,
@@ -111,14 +120,15 @@ export {
   parenOpen,
   parenClose,
   colon,
+  quote,
+  hexDigit,
+  hexDigitOrWildcard,
   cssIdentifierStart,
+  cssIdentifierStartWithDash,
   cssIdentifierCont,
   cssIdentifierContNoDash,
   wordBoundary,
-} from "./tiers/character-classes.js";
-
-export {
-  // Tier 1: W3C CSS Spec patterns
+  // Tier 1
   CSS_IDENTIFIER,
   CSS_NAME,
   CSS_NUMBER,
@@ -129,7 +139,7 @@ export {
   CSS_KEYWORD,
   CSS_UNICODE_RANGE,
   CSS_PROPERTY_NAME,
-  // Convenience string exports for use in template literals
+  // Tier 1 string exports
   cssIdentifier,
   cssName,
   cssNumber,
@@ -140,8 +150,18 @@ export {
   cssKeyword,
   cssUnicodeRange,
   cssPropertyName,
-} from "./tiers/css-spec.js";
+} from "./exports.js";
 
+// Re-export all tier modules (kept for phase 2+)
+export * as CharacterClassPatterns from "./tiers/character-classes.js";
+export * as CssSpecPatterns from "./tiers/css-spec.js";
+export * as CssDocGrammarPatterns from "./tiers/css-doc-grammar.js";
+export * as CssdocTokenPartsPatterns from "./tiers/cssdoc-token-parts.js";
+export * as CssdocTagsPatterns from "./tiers/cssdoc-tags.js";
+export * as CssdocLocalPatterns from "./tiers/cssdoc-local.js";
+export * as CssdocBuildingBlocksPatterns from "./tiers/cssdoc-building-blocks.js";
+
+// Legacy tier re-exports (for Tier 2+, still from tier files)
 export {
   // Tier 2: CssDoc Grammar patterns
   CSSDOC_IDENTIFIER,
