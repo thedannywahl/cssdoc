@@ -31,7 +31,6 @@ import {
 } from "@codemirror/view";
 import {
   ALPHA_SOURCE,
-  SPACE_TAB_SOURCE,
   WORD_BOUNDARY_SOURCE,
   toRegExp,
   TOKEN_CLASS_SELECTOR_REQUIRED_DOT,
@@ -39,12 +38,13 @@ import {
   COMMENT_LINE_MARKER_SOURCE,
   BRACE_OPEN,
   BRACE_CLOSE,
-  TOKEN_QUALIFIED_IDENTIFIER_SOURCE,
-  TOKEN_MODIFIER_NAME_SOURCE,
-  TOKEN_CLASS_SELECTOR_SOURCE,
   TOKEN_CUSTOM_PROPERTY_SOURCE,
-  TOKEN_REF_NUMBER_SOURCE,
-  TOKEN_INLINE_CONTENT_SOURCE,
+  TOKENIZER_INLINE_TAG_SOURCE,
+  TOKENIZER_RECORD_TAG_SOURCE,
+  TOKENIZER_MODIFIER_TAG_SOURCE,
+  TOKENIZER_PART_TAG_SOURCE,
+  TOKENIZER_PROPERTY_TAG_SOURCE,
+  TOKENIZER_REF_TAG_SOURCE,
 } from "@cssdoc/regex";
 
 /** Semantic token kind a doc-comment span maps to. Each becomes a `cm-cssdoc-<kind>` class. */
@@ -65,8 +65,7 @@ export interface CssdocToken {
   type: CssdocTokenType;
 }
 
-// The tag groups the matcher needs, all derived from the canonical vocabulary in @cssdoc/spec. Plain
-// tags are everything that isn't inline and takes no structured argument.
+// The tag groups the matcher needs, all derived from the canonical vocabulary in @cssdoc/spec.
 const alt = (names: readonly string[]): string => names.join("|");
 const INLINE_TAGS = cssdocTagNamesByKind("inline");
 const RECORD_TAGS = cssdocTagNamesByKind("record");
@@ -83,22 +82,24 @@ const PLAIN_TAGS = CSSDOC_TAGS.filter(
     t.name !== "pseudo",
 ).map((t) => t.name);
 
+/**
+ * Inject tag alternations into generic tokenizer patterns.
+ * Tokenizer patterns from @cssdoc/regex use `@\w+` as placeholders, which get
+ * replaced with specific tag alternations (INLINE_TAGS, RECORD_TAGS, etc.).
+ */
+const injectTags = (pattern: string, tags: readonly string[]): string =>
+  pattern.replace(/@\\w\+/g, `@(?:${alt(tags)})`);
+
 // One left-to-right alternation, so matches never overlap. The `d` flag exposes per-group offsets.
-// Patterns use tier-organized regex patterns from @cssdoc/regex for consistency.
+// Token patterns follow structures defined in @cssdoc/regex/TOKENIZER_* patterns.
 const TOKEN = new RegExp(
   [
-    // {@link ...} / {@label ...} / {@inheritDoc ...}
-    `(?<inline>\\{(?<itag>@(?:${alt(INLINE_TAGS)}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(?<itext>${TOKEN_INLINE_CONTENT_SOURCE})\\}?)`,
-    // @component/@name/@utility/@rule/@declaration/@layout name(.name)*
-    `(?<record>(?<rtag>@(?:${alt(RECORD_TAGS)}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(?<rname>${TOKEN_QUALIFIED_IDENTIFIER_SOURCE})?)`,
-    // @modifier -name
-    `(?<modifier>(?<mtag>@(?:${alt(MODIFIER_TAGS)}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(?<mname>${TOKEN_MODIFIER_NAME_SOURCE})?)`,
-    // @part / @csspart / @slot / @selector / @pseudo / @class .name
-    `(?<part>(?<ptag>@(?:${alt(PART_TAGS)}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(?<pname>${TOKEN_CLASS_SELECTOR_SOURCE})?)`,
-    // @cssproperty / @property --name
-    `(?<property>(?<proptag>@(?:${alt(PROPERTY_TAGS)}))${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(?<propname>${TOKEN_CUSTOM_PROPERTY_SOURCE})?)`,
-    // @ref 1 / @ref 1.
-    `(?<ref>(?<reftag>@(?:ref))${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(?<refnum>${TOKEN_REF_NUMBER_SOURCE})?)`,
+    injectTags(TOKENIZER_INLINE_TAG_SOURCE, INLINE_TAGS),
+    injectTags(TOKENIZER_RECORD_TAG_SOURCE, RECORD_TAGS),
+    injectTags(TOKENIZER_MODIFIER_TAG_SOURCE, MODIFIER_TAGS),
+    injectTags(TOKENIZER_PART_TAG_SOURCE, PART_TAGS),
+    injectTags(TOKENIZER_PROPERTY_TAG_SOURCE, PROPERTY_TAGS),
+    injectTags(TOKENIZER_REF_TAG_SOURCE, ["ref"]),
     // bare block/record/flag tags
     `(?<btag>@(?:${alt(PLAIN_TAGS)})${WORD_BOUNDARY_SOURCE})`,
     // a custom property named anywhere in the comment
