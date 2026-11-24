@@ -12,9 +12,9 @@
 import postcss, { type ChildNode } from "postcss";
 import { HTML_ELEMENT_GROUPS, HTML_ELEMENT_NAMES } from "@cssdoc/spec";
 import {
-  TOKEN_CUSTOM_PROPERTY,
+  TOKEN_CUSTOM_PROPERTY_SOURCE,
   PSEUDO_SELECTOR_FUNCTIONAL,
-  HTML_ELEMENT_NAME,
+  HTML_ELEMENT_NAME_SOURCE,
   RECORD_REFERENCE_NAME,
   toRegExp,
 } from "@cssdoc/regex";
@@ -51,7 +51,7 @@ import type {
  * Matches a `var(--name` reference; group 1 is the custom-property name.
  * Uses TOKEN_CUSTOM_PROPERTY pattern from @cssdoc/regex.
  */
-const VAR_RE = new RegExp(`var\\(\\s*(${TOKEN_CUSTOM_PROPERTY.source})`, "gu");
+const VAR_RE = new RegExp(`var\\(\\s*(${TOKEN_CUSTOM_PROPERTY_SOURCE})`, "gu");
 
 /**
  * Reduce an `@scope` at-rule's `params` (e.g. `(.pfx-alert)`) to a bare class name, or `undefined` for
@@ -128,7 +128,7 @@ function canonicalRecordKind(kind: string): CssRecordKind | undefined {
   }
   return undefined;
 }
-const ELEMENT_TAG_RE = new RegExp(`^<?\\s*(${HTML_ELEMENT_NAME.source})\\s*>?$`, "u");
+const ELEMENT_TAG_RE = new RegExp(`^<?\\s*(${HTML_ELEMENT_NAME_SOURCE})\\s*>?$`, "u");
 const STRUCT_CARDINALITY: Record<string, NonNullable<StructureNode["cardinality"]>> = {
   optional: "optional",
   opt: "optional",
