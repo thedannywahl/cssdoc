@@ -1582,6 +1582,73 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
         fails: [{ input: "@ref abc", reason: "not a number" }],
       },
     },
+    STRUCTURE_RECORD_KIND: {
+      name: "STRUCTURE_RECORD_KIND",
+      tier: 2,
+      source: String.raw`(?:component|name|utility|rule|declaration|layout)`,
+      description: "Structure record kind (component, name, utility, rule, declaration, or layout)",
+      fixtures: {
+        passes: [
+          { input: "component" },
+          { input: "name" },
+          { input: "utility" },
+          { input: "rule" },
+          { input: "declaration" },
+          { input: "layout" },
+        ],
+        fails: [
+          { input: "unknown", reason: "not a valid record kind" },
+          { input: "button", reason: "not a record kind" },
+        ],
+      },
+    },
+    TYPED_STRUCTURE_MEDIA: {
+      name: "TYPED_STRUCTURE_MEDIA",
+      tier: 3,
+      pattern: (resolve: PatternResolver) => {
+        const at = resolve("AT_CHAR");
+        const recordKind = resolve("STRUCTURE_RECORD_KIND");
+        const space = resolve("SPACE_TAB");
+        const identifier = resolve("TOKEN_IDENTIFIER");
+        const customProp = resolve("TOKEN_CUSTOM_PROPERTY");
+        return `${at}(${recordKind})${space}+(${identifier})${space}*\\(${space}*(${customProp})${space}*\\)`;
+      },
+      description: "Typed structure custom-media reference (@kind name (--profile))",
+      composedFrom: [
+        "AT_CHAR",
+        "STRUCTURE_RECORD_KIND",
+        "SPACE_TAB",
+        "TOKEN_IDENTIFIER",
+        "TOKEN_CUSTOM_PROPERTY",
+      ],
+      fixtures: {
+        passes: [{ input: "@component nav (--top-nav)" }, { input: "@utility spacing (--sizes)" }],
+        fails: [
+          { input: "@unknown nav (--x)", reason: "unknown record kind" },
+          { input: "component nav (--x)", reason: "missing @" },
+        ],
+      },
+    },
+    UNTYPED_STRUCTURE_MEDIA: {
+      name: "UNTYPED_STRUCTURE_MEDIA",
+      tier: 3,
+      pattern: (resolve: PatternResolver) => {
+        const at = resolve("AT_CHAR");
+        const space = resolve("SPACE_TAB");
+        const identifier = resolve("TOKEN_IDENTIFIER");
+        const customProp = resolve("TOKEN_CUSTOM_PROPERTY");
+        return `${at}(${identifier})${space}*\\(${space}*(${customProp})${space}*\\)`;
+      },
+      description: "Untyped structure custom-media reference (@name (--profile))",
+      composedFrom: ["AT_CHAR", "TOKEN_IDENTIFIER", "SPACE_TAB", "TOKEN_CUSTOM_PROPERTY"],
+      fixtures: {
+        passes: [{ input: "@sidebar (--layouts)" }, { input: "@custom-ref (--profile)" }],
+        fails: [
+          { input: "sidebar (--x)", reason: "missing @" },
+          { input: "@sidebar", reason: "missing parentheses" },
+        ],
+      },
+    },
   };
 
   // Helper to escape a single character with a backslash

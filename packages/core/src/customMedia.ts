@@ -1,8 +1,8 @@
 import type { CssDocEntry, CssRecordKind, StructureNode } from "./model.ts";
+import { TYPED_STRUCTURE_MEDIA_SOURCE, UNTYPED_STRUCTURE_MEDIA_SOURCE } from "@cssdoc/regex";
 
-const TYPED_STRUCTURE_MEDIA_RE =
-  /^@(component|name|utility|rule|declaration|layout)\s+([\w-]+)\s+\(\s*(--[\w-]+)\s*\)$/u;
-const UNTYPED_STRUCTURE_MEDIA_RE = /^@([\w-]+)\s+\(\s*(--[\w-]+)\s*\)$/u;
+const TYPED_STRUCTURE_MEDIA_RE = new RegExp(`^${TYPED_STRUCTURE_MEDIA_SOURCE}$`, "u");
+const UNTYPED_STRUCTURE_MEDIA_RE = new RegExp(`^${UNTYPED_STRUCTURE_MEDIA_SOURCE}$`, "u");
 
 function canonicalRecordKind(kind: string): CssRecordKind | undefined {
   if (kind === "name" || kind === "rule") return "component";
