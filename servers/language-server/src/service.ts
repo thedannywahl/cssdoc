@@ -11,6 +11,7 @@ import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import {
   ALPHANUMERIC_EXTENDED_SOURCE,
+  ASTERISK_SOURCE,
   CSS_CLASS_ATTRIBUTE_SELECTOR,
   CSSDOC_BASE_CLASS_NAME_SOURCE,
   CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE,
@@ -18,6 +19,7 @@ import {
   DIGIT_SOURCE,
   DOT_CHAR,
   DOT_SOURCE,
+  FORWARD_SLASH_SOURCE,
   escapeRegex,
   toRegExp,
 } from "@cssdoc/regex";
@@ -63,6 +65,10 @@ import {
 
 /** Language ids handled as CSS (the value/hygiene checks run on these). */
 const CSS_LANGUAGES = new Set(["css", "scss", "less", "postcss"]);
+const DOC_COMMENT_RE: Regex = arkRegex.as(
+  `${FORWARD_SLASH_SOURCE}${ASTERISK_SOURCE}${ASTERISK_SOURCE}[\\s\\S]*?${ASTERISK_SOURCE}${FORWARD_SLASH_SOURCE}`,
+  "gu",
+);
 
 /** Map an editor `languageId` to an embedded host, for docs whose path extension isn't decisive. */
 const hostForLanguageId = (languageId?: string): EmbeddedHost | undefined => {
@@ -197,7 +203,7 @@ function refHoverAt(
     return out;
   };
 
-  const comments = text.matchAll(/\/\*\*[\s\S]*?\*\//gu);
+  const comments = text.matchAll(DOC_COMMENT_RE);
   for (const block of comments) {
     const start = block.index ?? 0;
     const end = start + block[0].length;
@@ -1167,7 +1173,7 @@ export class CssDocLanguageService {
     };
 
     // Parse doc comments in CSS to find cssdoc tags
-    const docComments = text.matchAll(/\/\*\*[\s\S]*?\*\//gu);
+    const docComments = text.matchAll(DOC_COMMENT_RE);
     for (const block of docComments) {
       const blockText = block[0];
       const blockStart = block.index ?? 0;
