@@ -6,6 +6,7 @@
 
 import type { RawPatternDef, PatternResolver } from "../types.ts";
 
+/** JSX tag and class attribute scanning pattern definitions. */
 export const TIER_1_JSX_PATTERNS: Record<string, RawPatternDef> = {
   HTML_LIKE_DOTTED_TAG_NAME: {
     name: "HTML_LIKE_DOTTED_TAG_NAME",

@@ -6,6 +6,7 @@
 
 import type { RawPatternDef, PatternResolver } from "../types.ts";
 
+/** Map accepted structure cardinality keywords to their canonical values. */
 export const CSSDOC_CARDINALITY_KEYWORDS: Readonly<
   Record<string, "optional" | "many" | "one-or-more">
 > = {
@@ -16,6 +17,7 @@ export const CSSDOC_CARDINALITY_KEYWORDS: Readonly<
   more: "one-or-more",
 };
 
+/** CssDoc grammar, selector, and structure reference pattern definitions. */
 export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   CSS_CLASS_REFERENCE: {
     name: "CSS_CLASS_REFERENCE",

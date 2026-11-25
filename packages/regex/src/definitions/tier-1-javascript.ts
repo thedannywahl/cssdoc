@@ -6,6 +6,7 @@
 
 import type { RawPatternDef, PatternResolver } from "../types.ts";
 
+/** JavaScript template-tag and literal scanning pattern definitions. */
 export const TIER_1_JAVASCRIPT_PATTERNS: Record<string, RawPatternDef> = {
   JAVASCRIPT_TAGGED_TEMPLATE_BOUNDARY: {
     name: "JAVASCRIPT_TAGGED_TEMPLATE_BOUNDARY",

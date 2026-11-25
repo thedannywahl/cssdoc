@@ -6,6 +6,7 @@
 
 import type { RawPatternDef, PatternResolver } from "../types.ts";
 
+/** HTML name, attribute, comment, and style-tag pattern definitions. */
 export const TIER_1_HTML_PATTERNS: Record<string, RawPatternDef> = {
   HTML_STANDARD_ELEMENT_NAME: {
     name: "HTML_STANDARD_ELEMENT_NAME",

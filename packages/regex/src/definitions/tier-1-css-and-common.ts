@@ -7,6 +7,7 @@
 import type { RawPatternDef, PatternResolver } from "../types.ts";
 import { escapeChar } from "../lib.ts";
 
+/** Composed CSS and common punctuation pattern definitions. */
 export const TIER_1_CSS_AND_COMMON_PATTERNS: Record<string, RawPatternDef> = {
   FILE_EXTENSION: {
     name: "FILE_EXTENSION",

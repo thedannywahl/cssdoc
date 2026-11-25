@@ -6,6 +6,7 @@
 
 import type { RawPatternDef, PatternResolver } from "../types.ts";
 
+/** Markdown heading, fence, code span, and list marker pattern definitions. */
 export const TIER_1_MARKDOWN_PATTERNS: Record<string, RawPatternDef> = {
   MARKDOWN_ATX_HEADING_PREFIX: {
     name: "MARKDOWN_ATX_HEADING_PREFIX",

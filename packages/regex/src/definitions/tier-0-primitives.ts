@@ -6,8 +6,10 @@
 
 import type { RawPatternDef, PatternResolver } from "../types.ts";
 
+/** Regex source matching a character with special meaning in a regular expression. */
 export const REGEX_METACHARACTER_SOURCE: string = String.raw`[\\^$.|?*+()[\]{}]`;
 
+/** Primitive character and punctuation pattern definitions. */
 export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
   REGEX_METACHARACTER: {
     name: "REGEX_METACHARACTER",

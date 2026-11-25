@@ -6,6 +6,7 @@
 
 import type { RawPatternDef, PatternResolver } from "../types.ts";
 
+/** CssDoc token and tag tokenizer pattern definitions. */
 export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
   CSSDOC_COMPONENT_REF: {
     name: "CSSDOC_COMPONENT_REF",
