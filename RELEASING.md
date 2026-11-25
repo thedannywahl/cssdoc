@@ -43,6 +43,8 @@ Pushing the `v*` tag triggers `.github/workflows/release.yml`, which re-runs the
   token. A package must already exist before it can be configured, so `0.1.0` was published once with a
   temporary `NPM_TOKEN` (an npm automation token, since the registry can't prompt for a 2FA OTP in CI);
   that token and secret were removed once the trusted publishers were in place.
+- **First `@cssdoc/regex` release** — bootstrap the package on npm and configure its trusted publisher
+  before a tag-driven release that depends on it. The publish dry run doesn't perform this setup.
 - **VS Code extension tokens** — the Marketplace has no OIDC, so publishing needs stored PATs. Add repo
   secrets `VSCE_PAT` (an Azure DevOps token for the `cssdoc` publisher) and `OVSX_PAT` (an Open VSX
   token). The `cssdoc` publisher must exist on both marketplaces.

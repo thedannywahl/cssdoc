@@ -1,7 +1,6 @@
 {
   "name": "@cssdoc/regex",
   "version": "0.18.1",
-  "private": true,
   "description": "Type-safe, ArkRegex-based pattern library for cssdoc. Centralizes CSS, grammar-driven, and cssdoc-specific regex patterns with modern named capture groups.",
   "keywords": [
     "arkregex",
@@ -12,8 +11,14 @@
     "regex",
     "type-safe"
   ],
+  "homepage": "https://cssdoc.dev",
+  "bugs": "https://github.com/thedannywahl/cssdoc/issues",
   "license": "MIT",
-  "author": "cssdoc contributors",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thedannywahl/cssdoc.git",
+    "directory": "packages/regex"
+  },
   "files": [
     "dist",
     "README.md"
@@ -22,20 +27,28 @@
   "main": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
   "exports": {
-    ".": "./dist/index.mjs"
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "vp pack",
+    "dev": "vp pack --watch",
     "test": "vp test",
-    "type-check": "tsc --noEmit"
+    "check": "vp check",
+    "type-check": "tsc --noEmit",
+    "prepublishOnly": "vp run build",
+    "publint": "publint"
   },
   "dependencies": {
     "arkregex": "catalog:",
     "arktype": "catalog:"
   },
   "devDependencies": {
+    "publint": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
-  },
-  "peerDependencies": {}
+  }
 }

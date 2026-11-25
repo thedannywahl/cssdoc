@@ -16,6 +16,7 @@ and the CSS/HTML language services share one core.
 | Package                                   | Path                 | What it is                                                                                                                             |
 | ----------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | [`@cssdoc/core`](packages/core)           | `packages/core`      | The parser + model. A formal grammar (grammarkdown) and an expansive tag vocabulary that documents the modern CSSOM surface AST-first. |
+| [`@cssdoc/regex`](packages/regex)         | `packages/regex`     | Shared CSS and cssdoc regex patterns and character primitives.                                                                         |
 | [`@cssdoc/config`](packages/config)       | `packages/config`    | Loads a `cssdoc.json` config file (custom tags, `extends`). Like `@microsoft/tsdoc-config`.                                            |
 | [`@cssdoc/index`](packages/index)         | `packages/index`     | A queryable semantic index over the model, plus the `Usage` abstraction and source spans.                                              |
 | [`@cssdoc/providers`](packages/providers) | `packages/providers` | Host-agnostic aspect providers: diagnostics, completions, hover, and definitions.                                                      |

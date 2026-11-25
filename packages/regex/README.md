@@ -4,13 +4,10 @@ Type-safe, ArkRegex-based pattern library for cssdoc. Centralizes CSS, grammar-d
 
 ## Features
 
-- **Type Safety**: All patterns use ArkRegex with named capture groups and TypeScript type inference
-- **IDE Completion**: Auto-complete shows all available capture groups
+- **ArkRegex**: Compiled patterns are available alongside their source strings
 - **Single Source of Truth**: Each pattern defined once with metadata and test fixtures in `definitions.ts`
 - **Maintainability**: Patterns traceable to W3C specs and CssDoc grammar
-- **Security**: ArkRegex prevents ReDoS (Regular Expression Denial of Service) vulnerabilities
-- **Zero Overhead**: Compile-time type inference, no runtime cost
-- **Comprehensive Testing**: 296 test cases covering all patterns with pass/fail fixtures
+- **Testing**: Pattern definitions include pass/fail fixtures
 
 ## Usage
 
@@ -24,7 +21,7 @@ const pattern = PATTERN_DEFINITIONS.CSS_IDENTIFIER;
 console.log(pattern.name); // "CSS_IDENTIFIER"
 console.log(pattern.tier); // 1
 console.log(pattern.description); // "CSS identifier"
-console.log(pattern.pattern); // string or function
+console.log(pattern.source); // resolved regex source
 console.log(pattern.fixtures); // { passes: [...], fails: [...] }
 ```
 
@@ -67,12 +64,7 @@ captures the name.
 import { PATTERN_DEFINITIONS } from "@cssdoc/regex";
 
 const def = PATTERN_DEFINITIONS.CSS_IDENTIFIER;
-const pattern =
-  def.pattern instanceof Function
-    ? def.pattern((name) => PATTERN_DEFINITIONS[name].pattern)
-    : def.pattern;
-
-const regex = new RegExp(pattern);
+const regex = new RegExp(def.source);
 console.log(regex.test("my-class")); // true
 console.log(regex.test("-my-class")); // false (cannot start with dash)
 ```
@@ -92,8 +84,9 @@ interface UnifiedPatternDef {
   // Tier level (0-4)
   tier: 0 | 1 | 2 | 3 | 4;
 
-  // Pattern string or composition function
-  pattern: string | ((resolve: (name: string) => string) => string);
+  // Resolved pattern source and, for tiers above 0, compiled regex
+  source: string;
+  regex?: Regex;
 
   // Unicode flag: 'u' or 'v'
   flags?: "u" | "v";

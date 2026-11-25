@@ -15,6 +15,7 @@ links to its npm page.
 | Package                                                                | What it is                                                                                                                                  |
 | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`@cssdoc/spec`](https://www.npmjs.com/package/@cssdoc/spec)           | The canonical tag vocabulary and the RFC-style grammar — the single source of truth the parser and grammars derive from. Zero dependencies. |
+| [`@cssdoc/regex`](https://www.npmjs.com/package/@cssdoc/regex)         | Shared CSS and cssdoc regex patterns and character primitives.                                                                              |
 | [`@cssdoc/config`](https://www.npmjs.com/package/@cssdoc/config)       | Loads a `cssdoc.json` / `cssdoc.jsonc` (custom tags, `extends`, conventions, rules). Node-only.                                             |
 | [`@cssdoc/index`](https://www.npmjs.com/package/@cssdoc/index)         | A queryable semantic index over the model, with source spans — the shared data layer for the linters and the language server.               |
 | [`@cssdoc/providers`](https://www.npmjs.com/package/@cssdoc/providers) | Host-agnostic diagnostics, completions, hover, and definitions over the index.                                                              |

@@ -1016,6 +1016,9 @@ importers:
         specifier: 'catalog:'
         version: 2.2.10
     devDependencies:
+      publint:
+        specifier: 'catalog:'
+        version: 0.3.25
       typescript:
         specifier: 'catalog:'
         version: 7.1.0-dev.20261119.1
