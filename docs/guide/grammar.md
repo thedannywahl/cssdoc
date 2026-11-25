@@ -17,4 +17,7 @@ grammar's validity and standard tag coverage alongside parser behavior. The pars
 malformed input and accepts unframed comment bodies, so parsing a string isn't a syntax-validity check.
 grammarkdown is notation and validation only — it doesn't generate a parser.
 
+The [pattern reference](./patterns) connects grammar productions to the regex patterns that implement
+or approximate them.
+
 <<< @/../packages/spec/grammar/CssDoc.grammarkdown{grammarkdown}
