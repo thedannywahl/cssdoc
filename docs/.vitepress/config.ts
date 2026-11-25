@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import grammarkdown from "@cssdoc/grammarkdown-tmlanguage";
 import cssdoc, { cssdocAtRules } from "@cssdoc/tmlanguage";
-import type { DefaultTheme } from "vitepress";
+import type { DefaultTheme, UserConfig } from "vitepress";
 import { defineConfig } from "vitepress";
 import llmstxt from "vitepress-plugin-llms";
 import { mermaidPlugin } from "./plugins/vitepress-mermaid/index.js";
@@ -28,7 +28,7 @@ const apiSidebar: DefaultTheme.SidebarItem[] = existsSync(apiSidebarPath)
   ? (JSON.parse(readFileSync(apiSidebarPath, "utf8")) as DefaultTheme.SidebarItem[])
   : [];
 
-export default defineConfig({
+const config: UserConfig = defineConfig({
   base,
   lang: "en-US",
   title: "cssdoc",
@@ -241,3 +241,5 @@ export default defineConfig({
     ],
   },
 });
+
+export default config;
