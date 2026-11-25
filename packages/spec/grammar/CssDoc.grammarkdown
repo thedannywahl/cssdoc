@@ -226,6 +226,9 @@ ModifierAlias ::
 MemberName ::
     > one or more ASCII letters, digits, underscores, or hyphens
 
+StateArgument ::
+    > one or more ASCII letters, digits, underscores, or hyphens
+
 AnnotationBody ::
     > numbered lines, each beginning with digits and a period, with optional continuation lines
 
@@ -402,12 +405,12 @@ TokensTag :
     `@tokens` WhiteSpace CustomPropertyName
     `@tokens` WhiteSpace CustomPropertyName WhiteSpace Separator WhiteSpace Description
 
-// A state name: a bare identifier (a custom `:state(name)` state), a `:`-prefixed native
-// pseudo-class state (e.g. `:disabled`), or a bracketed attribute-reflected state (e.g.
-// `[aria-sort="ascending"]`) for ARIA/data-* states that aren't expressed as a pseudo-class.
+// A state name: a bare identifier, a custom `:state(name)`, a native pseudo-class (e.g.
+// `:disabled`), or a bracketed attribute-reflected state (e.g. `[aria-sort="ascending"]`).
 StateName :
     Identifier
     `:` Identifier
+    `:state` `(` WhiteSpace? StateArgument WhiteSpace? `)`
     AttributeModifier
 
 CssStateTag :

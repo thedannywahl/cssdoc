@@ -143,3 +143,17 @@ test("the structure grammar retains nodes, scope boundaries, variants, and refer
   expect(body).toContain("`@variant`");
   expect(body).toContain("StructureReference");
 });
+
+test("the state grammar includes functional custom-state selectors", async () => {
+  const grammar = new Grammar([SPEC]);
+  await grammar.parse();
+  const source = grammar.rootFiles[0];
+  const production = source.elements.find(
+    (element): element is Production =>
+      element instanceof Production && element.name.text === "StateName",
+  );
+  if (!production?.body) throw new Error("Missing StateName body");
+  expect(production.body.getText(source)).toContain(
+    "`:state` `(` WhiteSpace? StateArgument WhiteSpace? `)`",
+  );
+});

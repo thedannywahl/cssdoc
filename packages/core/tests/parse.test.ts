@@ -67,6 +67,11 @@ test("parses quoted selector tokens and permissive custom-property names in tags
   expect(doc.functions.get("--_helper")).toBe("Function description.");
 });
 
+test("parses a functional custom-state selector in a cssstate tag", () => {
+  const doc = parseDocComment("/**\n * @cssstate :state(open) — Open state.\n */");
+  expect(doc.cssStates.get(":state(open)")).toBe("Open state.");
+});
+
 test("parses canonical modifier references and annotation punctuation", () => {
   const doc = parseDocComment(`/**
  * @modifier -old — @deprecated {@link .replacement} Use instead.

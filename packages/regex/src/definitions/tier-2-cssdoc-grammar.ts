@@ -37,6 +37,9 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   },
   CSSDOC_CUSTOM_STATE_SELECTOR: {
     name: "CSSDOC_CUSTOM_STATE_SELECTOR",
+    grammarRule: "StateName",
+    grammarSource: "cssdoc",
+    grammarRelation: "related",
     tier: 2,
     pattern: (resolve: PatternResolver) =>
       String.raw`${resolve("COLON")}state${resolve("PAREN_OPEN")}\s*(${resolve("ALPHANUMERIC_EXTENDED")}+)\s*${resolve("PAREN_CLOSE")}`,
