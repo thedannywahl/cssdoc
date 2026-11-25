@@ -61,7 +61,7 @@ const config: UserConfig = mergeConfig(
             "**/*.config.ts",
             "**/*.base.ts",
           ],
-          rules: { "tsdoc/syntax": "error" /*"tsdoc-require-2/require": "error" */ },
+          rules: { "tsdoc/syntax": "error", "tsdoc-require-2/require": "error" },
         },
       ],
     },
