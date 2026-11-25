@@ -25,8 +25,11 @@ import {
 
 /** Either a CSS source or an already-parsed model. */
 export interface ModelInput {
+  /** Source strings to concatenate with newlines and parse; defaults to an empty string. */
   css?: string | string[];
+  /** Parsed entries; when supplied, they take precedence over `css` and parser options. */
   entries?: CssDocEntry[];
+  /** Tag configuration used when parsing CSS. */
   configuration?: CssDocConfiguration;
   /** The host language `css` is written in. Non-`css` values extract embedded CSS first. Default `css`. */
   lang?: "css" | "js" | "html" | "markdown";
@@ -109,7 +112,13 @@ function structureList(nodes: StructureNode[]): string {
   return `<ul>${items}</ul>`;
 }
 
-/** Render one record to a standalone HTML page. */
+/**
+ * Render one record to a standalone HTML page with inline styles.
+ *
+ * @param entry - The record to render, including internal records if passed directly.
+ * @param options - Optional index link and example-label filter.
+ * @returns A complete HTML document.
+ */
 export function renderPage(
   entry: CssDocEntry,
   options: { indexHref?: string; exampleFilter?: ExampleFilter | null } = {},
@@ -297,7 +306,13 @@ export function renderPage(
   return doc(entry.name, parts.join("\n"));
 }
 
-/** Render the index page linking to every record. */
+/**
+ * Render a standalone index linking to record pages named `<record-name>.html`.
+ *
+ * @param entries - Records to list, in display order.
+ * @param options - Index title and whether to include internal records.
+ * @returns A complete HTML document.
+ */
 export function renderIndex(
   entries: readonly CssDocEntry[],
   options: { title?: string; includeInternal?: boolean } = {},
@@ -316,8 +331,11 @@ export function renderIndex(
 
 /** Options for {@link buildHtml}. */
 export interface BuildHtmlOptions extends ModelInput {
+  /** Output directory, created if needed. Existing generated files are overwritten. */
   outDir: string;
+  /** Index title; defaults to `CSS API reference`. */
   title?: string;
+  /** Optional example-label filter for record pages. */
   exampleFilter?: ExampleFilter | null;
   /** Include records marked `@visibility internal`; defaults to false. */
   includeInternal?: boolean;
@@ -330,7 +348,15 @@ export interface BuildHtmlResult {
   indexPath: string;
 }
 
-/** Parse and write one HTML page per record plus `index.html`. */
+/**
+ * Resolve the input model and write one HTML page per visible record plus `index.html`. Records are
+ * sorted by name; internal records are omitted unless explicitly included.
+ *
+ * @param options - Input, output directory, and rendering options.
+ * @returns The selected entries and written paths.
+ * @throws If parsing plain CSS or a filesystem operation fails. Embedded-source parsing returns no
+ * records on failure.
+ */
 export function buildHtml(options: BuildHtmlOptions): BuildHtmlResult {
   const entries = resolveEntries(options)
     .filter((entry) => options.includeInternal || entry.visibility !== "internal")

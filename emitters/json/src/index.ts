@@ -37,7 +37,13 @@ function resolveEntries(input: ModelInput): CssDocEntry[] {
     : parseCssDocs(css, { configuration: input.configuration, parse });
 }
 
-/** Serialize the model to a pretty JSON string. */
+/**
+ * Serialize the model to pretty JSON, preserving input order and omitting internal records by default.
+ *
+ * @param entries - Records to serialize.
+ * @param options - Whether to include internal records.
+ * @returns A JSON array followed by a newline.
+ */
 export function renderJson(
   entries: readonly CssDocEntry[],
   options: { includeInternal?: boolean } = {},
@@ -77,7 +83,15 @@ export interface WriteJsonResult {
   schemaPath?: string;
 }
 
-/** Write the model to `outDir/model.json` (and optionally per-record files, an index, and the schema). */
+/**
+ * Write `model.json` and optionally per-record files, an index, and the schema. Records are sorted by
+ * name and internal records are omitted unless explicitly included.
+ *
+ * @param options - Input, output directory, and optional output files.
+ * @returns The selected records and paths written.
+ * @throws If parsing plain CSS or a filesystem operation fails. Embedded-source parsing returns no
+ * records on failure.
+ */
 export function writeJson(options: WriteJsonOptions): WriteJsonResult {
   const entries = resolveEntries(options)
     .filter((entry) => options.includeInternal || entry.visibility !== "internal")

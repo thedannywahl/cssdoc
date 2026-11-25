@@ -18,8 +18,11 @@ import { parseCssDocsFromSource } from "@cssdoc/embedded";
 
 /** Either a CSS source or an already-parsed model. */
 export interface ModelInput {
+  /** Source strings to concatenate with newlines and parse; defaults to an empty string. */
   css?: string | string[];
+  /** Parsed entries; when supplied, they take precedence over `css` and parser options. */
   entries?: CssDocEntry[];
+  /** Tag configuration used when parsing CSS. */
   configuration?: CssDocConfiguration;
   /** The host language `css` is written in. Non-`css` values extract embedded CSS first. Default `css`. */
   lang?: "css" | "js" | "html" | "markdown";
@@ -69,7 +72,14 @@ function modifier(m: CssModifier): string {
   return desc ? `\`-${m.name.replace(/^-/u, "")}\` (${desc})` : `\`-${m.name.replace(/^-/u, "")}\``;
 }
 
-/** Render the model to an `llms.txt`-style Markdown digest. */
+/**
+ * Render an `llms.txt`-style Markdown digest. Records are sorted by name, empty facets are omitted,
+ * and internal records are excluded by default.
+ *
+ * @param entries - Records to summarize.
+ * @param options - Header text and visibility options.
+ * @returns The Markdown digest with a trailing newline.
+ */
 export function renderLlms(
   entries: readonly CssDocEntry[],
   options: RenderLlmsOptions = {},
@@ -157,7 +167,14 @@ export interface WriteLlmsOptions extends ModelInput, RenderLlmsOptions {
   outFile?: string;
 }
 
-/** Write the digest to `outFile` (default `llms.txt`). */
+/**
+ * Resolve the input model and write its digest to a file, creating parent directories as needed.
+ *
+ * @param options - Input, header, visibility, and output options.
+ * @returns The output path, defaulting to `llms.txt`.
+ * @throws If parsing plain CSS or a filesystem operation fails. Embedded-source parsing returns no
+ * records on failure.
+ */
 export function writeLlms(options: WriteLlmsOptions): { outFile: string } {
   const outFile = options.outFile ?? "llms.txt";
   mkdirSync(dirname(outFile), { recursive: true });
