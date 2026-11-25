@@ -127,3 +127,19 @@ test("tag descriptions include the whitespace used by the parser around separato
     "PartSelector WhiteSpace Separator WhiteSpace Description",
   );
 });
+
+test("the structure grammar retains nodes, scope boundaries, variants, and references", async () => {
+  const grammar = new Grammar([SPEC]);
+  await grammar.parse();
+  const source = grammar.rootFiles[0];
+  const production = source.elements.find(
+    (element): element is Production =>
+      element instanceof Production && element.name.text === "StructureNode",
+  );
+  if (!production?.body) throw new Error("Missing StructureNode body");
+  const body = production.body.getText(source);
+  expect(body).toContain("Selector `{` StructureNodeList?");
+  expect(body).toContain("`@scope`");
+  expect(body).toContain("`@variant`");
+  expect(body).toContain("StructureReference");
+});

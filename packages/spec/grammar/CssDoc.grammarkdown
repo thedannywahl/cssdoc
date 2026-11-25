@@ -209,9 +209,7 @@ LayerName ::
 // Nested CSS: each rule's selector is a node, and the rules nested inside it are its children. A
 // node's selector is a full compound/complex selector, so `:has()` (contains), `:is()` or a selector
 // list (one-of), and `:not()` (not) express relationships between the related parts.
-// `@scope (…) { … }` at-rules are accepted as scope-boundary nodes (selector is empty; the prelude
-// holds the scope argument). Other CSS at-rules (@media, @layer, etc.) inside the body are forwarded
-// to the parser but treated as unknown and silently omitted.
+// The selector is parsed as part of the nested CSS body by the configured CSS parser.
 Selector ::
     > a CSS compound or complex selector
 
@@ -240,8 +238,11 @@ ElementBody ::
 MembersBody ::
     > comma-separated member names
 
-StructureBody ::
-    > nested CSS rules, @scope and @variant blocks, and structure reference at-rules
+StructureParameters ::
+    > an at-rule prelude up to its opening brace
+
+StructureReference ::
+    > a recognized structure reference at-rule, with optional cardinality and nested children
 
 // ============================================================================================
 // Syntactic grammar
@@ -466,12 +467,25 @@ AccessibilityKeyword :
 AccessibilityTag :
     AccessibilityKeyword WhiteSpace Description
 
-// Structure uses the configured CSS parser. Rules become nodes; @scope, @variant, and record
-// references have special meaning. Cardinality may appear as a trailing selector pseudo or
-// reference suffix. Unknown at-rules are ignored, and malformed CSS produces an empty tree.
+// The list and node refer to each other, so one reference necessarily points to a later definition.
+StructureNodeList :
+    StructureNode
+    StructureNodeList StructureNode
+
+// Structure uses the configured CSS parser. Cardinality may appear as a trailing selector pseudo
+// or reference suffix. Unknown at-rules are ignored, and malformed CSS produces an empty tree.
+StructureNode :
+    Selector `{` StructureNodeList? `}`
+    `@scope` WhiteSpace? StructureParameters `{` StructureNodeList? `}`
+    `@variant` WhiteSpace? StructureParameters? `{` StructureNodeList? `}`
+    StructureReference
+
+StructureBody :
+    StructureNodeList
+    Description StructureNodeList
+
 StructureTag :
     `@structure` StructureBody
-    `@structure` Description StructureBody
 
 ElementTag :
     `@element` WhiteSpace ElementBody

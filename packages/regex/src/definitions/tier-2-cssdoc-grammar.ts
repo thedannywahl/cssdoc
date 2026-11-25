@@ -76,6 +76,9 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   },
   CSSDOC_TYPED_STRUCTURE_REFERENCE: {
     name: "CSSDOC_TYPED_STRUCTURE_REFERENCE",
+    grammarRule: "StructureReference",
+    grammarSource: "cssdoc",
+    grammarRelation: "fragment",
     tier: 2,
     pattern: (resolve: PatternResolver) =>
       String.raw`(${resolve("STRUCTURE_RECORD_KIND")})\s+(${resolve("CSSDOC_QUALIFIED_REFERENCE")})(?:${resolve("COLON")}(${resolve("ALPHANUMERIC_EXTENDED")}+))?(?:\s+(private))?`,
@@ -97,6 +100,9 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   },
   CSSDOC_SHORTHAND_STRUCTURE_REFERENCE: {
     name: "CSSDOC_SHORTHAND_STRUCTURE_REFERENCE",
+    grammarRule: "StructureReference",
+    grammarSource: "cssdoc",
+    grammarRelation: "fragment",
     tier: 2,
     pattern: (resolve: PatternResolver) =>
       String.raw`(${resolve("CSSDOC_QUALIFIED_REFERENCE")})(?:${resolve("COLON")}(${resolve("ALPHANUMERIC_EXTENDED")}+))?(?:\s+(private))?`,
@@ -248,7 +254,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     name: "CSSDOC_SELECTOR_TOKEN",
     grammarRule: "CssSelectorArgument",
     grammarSource: "cssdoc",
-    grammarRelation: "exact",
+    grammarRelation: "related",
     tier: 2,
     pattern: (resolve: PatternResolver) =>
       String.raw`(?:${resolve("CSSDOC_ATTRIBUTE_SELECTOR")}|[^\s${resolve("BRACKET_OPEN")}]+)+`,
@@ -265,6 +271,9 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   },
   CSSDOC_QUALIFIED_REFERENCE: {
     name: "CSSDOC_QUALIFIED_REFERENCE",
+    grammarRule: "StructureReference",
+    grammarSource: "cssdoc",
+    grammarRelation: "fragment",
     tier: 2,
     pattern: (resolve: PatternResolver) => {
       const segment = `${resolve("ALPHANUMERIC_EXTENDED")}+`;
@@ -284,6 +293,9 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   },
   CSSDOC_STRUCTURE_SLOT: {
     name: "CSSDOC_STRUCTURE_SLOT",
+    grammarRule: "Selector",
+    grammarSource: "cssdoc",
+    grammarRelation: "related",
     tier: 2,
     pattern: (resolve: PatternResolver) => {
       const open = resolve("BRACKET_OPEN");
@@ -336,6 +348,9 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   },
   CSSDOC_BLOCK_TAG_NAME: {
     name: "CSSDOC_BLOCK_TAG_NAME",
+    grammarRule: "CustomTag",
+    grammarSource: "cssdoc",
+    grammarRelation: "related",
     tier: 2,
     pattern: (resolve: PatternResolver) => String.raw`${resolve("ALPHA")}[\w${resolve("DASH")}]*`,
     description: "Block tag name without its at sign",
@@ -392,6 +407,9 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   },
   CSSDOC_MODIFIER_ANNOTATION_PREFIX: {
     name: "CSSDOC_MODIFIER_ANNOTATION_PREFIX",
+    grammarRule: "ModifierBody",
+    grammarSource: "cssdoc",
+    grammarRelation: "fragment",
     tier: 2,
     pattern: (resolve: PatternResolver) => String.raw`(?:[${resolve("DASH")}—]\s*)?`,
     description: "Optional punctuation before a modifier annotation",
@@ -406,6 +424,9 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   },
   CSSDOC_MODIFIER_REFERENCE: {
     name: "CSSDOC_MODIFIER_REFERENCE",
+    grammarRule: "CssReference",
+    grammarSource: "cssdoc",
+    grammarRelation: "related",
     tier: 2,
     pattern: (resolve: PatternResolver) =>
       String.raw`(?:${resolve("DOT")}?[\w-]+|${resolve("BRACKET_OPEN")}[^${resolve("BRACKET_CLOSE")}]*${resolve("BRACKET_CLOSE")})`,
