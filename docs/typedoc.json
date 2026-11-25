@@ -23,6 +23,11 @@
   "hideBreadcrumbs": true,
   "useCodeBlocks": true,
   "validation": { "notDocumented": true },
-  "packagesRequiringDocumentation": ["@cssdoc/core", "@cssdoc/index"],
+  "packagesRequiringDocumentation": [
+    "@cssdoc/core",
+    "@cssdoc/index",
+    "@cssdoc/config",
+    "@cssdoc/embedded"
+  ],
   "treatWarningsAsErrors": true
 }
