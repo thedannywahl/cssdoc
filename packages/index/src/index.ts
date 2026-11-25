@@ -253,9 +253,17 @@ function resolveValue(
   return valueParser.stringify(parsed.nodes);
 }
 
-/** A queryable view over the parsed records. */
+/**
+ * A queryable view over parsed records and, when available, their source spans.
+ *
+ * Member-list methods return an empty array when the record is unknown. Structure methods return
+ * `undefined` when the record or structure is absent. Name lookups use record names; class lookups
+ * accept a base class with or without a leading dot.
+ */
 export class CssDocIndex {
+  /** Source filename attached to returned locations, when supplied. */
   readonly file?: string;
+  /** Indexed records in input order. */
   readonly records: readonly RecordInfo[];
   /** The modifier matcher for this index's convention — how members are matched and rendered. */
   readonly matcher: ModifierMatcher;
@@ -311,42 +319,52 @@ export class CssDocIndex {
     return this.byName.get(name);
   }
 
+  /** The modifiers documented on the named record. */
   modifiersFor(name: string): CssModifier[] {
     return this.byName.get(name)?.entry.modifiers ?? [];
   }
 
+  /** The selector-derived parts documented on the named record. */
   partsFor(name: string): CssPart[] {
     return this.byName.get(name)?.entry.parts ?? [];
   }
 
+  /** The shadow parts documented on the named record. */
   shadowPartsFor(name: string): CssPart[] {
     return this.byName.get(name)?.entry.shadowParts ?? [];
   }
 
+  /** The custom properties declared by the named record, not properties it consumes. */
   customPropertiesFor(name: string): CssPropertyDeclared[] {
     return this.byName.get(name)?.entry.cssPropertiesDeclared ?? [];
   }
 
+  /** The custom functions documented on the named record. */
   functionsFor(name: string): CssFunction[] {
     return this.byName.get(name)?.entry.functions ?? [];
   }
 
+  /** The states documented on the named record. */
   statesFor(name: string): CssState[] {
     return this.byName.get(name)?.entry.states ?? [];
   }
 
+  /** The conditions documented on the named record. */
   conditionsFor(name: string): CssCondition[] {
     return this.byName.get(name)?.entry.conditions ?? [];
   }
 
+  /** The animations documented on the named record. */
   animationsFor(name: string): CssAnimation[] {
     return this.byName.get(name)?.entry.animations ?? [];
   }
 
+  /** The named record's structure tree, if present. */
   structureFor(name: string): StructureNode[] | undefined {
     return this.byName.get(name)?.entry.structure;
   }
 
+  /** The named record's alternative structure trees, if present. */
   structureVariantsFor(name: string): StructureVariant[] | undefined {
     return this.byName.get(name)?.entry.structureVariants;
   }
@@ -427,6 +445,12 @@ export class CssDocIndex {
  * Build an index from a model snapshot (no source spans). `matcher` defaults to BEM when omitted —
  * pass the governing scope's own `index.matcher` when merging in provider/sibling entries, so a
  * non-BEM project's modifier convention (rscss, attribute, …) still applies to the merged index.
+ *
+ * @param entries - Records to index in the given order.
+ * @param file - Optional filename stored in the index and its manifest.
+ * @param globalPrecedence - Whether a base or global modifier wins on conflict; defaults to `base`.
+ * @param matcher - Modifier matcher for the governing scope; defaults to BEM.
+ * @returns An index without source spans or collected custom-property values.
  */
 export function indexFromEntries(
   entries: CssDocEntry[],

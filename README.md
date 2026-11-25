@@ -73,6 +73,18 @@ the docs and TypeDoc plugin type-check tasks use the root TypeScript compiler in
 The root `tsdoc.json` defines cssdoc tags for TSDoc linting. Its definitions are checked against the
 canonical vocabulary in `@cssdoc/spec`.
 
+### Documenting TypeScript APIs
+
+Write public API comments in TSDoc syntax. Start with what the API does, then describe behavior a caller
+can't infer from the signature: defaults, ordering, side effects, errors, and edge cases. Use
+`@param name - description` for parameters and `@returns` for a useful return description; avoid
+restating the TypeScript types. Add `@throws`, `@remarks`, and runnable `@example` blocks when they
+help explain the contract. Keep examples consistent with the implementation and tests.
+
+The root lint configuration checks TSDoc syntax, requires comments on exported source declarations, and
+requires a description when `@returns` is present. CSS doc-comment examples use the cssdoc grammar,
+which is separate from the TSDoc comments documenting the TypeScript APIs.
+
 ## License
 
 MIT
