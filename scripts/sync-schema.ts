@@ -38,7 +38,7 @@ export const SCHEMA_TARGETS = [
 ] as const;
 
 /** The canonical bytes every target must contain (2-space JSON + trailing newline). */
-export const SCHEMA_JSON = `${JSON.stringify(cssDocSchema, null, 2)}\n`;
+export const SCHEMA_JSON: string = `${JSON.stringify(cssDocSchema, null, 2)}\n`;
 
 const resolve = (rel: string): string => fileURLToPath(new URL(`../${rel}`, import.meta.url));
 

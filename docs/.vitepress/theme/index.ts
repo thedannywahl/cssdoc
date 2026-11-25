@@ -4,9 +4,9 @@ import type { Theme } from "vitepress";
 import VitePressMermaid from "../plugins/vitepress-mermaid/index.vue";
 import "./custom.css";
 
-export default {
+const theme: Theme = {
   extends: DefaultTheme,
-  enhanceApp({ app }) {
+  enhanceApp({ app }): void {
     // Renders ```mermaid fences (rewritten to <vitepress-mermaid> by the markdown-it plugin).
     app.component("vitepress-mermaid", VitePressMermaid);
 
@@ -17,4 +17,6 @@ export default {
       defineClientComponent(() => import("./CssdocPlayground.vue")),
     );
   },
-} satisfies Theme;
+};
+
+export default theme;
