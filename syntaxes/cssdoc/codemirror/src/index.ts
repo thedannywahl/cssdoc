@@ -22,6 +22,7 @@
 import { RangeSetBuilder } from "@codemirror/state";
 import type { Extension } from "@codemirror/state";
 import { CSSDOC_TAGS, cssdocTagNamesByArgument, cssdocTagNamesByKind } from "@cssdoc/spec";
+import { regex as arkRegex } from "arkregex";
 import {
   Decoration,
   type DecorationSet,
@@ -109,7 +110,7 @@ const injectTags = (pattern: string, tags: readonly string[]): string =>
 
 // One left-to-right alternation, so matches never overlap. The `d` flag exposes per-group offsets.
 // Token patterns follow structures defined in @cssdoc/regex/TOKENIZER_* patterns.
-const TOKEN = new RegExp(
+const TOKEN = arkRegex.as(
   [
     injectTags(TOKENIZER_INLINE_TAG_SOURCE, INLINE_TAGS),
     injectTags(TOKENIZER_RECORD_TAG_SOURCE, RECORD_TAGS),
@@ -122,7 +123,7 @@ const TOKEN = new RegExp(
     // a custom property named anywhere in the comment
     `(?<cprop>${TOKEN_CUSTOM_PROPERTY_SOURCE})`,
   ].join("|"),
-  "gd",
+  "dg",
 );
 
 const GROUP_TYPE: Record<string, CssdocTokenType> = {
@@ -189,7 +190,7 @@ export const tokenizeComment = (text: string): CssdocToken[] => {
     }
 
     // Pattern to match braces for nesting visualization
-    const bracePattern = new RegExp(`${BRACE_OPEN_SOURCE}|${BRACE_CLOSE_SOURCE}`, "gu");
+    const bracePattern = arkRegex.as(`${BRACE_OPEN_SOURCE}|${BRACE_CLOSE_SOURCE}`, "gu");
     for (const m of body.matchAll(bracePattern)) {
       const from = start + (m.index ?? 0);
       out.push({ from, to: from + m[0].length, type: "punct" });

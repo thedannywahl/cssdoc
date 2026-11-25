@@ -36,6 +36,7 @@
  */
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { regex as arkRegex } from "arkregex";
 import { CssDocConfigFile, resolveProviders } from "@cssdoc/config";
 import type { ModifierConventionInput } from "@cssdoc/core";
 import { scanClassUsages } from "@cssdoc/embedded";
@@ -360,7 +361,7 @@ const requireComponentDocs: RuleModule = {
   },
   create(context) {
     const options = (context.options[0] ?? {}) as { pattern?: string; skipUtilities?: boolean };
-    const pattern = new RegExp(options.pattern ?? "^[A-Z]");
+    const pattern = arkRegex.as(options.pattern ?? "^[A-Z]");
     const skipUtilities = options.skipUtilities !== false;
 
     return {

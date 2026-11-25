@@ -42,7 +42,8 @@
     "@codemirror/state": "catalog:",
     "@codemirror/view": "catalog:",
     "@cssdoc/regex": "workspace:*",
-    "@cssdoc/spec": "workspace:*"
+    "@cssdoc/spec": "workspace:*",
+    "arkregex": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",

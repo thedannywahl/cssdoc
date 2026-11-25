@@ -40,10 +40,11 @@
   "dependencies": {
     "@codemirror/state": "catalog:",
     "@codemirror/view": "catalog:",
-    "@cssdoc/grammarkdown-tmlanguage": "workspace:*"
+    "@cssdoc/grammarkdown-tmlanguage": "workspace:*",
+    "@cssdoc/regex": "workspace:*",
+    "arkregex": "catalog:"
   },
   "devDependencies": {
-    "@cssdoc/regex": "workspace:*",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "publint": "catalog:",

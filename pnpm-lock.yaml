@@ -1097,6 +1097,9 @@ importers:
       '@cssdoc/providers':
         specifier: workspace:*
         version: link:../../packages/providers
+      arkregex:
+        specifier: 'catalog:'
+        version: 0.0.15
     devDependencies:
       '@cssdoc/stylelint-plugin':
         specifier: workspace:*
@@ -1303,6 +1306,9 @@ importers:
       '@cssdoc/spec':
         specifier: workspace:*
         version: link:../../../packages/spec
+      arkregex:
+        specifier: 'catalog:'
+        version: 0.0.15
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -1368,10 +1374,13 @@ importers:
       '@cssdoc/grammarkdown-tmlanguage':
         specifier: workspace:*
         version: link:../tmlanguage
-    devDependencies:
       '@cssdoc/regex':
         specifier: workspace:*
         version: link:../../../packages/regex
+      arkregex:
+        specifier: 'catalog:'
+        version: 0.0.15
+    devDependencies:
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.4

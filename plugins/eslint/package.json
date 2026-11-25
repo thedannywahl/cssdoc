@@ -42,7 +42,8 @@
     "@cssdoc/embedded": "workspace:*",
     "@cssdoc/index": "workspace:*",
     "@cssdoc/lint-core": "workspace:*",
-    "@cssdoc/providers": "workspace:*"
+    "@cssdoc/providers": "workspace:*",
+    "arkregex": "catalog:"
   },
   "devDependencies": {
     "@cssdoc/stylelint-plugin": "workspace:*",
