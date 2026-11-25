@@ -45,7 +45,14 @@ export interface CustomElementsManifest {
   modules: CemModule[];
 }
 
-/** Build a Custom Elements Manifest from the index. */
+/**
+ * Build a Custom Elements Manifest with one declaration per indexed record. Only shadow parts and
+ * custom states map to CEM parts and states; class-based parts and native pseudo-classes do not.
+ *
+ * @param index - Index containing records and their documented CSS members.
+ * @param options - Optional module path; defaults to the index filename, then `styles.css`.
+ * @returns A manifest with one JavaScript module containing the record declarations.
+ */
 export function toCem(index: CssDocIndex, options: { path?: string } = {}): CustomElementsManifest {
   const path = options.path ?? index.file ?? "styles.css";
   const declarations: CemDeclaration[] = index.entries.map((entry) => ({
@@ -71,7 +78,14 @@ export function toCem(index: CssDocIndex, options: { path?: string } = {}): Cust
   return { schemaVersion: "2.1.0", modules: [{ kind: "javascript-module", path, declarations }] };
 }
 
-/** Write the manifest to `outFile` (defaults to `custom-elements.json`). */
+/**
+ * Write a pretty-printed manifest, creating parent directories as needed.
+ *
+ * @param options - The source index, optional module path, and output path; the output defaults to
+ * `custom-elements.json`.
+ * @returns The output path.
+ * @throws If a filesystem operation fails.
+ */
 export function writeCem(options: { index: CssDocIndex; outFile?: string; path?: string }): {
   outFile: string;
 } {

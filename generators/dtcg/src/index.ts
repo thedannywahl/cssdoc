@@ -36,7 +36,14 @@ export interface DtcgToken {
 /** A DTCG token document: a group per record, each holding its custom-property tokens. */
 export type DtcgDocument = Record<string, Record<string, DtcgToken>>;
 
-/** Build a DTCG token document from the index's declared custom properties. */
+/**
+ * Build a DTCG token document from declared custom properties, grouped by record name. Leading `--`
+ * is removed from token names. Missing defaults become empty strings; recognized syntax descriptors
+ * supply a `$type`, while unrecognized descriptors leave it out.
+ *
+ * @param index - Index containing records and their declared custom properties.
+ * @returns A token document; records without declared properties are omitted.
+ */
 export function toDtcg(index: CssDocIndex): DtcgDocument {
   const root: DtcgDocument = {};
   for (const entry of index.entries) {
@@ -55,7 +62,13 @@ export function toDtcg(index: CssDocIndex): DtcgDocument {
   return root;
 }
 
-/** Write the DTCG document to `outFile` (defaults to `tokens.json`). */
+/**
+ * Write a pretty-printed token document, creating parent directories as needed.
+ *
+ * @param options - The source index and optional output path, which defaults to `tokens.json`.
+ * @returns The output path.
+ * @throws If a filesystem operation fails.
+ */
 export function writeDtcg(options: { index: CssDocIndex; outFile?: string }): { outFile: string } {
   const outFile = options.outFile ?? "tokens.json";
   mkdirSync(dirname(outFile), { recursive: true });
