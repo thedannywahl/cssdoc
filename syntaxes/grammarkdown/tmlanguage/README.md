@@ -32,3 +32,16 @@ import grammar from "@cssdoc/grammarkdown-tmlanguage/grammarkdown.tmLanguage.jso
 ```
 
 Its scope name is `source.grammarkdown`.
+
+## Updating the grammar
+
+The grammar is defined in `src/index.ts` and composes shared patterns from `@cssdoc/regex`. The private
+regex package is bundled into the published JavaScript. After changing the grammar, rebuild the package
+and regenerate the committed JSON snapshot:
+
+```sh
+vp run build
+vp run generate
+```
+
+Tests check that the snapshot matches the grammar builder. Building alone doesn't regenerate it.

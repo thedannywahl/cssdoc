@@ -101,6 +101,22 @@ test("@structure region highlights @component and @variant with names", () => {
   expect((componentPattern as Record<string, unknown>)?.captures).toBeDefined();
 });
 
+test.each([
+  "optional",
+  "opt",
+  "many",
+  "one-or-more",
+  "more",
+  "max-5",
+  "one-or-more:max-3",
+  "more:max-4",
+])("@structure component references include the full :%s cardinality", (cardinality) => {
+  const pattern = buildInjectionGrammar().repository["structure-tag"]?.patterns?.[0]?.match;
+  expect(pattern).toBeDefined();
+  const match = `@component button:${cardinality}`.match(new RegExp(pattern!, "u"));
+  expect(match?.[2]).toBe(`button:${cardinality}`);
+});
+
 test("@structure region highlights slot declarations", () => {
   const g = buildInjectionGrammar();
   const structurePatterns = g.repository["structure-tag"]?.patterns ?? [];

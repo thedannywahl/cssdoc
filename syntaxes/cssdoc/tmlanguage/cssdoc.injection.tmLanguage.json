@@ -144,7 +144,7 @@
       "end": "(?=@)|(?=\\*/)",
       "patterns": [
         {
-          "match": "((?:@component|@variant|@modifier|@state|@part))\\b[ \\t]*((?<ref>(?<identifier>[a-zA-Z_\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*)(?::(?<card>(?:one-or-more|zero-or-more|optional|exactly-one|max-\\d+)?))?))?",
+          "match": "((?:@component|@variant|@modifier|@state|@part))\\b[ \\t]*((?<ref>(?<identifier>[a-zA-Z_\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*)(?::(?<card>(?:(?<oomKw>one-or-more|more):max-(?<oomMax>[0-9]+)|max-(?<max>[0-9]+)|(?<kw>optional|opt|many|one-or-more|more))))?))?",
           "captures": {
             "1": {
               "name": "storage.type.class.cssdoc"
