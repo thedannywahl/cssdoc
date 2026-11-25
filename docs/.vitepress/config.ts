@@ -28,6 +28,7 @@ const apiSidebar: DefaultTheme.SidebarItem[] = existsSync(apiSidebarPath)
   ? (JSON.parse(readFileSync(apiSidebarPath, "utf8")) as DefaultTheme.SidebarItem[])
   : [];
 
+/** VitePress site configuration, including generated reference pages and theme plugins. */
 const config: UserConfig = defineConfig({
   base,
   lang: "en-US",

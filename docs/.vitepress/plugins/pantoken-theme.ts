@@ -7,6 +7,7 @@ import type { Plugin } from "vite-plus";
 
 const auroraPrefix = "--instui-primitive-color-aurora-aurora";
 
+/** Render Aurora tokens, VitePress brand bridges, and home-page backgrounds as CSS. */
 export function themeCss(tokens: readonly Token[] = byTheme("rebrand")): string {
   const bridge = postcss.rule({ selector: ":root" });
   for (const [property, token] of Object.entries(VITEPRESS_TO_INSTUI)) {
@@ -34,6 +35,7 @@ ${bridge.toString()}
 .dark { ${background(true)} }`;
 }
 
+/** Replace the cssdoc theme at-rule with generated theme CSS. */
 export function expandTheme(): PostcssPlugin {
   return {
     postcssPlugin: "cssdoc-pantoken-theme",
@@ -47,6 +49,7 @@ export function expandTheme(): PostcssPlugin {
   };
 }
 
+/** Remove unused Pantoken custom properties while preserving other custom properties. */
 export async function pruneTheme(source: string): Promise<string> {
   const root = postcss.parse(source);
   const preserved = new Set<string>();
@@ -65,6 +68,7 @@ export async function pruneTheme(source: string): Promise<string> {
   return root.toString();
 }
 
+/** Prune Pantoken properties from the composed CSS asset after the site build. */
 export function pruneThemeBundle(): Plugin {
   return {
     name: "cssdoc-prune-pantoken",

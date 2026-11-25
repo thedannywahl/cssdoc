@@ -8,6 +8,7 @@ import bareConfig from "../../examples/cssdoc.bare.jsonc?raw";
 import rscssCss from "../../examples/tabs.rscss.css?raw";
 import rscssConfig from "../../examples/cssdoc.rscss.json?raw";
 
+/** Playground inputs for one CSS naming convention. */
 export interface Preset {
   label: string;
   css: string;
@@ -64,6 +65,7 @@ const tabsHtml = (modifier: string): string => `<div class="tabs ${modifier}">
   <div class="panel">Panel one</div>
 </div>`;
 
+/** Built-in playground examples keyed by naming convention. */
 export const presets: Record<string, Preset> = {
   bem: {
     label: "BEM",

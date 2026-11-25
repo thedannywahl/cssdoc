@@ -4,6 +4,7 @@ import type { Theme } from "vitepress";
 import VitePressMermaid from "../plugins/vitepress-mermaid/index.vue";
 import "./custom.css";
 
+/** Site theme with Mermaid rendering and a client-only playground. */
 const theme: Theme = {
   extends: DefaultTheme,
   enhanceApp({ app }): void {
