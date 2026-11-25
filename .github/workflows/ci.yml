@@ -23,7 +23,7 @@ jobs:
       - run: vp run build
       - run: vp run check # format + lint + typecheck
       - run: vp run test
-      - run: vp run check:publish # publint
+      - run: vp run check:publish # publint + ATTW
 
   commitlint:
     if: github.event_name == 'pull_request'

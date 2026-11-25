@@ -58,7 +58,7 @@ vp run -r build   # build every package
 vp run check      # format + lint + type-check + schema check
 vp run type-check # run tsc across every workspace project
 vp run -r test    # run every package's tests
-vp run -r publint # check each package is publish-ready
+vp run check:publish # check each package with publint and ATTW
 ```
 
 Package configs merge shared lint, format, and library pack settings from `vite.config.base.ts`.

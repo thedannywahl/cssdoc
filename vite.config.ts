@@ -53,15 +53,21 @@ const config: UserConfig = mergeConfig(
         "type-check": { cache: false, command: "tsc --noEmit && vp run --no-cache -r type-check" },
         "sync:schema": { cache: false, command: "node scripts/sync-schema.ts" },
         test: { cache: false, command: "vp run -r test" },
-        "check:publish": { cache: false, command: "vp run -r publint" },
-        ready: { cache: false, command: "vp run build && vp run check && vp run test" },
+        "check:publish": {
+          cache: false,
+          command: "vp run -r publint && vp run --no-cache -r attw",
+        },
+        ready: {
+          cache: false,
+          command: "vp run build && vp run check && vp run test && vp run check:publish",
+        },
         "docs:dev": { cache: false, command: "vp run @cssdoc/docs#docs:dev" },
         "docs:build": { cache: false, command: "vp run @cssdoc/docs#docs:build" },
         "docs:preview": { cache: false, command: "vp run @cssdoc/docs#docs:preview" },
         release: {
           cache: false,
           command:
-            'vp run ready && vp run check:publish && bumpp -r --all --print-commits --execute "node scripts/release-changelog.mjs" --commit "chore(release): v%s" --tag "v%s" --no-push && git push --follow-tags',
+            'vp run ready && bumpp -r --all --print-commits --execute "node scripts/release-changelog.mjs" --commit "chore(release): v%s" --tag "v%s" --no-push && git push --follow-tags',
         },
         publish: {
           cache: false,

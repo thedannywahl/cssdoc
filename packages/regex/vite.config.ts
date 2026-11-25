@@ -17,6 +17,7 @@ const config: UserConfig = mergeConfig(
         test: "vp test",
         check: "vp check",
         publint: "publint",
+        attw: "node ../../scripts/check-package-types.mjs",
         "type-check": "tsc --noEmit",
       },
     },

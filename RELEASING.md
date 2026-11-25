@@ -8,7 +8,9 @@ are gated by CI.
 
 Write [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`,
 `refactor:`, `chore:`, `feat!:` / `BREAKING CHANGE:` for majors). CI lints every PR's commits and runs
-the full gate (`build`, `check`, `test`, `publint`).
+the full gate (`build`, `check`, `test`, `publint`, and Are the Types Wrong?).
+The type-package check uses pnpm-packed tarballs and ATTW's ESM-only profile, matching the published
+packages' module format.
 
 ## Cutting a release
 

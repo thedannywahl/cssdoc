@@ -15,6 +15,7 @@ const config: UserConfig = mergeConfig(
         check: "vp check",
         "type-check": "tsc --noEmit",
         publint: "publint",
+        attw: "node ../../../scripts/check-package-types.mjs",
         generate: {
           command: "node scripts/generate.mjs && vp fmt grammarkdown.tmLanguage.json",
           cache: false,

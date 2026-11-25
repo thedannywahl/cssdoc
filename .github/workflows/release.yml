@@ -18,7 +18,7 @@ jobs:
         with:
           cache: true
       - name: Gate
-        run: vp run ready && vp run check:publish
+        run: vp run ready
       # Tokenless OIDC trusted publishing (no NODE_AUTH_TOKEN). Requires a trusted publisher configured
       # on npm for each @cssdoc/* package (repo thedannywahl/cssdoc, workflow release.yml). The `id-token`
       # permission lets vp exchange the OIDC token for a short-lived publish token against the default

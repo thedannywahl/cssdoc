@@ -1,5 +1,5 @@
-import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { execFileSync, spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -65,6 +65,45 @@ test("JSDoc lint accepts cssdoc tags but still reports unknown tags", () => {
           .map((diagnostic) => diagnostic.help),
       ).toEqual(["`@unknownCssdocTag` is invalid tag name."]);
     }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("the package type check fails on missing declarations and cleans its tarball", () => {
+  const directory = mkdtempSync(join(tmpdir(), "cssdoc-attw-test-"));
+  try {
+    const packageDir = join(directory, "package");
+    const scratchDir = join(directory, "scratch");
+    mkdirSync(packageDir);
+    mkdirSync(scratchDir);
+    symlinkSync(
+      fileURLToPath(new URL("../../../node_modules", import.meta.url)),
+      join(packageDir, "node_modules"),
+      "junction",
+    );
+    writeFileSync(
+      join(packageDir, "package.json"),
+      JSON.stringify({
+        name: "cssdoc-attw-test",
+        version: "1.0.0",
+        type: "module",
+        exports: "./index.js",
+      }),
+    );
+    writeFileSync(join(packageDir, "index.js"), "export const example = 1;\n");
+    const script = fileURLToPath(
+      new URL("../../../scripts/check-package-types.mjs", import.meta.url),
+    );
+    const result = spawnSync(process.execPath, [script], {
+      cwd: packageDir,
+      encoding: "utf8",
+      env: { ...process.env, TMPDIR: scratchDir, TMP: scratchDir, TEMP: scratchDir },
+    });
+
+    expect(result.status).not.toBe(0);
+    expect(result.stdout + result.stderr).toContain("ATTW: package has no type declarations");
+    expect(readdirSync(scratchDir).filter((entry) => entry.startsWith("cssdoc-attw-"))).toEqual([]);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
