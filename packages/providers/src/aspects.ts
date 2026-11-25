@@ -289,6 +289,7 @@ const renderStructureTree = (nodes: StructureNode[], depth = 0): string[] =>
 
 /** Providers for documented records and their usage. */
 export const record = {
+  /** Check record-level authoring rules, including structure references and naming. */
   model(
     index: CssDocIndex,
     naming?: ResolvedNaming,
@@ -748,6 +749,7 @@ export const record = {
     return out;
   },
 
+  /** Suggest indexed base classes without their leading dots. */
   completions(index: CssDocIndex): Completion[] {
     return index.entries.map((entry) => ({
       label: stripDot(entry.className),
@@ -758,6 +760,7 @@ export const record = {
     }));
   },
 
+  /** Render the matching record's hover card, or return `undefined` when no record matches. */
   hover(
     base: string,
     index: CssDocIndex,
@@ -1013,6 +1016,7 @@ export const record = {
     return { contents: lines.join("\n") };
   },
 
+  /** Find the base record's source location, when indexed. */
   definition(base: string, index: CssDocIndex): Location | undefined {
     const entry = index.componentForClass(base);
     return entry ? index.location(entry.name, "record") : undefined;
@@ -1023,6 +1027,7 @@ export const record = {
 
 /** Providers for modifier documentation and usage. */
 export const modifier = {
+  /** Check modifier documentation and selector drift across indexed records. */
   model(index: CssDocIndex): Diagnostic[] {
     const out: Diagnostic[] = [];
     for (const info of index.records) {
@@ -1140,6 +1145,7 @@ export const modifier = {
     return out;
   },
 
+  /** Diagnose unknown or deprecated modifier usage on a recognized base class. */
   classUsage(usage: ClassUsage, index: CssDocIndex): Diagnostic[] {
     if (!usage.base || !index.matcher.looksLikeUsage(usage.token, usage.base)) return [];
     const entry = index.componentForClass(usage.base);
@@ -1174,6 +1180,7 @@ export const modifier = {
     return [];
   },
 
+  /** Suggest direct and global modifiers for a recognized base class. */
   completions(base: string, index: CssDocIndex): Completion[] {
     const entry = index.componentForClass(base);
     if (!entry) return [];
@@ -1216,6 +1223,7 @@ export const modifier = {
     return [...direct, ...global];
   },
 
+  /** Render hover content for a directly documented modifier, when found. */
   hover(base: string, token: string, index: CssDocIndex): Hover | undefined {
     const entry = index.componentForClass(base);
     const m = entry?.modifiers.find((x) => x.name === index.matcher.normalizeMember(token));
@@ -1248,6 +1256,7 @@ export const modifier = {
     return { contents: lines.join("\n") };
   },
 
+  /** Find a modifier's source location, when indexed. */
   definition(base: string, token: string, index: CssDocIndex): Location | undefined {
     const entry = index.componentForClass(base);
     return entry
@@ -1260,6 +1269,7 @@ export const modifier = {
 
 /** Providers for documented class-based parts. */
 export const part = {
+  /** Check class-based part documentation and optional naming conventions. */
   model(index: CssDocIndex, naming?: ResolvedNaming): Diagnostic[] {
     const out: Diagnostic[] = [];
     for (const info of index.records) {
@@ -1320,6 +1330,7 @@ export const part = {
 
 /** Providers for documented shadow parts. */
 export const cssPart = {
+  /** Check shadow-part descriptions on indexed records. */
   model(index: CssDocIndex): Diagnostic[] {
     const out: Diagnostic[] = [];
     for (const info of index.records) {
@@ -1467,6 +1478,7 @@ export const customProperty = {
     ];
   },
 
+  /** Check a property reference's fallback and, when configured, whether its name is known. */
   propertyUsage(usage: PropertyUsage, index: CssDocIndex, options: UsageOptions): Diagnostic[] {
     const out: Diagnostic[] = [];
     // A `var(--x, fallback)` fallback must match --x's declared syntax.
@@ -1505,6 +1517,7 @@ export const customProperty = {
     return out;
   },
 
+  /** Suggest declared custom properties from the index. */
   completions(index: CssDocIndex): Completion[] {
     return index.allCustomProperties().map(({ property }) => ({
       label: property.name,
@@ -1514,6 +1527,7 @@ export const customProperty = {
     }));
   },
 
+  /** Render property documentation and resolved values, when available. */
   hover(name: string, index: CssDocIndex, valueIndex: CssDocIndex = index): Hover | undefined {
     const found = findProperty(index, name);
     const { declared, resolved } = valueIndex.resolveCustomProperty(name);
@@ -1529,6 +1543,7 @@ export const customProperty = {
     return { contents: lines.join("\n") };
   },
 
+  /** Find a custom property's source location, when indexed. */
   definition(name: string, index: CssDocIndex): Location | undefined {
     const found = findProperty(index, name);
     return found ? index.location(found.record.entry.name, memberKey("property", name)) : undefined;
@@ -1539,6 +1554,7 @@ export const customProperty = {
 
 /** Providers for documented CSS functions. */
 export const func = {
+  /** Suggest documented custom functions from the index. */
   completions(index: CssDocIndex): Completion[] {
     return index.allFunctions().map(({ fn }) => ({
       label: fn.name,
@@ -1550,6 +1566,7 @@ export const func = {
     }));
   },
 
+  /** Render the first matching function's signature and description. */
   hover(name: string, index: CssDocIndex): Hover | undefined {
     const match = index.allFunctions().find(({ fn }) => fn.name === name);
     if (!match) return undefined;
@@ -1558,6 +1575,7 @@ export const func = {
     return { contents: fn.description ? `${sig}\n\n${fn.description}` : sig };
   },
 
+  /** Find the first matching custom function's source location, when indexed. */
   definition(name: string, index: CssDocIndex): Location | undefined {
     const match = index.allFunctions().find(({ fn }) => fn.name === name);
     return match ? index.location(match.record, memberKey("function", name)) : undefined;

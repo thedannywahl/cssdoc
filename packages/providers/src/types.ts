@@ -129,8 +129,16 @@ export interface RuleOptions {
 
 /** Resolved rule options with defaults applied. */
 export interface ResolvedRuleOptions {
-  values: { allowInherit: boolean };
-  sealed: { mode: "strict" | "compat" };
+  /** Resolved reset-value policy. */
+  values: {
+    /** Whether `inherit` is allowed. */
+    allowInherit: boolean;
+  };
+  /** Resolved sealed-rule policy. */
+  sealed: {
+    /** The selected sealed-rule mode. */
+    mode: "strict" | "compat";
+  };
 }
 
 /** Default rule options used when config omits `ruleOptions`. */
@@ -187,7 +195,10 @@ export interface Diagnostic {
    * linted (possibly projected) source, so the language server can restore an embedded `${…}`
    * interpolation for display instead of the masked filler.
    */
-  data?: { maskedName?: string };
+  data?: {
+    /** Class token as it appears in the linted source. */
+    maskedName?: string;
+  };
 }
 
 /** What kind of thing a completion inserts. */
@@ -197,6 +208,7 @@ export type CompletionKind = "component" | "modifier" | "part" | "property" | "f
 export interface Completion {
   /** The text to insert (e.g. `-color-secondary`, `--value`). */
   label: string;
+  /** Category of the suggested item. */
   kind: CompletionKind;
   /** A short type/hint shown beside the label. */
   detail?: string;
@@ -210,6 +222,7 @@ export interface Completion {
 
 /** Hover content (markdown). */
 export interface Hover {
+  /** Markdown content to display. */
   contents: string;
 }
 
@@ -296,7 +309,9 @@ export const NAME_CASE_PRESETS: Record<string, RegExp> = {
 
 /** A {@link NamingRules} compiled to regexes (custom patterns compiled from their source). */
 export interface ResolvedNaming {
+  /** Pattern for component base-class names, when configured. */
   component?: RegExp;
+  /** Pattern for part names, when configured. */
   part?: RegExp;
 }
 
