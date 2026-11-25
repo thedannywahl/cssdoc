@@ -4,6 +4,127 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.19.0
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.18.1...v0.19.0)
+
+### 🚀 Enhancements
+
+- **regex:** Add tier 0 character class patterns ([a263280](https://github.com/thedannywahl/cssdoc/commit/a263280))
+- **regex:** Add pattern registry with queryable metadata ([62fd8c7](https://github.com/thedannywahl/cssdoc/commit/62fd8c7))
+- Implement pattern fixtures for Tiers 0-2 ([7295112](https://github.com/thedannywahl/cssdoc/commit/7295112))
+- **regex:** Consolidate Tier 0-1 patterns into unified registry ([4fce560](https://github.com/thedannywahl/cssdoc/commit/4fce560))
+- **regex:** Add ArkRegex support to unified definitions ([db6194f](https://github.com/thedannywahl/cssdoc/commit/db6194f))
+- **regex:** Export all 48 patterns comprehensively from index.ts ([a141d0a](https://github.com/thedannywahl/cssdoc/commit/a141d0a))
+- **regex:** Add TOKEN_CLASS_SELECTOR_REQUIRED_DOT pattern ([bc37567](https://github.com/thedannywahl/cssdoc/commit/bc37567))
+- **regex:** Add comment punctuation patterns ([c4c977d](https://github.com/thedannywahl/cssdoc/commit/c4c977d))
+- **regex:** Add brace punctuation patterns ([918131a](https://github.com/thedannywahl/cssdoc/commit/918131a))
+- **regex+core:** Add pattern definitions and consolidate core/parse.ts ([72a936c](https://github.com/thedannywahl/cssdoc/commit/72a936c))
+- **regex:** Add anchor support to toRegExp utility ([1c1397b](https://github.com/thedannywahl/cssdoc/commit/1c1397b))
+- **regex:** Add generic tokenizer pattern definitions for doc-comment tags ([21dcfc7](https://github.com/thedannywahl/cssdoc/commit/21dcfc7))
+- Add arkregex dependency to core and enhance structure tag highlighting ([7ea59ad](https://github.com/thedannywahl/cssdoc/commit/7ea59ad))
+- **tests:** Enhance parsing tests for documentation comments and modifier matching ([0c094fe](https://github.com/thedannywahl/cssdoc/commit/0c094fe))
+- Enhance regex pattern definitions with additional characters and structures ([4976d2b](https://github.com/thedannywahl/cssdoc/commit/4976d2b))
+- Add CodeMirror highlighter for grammarkdown and update grammar definitions ([102656d](https://github.com/thedannywahl/cssdoc/commit/102656d))
+- Replace CLASS_ATTR_RE regex with toRegExp for improved consistency and maintainability ([68d3a62](https://github.com/thedannywahl/cssdoc/commit/68d3a62))
+- Add grammarkdown support with new TextMate grammar and CodeMirror highlighter ([c0837a5](https://github.com/thedannywahl/cssdoc/commit/c0837a5))
+- Add CodeMirror dependencies and update grammarkdown syntax configurations ([9fda0d5](https://github.com/thedannywahl/cssdoc/commit/9fda0d5))
+- **regex:** Prepare shared patterns for publication ([d1bb601](https://github.com/thedannywahl/cssdoc/commit/d1bb601))
+
+### 🩹 Fixes
+
+- **regex:** Correct pattern fixtures and test assertions ([c5c3278](https://github.com/thedannywahl/cssdoc/commit/c5c3278))
+- **regex:** Add explicit type annotation to PATTERN_DEFINITIONS ([167ab6e](https://github.com/thedannywahl/cssdoc/commit/167ab6e))
+- **regex:** Wrap unwrapped alpha in brackets for TOKEN patterns ([1c05911](https://github.com/thedannywahl/cssdoc/commit/1c05911))
+- **codemirror:** Correct @structure body parsing for class selector highlighting ([c307996](https://github.com/thedannywahl/cssdoc/commit/c307996))
+- **embedded:** Match configured template tags literally ([cb4fde4](https://github.com/thedannywahl/cssdoc/commit/cb4fde4))
+- **config:** Annotate vite config exports for isolated declarations ([3a1a431](https://github.com/thedannywahl/cssdoc/commit/3a1a431))
+- **types:** Annotate exports for isolated declarations ([5f24e47](https://github.com/thedannywahl/cssdoc/commit/5f24e47))
+
+### 💅 Refactors
+
+- **regex:** Update tier files to reference tier 0 character classes ([c382ba5](https://github.com/thedannywahl/cssdoc/commit/c382ba5))
+- Use character classes in CSS_FUNCTION and CSS_PROPERTY_NAME ([c1dcfc6](https://github.com/thedannywahl/cssdoc/commit/c1dcfc6))
+- Add CSS_IDENTIFIER_START_WITH_DASH character class ([048bec2](https://github.com/thedannywahl/cssdoc/commit/048bec2))
+- Add hex digit character classes ([96426d9](https://github.com/thedannywahl/cssdoc/commit/96426d9))
+- Use cssIdentifierStart in CSS_PROPERTY_NAME ([7f36764](https://github.com/thedannywahl/cssdoc/commit/7f36764))
+- Extract CSSDOC_IDENTIFIER_PART character class ([65ddff5](https://github.com/thedannywahl/cssdoc/commit/65ddff5))
+- Use cssdocIdentifierPart string export in templates ([c58f105](https://github.com/thedannywahl/cssdoc/commit/c58f105))
+- Use Tier 0 patterns in modifier name patterns ([4e64f98](https://github.com/thedannywahl/cssdoc/commit/4e64f98))
+- Add QUOTE character class to Tier 0 ([1a33d81](https://github.com/thedannywahl/cssdoc/commit/1a33d81))
+- Use cssdocIdentifierPart for modifier patterns ([05f81bc](https://github.com/thedannywahl/cssdoc/commit/05f81bc))
+- Use Tier 1 CSS identifiers for modifier patterns ([6e4f9e5](https://github.com/thedannywahl/cssdoc/commit/6e4f9e5))
+- Use doubleDash from Tier 0 in CSS and CssDoc patterns ([e407540](https://github.com/thedannywahl/cssdoc/commit/e407540))
+- Use CSS identifier rules in CSSDOC_CUSTOM_PROPERTY ([2284c85](https://github.com/thedannywahl/cssdoc/commit/2284c85))
+- Modernize codemirror and tmlanguage syntax highlighters to use tier-organized regex patterns ([a78d352](https://github.com/thedannywahl/cssdoc/commit/a78d352))
+- **regex:** Remove duplicate Tier 2 re-exports from index ([ce42e27](https://github.com/thedannywahl/cssdoc/commit/ce42e27))
+- **regex:** Eliminate pattern duplication using getters ([9169097](https://github.com/thedannywahl/cssdoc/commit/9169097))
+- **regex:** Implement pattern composition to eliminate duplication ([f31a22e](https://github.com/thedannywahl/cssdoc/commit/f31a22e))
+- **regex:** Consolidate patterns into unified definitions with autogeneration ([fe9db72](https://github.com/thedannywahl/cssdoc/commit/fe9db72))
+- **regex:** Simplify pattern descriptions to avoid duplication ([2cd9c0f](https://github.com/thedannywahl/cssdoc/commit/2cd9c0f))
+- **regex:** Abstract PatternResolver type for composed patterns ([cfffa38](https://github.com/thedannywahl/cssdoc/commit/cfffa38))
+- **regex:** Add unwrap parameter to resolver for bracket stripping ([19a61d7](https://github.com/thedannywahl/cssdoc/commit/19a61d7))
+- **codemirror:** Add clarity on class selector pattern choice ([8fb2b5f](https://github.com/thedannywahl/cssdoc/commit/8fb2b5f))
+- **regex+providers:** Consolidate syntax patterns with existing definitions ([fabea33](https://github.com/thedannywahl/cssdoc/commit/fabea33))
+- **providers:** Use CSS_*_SOURCE exports instead of .source destructuring ([1cb05df](https://github.com/thedannywahl/cssdoc/commit/1cb05df))
+- **core:** Use pattern _SOURCE exports instead of .source destructuring ([49512a9](https://github.com/thedannywahl/cssdoc/commit/49512a9))
+- **codemirror:** Use tokenizer patterns from @cssdoc/regex ([8c42e7b](https://github.com/thedannywahl/cssdoc/commit/8c42e7b))
+- **codemirror:** Extract tag placeholder pattern to constant ([3c04a38](https://github.com/thedannywahl/cssdoc/commit/3c04a38))
+- **codemirror:** Add explicit RegExp type to TAG_NAME_PLACEHOLDER ([f1083f0](https://github.com/thedannywahl/cssdoc/commit/f1083f0))
+- **codemirror:** Extract brace characters to named constants ([bb40154](https://github.com/thedannywahl/cssdoc/commit/bb40154))
+- **regex+codemirror:** Hoist brace character constants to regex tier 0 ([3a294a8](https://github.com/thedannywahl/cssdoc/commit/3a294a8))
+- **regex:** Compose BRACE_OPEN/BRACE_CLOSE from character tier 0 ([1a3d89b](https://github.com/thedannywahl/cssdoc/commit/1a3d89b))
+- Use regex tier-0 patterns with word boundary resolver in syntax grammars ([bf8e37c](https://github.com/thedannywahl/cssdoc/commit/bf8e37c))
+- Replace all .source usages with _SOURCE exports in tmlanguage ([8c52c53](https://github.com/thedannywahl/cssdoc/commit/8c52c53))
+- Replace remaining -- literals with DOUBLE_DASH_SOURCE in at-rule patterns ([36066cc](https://github.com/thedannywahl/cssdoc/commit/36066cc))
+- Use BRACE_OPEN_CHAR and BRACE_CLOSE_CHAR in structure pattern ([21e2cf2](https://github.com/thedannywahl/cssdoc/commit/21e2cf2))
+- Use pattern definitions for INLINE_CUSTOM_MEDIA_PARAMS_RE ([2a467d8](https://github.com/thedannywahl/cssdoc/commit/2a467d8))
+- Use pattern definitions for TAG_NAME_RE in configuration ([3d15a28](https://github.com/thedannywahl/cssdoc/commit/3d15a28))
+- Use pattern definitions for LEADING_AT_RE in configuration ([c7c81c9](https://github.com/thedannywahl/cssdoc/commit/c7c81c9))
+- Use AT_CHAR for @ prefix in tagName constructor ([2d0c2d6](https://github.com/thedannywahl/cssdoc/commit/2d0c2d6))
+- Use LEADING_AT_RE in tryGetTagDefinition method ([946e1d6](https://github.com/thedannywahl/cssdoc/commit/946e1d6))
+- Use pattern definitions for structure custom-media regexes ([3461b7e](https://github.com/thedannywahl/cssdoc/commit/3461b7e))
+- Use arkregex.as() for structure custom-media regexes ([a577229](https://github.com/thedannywahl/cssdoc/commit/a577229))
+- Use STRUCTURE_RECORD_KIND pattern for guard check in customMedia ([df5b92c](https://github.com/thedannywahl/cssdoc/commit/df5b92c))
+- Declare selector attribute key regex with arkregex ([86448cd](https://github.com/thedannywahl/cssdoc/commit/86448cd))
+- Use character patterns for string literals in grammar ([dcdbaee](https://github.com/thedannywahl/cssdoc/commit/dcdbaee))
+- Convert COLON and DOT to tier 1, add POUND tier 1 pattern ([26b2005](https://github.com/thedannywahl/cssdoc/commit/26b2005))
+- Split definitions.ts into modular definitions/ directory ([835fa8b](https://github.com/thedannywahl/cssdoc/commit/835fa8b))
+- Remove types.ts and consolidate patterns ([5e2d1c5](https://github.com/thedannywahl/cssdoc/commit/5e2d1c5))
+- Update Vite configuration to use UserConfig type for improved type safety ([a45d4a7](https://github.com/thedannywahl/cssdoc/commit/a45d4a7))
+- Share base class reference patterns ([d972713](https://github.com/thedannywahl/cssdoc/commit/d972713))
+- **providers:** Reuse shared selector primitives ([f6826ea](https://github.com/thedannywahl/cssdoc/commit/f6826ea))
+- **config:** Reuse shared regex escaping ([ac3496b](https://github.com/thedannywahl/cssdoc/commit/ac3496b))
+- **markdown:** Reuse shared structure patterns ([c14bee5](https://github.com/thedannywahl/cssdoc/commit/c14bee5))
+- Share structure reference patterns ([121e078](https://github.com/thedannywahl/cssdoc/commit/121e078))
+- Use ArkRegex for local provider patterns ([d5e3ae7](https://github.com/thedannywahl/cssdoc/commit/d5e3ae7))
+- **language-server:** Reuse shared selector patterns ([aa80251](https://github.com/thedannywahl/cssdoc/commit/aa80251))
+- Use ArkRegex in syntax and lint adapters ([0277da2](https://github.com/thedannywahl/cssdoc/commit/0277da2))
+- **regex:** Construct adapters with ArkRegex ([b46d5f8](https://github.com/thedannywahl/cssdoc/commit/b46d5f8))
+- Share selector scanning patterns ([54a3d16](https://github.com/thedannywahl/cssdoc/commit/54a3d16))
+- Share permissive class reference pattern ([2421eb9](https://github.com/thedannywahl/cssdoc/commit/2421eb9))
+- **language-server:** Share doc comment matcher ([abb6344](https://github.com/thedannywahl/cssdoc/commit/abb6344))
+- Reuse shared characters for output escaping ([d64b038](https://github.com/thedannywahl/cssdoc/commit/d64b038))
+
+### 📖 Documentation
+
+- **regex:** Update README for unified definitions.ts structure ([9adbbe0](https://github.com/thedannywahl/cssdoc/commit/9adbbe0))
+- **codemirror:** Clarify brace references to @cssdoc/regex definitions ([6aa2100](https://github.com/thedannywahl/cssdoc/commit/6aa2100))
+- **regex:** Clarify global matching example ([b42ea24](https://github.com/thedannywahl/cssdoc/commit/b42ea24))
+
+### 📦 Build
+
+- **vscode:** Minify bundled extension assets ([7036cfb](https://github.com/thedannywahl/cssdoc/commit/7036cfb))
+
+### 🏡 Chore
+
+- **regex:** Remove backup definitions file ([8f4fcd6](https://github.com/thedannywahl/cssdoc/commit/8f4fcd6))
+- Update dependencies in pnpm-workspace.yaml ([76e2903](https://github.com/thedannywahl/cssdoc/commit/76e2903))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.18.1
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.18.0...v0.18.1)

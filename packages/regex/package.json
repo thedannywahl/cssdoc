@@ -1,6 +1,6 @@
 {
   "name": "@cssdoc/regex",
-  "version": "0.18.1",
+  "version": "0.19.0",
   "description": "Type-safe, ArkRegex-based pattern library for cssdoc. Centralizes CSS, grammar-driven, and cssdoc-specific regex patterns with modern named capture groups.",
   "keywords": [
     "arkregex",
