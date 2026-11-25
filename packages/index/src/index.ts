@@ -56,19 +56,25 @@ const CUSTOM_FUNCTION = arkRegex.as(`^(${CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE}
 
 /** A 1-based line/column position (matching PostCSS). */
 export interface Position {
+  /** 1-based line number. */
   line: number;
+  /** 1-based column number. */
   column: number;
 }
 
 /** A source range. */
 export interface SourceSpan {
+  /** Start position. */
   start: Position;
+  /** End position. */
   end: Position;
 }
 
 /** A location: a source range, optionally in a named file. */
 export interface Location {
+  /** Source filename, when known. */
   file?: string;
+  /** Range within the source. */
   span: SourceSpan;
 }
 
@@ -94,22 +100,29 @@ export interface ClassUsage {
 
 /** A `var(--name)` custom-property reference. */
 export interface PropertyUsage {
+  /** Referenced custom-property name, including `--`. */
   name: string;
   /** The fallback in `var(--name, fallback)`, when present. */
   fallback?: string;
+  /** Source range of the reference, when known. */
   loc?: SourceSpan;
 }
 
 /** A custom-property assignment: `--name: value`. */
 export interface PropertyAssignment {
+  /** Assigned custom-property name, including `--`. */
   name: string;
+  /** Authored declaration value. */
   value: string;
+  /** Source range of the declaration, when known. */
   loc?: SourceSpan;
 }
 
 /** The value sites a stylesheet contains: custom-property assignments and `var(--…)` references. */
 export interface CssValueSites {
+  /** Custom-property declarations found in the source. */
   assignments: PropertyAssignment[];
+  /** Custom-property references found in declaration values. */
   usages: PropertyUsage[];
 }
 
@@ -134,6 +147,7 @@ export function memberKey(kind: MemberKind, id = ""): string {
 
 /** One record in the index: its model entry plus source spans and the facts drift checks need. */
 export interface RecordInfo {
+  /** Parsed model record. */
   entry: CssDocEntry;
   /** The record's definition span (its base-class rule, else its doc comment). */
   span?: SourceSpan;
@@ -161,13 +175,23 @@ export interface RecordInfo {
   /** Distinct values seen for each property declared inside this record's rules. */
   propertyValues: Map<string, Set<string>>;
   /** Declarations that include reset-like keywords (`unset`/`initial`/`inherit`/`revert`). */
-  resetValueUsages: { property: string; value: string; span?: SourceSpan }[];
+  resetValueUsages: {
+    /** Name of the declaration's property. */
+    property: string;
+    /** Authored declaration value. */
+    value: string;
+    /** Declaration range, when known. */
+    span?: SourceSpan;
+  }[];
 }
 
 /** A serializable snapshot of the index (the model plus its file), for tools that consume JSON. */
 export interface CssDocManifest {
+  /** Manifest format version. */
   version: 1;
+  /** Source filename, when supplied. */
   file?: string;
+  /** Model records in index order. */
   entries: CssDocEntry[];
 }
 
@@ -297,7 +321,12 @@ export class CssDocIndex {
    * through the index to a terminal literal, the way browser dev tools do. `resolved` is omitted when
    * nothing was followed (no `var()`, or the chain couldn't be resolved further).
    */
-  resolveCustomProperty(name: string): { declared?: string; resolved?: string } {
+  resolveCustomProperty(name: string): {
+    /** Value stored for the property, if present. */
+    declared?: string;
+    /** Value after resolving references, if it differs from the declared value. */
+    resolved?: string;
+  } {
     const declared = this.customPropertyValues.get(name);
     if (declared === undefined) return {};
     const resolved = resolveValue(declared, this.customPropertyValues, new Set([name]));
@@ -397,25 +426,55 @@ export class CssDocIndex {
 
   /** The deprecation of a modifier on `base`, if it is deprecated (including via a `*` family).
    * Checks both base-specific and global modifiers (applying globalPrecedence logic). */
-  deprecationOf(base: string, modifier: string): { canonical?: string; note?: string } | undefined {
+  deprecationOf(
+    base: string,
+    modifier: string,
+  ):
+    | {
+        /** Replacement modifier, when known. */
+        canonical?: string;
+        /** Authored deprecation guidance, when supplied. */
+        note?: string;
+      }
+    | undefined {
     return this.matchedModifier(base, this.matcher.normalizeMember(modifier))?.deprecated;
   }
 
   /** The alias mapping of a modifier on `base`, if documented as an alias.
    * Checks both base-specific and global modifiers (applying globalPrecedence logic). */
-  aliasOf(base: string, modifier: string): { canonical?: string; note?: string } | undefined {
+  aliasOf(
+    base: string,
+    modifier: string,
+  ):
+    | {
+        /** Canonical modifier, when known. */
+        canonical?: string;
+        /** Authored alias guidance, when supplied. */
+        note?: string;
+      }
+    | undefined {
     return this.matchedModifier(base, this.matcher.normalizeMember(modifier))?.alias;
   }
 
   /** Every declared custom property, paired with the record that declares it (for `var(...)` completion). */
-  allCustomProperties(): { property: CssPropertyDeclared; record: string }[] {
+  allCustomProperties(): {
+    /** Declared custom property. */
+    property: CssPropertyDeclared;
+    /** Name of the record declaring the property. */
+    record: string;
+  }[] {
     return this.records.flatMap((r) =>
       r.entry.cssPropertiesDeclared.map((property) => ({ property, record: r.entry.name })),
     );
   }
 
   /** Every custom function, paired with its record. */
-  allFunctions(): { fn: CssFunction; record: string }[] {
+  allFunctions(): {
+    /** Documented custom function. */
+    fn: CssFunction;
+    /** Name of the record containing the function. */
+    record: string;
+  }[] {
     return this.records.flatMap((r) =>
       r.entry.functions.map((fn) => ({ fn, record: r.entry.name })),
     );
