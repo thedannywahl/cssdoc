@@ -37,7 +37,7 @@ const config: UserConfig = defineConfig({
   description,
   cleanUrls: true,
   sitemap: { hostname },
-  srcExclude: ["engineering-log.md"],
+  srcExclude: ["engineering-log.md", "internal/**"],
   // Emit /llms.txt (an agent-legible index) and /llms-full.txt (the whole site as one document) at the
   // dist root, so AI agents can read cssdoc without scraping HTML. Covers the guide pages and the
   // generated API reference.
@@ -52,6 +52,7 @@ const config: UserConfig = defineConfig({
       llmstxt({
         title: "cssdoc",
         description,
+        ignoreFiles: ["internal/**"],
       }) as never,
     ],
   },

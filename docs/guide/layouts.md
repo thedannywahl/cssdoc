@@ -145,24 +145,24 @@ slot. Sometimes the slot element itself carries the component class directly. Us
  * @summary A tabs layout.
  * @structure
  * .tabs-layout {
- *   .tabs-list:optional:is(.instui-card) {}
+ *   .tabs-list:optional:is(.vendor-card) {}
  * }
  */
 .tabs-layout {
 }
 ```
 
-cssdoc reads `.tabs-list:optional:is(.instui-card)` as: "this slot element carries `.instui-card`
+cssdoc reads `.tabs-list:optional:is(.vendor-card)` as: "this slot element carries `.vendor-card`
 itself." The scaffold it derives is therefore:
 
 ```html
-<nav class="tabs-list instui-card">…</nav>
+<nav class="tabs-list vendor-card">…</nav>
 ```
 
 …not:
 
 ```html
-<nav class="tabs-list"><div class="instui-card">…</div></nav>
+<nav class="tabs-list"><div class="vendor-card">…</div></nav>
 ```
 
 `:is()` accepts any valid single selector — a class, an element type, an ID, or an attribute
@@ -171,8 +171,8 @@ selector:
 ```css
 * @structure
 * .panel {
-*   .header:is(.instui-view-header) {}
-*   button:one-or-more:is(.instui-button) {}
+*   .header:is(.vendor-view-header) {}
+*   button:one-or-more:is(.vendor-button) {}
 *   nav:optional:is(#primary-nav) {}
 * }
 ```
@@ -186,11 +186,11 @@ parent is only required when the parent is present:
 ```css
 * @structure
 * .utilities:optional {
-*   button:one-or-more:is(.instui-button) {}
+*   button:one-or-more:is(.vendor-button) {}
 * }
 ```
 
-Reads as: if `.utilities` is present, it must contain one or more `button.instui-button` elements.
+Reads as: if `.utilities` is present, it must contain one or more `button.vendor-button` elements.
 
 **Using `:is()` with multiple selectors** (e.g. `:is(.a, .b)`) is not co-location — cssdoc keeps
 the compound verbatim and treats it as a relationship selector, just as `:has()` and `:not()` are.

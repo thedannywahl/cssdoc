@@ -143,7 +143,7 @@ export const cssDocSchema: Record<string, unknown> = {
             additionalProperties: false,
             required: ["from"],
             description:
-              "Rewrite the provider's base-class prefix before merging its records (e.g. a published `instui-` consumed under a different spelling). `to` is used verbatim — no separator is added or assumed.",
+              "Rewrite the provider's base-class prefix before merging its records (e.g. a published `vendor-` consumed under a different spelling). `to` is used verbatim — no separator is added or assumed.",
             properties: {
               from: {
                 type: "string",

@@ -795,23 +795,23 @@ test("classNames wraps just the marker word, leaving the prose outside the span"
   const [box] = parseCssDocs(STATUS_CSS);
   const md = renderEntry(box!, {
     classNames: {
-      deprecated: "-instui-pill -color-warning",
-      stage: { experimental: "-instui-pill -color-alert" },
+      deprecated: "-vendor-pill -color-warning",
+      stage: { experimental: "-vendor-pill -color-alert" },
     },
   });
   // Record-level banner: only "Deprecated" is a pill; the reason stays plain prose after it.
-  expect(md).toContain('> <span class="-instui-pill -color-warning">Deprecated</span> — Use ');
+  expect(md).toContain('> <span class="-vendor-pill -color-warning">Deprecated</span> — Use ');
   // The deprecated modifier cell: same — the pill wraps the word, the note follows outside.
-  expect(md).toContain('<span class="-instui-pill -color-warning">Deprecated</span> — use ');
+  expect(md).toContain('<span class="-vendor-pill -color-warning">Deprecated</span> — use ');
   // The stage marker becomes a bare-word pill (no code-span backticks) so it styles like a tag.
-  expect(md).toContain('<span class="-instui-pill -color-alert">experimental</span>');
+  expect(md).toContain('<span class="-vendor-pill -color-alert">experimental</span>');
   expect(md).not.toContain("`experimental`");
 });
 
 test("classNames.stage only applies to the record's own stage", () => {
   const [box] = parseCssDocs(STATUS_CSS);
   // The record is @stage experimental; a class registered for a different stage is not applied.
-  const md = renderEntry(box!, { classNames: { stage: { beta: "-instui-pill" } } });
+  const md = renderEntry(box!, { classNames: { stage: { beta: "-vendor-pill" } } });
   expect(md).toContain(" · `experimental`");
   expect(md).not.toContain("<span class=");
 });

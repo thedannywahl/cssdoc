@@ -93,12 +93,12 @@ export interface ProviderRef {
   baseHref?: string;
   /**
    * Rewrite the provider's base-class prefix before merging its records — for a provider published
-   * under one prefix spelling (e.g. a published `instui-`) but consumed under a different one. `from`
+   * under one prefix spelling (e.g. a published `vendor-`) but consumed under a different one. `from`
    * matches the START of each class name (no leading `.`/`^` needed): a literal string by default, or
    * — when `isRegExp` is true — a regex source (anchored, so it always matches from the start; keep
    * it to valid CSS identifier characters). `to` is the literal replacement text, used **verbatim** —
-   * no separator like `-` is added or assumed — so `{ from: "instui-", to: "i" }` turns
-   * `.instui-alert` into `.ialert`, and `{ from: "instui-", to: "" }` (or omitting `to`) strips it to
+   * no separator like `-` is added or assumed — so `{ from: "vendor-", to: "i" }` turns
+   * `.vendor-alert` into `.ialert`, and `{ from: "vendor-", to: "" }` (or omitting `to`) strips it to
    * a bare `.alert`. Omit `prefix` entirely to use the provider's classes exactly as published.
    */
   prefix?: { from: string; to?: string; isRegExp?: boolean };

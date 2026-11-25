@@ -100,16 +100,16 @@ loads a published **model** — the [`@cssdoc/json`](/guide/packages) emitter's 
 
 ### Rewriting a provider's prefix
 
-A provider's `model.json` is published at one fixed class prefix (e.g. a vendor ships `instui-`), but a
+A provider's `model.json` is published at one fixed class prefix (e.g. a vendor ships `vendor-`), but a
 consumer may build their own copy of the vendor's CSS under a different prefix — or none at all. Add
 `prefix` to rewrite the provider's base classes at load time, without touching the provider's own build:
 
 ```jsonc
 {
   "providers": [
-    // `to` is spliced in verbatim — no separator like "-" is added or assumed. So `{ from: "instui-",
-    // to: "i" }` turns `.instui-alert` into `.ialert`, not `.i-alert`.
-    { "path": "@vendor/ui/model.json", "prefix": { "from": "instui-", "to": "acme-" } },
+    // `to` is spliced in verbatim — no separator like "-" is added or assumed. So `{ from: "vendor-",
+    // to: "i" }` turns `.vendor-alert` into `.ialert`, not `.i-alert`.
+    { "path": "@vendor/ui/model.json", "prefix": { "from": "vendor-", "to": "acme-" } },
   ],
 }
 ```

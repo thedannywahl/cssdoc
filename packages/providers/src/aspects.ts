@@ -502,8 +502,8 @@ export const record = {
             if (hasSelfBelow(root.children)) for (const c of classesOf(root.selector)) known.add(c);
           }
         }
-        // The prefix this record's own class carries in front of its name (e.g. `instui-` in
-        // `.instui-alert`, or the masked `aaaa` when an embedded `${p}` is projected). A sibling
+        // The prefix this record's own class carries in front of its name (e.g. `vendor-` in
+        // `.vendor-alert`, or the masked `aaaa` when an embedded `${p}` is projected). A sibling
         // reference wears the same prefix, so stripping it should leave a known component name — this is
         // how `.aaaaclose-button` resolves to the `close-button` component regardless of the mask.
         const own = stripDot(info.entry.className);

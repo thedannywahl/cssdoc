@@ -887,7 +887,7 @@ test("`&` is NOT recognized for BEM suffix concatenation (`&--mod` isn't valid C
 test("`&` inside a PARENT's @scope is NOT attributed to a child member record", () => {
   // A member record's own file/doc-comment can carry a rule block that reaches UP into a parent's
   // @scope to restyle the member (e.g. `modal.body`'s file styling `.body` from inside
-  // `@scope (.pfx-modal)`) — a real pantoken pattern. `&` there means the PARENT's base
+  // `@scope (.pfx-modal)`) — a real-world pattern. `&` there means the PARENT's base
   // (`.pfx-modal`), not this record's own base (`.body`), so it must not be picked up as this record's
   // modifier — even though it's a direct child of @scope, same as the positive case above.
   const [body] = parseCssDocs(
@@ -899,7 +899,7 @@ test("`&` inside a PARENT's @scope is NOT attributed to a child member record", 
 });
 
 test("`&` stops meaning the scope root once a combinator introduces a new compound (nested part)", () => {
-  // Real pantoken pattern (tooltip): `@scope (.pfx-tooltip) { :scope { > .tip { &.-placement-bottom {} } } }`.
+  // Real-world tooltip pattern: `@scope (.pfx-tooltip) { :scope { > .tip { &.-placement-bottom {} } } }`.
   // The outer `@scope` DOES match this record's own base, but `&.-placement-bottom` is nested inside
   // `> .tip` — a combinator that moves `&`'s meaning to the `.tip` part, not the tooltip's own base —
   // so it must not be picked up as a tooltip modifier.
@@ -912,7 +912,7 @@ test("`&` stops meaning the scope root once a combinator introduces a new compou
 });
 
 test("`&` stops meaning the scope root inside a bare nested class selector, not just after a combinator", () => {
-  // Real pantoken pattern (range-input): `.pfx-range-input-value { & {} &.-size-sm {} }`, nested
+  // Real-world range-input pattern: `.pfx-range-input-value { & {} &.-size-sm {} }`, nested
   // directly inside `@scope (.pfx-range-input)` — no `&`/`:scope` prefix (and so no combinator either)
   // on the `.pfx-range-input-value` rule itself, just a bare class selector. `&`/`:scope` inside IT
   // mean that nested part, not the outer `range-input` scope root.
@@ -925,7 +925,7 @@ test("`&` stops meaning the scope root inside a bare nested class selector, not 
 });
 
 test("`&` is not attributed when an `@selector` descendant compound truncates to the parent's own base", () => {
-  // Real pantoken pattern (`list.item`): `@selector .pfx-list > li` truncates to `.pfx-list` (the
+  // Real-world `list.item` pattern: `@selector .pfx-list > li` truncates to `.pfx-list` (the
   // `@selector` grammar only captures the leading token) — identical to the PARENT `list` record's own
   // base. Without tracking this, `&.-size-sm > li` (list's own modifier, reaching into its `.item`
   // member) would look exactly like `list.item`'s own base matching its own `@scope`.
@@ -939,7 +939,7 @@ test("`&` is not attributed when an `@selector` descendant compound truncates to
 });
 
 test("`&` still resolves at scope depth when the base is an authored compound built on the prelude", () => {
-  // Real pantoken pattern (the `transition` utility): its `@selector` is the compound
+  // Real-world `transition` utility pattern: its `@selector` is the compound
   // `.pfx-transition.-transition-fade-entering`, built ON TOP of the `@scope`'s own `.pfx-transition`
   // prelude — a prefix match, not exact equality — so `&`-based modifiers there still resolve.
   const [transition] = parseCssDocs(

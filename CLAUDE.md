@@ -49,8 +49,8 @@ needs beyond it; open the linked docs only when a task calls for them.
   AST already gives you, and never let a doc-comment override a fact the AST owns.
 - **Use the `vp` CLIs — never raw pnpm/npm/yarn.** Run `vp check` and `vp test` before you're done
   (see the Vite+ checklist above).
-- **The sibling `~/Scripts/pantoken` repo dogfoods `@cssdoc/*` from npm.** When you add a render
-  option to `@cssdoc/markdown`, forward it through the `@cssdoc/typedoc` emit path too — the emit
+- **Keep TypeDoc render options in sync.** When you add a render option to `@cssdoc/markdown`, forward
+  it through the `@cssdoc/typedoc` emit path too — the emit
   wrapper cherry-picks options, so a new option silently no-ops otherwise. Add a forwarding test. See
   `docs/engineering-log.md`.
 - **Markdown output must be VitePress/Vue-safe.** Consumers render emitted pages through Vue, so the

@@ -347,10 +347,10 @@ const Button = styled.button\`
 });
 
 test("structure diagnostics resolve a cross-file sibling and restore masked ${…} for display", () => {
-  // The workspace scope knows the `close-button` sibling (any prefix — here `instui-`).
+  // The workspace scope knows the `close-button` sibling (any prefix — here `vendor-`).
   const svc = new CssDocLanguageService(
     createIndex(
-      "/**\n * @component close-button\n * @summary A dismiss control.\n */\n.instui-close-button {}",
+      "/**\n * @component close-button\n * @summary A dismiss control.\n */\n.vendor-close-button {}",
       { modifierConvention: "rscss" },
     ),
   );
@@ -445,10 +445,10 @@ test("embedded hover: var() chain resolves, [class*] shows the family, a sibling
       '@property --info-border { syntax: "<color>"; inherits: false; initial-value: var(--stroke-info); }',
       ":root { --stroke-info: #0770a3; }",
       "/**\n * @component alert\n * @summary An alert.\n * @modifier -icon-* — Swap the glyph.\n */",
-      ".instui-alert {}",
-      ".instui-alert[class*='-icon-'] {}",
+      ".vendor-alert {}",
+      ".vendor-alert[class*='-icon-'] {}",
       "/**\n * @component close-button\n * @summary A dismiss control.\n */",
-      ".instui-close-button {}",
+      ".vendor-close-button {}",
     ].join("\n"),
     { modifierConvention: "rscss" },
   );
@@ -802,7 +802,7 @@ test("a scope's providers let a consumer stylesheet compose an upstream componen
 });
 
 test("a scope's providers resolve @global modifiers in classUsage diagnostics (not just structure/hover)", () => {
-  // The upstream provider documents a `@global` spacing utility (like pantoken's spacing/gap/etc.),
+  // The upstream provider documents a `@global` spacing utility,
   // never authored anywhere in the consumer's own scope.
   const providerEntries = parseCssDocs(
     "/**\n * @utility spacing\n * @global\n * @modifier --p-lg — Large padding.\n */\n.spacing {}",

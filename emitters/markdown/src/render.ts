@@ -168,7 +168,7 @@ export interface RenderEntryOptions {
   classNames?: {
     /**
      * Wrap deprecation output — the record-level `> [!WARNING]` banner and deprecated modifier-table
-     * cells — in `<span class="…">`, e.g. `"-instui-pill -color-warning"`.
+     * cells — in `<span class="…">`, e.g. `"-vendor-pill -color-warning"`.
      */
     deprecated?: string;
     /**

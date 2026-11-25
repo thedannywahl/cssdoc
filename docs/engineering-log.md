@@ -1,8 +1,8 @@
 # Engineering log
 
-Hard-won fixes and gotchas from cssdoc work, most surfaced while dogfooding cssdoc through the sibling
-`pantoken` docs site. Each entry is symptom → root cause → the durable rule. Version and PR numbers
-are left out; the lesson is timeless.
+Hard-won fixes and gotchas from cssdoc work, including those found in downstream documentation sites.
+Each entry is symptom → root cause → the durable rule. Version and PR numbers are left out; the lesson
+is timeless.
 
 ## A new `@cssdoc/markdown` render option silently no-ops in TypeDoc output
 

@@ -895,7 +895,7 @@ test("hoverForClass: an empty sectionOrder falls back to the default order (not 
 
 test("structure-unknown-selector resolves a cross-file sibling via siblingIndex, across prefixes", () => {
   // The linted file only knows `alert` (masked prefix `aaaa`, as an embedded `${p}` projects). The
-  // sibling `close-button` lives in another file and carries a *different* prefix (`instui-`).
+  // sibling `close-button` lives in another file and carries a *different* prefix (`vendor-`).
   const alert = createIndex(
     [
       "/**",
@@ -912,7 +912,7 @@ test("structure-unknown-selector resolves a cross-file sibling via siblingIndex,
     { modifierConvention: "rscss" },
   );
   const project = createIndex(
-    "/**\n * @component close-button\n * @summary A dismiss control.\n */\n.instui-close-button {}",
+    "/**\n * @component close-button\n * @summary A dismiss control.\n */\n.vendor-close-button {}",
     { modifierConvention: "rscss" },
   );
 

@@ -146,11 +146,11 @@ test("emitCssApi forwards classNames to the renderer so deprecation markers get 
   emitCssApi({
     outputDirectory: out,
     css: [cssPath],
-    classNames: { deprecated: "instui-pill -color-warning" },
+    classNames: { deprecated: "vendor-pill -color-warning" },
   });
 
   const page = readFileSync(join(out, "css", "box.md"), "utf8");
-  expect(page).toContain('<span class="instui-pill -color-warning">Deprecated</span> — ');
+  expect(page).toContain('<span class="vendor-pill -color-warning">Deprecated</span> — ');
 });
 
 const GROUP_CSS = `

@@ -123,7 +123,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.18.1
 
@@ -141,7 +141,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.18.0
 
@@ -157,7 +157,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.17.0
 
@@ -176,7 +176,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.16.2
 
@@ -184,7 +184,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### 🚀 Enhancements
 
-- Enhance Pantoken theme with improved SVG handling and background styles ([fd62eaf](https://github.com/thedannywahl/cssdoc/commit/fd62eaf))
+- Enhance documentation theme with improved SVG handling and background styles ([fd62eaf](https://github.com/thedannywahl/cssdoc/commit/fd62eaf))
 
 ### 🩹 Fixes
 
@@ -201,7 +201,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.16.1
 
@@ -213,7 +213,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.16.0
 
@@ -250,7 +250,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.15.2
 
@@ -262,7 +262,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.15.1
 
@@ -276,7 +276,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.15.0
 
@@ -303,7 +303,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.14.2
 
@@ -319,7 +319,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.14.1
 
@@ -339,7 +339,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.14.0
 
@@ -351,7 +351,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.13.12
 
@@ -374,7 +374,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.13.11
 
@@ -386,7 +386,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.13.10
 
@@ -410,7 +410,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.13.9
 
@@ -426,7 +426,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.13.8
 
@@ -442,7 +442,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.13.7
 
@@ -454,7 +454,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.13.6
 
@@ -470,7 +470,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.13.5
 
@@ -486,7 +486,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.13.4
 
@@ -498,7 +498,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.13.3
 
@@ -511,7 +511,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.13.2
 
@@ -530,7 +530,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.13.1
 
@@ -554,7 +554,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.13.0
 
@@ -569,7 +569,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.12.0
 
@@ -581,7 +581,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.11.0
 
@@ -596,7 +596,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.10.2
 
@@ -612,7 +612,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.10.1
 
@@ -636,7 +636,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.10.0
 
@@ -664,7 +664,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.9.0
 
@@ -682,7 +682,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.8.1
 
@@ -698,7 +698,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.8.0
 
@@ -734,7 +734,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.7.10
 
@@ -755,7 +755,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.7.9
 
@@ -775,7 +775,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.7.8
 
@@ -787,7 +787,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.7.7
 
@@ -803,7 +803,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.7.6
 
@@ -816,7 +816,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.7.5
 
@@ -828,7 +828,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.7.4
 
@@ -840,7 +840,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.7.3
 
@@ -852,7 +852,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.7.2
 
@@ -864,7 +864,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.7.1
 
@@ -880,7 +880,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.7.0
 
@@ -894,7 +894,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.6.1
 
@@ -906,7 +906,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.6.0
 
@@ -921,7 +921,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.5.4
 
@@ -937,7 +937,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.5.3
 
@@ -949,7 +949,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.5.2
 
@@ -962,7 +962,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.5.1
 
@@ -978,7 +978,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.5.0
 
@@ -1012,7 +1012,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.4.2
 
@@ -1024,7 +1024,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.4.1
 
@@ -1042,7 +1042,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.4.0
 
@@ -1076,7 +1076,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.3.3
 
@@ -1093,7 +1093,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.3.2
 
@@ -1105,7 +1105,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.3.1
 
@@ -1118,7 +1118,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.3.0
 
@@ -1172,7 +1172,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.2.0
 
@@ -1198,7 +1198,7 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 
 ### ❤️ Contributors
 
-- Danny Wahl <dwahl@instructure.com>
+- Danny Wahl <danny@iywahl.com>
 
 ## v0.1.0
 
