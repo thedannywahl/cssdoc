@@ -46,6 +46,9 @@ Zed disables semantic tokens by default. To request them alongside Tree-sitter h
 `"semantic_tokens": "combined"` for the language in Zed's settings. Themes and other language servers
 also affect the result. See [Zed's semantic token documentation](https://zed.dev/docs/semantic-tokens).
 
+Zed's built-in CSS language configuration doesn't continue documentation-comment lines with `*`
+when you press Enter. Add the prefix manually.
+
 ## Release
 
 Keep the pinned server version in `src/lib.rs` aligned with `servers/language-server/package.json`.
