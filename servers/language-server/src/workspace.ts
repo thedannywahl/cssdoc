@@ -3,8 +3,8 @@
  *
  * @module
  */
-import { globSync, statSync } from "node:fs";
-import { dirname, isAbsolute, resolve } from "node:path";
+import { globSync, readdirSync, statSync } from "node:fs";
+import { isAbsolute, join, resolve } from "node:path";
 
 /** Options for discovering documented stylesheets. */
 export interface WorkspaceDiscoveryOptions {
@@ -126,6 +126,41 @@ export function parseClientSettings(value: unknown): ClientSettings {
 }
 
 /**
+ * Validate initialization options, retaining the explicit empty CSS list.
+ *
+ * @param value - Initialization options supplied by the client.
+ * @returns Validated server options.
+ * @throws If a supplied option has an invalid shape.
+ */
+export function parseInitializationOptions(value: unknown): ClientSettings {
+  if (value === null || value === undefined) return {};
+  if (typeof value !== "object" || Array.isArray(value)) {
+    throw new TypeError("cssdoc initialization options must be an object");
+  }
+  const options = value as Record<string, unknown>;
+  const settings = parseClientSettings({
+    ...("css" in options ? { css: options.css } : {}),
+    ...("include" in options ? { include: options.include } : {}),
+    ...("exclude" in options ? { exclude: options.exclude } : {}),
+    hover: {
+      ...("hoverDetail" in options ? { detail: options.hoverDetail } : {}),
+      ...("hoverSections" in options ? { sections: options.hoverSections } : {}),
+      ...("hoverSectionOrder" in options ? { sectionOrder: options.hoverSectionOrder } : {}),
+    },
+    editor: {
+      ...("providerDiscovery" in options ? { providerDiscovery: options.providerDiscovery } : {}),
+      ...("providerScanDepth" in options ? { providerScanDepth: options.providerScanDepth } : {}),
+      ...("providerGlobs" in options ? { providerGlobs: options.providerGlobs } : {}),
+      ...("circularReferenceMode" in options
+        ? { circularReferenceMode: options.circularReferenceMode }
+        : {}),
+    },
+  });
+  if ("css" in options && settings.css === undefined) settings.css = [];
+  return settings;
+}
+
+/**
  * Find configuration directories up to a workspace-relative depth.
  *
  * @param root - The absolute workspace folder path.
@@ -133,15 +168,24 @@ export function parseClientSettings(value: unknown): ClientSettings {
  * @returns Sorted, unique directories containing a cssdoc configuration.
  */
 export function discoverConfigDirectories(root: string, depth: number): string[] {
-  const patterns = Array.from(
-    { length: depth + 1 },
-    (_, level) => `${"*/".repeat(level)}cssdoc.{json,jsonc}`,
-  );
-  const dirs = globSync(patterns, {
-    cwd: root,
-    exclude: ["**/node_modules/**", "**/.git/**", "**/.vscode/**", "**/dist/**", "**/build/**"],
-  }).map((file) => dirname(resolve(root, file)));
-  return [...new Set(dirs)].toSorted();
+  const found = new Set<string>();
+  const pending = [{ dir: root, level: 0 }];
+  const excluded = new Set(["node_modules", "dist", "build"]);
+  while (pending.length) {
+    const { dir, level } = pending.pop()!;
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name === "cssdoc.json" || entry.name === "cssdoc.jsonc") found.add(dir);
+      if (
+        level < depth &&
+        entry.isDirectory() &&
+        !entry.name.startsWith(".") &&
+        !excluded.has(entry.name)
+      ) {
+        pending.push({ dir: join(dir, entry.name), level: level + 1 });
+      }
+    }
+  }
+  return [...found].toSorted();
 }
 
 /**

@@ -6,6 +6,7 @@ import {
   discoverConfigDirectories,
   discoverStylesheets,
   parseClientSettings,
+  parseInitializationOptions,
 } from "../src/workspace.ts";
 
 test("discovers CSS in every root, excludes node_modules, and supports custom globs", () => {
@@ -68,6 +69,17 @@ test("client configuration maps discovery and hover settings and rejects malform
   expect(() => parseClientSettings({ editor: { providerScanDepth: -1 } })).toThrow(
     "cssdoc.editor.providerScanDepth",
   );
+});
+
+test("initialization validates settings and preserves an explicit empty CSS list", () => {
+  expect(parseInitializationOptions({ css: [], hoverDetail: "compact" })).toEqual({
+    css: [],
+    hoverDetail: "compact",
+  });
+  expect(() => parseInitializationOptions({ providerScanDepth: -1 })).toThrow(
+    "cssdoc.editor.providerScanDepth",
+  );
+  expect(() => parseInitializationOptions({ include: "**/*.css" })).toThrow("cssdoc.include");
 });
 
 test("configuration discovery respects depth and skips dependency directories", () => {

@@ -31,6 +31,7 @@ import {
   discoverConfigDirectories,
   discoverStylesheets,
   parseClientSettings,
+  parseInitializationOptions,
 } from "./workspace.ts";
 
 /** The absolute file path for a document URI, or `undefined` for non-file URIs. */
@@ -233,7 +234,7 @@ export function startLanguageServer(): void {
   };
 
   connection.onInitialize((params) => {
-    const options = params.initializationOptions as ClientSettings | undefined;
+    const options = parseInitializationOptions(params.initializationOptions);
     const folders =
       params.workspaceFolders?.map((folder) => folder.uri) ??
       (params.rootUri ? [params.rootUri] : []);
@@ -242,7 +243,7 @@ export function startLanguageServer(): void {
       if (!path) connection.console.warn(`Cannot discover CSS in non-file workspace ${uri}`);
       return path ? [path] : [];
     });
-    initialOptions = options ?? {};
+    initialOptions = options;
     watchFiles = params.capabilities.workspace?.didChangeWatchedFiles?.dynamicRegistration === true;
     watchWorkspaceFolders = params.capabilities.workspace?.workspaceFolders === true;
     supportsConfiguration = params.capabilities.workspace?.configuration === true;
