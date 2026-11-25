@@ -205,4 +205,21 @@ export const TIER_1_HTML_PATTERNS: Record<string, RawPatternDef> = {
       ],
     },
   },
+  HTML_LIKE_STYLE_CLOSE_PREFIX: {
+    name: "HTML_LIKE_STYLE_CLOSE_PREFIX",
+    tier: 1,
+    pattern: (resolve: PatternResolver) =>
+      `${resolve("LESS_THAN_CHAR")}${resolve("FORWARD_SLASH_CHAR")}style`,
+    flags: "u",
+    description:
+      "Style closing-tag prefix heuristic, without requiring the closing greater-than sign",
+    composedFrom: ["LESS_THAN_CHAR", "FORWARD_SLASH_CHAR"],
+    fixtures: {
+      passes: [{ input: "</style" }],
+      fails: [
+        { input: "<style", reason: "opening tag" },
+        { input: "</script", reason: "different tag" },
+      ],
+    },
+  },
 };

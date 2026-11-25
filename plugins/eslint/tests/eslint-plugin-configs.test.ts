@@ -167,6 +167,21 @@ test("require-component-docs create function returns object with Rule visitor", 
   expect(typeof visitors.Rule).toBe("function");
 });
 
+test("require-component-docs matches configured component names before selector suffixes", () => {
+  const messages: string[] = [];
+  const visitors = plugin.rules["require-component-docs"].create({
+    options: [{ pattern: "^Button$" }],
+    sourceCode: { text: "", getLocFromIndex: () => ({ line: 1, column: 0 }) },
+    report: ({ message }) => messages.push(message),
+  });
+  for (const selector of [".ButtonPrimary", ".Button:hover", ".Button-secondary", ".card"]) {
+    visitors.Rule({ selector: { value: selector } } as never);
+  }
+  expect(messages).toEqual(
+    Array(3).fill("Component `.Button` should have a @component doc comment."),
+  );
+});
+
 // ── valid-custom-properties ───────────────────────────────────────────────────────────
 
 test("valid-custom-properties rule is registered in plugin", () => {
@@ -199,6 +214,38 @@ test("valid-custom-properties create function returns object with Declaration vi
   const visitors = rule.create(mockContext as never);
   expect(typeof visitors).toBe("object");
   expect(typeof visitors.Declaration).toBe("function");
+});
+
+test("valid-custom-properties applies each declared syntax on repeated visits", () => {
+  const messages: string[] = [];
+  const visitors = plugin.rules["valid-custom-properties"].create({
+    options: [],
+    filename: "test.css",
+    sourceCode: {
+      text: [
+        '@property --color { syntax: "<color>"; }',
+        '@property --length { syntax: "<length>"; }',
+        '@property --count { syntax: "<number>"; }',
+      ].join("\n"),
+      getLocFromIndex: () => ({ line: 1, column: 0 }),
+    },
+    report: ({ message }) => messages.push(message),
+  });
+  const visit = (property: string, value: string) =>
+    visitors.Declaration({ property, value } as never);
+  visit("--color", "invalid");
+  visit("--length", "invalid");
+  visit("--count", "invalid");
+  visit("--color", "#fff");
+  visit("--length", "1.5rem");
+  visit("--count", "42");
+  visit("--color", "invalid");
+  expect(messages).toEqual([
+    "Custom property --color requires a color value (syntax: <color>), got: invalid",
+    "Custom property --length requires a length value (syntax: <length>), got: invalid",
+    "Custom property --count requires a numeric value (syntax: <number>), got: invalid",
+    "Custom property --color requires a color value (syntax: <color>), got: invalid",
+  ]);
 });
 
 // ── Verify Schemas Are Complete ─────────────────────────────────────────────────

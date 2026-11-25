@@ -16,6 +16,19 @@ test("host detection and style language matching retain their case and offset be
   expect(block.start.line).toBe(3);
 });
 
+test("HTML style blocks close case-insensitively without including following markup", () => {
+  const source = "İ<STYLE>.one {}</STYLE><style>.two {}</StYlE><div>outside</div>";
+  const blocks = extractCssBlocks(source, { host: "html" });
+  expect(blocks.map((block) => block.css)).toEqual([".one {}", ".two {}"]);
+  expect(blocks.map((block) => block.start.offset)).toEqual([
+    source.indexOf(".one {}"),
+    source.indexOf(".two {}"),
+  ]);
+  const projection = projectCss(source, { host: "html" });
+  expect(projection).toHaveLength(source.length);
+  expect(projection).not.toContain("outside");
+});
+
 const JS = `import styled from "styled-components";
 
 /**
@@ -122,6 +135,49 @@ test("parseCssDocsFromSource reads a JS tagged template, a Vue <style scoped>, a
   expect(vue.map((e) => e.name)).toEqual(["btn"]);
   const md = parseCssDocsFromSource(MD, { host: "markdown" });
   expect(md.map((e) => e.name)).toEqual(["card"]);
+});
+
+test.each([
+  ["styled.button", "button.tsx"],
+  ['styled("button")', "button.jsx"],
+  ["css", "button.ts"],
+  ["keyframes", "button.js"],
+  ["createGlobalStyle", "global.tsx"],
+  ["injectGlobal", "global.js"],
+])("extracts documented CSS-in-JS tag %s from %s", (tag, filename) => {
+  const source = `/**\n * @component button\n * @summary A button.\n */\nconst result = ${tag}\`.button {}\`;`;
+  expect(parseCssDocsFromSource(source, { filename }).map((entry) => entry.name)).toEqual([
+    "button",
+  ]);
+});
+
+test.each(["button.html", "button.vue", "button.svelte", "button.astro"])(
+  "extracts an HTML-like style block from %s",
+  (filename) => {
+    const source =
+      '<button class="button"></button><style scoped>/** @component button */\n.button {}</style>';
+    expect(parseCssDocsFromSource(source, { filename }).map((entry) => entry.name)).toEqual([
+      "button",
+    ]);
+  },
+);
+
+test.each(["button.md", "button.mdx"])("extracts a CSS fence from %s", (filename) => {
+  const source = "# Example\n\n```css\n/** @component button */\n.button {}\n```\n";
+  expect(parseCssDocsFromSource(source, { filename }).map((entry) => entry.name)).toEqual([
+    "button",
+  ]);
+});
+
+test.each([
+  ["scss", "button.vue", "<style lang='scss'>", "</style>", "$color: red;"],
+  ["less", "button.mdx", "```less\n", "\n```", "@color: red;"],
+])("extracts a %s dialect region from %s", (dialect, filename, open, close, variable) => {
+  const source = `${open}// preprocessor comment\n${variable}\n/** @component button */\n.button { color: red; }${close}`;
+  expect(parseCssDocsFromSource(source, { filename }).map((entry) => entry.name)).toEqual([
+    "button",
+  ]);
+  expect(extractCssBlocks(source, { filename })[0].dialect).toBe(dialect);
 });
 
 test("Markdown fence scanning preserves offsets and skips non-CSS blocks between CSS blocks", () => {

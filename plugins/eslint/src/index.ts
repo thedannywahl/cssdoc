@@ -44,14 +44,34 @@ import { type NamingRules, type RuleName, lintCssDocs } from "@cssdoc/lint-core"
 import { type CssDocIndex, createIndex } from "@cssdoc/index";
 import { type RuleSeverity, checkClassUsage } from "@cssdoc/providers";
 import {
+  ALPHA_UPPER_SOURCE,
+  AT_CHAR,
+  BRACE_CLOSE_SOURCE,
+  BRACE_OPEN_SOURCE,
+  COLON_CHAR,
   COMMENT_END_SOURCE,
   CSSDOC_CUSTOM_PROPERTY_TAG_NAME,
+  CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE,
+  DASH_SOURCE,
   DOC_COMMENT_START_SOURCE,
+  QUOTE_DOUBLE_CHAR,
 } from "@cssdoc/regex";
 import css from "@eslint/css";
 
 type Position = { line: number; column: number };
 const DOC_COMMENT = arkRegex.as(`${DOC_COMMENT_START_SOURCE}[\\s\\S]*?${COMMENT_END_SOURCE}`);
+const CLASS_WHITESPACE = arkRegex.as(String.raw`\s+`, "u");
+const DEFAULT_COMPONENT_NAME = arkRegex.as(`^${ALPHA_UPPER_SOURCE}`);
+const COMPONENT_NAME_SEPARATOR = arkRegex.as(
+  `[${DASH_SOURCE}${COLON_CHAR}]|(?=${ALPHA_UPPER_SOURCE})`,
+);
+const PROPERTY_SYNTAX = arkRegex.as(
+  String.raw`^${AT_CHAR}property\s+${CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE}\s*${BRACE_OPEN_SOURCE}[\s\S]*?syntax${COLON_CHAR}\s*${QUOTE_DOUBLE_CHAR}([^${QUOTE_DOUBLE_CHAR}]+)${QUOTE_DOUBLE_CHAR}[\s\S]*?${BRACE_CLOSE_SOURCE}`,
+  "gm",
+);
+const COLOR_VALUE = arkRegex.as(String.raw`(#[0-9a-f]{3,8}|rgb|hsl|var)`, "i");
+const LENGTH_VALUE = arkRegex.as(String.raw`^\d+(\.\d+)?(px|em|rem|%|vh|vw)$|var\(`);
+const NUMBER_VALUE = arkRegex.as(String.raw`^\d+(\.\d+)?$|var\(`);
 
 interface ReportDescriptor {
   node?: unknown;
@@ -289,7 +309,7 @@ const validClassUsage: RuleModule = {
           const elementName = jsxTagName(node as JsxOpeningElement);
           const tokens = attrs
             .filter((a) => a.name?.name === "class" || a.name?.name === "className")
-            .flatMap((a) => (jsxLiteral(a) ?? "").split(/\s+/u).filter(Boolean));
+            .flatMap((a) => (jsxLiteral(a) ?? "").split(CLASS_WHITESPACE).filter(Boolean));
           const base = tokens.find((t) => index.componentForClass(t));
           if (!base) return;
           // Base usage for `@element` host-tag constraints.
@@ -354,7 +374,7 @@ const requireComponentDocs: RuleModule = {
         properties: {
           pattern: {
             type: "string",
-            description: "RegExp pattern for component names (default: ^[A-Z])",
+            description: `RegExp pattern for component names (default: ${DEFAULT_COMPONENT_NAME.source})`,
           },
           skipUtilities: {
             type: "boolean",
@@ -367,7 +387,7 @@ const requireComponentDocs: RuleModule = {
   },
   create(context) {
     const options = (context.options[0] ?? {}) as { pattern?: string; skipUtilities?: boolean };
-    const pattern = arkRegex.as(options.pattern ?? "^[A-Z]");
+    const pattern = options.pattern == null ? DEFAULT_COMPONENT_NAME : arkRegex.as(options.pattern);
     const skipUtilities = options.skipUtilities !== false;
 
     return {
@@ -376,7 +396,7 @@ const requireComponentDocs: RuleModule = {
         const selector = rule.selector?.value;
         if (!selector || !selector.startsWith(".")) return;
 
-        const baseName = selector.slice(1).split(/[-:]|(?=[A-Z])/)[0] ?? "";
+        const baseName = selector.slice(1).split(COMPONENT_NAME_SEPARATOR)[0] ?? "";
         if (!pattern.test(baseName)) return;
 
         // Check if this rule or its peers have docs
@@ -419,10 +439,8 @@ const validCustomProperties: RuleModule = {
         if (!propName?.startsWith("--")) return;
 
         // Check @property syntax validation
-        const regex = /^@property\s+--[\w-]+\s*{[\s\S]*?syntax:\s*"([^"]+)"[\s\S]*?}/gm;
-        let match;
         const propertyDefs = new Map<string, string>();
-        while ((match = regex.exec(context.sourceCode.text)) !== null) {
+        for (const match of context.sourceCode.text.matchAll(PROPERTY_SYNTAX)) {
           const name = match[0].match(CSSDOC_CUSTOM_PROPERTY_TAG_NAME)?.[0];
           if (name) propertyDefs.set(name, match[1]);
         }
@@ -436,21 +454,21 @@ const validCustomProperties: RuleModule = {
         const isLength = syntax === "<length>";
         const isNumber = syntax === "<number>";
 
-        if (isColor && value && !/(#[0-9a-f]{3,8}|rgb|hsl|var)/i.test(value)) {
+        if (isColor && value && COLOR_VALUE.exec(value) === null) {
           context.report({
             node,
             message: `Custom property ${propName} requires a color value (syntax: <color>), got: ${value}`,
           });
         }
 
-        if (isLength && value && !/^\d+(\.\d+)?(px|em|rem|%|vh|vw)$|var\(/.test(value)) {
+        if (isLength && value && LENGTH_VALUE.exec(value) === null) {
           context.report({
             node,
             message: `Custom property ${propName} requires a length value (syntax: <length>), got: ${value}`,
           });
         }
 
-        if (isNumber && value && !/^\d+(\.\d+)?$|var\(/.test(value)) {
+        if (isNumber && value && NUMBER_VALUE.exec(value) === null) {
           context.report({
             node,
             message: `Custom property ${propName} requires a numeric value (syntax: <number>), got: ${value}`,

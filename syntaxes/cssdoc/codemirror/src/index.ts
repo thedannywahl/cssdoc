@@ -92,7 +92,7 @@ const PLAIN_TAGS = CSSDOC_TAGS.filter(
  * which appears as `@\\w+` after escaping. This gets replaced with specific tag alternations
  * (INLINE_TAGS, RECORD_TAGS, etc.).
  */
-const TAG_NAME_PLACEHOLDER_PATTERN: RegExp = /@\\w\+/g;
+const TAG_NAME_PLACEHOLDER_PATTERN = arkRegex.as(String.raw`@\\w\+`, "g");
 
 /**
  * Create a tag alternation pattern for injecting into tokenizer patterns.

@@ -63,6 +63,8 @@ reflect their use across HTML-like hosts.
 `HTML_COMMENT` matches between comment delimiters without validating HTML comment contents.
 `HTML_LIKE_STYLE_OPEN_TAG` captures text after the `style` prefix through the first `>`; it also
 accepts longer names such as `<styles>` and doesn't handle quoted `>` characters.
+`HTML_LIKE_STYLE_CLOSE_PREFIX` matches `</style` without requiring a complete closing tag. Callers
+choose whether to match these style patterns case-insensitively.
 `JAVASCRIPT_TAGGED_TEMPLATE_BOUNDARY` and `JAVASCRIPT_TAGGED_TEMPLATE_CHAIN_SEGMENT` compose the
 embedded scanner's permissive tag-expression heuristic, not a full JavaScript parser.
 `JAVASCRIPT_QUOTED_OR_TEMPLATE_LITERAL_LIKE` captures simple quoted and backtick-delimited text

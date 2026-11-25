@@ -36,6 +36,7 @@ import {
   HTML_COMMENT,
   HTML_LIKE_CLASS_ATTRIBUTE_NAME_SOURCE,
   HTML_LIKE_DOTTED_TAG_NAME_SOURCE,
+  HTML_LIKE_STYLE_CLOSE_PREFIX_SOURCE,
   HTML_LIKE_STYLE_OPEN_TAG_SOURCE,
   HTML_QUOTED_ATTRIBUTE_VALUE_SOURCE,
   JAVASCRIPT_QUOTED_OR_TEMPLATE_LITERAL_LIKE,
@@ -226,10 +227,12 @@ function scanHtml(src: string): { regions: Region[] } {
   const regions: Region[] = [];
   const scan = maskComments(src);
   const open = arkRegex.as(HTML_LIKE_STYLE_OPEN_TAG_SOURCE, "giu");
+  const closeTag = arkRegex.as(HTML_LIKE_STYLE_CLOSE_PREFIX_SOURCE, "giu");
   let m: RegExpExecArray | null = open.exec(scan);
   while (m) {
     const contentStart = m.index + m[0].length;
-    const close = scan.indexOf(`${LESS_THAN_CHAR}${FORWARD_SLASH_CHAR}style`, contentStart);
+    closeTag.lastIndex = contentStart;
+    const close = closeTag.exec(scan)?.index ?? -1;
     const end = close === -1 ? scan.length : close;
     const lang = m[1].match(LANG_ATTRIBUTE)?.[1];
     regions.push({ start: contentStart, end, host: "html", dialect: dialectFromLang(lang) });
@@ -400,7 +403,7 @@ const SVELTE_CLASS_RE = arkRegex.as(
   "gu",
 );
 const STRING_LITERAL_RE = toRegExp(JAVASCRIPT_QUOTED_OR_TEMPLATE_LITERAL_LIKE);
-const WORD_RE = /\S+/gu;
+const WORD_RE = arkRegex.as(String.raw`\S+`, "gu");
 // Comment forms to blank before scanning, so commented-out markup isn't read as a usage. The `//`
 // form guards against `://` (URLs) so a `href="http://…"` isn't mistaken for a line comment.
 const COMMENT_RES = [
