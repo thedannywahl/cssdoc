@@ -265,6 +265,22 @@ export const TIER_0_PATTERNS: Record<string, RawPatternDef> = {
       ],
     },
   },
+  FORWARD_SLASH_CHAR: {
+    name: "FORWARD_SLASH_CHAR",
+    tier: 0,
+    source: "/",
+    description: "Forward slash character (literal)",
+    fixtures: { passes: [{ input: "/" }], fails: [{ input: "\\", reason: "backslash" }] },
+  },
+  DOC_COMMENT_START_TEXT: {
+    name: "DOC_COMMENT_START_TEXT",
+    tier: 0,
+    pattern: (resolve: PatternResolver) =>
+      `${resolve("FORWARD_SLASH_CHAR")}${resolve("ASTERISK_CHAR")}${resolve("ASTERISK_CHAR")}`,
+    description: "CSS doc-comment opener as literal text",
+    composedFrom: ["FORWARD_SLASH_CHAR", "ASTERISK_CHAR"],
+    fixtures: { passes: [{ input: "/**" }], fails: [{ input: "/*", reason: "ordinary comment" }] },
+  },
   FORWARD_SLASH: {
     name: "FORWARD_SLASH",
     tier: 0,

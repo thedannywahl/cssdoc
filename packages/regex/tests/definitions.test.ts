@@ -11,6 +11,7 @@ import { describe, it, expect } from "vite-plus/test";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import { PATTERN_DEFINITIONS, type UnifiedPatternDef } from "../src/definitions.js";
+import { DOC_COMMENT_START, DOC_COMMENT_START_TEXT } from "../src/index.ts";
 import { escapeRegex, escapeRegexChar, toRegExp } from "../src/lib.ts";
 
 function requiredRegex(def: UnifiedPatternDef): Regex {
@@ -46,6 +47,11 @@ it("captures only a trailing lowercase ASCII filename extension", () => {
   expect("dir/file.scss".match(pattern)?.[1]).toBe("scss");
   expect("file.scss1".match(pattern)).toBeNull();
   expect("file.".match(pattern)).toBeNull();
+});
+
+it("matches the same doc-comment opener as the literal form without consuming extra stars", () => {
+  expect(DOC_COMMENT_START.exec("/*** text")?.[0]).toBe(DOC_COMMENT_START_TEXT);
+  expect(DOC_COMMENT_START.exec("/* text")).toBeNull();
 });
 
 it.each([

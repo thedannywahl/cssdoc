@@ -43,10 +43,18 @@ import { scanClassUsages } from "@cssdoc/embedded";
 import { type NamingRules, type RuleName, lintCssDocs } from "@cssdoc/lint-core";
 import { type CssDocIndex, createIndex } from "@cssdoc/index";
 import { type RuleSeverity, checkClassUsage } from "@cssdoc/providers";
-import { CSSDOC_CUSTOM_PROPERTY_TAG_NAME } from "@cssdoc/regex";
+import {
+  ASTERISK_SOURCE,
+  CSSDOC_CUSTOM_PROPERTY_TAG_NAME,
+  DOC_COMMENT_START_SOURCE,
+  FORWARD_SLASH_SOURCE,
+} from "@cssdoc/regex";
 import css from "@eslint/css";
 
 type Position = { line: number; column: number };
+const DOC_COMMENT = arkRegex.as(
+  `${DOC_COMMENT_START_SOURCE}[\\s\\S]*?${ASTERISK_SOURCE}${FORWARD_SLASH_SOURCE}`,
+);
 
 interface ReportDescriptor {
   node?: unknown;
@@ -376,7 +384,7 @@ const requireComponentDocs: RuleModule = {
 
         // Check if this rule or its peers have docs
         const docComment = (rule as never as { raws?: { between?: string } }).raws?.between ?? "";
-        const hasDoc = /\/\*\*[\s\S]*?\*\//.test(docComment);
+        const hasDoc = DOC_COMMENT.exec(docComment) !== null;
         if (hasDoc) return;
 
         // Check if marked as utility (skip if skipUtilities enabled)

@@ -1,7 +1,7 @@
 import {
   ASTERISK_SOURCE,
   AT_SOURCE,
-  COMMENT_START_SOURCE,
+  DOC_COMMENT_START_SOURCE,
   STRUCTURE_RECORD_KIND_SOURCE,
 } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
@@ -42,7 +42,7 @@ const isCssDocRecord = (line: string): boolean => RECORD_TAG.test(line);
  */
 export function cssDocEdits(text: string, formatBlankLines: boolean): CssDocEdit[] {
   const edits: CssDocEdit[] = [];
-  const opener = arkRegex.as(`${COMMENT_START_SOURCE}${ASTERISK_SOURCE}`, "gu");
+  const opener = arkRegex.as(DOC_COMMENT_START_SOURCE, "gu");
   let match: RegExpExecArray | null;
 
   while ((match = opener.exec(text))) {

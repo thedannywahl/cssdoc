@@ -15,6 +15,9 @@ import {
   CSS_CLASS_ATTRIBUTE_SELECTOR,
   CSSDOC_BASE_CLASS_NAME_SOURCE,
   CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE,
+  COMMENT_START_SOURCE,
+  DOC_COMMENT_START_SOURCE,
+  DOC_COMMENT_START_TEXT,
   DASH_SOURCE,
   DIGIT_SOURCE,
   DOT_CHAR,
@@ -70,9 +73,10 @@ const ANNOTATION_MARKER = arkRegex.as(
   "u",
 );
 const DOC_COMMENT_RE: Regex = arkRegex.as(
-  `${FORWARD_SLASH_SOURCE}${ASTERISK_SOURCE}${ASTERISK_SOURCE}[\\s\\S]*?${ASTERISK_SOURCE}${FORWARD_SLASH_SOURCE}`,
+  `${DOC_COMMENT_START_SOURCE}[\\s\\S]*?${ASTERISK_SOURCE}${FORWARD_SLASH_SOURCE}`,
   "gu",
 );
+const COMMENT_OPENING_RE: Regex = arkRegex.as(`^${COMMENT_START_SOURCE}${ASTERISK_SOURCE}?`);
 
 /** Map an editor `languageId` to an embedded host, for docs whose path extension isn't decisive. */
 const hostForLanguageId = (languageId?: string): EmbeddedHost | undefined => {
@@ -185,7 +189,7 @@ function refHoverAt(
   const fallbackLegend = (raw: string): Map<number, string> => {
     const out = new Map<number, string>();
     const body = raw
-      .replace(/^\/\*\*?/, "")
+      .replace(COMMENT_OPENING_RE, "")
       .replace(/\*\/$/, "")
       .split("\n")
       .map((line) => line.replace(/^\s*\*\s?/, ""));
@@ -576,7 +580,7 @@ export class CssDocLanguageService {
 
     // Doc-tag completion: inside an unclosed `/**` block right after an `@`, while authoring CSS — a
     // stylesheet, or an embedded CSS region (a `<style>` block / `css` template / Markdown fence).
-    const open = before.lastIndexOf("/**");
+    const open = before.lastIndexOf(DOC_COMMENT_START_TEXT);
     if (open !== -1 && open > before.lastIndexOf("*/") && /(?:^|[\s*])@[\w-]*$/u.test(before)) {
       const host = detectEmbeddedHost(path) ?? hostForLanguageId(languageId);
       const authoring =

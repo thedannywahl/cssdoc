@@ -35,6 +35,7 @@ import {
   CSSDOC_MODIFIER_REFERENCE_SOURCE,
   CSSDOC_SCANNED_PSEUDO_SELECTOR,
   CSSDOC_SHADOW_PART_SELECTOR,
+  DOC_COMMENT_START_TEXT,
   DASH_SOURCE,
   DIGIT_SOURCE,
   DOT_CHAR,
@@ -1153,7 +1154,7 @@ function isDocComment(node: Extract<ChildNode, { type: "comment" }>, source: str
   const offset = node.source?.start?.offset;
   return offset === undefined
     ? node.text.startsWith(ASTERISK_CHAR)
-    : source.startsWith("/**", offset);
+    : source.startsWith(DOC_COMMENT_START_TEXT, offset);
 }
 
 /**

@@ -40,6 +40,7 @@ Patterns are organized by tier level:
 `EQUALS_CHAR` provides the literal equals sign.
 `AMPERSAND_CHAR` provides the literal ampersand.
 `FILE_EXTENSION` captures a lowercase ASCII filename extension at the end of a string.
+`DOC_COMMENT_START_SOURCE` matches a doc-comment opener; `DOC_COMMENT_START_TEXT` is its literal form.
 `LESS_THAN_CHAR` and `GREATER_THAN_CHAR` provide literal angle brackets.
 `REGEX_METACHARACTER_SOURCE` matches characters that need escaping in regular expressions.
 Use `escapeRegex(text)` to escape those characters throughout a string for use in a regex pattern.

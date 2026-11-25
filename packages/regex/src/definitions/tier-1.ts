@@ -351,6 +351,20 @@ export const TIER_1_PATTERNS: Record<string, RawPatternDef> = {
       ],
     },
   },
+  DOC_COMMENT_START: {
+    name: "DOC_COMMENT_START",
+    tier: 1,
+    pattern: (resolve: PatternResolver) => `${resolve("COMMENT_START")}${resolve("ASTERISK")}`,
+    description: "CSS doc-comment opener (/**)",
+    composedFrom: ["COMMENT_START", "ASTERISK"],
+    fixtures: {
+      passes: [{ input: "/**" }],
+      fails: [
+        { input: "/*", reason: "ordinary comment opener" },
+        { input: "**/", reason: "comment end" },
+      ],
+    },
+  },
   COMMENT_LINE_MARKER: {
     name: "COMMENT_LINE_MARKER",
     tier: 1,
