@@ -92,13 +92,27 @@ test("the bundled server.cjs starts and answers LSP diagnostics", async () => {
   expect(codes).not.toContain("missing-summary");
 }, 20_000);
 
-function ipcServer<T>() {
+function ipcServer<T>(
+  configuration?: (items: { scopeUri?: string; section: string }[]) => unknown[],
+) {
   const server = fork(serverBundle, ["--node-ipc"], { silent: true });
-  type Reply = { id: number; result?: T };
+  type Reply = { id: number; result?: T; method?: string; params?: unknown };
   const pending = new Map<number, (reply: Reply) => void>();
   let id = 0;
   server.on("message", (message) => {
     const reply = message as Reply;
+    if (reply.method === "workspace/configuration" && configuration) {
+      const params = reply.params as { items: { scopeUri?: string; section: string }[] };
+      server.send({ jsonrpc: "2.0", id: reply.id, result: configuration(params.items) });
+      return;
+    }
+    if (
+      reply.method === "client/registerCapability" ||
+      reply.method === "client/unregisterCapability"
+    ) {
+      server.send({ jsonrpc: "2.0", id: reply.id, result: null });
+      return;
+    }
     pending.get(reply.id)?.(reply);
     pending.delete(reply.id);
   });
@@ -115,6 +129,84 @@ function ipcServer<T>() {
   };
   return { server, request };
 }
+
+test("the server applies per-folder client settings and reloads them on change", async () => {
+  execFileSync("node", ["scripts/build.mjs"], { cwd: root });
+  const fixture = mkdtempSync(join(tmpdir(), "cssdoc-settings-"));
+  const first = join(fixture, "first");
+  const second = join(fixture, "second");
+  mkdirSync(first);
+  mkdirSync(second);
+  for (const dir of [first, second]) {
+    writeFileSync(
+      join(dir, "widget.scss"),
+      "/**\n * @component widget\n * @summary Scoped settings\n */\n.widget {}\n",
+    );
+  }
+  const enabled = new Set([pathToFileURL(first).href]);
+  const { server, request } = ipcServer<{ contents: { value: string } } | null>((items) =>
+    items.map((item) => ({
+      include: enabled.has(item.scopeUri ?? "") ? ["**/*.scss"] : ["**/*.css"],
+    })),
+  );
+  const hover = async (dir: string): Promise<string | undefined> =>
+    (
+      await request("textDocument/hover", {
+        textDocument: { uri: pathToFileURL(join(dir, "page.html")).href },
+        position: { line: 0, character: 13 },
+      })
+    ).result?.contents.value;
+  try {
+    await request("initialize", {
+      processId: process.pid,
+      rootUri: pathToFileURL(first).href,
+      workspaceFolders: [first, second].map((dir) => ({
+        uri: pathToFileURL(dir).href,
+        name: dir,
+      })),
+      capabilities: {
+        workspace: { configuration: true, didChangeWatchedFiles: { dynamicRegistration: true } },
+      },
+    });
+    server.send({ jsonrpc: "2.0", method: "initialized", params: {} });
+    for (const dir of [first, second]) {
+      server.send({
+        jsonrpc: "2.0",
+        method: "textDocument/didOpen",
+        params: {
+          textDocument: {
+            uri: pathToFileURL(join(dir, "page.html")).href,
+            languageId: "html",
+            version: 1,
+            text: '<div class="widget"></div>',
+          },
+        },
+      });
+    }
+    const deadline = Date.now() + 5000;
+    while (!(await hover(first))?.includes("Scoped settings") && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    expect(await hover(first)).toContain("Scoped settings");
+    expect(await hover(second)).toBeUndefined();
+    enabled.delete(pathToFileURL(first).href);
+    enabled.add(pathToFileURL(second).href);
+    server.send({
+      jsonrpc: "2.0",
+      method: "workspace/didChangeConfiguration",
+      params: { settings: null },
+    });
+    const changedDeadline = Date.now() + 5000;
+    while (!(await hover(second))?.includes("Scoped settings") && Date.now() < changedDeadline) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    expect(await hover(first)).toBeUndefined();
+    expect(await hover(second)).toContain("Scoped settings");
+  } finally {
+    server.kill();
+    rmSync(fixture, { recursive: true, force: true });
+  }
+}, 30_000);
 
 test("the server discovers CSS and keeps workspace folders independent", async () => {
   execFileSync("node", ["scripts/build.mjs"], { cwd: root });
@@ -248,6 +340,17 @@ test("the server refreshes discovered files and unsaved stylesheet changes", asy
       params: { changes: [{ uri: cssUri, type: 3 }] },
     });
     await waitForHover(undefined);
+    writeFileSync(join(fixture, "widget.scss"), text("Pushed settings"));
+    server.send({
+      jsonrpc: "2.0",
+      method: "workspace/didChangeConfiguration",
+      params: { settings: { cssdoc: { include: ["**/*.scss"] } } },
+    });
+    const configDeadline = Date.now() + 5000;
+    while (!(await hover())?.includes("Pushed settings") && Date.now() < configDeadline) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    expect(await hover()).toContain("Pushed settings");
   } finally {
     server.kill();
     rmSync(fixture, { recursive: true, force: true });

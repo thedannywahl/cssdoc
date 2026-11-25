@@ -18,6 +18,12 @@ discovers `**/*.css` in each folder, excluding `node_modules`. Configure discove
 `initializationOptions.css` to an explicit list of paths (including an empty list to disable discovery).
 Relative paths resolve against each workspace folder.
 
+When a client supports `workspace/configuration`, the server reads its `cssdoc` settings separately
+for each workspace folder and reloads them after configuration changes. Client settings override
+initialization options. The `cssdoc.css` client setting uses an empty array to select discovery;
+an empty `initializationOptions.css` explicitly selects no files. Hover settings use
+`cssdoc.hover.detail`, `cssdoc.hover.sections`, and `cssdoc.hover.sectionOrder`.
+
 When the client supports watched-file registration, changes to workspace stylesheets and config files
 refresh the index. The server also refreshes on document saves and uses unsaved text from open indexed
 files. Clients without file watching need a save or server restart to pick up external changes.

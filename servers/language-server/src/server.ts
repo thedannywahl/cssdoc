@@ -25,7 +25,7 @@ import {
 } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { type ConfigScope, CssDocLanguageService, type LspDiagnostic } from "./service.ts";
-import { discoverStylesheets, type WorkspaceDiscoveryOptions } from "./workspace.ts";
+import { type ClientSettings, discoverStylesheets, parseClientSettings } from "./workspace.ts";
 
 /** The absolute file path for a document URI, or `undefined` for non-file URIs. */
 const fsPathOf = (uri: string): string | undefined => {
@@ -44,10 +44,16 @@ export function startLanguageServer(): void {
   const hoverFilters = new Map<string, ExampleFilter | null>();
   let cssPaths: string[] = [];
   let workspaceRoots: string[] = [];
-  let discoveryOptions: WorkspaceDiscoveryOptions = {};
+  let initialOptions: ClientSettings = {};
+  let clientSettings: ClientSettings = {};
+  let folderSettings = new Map<string, ClientSettings>();
   let watchFiles = false;
   let watchWorkspaceFolders = false;
+  let supportsConfiguration = false;
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
+  let watcher: { dispose(): void } | undefined;
+  let watcherGeneration = 0;
+  let configurationGeneration = 0;
 
   const rootFor = (path: string): string | undefined =>
     workspaceRoots
@@ -56,6 +62,12 @@ export function startLanguageServer(): void {
         return !rel.startsWith(`..${sep}`) && rel !== ".." && !isAbsolute(rel);
       })
       .toSorted((a, b) => b.length - a.length)[0];
+
+  const optionsFor = (root?: string): ClientSettings => ({
+    ...initialOptions,
+    ...clientSettings,
+    ...(root ? folderSettings.get(root) : undefined),
+  });
 
   const hoverFilterFor = (uri: string, path: string | undefined): ExampleFilter | null => {
     if (!path) return null;
@@ -179,20 +191,20 @@ export function startLanguageServer(): void {
 
   const discover = (): void => {
     try {
-      cssPaths = discoverStylesheets(workspaceRoots, discoveryOptions);
+      cssPaths = workspaceRoots.length
+        ? [
+            ...new Set(
+              workspaceRoots.flatMap((root) => discoverStylesheets([root], optionsFor(root))),
+            ),
+          ].toSorted()
+        : discoverStylesheets([], optionsFor());
     } catch (error) {
       connection.console.error(`Cannot discover workspace stylesheets: ${String(error)}`);
     }
   };
 
   connection.onInitialize((params) => {
-    const options = params.initializationOptions as
-      | (WorkspaceDiscoveryOptions & {
-          hoverDetail?: "compact" | "full" | "custom";
-          hoverSections?: Record<string, "on" | "off" | "auto">;
-          hoverSectionOrder?: string[];
-        })
-      | undefined;
+    const options = params.initializationOptions as ClientSettings | undefined;
     const folders =
       params.workspaceFolders?.map((folder) => folder.uri) ??
       (params.rootUri ? [params.rootUri] : []);
@@ -201,9 +213,10 @@ export function startLanguageServer(): void {
       if (!path) connection.console.warn(`Cannot discover CSS in non-file workspace ${uri}`);
       return path ? [path] : [];
     });
-    discoveryOptions = options ?? {};
+    initialOptions = options ?? {};
     watchFiles = params.capabilities.workspace?.didChangeWatchedFiles?.dynamicRegistration === true;
     watchWorkspaceFolders = params.capabilities.workspace?.workspaceFolders === true;
+    supportsConfiguration = params.capabilities.workspace?.configuration === true;
     discover();
     if (options?.hoverDetail)
       service.setHoverDetail(
@@ -259,6 +272,59 @@ export function startLanguageServer(): void {
     }, 200);
   };
 
+  const registerWatchers = (): void => {
+    if (!watchFiles) return;
+    const generation = ++watcherGeneration;
+    const patterns = new Set([
+      "**/*.{css,scss,less,vue,svelte,astro,html,js,jsx,ts,tsx,md,mdx,json,jsonc}",
+      ...(optionsFor().include ?? []),
+      ...workspaceRoots.flatMap((root) => optionsFor(root).include ?? []),
+    ]);
+    void connection.client
+      .register(DidChangeWatchedFilesNotification.type, {
+        watchers: [...patterns].map((globPattern) => ({ globPattern })),
+      })
+      .then((registration) => {
+        if (generation !== watcherGeneration) {
+          registration.dispose();
+          return;
+        }
+        watcher?.dispose();
+        watcher = registration;
+      })
+      .catch((error: unknown) =>
+        connection.console.warn(`Cannot register file watchers: ${String(error)}`),
+      );
+  };
+
+  const requestConfiguration = (): void => {
+    if (!supportsConfiguration) return;
+    const generation = ++configurationGeneration;
+    const roots = [...workspaceRoots];
+    const items = roots.length
+      ? roots.map((root) => ({ scopeUri: pathToFileURL(root).href, section: "cssdoc" }))
+      : [{ section: "cssdoc" }];
+    void connection.workspace
+      .getConfiguration(items)
+      .then((values: unknown[]) => {
+        if (generation !== configurationGeneration) return;
+        if (roots.length) {
+          folderSettings = new Map(
+            roots.map((root, index) => [root, parseClientSettings(values[index])]),
+          );
+          clientSettings = {};
+        } else {
+          clientSettings = parseClientSettings(values[0]);
+          folderSettings.clear();
+        }
+        registerWatchers();
+        scheduleRefresh();
+      })
+      .catch((error: unknown) =>
+        connection.console.warn(`Cannot load cssdoc client settings: ${String(error)}`),
+      );
+  };
+
   connection.onInitialized(() => {
     if (watchWorkspaceFolders) {
       connection.workspace.onDidChangeWorkspaceFolders((event) => {
@@ -271,21 +337,27 @@ export function startLanguageServer(): void {
             connection.console.warn(`Cannot discover CSS in non-file workspace ${folder.uri}`);
           }
         }
+        requestConfiguration();
+        registerWatchers();
         scheduleRefresh();
       });
     }
-    if (watchFiles) {
-      const patterns = new Set([
-        "**/*.{css,scss,less,vue,svelte,astro,html,js,jsx,ts,tsx,md,mdx,json,jsonc}",
-        ...(discoveryOptions.include ?? []),
-      ]);
-      void connection.client
-        .register(DidChangeWatchedFilesNotification.type, {
-          watchers: [...patterns].map((globPattern) => ({ globPattern })),
-        })
-        .catch((error: unknown) =>
-          connection.console.warn(`Cannot register file watchers: ${String(error)}`),
-        );
+    registerWatchers();
+    requestConfiguration();
+  });
+
+  connection.onDidChangeConfiguration((params) => {
+    if (supportsConfiguration) {
+      requestConfiguration();
+      return;
+    }
+    try {
+      const settings = params.settings as { cssdoc?: unknown } | null;
+      clientSettings = parseClientSettings(settings?.cssdoc);
+      registerWatchers();
+      scheduleRefresh();
+    } catch (error) {
+      connection.console.warn(`Cannot load cssdoc client settings: ${String(error)}`);
     }
   });
 
@@ -308,6 +380,8 @@ export function startLanguageServer(): void {
   });
   connection.onShutdown(() => {
     if (refreshTimer) clearTimeout(refreshTimer);
+    watcherGeneration++;
+    configurationGeneration++;
   });
 
   connection.onCompletion((params) => {
@@ -333,6 +407,12 @@ export function startLanguageServer(): void {
     const doc = documents.get(params.textDocument.uri);
     if (!doc) return null;
     const path = fsPathOf(doc.uri);
+    const settings = optionsFor(path ? rootFor(path) : undefined);
+    service.setHoverDetail(
+      settings.hoverDetail ?? "full",
+      settings.hoverSections ?? {},
+      settings.hoverSectionOrder as HoverSectionOrder | undefined,
+    );
     const hover = service.hover(
       doc.getText(),
       params.position,

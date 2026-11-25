@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test } from "vite-plus/test";
-import { discoverStylesheets } from "../src/workspace.ts";
+import { discoverStylesheets, parseClientSettings } from "../src/workspace.ts";
 
 test("discovers CSS in every root, excludes node_modules, and supports custom globs", () => {
   const fixture = mkdtempSync(join(tmpdir(), "cssdoc-discovery-"));
@@ -35,4 +35,24 @@ test("explicit paths override discovery and resolve relative to each root", () =
     [join(roots[0], "dist/all.css"), join(roots[1], "dist/all.css"), shared].toSorted(),
   );
   expect(discoverStylesheets(roots, { css: [] })).toEqual([]);
+});
+
+test("client configuration maps discovery and hover settings and rejects malformed values", () => {
+  expect(
+    parseClientSettings({
+      css: [],
+      include: ["src/**/*.css"],
+      hover: { detail: "custom", sections: { examples: "off" }, sectionOrder: ["summary"] },
+    }),
+  ).toEqual({
+    css: undefined,
+    include: ["src/**/*.css"],
+    hoverDetail: "custom",
+    hoverSections: { examples: "off" },
+    hoverSectionOrder: ["summary"],
+  });
+  expect(() => parseClientSettings({ include: "**/*.css" })).toThrow("cssdoc.include");
+  expect(() => parseClientSettings({ hover: { sections: { summary: "sometimes" } } })).toThrow(
+    "cssdoc.hover.sections.summary",
+  );
 });
