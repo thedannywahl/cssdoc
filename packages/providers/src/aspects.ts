@@ -7,7 +7,15 @@
  * @module
  */
 import { type ExampleFilter, type StructureNode, selectExamples } from "@cssdoc/core";
-import { CSS_CLASS_ATTRIBUTE_SELECTOR, toRegExp } from "@cssdoc/regex";
+import {
+  ALPHANUMERIC_EXTENDED_SOURCE,
+  ASTERISK_CHAR,
+  CSS_CLASS_ATTRIBUTE_SELECTOR,
+  DOT_CHAR,
+  DOT_SOURCE,
+  escapeRegex,
+  toRegExp,
+} from "@cssdoc/regex";
 import {
   type ClassUsage,
   type CssDocIndex,
@@ -41,7 +49,7 @@ const linkedSyntax = (syntax: string): string => {
   return linked === syntax ? `\`${syntax}\`` : linked; // no `<type>` to link → plain code span
 };
 
-const stripDot = (name: string): string => name.replace(/^\./u, "");
+const stripDot = (name: string): string => (name.startsWith(DOT_CHAR) ? name.slice(1) : name);
 const warn = (d: Omit<Diagnostic, "severity">): Diagnostic => ({ ...d, severity: "warning" });
 const scaffoldDocLine = (commentSpan: SourceSpan | undefined, line: string): Diagnostic["fix"] => {
   if (!commentSpan) return undefined;
@@ -58,11 +66,11 @@ const scaffoldDocLine = (commentSpan: SourceSpan | undefined, line: string): Dia
   };
 };
 
-const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 const CUSTOM_ELEMENT_RE = /^[a-z][a-z0-9._-]*-[a-z0-9._-]+$/u;
 
 /** A `*`-glob name (e.g. `-icon-*`) as a regex source over one class token (`*` → any `[\w-]` run). */
-const globSource = (name: string): string => name.split("*").map(escapeRe).join("[\\w-]*");
+const globSource = (name: string): string =>
+  name.split(ASTERISK_CHAR).map(escapeRegex).join(`${ALPHANUMERIC_EXTENDED_SOURCE}*`);
 
 /** `class` attribute selectors, capturing the operator (`~`/`^`/`$`/`*`/`|`/none) and the value. */
 const CLASS_ATTR_RE = toRegExp(CSS_CLASS_ATTRIBUTE_SELECTOR);
@@ -79,13 +87,18 @@ const CLASS_ATTR_RE = toRegExp(CSS_CLASS_ATTRIBUTE_SELECTOR);
  * IDs (`#foo`), and `:host` without modifications.
  */
 export const selectorDefines = (selectorText: string, selector: string): boolean => {
-  if (!selector.startsWith(".")) return selectorText.includes(selector); // attribute-convention modifier
+  if (!selector.startsWith(DOT_CHAR)) return selectorText.includes(selector); // attribute-convention modifier
   const name = stripDot(selector); // e.g. `-icon-*` or `-foo`
-  const wild = name.includes("*");
-  const prefix = name.split("*")[0]; // literal part before the first `*`
+  const wild = name.includes(ASTERISK_CHAR);
+  const prefix = name.split(ASTERISK_CHAR)[0]; // literal part before the first `*`
 
   // 1. A literal class token matching the (glob) name — e.g. `.-icon-foo` for `-icon-*`, `.-foo` for `-foo`.
-  if (new RegExp(`\\.${globSource(name)}(?![\\w-])`, "u").test(selectorText)) return true;
+  if (
+    new RegExp(`${DOT_SOURCE}${globSource(name)}(?!${ALPHANUMERIC_EXTENDED_SOURCE})`, "u").test(
+      selectorText,
+    )
+  )
+    return true;
 
   // 2. `class` attribute selectors, evaluated per operator against the modifier as a class token.
   const glob = new RegExp(`^${globSource(name)}$`, "u");
@@ -109,11 +122,8 @@ export const selectorDefines = (selectorText: string, selector: string): boolean
  * stands for any run of characters (e.g. `util-*`, `*--legacy`, `*`). Matched literally otherwise.
  */
 const globMatch = (pattern: string, value: string): boolean => {
-  if (!pattern.includes("*")) return pattern === value;
-  const re = new RegExp(
-    `^${pattern.replace(/[.+?^${}()|[\]\\]/gu, "\\$&").replace(/\*/gu, ".*")}$`,
-    "u",
-  );
+  if (!pattern.includes(ASTERISK_CHAR)) return pattern === value;
+  const re = new RegExp(`^${pattern.split(ASTERISK_CHAR).map(escapeRegex).join(".*")}$`, "u");
   return re.test(value);
 };
 
@@ -1279,7 +1289,7 @@ export function stateUsage(usage: ClassUsage, index: CssDocIndex): Diagnostic[] 
   if (!usage.base) return [];
   const entry = index.componentForClass(usage.base);
   if (!entry) return [];
-  const name = usage.token.replace(/^\./u, "");
+  const name = stripDot(usage.token);
   if (entry.states.some((s) => s.name === name)) return [];
   return [
     warn({
@@ -1297,7 +1307,7 @@ export function partUsage(usage: ClassUsage, index: CssDocIndex): Diagnostic[] {
   if (!usage.base) return [];
   const entry = index.componentForClass(usage.base);
   if (!entry) return [];
-  const name = usage.token.replace(/^\./u, "");
+  const name = stripDot(usage.token);
   const known = entry.parts.some(
     (p) => p.name === name || p.modifiers?.some((m) => m.name === name),
   );
