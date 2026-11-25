@@ -91,6 +91,31 @@ test("custom template tags are matched literally, and an empty tag list matches 
   expect(extractCssBlocks(source, { host: "js", tags: [] })).toEqual([]);
 });
 
+test("CSS-in-JS tag scanning preserves member, call, and boundary behavior", () => {
+  const source = [
+    "const a = styled.button`.a {}`;",
+    'const b = styled("div").attrs({ role: "button" })`.b {}`;',
+    "const c = css`.c {}`;",
+    "const d = keyframes`.d {}`;",
+    "const e = theme.css`.ignored {}`;",
+    "const f = mycss`.ignored {}`;",
+    "const g = styled(foo(bar))`.ignored {}`;",
+  ].join("\n");
+  const blocks = extractCssBlocks(source, { host: "js" });
+  expect(blocks.map((block) => block.css)).toEqual([".a {}", ".b {}", ".c {}", ".d {}"]);
+  for (const block of blocks) {
+    expect(source.slice(block.start.offset, block.start.offset + block.css.length)).toBe(block.css);
+  }
+});
+
+test("CSS-in-JS interpolation masking preserves nested strings and template offsets", () => {
+  const source = 'const x = css`a { color: ${fn({ v: "}" }, `nested ${x}`)}; }`;';
+  const [block] = extractCssBlocks(source, { host: "js" });
+  expect(block.css.length).toBe(source.indexOf("`;", block.start.offset) - block.start.offset);
+  expect(block.css).toMatch(/^a \{ color: a+; \}$/u);
+  expect(projectCss(source, { host: "js" }).length).toBe(source.length);
+});
+
 test("parseCssDocsFromSource reads a JS tagged template, a Vue <style scoped>, and a Markdown fence", () => {
   expect(parseCssDocsFromSource(JS, { host: "js" }).map((e) => e.name)).toEqual(["button"]);
   const vue = parseCssDocsFromSource(VUE, { host: "html" });

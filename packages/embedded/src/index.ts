@@ -16,6 +16,10 @@ import { type CssDialect as ParserDialect, resolveParser } from "@cssdoc/dialect
 import { type LintOptions, type Violation, lintCssDocs } from "@cssdoc/lint-core";
 import {
   ALPHA_LOWER_SOURCE,
+  ALPHA_SOURCE,
+  ASTERISK_CHAR,
+  BACKSLASH_CHAR,
+  BACKTICK_CHAR,
   BRACE_CLOSE_CHAR,
   BRACE_CLOSE_SOURCE,
   BRACE_OPEN_CHAR,
@@ -24,6 +28,7 @@ import {
   COMMENT_END_SOURCE,
   COMMENT_START_SOURCE,
   DASH_SOURCE,
+  DOLLAR_CHAR,
   EQUALS_CHAR,
   FILE_EXTENSION,
   FORWARD_SLASH_CHAR,
@@ -33,6 +38,9 @@ import {
   HTML_LIKE_DOTTED_TAG_NAME_SOURCE,
   HTML_LIKE_STYLE_OPEN_TAG_SOURCE,
   HTML_QUOTED_ATTRIBUTE_VALUE_SOURCE,
+  JAVASCRIPT_QUOTED_OR_TEMPLATE_LITERAL_LIKE,
+  JAVASCRIPT_TAGGED_TEMPLATE_BOUNDARY_SOURCE,
+  JAVASCRIPT_TAGGED_TEMPLATE_CHAIN_SEGMENT_SOURCE,
   LESS_THAN_CHAR,
   QUOTE_DOUBLE_CHAR,
   QUOTE_SINGLE_CHAR,
@@ -121,13 +129,13 @@ function skipInterpolation(src: string, i: number): number {
   i += 1; // past '$'
   for (; i < src.length; i++) {
     const c = src[i];
-    if (c === "{") depth++;
-    else if (c === "}") {
+    if (c === BRACE_OPEN_CHAR) depth++;
+    else if (c === BRACE_CLOSE_CHAR) {
       depth--;
       if (depth === 0) return i + 1;
-    } else if (c === "'" || c === '"') {
+    } else if (c === QUOTE_SINGLE_CHAR || c === QUOTE_DOUBLE_CHAR) {
       i = skipString(src, i, c);
-    } else if (c === "`") {
+    } else if (c === BACKTICK_CHAR) {
       i = skipTemplate(src, i);
     }
   }
@@ -137,7 +145,7 @@ function skipInterpolation(src: string, i: number): number {
 /** Skip a quoted string starting at `i` (the quote). Returns the index of the closing quote. */
 function skipString(src: string, i: number, quote: string): number {
   for (i += 1; i < src.length; i++) {
-    if (src[i] === "\\") i++;
+    if (src[i] === BACKSLASH_CHAR) i++;
     else if (src[i] === quote) return i;
   }
   return i;
@@ -146,9 +154,10 @@ function skipString(src: string, i: number, quote: string): number {
 /** Skip a (non-CSS) template literal starting at `i` (the backtick). Returns the closing backtick index. */
 function skipTemplate(src: string, i: number): number {
   for (i += 1; i < src.length; i++) {
-    if (src[i] === "\\") i++;
-    else if (src[i] === "`") return i;
-    else if (src[i] === "$" && src[i + 1] === "{") i = skipInterpolation(src, i) - 1;
+    if (src[i] === BACKSLASH_CHAR) i++;
+    else if (src[i] === BACKTICK_CHAR) return i;
+    else if (src[i] === DOLLAR_CHAR && src[i + 1] === BRACE_OPEN_CHAR)
+      i = skipInterpolation(src, i) - 1;
   }
   return i;
 }
@@ -164,24 +173,25 @@ function scanJs(
   if (tags.length === 0) return { regions, masks, comments };
   // Matches a CSS tag expression immediately before a backtick: `css`, `styled.x`, `styled(x)`, chains.
   const tagRe = arkRegex.as(
-    `(?:[^.\\w$]|^)(?:${tags.map(escapeRegex).join("|")})(?:\\.[A-Za-z0-9_$]+|\\([^()]*\\))*\\s*$`,
+    `${JAVASCRIPT_TAGGED_TEMPLATE_BOUNDARY_SOURCE}(?:${tags.map(escapeRegex).join("|")})${JAVASCRIPT_TAGGED_TEMPLATE_CHAIN_SEGMENT_SOURCE}*\\s*$`,
     "u",
   );
   for (let i = 0; i < src.length; i++) {
     const c = src[i];
-    if (c === "/" && src[i + 1] === "/") {
+    if (c === FORWARD_SLASH_CHAR && src[i + 1] === FORWARD_SLASH_CHAR) {
       while (i < src.length && src[i] !== "\n") i++;
-    } else if (c === "/" && src[i + 1] === "*") {
+    } else if (c === FORWARD_SLASH_CHAR && src[i + 1] === ASTERISK_CHAR) {
       const start = i;
-      const isDoc = src[i + 2] === "*";
+      const isDoc = src[i + 2] === ASTERISK_CHAR;
       i += 2;
-      while (i < src.length && !(src[i] === "*" && src[i + 1] === "/")) i++;
+      while (i < src.length && !(src[i] === ASTERISK_CHAR && src[i + 1] === FORWARD_SLASH_CHAR))
+        i++;
       const closed = i < src.length;
       i += 1; // land on the '/'; loop's i++ moves past
       if (isDoc && closed) comments.push({ start, end: Math.min(i + 1, src.length) });
-    } else if (c === "'" || c === '"') {
+    } else if (c === QUOTE_SINGLE_CHAR || c === QUOTE_DOUBLE_CHAR) {
       i = skipString(src, i, c);
-    } else if (c === "`") {
+    } else if (c === BACKTICK_CHAR) {
       const isCss = tagRe.test(src.slice(Math.max(0, i - 256), i));
       if (!isCss) {
         i = skipTemplate(src, i);
@@ -190,9 +200,9 @@ function scanJs(
       const start = i + 1;
       let j = start;
       for (; j < src.length; j++) {
-        if (src[j] === "\\") j++;
-        else if (src[j] === "`") break;
-        else if (src[j] === "$" && src[j + 1] === "{") {
+        if (src[j] === BACKSLASH_CHAR) j++;
+        else if (src[j] === BACKTICK_CHAR) break;
+        else if (src[j] === DOLLAR_CHAR && src[j + 1] === BRACE_OPEN_CHAR) {
           const end = skipInterpolation(src, j);
           masks.push({ start: j, end });
           j = end - 1;
@@ -233,7 +243,7 @@ function scanHtml(src: string): { regions: Region[] } {
 function scanMarkdown(src: string): { regions: Region[] } {
   const regions: Region[] = [];
   const fence = arkRegex.as(
-    String.raw`(^|\n)${MARKDOWN_BACKTICK_FENCE_SOURCE}([a-zA-Z]+)[^\n]*\n`,
+    String.raw`(^|\n)${MARKDOWN_BACKTICK_FENCE_SOURCE}(${ALPHA_SOURCE}+)[^\n]*\n`,
     "gu",
   );
   let m: RegExpExecArray | null = fence.exec(src);
@@ -389,14 +399,17 @@ const SVELTE_CLASS_RE = arkRegex.as(
   String.raw`${WORD_BOUNDARY_SOURCE}class${COLON_CHAR}([\w${DASH_SOURCE}]+)`,
   "gu",
 );
-const STRING_LITERAL_RE = /(["'`])((?:(?!\1)[\s\S])*)\1/gu;
+const STRING_LITERAL_RE = toRegExp(JAVASCRIPT_QUOTED_OR_TEMPLATE_LITERAL_LIKE);
 const WORD_RE = /\S+/gu;
 // Comment forms to blank before scanning, so commented-out markup isn't read as a usage. The `//`
 // form guards against `://` (URLs) so a `href="http://…"` isn't mistaken for a line comment.
 const COMMENT_RES = [
   toRegExp(HTML_COMMENT),
   arkRegex.as(`${COMMENT_START_SOURCE}[\\s\\S]*?${COMMENT_END_SOURCE}`, "gu"),
-  /(?<![:/])\/\/[^\n]*/gu,
+  arkRegex.as(
+    String.raw`(?<![${COLON_CHAR}${FORWARD_SLASH_CHAR}])${FORWARD_SLASH_CHAR}{2}[^\n]*`,
+    "gu",
+  ),
 ];
 
 /** Blank every `${ … }` interpolation in a template-literal body to same-length spaces, so a static
@@ -405,7 +418,7 @@ const COMMENT_RES = [
 function maskTemplateInterpolations(body: string): string {
   let out = body;
   for (let i = 0; i < out.length; i++) {
-    if (out[i] === "$" && out[i + 1] === "{") {
+    if (out[i] === DOLLAR_CHAR && out[i + 1] === BRACE_OPEN_CHAR) {
       const end = skipInterpolation(out, i);
       out = out.slice(0, i) + " ".repeat(end - i) + out.slice(end);
     }
@@ -453,7 +466,7 @@ export function scanClassUsages(source: string): ClassUsageSite[] {
     };
     const pushLiterals = (expr: string, exprBase: number): void => {
       for (const s of expr.matchAll(STRING_LITERAL_RE)) {
-        const body = s[1] === "`" ? maskTemplateInterpolations(s[2]) : s[2];
+        const body = s[1] === BACKTICK_CHAR ? maskTemplateInterpolations(s[2]) : s[2];
         pushWords(body, exprBase + (s.index ?? 0) + 1); // +1 skips the opening quote
       }
     };
