@@ -28,7 +28,18 @@
     "@cssdoc/index",
     "@cssdoc/config",
     "@cssdoc/embedded",
-    "@cssdoc/providers"
+    "@cssdoc/providers",
+    "@cssdoc/dialects",
+    "@cssdoc/lint-core",
+    "@cssdoc/spec",
+    "@cssdoc/codemirror",
+    "@cssdoc/tmlanguage",
+    "@cssdoc/grammarkdown-codemirror",
+    "@cssdoc/grammarkdown-tmlanguage",
+    "@cssdoc/html",
+    "@cssdoc/llms",
+    "@cssdoc/cem",
+    "@cssdoc/dtcg"
   ],
   "treatWarningsAsErrors": true
 }
