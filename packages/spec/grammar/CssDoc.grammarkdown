@@ -361,18 +361,18 @@ ModifierBody :
 // @global, or @affects marker at the start of the description contributes structured metadata.
 ModifierTag :
     `@modifier` WhiteSpace ModifierSelector
-    `@modifier` WhiteSpace ModifierSelector Separator ModifierBody
-    `@modifier` WhiteSpace ModifierSelector WhiteSpace ModifierAlias Separator ModifierBody
+    `@modifier` WhiteSpace ModifierSelector WhiteSpace Separator WhiteSpace ModifierBody
+    `@modifier` WhiteSpace ModifierSelector WhiteSpace ModifierAlias WhiteSpace Separator WhiteSpace ModifierBody
 
 // A part can name a selector chain. An optional alias overrides the name derived from its final
 // compound; wrappers use the same argument parser.
 PartTag :
     `@part` WhiteSpace PartSelector
-    `@part` WhiteSpace PartSelector Separator Description
+    `@part` WhiteSpace PartSelector WhiteSpace Separator WhiteSpace Description
 
 WrapperTag :
     `@wrapper` WhiteSpace PartSelector
-    `@wrapper` WhiteSpace PartSelector Separator Description
+    `@wrapper` WhiteSpace PartSelector WhiteSpace Separator WhiteSpace Description
 
 // A shadow-DOM exposed part (`::part(name)`), named by a bare identifier, e.g. `@csspart header`.
 ShadowPartName :
@@ -380,7 +380,7 @@ ShadowPartName :
 
 CssPartTag :
     `@csspart` WhiteSpace ShadowPartName
-    `@csspart` WhiteSpace ShadowPartName Separator Description
+    `@csspart` WhiteSpace ShadowPartName WhiteSpace Separator WhiteSpace Description
 
 PseudoTag :
     `@pseudo` WhiteSpace Description
@@ -393,13 +393,13 @@ CssPropertyKeyword :
 CssPropertyTag :
     CssPropertyKeyword WhiteSpace CustomPropertyName
     CssPropertyKeyword WhiteSpace CustomPropertyName WhiteSpace? SyntaxDescriptor
-    CssPropertyKeyword WhiteSpace CustomPropertyName Separator Description
-    CssPropertyKeyword WhiteSpace CustomPropertyName WhiteSpace? SyntaxDescriptor Separator Description
+    CssPropertyKeyword WhiteSpace CustomPropertyName WhiteSpace? Separator WhiteSpace? Description
+    CssPropertyKeyword WhiteSpace CustomPropertyName WhiteSpace? SyntaxDescriptor WhiteSpace? Separator WhiteSpace? Description
 
 // A design token the component consumes (`var(--name)`); the set is derived from the CSS, this adds prose.
 TokensTag :
     `@tokens` WhiteSpace CustomPropertyName
-    `@tokens` WhiteSpace CustomPropertyName Separator Description
+    `@tokens` WhiteSpace CustomPropertyName WhiteSpace Separator WhiteSpace Description
 
 // A state name: a bare identifier (a custom `:state(name)` state), a `:`-prefixed native
 // pseudo-class state (e.g. `:disabled`), or a bracketed attribute-reflected state (e.g.
@@ -411,19 +411,19 @@ StateName :
 
 CssStateTag :
     `@cssstate` WhiteSpace StateName
-    `@cssstate` WhiteSpace StateName Separator Description
+    `@cssstate` WhiteSpace StateName WhiteSpace? Separator WhiteSpace Description
 
 SlotName :
     Identifier
 
 SlotTag :
     `@slot` WhiteSpace SlotName
-    `@slot` WhiteSpace SlotName Separator Description
+    `@slot` WhiteSpace SlotName WhiteSpace Separator WhiteSpace Description
 
 // A CSS custom function (`@function --name`), derived from the `@function` at-rule.
 CssFunctionTag :
     `@function` WhiteSpace CustomPropertyName
-    `@function` WhiteSpace CustomPropertyName Separator Description
+    `@function` WhiteSpace CustomPropertyName WhiteSpace Separator WhiteSpace Description
 
 AnimationName :
     Identifier
@@ -435,12 +435,12 @@ KeyframesKeyword :
 // An animation the component exposes (`@keyframes`/`@animation`), derived from the `@keyframes` at-rule.
 KeyframesTag :
     KeyframesKeyword WhiteSpace AnimationName
-    KeyframesKeyword WhiteSpace AnimationName Separator Description
+    KeyframesKeyword WhiteSpace AnimationName WhiteSpace Separator WhiteSpace Description
 
 // A cascade layer (`@layer`), derived from `@layer` names.
 LayerTag :
     `@layer` WhiteSpace LayerName
-    `@layer` WhiteSpace LayerName Separator Description
+    `@layer` WhiteSpace LayerName WhiteSpace Separator WhiteSpace Description
 
 // A container-query surface (`@container`), derived from `@container` / `container-name`.
 ContainerTag :
@@ -504,7 +504,7 @@ CompatTag :
 // A related component cross-reference, named by its record name.
 RelatedTag :
     `@related` WhiteSpace RecordName
-    `@related` WhiteSpace RecordName Separator Description
+    `@related` WhiteSpace RecordName WhiteSpace Separator WhiteSpace Description
 
 // Declared family membership: distinct from `@structure` containment (fixed position) and from
 // `@related` (loose "see also") — feeds the parent's Subcomponents section even when this record

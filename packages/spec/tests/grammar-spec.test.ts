@@ -113,3 +113,17 @@ test("the separator pattern matches the grammar's terminal alternatives", async 
   expect(terminals.filter((terminal) => !pattern.test(terminal))).toEqual([]);
   expect(["", "–", "---"].filter((invalid) => pattern.test(invalid))).toEqual([]);
 });
+
+test("tag descriptions include the whitespace used by the parser around separators", async () => {
+  const grammar = new Grammar([SPEC]);
+  await grammar.parse();
+  const source = grammar.rootFiles[0];
+  const production = source.elements.find(
+    (element): element is Production =>
+      element instanceof Production && element.name.text === "PartTag",
+  );
+  if (!production?.body) throw new Error("Missing PartTag body");
+  expect(production.body.getText(source)).toContain(
+    "PartSelector WhiteSpace Separator WhiteSpace Description",
+  );
+});
