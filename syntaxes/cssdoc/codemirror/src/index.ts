@@ -114,11 +114,11 @@ const TOKEN = arkRegex.as(
   [
     injectTags(TOKENIZER_INLINE_TAG_SOURCE, INLINE_TAGS),
     injectTags(TOKENIZER_RECORD_TAG_SOURCE, RECORD_TAGS),
-    injectTags(TOKENIZER_MODIFIER_TAG_SOURCE, MODIFIER_TAGS),
+    ...(MODIFIER_TAGS.length ? [injectTags(TOKENIZER_MODIFIER_TAG_SOURCE, MODIFIER_TAGS)] : []),
     injectTags(TOKENIZER_PART_TAG_SOURCE, PART_TAGS),
     injectTags(TOKENIZER_PROPERTY_TAG_SOURCE, PROPERTY_TAGS),
     injectTags(TOKENIZER_REF_TAG_SOURCE, ["ref"]),
-    // bare block/record/flag tags
+    // bare block and record tags
     `(?<btag>@(?:${alt(PLAIN_TAGS)})${WORD_BOUNDARY_SOURCE})`,
     // a custom property named anywhere in the comment
     `(?<cprop>${TOKEN_CUSTOM_PROPERTY_SOURCE})`,

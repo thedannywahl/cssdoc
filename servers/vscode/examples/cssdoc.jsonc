@@ -11,7 +11,7 @@
   "noStandardTags": false,
 
   // Register custom doc-comment tags. Each: { tagName, syntaxKind: record|block|modifier|inline,
-  // allowMultiple?, recordKind?: component|utility|rule|declaration, aliasFor? }. Default: none.
+  // allowMultiple?, recordKind?: component|utility|declaration|layout, aliasFor? }. Default: none.
   "tagDefinitions": [],
 
   // Turn individual tags on/off by name, e.g. { "part": false }. Default: {} (all standard tags on).

@@ -12,7 +12,7 @@ const UNTYPED_STRUCTURE_MEDIA_RE: Regex = arkRegex.as(`^${UNTYPED_STRUCTURE_MEDI
 const STRUCTURE_RECORD_KIND_RE: Regex = arkRegex.as(`^${STRUCTURE_RECORD_KIND_SOURCE}$`, "u");
 
 function canonicalRecordKind(kind: string): CssRecordKind | undefined {
-  if (kind === "name" || kind === "rule") return "component";
+  if (kind === "name") return "component";
   if (kind === "component" || kind === "utility" || kind === "declaration" || kind === "layout") {
     return kind;
   }

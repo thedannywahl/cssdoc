@@ -9,7 +9,7 @@ They layer onto host CSS scopes, so cssdoc tags and refs light up wherever CSS i
 including CSS embedded in HTML `<style>`.
 
 It highlights the record and block tags (`@component`, `@modifier`, `@part`, `@cssproperty`, …), the
-release modifiers (`@alpha`, `@beta`, `@public`, …), inline tags (`{@link}`, `{@inheritDoc}`,
+release metadata (`@stage`, `@visibility`), inline tags (`{@link}`, `{@inheritDoc}`,
 `{@label}`), and custom properties (`--foo`).
 
 ## Use with Shiki or VitePress

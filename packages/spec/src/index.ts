@@ -67,13 +67,6 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
     description: "Opens a utility record — a single-purpose class with no variants.",
   },
   {
-    name: "rule",
-    kind: "record",
-    recordKind: "component",
-    aliasFor: "component",
-    description: "Deprecated alias for @component.",
-  },
-  {
     name: "declaration",
     kind: "record",
     recordKind: "declaration",
@@ -375,17 +368,6 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
     allowMultiple: true,
     description: "Declares one member record on a parent, optionally private.",
   },
-  // Legacy flag tags remain accepted as aliases for @stage/@visibility.
-  { name: "alpha", kind: "modifier", description: "Legacy alias for `@stage alpha`." },
-  { name: "beta", kind: "modifier", description: "Legacy alias for `@stage beta`." },
-  {
-    name: "experimental",
-    kind: "modifier",
-    description: "Legacy alias for `@stage experimental`.",
-  },
-  { name: "internal", kind: "modifier", description: "Legacy alias for `@visibility internal`." },
-  { name: "public", kind: "modifier", description: "Legacy alias for `@visibility public`." },
-  { name: "stable", kind: "modifier", description: "Legacy alias for `@stage stable`." },
   // Inline tags.
   { name: "link", kind: "inline", description: "An inline link to another record or a URL." },
   { name: "inheritDoc", kind: "inline", description: "Inherits prose from another record." },

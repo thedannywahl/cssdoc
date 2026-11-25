@@ -158,10 +158,10 @@ const SELECTOR_COMBINATOR: Regex = arkRegex.as(
   String.raw`[\s${GREATER_THAN_CHAR}+${TILDE_CHAR}]`,
   "u",
 );
-const RECORD_REF_KINDS = new Set(["component", "name", "utility", "rule", "declaration", "layout"]);
+const RECORD_REF_KINDS = new Set(["component", "name", "utility", "declaration", "layout"]);
 
 function canonicalRecordKind(kind: string): CssRecordKind | undefined {
-  if (kind === "name" || kind === "rule") return "component";
+  if (kind === "name") return "component";
   if (kind === "component" || kind === "utility" || kind === "declaration" || kind === "layout") {
     return kind;
   }
@@ -442,10 +442,7 @@ function parseLegendFromInlineComment(text: string): {
   annotations: Map<number, string>;
   refs: number[];
 } {
-  const LEGEND_TAG: Regex = arkRegex.as(
-    `^${AT_SOURCE}(annotations|rule)${WORD_BOUNDARY_SOURCE}`,
-    "u",
-  );
+  const LEGEND_TAG: Regex = arkRegex.as(`^${AT_SOURCE}annotations${WORD_BOUNDARY_SOURCE}`, "u");
   const stripped = stripCommentFraming(text);
   const lines = stripped.split("\n");
   const first = lines.find((line) => line.trim().length > 0)?.trim() ?? "";

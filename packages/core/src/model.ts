@@ -192,7 +192,7 @@ export interface CssCondition {
  * What kind of CSS surface a record documents. `component` is a component or general selector-based
  * surface; `utility` is a single-purpose class family; `layout` describes composition; `declaration`
  * describes custom-property or custom-function declarations. The record-opening tag chooses it;
- * `@rule` is a compatibility alias for `@component`, and `@name` is an alias for `component`.
+ * `@name` is an alias for `@component`.
  */
 export type CssRecordKind = "component" | "utility" | "declaration" | "layout";
 
@@ -226,7 +226,7 @@ export interface CssElementConstraints {
 }
 
 /**
- * A release maturity from `@stage` (or its legacy flag-tag aliases).
+ * A release maturity from `@stage`.
  */
 export type CssReleaseStage = "alpha" | "beta" | "experimental" | "stable";
 

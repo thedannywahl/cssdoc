@@ -242,7 +242,6 @@ RecordKeyword :
     `@component`
     `@name`
     `@utility`
-    `@rule`
     `@declaration`
     `@layout`
 
@@ -501,16 +500,6 @@ MemberTag :
     `@member` WhiteSpace RecordName
     `@member` WhiteSpace RecordName WhiteSpace `private`
 
-// --- Legacy modifier (flag) tags; prefer @stage / @visibility -------------------------------
-
-ModifierFlagTag :
-    `@alpha`
-    `@beta`
-    `@experimental`
-    `@internal`
-    `@public`
-    `@stable`
-
 // --- Custom tags: registered by the host tooling; unregistered tags are ignored ---------------
 
 CustomTagContent ::
@@ -558,7 +547,6 @@ BlockTag :
     SinceTag
     GroupTag
     DefaultValueTag
-    ModifierFlagTag
     CustomTag
 
 TagList :

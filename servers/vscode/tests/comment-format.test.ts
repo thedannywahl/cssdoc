@@ -18,9 +18,10 @@ test("adds a closing line only after a CSSDoc record tag", () => {
 });
 
 test("recognizes every built-in CSSDoc record tag", () => {
-  for (const tag of ["component", "name", "utility", "rule", "declaration", "layout"]) {
+  for (const tag of ["component", "name", "utility", "declaration", "layout"]) {
     expect(cssDocEdits(`/**\n * @${tag} value`, false)).not.toEqual([]);
   }
+  expect(cssDocEdits("/**\n * @rule value", false)).toEqual([]);
 });
 
 test("formats blank lines before an existing closer", () => {

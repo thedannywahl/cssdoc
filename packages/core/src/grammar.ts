@@ -119,14 +119,12 @@ function isReleaseStage(value: string): value is CssReleaseStage {
 
 /**
  * The record-opening tags and the {@link CssRecordKind} each selects, as the default boundary map.
- * `@name` and legacy `@rule` are aliases for `@component`. A {@link CssDocConfiguration} may add
- * more record tags.
+ * `@name` is an alias for `@component`. A {@link CssDocConfiguration} may add more record tags.
  */
 export const RECORD_TAGS: Record<string, CssRecordKind> = {
   component: "component",
   name: "component",
   utility: "utility",
-  rule: "component",
   declaration: "declaration",
   layout: "layout",
 };
@@ -175,7 +173,7 @@ export interface DocCondition {
 export interface ParsedDoc {
   /** A record-opening tag's canonical name. Marks a record boundary. */
   component?: string;
-  /** The record kind chosen by the opening tag (`@rule` is a compatibility alias for `@component`). */
+  /** The record kind chosen by the opening tag. */
   kind?: CssRecordKind;
   /** `@selector` / `@class` — an explicit base CSS selector (any valid simple selector; otherwise inferred from the CSS). */
   className?: string;
@@ -198,9 +196,9 @@ export interface ParsedDoc {
   group?: string;
   /** `@a11y`/`@accessibility` — accessibility guidance. */
   accessibility?: string;
-  /** Release maturity from `@stage` or a legacy maturity flag tag. */
+  /** Release maturity from `@stage`. */
   releaseStage?: CssReleaseStage;
-  /** Audience visibility from `@visibility` or a legacy visibility flag tag. */
+  /** Audience visibility from `@visibility`. */
   visibility?: CssVisibility;
   /** `@modifier` prose, keyed by the derived modifier name (e.g. `-color-secondary`, `data-variant="ghost"`). */
   modifiers: Map<string, DocModifier>;
@@ -563,13 +561,6 @@ export function parseDocComment(
       const WHITESPACE: Regex = arkRegex.as(String.raw`\s`, "u");
       doc.component = rest.split(WHITESPACE)[0];
       doc.kind = definition.recordKind;
-      continue;
-    }
-    if (definition.syntaxKind === "modifier") {
-      const legacyValue = definition.canonicalName;
-      if (legacyValue === "internal" || legacyValue === "public") {
-        doc.visibility = legacyValue;
-      } else if (isReleaseStage(legacyValue)) doc.releaseStage = legacyValue;
       continue;
     }
     if (definition.syntaxKind === "inline") continue; // inline tags live inside descriptions

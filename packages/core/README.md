@@ -86,7 +86,6 @@ they exist, so it's standards-aligned:
 | ------------------------------------------ | --------------------------------------------------------------------------- |
 | `@component` / `@name <id>`                | Names the record (required; marks a boundary).                              |
 | `@utility <id>`                            | Marks a single-purpose class record.                                        |
-| `@rule <id>`                               | Deprecated alias for a component record.                                    |
 | `@layout <id>`                             | Marks a composition-oriented record.                                        |
 | `@declaration <id>`                        | Marks a custom-property/function declaration record.                        |
 | `@class <selector>`                        | An explicit base class (otherwise inferred from the first bare-class rule). |

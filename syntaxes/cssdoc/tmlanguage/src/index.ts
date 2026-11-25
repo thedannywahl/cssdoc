@@ -2,7 +2,7 @@
  * `@cssdoc/tmlanguage` — a TextMate injection grammar that highlights cssdoc doc-comment tags inside
  * CSS comments, the way TSDoc highlights JSDoc tags inside `/** … *\/` comments. It layers onto the host
  * CSS grammar's comment scope, so `@component`, `@modifier`, `@cssproperty`, `{@link …}`, the release
- * modifiers, and custom properties light up wherever CSS is highlighted.
+ * metadata tags, and custom properties light up wherever CSS is highlighted.
  *
  * The grammar is built from the canonical tag vocabulary in `@cssdoc/spec` via
  * {@link buildInjectionGrammar}, so the tag list is defined exactly once. The default export is the

@@ -624,18 +624,18 @@ export const TIER_2_PATTERNS: Record<string, RawPatternDef> = {
   STRUCTURE_RECORD_KIND: {
     name: "STRUCTURE_RECORD_KIND",
     tier: 2,
-    source: String.raw`(?:component|name|utility|rule|declaration|layout)`,
-    description: "Structure record kind (component, name, utility, rule, declaration, or layout)",
+    source: String.raw`(?:component|name|utility|declaration|layout)`,
+    description: "Structure record kind (component, name, utility, declaration, or layout)",
     fixtures: {
       passes: [
         { input: "component" },
         { input: "name" },
         { input: "utility" },
-        { input: "rule" },
         { input: "declaration" },
         { input: "layout" },
       ],
       fails: [
+        { input: "rule", reason: "not a valid record kind" },
         { input: "unknown", reason: "not a valid record kind" },
         { input: "button", reason: "not a record kind" },
       ],

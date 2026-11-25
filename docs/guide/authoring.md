@@ -15,15 +15,14 @@ template, a `<style>` block, or a Markdown fence. See [Embedded CSS](/guide/embe
 One of these opens a record and picks its kind. The required `<id>` is the stable, human-readable
 name used for references and generated page names; it is not the CSS selector. `@selector` separately
 declares a non-class base selector when inference is insufficient. `@name` is an alias for
-`@component`, and `@rule` remains accepted as a deprecated alias.
+`@component`.
 
-| Tag                              | Kind                           |
-| -------------------------------- | ------------------------------ |
-| `@component <id>` / `@name <id>` | `component`                    |
-| `@layout <id>`                   | `layout`                       |
-| `@utility <id>`                  | `utility`                      |
-| `@rule <id>`                     | `component` (deprecated alias) |
-| `@declaration <id>`              | `declaration`                  |
+| Tag                              | Kind          |
+| -------------------------------- | ------------- |
+| `@component <id>` / `@name <id>` | `component`   |
+| `@layout <id>`                   | `layout`      |
+| `@utility <id>`                  | `utility`     |
+| `@declaration <id>`              | `declaration` |
 
 Record kinds label the documented surface; they don't change the CSS or limit the record-level
 vocabulary. Prose tags such as `@todo` can be used on any record. Surface tags such as `@part` and
@@ -62,10 +61,9 @@ property. Use `@structure` when the record describes an element composition.
 }
 ```
 
-`@utility` remains a reader-facing classification for single-purpose classes. `@rule` was too broad
-to distinguish a meaningful surface, so it now opens a component record and remains only for
-backward compatibility. `@layout` is for composition-oriented records; `@declaration` groups
-registered-property or custom-function declarations.
+`@utility` is a reader-facing classification for single-purpose classes. `@layout` is for
+composition-oriented records; `@declaration` groups registered-property or custom-function
+declarations.
 
 ## Prose tags
 
@@ -308,8 +306,7 @@ implicit-structure behavior, and record-reference syntax in `@structure`, see [L
 Use `@stage alpha`, `@stage beta`, `@stage experimental`, or `@stage stable` to describe release
 maturity. Use `@visibility internal` for records intended for author documentation; collection
 emitters omit them by default and accept `includeInternal: true` to include them. Unmarked records
-are public. The legacy flag tags (`@alpha`, `@beta`, `@experimental`, `@stable`, `@internal`, and
-`@public`) remain accepted and map to the corresponding field.
+are public.
 
 ## Annotations and refs
 
@@ -535,7 +532,7 @@ doesn't need to declare `@memberOf` back for `@members` to pick it up.
  *   .panel {}
  * }
  * @a11y Tabs use roving tabindex; panels are labelled by their tab.
- * @beta
+ * @stage beta
  */
 .tabs {
   display: grid;

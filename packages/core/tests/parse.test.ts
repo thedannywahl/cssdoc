@@ -733,7 +733,7 @@ test("inlineComments mode controls how an inline comment combines with @modifier
   expect(desc("ignore")).toBe("Tag prose.");
 });
 
-test("inlineComments: ignore still parses explicit-gated inline legends (@annotations/@rule)", () => {
+test("inlineComments: ignore still parses explicit-gated inline legends (@annotations)", () => {
   const cfg = new CssDocConfiguration();
   cfg.setInlineComments("ignore");
   const [card] = parseCssDocs(
@@ -749,7 +749,7 @@ test("inlineComments: ignore still parses explicit-gated inline legends (@annota
       "2. Focus ring must be visible",
       "*/",
       ".card.-x {}",
-      "/* @rule",
+      "/* @annotations",
       "3. Legacy reset path",
       "@ref 3",
       "*/",
@@ -1254,13 +1254,14 @@ test("@ref inline prose and @annotations block merge; block row wins on collisio
   ]);
 });
 
-test("record-opening tags set the kind; @rule remains a component alias", () => {
+test("record-opening tags set the kind; @name remains a component alias", () => {
   const [comp] = parseCssDocs(`/**\n * @component button\n */\n.button { color: red; }`);
   expect(comp.kind).toBe("component");
+  const [named] = parseCssDocs(`/**\n * @name button\n */\n.button { color: red; }`);
+  expect(named.kind).toBe("component");
   const [util] = parseCssDocs(`/**\n * @utility spacing\n */\n.m-sm { margin: 0.5rem; }`);
   expect(util.kind).toBe("utility");
-  const [rule] = parseCssDocs(`/**\n * @rule base\n */\nbody { margin: 0; }`);
-  expect(rule.kind).toBe("component");
+  expect(parseCssDocs(`/**\n * @rule base\n */\nbody { margin: 0; }`)).toEqual([]);
   const [decl] = parseCssDocs(`/**\n * @declaration tokens\n */\n:root { --x: 1; }`);
   expect(decl.kind).toBe("declaration");
   const [layout] = parseCssDocs(`/**\n * @layout template\n */\n.wrapper {}`);
@@ -2107,12 +2108,12 @@ test("prose tags surface on the entry, including stage and visibility", () => {
   expect(entry.visibility).toBe("internal");
 });
 
-test("legacy release-stage and visibility flags map to the separated fields", () => {
+test("legacy release-stage and visibility flags are ignored", () => {
   const [entry] = parseCssDocs(
-    `/**\n * @component legacy\n * @experimental\n * @internal\n */\n.legacy {}`,
+    `/**\n * @component legacy\n * @alpha\n * @beta\n * @experimental\n * @stable\n * @internal\n * @public\n */\n.legacy {}`,
   );
-  expect(entry.releaseStage).toBe("experimental");
-  expect(entry.visibility).toBe("internal");
+  expect(entry.releaseStage).toBeUndefined();
+  expect(entry.visibility).toBeUndefined();
 });
 
 test("multiline @remarks and @accessibility preserve newlines through the parser", () => {

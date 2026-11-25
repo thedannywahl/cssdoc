@@ -133,7 +133,7 @@
  * @component nav
  * @summary Horizontal site navigation bar.
  * @part .nav__link — One navigation link.
- * @stable
+ * @stage stable
  */
 .nav {
   display: flex;
