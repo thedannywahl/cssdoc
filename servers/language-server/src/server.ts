@@ -6,7 +6,7 @@
  * @module
  */
 import { readFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { dirname, isAbsolute, relative, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { CssDocConfigFile, resolveProviders } from "@cssdoc/config";
 import type { ExampleFilter } from "@cssdoc/core";
@@ -24,6 +24,7 @@ import {
 } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { type ConfigScope, CssDocLanguageService, type LspDiagnostic } from "./service.ts";
+import { discoverStylesheets, type WorkspaceDiscoveryOptions } from "./workspace.ts";
 
 /** The absolute file path for a document URI, or `undefined` for non-file URIs. */
 const fsPathOf = (uri: string): string | undefined => {
@@ -41,6 +42,15 @@ export function startLanguageServer(): void {
   const service = new CssDocLanguageService(createIndex(""));
   const hoverFilters = new Map<string, ExampleFilter | null>();
   let cssPaths: string[] = [];
+  let workspaceRoots: string[] = [];
+
+  const rootFor = (path: string): string | undefined =>
+    workspaceRoots
+      .filter((root) => {
+        const rel = relative(root, path);
+        return !rel.startsWith(`..${sep}`) && rel !== ".." && !isAbsolute(rel);
+      })
+      .toSorted((a, b) => b.length - a.length)[0];
 
   const hoverFilterFor = (uri: string, path: string | undefined): ExampleFilter | null => {
     if (!path) return null;
@@ -55,7 +65,8 @@ export function startLanguageServer(): void {
   const readSafe = (p: string): string => {
     try {
       return readFileSync(p, "utf8");
-    } catch {
+    } catch (error) {
+      connection.console.warn(`Cannot read ${p}: ${String(error)}`);
       return "";
     }
   };
@@ -73,16 +84,18 @@ export function startLanguageServer(): void {
     // a config per package gets one scope per config — each with its own convention/severities/naming.
     const groups = new Map<
       string,
-      { dir: string; configFile: CssDocConfigFile; files: string[] }
+      { dir: string; workspaceRoot?: string; configFile: CssDocConfigFile; files: string[] }
     >();
-    const add = (configFile: CssDocConfigFile, file?: string): void => {
-      const dir = configFile.fileNotFound ? "" : dirname(configFile.filePath);
-      const g = groups.get(dir) ?? { dir, configFile, files: [] };
+    const add = (configFile: CssDocConfigFile, root?: string, file?: string): void => {
+      const dir = configFile.fileNotFound ? (root ?? "") : dirname(configFile.filePath);
+      const key = `${root ?? ""}\0${dir}`;
+      const g = groups.get(key) ?? { dir, workspaceRoot: root, configFile, files: [] };
       if (file) g.files.push(file);
-      groups.set(dir, g);
+      groups.set(key, g);
     };
-    for (const p of cssPaths) add(CssDocConfigFile.loadForFolder(dirname(p)), p);
-    if (groups.size === 0) add(CssDocConfigFile.loadForFolder(process.cwd())); // no CSS yet
+    for (const root of workspaceRoots) add(CssDocConfigFile.loadForFolder(root), root);
+    for (const p of cssPaths) add(CssDocConfigFile.loadForFolder(dirname(p)), rootFor(p), p);
+    if (groups.size === 0) add(CssDocConfigFile.loadForFolder(process.cwd()));
 
     const scopes: ConfigScope[] = [...groups.values()].map((g) => {
       const configuration = g.configFile.toConfiguration();
@@ -101,13 +114,15 @@ export function startLanguageServer(): void {
           configuration,
           parse,
         });
-      } catch {
+      } catch (error) {
+        connection.console.warn(`Cannot index CSS in ${g.dir || "workspace"}: ${String(error)}`);
         index = createIndex("", { configuration });
       }
       // Declared providers add their components to the sibling set (lint + cross-component hover) — the
       // real, span-carrying `index` stays the source for `var()` resolution. Pass this scope's own
       // matcher so a non-BEM convention (rscss, attribute, …) still applies to the merged index.
       const providers = resolveProviders(g.configFile);
+      for (const message of providers.messages) connection.console.warn(message);
       const siblingIndex = providers.entries.length
         ? indexFromEntries(
             [...index.entries, ...providers.entries],
@@ -130,7 +145,8 @@ export function startLanguageServer(): void {
                 parse: resolveParser(dialectForFilename(file)),
               });
               definitionCache.set(file, sourceIndex);
-            } catch {
+            } catch (error) {
+              connection.console.warn(`Cannot index ${file}: ${String(error)}`);
               continue;
             }
           }
@@ -139,6 +155,7 @@ export function startLanguageServer(): void {
       };
       return {
         dir: g.dir,
+        workspaceRoot: g.workspaceRoot,
         configuration,
         index,
         definitionIndexes,
@@ -157,14 +174,26 @@ export function startLanguageServer(): void {
 
   connection.onInitialize((params) => {
     const options = params.initializationOptions as
-      | {
-          css?: string[];
+      | (WorkspaceDiscoveryOptions & {
           hoverDetail?: "compact" | "full" | "custom";
           hoverSections?: Record<string, "on" | "off" | "auto">;
           hoverSectionOrder?: string[];
-        }
+        })
       | undefined;
-    cssPaths = options?.css ?? [];
+    const folders =
+      params.workspaceFolders?.map((folder) => folder.uri) ??
+      (params.rootUri ? [params.rootUri] : []);
+    workspaceRoots = folders.flatMap((uri) => {
+      const path = fsPathOf(uri);
+      if (!path) connection.console.warn(`Cannot discover CSS in non-file workspace ${uri}`);
+      return path ? [path] : [];
+    });
+    try {
+      cssPaths = discoverStylesheets(workspaceRoots, options);
+    } catch (error) {
+      connection.console.error(`Cannot discover workspace stylesheets: ${String(error)}`);
+      cssPaths = [];
+    }
     if (options?.hoverDetail)
       service.setHoverDetail(
         options.hoverDetail,

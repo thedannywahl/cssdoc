@@ -12,7 +12,11 @@ documented CSS surface, over [`@cssdoc/providers`](../../packages/providers). It
 
 ## Use it
 
-Editors spawn the built binary and pass the CSS paths as `initializationOptions`:
+Editors spawn the built binary and provide workspace folders through LSP. By default, the server
+discovers `**/*.css` in each folder, excluding `node_modules`. Configure discovery with
+`initializationOptions.include` and `initializationOptions.exclude`, or set
+`initializationOptions.css` to an explicit list of paths (including an empty list to disable discovery).
+Relative paths resolve against each workspace folder.
 
 ```jsonc
 {

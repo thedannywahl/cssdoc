@@ -6,6 +6,7 @@
  *
  * @module
  */
+import { isAbsolute, relative, sep } from "node:path";
 import { CssDocConfiguration, type ExampleFilter, parseDocComment } from "@cssdoc/core";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
@@ -85,6 +86,10 @@ import {
 
 /** Language ids handled as CSS (the value/hygiene checks run on these). */
 const CSS_LANGUAGES = new Set(["css", "scss", "less", "postcss"]);
+const containsPath = (root: string, path: string): boolean => {
+  const rel = relative(root, path);
+  return rel !== ".." && !rel.startsWith(`..${sep}`) && !isAbsolute(rel);
+};
 const ANNOTATION_MARKER = arkRegex.as(
   String.raw`^(${DIGIT_SOURCE}+)${DOT_SOURCE}\s*([\s\S]*)$`,
   "u",
@@ -535,6 +540,8 @@ function siblingComponentClass(
 export interface ConfigScope {
   /** The directory of the governing `cssdoc.json` (`""` for the default/no-config scope). */
   dir: string;
+  /** Workspace folder containing this scope, when one was provided by the client. */
+  workspaceRoot?: string;
   /** The configuration (for rebuilding a CSS-doc index from unsaved editor text). */
   configuration?: CssDocConfiguration;
   index: CssDocIndex;
@@ -600,18 +607,29 @@ export class CssDocLanguageService {
     if (scopes.length) this.scopes = scopes;
   }
 
+  private workspaceScopes(path?: string): ConfigScope[] {
+    if (!path) return this.scopes;
+    const roots = this.scopes
+      .map((scope) => scope.workspaceRoot)
+      .filter((root): root is string => !!root && containsPath(root, path))
+      .toSorted((a, b) => b.length - a.length);
+    return roots.length
+      ? this.scopes.filter((scope) => !scope.workspaceRoot || scope.workspaceRoot === roots[0])
+      : this.scopes;
+  }
+
   /** The scope governing `path` — the deepest `cssdoc.json` dir containing it, else the default. */
   private scopeForPath(path?: string): ConfigScope {
     let best: ConfigScope | undefined;
+    const scopes = this.workspaceScopes(path);
     if (path) {
-      for (const s of this.scopes) {
-        const prefix = s.dir.endsWith("/") ? s.dir : `${s.dir}/`;
-        if (s.dir && (path === s.dir || path.startsWith(prefix))) {
+      for (const s of scopes) {
+        if (s.dir && containsPath(s.dir, path)) {
           if (!best || s.dir.length > best.dir.length) best = s;
         }
       }
     }
-    return best ?? this.scopes.find((s) => !s.dir) ?? this.scopes[0];
+    return best ?? scopes.find((s) => !s.dir) ?? scopes[0];
   }
 
   /**
@@ -622,11 +640,12 @@ export class CssDocLanguageService {
    */
   private scopesFor(text: string, path?: string, languageId?: string): ConfigScope[] {
     const host = detectEmbeddedHost(path) ?? hostForLanguageId(languageId);
-    if (!host) return this.scopes;
+    const scopes = this.workspaceScopes(path);
+    if (!host) return scopes;
     const govern = this.scopeForPath(path);
     const parse = resolveParser(projectionDialect(text, { host }));
     return [
-      ...this.scopes,
+      ...scopes,
       {
         ...govern,
         index: safeCreateIndex(projectCss(text, { host }), {

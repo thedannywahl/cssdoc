@@ -116,6 +116,59 @@ function ipcServer<T>() {
   return { server, request };
 }
 
+test("the server discovers CSS and keeps workspace folders independent", async () => {
+  execFileSync("node", ["scripts/build.mjs"], { cwd: root });
+  const fixture = mkdtempSync(join(tmpdir(), "cssdoc-workspaces-"));
+  const first = join(fixture, "first");
+  const second = join(fixture, "second");
+  mkdirSync(first);
+  mkdirSync(second);
+  for (const [dir, summary] of [
+    [first, "First workspace"],
+    [second, "Second workspace"],
+  ]) {
+    writeFileSync(
+      join(dir, "widget.css"),
+      `/**\n * @component widget\n * @summary ${summary}\n */\n.widget {}\n`,
+    );
+  }
+  const { server, request } = ipcServer<{ contents: { value: string } }>();
+  try {
+    await request("initialize", {
+      processId: process.pid,
+      rootUri: pathToFileURL(first).href,
+      workspaceFolders: [first, second].map((dir) => ({
+        uri: pathToFileURL(dir).href,
+        name: dir,
+      })),
+      capabilities: {},
+    });
+    server.send({ jsonrpc: "2.0", method: "initialized", params: {} });
+    for (const [dir, expected, other] of [
+      [first, "First workspace", "Second workspace"],
+      [second, "Second workspace", "First workspace"],
+    ]) {
+      const uri = pathToFileURL(join(dir, "page.html")).href;
+      server.send({
+        jsonrpc: "2.0",
+        method: "textDocument/didOpen",
+        params: {
+          textDocument: { uri, languageId: "html", version: 1, text: '<div class="widget"></div>' },
+        },
+      });
+      const reply = await request("textDocument/hover", {
+        textDocument: { uri },
+        position: { line: 0, character: 13 },
+      });
+      expect(reply.result?.contents.value).toContain(expected);
+      expect(reply.result?.contents.value).not.toContain(other);
+    }
+  } finally {
+    server.kill();
+    rmSync(fixture, { recursive: true, force: true });
+  }
+}, 30_000);
+
 test("definitions from a multi-file index retain their source URI and local line", async () => {
   execFileSync("node", ["scripts/build.mjs"], { cwd: root });
   const fixture = mkdtempSync(join(tmpdir(), "cssdoc-definitions-"));
