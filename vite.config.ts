@@ -34,8 +34,36 @@ const config: UserConfig = mergeConfig(
     },
     lint: {
       ignorePatterns: [...WORKTREE_IGNORE],
-      jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
+      jsPlugins: [
+        { name: "vite-plus", specifier: "vite-plus/oxlint-plugin" },
+        { name: "tsdoc", specifier: "eslint-plugin-tsdoc" },
+        { name: "tsdoc-require-2", specifier: "eslint-plugin-tsdoc-require-2" },
+      ],
       rules: { "vite-plus/prefer-vite-plus-imports": "error" },
+      overrides: [
+        {
+          // TSDoc enforcement on source TypeScript: every exported declaration needs a doc comment and
+          // comments must be valid TSDoc (honouring tsdoc.json). Both rules are comment/syntax-only.
+          files: ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts"],
+          excludeFiles: [
+            "**/*.test.ts",
+            "**/*.test.tsx",
+            "**/*.test.mts",
+            "**/*.test.cts",
+            "**/*.spec.ts",
+            "**/*.spec.tsx",
+            "**/*.spec.mts",
+            "**/*.spec.cts",
+            "**/tests/**",
+            "**/generated/**",
+            "**/dist/**",
+            "**/*.d.ts",
+            "**/*.config.ts",
+            "**/*.base.ts",
+          ],
+          rules: { "tsdoc/syntax": "error" /*"tsdoc-require-2/require": "error" */ },
+        },
+      ],
     },
     // Repo orchestration lives here as `vp run <task>` tasks (invoked by CI and locally) rather than in
     // package.json scripts. The root isn't a workspace member, so a task named `build` running

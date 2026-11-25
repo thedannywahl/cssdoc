@@ -7,10 +7,11 @@ import { fileURLToPath } from "node:url";
 import { expect, test } from "vite-plus/test";
 
 import docsConfig from "../../../docs/vite.config.ts";
-import { CSSDOC_TAG_NAMES } from "../../spec/src/index.ts";
+import { CSSDOC_TAG_NAMES, CSSDOC_TAGS } from "../../spec/src/index.ts";
 import regexConfig from "../../regex/vite.config.ts";
 import cliConfig from "../../cli/vite.config.ts";
 import grammarConfig from "../../../syntaxes/cssdoc/tmlanguage/vite.config.ts";
+import tsdocConfig from "../../../tsdoc.json" with { type: "json" };
 
 test("the TypeScript catalog matches the compiler revision targeted by Vite+'s tsrs", () => {
   const require = createRequire(import.meta.url);
@@ -46,7 +47,7 @@ test("merged Vite configs retain package-specific pack settings and tasks", () =
 test("JSDoc lint accepts cssdoc tags but still reports unknown tags", () => {
   const directory = mkdtempSync(join(tmpdir(), "cssdoc-jsdoc-"));
   try {
-    const file = join(directory, "tags.ts");
+    const file = join(directory, "tags.test.ts");
     const tags = [...CSSDOC_TAG_NAMES, "param", "unknownCssdocTag"]
       .map((tag) => ` * @${tag} example`)
       .join("\n");
@@ -65,6 +66,55 @@ test("JSDoc lint accepts cssdoc tags but still reports unknown tags", () => {
           .map((diagnostic) => diagnostic.help),
       ).toEqual(["`@unknownCssdocTag` is invalid tag name."]);
     }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("TSDoc definitions follow the cssdoc vocabulary", () => {
+  const require = createRequire(import.meta.url);
+  const pluginRequire = createRequire(require.resolve("eslint-plugin-tsdoc"));
+  const tsdoc: { StandardTags: { allDefinitions: { tagName: string }[] } } =
+    pluginRequire("@microsoft/tsdoc");
+  const standardTags = new Set(
+    tsdoc.StandardTags.allDefinitions.map((definition) => definition.tagName.toLowerCase()),
+  );
+  const definitions = CSSDOC_TAGS.filter(
+    (tag) => !standardTags.has(`@${tag.name}`.toLowerCase()),
+  ).map((tag) => ({
+    tagName: `@${tag.name}`,
+    syntaxKind: tag.kind === "record" ? "block" : tag.kind,
+    ...(tag.allowMultiple ? { allowMultiple: true } : {}),
+  }));
+  expect(tsdocConfig.tagDefinitions).toEqual(definitions);
+});
+
+test("TSDoc lint recognizes cssdoc tags without accepting unknown tags", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".tsdoc-check-"));
+  try {
+    const file = join(directory, "tags.ts");
+    const tags = [...CSSDOC_TAG_NAMES, "unknownCssdocTag"]
+      .map((tag) => ` * @${tag} example`)
+      .join("\n");
+    writeFileSync(file, `/**\n${tags}\n */\nexport const example = 1;\n`);
+    const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    expect(result.status).toBe(1);
+    const output: { diagnostics: { code: string; message: string }[] } = JSON.parse(result.stdout);
+    expect(
+      output.diagnostics
+        .filter(
+          (diagnostic) =>
+            diagnostic.code === "tsdoc(syntax)" &&
+            diagnostic.message.startsWith("tsdoc-undefined-tag:"),
+        )
+        .map((diagnostic) => diagnostic.message),
+    ).toEqual([
+      'tsdoc-undefined-tag: The TSDoc tag "@unknownCssdocTag" is not defined in this configuration',
+    ]);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

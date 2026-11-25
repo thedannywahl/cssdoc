@@ -87,6 +87,8 @@ catalog:
   vitest: 5.1.1
   vitepress-plugin-mermaid: ^2.0.17
   "@arethetypeswrong/cli": ^0.18.5
+  eslint-plugin-tsdoc: ^0.5.4
+  eslint-plugin-tsdoc-require-2: ^1.2.7
 
 overrides:
   vite@*: "catalog:"

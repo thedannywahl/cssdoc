@@ -25,6 +25,8 @@
     "@commitlint/config-conventional": "catalog:",
     "bumpp": "catalog:",
     "changelogen": "catalog:",
+    "eslint-plugin-tsdoc": "catalog:",
+    "eslint-plugin-tsdoc-require-2": "catalog:",
     "publint": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",

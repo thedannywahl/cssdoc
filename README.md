@@ -70,6 +70,9 @@ The TypeScript catalog is pinned to the upstream revision targeted by Vite+'s ts
 checks that they stay aligned. TypeDoc uses TypeScript 6 separately because of its peer dependency;
 the docs and TypeDoc plugin type-check tasks use the root TypeScript compiler instead.
 
+The root `tsdoc.json` defines cssdoc tags for TSDoc linting. Its definitions are checked against the
+canonical vocabulary in `@cssdoc/spec`.
+
 ## License
 
 MIT

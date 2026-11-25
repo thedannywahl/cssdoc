@@ -14,6 +14,7 @@
   },
   "oxc.disableNestedConfig": true,
   "oxc.fmt.disableNestedConfig": true,
+  "vitest.configSearchPatternExclude": "{**/node_modules/**,**/vendor/**,**/.*/**,**/*.d.ts,**/vite.config.base.ts}",
   "editor.formatOnSave": true,
   "editor.formatOnSaveMode": "file",
   "editor.codeActionsOnSave": {
