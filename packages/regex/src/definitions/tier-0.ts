@@ -491,6 +491,16 @@ export const TIER_0_PATTERNS: Record<string, RawPatternDef> = {
       fails: [{ input: "'", reason: "single quote" }],
     },
   },
+  BACKTICK_CHAR: {
+    name: "BACKTICK_CHAR",
+    tier: 0,
+    source: "`",
+    description: "Backtick character (literal)",
+    fixtures: {
+      passes: [{ input: "`" }],
+      fails: [{ input: "'", reason: "single quote" }],
+    },
+  },
   BRACE_OPEN_CHAR: {
     name: "BRACE_OPEN_CHAR",
     tier: 0,

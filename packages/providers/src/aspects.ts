@@ -13,6 +13,9 @@ import {
   ALPHANUMERIC_EXTENDED_SOURCE,
   ASTERISK_CHAR,
   AT_CHAR,
+  BACKTICK_CHAR,
+  BRACKET_CLOSE_CHAR,
+  BRACKET_OPEN_CHAR,
   CSS_CLASS_ATTRIBUTE_SELECTOR,
   CSS_CLASS_REFERENCE,
   CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE,
@@ -22,7 +25,10 @@ import {
   DOT_CHAR,
   DOT_SOURCE,
   GREATER_THAN_CHAR,
+  LESS_THAN_CHAR,
+  PAREN_CLOSE_CHAR,
   PAREN_CLOSE_SOURCE,
+  PAREN_OPEN_CHAR,
   PAREN_OPEN_SOURCE,
   STRUCTURE_RECORD_KIND_SOURCE,
   TILDE_CHAR,
@@ -59,8 +65,12 @@ import { resolveRuleOptions } from "./types.ts";
 
 /** Render a `@property` syntax descriptor with each `<type>` linked to its MDN reference page. */
 const linkedSyntax = (syntax: string): string => {
-  const linked = linkSyntax(syntax, (type, url) => `[\`<${type}>\`](${url})`);
-  return linked === syntax ? `\`${syntax}\`` : linked; // no `<type>` to link → plain code span
+  const linked = linkSyntax(
+    syntax,
+    (type, url) =>
+      `${BRACKET_OPEN_CHAR}${BACKTICK_CHAR}${LESS_THAN_CHAR}${type}${GREATER_THAN_CHAR}${BACKTICK_CHAR}${BRACKET_CLOSE_CHAR}${PAREN_OPEN_CHAR}${url}${PAREN_CLOSE_CHAR}`,
+  );
+  return linked === syntax ? `${BACKTICK_CHAR}${syntax}${BACKTICK_CHAR}` : linked; // no `<type>` to link → plain code span
 };
 
 const stripDot = (name: string): string => (name.startsWith(DOT_CHAR) ? name.slice(1) : name);

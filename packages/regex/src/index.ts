@@ -346,6 +346,7 @@ export const QUOTE_SINGLE_CHAR: string = PATTERN_DEFINITIONS.QUOTE_SINGLE_CHAR.s
 export const QUOTE_DOUBLE: Regex = compileRegex(PATTERN_DEFINITIONS.QUOTE_DOUBLE);
 export const QUOTE_DOUBLE_SOURCE: string = PATTERN_DEFINITIONS.QUOTE_DOUBLE.source;
 export const QUOTE_DOUBLE_CHAR: string = PATTERN_DEFINITIONS.QUOTE_DOUBLE_CHAR.source;
+export const BACKTICK_CHAR: string = PATTERN_DEFINITIONS.BACKTICK_CHAR.source;
 
 // Tier 3-4 - Token patterns for syntax highlighting
 export const TOKEN_WHITESPACE: Regex = compileRegex(PATTERN_DEFINITIONS.TOKEN_WHITESPACE);
