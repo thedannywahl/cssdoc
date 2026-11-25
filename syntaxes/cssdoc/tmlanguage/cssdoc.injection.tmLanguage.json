@@ -196,6 +196,10 @@
           }
         },
         {
+          "match": "@scope(?![A-Za-z0-9\\-_])",
+          "name": "storage.type.class.cssdoc"
+        },
+        {
           "match": "\\bslot\\b",
           "name": "entity.other.attribute-name.part.cssdoc"
         },

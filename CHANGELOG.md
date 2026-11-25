@@ -645,7 +645,6 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 ### 🚀 Enhancements
 
 - Add coverage directory to .gitignore ([bd82044](https://github.com/thedannywahl/cssdoc/commit/bd82044))
-- **core:** Add @layout record kind and implicit structure inference ([b94e6e7](https://github.com/thedannywahl/cssdoc/commit/b94e6e7))
 - **providers:** Add layout/structure/element diagnostics ([3f69c6e](https://github.com/thedannywahl/cssdoc/commit/3f69c6e))
 - **config:** Add layout kind and new diagnostic rule IDs to schema ([2d6ff70](https://github.com/thedannywahl/cssdoc/commit/2d6ff70))
 - **core:** Add custom-media profile syntax and declaration builder ([0aae85c](https://github.com/thedannywahl/cssdoc/commit/0aae85c))

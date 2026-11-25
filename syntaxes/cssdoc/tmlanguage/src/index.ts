@@ -44,6 +44,7 @@ import {
   CSSDOC_STRUCTURE_TAG_SOURCE,
   TOKEN_CLASS_SELECTOR_SOURCE,
   CSSDOC_COMPONENT_REF_SOURCE,
+  CSSDOC_DIRECTIVE_KIND_SOURCE,
 } from "@cssdoc/regex";
 
 /** A TextMate capture assignment (`{ "1": { name } }`). */
@@ -113,11 +114,11 @@ const buildStateValue = (): string =>
 export function buildInjectionGrammar(): InjectionGrammar {
   const recordTags = alt(cssdocTagNamesByKind("record"));
   const modifierTags = alt(cssdocTagNamesByArgument("modifier-name"));
-  const partTags = alt([...cssdocTagNamesByArgument("part-name"), "selector", "class", "pseudo"]);
+  const partTags = alt([...cssdocTagNamesByArgument("part-name"), "selector", "pseudo"]);
   const propertyTags = alt(cssdocTagNamesByArgument("custom-property"));
   // Everything argument-less that isn't a record tag or `@cssstate` — those get their own value-colouring
   // rules below (a record's name, a state's `:state(…)`), so they must not fall through to the bare
-  // keyword rule. Also exclude selector/class/pseudo which are handled in part-tag.
+  // keyword rule. Also exclude selector/pseudo which are handled in part-tag.
   const blockTags = alt(
     CSSDOC_TAGS.filter(
       (t) =>
@@ -126,7 +127,6 @@ export function buildInjectionGrammar(): InjectionGrammar {
         t.name !== "cssstate" &&
         !t.argument &&
         t.name !== "selector" &&
-        t.name !== "class" &&
         t.name !== "pseudo",
     ).map((t) => t.name),
   );
@@ -137,18 +137,32 @@ export function buildInjectionGrammar(): InjectionGrammar {
     scopeName: "text.cssdoc",
     injectionSelector: "L:comment.block.css, L:comment.block.scss, L:comment.block.less",
     patterns: [
+      { include: "#directive-comment" },
       { include: "#inline-tag" },
       { include: "#record-tag" },
       { include: "#modifier-tag" },
       { include: "#part-tag" },
       { include: "#property-tag" },
       { include: "#ref-tag" },
+      { include: "#member-tag" },
       { include: "#state-tag" },
       { include: "#structure-tag" },
       { include: "#block-tag" },
       { include: "#custom-property" },
     ],
     repository: {
+      "directive-comment": {
+        begin: `(?<=/\\*)[ \\t]*(?=cssdoc-${CSSDOC_DIRECTIVE_KIND_SOURCE}|$)`,
+        end: `(?=\\*/)|(?=\\S)(?!cssdoc-${CSSDOC_DIRECTIVE_KIND_SOURCE})`,
+        patterns: [
+          {
+            begin: `(cssdoc-${CSSDOC_DIRECTIVE_KIND_SOURCE})`,
+            beginCaptures: { "1": { name: "keyword.control.directive.cssdoc" } },
+            end: `(?=\\*/)|(?=\\s-\\s)|(?=^-\\s)`,
+            patterns: [{ match: String.raw`[^\s,*/]+`, name: "entity.name.tag.rule.cssdoc" }],
+          },
+        ],
+      },
       "inline-tag": {
         name: "meta.inline-tag.cssdoc",
         begin: `(${BRACE_OPEN_SOURCE})(${createTagAlternation(cssdocTagNamesByKind("inline"))})${WORD_BOUNDARY_SOURCE}`,
@@ -213,12 +227,20 @@ export function buildInjectionGrammar(): InjectionGrammar {
           "2": { name: "constant.numeric.cssdoc" },
         },
       },
+      "member-tag": {
+        match: `(${AT_SOURCE}(?:memberOf|member))${WORD_BOUNDARY_SOURCE}(?:${SPACE_TAB_SOURCE}+(${ALPHANUMERIC_EXTENDED_SOURCE}+)(?:${SPACE_TAB_SOURCE}+(private)(?!${ALPHANUMERIC_EXTENDED_SOURCE}))?)?`,
+        captures: {
+          "1": { name: TAG_SCOPE },
+          "2": { name: "entity.name.type.cssdoc" },
+          "3": { name: "storage.modifier.cssdoc" },
+        },
+      },
       "block-tag": {
         match: `(${AT_SOURCE}(?:${blockTags}))${WORD_BOUNDARY_SOURCE}`,
         name: TAG_SCOPE,
       },
-      // The `@structure` body is nested CSS. We light up the parts (class selectors), @component/@variant
-      // tags and their names, slot declarations, cardinality modifiers, and braces that show nesting.
+      // The `@structure` body is nested CSS. We light up structure tags, nested @scope at-rules,
+      // parts (class selectors), slot declarations, cardinality modifiers, and braces that show nesting.
       // The region runs to the next tag or the comment's end. Listed before `#block-tag` so it claims
       // `@structure` first.
       "structure-tag": {
@@ -232,6 +254,10 @@ export function buildInjectionGrammar(): InjectionGrammar {
               "1": { name: TAG_SCOPE },
               "2": { name: TAG_SCOPE },
             },
+          },
+          {
+            match: `${AT_SOURCE}scope(?!${ALPHANUMERIC_EXTENDED_SOURCE})`,
+            name: TAG_SCOPE,
           },
           {
             match: `\\bslot\\b`,
@@ -261,7 +287,7 @@ export function buildInjectionGrammar(): InjectionGrammar {
 
 /**
  * Build an injection grammar that highlights cssdoc record-reference at-rules in source CSS, for
- * examples like `@component top-nav (--desktop-nav) {}` used inside implicit layout blocks.
+ * examples like `@component top-nav (--desktop-nav) {}`.
  */
 export function buildAtRuleInjectionGrammar(): InjectionGrammar {
   const recordTags = alt(cssdocTagNamesByKind("record"));
@@ -297,7 +323,7 @@ export function buildAtRuleInjectionGrammar(): InjectionGrammar {
       { include: "#custom-property" },
     ],
     repository: {
-      // Typed record refs: @component nav, @layout shell, with optional :profile / (--profile).
+      // Typed record refs: @component nav, with optional :profile / (--profile).
       "record-ref-atrule": {
         match:
           `(${AT_SOURCE}(?:${recordTags}))${WORD_BOUNDARY_SOURCE}(?:${SPACE_TAB_SOURCE}+(${buildIdentifier()}))?` +

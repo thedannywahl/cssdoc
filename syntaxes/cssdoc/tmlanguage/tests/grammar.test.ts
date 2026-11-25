@@ -83,22 +83,45 @@ test("@selector and @pseudo have value highlighting, but @class is not a tag", (
   expect(new RegExp(g.repository["block-tag"]?.match ?? "").test("@class")).toBe(false);
 });
 
-test("@structure region highlights @component and @variant with names", () => {
+test("@structure region highlights nested @scope and @variant with names", () => {
   const g = buildInjectionGrammar();
   const structurePatterns = g.repository["structure-tag"]?.patterns ?? [];
   const patternsStr = JSON.stringify(structurePatterns);
-  expect(patternsStr).toContain("component");
+  expect(patternsStr).toContain("scope");
   expect(patternsStr).toContain("variant");
-  // Should capture both tag and name in separate groups
-  const componentPattern = structurePatterns.find(
+  const scopePattern = structurePatterns.find(
     (p: unknown) =>
       typeof p === "object" &&
       p !== null &&
       "match" in p &&
-      (p as Record<string, unknown>).match?.toString().includes("component"),
+      (p as Record<string, unknown>).match?.toString().includes("scope"),
   );
-  expect(componentPattern).toBeDefined();
-  expect((componentPattern as Record<string, unknown>)?.captures).toBeDefined();
+  expect(scopePattern).toBeDefined();
+  const scopeMatch = "@scope (.menu) {".match(
+    new RegExp((scopePattern as Record<string, string>)?.match ?? "", "u"),
+  );
+  expect(scopeMatch?.[0]).toBe("@scope");
+  expect(
+    "@scope-menu (.menu) {".match(
+      new RegExp((scopePattern as Record<string, string>)?.match ?? "", "u"),
+    ),
+  ).toBeNull();
+
+  const structureTagPattern = structurePatterns.find(
+    (p: unknown) =>
+      typeof p === "object" &&
+      p !== null &&
+      "match" in p &&
+      (p as Record<string, unknown>).match?.toString().includes("variant"),
+  );
+  expect(structureTagPattern).toBeDefined();
+  const nestedVariant = "  .menu {\n    @variant compact {";
+  const variantMatch = nestedVariant.match(
+    new RegExp((structureTagPattern as Record<string, string>)?.match ?? "", "u"),
+  );
+  expect(variantMatch?.[1]).toBe("@variant");
+  expect(variantMatch?.[2]).toBe("compact");
+  expect((structureTagPattern as Record<string, unknown>)?.captures).toBeDefined();
 });
 
 test.each([

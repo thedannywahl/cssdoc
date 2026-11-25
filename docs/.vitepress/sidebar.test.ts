@@ -75,34 +75,65 @@ const sidebarFor = (routes: Record<string, Item[]>, path: string): Item[] => {
 };
 
 describe("createSidebars", () => {
-  test("keeps all three sections reachable on guide, API, and reference pages", () => {
+  test("groups guides by task and keeps API and reference reachable", () => {
+    const sidebar = sidebarFor(createSidebars(generated), "/guide/config.html");
+    expect(sidebar.slice(0, 4).map(({ text }) => text)).toEqual([
+      "Overview",
+      "Write CSS docs",
+      "Publish and export",
+      "Set up your project",
+    ]);
+    expect(
+      find(find(sidebar, "Write CSS docs")?.items ?? [], "Describe variants and states")?.link,
+    ).toBe("/guide/variants-and-states");
+    expect(
+      find(find(sidebar, "Publish and export")?.items ?? [], "Publish alongside TypeDoc")?.link,
+    ).toBe("/guide/publish-with-typedoc");
+    expect(find(sidebar, "Configure cssdoc")?.link).toBe("/guide/config");
+    expect(find(sidebar, "API")?.link).toBe("/api/");
+    expect(find(sidebar, "Reference")?.link).toBe("/guide/reference");
+  });
+
+  test("shows the same grouped navigation on all reference pages", () => {
     const routes = createSidebars(generated);
-    for (const path of [
-      "/guide/config.html",
-      "/api/index.html",
-      "/guide/reference.html",
-      "/guide/config-reference.html",
-    ]) {
-      const sidebar = sidebarFor(routes, path);
-      expect(sidebar).toHaveLength(3);
-      expect(find(sidebar, "Guides")).toBeDefined();
-      expect(find(sidebar, "API")).toBeDefined();
-      expect(find(sidebar, "Reference")).toBeDefined();
+    const reference = sidebarFor(routes, "/guide/reference.html");
+
+    expect(reference.map(({ text }) => text).filter(Boolean)).toEqual([
+      "Authoring",
+      "Project behavior",
+      "Specification",
+    ]);
+    expect(find(reference, "Guides")?.link).toBe("/guide/introduction");
+    expect(find(reference, "API")?.link).toBe("/api/");
+    expect(find(reference, "Reference")?.link).toBe("/guide/reference");
+    expect(find(reference, "Authoring")?.items?.map(({ text }) => text)).toEqual([
+      "Doc-comment tags",
+      "Selectors and structure",
+    ]);
+    expect(find(reference, "Project behavior")?.items?.map(({ text }) => text)).toEqual([
+      "Configuration",
+      "Lint rules and diagnostics",
+      "Embedded CSS support",
+    ]);
+    expect(find(reference, "Specification")?.items).toEqual([
+      { text: "Formal grammar", link: "/guide/grammar" },
+      { text: "Regex patterns", link: "/guide/patterns" },
+    ]);
+
+    for (const group of reference.filter(({ text }) => text)) {
+      for (const item of group.items ?? []) {
+        expect(sidebarFor(routes, `${item.link}.html`)).toBe(reference);
+      }
     }
-    expect(find(sidebarFor(routes, "/guide/config.html"), "Configuration")?.link).toBe(
-      "/guide/config",
-    );
-    expect(find(sidebarFor(routes, "/guide/config-reference.html"), "Config")?.link).toBe(
-      "/guide/config-reference",
-    );
-    expect(find(sidebarFor(routes, "/api/index.html"), "Overview")?.link).toBe("/api/");
-    expect(find(sidebarFor(routes, "/guide/reference.html"), "Overview")?.link).toBe(
-      "/guide/reference",
-    );
-    expect(find(sidebarFor(routes, "/guide/config.html"), "Reference")?.link).toBe(
-      "/guide/reference",
-    );
-    expect(find(sidebarFor(routes, "/api/index.html"), "Reference")?.link).toBe("/guide/reference");
+  });
+
+  test("lists the package catalog with the API pages", () => {
+    const routes = createSidebars(generated);
+    const overview = sidebarFor(routes, "/api/index.html");
+    expect(sidebarFor(routes, "/guide/packages.html")).toBe(overview);
+    expect(find(overview, "Overview")?.link).toBe("/api/");
+    expect(find(overview, "Packages")?.link).toBe("/guide/packages");
+    expect(find(overview, "Reference")?.link).toBe("/guide/reference");
   });
 
   test("groups packages and expands only the active package's symbols", () => {

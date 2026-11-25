@@ -18,6 +18,8 @@ const base = process.env.DOCS_BASE ?? "/";
 const hostname = "https://cssdoc.dev";
 const INDEX_MARKDOWN = arkRegex.as(String.raw`index\.md$`);
 const MARKDOWN_EXTENSION = arkRegex.as(String.raw`\.md$`);
+const GRAMMAR_PRODUCTION = arkRegex.as(String.raw`^([A-Za-z][A-Za-z0-9]*)\s+:{1,3}(?=\s|$)`);
+const EXAMPLE_DIAGNOSTIC = arkRegex.as(String.raw`(?:^|\s)diagnostic-(warning|error)="([^"]+)"`);
 
 // One site-wide description, ~139 chars — a subset of the home hero tagline, long enough for social
 // unfurl previews (which want 120–140). Feeds the meta description, Open Graph, Twitter, and JSON-LD.
@@ -63,6 +65,31 @@ const config: UserConfig = defineConfig({
   // comments + typed record-reference at-rules in CSS examples).
   markdown: {
     languages: [grammarkdown, cssdoc, cssdocAtRules],
+    codeTransformers: [
+      {
+        preprocess(code, options) {
+          const diagnostic = EXAMPLE_DIAGNOSTIC.exec(options.meta?.__raw ?? "");
+          if (!diagnostic) return;
+          const [, level, target] = diagnostic;
+          const start = code.indexOf(target);
+          if (start === -1)
+            throw new Error(`Diagnostic target missing from code example: ${target}`);
+          (options.decorations ??= []).push({
+            start,
+            end: start + target.length,
+            properties: { class: `cssdoc-example-${level}` },
+          });
+        },
+      },
+      {
+        line(node, line) {
+          if (this.options.lang !== "grammarkdown") return;
+          const text = this.tokens[line - 1]?.map(({ content }) => content).join("") ?? "";
+          const production = GRAMMAR_PRODUCTION.exec(text);
+          if (production) node.properties.id = `production-${production[1].toLowerCase()}`;
+        },
+      },
+    ],
     config: (md) => {
       // markdown-exit v2.0+ is a TypeScript rewrite of markdown-it with enhanced plugin support
       // and async rendering capabilities. All markdown-it plugins are compatible.
@@ -201,6 +228,7 @@ const config: UserConfig = defineConfig({
       { text: "Guides", link: "/guide/introduction" },
       { text: "API", link: "/api/" },
       { text: "Reference", link: "/guide/reference" },
+      { text: "Playground", link: "/guide/playground" },
     ],
     sidebar: createSidebars(apiSidebar),
     outline: "deep",

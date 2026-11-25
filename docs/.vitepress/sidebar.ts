@@ -4,26 +4,67 @@ type SidebarItem = DefaultTheme.SidebarItem;
 type SidebarRoutes = Record<string, SidebarItem[]>;
 
 const guides: SidebarItem[] = [
-  { text: "Introduction", link: "/guide/introduction" },
-  { text: "Getting started", link: "/guide/getting-started" },
-  { text: "Authoring doc comments", link: "/guide/authoring" },
-  { text: "Layouts", link: "/guide/layouts" },
-  { text: "Modifier conventions", link: "/guide/modifier-conventions" },
-  { text: "Configuration", link: "/guide/config" },
-  { text: "Embedded CSS", link: "/guide/embedded-css" },
-  { text: "Emitting docs", link: "/guide/emitters" },
-  { text: "Standard formats", link: "/guide/generators" },
-  { text: "Linting", link: "/guide/linting" },
-  { text: "Editor support", link: "/guide/editor" },
+  {
+    text: "Overview",
+    items: [
+      { text: "What is cssdoc?", link: "/guide/introduction" },
+      { text: "Getting started", link: "/guide/getting-started" },
+    ],
+  },
+  {
+    text: "Write CSS docs",
+    items: [
+      { text: "Document a component", link: "/guide/authoring" },
+      { text: "Describe variants and states", link: "/guide/variants-and-states" },
+      { text: "Document composition", link: "/guide/layouts" },
+      { text: "Document embedded CSS", link: "/guide/embedded-css" },
+    ],
+  },
+  {
+    text: "Publish and export",
+    items: [
+      { text: "Generate documentation", link: "/guide/emitters" },
+      { text: "Publish alongside TypeDoc", link: "/guide/publish-with-typedoc" },
+      { text: "Export to other tools", link: "/guide/generators" },
+    ],
+  },
+  {
+    text: "Set up your project",
+    items: [
+      { text: "Configure cssdoc", link: "/guide/config" },
+      { text: "Set up linting", link: "/guide/linting" },
+      { text: "Set up your editor", link: "/guide/editor" },
+    ],
+  },
 ];
 
 const reference: SidebarItem[] = [
-  { text: "Overview", link: "/guide/reference" },
-  { text: "Packages", link: "/guide/packages" },
-  { text: "Grammar", link: "/guide/grammar" },
-  { text: "Config", link: "/guide/config-reference" },
-  { text: "Playground", link: "/guide/playground" },
+  {
+    text: "Authoring",
+    items: [
+      { text: "Doc-comment tags", link: "/guide/doc-comment-tags" },
+      { text: "Selectors and structure", link: "/guide/selectors-and-structure" },
+    ],
+  },
+  {
+    text: "Project behavior",
+    items: [
+      { text: "Configuration", link: "/guide/config-reference" },
+      { text: "Lint rules and diagnostics", link: "/guide/lint-reference" },
+      { text: "Embedded CSS support", link: "/guide/embedded-css-support" },
+    ],
+  },
+  {
+    text: "Specification",
+    items: [
+      { text: "Formal grammar", link: "/guide/grammar" },
+      { text: "Regex patterns", link: "/guide/patterns" },
+    ],
+  },
 ];
+
+const referenceHome = "/guide/reference";
+const packageCatalog = "/guide/packages";
 
 const apiGroups = [
   {
@@ -76,15 +117,19 @@ const sectionSidebar = (
   active: "guides" | "api" | "reference",
   apiItems: SidebarItem[] = [],
 ): SidebarItem[] => [
-  active === "guides"
-    ? { text: "Guides", items: guides }
-    : sectionLink("Guides", "/guide/introduction"),
+  ...(active === "guides" ? guides : [sectionLink("Guides", "/guide/introduction")]),
   active === "api"
-    ? { text: "API", items: [{ text: "Overview", link: "/api/" }, ...apiItems] }
+    ? {
+        text: "API",
+        items: [
+          { text: "Overview", link: "/api/" },
+          { text: "Packages", link: packageCatalog },
+          ...apiItems,
+        ],
+      }
     : sectionLink("API", "/api/"),
-  active === "reference"
-    ? { text: "Reference", items: reference }
-    : sectionLink("Reference", "/guide/reference"),
+  sectionLink("Reference", referenceHome),
+  ...(active === "reference" ? reference : []),
 ];
 
 const packageEntries = (items: SidebarItem[]): SidebarItem[] =>
@@ -141,8 +186,13 @@ export function createSidebars(generated: SidebarItem[]): SidebarRoutes {
     if (entry.link) routes[entry.link] = apiSidebar(entry.link);
   }
   // VitePress sorts by slash count, not string length: register these before /guide/.
-  for (const item of reference) {
-    if (item.link) routes[item.link] = sectionSidebar("reference");
+  const referenceSidebar = sectionSidebar("reference");
+  routes[referenceHome] = referenceSidebar;
+  routes[packageCatalog] = routes["/api/"];
+  for (const group of reference) {
+    for (const item of group.items ?? []) {
+      if (item.link) routes[item.link] = referenceSidebar;
+    }
   }
   routes["/guide/"] = sectionSidebar("guides");
   routes["/"] = sectionSidebar("guides");

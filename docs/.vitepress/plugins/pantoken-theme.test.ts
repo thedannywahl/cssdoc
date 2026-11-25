@@ -59,6 +59,22 @@ describe("Pantoken docs theme", () => {
     expect(result.css).toContain("--instui-primitive-color-aurora-aurora120");
   });
 
+  it("keeps both themes' Pantoken colors for passing and failing fixtures", async () => {
+    const page = readFileSync(new URL("../../guide/patterns.md", import.meta.url), "utf8");
+    const styles = page.split("<style module>")[1].split("</style>")[0];
+    const result = await pruneTheme(themeCss() + styles);
+    const colors = byTheme("rebrand").filter(({ name }) =>
+      /--instui-color-(?:text|background-pastel)-(?:success|error)$/.test(name),
+    );
+    expect(colors).toHaveLength(4);
+    for (const { name, value } of colors) {
+      expect(result).toContain(`${name}: ${value}`);
+      for (const [, dependency] of value.matchAll(/var\(([^)]+)\)/g)) {
+        expect(result).toContain(`${dependency}: #`);
+      }
+    }
+  });
+
   it("retains only the Aurora stops referenced by the actual docs theme", async () => {
     const source = readFileSync(new URL("../theme/custom.css", import.meta.url), "utf8");
     const expanded = await postcss([expandTheme()]).process(source, { from: undefined });

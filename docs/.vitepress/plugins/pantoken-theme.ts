@@ -8,9 +8,15 @@ import postcss, { type Plugin as PostcssPlugin } from "postcss";
 import type { Plugin } from "vite-plus";
 
 const auroraPrefix = "--instui-primitive-color-aurora-aurora";
+const exampleStatusTokens = new Set([
+  "--instui-color-text-success",
+  "--instui-color-text-error",
+  "--instui-color-background-pastel-success",
+  "--instui-color-background-pastel-error",
+]);
 const HEX_COLOR = arkRegex.as(`^#${HEX_DIGIT_SOURCE}{6}$`, "i");
 
-/** Render Aurora tokens, VitePress brand bridges, and home-page backgrounds as CSS. */
+/** Render Pantoken theme colors, VitePress brand bridges, and home-page backgrounds as CSS. */
 export function themeCss(tokens: readonly Token[] = byTheme("rebrand")): string {
   const bridge = postcss.rule({ selector: ":root" });
   for (const [property, token] of Object.entries(VITEPRESS_TO_INSTUI)) {
@@ -19,6 +25,12 @@ export function themeCss(tokens: readonly Token[] = byTheme("rebrand")): string 
     }
   }
   const aurora = tokens.filter((token) => token.name.startsWith(auroraPrefix));
+  const statusColors = tokens.filter(
+    ({ name }) =>
+      exampleStatusTokens.has(name) ||
+      name.startsWith("--instui-primitive-color-green-") ||
+      name.startsWith("--instui-primitive-color-red-"),
+  );
   const values = new Map(aurora.map((token) => [token.name, token.value]));
   const color = (step: number): string => {
     const value = values.get(`${auroraPrefix}${step}`);
@@ -32,7 +44,7 @@ export function themeCss(tokens: readonly Token[] = byTheme("rebrand")): string 
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="56.5685424949" height="56.5685424949" viewBox="0 0 56.5685424949 56.5685424949"><defs><pattern id="lines" width="40" height="40" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0V40" stroke="${accent}" stroke-width="2" opacity="0.5"/></pattern></defs><rect width="100%" height="100%" fill="url(#lines)"/></svg>`;
     return `--vp-home-pattern-image: url("data:image/svg+xml,${encodeURIComponent(svg)}"); --vp-home-bg-image: linear-gradient(135deg, ${color(dark ? 200 : 10)}, ${color(dark ? 190 : 20)});`;
   };
-  return `${toCss(aurora, { declareAll: true })}
+  return `${toCss([...aurora, ...statusColors], { declareAll: true })}
 ${bridge.toString()}
 :root { ${background(false)} }
 .dark { ${background(true)} }`;

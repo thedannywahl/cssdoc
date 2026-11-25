@@ -1,6 +1,7 @@
 @cssdoc-theme;
 
 :root {
+  color-scheme: light;
   --instui-color-institutional-brand-primary: var(--instui-primitive-color-aurora-aurora120);
   --instui-color-institutional-brand-button-secondary-bgd: color-mix(
     in srgb,
@@ -13,6 +14,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --instui-color-institutional-brand-primary: var(--instui-primitive-color-aurora-aurora50);
   --instui-color-institutional-brand-button-secondary-bgd: color-mix(
     in srgb,
@@ -24,6 +26,24 @@
   --vp-button-brand-text: var(--instui-primitive-color-aurora-aurora200);
   --vp-button-brand-hover-text: var(--vp-button-brand-text);
   --vp-button-brand-active-text: var(--vp-button-brand-text);
+}
+
+.vp-doc div[class*="language-"] pre.shiki,
+.vp-doc div[class*="language-"] pre.shiki code {
+  tab-size: 2;
+}
+
+.cssdoc-example-warning {
+  --example-diagnostic-color: var(--vp-c-warning-1);
+}
+
+.cssdoc-example-error {
+  --example-diagnostic-color: var(--vp-c-danger-1);
+}
+
+.vp-doc .shiki :is(.cssdoc-example-warning, .cssdoc-example-error) {
+  text-decoration: underline wavy var(--example-diagnostic-color);
+  text-underline-offset: 0.2em;
 }
 
 :root:has(.VPHome) {
