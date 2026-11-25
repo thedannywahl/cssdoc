@@ -16,13 +16,14 @@ import {
   CSSDOC_BASE_CLASS_NAME_SOURCE,
   CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE,
   COMMENT_START_SOURCE,
+  COMMENT_END_SOURCE,
+  COMMENT_END_TEXT,
   DOC_COMMENT_START_SOURCE,
   DOC_COMMENT_START_TEXT,
   DASH_SOURCE,
   DIGIT_SOURCE,
   DOT_CHAR,
   DOT_SOURCE,
-  FORWARD_SLASH_SOURCE,
   escapeRegex,
   toRegExp,
 } from "@cssdoc/regex";
@@ -73,10 +74,11 @@ const ANNOTATION_MARKER = arkRegex.as(
   "u",
 );
 const DOC_COMMENT_RE: Regex = arkRegex.as(
-  `${DOC_COMMENT_START_SOURCE}[\\s\\S]*?${ASTERISK_SOURCE}${FORWARD_SLASH_SOURCE}`,
+  `${DOC_COMMENT_START_SOURCE}[\\s\\S]*?${COMMENT_END_SOURCE}`,
   "gu",
 );
 const COMMENT_OPENING_RE: Regex = arkRegex.as(`^${COMMENT_START_SOURCE}${ASTERISK_SOURCE}?`);
+const COMMENT_CLOSING_RE: Regex = arkRegex.as(`${COMMENT_END_SOURCE}$`);
 
 /** Map an editor `languageId` to an embedded host, for docs whose path extension isn't decisive. */
 const hostForLanguageId = (languageId?: string): EmbeddedHost | undefined => {
@@ -190,7 +192,7 @@ function refHoverAt(
     const out = new Map<number, string>();
     const body = raw
       .replace(COMMENT_OPENING_RE, "")
-      .replace(/\*\/$/, "")
+      .replace(COMMENT_CLOSING_RE, "")
       .split("\n")
       .map((line) => line.replace(/^\s*\*\s?/, ""));
     const at = body.findIndex((line) => /^\s*@annotations\b/u.test(line));
@@ -581,7 +583,11 @@ export class CssDocLanguageService {
     // Doc-tag completion: inside an unclosed `/**` block right after an `@`, while authoring CSS — a
     // stylesheet, or an embedded CSS region (a `<style>` block / `css` template / Markdown fence).
     const open = before.lastIndexOf(DOC_COMMENT_START_TEXT);
-    if (open !== -1 && open > before.lastIndexOf("*/") && /(?:^|[\s*])@[\w-]*$/u.test(before)) {
+    if (
+      open !== -1 &&
+      open > before.lastIndexOf(COMMENT_END_TEXT) &&
+      /(?:^|[\s*])@[\w-]*$/u.test(before)
+    ) {
       const host = detectEmbeddedHost(path) ?? hostForLanguageId(languageId);
       const authoring =
         (languageId && CSS_LANGUAGES.has(languageId)) ||

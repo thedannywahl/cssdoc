@@ -62,6 +62,7 @@ import {
   CSSDOC_MODIFIER_REFERENCE_SOURCE,
   STRUCTURE_RECORD_KIND_SOURCE,
   COMMENT_START_SOURCE,
+  COMMENT_END_SOURCE,
   COMMENT_LINE_MARKER_SOURCE,
   ASTERISK_SOURCE,
   FORWARD_SLASH_SOURCE,
@@ -340,7 +341,7 @@ function splitQuery(rest: string): { query: string; description?: string } {
 /** Strip the comment framing (`/**`, `*\/`, and leading ` * `) from a raw block-comment body. */
 export function stripCommentFraming(raw: string): string {
   const COMMENT_START: Regex = arkRegex.as(`^${COMMENT_START_SOURCE}${ASTERISK_SOURCE}?`);
-  const COMMENT_END: Regex = arkRegex.as(`${ASTERISK_SOURCE}${FORWARD_SLASH_SOURCE}$`);
+  const COMMENT_END: Regex = arkRegex.as(`${COMMENT_END_SOURCE}$`);
   const COMMENT_LINE_PREFIX: Regex = arkRegex.as(String.raw`^\s*${COMMENT_LINE_MARKER_SOURCE}\s?`);
   return raw
     .replace(COMMENT_START, "")

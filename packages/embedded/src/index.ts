@@ -16,6 +16,8 @@ import { type CssDialect as ParserDialect, resolveParser } from "@cssdoc/dialect
 import { type LintOptions, type Violation, lintCssDocs } from "@cssdoc/lint-core";
 import {
   ALPHA_LOWER_SOURCE,
+  COMMENT_END_SOURCE,
+  COMMENT_START_SOURCE,
   EQUALS_CHAR,
   FILE_EXTENSION,
   QUOTE_DOUBLE_CHAR,
@@ -356,7 +358,11 @@ const STRING_LITERAL_RE = /(["'`])((?:(?!\1)[\s\S])*)\1/gu;
 const WORD_RE = /\S+/gu;
 // Comment forms to blank before scanning, so commented-out markup isn't read as a usage. The `//`
 // form guards against `://` (URLs) so a `href="http://…"` isn't mistaken for a line comment.
-const COMMENT_RES = [/<!--[\s\S]*?-->/gu, /\/\*[\s\S]*?\*\//gu, /(?<![:/])\/\/[^\n]*/gu];
+const COMMENT_RES = [
+  /<!--[\s\S]*?-->/gu,
+  arkRegex.as(`${COMMENT_START_SOURCE}[\\s\\S]*?${COMMENT_END_SOURCE}`, "gu"),
+  /(?<![:/])\/\/[^\n]*/gu,
+];
 
 /** Blank every `${ … }` interpolation in a template-literal body to same-length spaces, so a static
  * prefix like `` `-icon-${icon.name}` `` still tokenizes to `-icon-` instead of the raw expression

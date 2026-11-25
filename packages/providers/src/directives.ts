@@ -16,6 +16,8 @@
  * @module
  */
 import type { Diagnostic } from "./types.ts";
+import { COMMENT_END_SOURCE, COMMENT_START_SOURCE } from "@cssdoc/regex";
+import { regex as arkRegex } from "arkregex";
 
 type DirectiveKind = "disable" | "enable" | "disable-line" | "disable-next-line" | "expect-error";
 
@@ -31,8 +33,10 @@ interface Directive {
 }
 
 // `disable-next-line` before `disable-line` before `disable` so the longer keyword wins the alternation.
-const DIRECTIVE_RE =
-  /\/\*\s*cssdoc-(disable-next-line|disable-line|disable|enable|expect-error)\b([^*]*?)\*\//gu;
+const DIRECTIVE_RE = arkRegex.as(
+  String.raw`${COMMENT_START_SOURCE}\s*cssdoc-(disable-next-line|disable-line|disable|enable|expect-error)\b([^*]*?)${COMMENT_END_SOURCE}`,
+  "gu",
+);
 
 const lineAt = (source: string, index: number): number => {
   let line = 1;

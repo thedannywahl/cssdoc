@@ -281,6 +281,15 @@ export const TIER_0_PATTERNS: Record<string, RawPatternDef> = {
     composedFrom: ["FORWARD_SLASH_CHAR", "ASTERISK_CHAR"],
     fixtures: { passes: [{ input: "/**" }], fails: [{ input: "/*", reason: "ordinary comment" }] },
   },
+  COMMENT_END_TEXT: {
+    name: "COMMENT_END_TEXT",
+    tier: 0,
+    pattern: (resolve: PatternResolver) =>
+      `${resolve("ASTERISK_CHAR")}${resolve("FORWARD_SLASH_CHAR")}`,
+    description: "CSS block comment closer as literal text",
+    composedFrom: ["ASTERISK_CHAR", "FORWARD_SLASH_CHAR"],
+    fixtures: { passes: [{ input: "*/" }], fails: [{ input: "/*", reason: "comment opener" }] },
+  },
   FORWARD_SLASH: {
     name: "FORWARD_SLASH",
     tier: 0,

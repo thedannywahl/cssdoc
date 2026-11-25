@@ -365,6 +365,21 @@ export const TIER_1_PATTERNS: Record<string, RawPatternDef> = {
       ],
     },
   },
+  COMMENT_END: {
+    name: "COMMENT_END",
+    tier: 1,
+    pattern: (resolve: PatternResolver) => `${resolve("ASTERISK")}${resolve("FORWARD_SLASH")}`,
+    description: "CSS block comment end (*/)",
+    composedFrom: ["ASTERISK", "FORWARD_SLASH"],
+    fixtures: {
+      passes: [{ input: "*/" }],
+      fails: [
+        { input: "/*", reason: "comment opener" },
+        { input: "*", reason: "single asterisk" },
+        { input: "/", reason: "single slash" },
+      ],
+    },
+  },
   COMMENT_LINE_MARKER: {
     name: "COMMENT_LINE_MARKER",
     tier: 1,

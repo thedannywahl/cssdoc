@@ -44,17 +44,14 @@ import { type NamingRules, type RuleName, lintCssDocs } from "@cssdoc/lint-core"
 import { type CssDocIndex, createIndex } from "@cssdoc/index";
 import { type RuleSeverity, checkClassUsage } from "@cssdoc/providers";
 import {
-  ASTERISK_SOURCE,
+  COMMENT_END_SOURCE,
   CSSDOC_CUSTOM_PROPERTY_TAG_NAME,
   DOC_COMMENT_START_SOURCE,
-  FORWARD_SLASH_SOURCE,
 } from "@cssdoc/regex";
 import css from "@eslint/css";
 
 type Position = { line: number; column: number };
-const DOC_COMMENT = arkRegex.as(
-  `${DOC_COMMENT_START_SOURCE}[\\s\\S]*?${ASTERISK_SOURCE}${FORWARD_SLASH_SOURCE}`,
-);
+const DOC_COMMENT = arkRegex.as(`${DOC_COMMENT_START_SOURCE}[\\s\\S]*?${COMMENT_END_SOURCE}`);
 
 interface ReportDescriptor {
   node?: unknown;

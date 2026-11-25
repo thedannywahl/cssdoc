@@ -1,6 +1,7 @@
 import {
   ASTERISK_SOURCE,
   AT_SOURCE,
+  COMMENT_END_TEXT,
   DOC_COMMENT_START_SOURCE,
   STRUCTURE_RECORD_KIND_SOURCE,
 } from "@cssdoc/regex";
@@ -54,7 +55,7 @@ export function cssDocEdits(text: string, formatBlankLines: boolean): CssDocEdit
     const recordEnd = lineEnd(text, recordStart);
     if (!isCssDocRecord(text.slice(recordStart, recordEnd))) continue;
 
-    const closeStart = text.indexOf("*/", recordEnd);
+    const closeStart = text.indexOf(COMMENT_END_TEXT, recordEnd);
     const indent = lineIndent(text, openerStart);
     const newline = text.includes("\r\n") ? "\r\n" : "\n";
 
@@ -75,8 +76,8 @@ export function cssDocEdits(text: string, formatBlankLines: boolean): CssDocEdit
         start: insertAt,
         end: insertAt,
         newText: hasTrailingContent
-          ? `${indent} */${newline}`
-          : `${text.endsWith("\n") ? "" : newline}${indent} */`,
+          ? `${indent} ${COMMENT_END_TEXT}${newline}`
+          : `${text.endsWith("\n") ? "" : newline}${indent} ${COMMENT_END_TEXT}`,
       });
       continue;
     }
