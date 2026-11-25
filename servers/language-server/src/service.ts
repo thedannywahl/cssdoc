@@ -7,6 +7,20 @@
  * @module
  */
 import { CssDocConfiguration, type ExampleFilter, parseDocComment } from "@cssdoc/core";
+import type { Regex } from "arkregex";
+import { regex as arkRegex } from "arkregex";
+import {
+  ALPHANUMERIC_EXTENDED_SOURCE,
+  CSS_CLASS_ATTRIBUTE_SELECTOR,
+  CSSDOC_BASE_CLASS_NAME_SOURCE,
+  CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE,
+  DASH_SOURCE,
+  DIGIT_SOURCE,
+  DOT_CHAR,
+  DOT_SOURCE,
+  escapeRegex,
+  toRegExp,
+} from "@cssdoc/regex";
 import {
   type EmbeddedHost,
   detectEmbeddedHost,
@@ -246,9 +260,10 @@ function unmask(
  */
 function unmaskContent(content: string, projected: string, source: string): string {
   if (source === projected) return content;
+  const IDENTIFIER: Regex = arkRegex.as(CSSDOC_BASE_CLASS_NAME_SOURCE, "gu");
   let out = content;
   const done = new Set<string>();
-  for (const m of projected.matchAll(/[A-Za-z_][\w-]*/gu)) {
+  for (const m of projected.matchAll(IDENTIFIER)) {
     const token = m[0];
     if (done.has(token)) continue;
     const original = source.slice(m.index, m.index + token.length);
@@ -311,7 +326,8 @@ function propertyAt(
   text: string,
   offset: number,
 ): { name: string; start: number; end: number } | undefined {
-  for (const m of text.matchAll(/--[\w-]+/gu)) {
+  const CUSTOM_PROPERTY: Regex = arkRegex.as(CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE, "gu");
+  for (const m of text.matchAll(CUSTOM_PROPERTY)) {
     const start = m.index ?? 0;
     const end = start + m[0].length;
     if (offset >= start && offset <= end) return { name: m[0], start, end };
@@ -324,12 +340,17 @@ function classAttrAt(text: string, offset: number): ClassAttr | undefined {
   return classAttributes(text).find((a) => offset >= a.valueStart && offset <= a.valueEnd);
 }
 
-const stripLeadingDot = (s: string): string => s.replace(/^\./u, "");
+const stripLeadingDot = (s: string): string => (s.startsWith(DOT_CHAR) ? s.slice(1) : s);
+
+const CSS_CLASS_TOKEN: Regex = arkRegex.as(
+  `(?<!${DIGIT_SOURCE})${DOT_SOURCE}(${DASH_SOURCE}?${ALPHANUMERIC_EXTENDED_SOURCE}+)`,
+  "gu",
+);
 
 /** The CSS class name under `offset` in a stylesheet — a `.name` selector token — else undefined. The
  *  `(?<!\d)` guard keeps decimals like `0.5em` from looking like a `.5em` class. */
 function cssClassTokenAt(text: string, offset: number): string | undefined {
-  for (const m of text.matchAll(/(?<!\d)\.(-?[\w-]+)/gu)) {
+  for (const m of text.matchAll(CSS_CLASS_TOKEN)) {
     const dot = m.index ?? 0;
     if (offset >= dot && offset <= dot + m[0].length) return m[1];
   }
@@ -353,7 +374,7 @@ function resolveCssClass(
   return owner ? { base: stripLeadingDot(owner.className), token } : undefined;
 }
 
-const CLASS_ATTR_SELECTOR_RE = /\[\s*class\s*([~^$*|]?)=\s*(?:"([^"]*)"|'([^']*)')\s*\]/gu;
+const CLASS_ATTR_SELECTOR_RE = toRegExp(CSS_CLASS_ATTRIBUTE_SELECTOR);
 
 /** The `[class OP="value"]` attribute selector under `offset` (its operator, value, and start), if any. */
 function cssClassAttrSelectorAt(
@@ -361,6 +382,7 @@ function cssClassAttrSelectorAt(
   offset: number,
 ): { op: string; value: string; start: number } | undefined {
   for (const m of text.matchAll(CLASS_ATTR_SELECTOR_RE)) {
+    if (m[4] !== undefined) continue;
     const start = m.index ?? 0;
     if (offset >= start && offset <= start + m[0].length) {
       return { op: m[1], value: m[2] ?? m[3] ?? "", start };
@@ -383,7 +405,7 @@ function baseComponentInSelector(
     text.lastIndexOf("\n", before),
   );
   const segment = text.slice(boundary + 1, before);
-  for (const m of segment.matchAll(/(?<!\d)\.(-?[\w-]+)/gu)) {
+  for (const m of segment.matchAll(CSS_CLASS_TOKEN)) {
     if (index.componentForClass(m[1])) return m[1];
   }
   return undefined;
@@ -1217,8 +1239,8 @@ export class CssDocLanguageService {
     for (const prop of index.allCustomProperties()) {
       const propName = prop.property.name;
       // Use escaped pattern to find all property usages
-      const pattern = propName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const propMatches = text.matchAll(new RegExp(pattern, "gu"));
+      const pattern: Regex = arkRegex.as(escapeRegex(propName), "gu");
+      const propMatches = text.matchAll(pattern);
 
       for (const match of propMatches) {
         const propStart = match.index ?? 0;

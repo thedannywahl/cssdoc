@@ -1217,6 +1217,12 @@ importers:
       '@cssdoc/providers':
         specifier: workspace:*
         version: link:../../packages/providers
+      '@cssdoc/regex':
+        specifier: workspace:*
+        version: link:../../packages/regex
+      arkregex:
+        specifier: 'catalog:'
+        version: 0.0.15
       vscode-languageserver:
         specifier: 'catalog:'
         version: 11.0.0

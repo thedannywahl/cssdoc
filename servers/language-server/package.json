@@ -47,6 +47,8 @@
     "@cssdoc/embedded": "workspace:*",
     "@cssdoc/index": "workspace:*",
     "@cssdoc/providers": "workspace:*",
+    "@cssdoc/regex": "workspace:*",
+    "arkregex": "catalog:",
     "vscode-languageserver": "catalog:",
     "vscode-languageserver-textdocument": "catalog:"
   },
