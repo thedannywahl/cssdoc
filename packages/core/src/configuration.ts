@@ -59,14 +59,23 @@ export class CssDocTagDefinition {
   readonly tagName: string;
   /** The tag name without its leading `@` (e.g. `modifier`). */
   readonly tagNameWithoutAt: string;
+  /** The tag's syntactic kind, including `record` for record-opening tags. */
   readonly syntaxKind: CssDocSyntaxKind;
+  /** Whether the tag may appear multiple times in one comment. */
   readonly allowMultiple: boolean;
+  /** The kind selected by a record-opening tag, when specified. */
   readonly recordKind?: CssRecordKind;
   /** The canonical tag name (without `@`) this aliases, if any; otherwise its own name. */
   readonly aliasFor?: string;
   /** A one-line description of the tag's purpose, surfaced in editor completions/hover. */
   readonly description?: string;
 
+  /**
+   * Normalize and validate a tag definition.
+   *
+   * @param options - The tag name and metadata.
+   * @throws If the trimmed name is not a valid tag name.
+   */
   constructor(options: CssDocTagDefinitionOptions) {
     const raw = options.tagName.trim();
     if (!TAG_NAME.test(raw)) {
@@ -183,28 +192,53 @@ export class CssDocConfiguration {
     if (supported) this._supported.add(definition);
   }
 
-  /** Register several tag definitions. */
+  /**
+   * Register definitions in order, replacing any existing definitions with the same names.
+   *
+   * @param definitions - Definitions to register.
+   * @param supported - Whether to enable each definition; defaults to `true`.
+   */
   addTagDefinitions(definitions: readonly CssDocTagDefinition[], supported = true): void {
     for (const definition of definitions) this.addTagDefinition(definition, supported);
   }
 
-  /** Look up a tag definition by name (with or without a leading `@`). */
+  /**
+   * Look up a tag definition, whether or not it is supported.
+   *
+   * @param tagName - The name with or without a leading `@`.
+   * @returns The registered definition, or `undefined` if none exists.
+   */
   tryGetTagDefinition(tagName: string): CssDocTagDefinition | undefined {
     return this._byName.get(tagName.replace(LEADING_AT, ""));
   }
 
-  /** Whether a tag definition is supported. */
+  /**
+   * Test whether this exact definition is enabled.
+   *
+   * @param definition - The registered definition to check.
+   * @returns Whether the definition is in the supported set.
+   */
   isTagSupported(definition: CssDocTagDefinition): boolean {
     return this._supported.has(definition);
   }
 
-  /** Enable or disable support for a tag. */
+  /**
+   * Enable or disable a tag definition without changing its registration.
+   *
+   * @param definition - The definition whose support state to change.
+   * @param supported - Whether to enable the definition.
+   */
   setSupportForTag(definition: CssDocTagDefinition, supported: boolean): void {
     if (supported) this._supported.add(definition);
     else this._supported.delete(definition);
   }
 
-  /** Enable or disable support for several tags. */
+  /**
+   * Enable or disable several definitions without changing their registration.
+   *
+   * @param definitions - The definitions whose support state to change.
+   * @param supported - Whether to enable the definitions.
+   */
   setSupportForTags(definitions: readonly CssDocTagDefinition[], supported: boolean): void {
     for (const definition of definitions) this.setSupportForTag(definition, supported);
   }

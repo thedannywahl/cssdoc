@@ -163,6 +163,8 @@ export const DEFAULT_MODIFIER_CONVENTION: ModifierConvention = MODIFIER_PRESETS.
  * Resolve a preset name or custom object into a fully-populated {@link ModifierConvention} (defaults
  * filled in). No argument resolves to the {@link DEFAULT_MODIFIER_CONVENTION} (BEM).
  *
+ * @param input - A preset name or custom convention; omit to use BEM.
+ * @returns A new convention object with default state and pseudo-element lists and other defaults.
  * @throws If given an unknown preset name.
  */
 export function resolveModifierConvention(input?: ModifierConventionInput): ModifierConvention {

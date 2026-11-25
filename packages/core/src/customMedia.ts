@@ -74,7 +74,12 @@ function parseStructureCustomMediaSelector(selector: string): {
   return { record: untyped[1], profile: untyped[2] };
 }
 
-/** Extract all custom-media profile references from structure trees. */
+/**
+ * Extract custom-media profile references from structure trees, including nested nodes and variants.
+ *
+ * @param entries - Records whose structure trees to inspect.
+ * @returns References in traversal order, including repeated references to the same profile.
+ */
 export function structureCustomMediaRefs(
   entries: readonly CssDocEntry[],
 ): StructureCustomMediaRef[] {
@@ -109,6 +114,13 @@ export function structureCustomMediaRefs(
  * Profiles default to `true` so the declaration is valid CSS immediately:
  *
  * `@custom-media --top-nav true;`
+ *
+ * The resolver receives all references to each profile. An empty or whitespace-only string omits that
+ * profile; an `undefined` result uses `true`. Declarations are sorted by profile by default.
+ *
+ * @param entries - Records whose structure trees contain profile references.
+ * @param options - Profile value resolution and declaration ordering.
+ * @returns CSS declarations with a trailing newline, or an empty string when none are emitted.
  */
 export function buildCustomMediaDeclarations(
   entries: readonly CssDocEntry[],

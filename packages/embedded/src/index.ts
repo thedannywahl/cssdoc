@@ -56,7 +56,7 @@ import { regex as arkRegex } from "arkregex";
 /** A host language cssdoc can pull embedded CSS out of. */
 export type EmbeddedHost = "js" | "html" | "markdown";
 
-/** A stylesheet dialect (Phase 2 uses this to pick a PostCSS syntax; today everything is treated as CSS). */
+/** A stylesheet dialect identified in an embedded region. `sass` is parsed as SCSS syntax. */
 export type CssDialect = "css" | "scss" | "sass" | "less";
 
 /** Options for the extraction/projection. Extra `ParseOptions`/`LintOptions` fields pass through. */
@@ -77,7 +77,7 @@ export interface CssBlock {
   host: EmbeddedHost;
   /** The region's stylesheet dialect (from a `lang` attribute, fence info-string, or `"css"`). */
   dialect: CssDialect;
-  /** Where the region begins in the source. */
+  /** Region start: 1-based line, 0-based column, and 0-based UTF-16 offset in the host source. */
   start: { line: number; column: number; offset: number };
 }
 
@@ -287,6 +287,10 @@ function scan(
  * Project a host source down to a CSS string: same length and line structure, with embedded-CSS
  * regions and outer `/** … *\/` doc comments kept in place, everything else blanked, and JS `${…}`
  * interpolations masked. The result feeds any CSS tool with source-accurate positions.
+ *
+ * @param source - The complete host-language source.
+ * @param opts - Host detection and CSS template tag options.
+ * @returns The projected CSS, with source offsets and line breaks preserved.
  */
 export function projectCss(source: string, opts: EmbeddedOptions = {}): string {
   const { regions, masks, comments } = scan(source, opts);
@@ -312,7 +316,13 @@ export function projectCss(source: string, opts: EmbeddedOptions = {}): string {
   return out.join("");
 }
 
-/** Extract each embedded CSS region as a discrete block, with its source position and dialect. */
+/**
+ * Extract each embedded CSS region as a discrete block, with its source position and dialect.
+ *
+ * @param source - The complete host-language source.
+ * @param opts - Host detection and CSS template tag options.
+ * @returns Blocks in scanner order, with interpolations masked in their CSS.
+ */
 export function extractCssBlocks(source: string, opts: EmbeddedOptions = {}): CssBlock[] {
   const projected = projectCss(source, opts);
   return scan(source, opts).regions.map((r) => {
@@ -328,7 +338,14 @@ export function extractCssBlocks(source: string, opts: EmbeddedOptions = {}): Cs
   });
 }
 
-/** The dialect to parse a source's projection with — `scss` wins over `less` wins over `css`. */
+/**
+ * Choose one parser dialect for the projection: `scss` (including `sass`) wins over `less`, which wins
+ * over `css`. A source with no embedded regions uses `css`.
+ *
+ * @param source - The complete host-language source.
+ * @param opts - Host detection and CSS template tag options.
+ * @returns The dialect selected for the combined projection.
+ */
 export const projectionDialect = (source: string, opts: EmbeddedOptions = {}): ParserDialect => {
   const dialects = scan(source, opts).regions.map((r) => r.dialect);
   if (dialects.includes("scss") || dialects.includes("sass")) return "scss";
@@ -336,7 +353,14 @@ export const projectionDialect = (source: string, opts: EmbeddedOptions = {}): P
   return "css";
 };
 
-/** Parse cssdoc records out of a host source (projects first). Returns `[]` if the projection can't parse. */
+/**
+ * Project a host source and parse its cssdoc records. Unless `opts.parse` is provided, the parser is
+ * selected from the detected dialects using {@link projectionDialect}.
+ *
+ * @param source - The complete host-language source.
+ * @param opts - Projection and core parser options.
+ * @returns The parsed records, or an empty array if projection or parsing throws.
+ */
 export function parseCssDocsFromSource(
   source: string,
   opts: EmbeddedOptions & ParseOptions = {},
@@ -349,7 +373,14 @@ export function parseCssDocsFromSource(
   }
 }
 
-/** Lint the cssdoc in a host source (projects first). Violation lines are absolute in the source. */
+/**
+ * Project a host source and lint its cssdoc records. Unless `opts.parse` is provided, the parser is
+ * selected from the detected dialects using {@link projectionDialect}.
+ *
+ * @param source - The complete host-language source.
+ * @param opts - Projection and lint options.
+ * @returns Violations with source-relative line numbers, or an empty array if projection or linting throws.
+ */
 export function lintCssDocsFromSource(
   source: string,
   opts: EmbeddedOptions & LintOptions = {},
@@ -449,6 +480,9 @@ function maskComments(source: string): string {
  * not), which is enough for the common `class="…"`, `:class="[ '…' ]"`, and `class:name` forms. A
  * template literal's `${…}` interpolations are masked out before tokenizing, so an `-icon-` prefix
  * reads as the static prefix `-icon-` rather than the raw (unmatchable) expression text.
+ *
+ * @param source - The complete host-language source to scan.
+ * @returns Class usage sites in source order, with offsets into the original source.
  */
 export function scanClassUsages(source: string): ClassUsageSite[] {
   const sites: ClassUsageSite[] = [];

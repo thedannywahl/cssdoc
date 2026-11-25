@@ -8,7 +8,16 @@ export interface ExampleFilter {
   includeUnlabeled?: boolean;
 }
 
-/** Select example bodies without modifying the record or its label metadata. */
+/**
+ * Select example bodies without modifying the record or its label metadata.
+ *
+ * A labeled example matches when any of its labels is in the filter. Unlabeled examples are kept
+ * unless `includeUnlabeled` is `false`. Without a filter, the original examples array is returned.
+ *
+ * @param entry - A record's examples and optional labels keyed by example index.
+ * @param filter - Labels to include and whether to retain unlabeled examples.
+ * @returns The selected example bodies in their original order.
+ */
 export function selectExamples(
   entry: Pick<CssDocEntry, "examples" | "exampleLabels">,
   filter?: ExampleFilter | null,

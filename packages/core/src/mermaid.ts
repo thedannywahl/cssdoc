@@ -190,7 +190,8 @@ function classify(node: StructureNode, isRoot: boolean, options: MermaidOptions)
  * get a `click` link.
  * * `@scope` boundary nodes (where {@link StructureNode.scope} is set) are rendered as labelled Mermaid
  * `subgraph` blocks wrapping their children; the scope prelude (e.g. `(.component)`) is the label.
- * * @param roots - Top-level {@link StructureNode}s (an authored `@structure`).
+ *
+ * @param roots - Top-level {@link StructureNode}s (an authored `@structure`).
  * @param options - {@link MermaidOptions}.
  * @returns Mermaid source, or an empty string when there are no nodes.
  *
