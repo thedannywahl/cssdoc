@@ -8,6 +8,7 @@
 
 const css = String.raw; // any tag named `css`/`styled`/… is treated as a CSS template
 
+/** Badge stylesheet demonstrating CSS-in-JS documentation and labeled examples. */
 export const badge: string = css`
   /**
    * @component badge

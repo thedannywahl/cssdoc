@@ -19,8 +19,10 @@ export interface FileResult {
   violations: Violation[];
 }
 
+/** Output formats supported by the lint command. */
 export type OutputFormat = "pretty" | "json" | "github";
 
+/** Input paths and reporting options for a CLI lint run. */
 export interface LintCliOptions {
   /** Positional glob patterns / file paths. */
   globs: string[];
@@ -34,6 +36,7 @@ export interface LintCliOptions {
   cwd?: string;
 }
 
+/** Output, per-file violations, counts, and exit code from a CLI lint run. */
 export interface LintCliResult {
   exitCode: number;
   output: string;

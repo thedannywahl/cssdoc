@@ -37,10 +37,12 @@ const loadConfig = (folder: string): CssDocConfigFile => {
 /** The rule name; enable it as `"cssdoc/valid-doc-comments": true` (optionally with rule toggles). */
 export const ruleName = "cssdoc/valid-doc-comments";
 
+/** Stylelint message formatter for rule violations. */
 export const messages: Record<string, (message: string) => string> = utils.ruleMessages(ruleName, {
   violation: (message: string) => message,
 });
 
+/** Documentation metadata attached to the Stylelint rule. */
 export const meta = { url: "https://cssdoc.dev" };
 
 /**

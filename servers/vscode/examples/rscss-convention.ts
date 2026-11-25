@@ -12,6 +12,7 @@
 
 const css = String.raw;
 
+/** Form field stylesheet demonstrating rscss modifiers. */
 export const formField: string = css`
   /**
    * @component form-field
@@ -148,6 +149,7 @@ export const formField: string = css`
   }
 `;
 
+/** Select control stylesheet demonstrating rscss modifiers. */
 export const selectControl: string = css`
   /**
    * @component select-control
@@ -232,6 +234,7 @@ export const selectControl: string = css`
   }
 `;
 
+/** Textarea stylesheet demonstrating rscss modifiers. */
 export const textareaControl: string = css`
   /**
    * @component textarea-control

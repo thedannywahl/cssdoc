@@ -20,6 +20,7 @@ interface PromptAdapter {
   log: Pick<typeof clack.log, "error" | "info" | "message" | "success" | "warn">;
 }
 
+/** Host I/O, prompts, and lint implementation used by the command-line interface. */
 export interface CliRuntime {
   stdinIsTTY: boolean;
   stdoutIsTTY: boolean;
@@ -145,6 +146,7 @@ async function runGuidedLint(runtime: CliRuntime): Promise<void> {
   runtime.prompts.outro("Lint complete.");
 }
 
+/** Create the command-line program with an optional host runtime. */
 export function createCssDocProgram(runtime: CliRuntime = defaultRuntime): Command {
   const program = new Command("cssdoc")
     .description("Lint CSS documentation without a host linter.")
@@ -196,6 +198,7 @@ export function createCssDocProgram(runtime: CliRuntime = defaultRuntime): Comma
   return program;
 }
 
+/** Parse and run CLI arguments, recording Commander exit codes in the runtime. */
 export async function runCli(
   argv: readonly string[] = process.argv.slice(2),
   runtime: CliRuntime = defaultRuntime,

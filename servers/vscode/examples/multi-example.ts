@@ -11,6 +11,7 @@
 
 const css = String.raw;
 
+/** Alert stylesheet demonstrating labeled examples and modifiers. */
 export const alertComponent: string = css`
   /**
    * @component alert
@@ -114,6 +115,7 @@ export const alertComponent: string = css`
   }
 `;
 
+/** Badge stylesheet demonstrating labeled examples and modifiers. */
 export const badgeComponent: string = css`
   /**
    * @component badge
@@ -178,6 +180,7 @@ export const badgeComponent: string = css`
   }
 `;
 
+/** Button stylesheet demonstrating labeled examples and modifiers. */
 export const buttonComponent: string = css`
   /**
    * @component button

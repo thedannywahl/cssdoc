@@ -479,6 +479,7 @@ const validCustomProperties: RuleModule = {
   },
 };
 
+/** ESLint plugin exposing cssdoc rules and reusable configurations. */
 const plugin: Plugin = {
   meta: { name: "@cssdoc/eslint-plugin", version: "0.0.0" },
   rules: {
