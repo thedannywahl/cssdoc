@@ -12,6 +12,7 @@ import { regex as arkRegex } from "arkregex";
 import {
   ALPHANUMERIC_EXTENDED_SOURCE,
   ASTERISK_CHAR,
+  AT_CHAR,
   CSS_CLASS_ATTRIBUTE_SELECTOR,
   CSS_CLASS_REFERENCE,
   CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE,
@@ -157,7 +158,7 @@ const TERMINAL_COMPOUND_RE: Regex = arkRegex.as(
 type StructureRecordRef = { kind?: string; name: string; profile?: string; private?: boolean };
 
 const parseStructureRecordRef = (selector: string): StructureRecordRef | undefined => {
-  if (!selector.startsWith("@")) return undefined;
+  if (!selector.startsWith(AT_CHAR)) return undefined;
   const raw = selector.slice(1).trim();
   if (!raw) return undefined;
 
