@@ -11,6 +11,7 @@
  *
  * @module
  */
+import type { CSSDOC_CARDINALITY_KEYWORDS } from "@cssdoc/regex";
 
 /**
  * A modifier variation on a component's base class. How modifiers are spelled is configurable (see
@@ -248,7 +249,10 @@ export interface StructureNode {
    * a doc comment where comments can't nest; an unknown pseudo is valid selector syntax and is stripped
    * from the stored selector.
    */
-  cardinality?: "optional" | "many" | "one-or-more" | `max-${number}` | `one-or-more-max-${number}`;
+  cardinality?:
+    | (typeof CSSDOC_CARDINALITY_KEYWORDS)[string]
+    | `max-${number}`
+    | `one-or-more-max-${number}`;
   /**
    * When present, this node is a `@scope` boundary. The value is the `@scope` prelude,
    * e.g. `(.component)` from `@scope (.component) { … }`.

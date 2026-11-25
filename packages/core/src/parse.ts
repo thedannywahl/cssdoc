@@ -10,15 +10,53 @@
  * @module
  */
 import postcss, { type ChildNode } from "postcss";
+import type { Regex } from "arkregex";
+import { regex as arkRegex } from "arkregex";
 import { HTML_ELEMENT_GROUPS, HTML_ELEMENT_NAMES } from "@cssdoc/spec";
 import {
+  ALPHA_SOURCE,
+  ALPHANUMERIC_EXTENDED_SOURCE,
+  ASTERISK_CHAR,
+  AT_CHAR,
+  AT_SOURCE,
+  BRACE_CLOSE_SOURCE,
+  BRACE_OPEN_SOURCE,
+  BRACKET_CLOSE_CHAR,
+  BRACKET_CLOSE_SOURCE,
+  BRACKET_OPEN_CHAR,
+  BRACKET_OPEN_SOURCE,
+  COLON_CHAR,
+  COLON_SOURCE,
+  CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE,
+  CSSDOC_ELEMENT_TAG_SOURCE,
+  CSSDOC_MODIFIER_REFERENCE_SOURCE,
+  DASH_SOURCE,
+  DIGIT_SOURCE,
+  DOT_CHAR,
+  DOT_SOURCE,
+  EQUALS_CHAR,
+  GREATER_THAN_CHAR,
   TOKEN_CUSTOM_PROPERTY_SOURCE,
   PSEUDO_SELECTOR_FUNCTIONAL,
-  HTML_ELEMENT_NAME_SOURCE,
-  RECORD_REFERENCE_NAME,
+  PAREN_CLOSE_CHAR,
+  PAREN_CLOSE_SOURCE,
+  PAREN_OPEN_CHAR,
+  PAREN_OPEN_SOURCE,
+  QUOTE_DOUBLE_CHAR,
+  QUOTE_SINGLE_CHAR,
+  RECORD_REFERENCE_NAME_SOURCE,
+  TILDE_CHAR,
+  UNDERSCORE_CHAR,
+  WORD_BOUNDARY_SOURCE,
+  escapeRegex,
   toRegExp,
 } from "@cssdoc/regex";
 import { CssDocConfiguration, type InlineCommentMode } from "./configuration.ts";
+import {
+  cardinalityFromMatch,
+  splitTrailingCardinality,
+  STRUCTURE_CARDINALITY,
+} from "./cardinality.ts";
 import {
   deriveSelectorName,
   parseDocComment,
@@ -48,19 +86,16 @@ import type {
 } from "./model.ts";
 
 /**
- * Matches a `var(--name` reference; group 1 is the custom-property name.
- * Uses TOKEN_CUSTOM_PROPERTY pattern from @cssdoc/regex.
- */
-const VAR_RE = new RegExp(`var\\(\\s*(${TOKEN_CUSTOM_PROPERTY_SOURCE})`, "gu");
-
-/**
  * Reduce an `@scope` at-rule's `params` (e.g. `(.pfx-alert)`) to a bare class name, or `undefined` for
  * anything that isn't a single simple class selector (a multi-selector or non-class prelude can't be
  * resolved to "this is the record's own base" safely, so `&`/`:scope` inside it are left unmatched).
  */
 export function scopePreludeBase(params: string): string | undefined {
-  const inner = params.trim().replace(/^\(/u, "").replace(/\)$/u, "").trim();
-  return inner.match(/^\.([\w-]+)$/u)?.[1];
+  const OPEN_PAREN: Regex = arkRegex.as(`^${PAREN_OPEN_SOURCE}`, "u");
+  const CLOSE_PAREN: Regex = arkRegex.as(`${PAREN_CLOSE_SOURCE}$`, "u");
+  const SCOPE_CLASS: Regex = arkRegex.as(`^${DOT_SOURCE}(${ALPHANUMERIC_EXTENDED_SOURCE}+)$`, "u");
+  const inner = params.trim().replace(OPEN_PAREN, "").replace(CLOSE_PAREN, "").trim();
+  return inner.match(SCOPE_CLASS)?.[1];
 }
 
 /**
@@ -74,7 +109,7 @@ export function scopePreludeBase(params: string): string | undefined {
 export function scopeMatchesBase(preludeBase: string | undefined, baseNoDot: string): boolean {
   return (
     preludeBase !== undefined &&
-    (preludeBase === baseNoDot || baseNoDot.startsWith(`${preludeBase}.`))
+    (preludeBase === baseNoDot || baseNoDot.startsWith(`${preludeBase}${DOT_CHAR}`))
   );
 }
 
@@ -85,20 +120,23 @@ export function scopeMatchesBase(preludeBase: string | undefined, baseNoDot: str
  * a rule nested inside THAT one would have `&` refer to the new compound, not the original scope root.
  */
 export function ampStaysAtScope(branch: string): boolean {
+  const SCOPE_ROOT: Regex = arkRegex.as(`^(?:&|${COLON_SOURCE}scope)`, "u");
   // Ignore combinators inside a pseudo-class argument (e.g. `:not(a > b)`) — they don't touch this
   // selector's own structure. Uses PSEUDO_SELECTOR_FUNCTIONAL pattern to match :pseudo(...).
   const stripped = branch.replace(toRegExp(PSEUDO_SELECTOR_FUNCTIONAL), "");
   const trimmed = stripped.trim();
-  if (!/^(?:&|:scope)/u.test(trimmed)) return false;
-  const rest = trimmed.replace(/^(?:&|:scope)/u, "");
-  return !/[\s>+~]/u.test(rest);
+  if (!SCOPE_ROOT.test(trimmed)) return false;
+  const rest = trimmed.replace(SCOPE_ROOT, "");
+  return !SELECTOR_COMBINATOR.test(rest);
 }
 
 /** Remove `&`/`:scope` tokens from a selector fragment so they can't be mistaken for the record's base
  * by {@link ModifierMatcher}'s matchers — used when the enclosing `@scope` doesn't resolve to this
  * record's own base (see {@link scopeMatchesBase}). */
 function neutralizeAmp(selector: string): string {
-  return selector.replace(/&/gu, "").replace(/:scope\b/gu, "");
+  const AMP: Regex = arkRegex.as("&", "gu");
+  const SCOPE: Regex = arkRegex.as(`${COLON_SOURCE}scope${WORD_BOUNDARY_SOURCE}`, "gu");
+  return selector.replace(AMP, "").replace(SCOPE, "");
 }
 
 /**
@@ -109,16 +147,13 @@ function neutralizeAmp(selector: string): string {
  * namespaced/prefixed base class (`.Button`, `.PFX-badge`) be recognized as the component's class rather
  * than silently mis-inferred to the bare `@name`. Used for base-class inference and the scoped-part scan.
  */
-const CLASS_IDENT = String.raw`[A-Za-z_][\w-]*`;
-/** Every class reference in a selector (name captured, dot dropped) — for the scoped-part scan. */
-const CLASS_REF_RE = new RegExp(String.raw`\.(${CLASS_IDENT})`, "gu");
+const CLASS_IDENT = `(?:${ALPHA_SOURCE}|${UNDERSCORE_CHAR})${ALPHANUMERIC_EXTENDED_SOURCE}*`;
 /** A selector that is exactly one class — the base-class inference candidate filter. */
-const SINGLE_CLASS_RE = new RegExp(String.raw`^\.${CLASS_IDENT}$`, "u");
-const RECORD_REF_NAME_RE = toRegExp(RECORD_REFERENCE_NAME, "start-end");
-const RECORD_REF_PROFILE_RE = /^:\s*([\w-]+)$/u;
-const RECORD_REF_TYPED_RE = /^([\w-]+)(?::([\w-]+))?$/u;
-const RECORD_REF_CUSTOM_MEDIA_RE = /^\(\s*(--[\w-]+)\s*\)$/u;
-const RECORD_REF_TYPED_CUSTOM_MEDIA_RE = /^([\w-]+)\s+\(\s*(--[\w-]+)\s*\)$/u;
+const SINGLE_CLASS: Regex = arkRegex.as(`^${DOT_SOURCE}${CLASS_IDENT}$`, "u");
+const SELECTOR_COMBINATOR: Regex = arkRegex.as(
+  String.raw`[\s${GREATER_THAN_CHAR}+${TILDE_CHAR}]`,
+  "u",
+);
 const RECORD_REF_KINDS = new Set(["component", "name", "utility", "rule", "declaration", "layout"]);
 
 function canonicalRecordKind(kind: string): CssRecordKind | undefined {
@@ -128,53 +163,17 @@ function canonicalRecordKind(kind: string): CssRecordKind | undefined {
   }
   return undefined;
 }
-const ELEMENT_TAG_RE = new RegExp(`^<?\\s*(${HTML_ELEMENT_NAME_SOURCE})\\s*>?$`, "u");
-const STRUCT_CARDINALITY: Record<string, NonNullable<StructureNode["cardinality"]>> = {
-  optional: "optional",
-  opt: "optional",
-  many: "many",
-  "one-or-more": "one-or-more",
-  more: "one-or-more",
-};
-const STRUCT_CARD_SUFFIX = String.raw`(?:(?<oomKw>one-or-more|more):max-(?<oomMax>\d+)|max-(?<max>\d+)|(?<kw>optional|opt|one-or-more|more|many))`;
-const STRUCT_CARD_RE = new RegExp(`:${STRUCT_CARD_SUFFIX}\\s*$`, "u");
-const STRUCT_TRAILING_CARD_RE = new RegExp(
-  `^(?<base>[\\s\\S]*?):${STRUCT_CARD_SUFFIX}(?:\\s+(?<private>private))?\\s*$`,
-  "u",
-);
-
-/** Resolve a {@link STRUCT_CARD_RE}/{@link STRUCT_TRAILING_CARD_RE} match's named groups to a stored cardinality. */
-function structureCardinalityFromMatch(
-  groups: Record<string, string | undefined>,
-): NonNullable<StructureNode["cardinality"]> | undefined {
-  if (groups.oomMax) return `one-or-more-max-${groups.oomMax}` as `one-or-more-max-${number}`;
-  if (groups.max) return `max-${groups.max}` as `max-${number}`;
-  if (groups.kw) return STRUCT_CARDINALITY[groups.kw];
-  return undefined;
-}
-const STRUCT_COLOC_RE = /:is\(\s*([^,)]+?)\s*\)/u;
 // A curated allow-list of ARIA/data-* attributes that reflect element *state* (not identity or
 // labeling) — avoids false positives on incidental attribute selectors like `[data-testid]`.
-const ATTR_STATE_RE =
-  /\[\s*(aria-[\w-]+|data-state)\s*=\s*("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[\w-]+)\s*\]/gu;
-// The same shape, anchored to the whole (authored) token rather than scanned within a selector.
-const ATTR_STATE_TAG_RE =
-  /^\[\s*(aria-[\w-]+|data-state)\s*=\s*("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[\w-]+)\s*\]$/u;
+const ATTRIBUTE_STATE_SOURCE = String.raw`${BRACKET_OPEN_SOURCE}\s*(aria-${ALPHANUMERIC_EXTENDED_SOURCE}+|data-state)\s*${EQUALS_CHAR}\s*(${QUOTE_DOUBLE_CHAR}(?:[^${QUOTE_DOUBLE_CHAR}\\]|\\.)*${QUOTE_DOUBLE_CHAR}|${QUOTE_SINGLE_CHAR}(?:[^${QUOTE_SINGLE_CHAR}\\]|\\.)*${QUOTE_SINGLE_CHAR}|${ALPHANUMERIC_EXTENDED_SOURCE}+)\s*${BRACKET_CLOSE_SOURCE}`;
 
-function splitStructureTrailingCardinality(raw: string): {
-  params: string;
-  cardinality?: NonNullable<StructureNode["cardinality"]>;
-} {
-  const trimmed = raw.trim();
-  const match = trimmed.match(STRUCT_TRAILING_CARD_RE);
-  if (!match?.groups || !match.groups.base) return { params: trimmed };
-  const card = structureCardinalityFromMatch(match.groups);
-  if (!card) return { params: trimmed };
-  const suffix = match.groups.private ? " private" : "";
-  return { params: `${match.groups.base.trim()}${suffix}`.trim(), cardinality: card };
-}
-
-const unquote = (value: string): string => value.trim().replace(/^["']|["']$/gu, "");
+const unquote = (value: string): string => {
+  const QUOTES: Regex = arkRegex.as(
+    `^[${QUOTE_DOUBLE_CHAR}${QUOTE_SINGLE_CHAR}]|[${QUOTE_DOUBLE_CHAR}${QUOTE_SINGLE_CHAR}]$`,
+    "gu",
+  );
+  return value.trim().replace(QUOTES, "");
+};
 const sortUnique = (values: Iterable<string>): string[] =>
   [...new Set([...values].map((v) => v.toLowerCase()))].toSorted((a, b) => a.localeCompare(b));
 
@@ -182,47 +181,77 @@ function normalizeStructureAtRuleRef(
   name: string,
   params: string,
 ): { selector: string; cardinality?: NonNullable<StructureNode["cardinality"]> } | undefined {
-  const cardSplit = splitStructureTrailingCardinality(params);
-  if (name.includes(":")) {
+  const RECORD_REF_NAME: Regex = arkRegex.as(`^${RECORD_REFERENCE_NAME_SOURCE}$`, "u");
+  const PROFILE: Regex = arkRegex.as(
+    String.raw`^${COLON_SOURCE}\s*(${ALPHANUMERIC_EXTENDED_SOURCE}+)$`,
+    "u",
+  );
+  const TYPED: Regex = arkRegex.as(
+    `^(${ALPHANUMERIC_EXTENDED_SOURCE}+)(?:${COLON_SOURCE}(${ALPHANUMERIC_EXTENDED_SOURCE}+))?$`,
+    "u",
+  );
+  const CUSTOM_MEDIA: Regex = arkRegex.as(
+    String.raw`^${PAREN_OPEN_SOURCE}\s*(${CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE})\s*${PAREN_CLOSE_SOURCE}$`,
+    "u",
+  );
+  const TYPED_CUSTOM_MEDIA: Regex = arkRegex.as(
+    String.raw`^(${ALPHANUMERIC_EXTENDED_SOURCE}+)\s+${PAREN_OPEN_SOURCE}\s*(${CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE})\s*${PAREN_CLOSE_SOURCE}$`,
+    "u",
+  );
+  const cardSplit = splitTrailingCardinality(params);
+  if (name.includes(COLON_CHAR)) {
     if (cardSplit.params.trim()) return undefined;
-    const [record, profile] = name.split(":", 2);
-    if (!RECORD_REF_NAME_RE.test(record) || !profile || !RECORD_REF_NAME_RE.test(profile)) {
+    const [record, profile] = name.split(COLON_CHAR, 2);
+    if (!RECORD_REF_NAME.test(record) || !profile || !RECORD_REF_NAME.test(profile)) {
       return undefined;
     }
-    return { selector: `@${record}:${profile}`, cardinality: cardSplit.cardinality };
+    return {
+      selector: `${AT_CHAR}${record}${COLON_CHAR}${profile}`,
+      cardinality: cardSplit.cardinality,
+    };
   }
-  if (!RECORD_REF_NAME_RE.test(name)) return undefined;
+  if (!RECORD_REF_NAME.test(name)) return undefined;
   const trimmed = cardSplit.params;
   if (RECORD_REF_KINDS.has(name)) {
-    const typedMedia = trimmed.match(RECORD_REF_TYPED_CUSTOM_MEDIA_RE);
+    const typedMedia = trimmed.match(TYPED_CUSTOM_MEDIA);
     if (typedMedia) {
       const kind = canonicalRecordKind(name);
       if (!kind) return undefined;
       return {
-        selector: `@${kind} ${typedMedia[1]} (${typedMedia[2]})`,
+        selector: `${AT_CHAR}${kind} ${typedMedia[1]} ${PAREN_OPEN_CHAR}${typedMedia[2]}${PAREN_CLOSE_CHAR}`,
         cardinality: cardSplit.cardinality,
       };
     }
-    const typed = trimmed.match(RECORD_REF_TYPED_RE);
+    const typed = trimmed.match(TYPED);
     if (!typed) return undefined;
     const kind = canonicalRecordKind(name);
     if (!kind) return undefined;
     return {
-      selector: `@${kind} ${typed[1]}${typed[2] ? `:${typed[2]}` : ""}`,
+      selector: `${AT_CHAR}${kind} ${typed[1]}${typed[2] ? `${COLON_CHAR}${typed[2]}` : ""}`,
       cardinality: cardSplit.cardinality,
     };
   }
-  if (!trimmed) return { selector: `@${name}`, cardinality: cardSplit.cardinality };
-  const customMedia = trimmed.match(RECORD_REF_CUSTOM_MEDIA_RE);
+  if (!trimmed) return { selector: `${AT_CHAR}${name}`, cardinality: cardSplit.cardinality };
+  const customMedia = trimmed.match(CUSTOM_MEDIA);
   if (customMedia) {
-    return { selector: `@${name} (${customMedia[1]})`, cardinality: cardSplit.cardinality };
+    return {
+      selector: `${AT_CHAR}${name} ${PAREN_OPEN_CHAR}${customMedia[1]}${PAREN_CLOSE_CHAR}`,
+      cardinality: cardSplit.cardinality,
+    };
   }
-  const profile = trimmed.match(RECORD_REF_PROFILE_RE);
+  const profile = trimmed.match(PROFILE);
   if (!profile) return undefined;
-  return { selector: `@${name}:${profile[1]}`, cardinality: cardSplit.cardinality };
+  return {
+    selector: `${AT_CHAR}${name}${COLON_CHAR}${profile[1]}`,
+    cardinality: cardSplit.cardinality,
+  };
 }
 
 function buildStructureFromNodes(nodes: readonly ChildNode[]): StructureNode[] {
+  const STRUCT_COLOC: Regex = arkRegex.as(
+    String.raw`${COLON_SOURCE}is${PAREN_OPEN_SOURCE}\s*([^,${PAREN_CLOSE_SOURCE}]+?)\s*${PAREN_CLOSE_SOURCE}`,
+    "u",
+  );
   const out: StructureNode[] = [];
   for (const node of nodes) {
     if (node.type === "atrule" && node.name === "scope") {
@@ -245,14 +274,14 @@ function buildStructureFromNodes(nodes: readonly ChildNode[]): StructureNode[] {
     }
     if (node.type !== "rule") continue;
     const rawSel = node.selector.trim();
-    const coloc = rawSel.match(STRUCT_COLOC_RE);
-    const withoutColoc = coloc ? rawSel.replace(STRUCT_COLOC_RE, "").trim() : rawSel;
-    const card = withoutColoc.match(STRUCT_CARD_RE);
+    const coloc = rawSel.match(STRUCT_COLOC);
+    const withoutColoc = coloc ? rawSel.replace(STRUCT_COLOC, "").trim() : rawSel;
+    const card = withoutColoc.match(STRUCTURE_CARDINALITY);
     const entry: StructureNode = {
       selector: card ? withoutColoc.slice(0, card.index).trim() : withoutColoc,
       children: buildStructureFromNodes(node.nodes ?? []),
     };
-    if (card?.groups) entry.cardinality = structureCardinalityFromMatch(card.groups);
+    if (card?.groups) entry.cardinality = cardinalityFromMatch(card.groups);
     if (coloc) entry.colocated = coloc[1].trim();
     out.push(entry);
   }
@@ -268,10 +297,11 @@ function parseElementToken(
   | undefined {
   const trimmed = token.trim().toLowerCase();
   if (!trimmed) return undefined;
-  if (trimmed === "*" || trimmed === "any") return { kind: "any" };
+  if (trimmed === ASTERISK_CHAR || trimmed === "any") return { kind: "any" };
   const group = HTML_ELEMENT_GROUPS[trimmed];
   if (group) return { kind: "group", alias: trimmed, members: group };
-  const m = trimmed.match(ELEMENT_TAG_RE);
+  const ELEMENT_TAG: Regex = arkRegex.as(`^${CSSDOC_ELEMENT_TAG_SOURCE}$`, "u");
+  const m = trimmed.match(ELEMENT_TAG);
   if (m) return { kind: "tag", name: m[1] };
   return undefined;
 }
@@ -361,13 +391,18 @@ interface Collected {
 
 /** Parse numbered legend rows (`1. ...`) from plain text. */
 function parseLegendRows(text: string): Map<number, string> {
+  const TAG_START: Regex = arkRegex.as(`^${AT_SOURCE}${ALPHA_SOURCE}`, "u");
+  const LEGEND_ROW: Regex = arkRegex.as(
+    String.raw`^(${DIGIT_SOURCE}+)${DOT_SOURCE}\s*([\s\S]*)$`,
+    "u",
+  );
   const out = new Map<number, string>();
   let current: number | undefined;
   for (const line of text.split("\n")) {
     const trimmed = line.trim();
     if (!trimmed) continue;
-    if (/^@[A-Za-z]/u.test(trimmed)) break;
-    const marker = trimmed.match(/^(\d+)\.\s*([\s\S]*)$/u);
+    if (TAG_START.exec(trimmed) !== null) break;
+    const marker = trimmed.match(LEGEND_ROW);
     if (marker) {
       current = Number.parseInt(marker[1], 10);
       out.set(current, marker[2].trim());
@@ -380,9 +415,13 @@ function parseLegendRows(text: string): Map<number, string> {
 
 /** Parse inline refs from plain text, capturing optional prose (`@ref 1. Prevent…`). */
 function parseInlineRefs(text: string): { refs: number[]; annotations: Map<number, string> } {
+  const INLINE_REF: Regex = arkRegex.as(
+    String.raw`${AT_SOURCE}ref\s+(${DIGIT_SOURCE}+)${DOT_SOURCE}?\s*([^\n]*)`,
+    "gu",
+  );
   const refs: number[] = [];
   const annotations = new Map<number, string>();
-  for (const m of text.matchAll(/@ref\s+(\d+)\.?\s*([^\n]*)/gu)) {
+  for (const m of text.matchAll(INLINE_REF)) {
     const n = Number.parseInt(m[1], 10);
     refs.push(n);
     const prose = m[2].trim();
@@ -399,11 +438,15 @@ function parseLegendFromInlineComment(text: string): {
   annotations: Map<number, string>;
   refs: number[];
 } {
+  const LEGEND_TAG: Regex = arkRegex.as(
+    `^${AT_SOURCE}(annotations|rule)${WORD_BOUNDARY_SOURCE}`,
+    "u",
+  );
   const stripped = stripCommentFraming(text);
   const lines = stripped.split("\n");
   const first = lines.find((line) => line.trim().length > 0)?.trim() ?? "";
   const { refs, annotations: inlineAnnotations } = parseInlineRefs(stripped);
-  if (!/^@(annotations|rule)\b/u.test(first)) return { annotations: inlineAnnotations, refs };
+  if (!LEGEND_TAG.test(first)) return { annotations: inlineAnnotations, refs };
   const body = lines.slice(1).join("\n");
   const legendAnnotations = parseLegendRows(body);
   // Merge: legend rows take precedence; inline @ref prose fills in any gaps.
@@ -422,12 +465,22 @@ function addCondition(acc: Collected, condition: CssCondition): void {
 
 /** Derive a CSS custom function from an `@function` at-rule. */
 function collectFunction(node: Extract<ChildNode, { type: "atrule" }>, acc: Collected): void {
+  const FUNCTION_NAME: Regex = arkRegex.as(`^(${CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE})`, "u");
+  const PARAMETERS: Regex = arkRegex.as(
+    `${PAREN_OPEN_SOURCE}([^${PAREN_CLOSE_SOURCE}]*)${PAREN_CLOSE_SOURCE}`,
+    "u",
+  );
+  const PARAMETER: Regex = arkRegex.as(`(${CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE})`, "gu");
+  const RETURNS: Regex = arkRegex.as(
+    String.raw`${WORD_BOUNDARY_SOURCE}returns${WORD_BOUNDARY_SOURCE}\s+(.+)$`,
+    "iu",
+  );
   const params = node.params.trim();
-  const nameMatch = params.match(/^(--[\w-]+)/u);
+  const nameMatch = params.match(FUNCTION_NAME);
   if (!nameMatch) return;
-  const paren = params.match(/\(([^)]*)\)/u);
-  const parameters = paren ? [...paren[1].matchAll(/(--[\w-]+)/gu)].map((m) => m[1]) : [];
-  const returns = params.match(/\breturns\b\s+(.+)$/iu);
+  const paren = params.match(PARAMETERS);
+  const parameters = paren ? [...paren[1].matchAll(PARAMETER)].map((m) => m[1]) : [];
+  const returns = params.match(RETURNS);
   let result = returns?.[1]?.trim();
   if (!result) {
     const resultDecl = node.nodes?.find((n) => n.type === "decl" && n.prop === "result");
@@ -456,6 +509,40 @@ function collect(
   // misattribute the parent's modifiers to this member (see `scopeMatchesBase`'s docs).
   ownScopeEligible = true,
 ): void {
+  const VAR: Regex = arkRegex.as(
+    String.raw`var${PAREN_OPEN_SOURCE}\s*(${TOKEN_CUSTOM_PROPERTY_SOURCE})`,
+    "gu",
+  );
+  const DEPRECATED: Regex = arkRegex.as(
+    String.raw`${AT_SOURCE}deprecated.*?use\s+(${DOT_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}+|${BRACKET_OPEN_SOURCE}[^${BRACKET_CLOSE_SOURCE}]*${BRACKET_CLOSE_SOURCE})`,
+    "u",
+  );
+  const TODO: Regex = arkRegex.as(String.raw`(^|\s)${AT_SOURCE}todo${WORD_BOUNDARY_SOURCE}`, "u");
+  const TODO_PREFIX: Regex = arkRegex.as(
+    String.raw`^${AT_SOURCE}todo${WORD_BOUNDARY_SOURCE}[${COLON_CHAR}\s]*`,
+    "u",
+  );
+  const CSSDOC_DIRECTIVE: Regex = arkRegex.as(String.raw`^\s*cssdoc${DASH_SOURCE}`, "u");
+  const WHITESPACE: Regex = arkRegex.as(String.raw`\s+`, "gu");
+  const TRUE: Regex = arkRegex.as("^true$", "iu");
+  const CUSTOM_STATE: Regex = arkRegex.as(
+    String.raw`${COLON_SOURCE}state${PAREN_OPEN_SOURCE}\s*(${ALPHANUMERIC_EXTENDED_SOURCE}+)\s*${PAREN_CLOSE_SOURCE}`,
+    "gu",
+  );
+  const ATTRIBUTE_STATE: Regex = arkRegex.as(ATTRIBUTE_STATE_SOURCE, "gu");
+  const SHADOW_PART: Regex = arkRegex.as(
+    String.raw`${COLON_SOURCE}${COLON_SOURCE}part${PAREN_OPEN_SOURCE}\s*(${ALPHANUMERIC_EXTENDED_SOURCE}+)\s*${PAREN_CLOSE_SOURCE}`,
+    "gu",
+  );
+  const PSEUDO: Regex = arkRegex.as(
+    `${COLON_SOURCE}${COLON_SOURCE}?${ALPHANUMERIC_EXTENDED_SOURCE}+(${PAREN_OPEN_SOURCE}[^${PAREN_CLOSE_SOURCE}]*${PAREN_CLOSE_SOURCE})?`,
+    "gu",
+  );
+  const FINAL_COMPOUND: Regex = arkRegex.as(
+    String.raw`([^\s${GREATER_THAN_CHAR}${TILDE_CHAR}+]+)\s*$`,
+    "u",
+  );
+  const CLASS_REF: Regex = arkRegex.as(`${DOT_SOURCE}(${CLASS_IDENT})`, "gu");
   let pendingCanonical: string | undefined;
   let pendingDescription: string | undefined;
 
@@ -464,24 +551,22 @@ function collect(
       const legend = parseLegendFromInlineComment(node.text);
       for (const [ref, text] of legend.annotations) acc.annotations.set(ref, text);
       for (const ref of legend.refs) acc.refs.push(ref);
-      const dep = node.text.match(/@deprecated.*?use\s+(\.[\w-]+|\[[^\]]*\])/u);
+      const dep = node.text.match(DEPRECATED);
       if (dep) {
         pendingCanonical = matcher.normalizeMember(dep[1]);
-      } else if (/(^|\s)@todo\b/u.test(node.text)) {
+      } else if (TODO.test(node.text)) {
         // A `/* @todo … */` note — a record to-do, not a member description.
-        const todo = stripCommentFraming(node.text)
-          .replace(/^@todo\b[:\s]*/u, "")
-          .trim();
+        const todo = stripCommentFraming(node.text).replace(TODO_PREFIX, "").trim();
         if (todo) acc.todos.push(todo);
-      } else if (!/^\s*cssdoc-/u.test(node.text) && inlineMode !== "ignore") {
+      } else if (!CSSDOC_DIRECTIVE.test(node.text) && inlineMode !== "ignore") {
         // Any other comment is provisional prose for the next member-defining rule.
-        const text = stripCommentFraming(node.text).replace(/\s+/gu, " ").trim();
+        const text = stripCommentFraming(node.text).replace(WHITESPACE, " ").trim();
         if (text) pendingDescription = text;
       }
       continue;
     }
     if (node.type === "decl") {
-      for (const m of node.value.matchAll(VAR_RE)) acc.consumed.add(m[1]);
+      for (const m of node.value.matchAll(VAR)) acc.consumed.add(m[1]);
       continue;
     }
     if (node.type === "atrule") {
@@ -497,7 +582,7 @@ function collect(
         acc.declared.set(name, {
           name,
           syntax: syntax === undefined ? undefined : unquote(syntax),
-          inherits: inherits === undefined ? undefined : /^true$/iu.test(inherits.trim()),
+          inherits: inherits === undefined ? undefined : TRUE.test(inherits.trim()),
           defaultValue: initial === undefined ? undefined : initial.trim(),
         });
       } else if (node.name === "function") {
@@ -514,7 +599,7 @@ function collect(
         const params = node.params.trim();
         let containerName: string | undefined;
         let query = params;
-        if (params && !params.startsWith("(")) {
+        if (params && !params.startsWith(PAREN_OPEN_CHAR)) {
           const sp = params.indexOf(" ");
           if (sp > 0) {
             containerName = params.slice(0, sp);
@@ -553,27 +638,27 @@ function collect(
       for (const selector of node.selector.split(",")) {
         // States, before pseudos are stripped: custom `:state(x)`, native pseudo-classes, and
         // shadow `::part(x)` parts are all read off the raw selector.
-        for (const s of selector.matchAll(/:state\(\s*([\w-]+)\s*\)/gu)) {
+        for (const s of selector.matchAll(CUSTOM_STATE)) {
           if (!acc.states.has(s[1])) acc.states.set(s[1], { name: s[1], kind: "custom" });
         }
         for (const ps of matcher.pseudoStatesIn(selector)) {
           if (!acc.states.has(ps.name))
             acc.states.set(ps.name, { name: ps.name, kind: "pseudo-class" });
         }
-        for (const as of selector.matchAll(ATTR_STATE_RE)) {
-          const attrSelector = `[${as[1]}=${as[2]}]`;
-          const name = `${as[1]}=${unquote(as[2])}`;
+        for (const as of selector.matchAll(ATTRIBUTE_STATE)) {
+          const attrSelector = `${BRACKET_OPEN_CHAR}${as[1]}${EQUALS_CHAR}${as[2]}${BRACKET_CLOSE_CHAR}`;
+          const name = `${as[1]}${EQUALS_CHAR}${unquote(as[2])}`;
           if (!acc.states.has(name))
             acc.states.set(name, { name, kind: "attribute", selector: attrSelector });
         }
-        for (const sp of selector.matchAll(/::part\(\s*([\w-]+)\s*\)/gu)) {
+        for (const sp of selector.matchAll(SHADOW_PART)) {
           if (!acc.shadowParts.has(sp[1])) acc.shadowParts.set(sp[1], { name: sp[1] });
         }
         for (const pe of matcher.pseudoElementsIn(selector)) {
           if (!acc.pseudoElements.has(pe.name))
             acc.pseudoElements.set(pe.name, { name: pe.name, description: pendingDescription });
         }
-        const bare = selector.replace(/::?[\w-]+(\([^)]*\))?/gu, ""); // drop pseudos
+        const bare = selector.replace(PSEUDO, ""); // drop pseudos
         const matchable = ampEnabled ? bare : neutralizeAmp(bare);
         const mods = matcher.modifiersIn(matchable, baseNoDot);
         const modNames = new Set(mods.map((mod) => mod.name));
@@ -606,8 +691,8 @@ function collect(
         }
         if (inScope) {
           // Only derive parts from the final compound — ancestor segments are scoping context.
-          const finalBare = bare.match(/([^\s>~+]+)\s*$/u)?.[1] ?? bare;
-          for (const m of finalBare.matchAll(CLASS_REF_RE)) {
+          const finalBare = bare.match(FINAL_COMPOUND)?.[1] ?? bare;
+          for (const m of finalBare.matchAll(CLASS_REF)) {
             const part = m[1];
             if (modNames.has(part)) continue; // a modifier, not a part
             if (part === baseNoDot) continue; // the record's own base class, not a part of itself
@@ -619,7 +704,7 @@ function collect(
       }
       for (const child of node.nodes ?? []) {
         if (child.type === "decl")
-          for (const m of child.value.matchAll(VAR_RE)) acc.consumed.add(m[1]);
+          for (const m of child.value.matchAll(VAR)) acc.consumed.add(m[1]);
       }
       if (node.nodes) {
         // `&`/`:scope` keep meaning this same scope root one level deeper only while every comma branch
@@ -676,22 +761,24 @@ function buildEntry(
   inlineMode: InlineCommentMode,
   source?: CssSource,
 ): CssDocEntry {
+  const ATTRIBUTE_STATE_TAG: Regex = arkRegex.as(`^${ATTRIBUTE_STATE_SOURCE}$`, "u");
+  const LEADING_DOT: Regex = arkRegex.as(`^${DOT_SOURCE}`, "u");
   // Base selector: an explicit @selector/@class wins immediately when set.
   // Otherwise infer from bare single-class rules — preferring the one ending with the record name.
   let className = doc.className ?? "";
-  if (className && !SINGLE_CLASS_RE.test(className)) {
+  if (className && !SINGLE_CLASS.test(className)) {
     // Non-class explicit selector (attribute, ID, :host, compound, …) — trust it as-is.
   } else if (!className) {
     const bare = nodes
       .filter((n): n is ChildNode & { selector: string } => n.type === "rule")
       .map((n) => n.selector.trim())
-      .filter((sel) => SINGLE_CLASS_RE.test(sel));
-    const nameEsc = name.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
-    const endsWithName = new RegExp(`(?:^|-)${nameEsc}$`, "u");
+      .filter((sel) => SINGLE_CLASS.test(sel));
+    const nameEsc = escapeRegex(name);
+    const endsWithName: Regex = arkRegex.as(`(?:^|${DASH_SOURCE})${nameEsc}$`, "u");
     // A masked `${p}` prefix abuts the name with no `-` (`.aaaabadge`), so the boundary match above
     // misses it and would fall through to the first bare rule — a wrapper like `.aaaabadge-wrapper`.
     // Fall back to any bare class ending in the name (shortest first, so `.badge` beats `.superbadge`).
-    const endsLoose = new RegExp(`${nameEsc}$`, "u");
+    const endsLoose: Regex = arkRegex.as(`${nameEsc}$`, "u");
     className =
       bare.find((sel) => endsWithName.test(sel.slice(1))) ??
       bare
@@ -700,7 +787,7 @@ function buildEntry(
       bare[0] ??
       "";
   }
-  if (!className) className = `.${name}`;
+  if (!className) className = `${DOT_CHAR}${name}`;
 
   const acc: Collected = {
     className,
@@ -719,14 +806,14 @@ function buildEntry(
     annotations: new Map(),
     refs: [],
   };
-  const baseNoDot = className.replace(/^\./u, "");
+  const baseNoDot = className.replace(LEADING_DOT, "");
   const prefixNoDot = className.endsWith(name)
     ? className.slice(1, className.length - name.length) // ".button" − "button" → ""
     : "";
   // An authored `@selector` naming a descendant compound (e.g. `.pfx-list > li`) truncates to just its
   // leading class (see the `@selector` grammar case) — that truncated base is indistinguishable from
   // (often identical to) a PARENT record's own base, so `&`/`:scope` must never resolve to it here.
-  const ownScopeEligible = !doc.fullSelector || !/[\s>+~]/u.test(doc.fullSelector);
+  const ownScopeEligible = !doc.fullSelector || !SELECTOR_COMBINATOR.test(doc.fullSelector);
   collect(
     nodes,
     acc,
@@ -746,17 +833,28 @@ function buildEntry(
       raw: string,
       allowBareCanonical: boolean,
     ): { canonical?: string; note?: string } => {
+      const OPEN_BRACKET: Regex = arkRegex.as(`^${BRACKET_OPEN_SOURCE}`, "u");
+      const CLOSE_BRACKET: Regex = arkRegex.as(`${BRACKET_CLOSE_SOURCE}$`, "u");
+      const LINK: Regex = arkRegex.as(
+        String.raw`${BRACE_OPEN_SOURCE}${AT_SOURCE}link\s+(${CSSDOC_MODIFIER_REFERENCE_SOURCE})\s*${BRACE_CLOSE_SOURCE}`,
+        "u",
+      );
+      const LINK_TEXT: Regex = arkRegex.as(
+        String.raw`${BRACE_OPEN_SOURCE}${AT_SOURCE}link\s+[^${BRACE_CLOSE_SOURCE}]*${BRACE_CLOSE_SOURCE}`,
+        "u",
+      );
+      const BARE: Regex = arkRegex.as(`^(${CSSDOC_MODIFIER_REFERENCE_SOURCE})(.*)$`, "u");
       const trimmed = raw.trim();
       const normalizeCanonical = (value: string): string =>
-        value.replace(/^\./u, "").replace(/^\[/u, "").replace(/\]$/u, "");
-      const link = trimmed.match(/\{@link\s+(\.?[\w-]+|\[[^\]]*\])\s*\}/u);
+        value.replace(LEADING_DOT, "").replace(OPEN_BRACKET, "").replace(CLOSE_BRACKET, "");
+      const link = trimmed.match(LINK);
       if (link) {
         const canonical = normalizeCanonical(link[1]);
-        const note = trimmed.replace(/\{@link\s+[^}]*\}/u, "").trim() || undefined;
+        const note = trimmed.replace(LINK_TEXT, "").trim() || undefined;
         return { canonical, note };
       }
       if (allowBareCanonical) {
-        const bare = trimmed.match(/^(\.?[\w-]+|\[[^\]]*\])(.*)$/u);
+        const bare = trimmed.match(BARE);
         if (bare) {
           const canonical = normalizeCanonical(bare[1]);
           const note = bare[2].trim() || undefined;
@@ -765,8 +863,16 @@ function buildEntry(
       }
       return { note: trimmed || undefined };
     };
-    const depInline = mdoc.description?.match(/^(?:[-—]\s*)?@deprecated\b\s*([\s\S]*)$/u);
-    const aliasInline = mdoc.description?.match(/^(?:[-—]\s*)?@alias\b\s*([\s\S]*)$/u);
+    const DEPRECATED_INLINE: Regex = arkRegex.as(
+      String.raw`^(?:[${DASH_SOURCE}—]\s*)?${AT_SOURCE}deprecated${WORD_BOUNDARY_SOURCE}\s*([\s\S]*)$`,
+      "u",
+    );
+    const ALIAS_INLINE: Regex = arkRegex.as(
+      String.raw`^(?:[${DASH_SOURCE}—]\s*)?${AT_SOURCE}alias${WORD_BOUNDARY_SOURCE}\s*([\s\S]*)$`,
+      "u",
+    );
+    const depInline = mdoc.description?.match(DEPRECATED_INLINE);
+    const aliasInline = mdoc.description?.match(ALIAS_INLINE);
     const depInlineParsed = depInline ? parseCanonicalAndNote(depInline[1], false) : undefined;
     const aliasInlineParsed = aliasInline ? parseCanonicalAndNote(aliasInline[1], true) : undefined;
     const authoredDescription = depInline || aliasInline ? undefined : mdoc.description;
@@ -810,7 +916,7 @@ function buildEntry(
         name: modName,
         prop,
         value,
-        ...(modName.includes("*") ? { pattern: true } : {}),
+        ...(modName.includes(ASTERISK_CHAR) ? { pattern: true } : {}),
         description: authoredDescription,
         deprecated: dep,
         alias,
@@ -855,12 +961,12 @@ function buildEntry(
     // authored name (`@cssstate [aria-sort="ascending"]`) is an attribute-reflected state. The stored
     // name/selector for the attribute form must match the auto-derivation below (`key=unquoted-value`),
     // so an authored description and a CSS-derived usage merge into one state, not two.
-    const isPseudo = rawState.startsWith(":");
-    const attrMatch = rawState.match(ATTR_STATE_TAG_RE);
+    const isPseudo = rawState.startsWith(COLON_CHAR);
+    const attrMatch = rawState.match(ATTRIBUTE_STATE_TAG);
     const state = isPseudo
       ? rawState.slice(1)
       : attrMatch
-        ? `${attrMatch[1]}=${unquote(attrMatch[2])}`
+        ? `${attrMatch[1]}${EQUALS_CHAR}${unquote(attrMatch[2])}`
         : rawState;
     const existing = acc.states.get(state);
     if (existing) existing.description = description || existing.description;
@@ -869,7 +975,11 @@ function buildEntry(
         name: state,
         kind: isPseudo ? "pseudo-class" : attrMatch ? "attribute" : "custom",
         description: description || undefined,
-        ...(attrMatch ? { selector: `[${attrMatch[1]}=${attrMatch[2]}]` } : {}),
+        ...(attrMatch
+          ? {
+              selector: `${BRACKET_OPEN_CHAR}${attrMatch[1]}${EQUALS_CHAR}${attrMatch[2]}${BRACKET_CLOSE_CHAR}`,
+            }
+          : {}),
       });
   }
   for (const prop of doc.cssProperties) {
@@ -1047,7 +1157,9 @@ function buildEntry(
  */
 function isDocComment(node: Extract<ChildNode, { type: "comment" }>, source: string): boolean {
   const offset = node.source?.start?.offset;
-  return offset === undefined ? node.text.startsWith("*") : source.startsWith("/**", offset);
+  return offset === undefined
+    ? node.text.startsWith(ASTERISK_CHAR)
+    : source.startsWith("/**", offset);
 }
 
 /**

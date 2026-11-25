@@ -11,6 +11,32 @@
  *
  * @module
  */
+import type { Regex } from "arkregex";
+import { regex as arkRegex } from "arkregex";
+import {
+  ALPHANUMERIC_EXTENDED_SOURCE,
+  ASTERISK_CHAR,
+  ASTERISK_SOURCE,
+  BRACKET_CLOSE_CHAR,
+  BRACKET_CLOSE_SOURCE,
+  BRACKET_OPEN_CHAR,
+  BRACKET_OPEN_SOURCE,
+  CARET_CHAR,
+  COLON_SOURCE,
+  CSS_CLASS_ATTRIBUTE_SELECTOR_SOURCE,
+  DASH_SOURCE,
+  DOUBLE_DASH_SOURCE,
+  DOLLAR_CHAR,
+  DOT_CHAR,
+  DOT_SOURCE,
+  EQUALS_CHAR,
+  PIPE_CHAR,
+  QUOTE_DOUBLE_CHAR,
+  QUOTE_SINGLE_CHAR,
+  TILDE_CHAR,
+  UNDERSCORE_CHAR,
+  escapeRegex,
+} from "@cssdoc/regex";
 
 /**
  * How a modifier attaches to a component's base class.
@@ -110,9 +136,19 @@ export const DEFAULT_PSEUDO_ELEMENTS: readonly string[] = [
 /** The built-in convention presets. Other schemes use the custom object (see the docs). */
 export const MODIFIER_PRESETS: Record<string, ModifierConvention> = {
   /** BEM / SUIT — `.button--primary`, with `.button__element` sub-elements. The default. */
-  bem: { structure: "suffix", separator: "--", elementSeparator: "__", propValue: false },
+  bem: {
+    structure: "suffix",
+    separator: DOUBLE_DASH_SOURCE,
+    elementSeparator: `${UNDERSCORE_CHAR}${UNDERSCORE_CHAR}`,
+    propValue: false,
+  },
   /** rscss — `.button.-color-secondary`, split into `prop`/`value`. */
-  rscss: { structure: "chained", separator: "-", propValue: true, propValueSeparator: "-" },
+  rscss: {
+    structure: "chained",
+    separator: DASH_SOURCE,
+    propValue: true,
+    propValueSeparator: DASH_SOURCE,
+  },
   /** OOCSS / bare chained classes — `.button.primary` (any class chained to the base). */
   bare: { structure: "chained", separator: "", propValue: false },
 };
@@ -143,7 +179,7 @@ export function resolveModifierConvention(input?: ModifierConventionInput): Modi
     statePseudoClasses: base.statePseudoClasses ?? [...DEFAULT_STATE_PSEUDO_CLASSES],
     pseudoElements: base.pseudoElements ?? [...DEFAULT_PSEUDO_ELEMENTS],
     propValue: base.propValue ?? false,
-    propValueSeparator: base.propValueSeparator ?? "-",
+    propValueSeparator: base.propValueSeparator ?? DASH_SOURCE,
   };
 }
 
@@ -160,11 +196,26 @@ export interface ModifierHit {
   pattern?: boolean;
 }
 
-/** Escape a string for literal use inside a `RegExp`. */
-const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
-
 /** Strip one layer of matching quotes from an attribute value. */
-const unquote = (v: string): string => v.trim().replace(/^(["'])([\s\S]*)\1$/u, "$2");
+const unquote = (v: string): string => {
+  const QUOTED: Regex = arkRegex.as(
+    String.raw`^([${QUOTE_DOUBLE_CHAR}${QUOTE_SINGLE_CHAR}])([\s\S]*)\1$`,
+    "u",
+  );
+  return v.trim().replace(QUOTED, "$2");
+};
+
+const ATTRIBUTE: Regex = arkRegex.as(
+  `${BRACKET_OPEN_SOURCE}([^${BRACKET_CLOSE_SOURCE}]*)${BRACKET_CLOSE_SOURCE}`,
+  "gu",
+);
+
+function attributeChain(baseEsc: string): Regex {
+  return arkRegex.as(
+    `(?:${DOT_SOURCE}${baseEsc}|${COLON_SOURCE}scope|&)((?:${ATTRIBUTE.source})+)`,
+    "gu",
+  );
+}
 
 /**
  * The single owner of modifier recognition for one convention: finds modifiers on selectors, derives
@@ -195,12 +246,12 @@ export class ModifierMatcher {
         (a: string, b: string) => b.length - a.length,
       );
     this.separators = longestFirst(convention.separator);
-    this.sepAlt = `(?:${this.separators.map(escapeRe).join("|")})`;
+    this.sepAlt = `(?:${this.separators.map(escapeRegex).join("|")})`;
     this.elementSeparators = convention.elementSeparator
       ? longestFirst(convention.elementSeparator).filter((s) => s !== "")
       : [];
     this.elementSepAlt = this.elementSeparators.length
-      ? `(?:${this.elementSeparators.map(escapeRe).join("|")})`
+      ? `(?:${this.elementSeparators.map(escapeRegex).join("|")})`
       : "";
     this.statePrefixes = (convention.statePrefixes ?? []).toSorted(
       (a: string, b: string) => b.length - a.length,
@@ -235,7 +286,7 @@ export class ModifierMatcher {
    * already dropped (as `parse.ts`/`index.ts` do); the base is given without its leading dot.
    */
   modifiersIn(selector: string, baseNoDot: string): ModifierHit[] {
-    const baseEsc = escapeRe(baseNoDot);
+    const baseEsc = escapeRegex(baseNoDot);
     const hits: ModifierHit[] = [];
     const seen = new Set<string>();
     const push = (name: string): void => {
@@ -246,17 +297,20 @@ export class ModifierMatcher {
 
     if (this.convention.structure === "suffix") {
       // `.base<sep><body>` — the modifier is conjoined into the base class name.
-      const re = new RegExp(`\\.(${baseEsc}${this.sepAlt}[\\w-]+)`, "gu");
-      for (const m of selector.matchAll(re)) push(m[1]);
+      const MODIFIER: Regex = arkRegex.as(
+        `${DOT_SOURCE}(${baseEsc}${this.sepAlt}${ALPHANUMERIC_EXTENDED_SOURCE}+)`,
+        "gu",
+      );
+      for (const m of selector.matchAll(MODIFIER)) push(m[1]);
       for (const name of this.classAttrFamilies(selector, baseEsc)) push(name);
       return hits;
     }
 
     if (this.convention.structure === "attribute") {
       // `.base[<attr>]…` / `:scope[<attr>]…` / `&[<attr>]…` — attribute selectors chained onto the base.
-      const chain = new RegExp(`(?:\\.${baseEsc}|:scope|&)((?:\\[[^\\]]*\\])+)`, "gu");
-      for (const m of selector.matchAll(chain)) {
-        for (const a of m[1].matchAll(/\[([^\]]*)\]/gu)) {
+      const CHAIN = attributeChain(baseEsc);
+      for (const m of selector.matchAll(CHAIN)) {
+        for (const a of m[1].matchAll(ATTRIBUTE)) {
           const name = this.normalizeAttribute(a[1]);
           if (name && this.attributeMatches(name)) push(name);
         }
@@ -265,11 +319,16 @@ export class ModifierMatcher {
     }
 
     // chained: one or more classes chained onto the base, each carrying a separator prefix.
-    const cls = `\\.${this.sepAlt}[\\w-]+`;
-    const chain = new RegExp(`(?:\\.${baseEsc}|:scope|&)((?:${cls})+)`, "gu");
-    const inner = new RegExp(`\\.(${this.sepAlt}[\\w-]+)`, "gu");
-    for (const m of selector.matchAll(chain)) {
-      for (const c of m[1].matchAll(inner)) if (!this.isStateClass(c[1])) push(c[1]);
+    const CLASS: Regex = arkRegex.as(
+      `${DOT_SOURCE}(${this.sepAlt}${ALPHANUMERIC_EXTENDED_SOURCE}+)`,
+      "gu",
+    );
+    const CHAIN: Regex = arkRegex.as(
+      `(?:${DOT_SOURCE}${baseEsc}|${COLON_SOURCE}scope|&)((?:${CLASS.source})+)`,
+      "gu",
+    );
+    for (const m of selector.matchAll(CHAIN)) {
+      for (const c of m[1].matchAll(CLASS)) if (!this.isStateClass(c[1])) push(c[1]);
     }
     for (const name of this.classAttrFamilies(selector, baseEsc)) push(name);
     return hits;
@@ -285,10 +344,10 @@ export class ModifierMatcher {
    */
   private classAttrFamilies(selector: string, baseEsc: string): string[] {
     const out: string[] = [];
-    const chain = new RegExp(`(?:\\.${baseEsc}|:scope|&)((?:\\[[^\\]]*\\])+)`, "gu");
-    const attr = /\[\s*class\s*([~^$*|]?)=\s*(?:"([^"]*)"|'([^']*)'|([^\]\s]*))\s*\]/gu;
-    for (const m of selector.matchAll(chain)) {
-      for (const a of m[1].matchAll(attr)) {
+    const CHAIN = attributeChain(baseEsc);
+    const CLASS_ATTRIBUTE: Regex = arkRegex.as(CSS_CLASS_ATTRIBUTE_SELECTOR_SOURCE, "gu");
+    for (const m of selector.matchAll(CHAIN)) {
+      for (const a of m[1].matchAll(CLASS_ATTRIBUTE)) {
         const value = (a[2] ?? a[3] ?? a[4] ?? "").trim();
         const name = this.classAttrFamily(a[1], value);
         if (name) out.push(name);
@@ -302,10 +361,10 @@ export class ModifierMatcher {
     const sep = this.separators.find((s) => s !== "" && value.startsWith(s));
     if (sep === undefined && this.separators.every((s) => s !== "")) return undefined; // not a modifier value
     if (value.length <= (sep?.length ?? 0)) return undefined; // no literal core beyond the separator
-    if (op === "^") return undefined; // anchors to the attribute start (base class), not a chained modifier
-    if (op === "$") return `*${value}`;
-    if (op === "" || op === "~") return value; // exact class → a concrete modifier
-    return `${value}*`; // *=, |= → prefix family
+    if (op === CARET_CHAR) return undefined; // anchors to the attribute start (base class), not a chained modifier
+    if (op === DOLLAR_CHAR) return `${ASTERISK_CHAR}${value}`;
+    if (op === "" || op === TILDE_CHAR) return value; // exact class → a concrete modifier
+    return `${value}${ASTERISK_CHAR}`; // *=, |= → prefix family
   }
 
   /**
@@ -315,10 +374,13 @@ export class ModifierMatcher {
    */
   elementsIn(selector: string, baseNoDot: string): { name: string; modifiers: ModifierHit[] }[] {
     if (this.convention.structure !== "suffix" || this.elementSepAlt === "") return [];
-    const baseEsc = escapeRe(baseNoDot);
-    const re = new RegExp(`\\.(${baseEsc}${this.elementSepAlt}[\\w-]+)`, "gu");
+    const baseEsc = escapeRegex(baseNoDot);
+    const ELEMENT: Regex = arkRegex.as(
+      `${DOT_SOURCE}(${baseEsc}${this.elementSepAlt}${ALPHANUMERIC_EXTENDED_SOURCE}+)`,
+      "gu",
+    );
     const byName = new Map<string, ModifierHit[]>();
-    for (const m of selector.matchAll(re)) {
+    for (const m of selector.matchAll(ELEMENT)) {
       const { element, modifier } = this.splitElementModifier(m[1], baseNoDot);
       const mods = byName.get(element) ?? [];
       if (modifier && !mods.some((x) => x.name === modifier.name)) mods.push(modifier);
@@ -355,14 +417,20 @@ export class ModifierMatcher {
    */
   statesIn(selector: string, baseNoDot: string): { name: string }[] {
     if (this.statePrefixes.length === 0) return [];
-    const baseEsc = escapeRe(baseNoDot);
-    const prefixAlt = `(?:${this.statePrefixes.map(escapeRe).join("|")})`;
-    const chain = new RegExp(`(?:\\.${baseEsc}|:scope|&)((?:\\.[\\w-]+)+)`, "gu");
-    const inner = new RegExp(`\\.(${prefixAlt}[\\w-]+)`, "gu");
+    const baseEsc = escapeRegex(baseNoDot);
+    const prefixAlt = `(?:${this.statePrefixes.map(escapeRegex).join("|")})`;
+    const CHAIN: Regex = arkRegex.as(
+      `(?:${DOT_SOURCE}${baseEsc}|${COLON_SOURCE}scope|&)((?:${DOT_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}+)+)`,
+      "gu",
+    );
+    const STATE: Regex = arkRegex.as(
+      `${DOT_SOURCE}(${prefixAlt}${ALPHANUMERIC_EXTENDED_SOURCE}+)`,
+      "gu",
+    );
     const seen = new Set<string>();
     const out: { name: string }[] = [];
-    for (const m of selector.matchAll(chain)) {
-      for (const c of m[1].matchAll(inner)) {
+    for (const m of selector.matchAll(CHAIN)) {
+      for (const c of m[1].matchAll(STATE)) {
         if (!seen.has(c[1])) {
           seen.add(c[1]);
           out.push({ name: c[1] });
@@ -379,9 +447,13 @@ export class ModifierMatcher {
    */
   pseudoStatesIn(selector: string): { name: string }[] {
     if (this.statePseudoClasses.size === 0) return [];
+    const PSEUDO_STATE: Regex = arkRegex.as(
+      `(?<!${COLON_SOURCE})${COLON_SOURCE}(${ALPHANUMERIC_EXTENDED_SOURCE}+)`,
+      "gu",
+    );
     const seen = new Set<string>();
     const out: { name: string }[] = [];
-    for (const m of selector.matchAll(/(?<!:):([\w-]+)/gu)) {
+    for (const m of selector.matchAll(PSEUDO_STATE)) {
       const name = m[1];
       if (this.statePseudoClasses.has(name) && !seen.has(name)) {
         seen.add(name);
@@ -398,9 +470,13 @@ export class ModifierMatcher {
    */
   pseudoElementsIn(selector: string): { name: string }[] {
     if (this.pseudoElements.size === 0) return [];
+    const PSEUDO_ELEMENT: Regex = arkRegex.as(
+      `${COLON_SOURCE}${COLON_SOURCE}(${ALPHANUMERIC_EXTENDED_SOURCE}+)`,
+      "gu",
+    );
     const seen = new Set<string>();
     const out: { name: string }[] = [];
-    for (const m of selector.matchAll(/::([\w-]+)/gu)) {
+    for (const m of selector.matchAll(PSEUDO_ELEMENT)) {
       const name = m[1];
       if (this.pseudoElements.has(name) && !seen.has(name)) {
         seen.add(name);
@@ -412,11 +488,13 @@ export class ModifierMatcher {
 
   /** Derive `prop`/`value` for a modifier `name` (as returned by {@link modifiersIn} or authored). */
   analyze(name: string): { prop: string; value?: string } {
-    if (name.includes("*")) {
+    if (name.includes(ASTERISK_CHAR)) {
+      const WILDCARD: Regex = arkRegex.as(ASTERISK_SOURCE, "gu");
+      const TRAILING_DASHES: Regex = arkRegex.as(`${DASH_SOURCE}+$`, "u");
       // A `*` family has no clean value; group by its literal core (the body minus wildcard and seps).
       const body =
         this.convention.structure === "suffix" ? this.stripToBody(name) : this.stripPrefix(name);
-      const prop = body.replace(/\*/gu, "").replace(/-+$/u, "");
+      const prop = body.replace(WILDCARD, "").replace(TRAILING_DASHES, "");
       return { prop: prop || body };
     }
     if (this.convention.structure === "attribute") {
@@ -433,7 +511,7 @@ export class ModifierMatcher {
       this.convention.structure === "suffix" ? this.stripToBody(name) : this.stripPrefix(name);
 
     if (!this.convention.propValue) return { prop: body };
-    const sep = this.convention.propValueSeparator ?? "-";
+    const sep = this.convention.propValueSeparator ?? DASH_SOURCE;
     const at = body.indexOf(sep);
     if (at === -1) return { prop: body };
     return { prop: body.slice(0, at), value: body.slice(at + sep.length) };
@@ -441,7 +519,9 @@ export class ModifierMatcher {
 
   /** Render a modifier `name` as the selector fragment it denotes (`.name` or `[name]`). */
   selectorFor(name: string): string {
-    return this.convention.structure === "attribute" ? `[${name}]` : `.${name}`;
+    return this.convention.structure === "attribute"
+      ? `${BRACKET_OPEN_CHAR}${name}${BRACKET_CLOSE_CHAR}`
+      : `${DOT_CHAR}${name}`;
   }
 
   /**
@@ -451,17 +531,24 @@ export class ModifierMatcher {
    */
   matchesModifier(name: string, used: string): boolean {
     if (name === used) return true;
-    if (!name.includes("*")) return false;
-    return new RegExp(`^${name.split("*").map(escapeRe).join("[\\w-]*")}$`, "u").test(used);
+    if (!name.includes(ASTERISK_CHAR)) return false;
+    const MODIFIER: Regex = arkRegex.as(
+      `^${name.split(ASTERISK_CHAR).map(escapeRegex).join(`${ALPHANUMERIC_EXTENDED_SOURCE}*`)}$`,
+      "u",
+    );
+    return MODIFIER.test(used);
   }
 
   /** Normalize a member token/expression to its canonical `name` key (the inverse of authoring noise). */
   normalizeMember(token: string): string {
     if (this.convention.structure === "attribute") {
-      const inner = token.replace(/^\[/u, "").replace(/\]$/u, "");
+      const OPEN_BRACKET: Regex = arkRegex.as(`^${BRACKET_OPEN_SOURCE}`, "u");
+      const CLOSE_BRACKET: Regex = arkRegex.as(`${BRACKET_CLOSE_SOURCE}$`, "u");
+      const inner = token.replace(OPEN_BRACKET, "").replace(CLOSE_BRACKET, "");
       return this.normalizeAttribute(inner);
     }
-    return token.replace(/^\./u, "");
+    const LEADING_DOT: Regex = arkRegex.as(`^${DOT_SOURCE}`, "u");
+    return token.replace(LEADING_DOT, "");
   }
 
   /**
@@ -472,7 +559,7 @@ export class ModifierMatcher {
     if (this.convention.structure === "attribute") {
       return this.attributeMatches(this.normalizeMember(token));
     }
-    const name = token.replace(/^\./u, "");
+    const name = this.normalizeMember(token);
     // A state class is a state, not a modifier usage.
     if (this.isStateClass(name)) return false;
     if (this.convention.structure === "suffix") {
@@ -493,7 +580,7 @@ export class ModifierMatcher {
     if (this.convention.structure === "attribute") {
       return this.looksLikeUsage(token, baseNoDot) ? "modifier" : undefined;
     }
-    const name = token.replace(/^\./u, "");
+    const name = this.normalizeMember(token);
     if (this.isStateClass(name)) return "state";
     if (
       baseNoDot &&
@@ -508,18 +595,22 @@ export class ModifierMatcher {
   /** Canonicalize an attribute expression (bracket-inner): normalize quotes to double, trim. */
   private normalizeAttribute(inner: string): string {
     const trimmed = inner.trim();
-    const eq = trimmed.indexOf("=");
+    const eq = trimmed.indexOf(EQUALS_CHAR);
     if (eq === -1) return trimmed;
     // Keep any comparison operator char (`~`, `|`, `^`, `$`, `*`) that precedes `=`.
     const attr = trimmed.slice(0, eq + 1);
     const value = unquote(trimmed.slice(eq + 1));
-    return `${attr}"${value}"`;
+    return `${attr}${QUOTE_DOUBLE_CHAR}${value}${QUOTE_DOUBLE_CHAR}`;
   }
 
   /** Does an attribute-expression's name carry one of the convention's required prefixes? */
   private attributeMatches(name: string): boolean {
-    const eq = name.indexOf("=");
-    const attr = (eq === -1 ? name : name.slice(0, eq)).replace(/[~|^$*]$/u, "");
+    const ATTRIBUTE_OPERATOR: Regex = arkRegex.as(
+      `(?:${[TILDE_CHAR, PIPE_CHAR, CARET_CHAR, DOLLAR_CHAR, ASTERISK_CHAR].map(escapeRegex).join("|")})$`,
+      "u",
+    );
+    const eq = name.indexOf(EQUALS_CHAR);
+    const attr = (eq === -1 ? name : name.slice(0, eq)).replace(ATTRIBUTE_OPERATOR, "");
     return attr.length > 0 && this.separators.some((s) => attr.startsWith(s));
   }
 }

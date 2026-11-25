@@ -26,6 +26,20 @@
  *
  * @module
  */
+import type { Regex } from "arkregex";
+import { regex as arkRegex } from "arkregex";
+import {
+  ALPHANUMERIC_EXTENDED_SOURCE,
+  AT_CHAR,
+  COLON_SOURCE,
+  CSSDOC_QUALIFIED_REFERENCE_SOURCE,
+  CSSDOC_STRUCTURE_SLOT_SOURCE,
+  DOT_CHAR,
+  DOT_SOURCE,
+  POUND_CHAR,
+  QUOTE_DOUBLE_CHAR,
+  STRUCTURE_RECORD_KIND_SOURCE,
+} from "@cssdoc/regex";
 import { cardinalityIsDashed, cardinalityToken } from "./cardinality.ts";
 import type { StructureNode } from "./model.ts";
 
@@ -50,9 +64,6 @@ export interface MermaidOptions {
    */
   resolveComponent?: ResolveStructureComponent;
 }
-
-/** Match a `slot` / `slot[name="x"]` node (a light-DOM content region → the default/named slot). */
-const SLOT_NODE = /^slot(?:\[\s*name\s*=\s*["']?([\w-]+)["']?\s*\])?$/u;
 
 type NodeClass = "cssdoc-root" | "cssdoc-part" | "cssdoc-slot" | "cssdoc-component";
 
@@ -80,21 +91,23 @@ const CLASS_DEFS = [
 ];
 
 /** Every bare class in a selector, e.g. a comma-separated alternation list `.a, .b` → `["a", "b"]`. */
-const allClasses = (selector: string): string[] =>
-  [...selector.matchAll(/\.([\w-]+)/gu)].map((m) => m[1]);
-
-const STRUCTURE_REF_KIND_RE = /^(component|name|utility|rule|declaration|layout)$/u;
+const allClasses = (selector: string): string[] => {
+  const CLASS: Regex = arkRegex.as(`${DOT_SOURCE}(${ALPHANUMERIC_EXTENDED_SOURCE}+)`, "gu");
+  return [...selector.matchAll(CLASS)].map((m) => m[1]);
+};
 
 const parseStructureRecordRef = (
   selector: string,
 ): { kind?: string; name: string; profile?: string; private?: boolean } | undefined => {
-  if (!selector.startsWith("@")) return undefined;
+  if (!selector.startsWith(AT_CHAR)) return undefined;
   const raw = selector.slice(1).trim();
   if (!raw) return undefined;
 
-  const typed = raw.match(
-    /^(component|name|utility|rule|declaration|layout)\s+([\w-]+(?:\.[\w-]+)*)(?::([\w-]+))?(?:\s+(private))?$/u,
+  const TYPED: Regex = arkRegex.as(
+    String.raw`^(${STRUCTURE_RECORD_KIND_SOURCE})\s+(${CSSDOC_QUALIFIED_REFERENCE_SOURCE})(?:${COLON_SOURCE}(${ALPHANUMERIC_EXTENDED_SOURCE}+))?(?:\s+(private))?$`,
+    "u",
   );
+  const typed = raw.match(TYPED);
   if (typed) {
     return {
       kind: typed[1] === "name" || typed[1] === "rule" ? "component" : typed[1],
@@ -104,18 +117,26 @@ const parseStructureRecordRef = (
     };
   }
 
-  const shorthand = raw.match(/^([\w-]+(?:\.[\w-]+)*)(?::([\w-]+))?(?:\s+(private))?$/u);
+  const SHORTHAND: Regex = arkRegex.as(
+    String.raw`^(${CSSDOC_QUALIFIED_REFERENCE_SOURCE})(?:${COLON_SOURCE}(${ALPHANUMERIC_EXTENDED_SOURCE}+))?(?:\s+(private))?$`,
+    "u",
+  );
+  const STRUCTURE_REF_KIND: Regex = arkRegex.as(`^${STRUCTURE_RECORD_KIND_SOURCE}$`, "u");
+  const shorthand = raw.match(SHORTHAND);
   if (!shorthand) return undefined;
-  if (STRUCTURE_REF_KIND_RE.test(shorthand[1])) return undefined;
+  if (STRUCTURE_REF_KIND.exec(shorthand[1]) !== null) return undefined;
   return { name: shorthand[1], profile: shorthand[2], private: Boolean(shorthand[3]) };
 };
 
 /** Strip a leading `.` or `#` so a co-located selector can be passed to a component resolver. */
 const colocNormalize = (sel: string): string =>
-  sel.startsWith(".") || sel.startsWith("#") ? sel.slice(1) : sel;
+  sel.startsWith(DOT_CHAR) || sel.startsWith(POUND_CHAR) ? sel.slice(1) : sel;
 
 /** Escape a label for a quoted Mermaid node body. */
-const esc = (text: string): string => text.replace(/"/gu, "&quot;");
+const esc = (text: string): string => {
+  const QUOTE: Regex = arkRegex.as(QUOTE_DOUBLE_CHAR, "gu");
+  return text.replace(QUOTE, "&quot;");
+};
 
 interface Classified {
   klass: NodeClass;
@@ -126,6 +147,7 @@ interface Classified {
 
 /** Classify one node: slot → root → sibling component → plain part. */
 function classify(node: StructureNode, isRoot: boolean, options: MermaidOptions): Classified {
+  const SLOT_NODE: Regex = arkRegex.as(`^${CSSDOC_STRUCTURE_SLOT_SOURCE}$`, "u");
   const slot = node.selector.match(SLOT_NODE);
   if (slot) return { klass: "cssdoc-slot", label: slot[1] ? `‹content: ${slot[1]}›` : "‹content›" };
   if (isRoot) {

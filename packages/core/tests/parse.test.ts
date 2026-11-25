@@ -10,7 +10,84 @@ import {
   toMermaidVariants,
 } from "../src/index.ts";
 import postcss from "postcss";
-import { parseDocComment, parseStructure } from "../src/grammar.ts";
+import { parseDocComment, parseStructure, splitPartArg } from "../src/grammar.ts";
+import { ModifierMatcher } from "../src/modifier.ts";
+
+test.each(["—", "-", "--"])("parses %s description separators across tag kinds", (separator) => {
+  const doc = parseDocComment(`/**
+ * @slot action ${separator} Slot description
+ * @media (min-width: 20px) ${separator} Media description
+ * @part .label ${separator} Part description
+ * @modifier -active ${separator} Modifier description
+ * @cssproperty --color <color> ${separator} Property description
+ * @cssstate [aria-selected] ${separator} State description
+ */`);
+  expect(doc.slots.get("action")).toBe("Slot description");
+  expect(doc.conditions).toContainEqual({
+    type: "media",
+    query: "(min-width: 20px)",
+    description: "Media description",
+  });
+  expect(doc.parts.get("label")).toBe("Part description");
+  expect(doc.modifiers.get("-active")?.description).toBe("Modifier description");
+  expect(doc.cssProperties[0]?.description).toBe("Property description");
+  expect(doc.cssStates.get("[aria-selected]")).toBe("State description");
+});
+
+test("does not split a slot description on three hyphens", () => {
+  const doc = parseDocComment("/**\n * @slot action --- not a separator\n */");
+  expect(doc.slots.get("action --- not a separator")).toBe("");
+});
+
+test("unknown block tags with underscores and digits don't become summary text", () => {
+  const doc = parseDocComment(`/**
+ * @summary First.
+ * @unknown_tag2 Ignored.
+ * Also ignored.
+ * @remarks Remaining.
+ */`);
+  expect(doc.summary).toBe("First.");
+  expect(doc.remarks).toBe("Remaining.");
+});
+
+test("parses quoted selector tokens and permissive custom-property names in tags", () => {
+  const doc = parseDocComment(`/**
+ * @selector [data-name="a b"].control
+ * @cssstate [data-value='a]b'] — State description.
+ * @cssproperty --123 <number> — Property description.
+ * @function --_helper — Function description.
+ */`);
+  expect(doc.className).toBe('[data-name="a b"].control');
+  expect(doc.cssStates.get("[data-value='a]b']")).toBe("State description.");
+  expect(doc.cssProperties[0]).toEqual({
+    name: "--123",
+    syntax: "<number>",
+    description: "Property description.",
+  });
+  expect(doc.functions.get("--_helper")).toBe("Function description.");
+});
+
+test("parses canonical modifier references and annotation punctuation", () => {
+  const doc = parseDocComment(`/**
+ * @modifier -old — @deprecated {@link .replacement} Use instead.
+ * @modifier -legacy — @alias [aria-selected=true] Preferred.
+ * @modifier -marked — - @alias .active Alias note.
+ * @modifier -global — @global Shared.
+ */`);
+  expect(doc.modifiers.get("-old")).toEqual({
+    deprecatedCanonical: "replacement",
+    deprecated: "Use instead.",
+  });
+  expect(doc.modifiers.get("-legacy")).toEqual({
+    aliasCanonical: "aria-selected=true",
+    alias: "Preferred.",
+  });
+  expect(doc.modifiers.get("-marked")).toEqual({
+    aliasCanonical: "active",
+    alias: "Alias note.",
+  });
+  expect(doc.modifiers.get("-global")).toEqual({ global: true, description: "Shared." });
+});
 
 test("example labels are metadata only when explicitly declared on the tag line", () => {
   const doc = parseDocComment(`/**
@@ -259,6 +336,19 @@ test("@part with descendant chain: full selector stored, alias or final-compound
   // No spurious part named "class" from the attribute key of the chain's first segment.
   expect(entry.parts.find((p) => p.name === "class")).toBeUndefined();
 });
+
+test.each([">", "~", "+"])(
+  "part selectors distinguish %s combinators from aliases",
+  (combinator) => {
+    const selector = `.parent ${combinator} button`;
+    expect(splitPartArg(selector)).toEqual({ selector, name: "button", description: undefined });
+    expect(splitPartArg(`${selector} alias_2-x — Description`)).toEqual({
+      selector,
+      name: "alias_2-x",
+      description: "Description",
+    });
+  },
+);
 
 test("inScope scan only derives parts from the final compound of a descendant chain", () => {
   const [entry] = parseCssDocs(
@@ -873,6 +963,18 @@ test("attribute (CUBE) convention: data attributes map to prop/value; parts unaf
   expect(card.parts.map((p) => p.name)).toEqual(["title"]);
 });
 
+test.each([".card", ":scope", "&"])(
+  "attribute modifiers are extracted from chained selectors on %s",
+  (base) => {
+    const matcher = new ModifierMatcher({ structure: "attribute", separator: "data-" });
+    const hits = matcher.modifiersIn(
+      `${base}[data-variant='ghost'][data-loading][role=button]`,
+      "card",
+    );
+    expect(hits.map((hit) => hit.name)).toEqual(['data-variant="ghost"', "data-loading"]);
+  },
+);
+
 test("a separator array matches several chained prefixes (is-/has-)", () => {
   const css =
     `/**\n * @component card\n */\n.card {}\n` +
@@ -883,6 +985,76 @@ test("a separator array matches several chained prefixes (is-/has-)", () => {
   // Only the is-/has- prefixed classes are modifiers; `.featured` is neither.
   expect(card.modifiers.map((m) => m.name).sort()).toEqual(["has-icon", "is-open"]);
   expect(card.modifiers.find((m) => m.name === "is-open")?.prop).toBe("open");
+});
+
+test("chained modifiers are extracted from each base while state classes are excluded", () => {
+  const matcher = new ModifierMatcher({
+    structure: "chained",
+    separator: "",
+    statePrefixes: ["is-"],
+  });
+  const hits = matcher.modifiersIn(
+    ".card.primary.is-open.small, :scope.secondary, &.tertiary",
+    "card",
+  );
+  expect(hits.map((hit) => hit.name)).toEqual(["primary", "small", "secondary", "tertiary"]);
+});
+
+test("state classes are deduplicated across chained selectors", () => {
+  const matcher = new ModifierMatcher({
+    structure: "chained",
+    separator: "",
+    statePrefixes: ["is-", "has-"],
+  });
+  expect(matcher.statesIn(".card.is-open.primary, :scope.has-icon, &.is-open.is-", "card")).toEqual(
+    [{ name: "is-open" }, { name: "has-icon" }],
+  );
+});
+
+test("pseudo states ignore pseudo-elements and deduplicate matches", () => {
+  const matcher = new ModifierMatcher({
+    structure: "chained",
+    separator: "",
+    statePseudoClasses: ["disabled", "before"],
+  });
+  expect(matcher.pseudoStatesIn(".card:disabled::before:disabled")).toEqual([{ name: "disabled" }]);
+});
+
+test("modifier matching treats regex metacharacters in separators and families literally", () => {
+  const matcher = new ModifierMatcher({ structure: "suffix", separator: "." });
+  expect(matcher.modifiersIn(".card.primary", "card").map((hit) => hit.name)).toEqual([
+    "card.primary",
+  ]);
+  expect(matcher.modifiersIn(".cardXprimary", "card")).toEqual([]);
+  expect(matcher.matchesModifier("icon.*", "icon.home")).toBe(true);
+  expect(matcher.matchesModifier("icon.*", "icon.")).toBe(true);
+  expect(matcher.matchesModifier("icon.*", "iconXhome")).toBe(false);
+  expect(matcher.matchesModifier("icon.*", "icon.é")).toBe(false);
+});
+
+test("attribute modifier values strip only matching quote pairs", () => {
+  const matcher = new ModifierMatcher({ structure: "attribute", separator: "data-" });
+  expect(matcher.analyze("data-size='wide'")).toEqual({ prop: "size", value: "wide" });
+  expect(matcher.analyze('data-size="wide"')).toEqual({ prop: "size", value: "wide" });
+  expect(matcher.analyze("data-size='wide\"")).toEqual({ prop: "size", value: "'wide\"" });
+});
+
+test("attribute usage ignores a trailing comparison operator when checking the name", () => {
+  const matcher = new ModifierMatcher({ structure: "attribute", separator: "" });
+  for (const operator of ["~", "|", "^", "$", "*"]) {
+    expect(matcher.looksLikeUsage(`${operator}=value`)).toBe(false);
+    expect(matcher.looksLikeUsage(`data-size${operator}=value`)).toBe(true);
+  }
+  expect(matcher.looksLikeUsage("=value")).toBe(false);
+  expect(matcher.looksLikeUsage("data-size=value")).toBe(true);
+});
+
+test("member normalization removes each outer bracket independently and only one leading dot", () => {
+  const attributes = new ModifierMatcher({ structure: "attribute", separator: "data-" });
+  expect(attributes.normalizeMember("[data-size=wide")).toBe('data-size="wide"');
+  expect(attributes.normalizeMember("data-size=wide]")).toBe('data-size="wide"');
+  const classes = new ModifierMatcher({ structure: "chained", separator: "" });
+  expect(classes.normalizeMember("..active")).toBe(".active");
 });
 
 test("a custom is- convention picks up state classes", () => {
@@ -1508,6 +1680,18 @@ test("compileCustomMediaDeclarations: resolver overrides absorbed inline declara
   ).toBe("@custom-media --desktop-nav (width >= 64rem);\n");
 });
 
+test("inferred layout references validate each name and profile independently", () => {
+  const [layout] = parseCssDocs(
+    "/** @layout shell */ .shell { @nav:wide {} @header {} @sidebar {} @component footer {} @bad:5 {} }",
+  );
+  expect(layout.structure?.[0].children.map((node) => node.selector)).toEqual([
+    "@nav:wide",
+    "@header",
+    "@sidebar",
+    "@component footer",
+  ]);
+});
+
 test("layout implicit structure is discarded when multiple top-level roots are present", () => {
   const [layout] = parseCssDocs(
     ["/**", " * @layout template", " */", "html {}", "main {}"].join("\n"),
@@ -1560,6 +1744,16 @@ test("toMermaid shapes/classes each node by kind, with cardinality on the edge",
   expect(mermaid).toMatch(/n0 -->\|0\.\.n\| n\d+/u); // .tag:many
   expect(mermaid).toMatch(/n0 -->\|1\.\.n\| n\d+/u); // .item:more
   expect(mermaid).toMatch(/n0 -\.->\|0\.\.1\| n\d+/u); // .close-button:optional
+});
+
+test.each([
+  ["slot", "‹content›"],
+  ["slot[name=icon]", "‹content: icon›"],
+  ["slot[ name = 'header_1' ]", "‹content: header_1›"],
+  ["slot[name=\"icon']", "‹content: icon›"],
+])("toMermaid classifies %s as a slot", (selector, label) => {
+  const mermaid = toMermaid([{ selector, children: [] }]);
+  expect(mermaid).toContain(`[/"${label}"/]:::cssdoc-slot`);
 });
 
 test("toMermaid renders a co-located node as a component node with a compound label", () => {
@@ -1661,6 +1855,51 @@ test("@structure bounded cardinality also parses on `@component` at-rule refs", 
   ]);
 });
 
+test.each([
+  ["optional", "optional"],
+  ["opt", "optional"],
+  ["many", "many"],
+  ["one-or-more", "one-or-more"],
+  ["more", "one-or-more"],
+  ["max-5", "max-5"],
+  ["one-or-more:max-3", "one-or-more-max-3"],
+  ["more:max-4", "one-or-more-max-4"],
+])("explicit and inferred structures agree on :%s", (suffix, cardinality) => {
+  const css = `.root { .item:${suffix} {} @component button:${suffix} {} }`;
+  const explicit = parseStructure(css, postcss.parse);
+  const [layout] = parseCssDocs(`/** @layout root */\n.root { .item:${suffix} {} }`);
+  const expected = [
+    {
+      selector: ".root",
+      children: [
+        { selector: ".item", cardinality, children: [] },
+        { selector: "@component button", cardinality, children: [] },
+      ],
+    },
+  ];
+  expect(explicit).toEqual(expected);
+  expect(layout.structure).toEqual([
+    { selector: ".root", children: [{ selector: ".item", cardinality, children: [] }] },
+  ]);
+});
+
+test("@structure preserves private member flags after cardinality", () => {
+  expect(
+    parseStructure(".root { @member button:more:max-4 private {} }", postcss.parse, "root"),
+  ).toEqual([
+    {
+      selector: ".root",
+      children: [
+        {
+          selector: "@component root.button private",
+          cardinality: "one-or-more-max-4",
+          children: [],
+        },
+      ],
+    },
+  ]);
+});
+
 test("@structure a nested `@variant` group is a local choice between alternative subtrees", () => {
   const [entry] = parseCssDocs(
     [
@@ -1751,6 +1990,19 @@ test("@structure captures an optional leading description without disturbing the
   expect(noDesc.structureDescription).toBeUndefined();
   expect(noDesc.structure).toHaveLength(1);
 });
+
+test.each([".tabs", "#tabs", ":host", "[data-tabs]", "*", "&", "> .tabs", "+ .tabs", "~ .tabs"])(
+  "@structure doesn't treat a multiline selector starting with %s as a description",
+  (selector) => {
+    const doc = parseDocComment(
+      `/**\n * @structure ${selector}\n * {}\n */`,
+      new CssDocConfiguration(),
+      postcss.parse,
+    );
+    expect(doc.structureDescription).toBeUndefined();
+    expect(doc.structure).toEqual([{ selector, children: [] }]);
+  },
+);
 
 test("@structure keeps compound selectors verbatim and never throws on a malformed body", () => {
   // A compound node — `:has()`/`:is()`/`:not()` express relationships between parts.

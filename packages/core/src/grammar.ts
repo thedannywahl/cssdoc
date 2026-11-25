@@ -41,7 +41,51 @@ import type { ChildNode } from "postcss";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import { CssDocConfiguration } from "./configuration.ts";
-import { DOT_CHAR, POUND_CHAR, BRACKET_OPEN_CHAR, BRACKET_CLOSE_CHAR } from "@cssdoc/regex";
+import {
+  cardinalityFromMatch,
+  splitTrailingCardinality,
+  STRUCTURE_CARDINALITY,
+} from "./cardinality.ts";
+import {
+  DOT_CHAR,
+  POUND_CHAR,
+  BRACKET_OPEN_CHAR,
+  BRACKET_CLOSE_CHAR,
+  CSSDOC_ATTRIBUTE_SELECTOR_SOURCE,
+  CSSDOC_SELECTOR_TOKEN_SOURCE,
+  CSSDOC_QUALIFIED_REFERENCE_SOURCE,
+  CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE,
+  CSSDOC_BLOCK_TAG_NAME_SOURCE,
+  CSSDOC_EXAMPLE_LABEL_SOURCE,
+  CSSDOC_DESCRIPTION_SEPARATOR_SOURCE,
+  CSSDOC_MODIFIER_ANNOTATION_PREFIX_SOURCE,
+  CSSDOC_MODIFIER_REFERENCE_SOURCE,
+  STRUCTURE_RECORD_KIND_SOURCE,
+  COMMENT_START_SOURCE,
+  COMMENT_LINE_MARKER_SOURCE,
+  ASTERISK_SOURCE,
+  FORWARD_SLASH_SOURCE,
+  AT_SOURCE,
+  AT_CHAR,
+  DOT_SOURCE,
+  RECORD_REFERENCE_NAME_SOURCE,
+  DIGIT_SOURCE,
+  DASH_SOURCE,
+  ALPHANUMERIC_EXTENDED_SOURCE,
+  COLON_CHAR,
+  COLON_SOURCE,
+  BRACE_OPEN_CHAR,
+  BRACE_OPEN_SOURCE,
+  BRACE_CLOSE_SOURCE,
+  BRACE_CLOSE_CHAR,
+  BRACKET_OPEN_SOURCE,
+  BRACKET_CLOSE_SOURCE,
+  PAREN_OPEN_SOURCE,
+  PAREN_CLOSE_SOURCE,
+  PAREN_CLOSE_CHAR,
+  WORD_BOUNDARY_SOURCE,
+  SPACE_TAB_SOURCE,
+} from "@cssdoc/regex";
 import type {
   CssParse,
   CssRelated,
@@ -72,8 +116,6 @@ function isReleaseStage(value: string): value is CssReleaseStage {
   return RELEASE_STAGES.includes(value as CssReleaseStage);
 }
 
-// Selector attribute key pattern: [attr-name or [attr-name=value or similar
-const SELECTOR_ATTR_KEY_RE: Regex = arkRegex.as(/^\[([^=\s~^$*|[\]]+)/u.source, "u");
 /**
  * The record-opening tags and the {@link CssRecordKind} each selects, as the default boundary map.
  * `@name` and legacy `@rule` are aliases for `@component`. A {@link CssDocConfiguration} may add
@@ -249,12 +291,14 @@ export interface ParsedDoc {
  * `@part`, `@wrapper`, and similar tags keyed by element identity rather than full modifier expression.
  */
 export function deriveSelectorName(sel: string): string {
-  if (sel.startsWith(".")) return sel.slice(1);
-  if (sel.startsWith("#")) return sel.slice(1);
+  if (sel.startsWith(DOT_CHAR)) return sel.slice(1);
+  if (sel.startsWith(POUND_CHAR)) return sel.slice(1);
   if (sel.startsWith(":host")) return "host";
-  const attrKey = sel.match(SELECTOR_ATTR_KEY_RE)?.[1];
+  const SELECTOR_ATTR_KEY: Regex = arkRegex.as(/^\[([^=\s~^$*|[\]]+)/u.source, "u");
+  const attrKey = sel.match(SELECTOR_ATTR_KEY)?.[1];
   if (attrKey) return attrKey;
-  return sel.replace(/^\W+/u, "") || sel;
+  const LEADING_NON_WORD: Regex = arkRegex.as(/^\W+/u.source, "u");
+  return sel.replace(LEADING_NON_WORD, "") || sel;
 }
 
 /**
@@ -273,47 +317,74 @@ function deriveModifierKey(sel: string): string {
 
 /** Split a tag's argument into `head` (a selector/name/token) and `description` on ` — ` or ` - `. */
 function splitDesc(rest: string): { head: string; description?: string } {
-  const m = rest.match(/^(\S+)\s+(?:—|-{1,2})\s+([\s\S]*)$/u);
+  const DESCRIPTION: Regex = arkRegex.as(
+    String.raw`^(\S+)\s+${CSSDOC_DESCRIPTION_SEPARATOR_SOURCE}\s+([\s\S]*)$`,
+    "u",
+  );
+  const m = rest.match(DESCRIPTION);
   if (m) return { head: m[1], description: normalizeMultilineDescription(m[2]) };
   return { head: rest.trim() || rest };
 }
 
 /** Split any argument into `query` (everything before the first ` — `/` - `) and `description`. */
 function splitQuery(rest: string): { query: string; description?: string } {
-  const m = rest.match(/^([\s\S]*?)\s+(?:—|-{1,2})\s+([\s\S]*)$/u);
+  const QUERY: Regex = arkRegex.as(
+    String.raw`^([\s\S]*?)\s+${CSSDOC_DESCRIPTION_SEPARATOR_SOURCE}\s+([\s\S]*)$`,
+    "u",
+  );
+  const m = rest.match(QUERY);
   if (m) return { query: m[1].trim(), description: normalizeMultilineDescription(m[2]) };
   return { query: rest.trim() };
 }
 
 /** Strip the comment framing (`/**`, `*\/`, and leading ` * `) from a raw block-comment body. */
 export function stripCommentFraming(raw: string): string {
+  const COMMENT_START: Regex = arkRegex.as(`^${COMMENT_START_SOURCE}${ASTERISK_SOURCE}?`);
+  const COMMENT_END: Regex = arkRegex.as(`${ASTERISK_SOURCE}${FORWARD_SLASH_SOURCE}$`);
+  const COMMENT_LINE_PREFIX: Regex = arkRegex.as(String.raw`^\s*${COMMENT_LINE_MARKER_SOURCE}\s?`);
   return raw
-    .replace(/^\/\*\*?/, "")
-    .replace(/\*\/$/, "")
+    .replace(COMMENT_START, "")
+    .replace(COMMENT_END, "")
     .split("\n")
-    .map((line) => line.replace(/^\s*\*\s?/, ""))
+    .map((line) => line.replace(COMMENT_LINE_PREFIX, ""))
     .join("\n")
     .trim();
 }
 
 /** Parse the inner body of a `@modifier` line's argument into a {@link DocModifier}. */
 function parseModifierBody(description: string | undefined): DocModifier {
-  const normalizeCanonical = (value: string | undefined): string | undefined =>
-    value?.replace(/^\./u, "").replace(/^\[/u, "").replace(/\]$/u, "");
+  const normalizeCanonical = (value: string | undefined): string | undefined => {
+    const LEADING_DOT: Regex = arkRegex.as(`^${DOT_SOURCE}`, "u");
+    const LEADING_BRACKET: Regex = arkRegex.as(`^${BRACKET_OPEN_SOURCE}`, "u");
+    const TRAILING_BRACKET: Regex = arkRegex.as(`${BRACKET_CLOSE_SOURCE}$`, "u");
+    return value
+      ?.replace(LEADING_DOT, "")
+      .replace(LEADING_BRACKET, "")
+      .replace(TRAILING_BRACKET, "");
+  };
 
   const parseCanonicalAndNote = (
     raw: string,
     allowBareCanonical: boolean,
   ): { canonical?: string; note?: string } => {
     const trimmed = raw.trim();
-    const link = trimmed.match(/\{@link\s+(\.?[\w-]+|\[[^\]]*\])\s*\}/u);
+    const LINK: Regex = arkRegex.as(
+      String.raw`${BRACE_OPEN_SOURCE}${AT_SOURCE}link\s+(${CSSDOC_MODIFIER_REFERENCE_SOURCE})\s*${BRACE_CLOSE_SOURCE}`,
+      "u",
+    );
+    const link = trimmed.match(LINK);
     if (link) {
       const canonical = normalizeCanonical(link[1]);
-      const note = trimmed.replace(/\{@link\s+[^}]*\}/u, "").trim() || undefined;
+      const LINK_TEXT: Regex = arkRegex.as(
+        String.raw`${BRACE_OPEN_SOURCE}${AT_SOURCE}link\s+[^${BRACE_CLOSE_CHAR}]*${BRACE_CLOSE_SOURCE}`,
+        "u",
+      );
+      const note = trimmed.replace(LINK_TEXT, "").trim() || undefined;
       return { canonical, note };
     }
     if (allowBareCanonical) {
-      const bare = trimmed.match(/^(\.?[\w-]+|\[[^\]]*\])(.*)$/u);
+      const BARE: Regex = arkRegex.as(`^(${CSSDOC_MODIFIER_REFERENCE_SOURCE})(.*)$`, "u");
+      const bare = trimmed.match(BARE);
       if (bare) {
         const canonical = normalizeCanonical(bare[1]);
         const note = bare[2].trim() || undefined;
@@ -325,7 +396,11 @@ function parseModifierBody(description: string | undefined): DocModifier {
 
   // A description beginning `@deprecated …` marks the modifier deprecated. A `{@link -canonical}` in the
   // remainder names the modifier to use instead; any other text is the free-text note.
-  const dep = description?.match(/^(?:[-—]\s*)?@deprecated\b\s*([\s\S]*)$/u);
+  const DEPRECATED: Regex = arkRegex.as(
+    String.raw`^${CSSDOC_MODIFIER_ANNOTATION_PREFIX_SOURCE}${AT_SOURCE}deprecated${WORD_BOUNDARY_SOURCE}\s*([\s\S]*)$`,
+    "u",
+  );
+  const dep = description?.match(DEPRECATED);
   if (dep) {
     const parsed = parseCanonicalAndNote(dep[1], false);
     if (!parsed.note && !parsed.canonical) return { deprecatedFlag: true };
@@ -333,7 +408,11 @@ function parseModifierBody(description: string | undefined): DocModifier {
   }
   // A description beginning `@alias …` maps this modifier to a canonical one while keeping both names
   // valid. The canonical may be authored as `{@link -canonical}` or `-canonical` directly.
-  const alias = description?.match(/^(?:[-—]\s*)?@alias\b\s*([\s\S]*)$/u);
+  const ALIAS: Regex = arkRegex.as(
+    String.raw`^${CSSDOC_MODIFIER_ANNOTATION_PREFIX_SOURCE}${AT_SOURCE}alias${WORD_BOUNDARY_SOURCE}\s*([\s\S]*)$`,
+    "u",
+  );
+  const alias = description?.match(ALIAS);
   if (alias) {
     const parsed = parseCanonicalAndNote(alias[1], true);
     return { alias: parsed.note, aliasCanonical: parsed.canonical };
@@ -341,19 +420,35 @@ function parseModifierBody(description: string | undefined): DocModifier {
   // A description beginning `@interaction …` marks a JS-toggled class with no CSS declarations of its
   // own (e.g. `@modifier -should-animate — @interaction Toggled while the ring grows.`); it's exempt
   // from the "documented modifier isn't defined by any selector" check.
-  const inter = description?.match(/^@interaction\b\s*([\s\S]*)$/u);
+  const INTERACTION: Regex = arkRegex.as(
+    String.raw`^${AT_SOURCE}interaction${WORD_BOUNDARY_SOURCE}\s*([\s\S]*)$`,
+    "u",
+  );
+  const inter = description?.match(INTERACTION);
   if (inter) return { description: inter[1].trim() || undefined, interaction: true };
   // A description beginning `@global …` marks this modifier as applying to any record.
-  const glob = description?.match(/^@global\b\s*([\s\S]*)$/u);
+  const GLOBAL: Regex = arkRegex.as(
+    String.raw`^${AT_SOURCE}global${WORD_BOUNDARY_SOURCE}\s*([\s\S]*)$`,
+    "u",
+  );
+  const glob = description?.match(GLOBAL);
   if (glob) return { description: glob[1].trim() || undefined, global: true };
   // A description beginning `@affects <component>.<target> …` names a descendant record (a part, pseudo,
   // or state on it) whose rendering this modifier changes — e.g. a `-layout-stacked` modifier on `table`
   // that changes how `table-cell` renders, via `.table.-layout-stacked .table-cell::before {…}` in
   // table-cell's own stylesheet, which otherwise has nothing on `table`'s side pointing a reader there.
-  const aff = description?.match(/^@affects\b\s*([\s\S]*)$/u);
+  const AFFECTS_TAG: Regex = arkRegex.as(
+    String.raw`^${AT_SOURCE}affects${WORD_BOUNDARY_SOURCE}\s*([\s\S]*)$`,
+    "u",
+  );
+  const aff = description?.match(AFFECTS_TAG);
   if (aff) {
     const rest = aff[1].trim();
-    const m = rest.match(/^([\w-]+)\.([\w-]+)\s*(?:(?:—|-{1,2})\s*([\s\S]*))?$/u);
+    const AFFECTS: Regex = arkRegex.as(
+      String.raw`^([\w-]+)${DOT_SOURCE}([\w-]+)\s*(?:${CSSDOC_DESCRIPTION_SEPARATOR_SOURCE}\s*([\s\S]*))?$`,
+      "u",
+    );
+    const m = rest.match(AFFECTS);
     if (m) {
       return {
         affects: [{ component: m[1], target: m[2], description: m[3]?.trim() || undefined }],
@@ -420,15 +515,20 @@ export function parseDocComment(
   // a block that continues until the next `@tag`. CSS at-rules (e.g. @scope, @media) inside a
   // @structure block are NOT treated as new tag openers — they're part of the CSS content.
   const blocks: string[] = [];
+  const TAG_LINE: Regex = arkRegex.as(
+    String.raw`^\s*${AT_SOURCE}(${CSSDOC_BLOCK_TAG_NAME_SOURCE})`,
+    "u",
+  );
+  const INDENTED_AT_RULE: Regex = arkRegex.as(String.raw`^\s+${AT_SOURCE}`, "u");
   let inStructureBlock = false;
   for (const line of body.split("\n")) {
-    const tagMatch = line.match(/^\s*@([a-zA-Z][\w-]*)/u);
+    const tagMatch = line.match(TAG_LINE);
     if (tagMatch) {
       const isKnownTag = configuration.tryGetTagDefinition(tagMatch[1]) !== undefined;
       if (isKnownTag) {
         // Inside `@structure`, indented `@...` lines are CSS content (record refs and at-rules),
         // not new doc-tag blocks.
-        if (inStructureBlock && tagMatch[1] !== "structure" && /^\s+@/u.test(line)) {
+        if (inStructureBlock && tagMatch[1] !== "structure" && INDENTED_AT_RULE.test(line)) {
           if (blocks.length) blocks[blocks.length - 1] += `\n${line}`;
           continue;
         }
@@ -446,8 +546,12 @@ export function parseDocComment(
     }
   }
 
+  const BLOCK_HEADER: Regex = arkRegex.as(
+    String.raw`^${AT_SOURCE}(${CSSDOC_BLOCK_TAG_NAME_SOURCE})${SPACE_TAB_SOURCE}*([\s\S]*)$`,
+    "u",
+  );
   for (const block of blocks) {
-    const m = block.match(/^@([a-zA-Z][\w-]*)[ \t]*([\s\S]*)$/u);
+    const m = block.match(BLOCK_HEADER);
     if (!m) continue;
     const tagName = m[1];
     const rest = m[2].trim();
@@ -455,7 +559,8 @@ export function parseDocComment(
     if (!definition || !configuration.isTagSupported(definition)) continue;
 
     if (definition.syntaxKind === "record") {
-      doc.component = rest.split(/\s/u)[0];
+      const WHITESPACE: Regex = arkRegex.as(String.raw`\s`, "u");
+      doc.component = rest.split(WHITESPACE)[0];
       doc.kind = definition.recordKind;
       continue;
     }
@@ -469,18 +574,20 @@ export function parseDocComment(
     if (definition.syntaxKind === "inline") continue; // inline tags live inside descriptions
 
     if (definition.canonicalName === "example") {
-      const header =
-        /^labels=\[([a-z0-9]+(?:-[a-z0-9]+)*(?:[ \t]*,[ \t]*[a-z0-9]+(?:-[a-z0-9]+)*)*)\](?:\n|$)/u.exec(
-          m[2],
-        );
+      const LABELS_HEADER: Regex = arkRegex.as(
+        String.raw`^labels=${BRACKET_OPEN_SOURCE}(${CSSDOC_EXAMPLE_LABEL_SOURCE}(?:${SPACE_TAB_SOURCE}*,${SPACE_TAB_SOURCE}*${CSSDOC_EXAMPLE_LABEL_SOURCE})*)${BRACKET_CLOSE_SOURCE}(?:\n|$)`,
+        "u",
+      );
+      const header = LABELS_HEADER.exec(m[2]);
       if (header) {
         (doc.exampleLabels ??= {})[doc.examples.length] = [
           ...new Set(header[1].split(",").map((label) => label.trim())),
         ];
       }
       // Unescape Markdown fences authored inside a JS `css` template.
+      const ESCAPED_BACKTICK: Regex = arkRegex.as(/\\`/gu.source, "gu");
       doc.examples.push(
-        (header ? m[2].slice(header[0].length).trim() : rest).replace(/\\`/gu, "`"),
+        (header ? m[2].slice(header[0].length).trim() : rest).replace(ESCAPED_BACKTICK, "`"),
       );
       continue;
     }
@@ -505,14 +612,18 @@ function applyBlockTag(
   parse?: CssParse,
 ): void {
   switch (canonical) {
-    case "selector":
+    case "selector": {
       // Match a full selector token: consecutive bracket groups, :host(-context(…)), or a plain \S+ token.
-      doc.className = rest.match(/^((?:\[(?:[^\]"']|"[^"]*"|'[^']*')*\]|[^\s[]+)+)/u)?.[1] ?? "";
+      const SELECTOR: Regex = arkRegex.as(`^(${CSSDOC_SELECTOR_TOKEN_SOURCE})`, "u");
+      doc.className = rest.match(SELECTOR)?.[1] ?? "";
       doc.fullSelector = rest.trim();
       break;
-    case "summary":
-      doc.summary = rest.replace(/\s+/gu, " ").trim();
+    }
+    case "summary": {
+      const WHITESPACE: Regex = arkRegex.as(String.raw`\s+`, "gu");
+      doc.summary = rest.replace(WHITESPACE, " ").trim();
       break;
+    }
     case "stage":
       if (isReleaseStage(rest)) doc.releaseStage = rest;
       break;
@@ -553,13 +664,18 @@ function applyBlockTag(
       const { name: mName, selector: mSel, description: mDesc } = splitModifierArg(rest);
       doc.modifiers.set(mName, parseModifierBody(mDesc));
       // Store only when the selector is a genuine CSS token (not a bare modifier name) and non-trivially different from `.${name}`.
-      if (mSel !== `.${mName}` && /^[.#[:/]/u.test(mSel)) doc.modifierSelectors.set(mName, mSel);
+      const SELECTOR_PREFIX: Regex = arkRegex.as(
+        `^[${DOT_CHAR}${POUND_CHAR}${BRACKET_OPEN_SOURCE}${COLON_CHAR}${FORWARD_SLASH_SOURCE}]`,
+        "u",
+      );
+      if (mSel !== `${DOT_CHAR}${mName}` && SELECTOR_PREFIX.test(mSel))
+        doc.modifierSelectors.set(mName, mSel);
       break;
     }
     case "part": {
       const { name: pName, selector: pSel, description: pDesc } = splitPartArg(rest);
       doc.parts.set(pName, pDesc ?? "");
-      if (pSel !== `.${pName}`) doc.partSelectors.set(pName, pSel);
+      if (pSel !== `${DOT_CHAR}${pName}`) doc.partSelectors.set(pName, pSel);
       break;
     }
     case "tokens": {
@@ -571,24 +687,30 @@ function applyBlockTag(
     case "csspart": {
       // A shadow-DOM `::part()` name — a bare identifier (tolerate a stray leading dot).
       const { head, description } = splitDesc(rest);
-      doc.cssParts.set(head.replace(/^\./u, ""), description ?? "");
+      const LEADING_DOT: Regex = arkRegex.as(`^${DOT_SOURCE}`, "u");
+      doc.cssParts.set(head.replace(LEADING_DOT, ""), description ?? "");
       break;
     }
     case "pseudo": {
       // A native pseudo-element, named as `::before` or `before` (tolerate the leading `::`).
       const { head, description } = splitDesc(rest);
-      doc.pseudoElements.set(head.replace(/^::/u, ""), description ?? "");
+      const LEADING_PSEUDO: Regex = arkRegex.as(`^${COLON_SOURCE}{2}`, "u");
+      doc.pseudoElements.set(head.replace(LEADING_PSEUDO, ""), description ?? "");
       break;
     }
     case "wrapper": {
       const { name: wName, selector: wSel, description: wDesc } = splitPartArg(rest);
       doc.wrappers.set(wName, wDesc ?? "");
-      if (wSel !== `.${wName}`) doc.wrapperSelectors.set(wName, wSel);
+      if (wSel !== `${DOT_CHAR}${wName}`) doc.wrapperSelectors.set(wName, wSel);
       break;
     }
     case "cssproperty": {
       // `--name [<syntax>] — description`
-      const propMatch = rest.match(/^(--[\w-]+)\s*(<[^>]+>)?\s*(?:(?:—|-{1,2})\s*([\s\S]*))?$/u);
+      const PROPERTY: Regex = arkRegex.as(
+        String.raw`^(${CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE})\s*(<[^>]+>)?\s*(?:${CSSDOC_DESCRIPTION_SEPARATOR_SOURCE}\s*([\s\S]*))?$`,
+        "u",
+      );
+      const propMatch = rest.match(PROPERTY);
       if (propMatch) {
         doc.cssProperties.push({
           name: propMatch[1],
@@ -607,13 +729,15 @@ function applyBlockTag(
     case "cssstate": {
       // A bracketed attribute expression (`[aria-sort="ascending"]`) needs bracket-aware splitting,
       // since its value may contain spaces; other forms (`:disabled`, a bare custom-state name) don't.
-      if (rest.startsWith("[")) {
-        const selMatch = rest.match(/^(\[(?:[^\]"']|"[^"]*"|'[^']*')*\])/u);
+      if (rest.startsWith(BRACKET_OPEN_CHAR)) {
+        const ATTRIBUTE: Regex = arkRegex.as(`^(${CSSDOC_ATTRIBUTE_SELECTOR_SOURCE})`, "u");
+        const selMatch = rest.match(ATTRIBUTE);
         const head = selMatch?.[1] ?? rest;
-        const descMatch = rest
-          .slice(head.length)
-          .trim()
-          .match(/^(?:—|-{1,2})\s+([\s\S]*)$/u);
+        const DESCRIPTION: Regex = arkRegex.as(
+          String.raw`^${CSSDOC_DESCRIPTION_SEPARATOR_SOURCE}\s+([\s\S]*)$`,
+          "u",
+        );
+        const descMatch = rest.slice(head.length).trim().match(DESCRIPTION);
         doc.cssStates.set(head, descMatch ? normalizeMultilineDescription(descMatch[1]) : "");
         break;
       }
@@ -623,11 +747,16 @@ function applyBlockTag(
     }
     case "slot": {
       const { head, description } = splitDesc(rest);
-      doc.slots.set(head.replace(/^\./u, ""), description ?? "");
+      const LEADING_DOT: Regex = arkRegex.as(`^${DOT_SOURCE}`, "u");
+      doc.slots.set(head.replace(LEADING_DOT, ""), description ?? "");
       break;
     }
     case "element": {
-      const m = rest.match(/^([\w-]+)\s*:\s*([\s\S]+)$/u);
+      const ELEMENT: Regex = arkRegex.as(
+        String.raw`^(${ALPHANUMERIC_EXTENDED_SOURCE}+)\s*${COLON_SOURCE}\s*([\s\S]+)$`,
+        "u",
+      );
+      const m = rest.match(ELEMENT);
       const profile = m ? m[1] : "";
       const body = (m ? m[2] : rest).trim();
       if (!body) break;
@@ -637,7 +766,8 @@ function applyBlockTag(
       break;
     }
     case "function": {
-      const nameMatch = rest.match(/^(--[\w-]+)/u);
+      const FUNCTION_NAME: Regex = arkRegex.as(`^(${CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE})`, "u");
+      const nameMatch = rest.match(FUNCTION_NAME);
       const { description } = splitDesc(rest);
       if (nameMatch) doc.functions.set(nameMatch[1], description ?? "");
       break;
@@ -662,9 +792,11 @@ function applyBlockTag(
     case "deprecated":
       doc.deprecated = rest;
       break;
-    case "demo":
-      doc.demo = rest.split(/\s/u)[0];
+    case "demo": {
+      const WHITESPACE: Regex = arkRegex.as(String.raw`\s`, "u");
+      doc.demo = rest.split(WHITESPACE)[0];
       break;
+    }
     case "see":
       doc.see.push(rest);
       break;
@@ -706,12 +838,8 @@ function applyBlockTag(
       break;
     case "related": {
       const { head, description } = splitDesc(rest);
-      doc.related.push({ name: head.replace(/^\./u, ""), description });
-      break;
-    }
-    case "memberOf": {
-      const m = rest.match(/^([\w-]+)(?:\s+(private))?\s*$/u);
-      if (m) doc.memberOf = { component: m[1], private: Boolean(m[2]) };
+      const LEADING_DOT: Regex = arkRegex.as(`^${DOT_SOURCE}`, "u");
+      doc.related.push({ name: head.replace(LEADING_DOT, ""), description });
       break;
     }
     case "members": {
@@ -721,9 +849,17 @@ function applyBlockTag(
         .filter(Boolean);
       break;
     }
+    case "memberOf":
     case "member": {
-      const m = rest.match(/^([\w-]+)(?:\s+(private))?\s*$/u);
-      if (m) doc.memberEntries.push({ name: m[1], private: Boolean(m[2]) });
+      const MEMBER: Regex = arkRegex.as(
+        String.raw`^(${ALPHANUMERIC_EXTENDED_SOURCE}+)(?:\s+(private))?\s*$`,
+        "u",
+      );
+      const m = rest.match(MEMBER);
+      if (m) {
+        if (canonical === "memberOf") doc.memberOf = { component: m[1], private: Boolean(m[2]) };
+        else doc.memberEntries.push({ name: m[1], private: Boolean(m[2]) });
+      }
       break;
     }
     default: {
@@ -754,7 +890,11 @@ export function recordNameOf(
         .map((d) => d.tagNameWithoutAt)
     : Object.keys(RECORD_TAGS);
   if (tagNames.length === 0) return undefined;
-  const m = commentText.match(new RegExp(`@(?:${tagNames.join("|")})\\s+(\\S+)`, "u"));
+  const RECORD_TAG: Regex = arkRegex.as(
+    String.raw`${AT_SOURCE}(?:${tagNames.join("|")})\s+(\S+)`,
+    "u",
+  );
+  const m = commentText.match(RECORD_TAG);
   return m?.[1];
 }
 
@@ -796,9 +936,12 @@ export function recordNameOf(
  */
 function normalizeMultilineDescription(text: string): string {
   const lines = text.split("\n").map((l) => l.trim());
+  const MARKDOWN_STRUCTURE: Regex = arkRegex.as(
+    String.raw`^[>${ASTERISK_SOURCE}+${DASH_SOURCE}]\s|${DIGIT_SOURCE}+${DOT_SOURCE}\s|^${POUND_CHAR}{1,6}\s`,
+  );
 
   // Look ahead: does this description contain Markdown structure?
-  const hasMarkdownStructure = lines.some((line) => /^[>*+-]\s|\d+\.\s|^#{1,6}\s/.test(line));
+  const hasMarkdownStructure = lines.some((line) => MARKDOWN_STRUCTURE.exec(line) !== null);
 
   if (!hasMarkdownStructure) {
     // No Markdown structure — just join all lines with spaces, skipping blank lines.
@@ -817,7 +960,7 @@ function normalizeMultilineDescription(text: string): string {
         currentParagraph = "";
       }
       result.push(""); // Preserve blank line for Markdown structure.
-    } else if (/^[>*+-]\s|\d+\.\s|^#{1,6}\s/.test(line)) {
+    } else if (MARKDOWN_STRUCTURE.exec(line) !== null) {
       // This line starts a Markdown list item, header, blockquote, code block, etc.
       // Flush the current paragraph and start a new one for the list item.
       if (currentParagraph) {
@@ -857,7 +1000,11 @@ export function splitPartArg(rest: string): {
   description?: string;
 } {
   // Split on the description separator to isolate selector+alias from description.
-  const descM = rest.match(/^([\s\S]*?)\s+(?:—|-{1,2})\s+([\s\S]*)$/u);
+  const DESCRIPTION: Regex = arkRegex.as(
+    String.raw`^([\s\S]*?)\s+${CSSDOC_DESCRIPTION_SEPARATOR_SOURCE}\s+([\s\S]*)$`,
+    "u",
+  );
+  const descM = rest.match(DESCRIPTION);
   const selectorPlusAlias = (descM ? descM[1] : rest).trim();
   const rawDescription = descM?.[2];
   const description = rawDescription ? normalizeMultilineDescription(rawDescription) : undefined;
@@ -865,13 +1012,20 @@ export function splitPartArg(rest: string): {
   // Greedy-match the last bare [\w-]+ token as a potential alias. A CSS selector segment always
   // starts with . # [ : — if the candidate selector ends with a combinator (>, ~, +) the last
   // token is the next selector segment, not an alias.
-  const aliasM = selectorPlusAlias.match(/^([\s\S]+)\s+([\w-]+)$/u);
-  if (aliasM && !/[>~+]\s*$/u.test(aliasM[1])) {
+  const COMBINATOR_CHARACTERS = ">~+";
+  const ALIAS: Regex = arkRegex.as(
+    String.raw`^([\s\S]+)\s+(${ALPHANUMERIC_EXTENDED_SOURCE}+)$`,
+    "u",
+  );
+  const TRAILING_COMBINATOR: Regex = arkRegex.as(String.raw`[${COMBINATOR_CHARACTERS}]\s*$`, "u");
+  const aliasM = selectorPlusAlias.match(ALIAS);
+  if (aliasM && TRAILING_COMBINATOR.exec(aliasM[1]) === null) {
     return { selector: aliasM[1].trim(), name: aliasM[2], description };
   }
 
   // No alias — derive the name from the final compound of the (possibly chained) selector.
-  const finalSeg = selectorPlusAlias.match(/([^\s>~+]+)\s*$/u)?.[1] ?? selectorPlusAlias;
+  const FINAL_SEGMENT: Regex = arkRegex.as(String.raw`([^\s${COMBINATOR_CHARACTERS}]+)\s*$`, "u");
+  const finalSeg = selectorPlusAlias.match(FINAL_SEGMENT)?.[1] ?? selectorPlusAlias;
   return { selector: selectorPlusAlias, name: deriveSelectorName(finalSeg), description };
 }
 
@@ -881,12 +1035,17 @@ export function splitModifierArg(rest: string): {
   description?: string;
 } {
   // Grab the selector with the same bracket-aware regex as splitPartArg.
-  const selMatch = rest.match(/^((?:\[(?:[^\]"']|"[^"]*"|'[^']*')*\]|[^\s[]+)+)/u);
+  const SELECTOR: Regex = arkRegex.as(`^(${CSSDOC_SELECTOR_TOKEN_SOURCE})`, "u");
+  const selMatch = rest.match(SELECTOR);
   const selector = selMatch?.[1] ?? "";
   const after = rest.slice(selector.length).trim();
 
   // If `after` starts with a word (the alias) before the `—` separator, use it as the name.
-  const aliasMatch = after.match(/^([\w-]+)\s+(?:—|-{1,2})\s+([\s\S]*)$/u);
+  const ALIAS: Regex = arkRegex.as(
+    String.raw`^([\w-]+)\s+${CSSDOC_DESCRIPTION_SEPARATOR_SOURCE}\s+([\s\S]*)$`,
+    "u",
+  );
+  const aliasMatch = after.match(ALIAS);
   if (aliasMatch)
     return {
       selector,
@@ -894,7 +1053,11 @@ export function splitModifierArg(rest: string): {
       description: normalizeMultilineDescription(aliasMatch[2]),
     };
 
-  const descMatch = after.match(/^(?:—|-{1,2})\s+([\s\S]*)$/u);
+  const DESCRIPTION: Regex = arkRegex.as(
+    String.raw`^${CSSDOC_DESCRIPTION_SEPARATOR_SOURCE}\s+([\s\S]*)$`,
+    "u",
+  );
+  const descMatch = after.match(DESCRIPTION);
   return {
     selector,
     name: deriveModifierKey(selector),
@@ -904,11 +1067,15 @@ export function splitModifierArg(rest: string): {
 
 function splitStructureBody(raw: string): { description?: string; css: string } {
   const lines = raw.split("\n");
-  const braceLine = lines.findIndex((l) => l.includes("{"));
+  const braceLine = lines.findIndex((l) => l.includes(BRACE_OPEN_CHAR));
   if (braceLine <= 0) return { css: raw }; // no rule, or the first line already opens one
   const lead = lines.slice(0, braceLine);
   // A lead that itself begins a selector is part of a multi-line selector, not a description.
-  if (/^\s*[.#:[*&>+~]/u.test(lead[0])) return { css: raw };
+  const SELECTOR_START: Regex = arkRegex.as(
+    String.raw`^\s*[${DOT_SOURCE}${POUND_CHAR}${COLON_CHAR}${BRACKET_OPEN_SOURCE}${ASTERISK_SOURCE}&>+~]`,
+    "u",
+  );
+  if (SELECTOR_START.test(lead[0])) return { css: raw };
   const description = lead.join("\n").trim();
   return description ? { description, css: lines.slice(braceLine).join("\n") } : { css: raw };
 }
@@ -916,11 +1083,12 @@ function splitStructureBody(raw: string): { description?: string; css: string } 
 /** Parse an `@annotations` body into numbered legend rows. */
 function parseAnnotationsBody(raw: string): DocAnnotation[] {
   const rows: DocAnnotation[] = [];
+  const MARKER: Regex = arkRegex.as(String.raw`^(${DIGIT_SOURCE}+)${DOT_SOURCE}\s*([\s\S]*)$`, "u");
   let current: DocAnnotation | undefined;
   for (const line of raw.split("\n")) {
     const trimmed = line.trim();
     if (!trimmed) continue;
-    const marker = trimmed.match(/^(\d+)\.\s*([\s\S]*)$/u);
+    const marker = trimmed.match(MARKER);
     if (marker) {
       if (current) rows.push(current);
       current = { ref: Number.parseInt(marker[1], 10), text: marker[2].trim() };
@@ -934,7 +1102,8 @@ function parseAnnotationsBody(raw: string): DocAnnotation[] {
 
 /** Parse `@ref <n>[. prose]` — returns the numeric index and any trailing description. */
 function parseRef(rest: string): { ref: number; text?: string } | undefined {
-  const m = rest.match(/^(\d+)\.?\s*(.*)$/u);
+  const REF: Regex = arkRegex.as(String.raw`^(${DIGIT_SOURCE}+)${DOT_SOURCE}?\s*(.*)$`, "u");
+  const m = rest.match(REF);
   if (!m) return undefined;
   const text = m[2].trim() || undefined;
   return { ref: Number.parseInt(m[1], 10), text };
@@ -965,37 +1134,6 @@ function parseRef(rest: string): { ref: number; text?: string } | undefined {
 // (required) when the component is used. A pseudo, not a `/* … *\/` comment, because `@structure`
 // lives inside a doc comment where a nested comment would close it early — an unknown pseudo-class is
 // valid selector syntax, and it's stripped from the stored selector here.
-const CARDINALITY: Record<string, NonNullable<StructureNode["cardinality"]>> = {
-  optional: "optional",
-  opt: "optional",
-  many: "many",
-  "one-or-more": "one-or-more",
-  more: "one-or-more",
-};
-const CARD_SUFFIX = String.raw`(?:(?<oomKw>one-or-more|more):max-(?<oomMax>\d+)|max-(?<max>\d+)|(?<kw>optional|opt|one-or-more|more|many))`;
-const CARD_RE = new RegExp(`:${CARD_SUFFIX}\\s*$`, "u");
-const TRAILING_CARD_RE = new RegExp(
-  `^(?<base>[\\s\\S]*?):${CARD_SUFFIX}(?:\\s+(?<private>private))?\\s*$`,
-  "u",
-);
-
-/** Resolve a {@link CARD_RE}/{@link TRAILING_CARD_RE} match's named groups to a stored cardinality. */
-function cardinalityFromMatch(
-  groups: Record<string, string | undefined>,
-): NonNullable<StructureNode["cardinality"]> | undefined {
-  if (groups.oomMax) return `one-or-more-max-${groups.oomMax}` as `one-or-more-max-${number}`;
-  if (groups.max) return `max-${groups.max}` as `max-${number}`;
-  if (groups.kw) return CARDINALITY[groups.kw];
-  return undefined;
-}
-// A single-class `:is(.<class>)` signals the element itself carries that class (co-location).
-const COLOC_RE = /:is\(\s*([^,)]+?)\s*\)/u;
-const STRUCTURE_REF_RE = /^[a-zA-Z][\w-]*(?:\.[\w-]+)*$/u;
-const STRUCTURE_REF_PROFILE_RE = /^:\s*([\w-]+)$/u;
-const STRUCTURE_REF_TYPED_RE = /^([\w-]+(?:\.[\w-]+)*)(?::([\w-]+))?$/u;
-const STRUCTURE_REF_CUSTOM_MEDIA_RE = /^\(\s*(--[\w-]+)\s*\)$/u;
-const STRUCTURE_REF_TYPED_CUSTOM_MEDIA_RE = /^([\w-]+(?:\.[\w-]+)*)\s+\(\s*(--[\w-]+)\s*\)$/u;
-const STRUCTURE_MEMBER_RE = /^([\w-]+)(?::([\w-]+))?(?:\s+(private))?$/u;
 const STRUCTURE_REF_KINDS = new Set([
   "component",
   "name",
@@ -1005,23 +1143,30 @@ const STRUCTURE_REF_KINDS = new Set([
   "layout",
 ]);
 
-function splitTrailingCardinality(raw: string): {
-  params: string;
-  cardinality?: NonNullable<StructureNode["cardinality"]>;
-} {
-  const trimmed = raw.trim();
-  const match = trimmed.match(TRAILING_CARD_RE);
-  if (!match?.groups || !match.groups.base) return { params: trimmed };
-  const card = cardinalityFromMatch(match.groups);
-  if (!card) return { params: trimmed };
-  const suffix = match.groups.private ? " private" : "";
-  return { params: `${match.groups.base.trim()}${suffix}`.trim(), cardinality: card };
-}
-
 function normalizeStructureAtRuleRef(
   name: string,
   params: string,
 ): { selector: string; cardinality?: NonNullable<StructureNode["cardinality"]> } | undefined {
+  const STRUCTURE_REF: Regex = arkRegex.as(
+    `^${RECORD_REFERENCE_NAME_SOURCE}(?:${DOT_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}+)*$`,
+    "u",
+  );
+  const STRUCTURE_REF_PROFILE: Regex = arkRegex.as(
+    String.raw`^${COLON_SOURCE}\s*(${ALPHANUMERIC_EXTENDED_SOURCE}+)$`,
+    "u",
+  );
+  const STRUCTURE_REF_TYPED: Regex = arkRegex.as(
+    `^(${CSSDOC_QUALIFIED_REFERENCE_SOURCE})(?:${COLON_SOURCE}(${ALPHANUMERIC_EXTENDED_SOURCE}+))?$`,
+    "u",
+  );
+  const STRUCTURE_REF_CUSTOM_MEDIA: Regex = arkRegex.as(
+    String.raw`^${PAREN_OPEN_SOURCE}\s*(${CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE})\s*${PAREN_CLOSE_SOURCE}$`,
+    "u",
+  );
+  const STRUCTURE_REF_TYPED_CUSTOM_MEDIA: Regex = arkRegex.as(
+    String.raw`^(${CSSDOC_QUALIFIED_REFERENCE_SOURCE})\s+${PAREN_OPEN_SOURCE}\s*(${CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE})\s*${PAREN_CLOSE_SOURCE}$`,
+    "u",
+  );
   if (name === "member") {
     return undefined;
   }
@@ -1029,22 +1174,22 @@ function normalizeStructureAtRuleRef(
   if (name.includes(":")) {
     if (cardSplit.params.trim()) return undefined;
     const [record, profile] = name.split(":", 2);
-    if (!STRUCTURE_REF_RE.test(record) || !profile || !STRUCTURE_REF_RE.test(profile)) {
+    if (!STRUCTURE_REF.test(record) || !profile || !STRUCTURE_REF.test(profile)) {
       return undefined;
     }
     return { selector: `@${record}:${profile}`, cardinality: cardSplit.cardinality };
   }
-  if (!STRUCTURE_REF_RE.test(name)) return undefined;
+  if (!STRUCTURE_REF.test(name)) return undefined;
   const trimmed = cardSplit.params;
   if (STRUCTURE_REF_KINDS.has(name)) {
-    const typedMedia = trimmed.match(STRUCTURE_REF_TYPED_CUSTOM_MEDIA_RE);
+    const typedMedia = trimmed.match(STRUCTURE_REF_TYPED_CUSTOM_MEDIA);
     if (typedMedia) {
       return {
         selector: `@${name} ${typedMedia[1]} (${typedMedia[2]})`,
         cardinality: cardSplit.cardinality,
       };
     }
-    const typed = trimmed.match(STRUCTURE_REF_TYPED_RE);
+    const typed = trimmed.match(STRUCTURE_REF_TYPED);
     if (!typed) return undefined;
     return {
       selector: `@${name} ${typed[1]}${typed[2] ? `:${typed[2]}` : ""}`,
@@ -1052,11 +1197,11 @@ function normalizeStructureAtRuleRef(
     };
   }
   if (!trimmed) return { selector: `@${name}`, cardinality: cardSplit.cardinality };
-  const customMedia = trimmed.match(STRUCTURE_REF_CUSTOM_MEDIA_RE);
+  const customMedia = trimmed.match(STRUCTURE_REF_CUSTOM_MEDIA);
   if (customMedia) {
     return { selector: `@${name} (${customMedia[1]})`, cardinality: cardSplit.cardinality };
   }
-  const profile = trimmed.match(STRUCTURE_REF_PROFILE_RE);
+  const profile = trimmed.match(STRUCTURE_REF_PROFILE);
   if (!profile) return undefined;
   return { selector: `@${name}:${profile[1]}`, cardinality: cardSplit.cardinality };
 }
@@ -1066,8 +1211,12 @@ function resolveStructureMemberRef(
   currentParent: string | undefined,
 ): { selector: string; cardinality?: NonNullable<StructureNode["cardinality"]> } | undefined {
   if (!currentParent) return undefined;
+  const STRUCTURE_MEMBER: Regex = arkRegex.as(
+    String.raw`^(${ALPHANUMERIC_EXTENDED_SOURCE}+)(?:${COLON_SOURCE}(${ALPHANUMERIC_EXTENDED_SOURCE}+))?(?:\s+(private))?$`,
+    "u",
+  );
   const cardSplit = splitTrailingCardinality(params);
-  const m = cardSplit.params.trim().match(STRUCTURE_MEMBER_RE);
+  const m = cardSplit.params.trim().match(STRUCTURE_MEMBER);
   if (!m) return undefined;
   const name = m[1];
   const profile = m[2];
@@ -1079,19 +1228,30 @@ function resolveStructureMemberRef(
 }
 
 function structureReferenceComponentName(selector: string): string | undefined {
-  if (!selector.startsWith("@")) return undefined;
-  const raw = selector.slice(1).trim();
-  const typed = raw.match(
-    /^(component|name|utility|rule|declaration|layout)\s+([\w-]+(?:\.[\w-]+)*)(?::[\w-]+)?(?:\s+private)?$/u,
+  if (!selector.startsWith(AT_CHAR)) return undefined;
+  const TYPED: Regex = arkRegex.as(
+    String.raw`^(${STRUCTURE_RECORD_KIND_SOURCE})\s+(${CSSDOC_QUALIFIED_REFERENCE_SOURCE})(?:${COLON_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}+)?(?:\s+private)?$`,
+    "u",
   );
+  const SHORTHAND: Regex = arkRegex.as(
+    String.raw`^(${CSSDOC_QUALIFIED_REFERENCE_SOURCE})(?:${COLON_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}+)?(?:\s+private)?$`,
+    "u",
+  );
+  const raw = selector.slice(1).trim();
+  const typed = raw.match(TYPED);
   if (typed) return typed[2];
-  const shorthand = raw.match(/^([\w-]+(?:\.[\w-]+)*)(?::[\w-]+)?(?:\s+private)?$/u);
+  const shorthand = raw.match(SHORTHAND);
   if (!shorthand || STRUCTURE_REF_KINDS.has(shorthand[1])) return undefined;
   return shorthand[1];
 }
 
 /** Build a {@link StructureNode} tree from one already-parsed level of a `@structure` body. */
 function buildStructureNodes(nodes: readonly ChildNode[], currentParent?: string): StructureNode[] {
+  // A single-class `:is(.<class>)` signals the element itself carries that class (co-location).
+  const COLOC: Regex = arkRegex.as(
+    String.raw`${COLON_SOURCE}is${PAREN_OPEN_SOURCE}\s*([^,${PAREN_CLOSE_CHAR}]+?)\s*${PAREN_CLOSE_SOURCE}`,
+    "u",
+  );
   const out: StructureNode[] = [];
   for (let i = 0; i < nodes.length; i++) {
     const rule = nodes[i];
@@ -1147,9 +1307,9 @@ function buildStructureNodes(nodes: readonly ChildNode[], currentParent?: string
     }
     if (rule.type !== "rule") continue;
     const rawSel = rule.selector.trim();
-    const coloc = rawSel.match(COLOC_RE);
-    const withoutColoc = coloc ? rawSel.replace(COLOC_RE, "").trim() : rawSel;
-    const card = withoutColoc.match(CARD_RE);
+    const coloc = rawSel.match(COLOC);
+    const withoutColoc = coloc ? rawSel.replace(COLOC, "").trim() : rawSel;
+    const card = withoutColoc.match(STRUCTURE_CARDINALITY);
     const node: StructureNode = {
       selector: card ? withoutColoc.slice(0, card.index).trim() : withoutColoc,
       children: buildStructureNodes(rule.nodes ?? [], currentParent),
