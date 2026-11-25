@@ -83,10 +83,15 @@ languages in the same way, keeping the existing servers you use. Start Helix fro
 
 ### Zed
 
-Zed requires an extension to register an additional language server. cssdoc doesn't currently publish
-a Zed extension, so its executable can't be attached using settings alone. See Zed's
-[language server extension documentation](https://zed.dev/docs/extensions/languages#language-servers)
-if you want to create a local adapter.
+The cssdoc Zed extension is in development and isn't published yet. To try it locally, install Rust
+with rustup, run **zed: install dev extension**, and select the `servers/zed` directory from the
+cssdoc repository. Open a trusted project containing documented CSS.
+
+The extension uses a configured executable or one on the worktree's `PATH` before attempting to
+install its pinned language server. The pinned version must be published before automatic
+installation works. See the [extension README](https://github.com/thedannywahl/cssdoc/tree/main/servers/zed)
+for local setup and settings. Zed disables semantic tokens by default; enable them in your language
+settings if you want to try them.
 
 ### Troubleshooting
 

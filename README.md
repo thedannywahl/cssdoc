@@ -49,6 +49,7 @@ and the CSS/HTML language services share one core.
 | [`@cssdoc/cli`](packages/cli)                        | `packages/cli`            | A host-agnostic `cssdoc lint` command — no ESLint or Stylelint required.                                                                                             |
 | [`@cssdoc/language-server`](servers/language-server) | `servers/language-server` | An editor-agnostic LSP: completion, hover, definition, and deprecation quick-fixes.                                                                                  |
 | [`cssdoc-vscode`](servers/vscode)                    | `servers/vscode`          | A thin VS Code extension that runs the language server.                                                                                                              |
+| [`cssdoc for Zed`](servers/zed)                      | `servers/zed`             | A Zed language-server extension in development.                                                                                                                      |
 
 ## Develop
 
