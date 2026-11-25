@@ -14,6 +14,7 @@ import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { type CssDocEntry, parseCssDocs } from "@cssdoc/core";
+import { DOT_CHAR, escapeRegex } from "@cssdoc/regex";
 import { CssDocConfigFile, type ProviderRef } from "./CssDocConfigFile.ts";
 
 /** Options for provider resolution. */
@@ -31,7 +32,7 @@ export interface ResolveProvidersOptions {
   circularReferenceMode?: "first" | "last" | "ignore" | "warn" | "error";
 }
 
-const stripDot = (name: string): string => name.replace(/^\./u, "");
+const stripDot = (name: string): string => (name.startsWith(DOT_CHAR) ? name.slice(1) : name);
 
 /** Type-safe error check for TypeScript 6 compatibility (Error.isError is ES2026). */
 const isErrorInstance = (error: unknown): error is Error => error instanceof Error;
@@ -67,8 +68,6 @@ function hasGlobPattern(path: string): boolean {
   return /[*?[\]{}()!]/.test(path);
 }
 
-const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
-
 /**
  * Rewrite a `.foo-bar` base-class prefix per {@link ProviderRef.prefix} — anchored to the start of the
  * bare class name so it can only ever match a genuine prefix, not an incidental substring elsewhere in
@@ -79,12 +78,12 @@ function rewriteEntryPrefix(
   entry: CssDocEntry,
   prefix: NonNullable<ProviderRef["prefix"]>,
 ): CssDocEntry {
-  if (!entry.className?.startsWith(".")) return entry;
+  if (!entry.className?.startsWith(DOT_CHAR)) return entry;
   const bare = entry.className.slice(1);
-  const pattern = prefix.isRegExp ? prefix.from : escapeRe(prefix.from);
+  const pattern = prefix.isRegExp ? prefix.from : escapeRegex(prefix.from);
   const re = new RegExp(`^(?:${pattern})`, "u");
   if (!re.test(bare)) return entry;
-  return { ...entry, className: `.${bare.replace(re, prefix.to ?? "")}` };
+  return { ...entry, className: `${DOT_CHAR}${bare.replace(re, prefix.to ?? "")}` };
 }
 
 /** Expand glob patterns using Node's built-in glob module. */
