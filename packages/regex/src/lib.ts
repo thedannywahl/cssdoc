@@ -7,6 +7,7 @@
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import type { PatternResolver, UnifiedPatternDef } from "./types.ts";
+import { REGEX_METACHARACTER_SOURCE } from "./definitions/tier-0.ts";
 
 export type AnchorMode = "none" | "start" | "end" | "start-end";
 
@@ -86,8 +87,14 @@ export function compileRegex(def: UnifiedPatternDef): Regex {
  * Special regex characters are escaped; others pass through.
  */
 export function escapeRegexChar(char: string): string {
-  const regexSpecialChar = arkRegex.as(String.raw`[\\^$.|?*+()[\]{}]`);
+  const regexSpecialChar = arkRegex.as(REGEX_METACHARACTER_SOURCE);
   return regexSpecialChar.test(char) ? `\\${char}` : char;
+}
+
+/** Escape regex metacharacters in a string for use as literal pattern text. */
+export function escapeRegex(text: string): string {
+  const METACHARACTER: Regex = arkRegex.as(REGEX_METACHARACTER_SOURCE, "gu");
+  return text.replace(METACHARACTER, "\\$&");
 }
 
 /**

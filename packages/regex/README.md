@@ -38,6 +38,29 @@ Patterns are organized by tier level:
 - **Tier 3**: cssdoc-specific patterns (parts, properties, states, variants, slots)
 - **Tier 4**: Complex composite patterns
 
+`UNDERSCORE_CHAR` is the literal underscore for composing separators and patterns.
+`ASTERISK_CHAR`, `CARET_CHAR`, `DOLLAR_CHAR`, and `TILDE_CHAR` provide literal operator characters.
+`EQUALS_CHAR` provides the literal equals sign.
+`LESS_THAN_CHAR` and `GREATER_THAN_CHAR` provide literal angle brackets.
+`REGEX_METACHARACTER_SOURCE` matches characters that need escaping in regular expressions.
+Use `escapeRegex(text)` to escape those characters throughout a string for use in a regex pattern.
+`CSSDOC_DESCRIPTION_SEPARATOR_SOURCE` matches `—`, `-`, and the parser's legacy `--` separator.
+Callers supply any whitespace required around it.
+`CSSDOC_MODIFIER_REFERENCE_SOURCE` matches canonical modifier references, and
+`CSSDOC_MODIFIER_ANNOTATION_PREFIX_SOURCE` matches optional punctuation before modifier annotations.
+`CSSDOC_BLOCK_TAG_NAME_SOURCE` matches the broader block-tag names accepted by the comment parser.
+`CSSDOC_EXAMPLE_LABEL_SOURCE` matches one label in an example's `labels=[...]` header.
+`CSSDOC_ATTRIBUTE_SELECTOR_SOURCE` and `CSSDOC_SELECTOR_TOKEN_SOURCE` match the parser's
+bracket-aware selector tokens. `CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE` matches the broader
+custom-property names accepted in doc tags. `CSSDOC_QUALIFIED_REFERENCE_SOURCE` matches the
+dot-separated reference segments accepted in structure tags.
+`CSS_CLASS_ATTRIBUTE_SELECTOR_SOURCE` matches a class attribute selector and captures its operator and value.
+`CSSDOC_STRUCTURE_SLOT_SOURCE` matches default and named slot selectors in structure nodes.
+`CSSDOC_ELEMENT_TAG_SOURCE` matches an element name with independently optional angle brackets and
+captures the name.
+`CSSDOC_CARDINALITY_SOURCE` matches the cardinality suffixes supported by `@structure`;
+`CSSDOC_CARDINALITY_KEYWORDS` maps their shorthand and full keywords to canonical values.
+
 ## Example: CSS Identifier
 
 ```typescript

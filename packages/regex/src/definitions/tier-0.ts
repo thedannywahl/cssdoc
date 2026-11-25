@@ -6,7 +6,22 @@
 
 import type { RawPatternDef, PatternResolver } from "../types.ts";
 
+export const REGEX_METACHARACTER_SOURCE: string = String.raw`[\\^$.|?*+()[\]{}]`;
+
 export const TIER_0_PATTERNS: Record<string, RawPatternDef> = {
+  REGEX_METACHARACTER: {
+    name: "REGEX_METACHARACTER",
+    tier: 0,
+    source: REGEX_METACHARACTER_SOURCE,
+    description: "A character with special meaning in a regular expression",
+    fixtures: {
+      passes: [{ input: "." }, { input: "[" }, { input: "]" }, { input: "\\" }],
+      fails: [
+        { input: "-", reason: "ordinary character" },
+        { input: "a", reason: "ordinary character" },
+      ],
+    },
+  },
   ALPHA: {
     name: "ALPHA",
     grammarRule: "Letter",
@@ -78,10 +93,11 @@ export const TIER_0_PATTERNS: Record<string, RawPatternDef> = {
     pattern: (resolve: PatternResolver) => {
       const alpha = resolve("ALPHA", true);
       const digit = resolve("DIGIT", true);
-      return `[${alpha}${digit}\\-_]`;
+      const underscore = resolve("UNDERSCORE_CHAR");
+      return `[${alpha}${digit}\\-${underscore}]`;
     },
     description: "Alphanumeric with underscore and hyphen",
-    composedFrom: ["ALPHA", "DIGIT"],
+    composedFrom: ["ALPHA", "DIGIT", "UNDERSCORE_CHAR"],
     fixtures: {
       passes: [{ input: "a" }, { input: "0" }, { input: "_" }, { input: "-" }],
       fails: [
@@ -131,6 +147,16 @@ export const TIER_0_PATTERNS: Record<string, RawPatternDef> = {
         { input: "-", reason: "single dash" },
         { input: "", reason: "empty" },
       ],
+    },
+  },
+  UNDERSCORE_CHAR: {
+    name: "UNDERSCORE_CHAR",
+    tier: 0,
+    source: "_",
+    description: "Underscore character (literal)",
+    fixtures: {
+      passes: [{ input: "_" }],
+      fails: [{ input: "-", reason: "hyphen" }],
     },
   },
   HEX_DIGIT: {
@@ -256,8 +282,9 @@ export const TIER_0_PATTERNS: Record<string, RawPatternDef> = {
   ASTERISK: {
     name: "ASTERISK",
     tier: 0,
-    source: String.raw`\*`,
+    pattern: (resolve: PatternResolver) => `\\${resolve("ASTERISK_CHAR")}`,
     description: "Asterisk punctuation",
+    composedFrom: ["ASTERISK_CHAR"],
     fixtures: {
       passes: [{ input: "*" }],
       fails: [
@@ -266,6 +293,55 @@ export const TIER_0_PATTERNS: Record<string, RawPatternDef> = {
         { input: "", reason: "empty" },
       ],
     },
+  },
+  ASTERISK_CHAR: {
+    name: "ASTERISK_CHAR",
+    tier: 0,
+    source: "*",
+    description: "Asterisk character (literal)",
+    fixtures: { passes: [{ input: "*" }], fails: [{ input: "+", reason: "plus" }] },
+  },
+  CARET_CHAR: {
+    name: "CARET_CHAR",
+    tier: 0,
+    source: "^",
+    description: "Caret character (literal)",
+    fixtures: { passes: [{ input: "^" }], fails: [{ input: "$", reason: "dollar sign" }] },
+  },
+  DOLLAR_CHAR: {
+    name: "DOLLAR_CHAR",
+    tier: 0,
+    source: "$",
+    description: "Dollar sign character (literal)",
+    fixtures: { passes: [{ input: "$" }], fails: [{ input: "^", reason: "caret" }] },
+  },
+  TILDE_CHAR: {
+    name: "TILDE_CHAR",
+    tier: 0,
+    source: "~",
+    description: "Tilde character (literal)",
+    fixtures: { passes: [{ input: "~" }], fails: [{ input: "-", reason: "hyphen" }] },
+  },
+  EQUALS_CHAR: {
+    name: "EQUALS_CHAR",
+    tier: 0,
+    source: "=",
+    description: "Equals sign character (literal)",
+    fixtures: { passes: [{ input: "=" }], fails: [{ input: "-", reason: "hyphen" }] },
+  },
+  LESS_THAN_CHAR: {
+    name: "LESS_THAN_CHAR",
+    tier: 0,
+    source: "<",
+    description: "Less-than character (literal)",
+    fixtures: { passes: [{ input: "<" }], fails: [{ input: ">", reason: "greater-than" }] },
+  },
+  GREATER_THAN_CHAR: {
+    name: "GREATER_THAN_CHAR",
+    tier: 0,
+    source: ">",
+    description: "Greater-than character (literal)",
+    fixtures: { passes: [{ input: ">" }], fails: [{ input: "<", reason: "less-than" }] },
   },
   COLON_CHAR: {
     name: "COLON_CHAR",

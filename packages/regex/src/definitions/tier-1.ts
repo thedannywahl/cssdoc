@@ -294,6 +294,28 @@ export const TIER_1_PATTERNS: Record<string, RawPatternDef> = {
       ],
     },
   },
+  LESS_THAN: {
+    name: "LESS_THAN",
+    tier: 1,
+    pattern: (resolve: PatternResolver) => resolve("LESS_THAN_CHAR"),
+    description: "Less-than character (regex pattern)",
+    composedFrom: ["LESS_THAN_CHAR"],
+    fixtures: {
+      passes: [{ input: "<" }],
+      fails: [{ input: ">", reason: "greater-than" }],
+    },
+  },
+  GREATER_THAN: {
+    name: "GREATER_THAN",
+    tier: 1,
+    pattern: (resolve: PatternResolver) => resolve("GREATER_THAN_CHAR"),
+    description: "Greater-than character (regex pattern)",
+    composedFrom: ["GREATER_THAN_CHAR"],
+    fixtures: {
+      passes: [{ input: ">" }],
+      fails: [{ input: "<", reason: "less-than" }],
+    },
+  },
   COMMENT_START: {
     name: "COMMENT_START",
     tier: 1,

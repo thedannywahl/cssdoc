@@ -23,9 +23,16 @@ export const TIER_3_PATTERNS: Record<string, RawPatternDef> = {
       passes: [
         { input: "button", note: "simple component" },
         { input: "button:optional", note: "with cardinality" },
+        { input: "button:opt", note: "shorthand cardinality" },
+        { input: "button:many", note: "many cardinality" },
         { input: "button:max-5", note: "with max" },
+        { input: "button:more:max-4", note: "bounded shorthand" },
       ],
-      fails: [{ input: "", reason: "empty" }],
+      fails: [
+        { input: "", reason: "empty" },
+        { input: "button:", reason: "missing cardinality" },
+        { input: "button:zero-or-more", reason: "unsupported cardinality" },
+      ],
     },
   },
   CSSDOC_PART_NAME: {
