@@ -9,7 +9,13 @@
 import type { CssDocEntry, CssReleaseStage, CssRecordKind, StructureNode } from "@cssdoc/core";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
-import { CSSDOC_CARDINALITY_KEYWORDS, CSSDOC_STRUCTURE_SLOT_SOURCE } from "@cssdoc/regex";
+import {
+  CSSDOC_CARDINALITY_KEYWORDS,
+  CSSDOC_SHORTHAND_STRUCTURE_REFERENCE_SOURCE,
+  CSSDOC_STRUCTURE_SLOT_SOURCE,
+  CSSDOC_TYPED_STRUCTURE_REFERENCE_SOURCE,
+  STRUCTURE_RECORD_KIND_SOURCE,
+} from "@cssdoc/regex";
 import {
   type ExampleFilter,
   cardinalityToken,
@@ -306,7 +312,7 @@ const SLOT_NODE: Regex = arkRegex.as(`^${CSSDOC_STRUCTURE_SLOT_SOURCE}$`, "u");
 const allClasses = (selector: string): string[] =>
   [...selector.matchAll(/\.([\w-]+)/gu)].map((m) => m[1]);
 
-const STRUCTURE_REF_KIND_RE = /^(component|name|utility|rule|declaration|layout)$/u;
+const STRUCTURE_REF_KIND_RE: Regex = arkRegex.as(`^${STRUCTURE_RECORD_KIND_SOURCE}$`, "u");
 const parseStructureRecordRef = (
   selector: string,
 ): { kind?: string; name: string; profile?: string; private?: boolean } | undefined => {
@@ -314,9 +320,8 @@ const parseStructureRecordRef = (
   const raw = selector.slice(1).trim();
   if (!raw) return undefined;
 
-  const typed = raw.match(
-    /^(component|name|utility|rule|declaration|layout)\s+([\w-]+(?:\.[\w-]+)*)(?::([\w-]+))?(?:\s+(private))?$/u,
-  );
+  const TYPED: Regex = arkRegex.as(`^${CSSDOC_TYPED_STRUCTURE_REFERENCE_SOURCE}$`, "u");
+  const typed = raw.match(TYPED);
   if (typed) {
     return {
       kind: typed[1] === "name" || typed[1] === "rule" ? "component" : typed[1],
@@ -326,7 +331,8 @@ const parseStructureRecordRef = (
     };
   }
 
-  const shorthand = raw.match(/^([\w-]+(?:\.[\w-]+)*)(?::([\w-]+))?(?:\s+(private))?$/u);
+  const SHORTHAND: Regex = arkRegex.as(`^${CSSDOC_SHORTHAND_STRUCTURE_REFERENCE_SOURCE}$`, "u");
+  const shorthand = raw.match(SHORTHAND);
   if (!shorthand) return undefined;
   if (STRUCTURE_REF_KIND_RE.test(shorthand[1])) return undefined;
   return { name: shorthand[1], profile: shorthand[2], private: Boolean(shorthand[3]) };

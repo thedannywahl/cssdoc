@@ -11,8 +11,11 @@ import {
   ALPHANUMERIC_EXTENDED_SOURCE,
   ASTERISK_CHAR,
   CSS_CLASS_ATTRIBUTE_SELECTOR,
+  CSSDOC_SHORTHAND_STRUCTURE_REFERENCE_SOURCE,
+  CSSDOC_TYPED_STRUCTURE_REFERENCE_SOURCE,
   DOT_CHAR,
   DOT_SOURCE,
+  STRUCTURE_RECORD_KIND_SOURCE,
   escapeRegex,
   toRegExp,
 } from "@cssdoc/regex";
@@ -127,7 +130,7 @@ const globMatch = (pattern: string, value: string): boolean => {
   return re.test(value);
 };
 
-const STRUCTURE_REF_KIND_RE = /^(component|name|utility|rule|declaration|layout)$/u;
+const STRUCTURE_REF_KIND_RE = new RegExp(`^${STRUCTURE_RECORD_KIND_SOURCE}$`, "u");
 
 type StructureRecordRef = { kind?: string; name: string; profile?: string; private?: boolean };
 
@@ -136,9 +139,7 @@ const parseStructureRecordRef = (selector: string): StructureRecordRef | undefin
   const raw = selector.slice(1).trim();
   if (!raw) return undefined;
 
-  const typed = raw.match(
-    /^(component|name|utility|rule|declaration|layout)\s+([\w-]+(?:\.[\w-]+)*)(?::([\w-]+))?(?:\s+(private))?$/u,
-  );
+  const typed = raw.match(new RegExp(`^${CSSDOC_TYPED_STRUCTURE_REFERENCE_SOURCE}$`, "u"));
   if (typed) {
     return {
       kind: typed[1] === "name" || typed[1] === "rule" ? "component" : typed[1],
@@ -175,7 +176,7 @@ const parseStructureRecordRef = (selector: string): StructureRecordRef | undefin
     };
   }
 
-  const shorthand = raw.match(/^([\w-]+(?:\.[\w-]+)*)(?::([\w-]+))?(?:\s+(private))?$/u);
+  const shorthand = raw.match(new RegExp(`^${CSSDOC_SHORTHAND_STRUCTURE_REFERENCE_SOURCE}$`, "u"));
   if (!shorthand) return undefined;
   // Guard against malformed `@kind` without a name being interpreted as shorthand.
   if (STRUCTURE_REF_KIND_RE.test(shorthand[1])) return undefined;

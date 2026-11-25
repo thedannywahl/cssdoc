@@ -17,6 +17,43 @@ export const CSSDOC_CARDINALITY_KEYWORDS: Readonly<
 };
 
 export const TIER_2_PATTERNS: Record<string, RawPatternDef> = {
+  CSSDOC_TYPED_STRUCTURE_REFERENCE: {
+    name: "CSSDOC_TYPED_STRUCTURE_REFERENCE",
+    tier: 2,
+    pattern: (resolve: PatternResolver) =>
+      String.raw`(${resolve("STRUCTURE_RECORD_KIND")})\s+(${resolve("CSSDOC_QUALIFIED_REFERENCE")})(?:${resolve("COLON")}(${resolve("ALPHANUMERIC_EXTENDED")}+))?(?:\s+(private))?`,
+    flags: "u",
+    description: "Typed structure reference body with kind, name, profile, and privacy captures",
+    composedFrom: [
+      "STRUCTURE_RECORD_KIND",
+      "CSSDOC_QUALIFIED_REFERENCE",
+      "COLON",
+      "ALPHANUMERIC_EXTENDED",
+    ],
+    fixtures: {
+      passes: [{ input: "component menu.item:compact private" }, { input: "utility spacing" }],
+      fails: [
+        { input: "component", reason: "missing name" },
+        { input: "unknown menu", reason: "unknown kind" },
+      ],
+    },
+  },
+  CSSDOC_SHORTHAND_STRUCTURE_REFERENCE: {
+    name: "CSSDOC_SHORTHAND_STRUCTURE_REFERENCE",
+    tier: 2,
+    pattern: (resolve: PatternResolver) =>
+      String.raw`(${resolve("CSSDOC_QUALIFIED_REFERENCE")})(?:${resolve("COLON")}(${resolve("ALPHANUMERIC_EXTENDED")}+))?(?:\s+(private))?`,
+    flags: "u",
+    description: "Shorthand structure reference body with name, profile, and privacy captures",
+    composedFrom: ["CSSDOC_QUALIFIED_REFERENCE", "COLON", "ALPHANUMERIC_EXTENDED"],
+    fixtures: {
+      passes: [{ input: "menu.item:compact private" }, { input: "spacing" }],
+      fails: [
+        { input: ".menu", reason: "empty first segment" },
+        { input: "menu:", reason: "empty profile" },
+      ],
+    },
+  },
   CSSDOC_BASE_CLASS_NAME: {
     name: "CSSDOC_BASE_CLASS_NAME",
     tier: 2,

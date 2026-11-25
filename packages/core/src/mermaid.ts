@@ -31,9 +31,9 @@ import { regex as arkRegex } from "arkregex";
 import {
   ALPHANUMERIC_EXTENDED_SOURCE,
   AT_CHAR,
-  COLON_SOURCE,
-  CSSDOC_QUALIFIED_REFERENCE_SOURCE,
+  CSSDOC_SHORTHAND_STRUCTURE_REFERENCE_SOURCE,
   CSSDOC_STRUCTURE_SLOT_SOURCE,
+  CSSDOC_TYPED_STRUCTURE_REFERENCE_SOURCE,
   DOT_CHAR,
   DOT_SOURCE,
   POUND_CHAR,
@@ -103,10 +103,7 @@ const parseStructureRecordRef = (
   const raw = selector.slice(1).trim();
   if (!raw) return undefined;
 
-  const TYPED: Regex = arkRegex.as(
-    String.raw`^(${STRUCTURE_RECORD_KIND_SOURCE})\s+(${CSSDOC_QUALIFIED_REFERENCE_SOURCE})(?:${COLON_SOURCE}(${ALPHANUMERIC_EXTENDED_SOURCE}+))?(?:\s+(private))?$`,
-    "u",
-  );
+  const TYPED: Regex = arkRegex.as(`^${CSSDOC_TYPED_STRUCTURE_REFERENCE_SOURCE}$`, "u");
   const typed = raw.match(TYPED);
   if (typed) {
     return {
@@ -117,10 +114,7 @@ const parseStructureRecordRef = (
     };
   }
 
-  const SHORTHAND: Regex = arkRegex.as(
-    String.raw`^(${CSSDOC_QUALIFIED_REFERENCE_SOURCE})(?:${COLON_SOURCE}(${ALPHANUMERIC_EXTENDED_SOURCE}+))?(?:\s+(private))?$`,
-    "u",
-  );
+  const SHORTHAND: Regex = arkRegex.as(`^${CSSDOC_SHORTHAND_STRUCTURE_REFERENCE_SOURCE}$`, "u");
   const STRUCTURE_REF_KIND: Regex = arkRegex.as(`^${STRUCTURE_RECORD_KIND_SOURCE}$`, "u");
   const shorthand = raw.match(SHORTHAND);
   if (!shorthand) return undefined;

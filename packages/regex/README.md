@@ -51,6 +51,8 @@ Callers supply any whitespace required around it.
 bracket-aware selector tokens. `CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE` matches the broader
 custom-property names accepted in doc tags. `CSSDOC_QUALIFIED_REFERENCE_SOURCE` matches the
 dot-separated reference segments accepted in structure tags.
+`CSSDOC_TYPED_STRUCTURE_REFERENCE_SOURCE` and `CSSDOC_SHORTHAND_STRUCTURE_REFERENCE_SOURCE`
+match structure reference bodies and capture their optional profiles and privacy flags.
 `CSS_CLASS_ATTRIBUTE_SELECTOR_SOURCE` matches a class attribute selector and captures its operator and value.
 `CSSDOC_STRUCTURE_SLOT_SOURCE` matches default and named slot selectors in structure nodes.
 `CSSDOC_ELEMENT_TAG_SOURCE` matches an element name with independently optional angle brackets and

@@ -55,6 +55,25 @@ it("captures base-class references without admitting modifier or digit prefixes"
   ).toEqual(["Card", "_part-1"]);
 });
 
+it("preserves typed and shorthand structure reference captures", () => {
+  const typed = new RegExp(`^${PATTERN_DEFINITIONS.CSSDOC_TYPED_STRUCTURE_REFERENCE.source}$`, "u");
+  const shorthand = new RegExp(
+    `^${PATTERN_DEFINITIONS.CSSDOC_SHORTHAND_STRUCTURE_REFERENCE.source}$`,
+    "u",
+  );
+  expect("component menu.item:compact private".match(typed)?.slice(1)).toEqual([
+    "component",
+    "menu.item",
+    "compact",
+    "private",
+  ]);
+  expect("menu.item:compact private".match(shorthand)?.slice(1)).toEqual([
+    "menu.item",
+    "compact",
+    "private",
+  ]);
+});
+
 describe("Pattern Definitions", () => {
   it("exports at least 40 patterns", () => {
     expect(Object.keys(PATTERN_DEFINITIONS).length).toBeGreaterThanOrEqual(40);
