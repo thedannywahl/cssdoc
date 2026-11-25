@@ -6,7 +6,7 @@ use zed_extension_api::{
 
 const SERVER_ID: &str = "cssdoc-language-server";
 const PACKAGE: &str = "@cssdoc/language-server";
-const VERSION: &str = "0.19.0";
+const VERSION: &str = "0.20.0";
 const SERVER_SCRIPT: &str = "node_modules/@cssdoc/language-server/bin/cssdoc-language-server.mjs";
 
 struct CssdocExtension;

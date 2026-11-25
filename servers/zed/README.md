@@ -12,9 +12,9 @@ features and settings.
 
 The extension starts a configured binary first, then `cssdoc-language-server` on the worktree's
 `PATH`. Otherwise, it installs the pinned `@cssdoc/language-server` package using Zed's npm API.
-Automatic installation requires that the pinned version has been published, network access, and
-Node.js 26 or newer. The current pin is 0.19.0, which hasn't been published yet. To test before the
-release, build the workspace language server and configure its executable explicitly.
+Automatic installation requires network access and Node.js 26 or newer. The current pin is 0.20.0.
+To use a local server instead, build the workspace language server and configure its executable
+explicitly.
 
 For example, add the following to the project's `.zed/settings.json`, replacing the path with the
 absolute path to a built server executable:
