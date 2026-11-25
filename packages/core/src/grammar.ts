@@ -64,6 +64,7 @@ import {
   COMMENT_START_SOURCE,
   COMMENT_END_SOURCE,
   COMMENT_LINE_MARKER_SOURCE,
+  MARKDOWN_ATX_HEADING_PREFIX_SOURCE,
   ASTERISK_SOURCE,
   FORWARD_SLASH_SOURCE,
   AT_SOURCE,
@@ -929,7 +930,7 @@ export function recordNameOf(
 function normalizeMultilineDescription(text: string): string {
   const lines = text.split("\n").map((l) => l.trim());
   const MARKDOWN_STRUCTURE: Regex = arkRegex.as(
-    String.raw`^[>${ASTERISK_SOURCE}+${DASH_SOURCE}]\s|${DIGIT_SOURCE}+${DOT_SOURCE}\s|^${POUND_CHAR}{1,6}\s`,
+    String.raw`^[>${ASTERISK_SOURCE}+${DASH_SOURCE}]\s|${DIGIT_SOURCE}+${DOT_SOURCE}\s|^${MARKDOWN_ATX_HEADING_PREFIX_SOURCE}`,
   );
 
   // Look ahead: does this description contain Markdown structure?

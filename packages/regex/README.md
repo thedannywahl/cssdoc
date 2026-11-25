@@ -49,6 +49,7 @@ Patterns are organized by tier level:
 `HTML_ELEMENT_NAME` matches either. `HTML_CUSTOM_ELEMENT_LIKE_NAME` preserves the narrower ASCII
 heuristic used by existing diagnostics. Anchor these sources when validating a complete name.
 `MARKDOWN_BACKTICK_FENCE` matches three backticks, not a complete Markdown fenced block.
+`MARKDOWN_ATX_HEADING_PREFIX` matches one to six hash marks followed by whitespace.
 `REGEX_METACHARACTER_SOURCE` matches characters that need escaping in regular expressions.
 Use `escapeRegex(text)` to escape those characters throughout a string for use in a regex pattern.
 `CSSDOC_DESCRIPTION_SEPARATOR_SOURCE` matches `—`, `-`, and the parser's legacy `--` separator.

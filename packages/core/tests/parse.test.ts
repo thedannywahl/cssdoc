@@ -2566,3 +2566,12 @@ test("multi-line tag descriptions: numbered and header structures are preserved"
   expect(steps.remarks).toContain("2. Wait");
   expect(steps.remarks).toContain("3. Proceed");
 });
+
+test("multi-line descriptions preserve heading prefixes only with one to six hashes and whitespace", () => {
+  const remarks = (heading: string) =>
+    parseDocComment(`/**\n * @remarks Intro\n * ${heading}\n * More text\n */`).remarks;
+  expect(remarks("# Title")).toBe("Intro\n# Title\nMore text");
+  expect(remarks("###### Title")).toBe("Intro\n###### Title\nMore text");
+  expect(remarks("####### Title")).toBe("Intro ####### Title More text");
+  expect(remarks("#Title")).toBe("Intro #Title More text");
+});
