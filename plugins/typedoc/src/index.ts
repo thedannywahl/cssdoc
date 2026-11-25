@@ -20,7 +20,7 @@
  *
  * (The generic `@demo` block-tag rewriter is a separate TypeDoc plugin, unrelated to CSS.)
  *
- * @module @cssdoc/typedoc
+ * @module \@cssdoc/typedoc
  */
 import { CssDocConfigFile } from "@cssdoc/config";
 import { type Application, ParameterType, RendererEvent } from "typedoc";

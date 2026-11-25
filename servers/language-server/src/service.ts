@@ -662,7 +662,7 @@ export class CssDocLanguageService {
   /**
    * Hover at a position. Resolves to a documentation card in three places: while authoring a stylesheet
    * (a selector/property in a `.css` file), while authoring embedded CSS (inside a `<style>` block, a
-   * `css` template, or a Markdown ```css fence — resolved against the projected CSS, which shares the
+   * `css` template, or a Markdown CSS code fence — resolved against the projected CSS, which shares the
    * source's offsets), and over a class *usage* (`class`/`className`, `clsx(…)`, Vue `:class`, Svelte
    * `class:name`).
    */
@@ -1183,7 +1183,7 @@ export class CssDocLanguageService {
   }
 
   /**
-   * Semantic tokens for syntax highlighting in doc comments (@component, @modifier, @deprecated, etc).
+   * Semantic tokens for syntax highlighting in doc comments (`@component`, `@modifier`, `@deprecated`, etc).
    * Returns encoded tokens in LSP format: each token is [line, startChar, length, tokenType, modifiers].
    */
   semanticTokens(text: string, _path?: string): LspSemanticToken[] {

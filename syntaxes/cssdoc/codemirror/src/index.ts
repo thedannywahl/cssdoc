@@ -17,7 +17,7 @@
  * new EditorView({ extensions: [css(), cssdocHighlight()], parent });
  * ```
  *
- * @module @cssdoc/codemirror
+ * @module \@cssdoc/codemirror
  */
 import { RangeSetBuilder } from "@codemirror/state";
 import type { Extension } from "@codemirror/state";
@@ -88,7 +88,7 @@ const PLAIN_TAGS = CSSDOC_TAGS.filter(
 
 /**
  * Pattern source to find and replace tag name placeholders in tokenizer patterns.
- * Tokenizer patterns from @cssdoc/regex use `@\w+` as placeholders in their source strings,
+ * Tokenizer patterns from \@cssdoc/regex use `@\w+` as placeholders in their source strings,
  * which appears as `@\\w+` after escaping. This gets replaced with specific tag alternations
  * (INLINE_TAGS, RECORD_TAGS, etc.).
  */
@@ -102,7 +102,7 @@ const createTagAlternation = (tags: readonly string[]): string => `@(?:${alt(tag
 
 /**
  * Inject tag alternations into generic tokenizer patterns.
- * Tokenizer patterns from @cssdoc/regex use TAG_NAME_PLACEHOLDER as placeholders, which get
+ * Tokenizer patterns from \@cssdoc/regex use TAG_NAME_PLACEHOLDER as placeholders, which get
  * replaced with specific tag alternations (INLINE_TAGS, RECORD_TAGS, etc.).
  */
 const injectTags = (pattern: string, tags: readonly string[]): string =>

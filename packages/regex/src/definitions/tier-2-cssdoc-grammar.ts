@@ -1,5 +1,5 @@
 /**
- * @cssdoc/regex/definitions/tier-2-cssdoc-grammar
+ * \@cssdoc/regex/definitions/tier-2-cssdoc-grammar
  * Tier 2 CssDoc grammar and selector patterns
  * @module
  */

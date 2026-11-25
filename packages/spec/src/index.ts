@@ -4,14 +4,14 @@
  * the shape of the argument they take. Everything that needs to know "what are the cssdoc tags"
  * derives it from here:
  *
- * - `@cssdoc/core` seeds its {@link https://cssdoc.dev parser configuration} from {@link CSSDOC_TAGS}.
+ * - `@cssdoc/core` seeds its {@link https://cssdoc.dev | parser configuration} from {@link CSSDOC_TAGS}.
  * - `@cssdoc/tmlanguage` generates its TextMate grammar from it.
  * - `@cssdoc/codemirror` builds its highlighter's matcher from it.
  *
  * The package is intentionally zero-dependency and data-only, so a syntax grammar can consume the
  * vocabulary without pulling in the CSS parser.
  *
- * @module @cssdoc/spec
+ * @module \@cssdoc/spec
  */
 
 /** The syntactic kind of a tag, mirroring TSDoc's Block/Modifier/Inline split, plus cssdoc's `record`. */

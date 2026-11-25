@@ -1,5 +1,5 @@
 /**
- * @cssdoc/regex
+ * \@cssdoc/regex
  *
  * Framework-agnostic regex patterns for CSS and CssDoc.
  * All patterns are defined in definitions.ts with metadata, capture types, and fixtures.

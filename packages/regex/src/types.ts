@@ -1,5 +1,5 @@
 /**
- * @cssdoc/regex/definitions/types
+ * \@cssdoc/regex/definitions/types
  *
  * Type definitions and interfaces for unified pattern definitions.
  *

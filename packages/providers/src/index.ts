@@ -4,7 +4,7 @@
  * from modular aspect modules. Every adapter — the Stylelint and ESLint plugins, and the language
  * server — is a thin translation of these into its host's API.
  *
- * @module @cssdoc/providers
+ * @module \@cssdoc/providers
  */
 import type { ExampleFilter } from "@cssdoc/core";
 import type {

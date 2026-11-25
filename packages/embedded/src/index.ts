@@ -1,6 +1,6 @@
 /**
  * `@cssdoc/embedded` — read cssdoc-annotated CSS out of host files where it lives embedded: JS/TS
- * tagged templates (`` styled.x`…` ``, `` css`…` ``, Lit, `keyframes`), HTML-like `<style>` blocks
+ * tagged templates (such as `styled.x` and `css`, Lit, `keyframes`), HTML-like `<style>` blocks
  * (`.html`, `.vue`, `.svelte`, `.astro`), and Markdown/MDX code fences.
  *
  * The core is {@link projectCss}: it returns a character-for-character CSS **projection** of the host
@@ -9,7 +9,7 @@
  * projection shares every offset/line/column with the source, all downstream CSS tooling
  * (`parseCssDocs`, `createIndex`, spans, ranges) works unchanged and correctly-positioned.
  *
- * @module @cssdoc/embedded
+ * @module \@cssdoc/embedded
  */
 import { type CssDocEntry, type ParseOptions, parseCssDocs } from "@cssdoc/core";
 import { type CssDialect as ParserDialect, resolveParser } from "@cssdoc/dialects";
@@ -242,7 +242,7 @@ function scanHtml(src: string): { regions: Region[] } {
   return { regions };
 }
 
-/** Find fenced ` ```css `/` ```scss ` … code blocks in Markdown/MDX. */
+/** Find fenced CSS and SCSS code blocks in Markdown/MDX. */
 function scanMarkdown(src: string): { regions: Region[] } {
   const regions: Region[] = [];
   const fence = arkRegex.as(
@@ -416,7 +416,7 @@ const COMMENT_RES = [
 ];
 
 /** Blank every `${ … }` interpolation in a template-literal body to same-length spaces, so a static
- * prefix like `` `-icon-${icon.name}` `` still tokenizes to `-icon-` instead of the raw expression
+ * prefix like `-icon-` followed by an interpolation still tokenizes to `-icon-` instead of the raw expression
  * text (which would never match a documented modifier or its `*` family). */
 function maskTemplateInterpolations(body: string): string {
   let out = body;
@@ -447,7 +447,7 @@ function maskComments(source: string): string {
  * element with every class token and its source offset. Dynamic expressions are best-effort — only
  * string/template **literals** are read (a `:class="{ active: x }"` object key or a computed name is
  * not), which is enough for the common `class="…"`, `:class="[ '…' ]"`, and `class:name` forms. A
- * template literal's `${…}` interpolations are masked out before tokenizing, so `` `-icon-${x}` ``
+ * template literal's `${…}` interpolations are masked out before tokenizing, so an `-icon-` prefix
  * reads as the static prefix `-icon-` rather than the raw (unmatchable) expression text.
  */
 export function scanClassUsages(source: string): ClassUsageSite[] {

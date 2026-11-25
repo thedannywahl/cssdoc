@@ -1,7 +1,7 @@
 /**
  * Pure markdown rendering of the `@cssdoc/core` model — no filesystem. {@link renderEntry} renders one
  * record, {@link renderIndex} the overview. The output targets `typedoc-plugin-markdown` /
- * `typedoc-vitepress-theme` conventions (GFM tables, ```mermaid``` and ```demo``` fences, VitePress-safe
+ * `typedoc-vitepress-theme` conventions (GFM tables, Mermaid and demo code fences, VitePress-safe
  * prose escaping), so CSS pages theme identically to a TypeDoc site.
  *
  * @module
@@ -149,8 +149,8 @@ export interface RenderEntryOptions {
   /** Heading prefix for the page title (defaults to no prefix, i.e. just the record name). */
   headingPrefix?: string;
   /**
-   * Which representation(s) the `## Structure` section emits: the `` ```text `` tree, the `` ```mermaid ``
-   * flowchart, or both. Defaults to `"both"`.
+   * Which representation(s) the `## Structure` section emits: the text tree, the Mermaid flowchart,
+   * or both. Defaults to `"both"`.
    */
   structureView?: "text" | "diagram" | "both";
   /**

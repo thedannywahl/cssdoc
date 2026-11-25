@@ -4,7 +4,7 @@
  * `cssdoc.jsonc`/`cssdoc.json` per file (honoring `extends`, `providers`, and `structureIgnore`) exactly
  * as the plugins do, via `@cssdoc/config`.
  *
- * @module @cssdoc/cli
+ * @module \@cssdoc/cli
  */
 import { existsSync, globSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, matchesGlob, parse as parsePath, relative, resolve, sep } from "node:path";

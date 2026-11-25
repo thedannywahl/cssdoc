@@ -60,7 +60,7 @@ export interface ModifierConvention {
   /**
    * The delimiter that marks a **BEM-style element** inside the base class name (e.g. `"__"` in
    * `.block__element`). When set (`suffix` structure only), a matching class is recorded as a
-   * {@link https://cssdoc.dev part} rather than a modifier. Its own modifiers
+   * {@link https://cssdoc.dev | part} rather than a modifier. Its own modifiers
    * (`.block__element--mod`) are captured as part of the element name for now.
    */
   elementSeparator?: string | string[];

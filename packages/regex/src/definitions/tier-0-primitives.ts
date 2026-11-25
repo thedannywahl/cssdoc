@@ -1,5 +1,5 @@
 /**
- * @cssdoc/regex/definitions/tier-0-primitives
+ * \@cssdoc/regex/definitions/tier-0-primitives
  * Tier 0 character class patterns
  * @module
  */

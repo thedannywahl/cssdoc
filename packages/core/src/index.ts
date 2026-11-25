@@ -21,7 +21,7 @@
  * writeFileSync("css-docs.json", toJson(model));
  * ```
  *
- * @module @cssdoc/core
+ * @module \@cssdoc/core
  */
 // The full surface: the parse-free `@cssdoc/core/lite` barrel plus `parseCssDocs` (the only export that
 // links a CSS parser, postcss). Consumers who never parse should import from `@cssdoc/core/lite` to keep

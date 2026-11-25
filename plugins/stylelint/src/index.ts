@@ -12,7 +12,7 @@
  * };
  * ```
  *
- * @module @cssdoc/stylelint-plugin
+ * @module \@cssdoc/stylelint-plugin
  */
 import { dirname } from "node:path";
 import { CssDocConfigFile, resolveProviders } from "@cssdoc/config";

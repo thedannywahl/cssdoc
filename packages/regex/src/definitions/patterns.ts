@@ -1,5 +1,5 @@
 /**
- * @cssdoc/regex/definitions/patterns
+ * \@cssdoc/regex/definitions/patterns
  *
  * Unified Pattern Definitions — Single source of truth for all regex patterns.
  * Each pattern is defined once with both ArkRegex and string representations.

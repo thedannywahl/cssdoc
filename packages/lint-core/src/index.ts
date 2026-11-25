@@ -4,7 +4,7 @@
  * (`lintModel`) diagnostics into a flat {@link Violation} list, which the Stylelint and ESLint adapters
  * translate into their host diagnostics. The rule logic itself lives in the aspect modules.
  *
- * @module @cssdoc/lint-core
+ * @module \@cssdoc/lint-core
  */
 import type {
   CssDocConfiguration,

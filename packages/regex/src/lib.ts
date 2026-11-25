@@ -1,7 +1,7 @@
 /**
  * Utilities for working with ArkRegex patterns.
  *
- * @module @cssdoc/regex/lib
+ * @module \@cssdoc/regex/lib
  */
 
 import type { Regex } from "arkregex";

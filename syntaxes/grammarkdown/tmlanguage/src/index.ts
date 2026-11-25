@@ -13,7 +13,7 @@
  * export default { markdown: { languages: [grammarkdown] } };
  * ```
  *
- * @module @cssdoc/grammarkdown-tmlanguage
+ * @module \@cssdoc/grammarkdown-tmlanguage
  */
 import {
   ALPHA_SOURCE,

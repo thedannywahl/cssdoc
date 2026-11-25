@@ -2,7 +2,7 @@
  * A CodeMirror 6 highlighter for grammarkdown, using the same patterns as
  * `@cssdoc/grammarkdown-tmlanguage`.
  *
- * @module @cssdoc/grammarkdown-codemirror
+ * @module \@cssdoc/grammarkdown-codemirror
  */
 import { RangeSetBuilder, StateField, type Extension } from "@codemirror/state";
 import { Decoration, EditorView, type DecorationSet } from "@codemirror/view";

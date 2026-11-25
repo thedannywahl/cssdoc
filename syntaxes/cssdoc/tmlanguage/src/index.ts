@@ -20,7 +20,7 @@
  * export default { markdown: { languages: [cssdoc] } };
  * ```
  *
- * @module @cssdoc/tmlanguage
+ * @module \@cssdoc/tmlanguage
  */
 import { CSSDOC_TAGS, cssdocTagNamesByArgument, cssdocTagNamesByKind } from "@cssdoc/spec";
 import {

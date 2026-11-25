@@ -86,7 +86,10 @@ test("TSDoc definitions follow the cssdoc vocabulary", () => {
     syntaxKind: tag.kind === "record" ? "block" : tag.kind,
     ...(tag.allowMultiple ? { allowMultiple: true } : {}),
   }));
-  expect(tsdocConfig.tagDefinitions).toEqual(definitions);
+  expect(tsdocConfig.tagDefinitions).toEqual([
+    { tagName: "@module", syntaxKind: "block" },
+    ...definitions,
+  ]);
 });
 
 test("TSDoc lint recognizes cssdoc tags without accepting unknown tags", () => {

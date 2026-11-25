@@ -1,5 +1,5 @@
 /**
- * @cssdoc/regex/definitions/tier-1-css-and-common
+ * \@cssdoc/regex/definitions/tier-1-css-and-common
  * Tier 1 CSS and common composed patterns
  * @module
  */

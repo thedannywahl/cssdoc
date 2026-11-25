@@ -1,5 +1,5 @@
 /**
- * @cssdoc/regex/definitions/tier-3-cssdoc-tokens
+ * \@cssdoc/regex/definitions/tier-3-cssdoc-tokens
  * Tier 3+ CssDoc and tokenizer patterns
  * @module
  */

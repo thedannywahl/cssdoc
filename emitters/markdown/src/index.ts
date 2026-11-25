@@ -4,7 +4,7 @@
  * {@link renderEntry} / {@link renderIndex} for strings, or {@link buildCssApi} to write a whole
  * reference directory.
  *
- * @module @cssdoc/markdown
+ * @module \@cssdoc/markdown
  */
 export {
   DEFAULT_SECTION_ORDER,

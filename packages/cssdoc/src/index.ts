@@ -3,9 +3,9 @@
  * browser-safe building blocks so you can `import { parseCssDocs, createIndex, lintModel } from "@cssdoc/cssdoc"`
  * instead of wiring up the scoped packages yourself:
  *
- * - {@link https://cssdoc.dev @cssdoc/core} — parse doc-comments + the CSS AST into a model.
- * - {@link https://cssdoc.dev @cssdoc/index} — build a queryable index with source spans.
- * - {@link https://cssdoc.dev @cssdoc/providers} — lint, complete, hover, and go-to-definition.
+ * - {@link https://cssdoc.dev | \@cssdoc/core} — parse doc-comments + the CSS AST into a model.
+ * - {@link https://cssdoc.dev | \@cssdoc/index} — build a queryable index with source spans.
+ * - {@link https://cssdoc.dev | \@cssdoc/providers} — lint, complete, hover, and go-to-definition.
  *
  * Loading `cssdoc.json` files is Node-only, so it stays in its own package — add `@cssdoc/config`
  * alongside this one when you need it.
@@ -18,7 +18,7 @@
  * const findings = lintModel(createIndex(css));
  * ```
  *
- * @module @cssdoc/cssdoc
+ * @module \@cssdoc/cssdoc
  */
 export * from "@cssdoc/core";
 export * from "@cssdoc/index";

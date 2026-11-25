@@ -23,6 +23,7 @@ import { LitElement, css, html } from "lit";
  * @example On State: Toggle activated
  * <x-switch class="on"></x-switch>
  * @example Styled Parts: Customizing with ::part()
+ * ```html
  * <style>
  *   x-switch::part(track) {
  *     background: linear-gradient(90deg, #ef4444, #f97316);
@@ -33,6 +34,7 @@ import { LitElement, css, html } from "lit";
  *   }
  * </style>
  * <x-switch class="on"></x-switch>
+ * ```
  * @example With Label: Toggle with descriptive label
  * <label>
  *   <x-switch></x-switch>

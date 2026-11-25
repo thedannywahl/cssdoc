@@ -32,7 +32,7 @@
  * ];
  * ```
  *
- * @module @cssdoc/eslint-plugin
+ * @module \@cssdoc/eslint-plugin
  */
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";

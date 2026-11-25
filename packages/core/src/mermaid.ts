@@ -1,7 +1,7 @@
 /**
  * Render an authored `@structure` tree ({@link StructureNode}[]) as a Mermaid flowchart, so an emitter
  * can show a component's HTML shape as a diagram. Output-agnostic: it returns Mermaid source; the host
- * decides how to render it (a ```mermaid fence, a live renderer, …).
+ * decides how to render it (a Mermaid code fence, a live renderer, …).
  *
  * The diagram is *structured* — every node is classified and shaped by what it is, and cardinality
  * rides the edge (ER-style) rather than the label:

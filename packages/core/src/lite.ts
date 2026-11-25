@@ -9,7 +9,7 @@
  * {@link parseCssDocs}, or inject your own parser via `ParseOptions.parse` (e.g. `@cssdoc/dialects`'s
  * `resolveParser`).
  *
- * @module @cssdoc/core/lite
+ * @module \@cssdoc/core/lite
  */
 export {
   parseDocComment,

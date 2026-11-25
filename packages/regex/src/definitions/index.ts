@@ -1,5 +1,5 @@
 /**
- * @cssdoc/regex/definitions/index
+ * \@cssdoc/regex/definitions/index
  *
  * Unified Pattern Definitions — Single source of truth for all regex patterns.
  * Organized by functional areas and tiers.

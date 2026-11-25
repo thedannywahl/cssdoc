@@ -139,7 +139,7 @@ const elementProfile: {
   },
 } as const;
 
-/** JSON Schema for a single {@link @cssdoc/core!CssDocEntry | CssDocEntry}. */
+/** JSON Schema for a single {@link https://cssdoc.dev/reference/@cssdoc/core/interfaces/CssDocEntry | CssDocEntry}. */
 export const cssDocEntrySchema: {
   readonly type: "object";
   readonly required: readonly string[];

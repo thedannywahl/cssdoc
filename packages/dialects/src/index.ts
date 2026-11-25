@@ -16,7 +16,7 @@
  * const records = parseCssDocs(scssSource, { parse });
  * ```
  *
- * @module @cssdoc/dialects
+ * @module \@cssdoc/dialects
  */
 import postcss, { type Root } from "postcss";
 // postcss-less ships no type declarations; its default export is a PostCSS Syntax with `.parse`.
