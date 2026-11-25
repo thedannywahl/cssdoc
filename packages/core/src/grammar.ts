@@ -495,6 +495,7 @@ function parseModifierBody(description: string | undefined): DocModifier {
  *
  * @param raw - The comment text (with or without `/** … *\/` framing).
  * @param configuration - The active tag configuration (defaults to the full standard vocabulary).
+ * @param parse - An optional CSS parser used to build structure trees.
  * @returns The structured tags.
  */
 export function parseDocComment(

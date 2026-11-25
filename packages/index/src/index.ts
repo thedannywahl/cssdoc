@@ -320,6 +320,9 @@ export class CssDocIndex {
    * A custom property's declared value and its fully resolved value — following `var()` references
    * through the index to a terminal literal, the way browser dev tools do. `resolved` is omitted when
    * nothing was followed (no `var()`, or the chain couldn't be resolved further).
+   *
+   * @param name - Custom-property name, including `--`.
+   * @returns The declared and, if different, resolved values; an empty object when unknown.
    */
   resolveCustomProperty(name: string): {
     /** Value stored for the property, if present. */
@@ -338,7 +341,12 @@ export class CssDocIndex {
     return this.records.map((r) => r.entry);
   }
 
-  /** The record whose base class matches `className` (with or without a leading dot). */
+  /**
+   * Look up a record by its base class.
+   *
+   * @param className - Base class, with or without a leading dot.
+   * @returns The matching record, or `undefined` if none exists.
+   */
   componentForClass(className: string): CssDocEntry | undefined {
     return this.byClass.get(stripDot(className))?.entry;
   }
@@ -417,15 +425,27 @@ export class CssDocIndex {
       : (baseModifier ?? globalModifier);
   }
 
-  /** Whether `modifier` (a class token or attribute expression) is a documented modifier of `base` —
+  /**
+   * Whether `modifier` (a class token or attribute expression) is a documented modifier of `base` —
    * an exact match, or an instance of a documented `*` family (`-icon-arrow` → `-icon-*`).
-   * Checks both base-specific modifiers and global modifiers. */
+   * Checks both base-specific modifiers and global modifiers.
+   *
+   * @param base - Record base class, with or without a leading dot.
+   * @param modifier - Modifier class token or attribute expression.
+   * @returns Whether a matching base-specific or global modifier exists.
+   */
   isModifier(base: string, modifier: string): boolean {
     return this.matchedModifier(base, this.matcher.normalizeMember(modifier)) !== undefined;
   }
 
-  /** The deprecation of a modifier on `base`, if it is deprecated (including via a `*` family).
-   * Checks both base-specific and global modifiers (applying globalPrecedence logic). */
+  /**
+   * Find deprecation information for a modifier, including a matching `*` family. Checks both
+   * base-specific and global modifiers, applying {@link globalPrecedence} on conflicts.
+   *
+   * @param base - Record base class, with or without a leading dot.
+   * @param modifier - Modifier class token or attribute expression.
+   * @returns The selected modifier's deprecation information, or `undefined`.
+   */
   deprecationOf(
     base: string,
     modifier: string,
@@ -440,8 +460,14 @@ export class CssDocIndex {
     return this.matchedModifier(base, this.matcher.normalizeMember(modifier))?.deprecated;
   }
 
-  /** The alias mapping of a modifier on `base`, if documented as an alias.
-   * Checks both base-specific and global modifiers (applying globalPrecedence logic). */
+  /**
+   * Find a modifier's alias mapping. Checks both base-specific and global modifiers, applying
+   * {@link globalPrecedence} on conflicts.
+   *
+   * @param base - Record base class, with or without a leading dot.
+   * @param modifier - Modifier class token or attribute expression.
+   * @returns The selected modifier's alias mapping, or `undefined`.
+   */
   aliasOf(
     base: string,
     modifier: string,
@@ -480,7 +506,14 @@ export class CssDocIndex {
     );
   }
 
-  /** The definition location of a record member (or the record itself), if a span is known. */
+  /**
+   * Find a record or member's definition location. For records, the rule span takes precedence over
+   * the record span.
+   *
+   * @param name - Record name.
+   * @param key - Member key from {@link memberKey}, or `record` (the default) for the record itself.
+   * @returns The location, or `undefined` if the record or span is unknown.
+   */
   location(name: string, key = "record"): Location | undefined {
     const record = this.byName.get(name);
     if (!record) return undefined;
@@ -743,6 +776,7 @@ export function createIndex(
  * extractor for the value-validation rules.
  *
  * @param css - The CSS source.
+ * @param options - An optional CSS parser; defaults to PostCSS.
  * @returns The assignments and `var(…)` usages found.
  */
 export function cssValueSites(
