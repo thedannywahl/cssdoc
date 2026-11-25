@@ -48,7 +48,6 @@
   },
   "devDependencies": {
     "publint": "catalog:",
-    "typescript": "catalog:",
-    "vitest": "catalog:"
+    "typescript": "catalog:"
   }
 }
