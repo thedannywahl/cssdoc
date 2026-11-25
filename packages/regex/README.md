@@ -35,8 +35,8 @@ Patterns are organized by tier level:
 - **Tier 3**: cssdoc-specific patterns (parts, properties, states, variants, slots)
 - **Tier 4**: Complex composite patterns
 
-Definitions live in `tier-<number>-<domain>.ts` files. Tier 1 keeps CSS and common patterns together
-in `tier-1-css-and-common.ts`, alongside separate HTML, JavaScript, JSX, and Markdown files.
+Definitions live in `tier-<number>-<domain>.ts` files. Tier 1 separates CSS and common patterns into
+`tier-1-css.ts` and `tier-1-common.ts`, alongside HTML, JavaScript, JSX, and Markdown files.
 
 `UNDERSCORE_CHAR` is the literal underscore for composing separators and patterns.
 `ASTERISK_CHAR`, `PLUS_CHAR`, `CARET_CHAR`, `DOLLAR_CHAR`, and `TILDE_CHAR` provide literal operator characters.

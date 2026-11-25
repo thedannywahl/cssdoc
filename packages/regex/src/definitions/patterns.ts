@@ -12,7 +12,8 @@ import { regex as arkRegex } from "arkregex";
 import type { UnifiedPatternDef, RawPatternDef } from "../types.ts";
 import { createResolver, resolveAllPatterns } from "../lib.ts";
 import { TIER_0_PRIMITIVES_PATTERNS } from "./tier-0-primitives.ts";
-import { TIER_1_CSS_AND_COMMON_PATTERNS } from "./tier-1-css-and-common.ts";
+import { TIER_1_COMMON_PATTERNS } from "./tier-1-common.ts";
+import { TIER_1_CSS_PATTERNS } from "./tier-1-css.ts";
 import { TIER_1_HTML_PATTERNS } from "./tier-1-html.ts";
 import { TIER_1_JAVASCRIPT_PATTERNS } from "./tier-1-javascript.ts";
 import { TIER_1_JSX_PATTERNS } from "./tier-1-jsx.ts";
@@ -25,9 +26,13 @@ import { TIER_3_CSSDOC_TOKENS_PATTERNS } from "./tier-3-cssdoc-tokens.ts";
  * Patterns are resolved lazily to handle composition dependencies.
  */
 export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
+  // Keep the public registry's existing iteration order across the split.
+  const { FILE_EXTENSION, ...commonPatterns } = TIER_1_COMMON_PATTERNS;
   const rawDefs: Record<string, RawPatternDef> = {
     ...TIER_0_PRIMITIVES_PATTERNS,
-    ...TIER_1_CSS_AND_COMMON_PATTERNS,
+    FILE_EXTENSION,
+    ...TIER_1_CSS_PATTERNS,
+    ...commonPatterns,
     ...TIER_1_HTML_PATTERNS,
     ...TIER_1_JAVASCRIPT_PATTERNS,
     ...TIER_1_JSX_PATTERNS,
