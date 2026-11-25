@@ -37,11 +37,18 @@ warnings instead of being applied.
 
 ### File discovery
 
-`cssdoc.include` and `cssdoc.exclude` are arrays of discovery glob strings, with defaults
-`["**/*.css"]` and `["**/node_modules/**"]`, respectively. Their initialization option names
-are `include` and `exclude`. Patterns are relative to each workspace folder. Include other
-supported file types explicitly when their embedded or dialect CSS should enter the workspace index;
-see [Embedded CSS support](/guide/embedded-css-support).
+#### `cssdoc.include`
+
+An array of workspace-relative discovery glob strings. It defaults to `["**/*.css"]`; its
+initialization option is `include`. Include other supported file types explicitly when their embedded
+or dialect CSS should enter the workspace index; see [Embedded CSS support](/guide/embedded-css-support).
+
+#### `cssdoc.exclude`
+
+An array of workspace-relative globs excluded from discovery. It defaults to
+`["**/node_modules/**"]`; its initialization option is `exclude`.
+
+#### `cssdoc.css`
 
 `cssdoc.css` is an array of explicit file path strings, corresponding to the `css` initialization
 option. A nonempty client list overrides `include` and `exclude`. The client setting defaults to
@@ -49,6 +56,8 @@ option. A nonempty client list overrides `include` and `exclude`. The client set
 contrast, an `initializationOptions.css` list is explicit even when empty: `css: []` disables
 stylesheet discovery unless client settings override it. Paths may be absolute; relative paths
 resolve against each workspace folder. Explicit paths aren't filtered by the include or exclude globs.
+
+#### Discovery examples
 
 For example, this client configuration discovers CSS and Vue files under `src`:
 
@@ -71,14 +80,20 @@ This initialization option instead indexes only the named file:
 
 ### Hover display
 
+#### `cssdoc.hover.detail`
+
 `cssdoc.hover.detail` selects `"compact"`, `"full"`, or `"custom"` and defaults to `"full"`.
 Its initialization option is `hoverDetail`. `compact` shows the component header, summary,
 deprecation, and facet counts. `full` shows sections with content.
+
+#### `cssdoc.hover.sections`
 
 `custom` uses `cssdoc.hover.sections`, an object mapping section names to visibility modes. It
 defaults to `{}`; its initialization option is `hoverSections`. `auto` shows a section only when it
 has content, `on` also shows empty sections with a placeholder, and `off` hides it. Unspecified
 sections use `auto`. These options affect component cards, not every kind of hover.
+
+#### `cssdoc.hover.sectionOrder`
 
 The default section order is `summary`, `deprecated`, `remarks`, `accessibility`, `modifiers`,
 `parts`, `shadowParts`, `pseudoElements`, `states`, `customProperties`, `functions`, `slots`,
@@ -88,6 +103,8 @@ sections are dropped. It defaults to `[]`, which uses the default order; its ini
 is `hoverSectionOrder`. The header always comes first. The order applies to `full` and `custom`
 cards, not `compact` cards.
 The VS Code extension's settings schema currently lists a subset of these keys for section order.
+
+#### Hover example
 
 For example, a client can request a shorter card:
 
@@ -108,19 +125,27 @@ The nearest config's `render.exampleFilters.hover` can also filter examples in h
 
 ### Provider discovery
 
+#### `cssdoc.editor.providerDiscovery`
+
 `cssdoc.editor.providerDiscovery` enables nested-config discovery and defaults to `true`; its
 initialization option is `providerDiscovery`. The root config and configs governing indexed files
 are loaded regardless of this boolean setting. When enabled, nested-config discovery also finds
 configs with providers even if their directories contain no indexed CSS.
 
+#### `cssdoc.editor.providerScanDepth`
+
 `cssdoc.editor.providerScanDepth` sets the maximum depth as a non-negative integer, defaulting to
 `3`; its initialization option is `providerScanDepth`. Depth counts directories below the workspace
 root: `0` checks only the root. The scan skips hidden directories, `node_modules`, `dist`, and `build`.
+
+#### `cssdoc.editor.providerGlobs`
 
 Provider paths come from the project config's [`providers`](/guide/config-reference#providers)
 field. `cssdoc.editor.providerGlobs` is a boolean, defaulting to `true`; its initialization option
 is `providerGlobs`. When enabled, glob patterns expand to matching paths; when disabled, paths are
 used literally. Provider resolution problems are reported in the server log.
+
+#### `cssdoc.editor.circularReferenceMode`
 
 `cssdoc.editor.circularReferenceMode` controls repeated resolved paths within one config's provider
 list. It defaults to `"warn"`; its initialization option is `circularReferenceMode`. The accepted
