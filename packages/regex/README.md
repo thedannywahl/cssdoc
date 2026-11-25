@@ -30,7 +30,7 @@ console.log(pattern.fixtures); // { passes: [...], fails: [...] }
 Patterns are organized by tier level:
 
 - **Tier 0**: Character classes (single characters, digits, word boundaries)
-- **Tier 1**: CSS, HTML, and Markdown patterns and their primitives
+- **Tier 1**: CSS, HTML, JSX, and Markdown patterns and their primitives
 - **Tier 2**: CssDoc grammar patterns (tags, modifiers, cardinality, record names)
 - **Tier 3**: cssdoc-specific patterns (parts, properties, states, variants, slots)
 - **Tier 4**: Complex composite patterns
@@ -55,6 +55,8 @@ HTML element-name validators; the latter also accepts JSX-style dotted names.
 `HTML_QUOTED_ATTRIBUTE_VALUE` captures the contents of either quote style, and
 `HTML_QUOTED_ATTRIBUTE` captures an ASCII-like name and its quoted value.
 `HTML_LIKE_CLASS_ATTRIBUTE_NAME` matches `class` and JSX `className`.
+The JSX-related host-scanning patterns live in `tier-1-jsx.ts`; their existing `HTML_LIKE_` names
+reflect their use across HTML-like hosts.
 `HTML_COMMENT` matches between comment delimiters without validating HTML comment contents.
 `HTML_LIKE_STYLE_OPEN_TAG` captures text after the `style` prefix through the first `>`; it also
 accepts longer names such as `<styles>` and doesn't handle quoted `>` characters.
@@ -150,7 +152,7 @@ When adding or modifying patterns in `definitions.ts`:
 
 1. **Choose the right tier**:
    - **Tier 0**: Character classes and basic building blocks
-   - **Tier 1**: CSS, HTML, and Markdown patterns
+   - **Tier 1**: CSS, HTML, JSX, and Markdown patterns
    - **Tier 2**: CssDoc grammar patterns from CssDoc.grammarkdown
    - **Tier 3**: cssdoc implementation-specific patterns
    - **Tier 4**: Complex composite patterns

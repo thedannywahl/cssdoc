@@ -14,6 +14,7 @@ import { createResolver, resolveAllPatterns } from "../lib.ts";
 import { TIER_0_PATTERNS } from "./tier-0.ts";
 import { TIER_1_PATTERNS } from "./tier-1.ts";
 import { TIER_1_HTML_PATTERNS } from "./tier-1-html.ts";
+import { TIER_1_JSX_PATTERNS } from "./tier-1-jsx.ts";
 import { TIER_1_MARKDOWN_PATTERNS } from "./tier-1-markdown.ts";
 import { TIER_2_PATTERNS } from "./tier-2.ts";
 import { TIER_3_PATTERNS } from "./tier-3.ts";
@@ -27,6 +28,7 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
     ...TIER_0_PATTERNS,
     ...TIER_1_PATTERNS,
     ...TIER_1_HTML_PATTERNS,
+    ...TIER_1_JSX_PATTERNS,
     ...TIER_1_MARKDOWN_PATTERNS,
     ...TIER_2_PATTERNS,
     ...TIER_3_PATTERNS,
