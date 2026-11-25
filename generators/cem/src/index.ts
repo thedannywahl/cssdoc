@@ -41,7 +41,9 @@ interface CemModule {
 
 /** A Custom Elements Manifest. */
 export interface CustomElementsManifest {
+  /** Custom Elements Manifest schema version. */
   schemaVersion: string;
+  /** Modules containing the generated declarations. */
   modules: CemModule[];
 }
 
@@ -87,6 +89,7 @@ export function toCem(index: CssDocIndex, options: { path?: string } = {}): Cust
  * @throws If a filesystem operation fails.
  */
 export function writeCem(options: { index: CssDocIndex; outFile?: string; path?: string }): {
+  /** Path where the manifest was written. */
   outFile: string;
 } {
   const outFile = options.outFile ?? "custom-elements.json";

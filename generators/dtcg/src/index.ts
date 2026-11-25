@@ -28,8 +28,11 @@ function dtcgType(syntax: string | undefined): string | undefined {
 
 /** A single DTCG token. */
 export interface DtcgToken {
+  /** The custom property's default value, or an empty string when absent. */
   $value: string;
+  /** DTCG type mapped from a recognized CSS syntax, when available. */
   $type?: string;
+  /** Authored property description, when present. */
   $description?: string;
 }
 
@@ -69,7 +72,10 @@ export function toDtcg(index: CssDocIndex): DtcgDocument {
  * @returns The output path.
  * @throws If a filesystem operation fails.
  */
-export function writeDtcg(options: { index: CssDocIndex; outFile?: string }): { outFile: string } {
+export function writeDtcg(options: { index: CssDocIndex; outFile?: string }): {
+  /** Path where the token document was written. */
+  outFile: string;
+} {
   const outFile = options.outFile ?? "tokens.json";
   mkdirSync(dirname(outFile), { recursive: true });
   writeFileSync(outFile, `${JSON.stringify(toDtcg(options.index), null, 2)}\n`);

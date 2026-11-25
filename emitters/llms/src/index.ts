@@ -175,7 +175,10 @@ export interface WriteLlmsOptions extends ModelInput, RenderLlmsOptions {
  * @throws If parsing plain CSS or a filesystem operation fails. Embedded-source parsing returns no
  * records on failure.
  */
-export function writeLlms(options: WriteLlmsOptions): { outFile: string } {
+export function writeLlms(options: WriteLlmsOptions): {
+  /** Path where the digest was written. */
+  outFile: string;
+} {
   const outFile = options.outFile ?? "llms.txt";
   mkdirSync(dirname(outFile), { recursive: true });
   writeFileSync(outFile, renderLlms(resolveEntries(options), options));

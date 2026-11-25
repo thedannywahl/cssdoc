@@ -343,8 +343,11 @@ export interface BuildHtmlOptions extends ModelInput {
 
 /** What {@link buildHtml} produced. */
 export interface BuildHtmlResult {
+  /** Visible records, sorted by name. */
   entries: CssDocEntry[];
+  /** Paths of the generated record pages, in entry order. */
   pages: string[];
+  /** Path of the generated index page. */
   indexPath: string;
 }
 
