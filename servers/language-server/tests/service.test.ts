@@ -880,6 +880,24 @@ test("semanticTokens: extracts doc comment tags as tokens", () => {
   expect(decoratorToken).toBeDefined();
 });
 
+test("semantic tokens use line-relative UTF-16 positions in multiline and inline comments", () => {
+  const text = `/**\n * @component button\n * @summary Click me\n */\n.💫 {} /** @deprecated Old */`;
+  const lines = text.split("\n");
+  const svc = new CssDocLanguageService(createIndex(""));
+  const tokenText = svc.semanticTokens(text).map((token) => ({
+    line: token.line,
+    text: lines[token.line].slice(token.startCharacter, token.startCharacter + token.length),
+  }));
+  expect(tokenText).toEqual([
+    { line: 1, text: "component" },
+    { line: 1, text: "button" },
+    { line: 2, text: "summary" },
+    { line: 2, text: "Click me" },
+    { line: 4, text: "deprecated" },
+    { line: 4, text: "Old" },
+  ]);
+});
+
 test("inlayHints: shows custom property metadata", () => {
   const docCss = `
 /**

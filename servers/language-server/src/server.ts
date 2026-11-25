@@ -18,6 +18,7 @@ import {
   CompletionItemTag,
   DiagnosticSeverity,
   DidChangeWatchedFilesNotification,
+  type InlayHintParams,
   ProposedFeatures,
   TextDocumentSyncKind,
   TextDocuments,
@@ -511,16 +512,22 @@ export function startLanguageServer(): void {
     },
   );
 
-  connection.onRequest("textDocument/inlayHint", (params: { textDocument: { uri: string } }) => {
+  connection.onRequest("textDocument/inlayHint", (params: InlayHintParams) => {
     const doc = documents.get(params.textDocument.uri);
     if (!doc) return [];
     const hints = service.inlayHints(doc.getText(), fsPathOf(doc.uri));
-    return hints.map((h) => ({
-      position: h.position,
-      label: h.label,
-      kind: h.kind,
-      tooltip: h.tooltip,
-    }));
+    const offset = (position: { line: number; character: number }): number =>
+      doc.offsetAt(position);
+    const start = offset(params.range.start);
+    const end = offset(params.range.end);
+    return hints
+      .filter((hint) => offset(hint.position) >= start && offset(hint.position) < end)
+      .map((h) => ({
+        position: h.position,
+        label: h.label,
+        kind: h.kind,
+        tooltip: h.tooltip,
+      }));
   });
 
   documents.listen(connection);

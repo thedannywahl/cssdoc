@@ -1287,19 +1287,17 @@ export class CssDocLanguageService {
       const blockStart = block.index ?? 0;
       const blockLines = blockText.split("\n");
 
-      let currentLine = positionAt(text, blockStart).line;
-      let charInBlock = 0;
+      const start = positionAt(text, blockStart);
+      let currentLine = start.line;
 
       for (const line of blockLines) {
-        const lineStart = charInBlock;
-        charInBlock += line.length + 1; // +1 for newline
+        const lineStart = currentLine === start.line ? start.character : 0;
 
         // Find @-tags in this line
         const tagMatches = line.matchAll(SEMANTIC_TAG);
         for (const match of tagMatches) {
           const tagName = match[1];
           const tagStart = (match.index ?? 0) + 1; // +1 for @
-          const tagEnd = tagStart + tagName.length;
           const tagValue = match[2];
 
           // Emit @tag token
@@ -1318,19 +1316,15 @@ export class CssDocLanguageService {
           if (tagName.startsWith("css")) modifierFlags |= 1 << modifiers.optional;
 
           // Emit value token if present
-          if (tagValue && tagEnd + 1 < line.length) {
-            const valueStart = lineStart + tagEnd + 1;
-            const valueEnd = line.lastIndexOf("*") > 0 ? line.lastIndexOf("*") : line.length;
-            const valueLength = Math.max(0, valueEnd - valueStart);
-            if (valueLength > 0) {
-              tokens.push({
-                line: currentLine,
-                startCharacter: valueStart,
-                length: Math.min(valueLength, 50), // Cap length to avoid massive tokens
-                tokenType: tokenTypes.variable,
-                tokenModifiers: modifierFlags,
-              });
-            }
+          if (tagValue) {
+            const valueStart = (match.index ?? 0) + match[0].indexOf(tagValue, tagName.length + 1);
+            tokens.push({
+              line: currentLine,
+              startCharacter: lineStart + valueStart,
+              length: Math.min(tagValue.length, 50),
+              tokenType: tokenTypes.variable,
+              tokenModifiers: modifierFlags,
+            });
           }
         }
 

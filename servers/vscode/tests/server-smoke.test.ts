@@ -477,6 +477,45 @@ test("the server discovers nested provider configs without a local stylesheet", 
   }
 }, 30_000);
 
+test("inlay hint requests return only hints within the requested range", async () => {
+  execFileSync("node", ["scripts/build.mjs"], { cwd: root });
+  const fixture = mkdtempSync(join(tmpdir(), "cssdoc-inlay-range-"));
+  writeFileSync(
+    join(fixture, "button.css"),
+    "/**\n * @component button\n * @cssproperty --button-color Button color.\n */\n.button { color: var(--button-color); }\n",
+  );
+  const uri = pathToFileURL(join(fixture, "page.html")).href;
+  const { server, request } = ipcServer<{ position: { line: number } }[]>();
+  try {
+    await request("initialize", {
+      processId: process.pid,
+      rootUri: pathToFileURL(fixture).href,
+      capabilities: {},
+    });
+    server.send({ jsonrpc: "2.0", method: "initialized", params: {} });
+    server.send({
+      jsonrpc: "2.0",
+      method: "textDocument/didOpen",
+      params: {
+        textDocument: {
+          uri,
+          languageId: "html",
+          version: 1,
+          text: "var(--button-color)\nvar(--button-color)\n",
+        },
+      },
+    });
+    const reply = await request("textDocument/inlayHint", {
+      textDocument: { uri },
+      range: { start: { line: 1, character: 0 }, end: { line: 2, character: 0 } },
+    });
+    expect(reply.result?.map((hint) => hint.position.line)).toEqual([1]);
+  } finally {
+    server.kill();
+    rmSync(fixture, { recursive: true, force: true });
+  }
+}, 30_000);
+
 test("definitions from a multi-file index retain their source URI and local line", async () => {
   execFileSync("node", ["scripts/build.mjs"], { cwd: root });
   const fixture = mkdtempSync(join(tmpdir(), "cssdoc-definitions-"));
