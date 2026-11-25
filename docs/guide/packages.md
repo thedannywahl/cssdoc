@@ -76,7 +76,9 @@ non-Microsoft editors).
 
 ## Syntax highlighting
 
-| Package                                                                  | What it is                                                                 |
-| ------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
-| [`@cssdoc/tmlanguage`](https://www.npmjs.com/package/@cssdoc/tmlanguage) | A TextMate injection grammar for Shiki, VS Code, and other TextMate hosts. |
-| [`@cssdoc/codemirror`](https://www.npmjs.com/package/@cssdoc/codemirror) | A CodeMirror 6 highlighter for the same doc-comment vocabulary.            |
+| Package                                                                                            | What it is                                                                 |
+| -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| [`@cssdoc/tmlanguage`](https://www.npmjs.com/package/@cssdoc/tmlanguage)                           | A TextMate injection grammar for Shiki, VS Code, and other TextMate hosts. |
+| [`@cssdoc/codemirror`](https://www.npmjs.com/package/@cssdoc/codemirror)                           | A CodeMirror 6 highlighter for the same doc-comment vocabulary.            |
+| [`@cssdoc/grammarkdown-tmlanguage`](https://www.npmjs.com/package/@cssdoc/grammarkdown-tmlanguage) | A TextMate grammar for grammarkdown.                                       |
+| [`@cssdoc/grammarkdown-codemirror`](https://www.npmjs.com/package/@cssdoc/grammarkdown-codemirror) | A CodeMirror 6 highlighter for grammarkdown.                               |
