@@ -1316,6 +1316,35 @@ test("component hover card: full renders every present facet, compact shows coun
   expect(compact).toContain("2 modifiers");
 });
 
+test("portable component hovers retain sections and examples without VS Code markup", () => {
+  const idx = createIndex(`
+/** @component button
+ * @summary Click to submit.
+ * @modifier button--quiet — A quieter action.
+ * @example
+ * <button class="button">Save</button>
+ */
+.button {}
+.button--quiet {}
+`);
+  const card = hoverForClass(
+    "button",
+    "button",
+    idx,
+    "full",
+    undefined,
+    undefined,
+    undefined,
+    "markdown",
+  )?.contents;
+  expect(card).toContain("`.button`");
+  expect(card).toContain("**Modifiers**");
+  expect(card).toContain("`.button--quiet`");
+  expect(card).toContain('```html\n<button class="button">Save</button>\n```');
+  expect(card).not.toContain("$(");
+  expect(card).not.toContain("--vscode-");
+});
+
 test("hover custom detail: per-section on/off/auto", () => {
   const css = [
     "/**",

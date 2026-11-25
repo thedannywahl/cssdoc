@@ -66,6 +66,7 @@ import type {
   Diagnostic,
   Hover,
   HoverDetail,
+  HoverPresentation,
   RuleOptions,
   HoverSectionKey,
   HoverSectionOrder,
@@ -768,6 +769,7 @@ export const record = {
     sections?: HoverSections,
     sectionOrder?: HoverSectionOrder,
     exampleFilter?: ExampleFilter | null,
+    presentation: HoverPresentation = "vscode",
   ): Hover | undefined {
     const entry = index.componentForClass(base);
     if (!entry) return undefined;
@@ -776,18 +778,23 @@ export const record = {
     // symbol-category colours so a selector/property/name pops over its prose description — mirroring
     // the palette the injection grammar uses (component → class, modifier/part → field, state/property
     // → variable, function → method).
+    const icon = (name: string): string => (presentation === "vscode" ? `${codicon(name)} ` : "");
     const warnHtml = (label: string): string =>
-      `${LESS_THAN_CHAR}span style="color:var(--vscode-editorWarning-foreground);"${GREATER_THAN_CHAR}${label}${LESS_THAN_CHAR}${FORWARD_SLASH_CHAR}span${GREATER_THAN_CHAR}`;
+      presentation === "vscode"
+        ? `${LESS_THAN_CHAR}span style="color:var(--vscode-editorWarning-foreground);"${GREATER_THAN_CHAR}${label}${LESS_THAN_CHAR}${FORWARD_SLASH_CHAR}span${GREATER_THAN_CHAR}`
+        : bold(label);
     const styled = (text: string, kind: "class" | "field" | "variable" | "method"): string =>
-      `${LESS_THAN_CHAR}code style="color:var(--vscode-symbolIcon-${kind}Foreground);"${GREATER_THAN_CHAR}${text}${LESS_THAN_CHAR}${FORWARD_SLASH_CHAR}code${GREATER_THAN_CHAR}`;
+      presentation === "vscode"
+        ? `${LESS_THAN_CHAR}code style="color:var(--vscode-symbolIcon-${kind}Foreground);"${GREATER_THAN_CHAR}${text}${LESS_THAN_CHAR}${FORWARD_SLASH_CHAR}code${GREATER_THAN_CHAR}`
+        : codeSpan(text);
     const dash = (d?: string): string => (d ? ` — ${d}` : "");
 
-    const head = [`${codicon("symbol-class")} ${styled(entry.className, "class")}`, entry.kind];
+    const head = [`${icon("symbol-class")}${styled(entry.className, "class")}`, entry.kind];
     if (entry.releaseStage) head.push(entry.releaseStage);
     if (entry.since) head.push(`since ${entry.since}`);
     const lines = [head.join(" · ")];
     const deprecatedLine = entry.deprecated
-      ? `${codicon("warning")} ${warnHtml("Deprecated")} — ${entry.deprecated}`
+      ? `${icon("warning")}${warnHtml("Deprecated")} — ${entry.deprecated}`
       : undefined;
 
     if (detail === "compact") {
@@ -829,7 +836,7 @@ export const record = {
       if (w !== "skip")
         fragments[key] = [
           "",
-          bold(`${codicon(icon)} ${label}`),
+          bold(`${presentation === "vscode" ? `${codicon(icon)} ` : ""}${label}`),
           ...(w === "content" ? rows : [emptySection]),
         ];
     };
@@ -842,11 +849,11 @@ export const record = {
           "",
           w === "content"
             ? (deprecatedLine as string)
-            : `${codicon("warning")} ${warnHtml("Deprecated")}`,
+            : `${icon("warning")}${warnHtml("Deprecated")}`,
         ];
     }
     prose("remarks", "", entry.remarks);
-    prose("accessibility", `${codicon("accessibility")} `, entry.accessibility);
+    prose("accessibility", icon("accessibility"), entry.accessibility);
 
     list(
       "modifiers",
@@ -959,7 +966,7 @@ export const record = {
         Boolean(entry.structure?.length || entry.structureVariants?.length),
       );
       if (w !== "skip") {
-        const frag = ["", bold(`${codicon("list-tree")} Structure`)];
+        const frag = ["", bold(`${icon("list-tree")}Structure`)];
         if (w === "content") {
           if (entry.structureDescription) frag.push("", entry.structureDescription);
           if (entry.structureVariants?.length) {
@@ -988,7 +995,7 @@ export const record = {
       const examples = selectExamples(entry, exampleFilter);
       const w = want("examples", examples.length > 0);
       if (w !== "skip") {
-        const frag = ["", bold(`${codicon("book")} Example${examples.length > 1 ? "s" : ""}`)];
+        const frag = ["", bold(`${icon("book")}Example${examples.length > 1 ? "s" : ""}`)];
         if (w === "content")
           for (const e of examples) {
             const ex = e.trim();

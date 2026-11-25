@@ -31,6 +31,7 @@ import {
   type Diagnostic,
   type Hover,
   type HoverDetail,
+  type HoverPresentation,
   type HoverSectionOrder,
   type HoverSections,
   type ResolvedNaming,
@@ -202,7 +203,12 @@ export function completeFunctions(index: CssDocIndex): Completion[] {
   return func.completions(index);
 }
 
-/** Hover for a class token: the modifier's docs, else the component's card (at the given detail). */
+/**
+ * Hover for a class token: the modifier's docs, else the component's card.
+ *
+ * Component cards default to VS Code styling for compatibility. Pass `"markdown"` for portable
+ * Markdown without VS Code icons or theme HTML.
+ */
 export function hoverForClass(
   base: string,
   token: string,
@@ -211,10 +217,11 @@ export function hoverForClass(
   sections?: HoverSections,
   sectionOrder?: HoverSectionOrder,
   exampleFilter?: ExampleFilter | null,
+  presentation?: HoverPresentation,
 ): Hover | undefined {
   return (
     modifier.hover(base, token, index) ??
-    record.hover(base, index, detail, sections, sectionOrder, exampleFilter)
+    record.hover(base, index, detail, sections, sectionOrder, exampleFilter, presentation)
   );
 }
 

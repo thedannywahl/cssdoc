@@ -235,6 +235,9 @@ export interface Hover {
  */
 export type HoverDetail = "compact" | "full" | "custom";
 
+/** Presentation used for component hover cards. */
+export type HoverPresentation = "vscode" | "markdown";
+
 /**
  * Per-section visibility for the `custom` hover detail. `auto` shows the section only when it has
  * content (what `full` does for every section); `on` always shows it (empty sections render a
