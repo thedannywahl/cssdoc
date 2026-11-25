@@ -326,6 +326,13 @@ export const TIER_0_PATTERNS: Record<string, RawPatternDef> = {
     description: "Asterisk character (literal)",
     fixtures: { passes: [{ input: "*" }], fails: [{ input: "+", reason: "plus" }] },
   },
+  PLUS_CHAR: {
+    name: "PLUS_CHAR",
+    tier: 0,
+    source: "+",
+    description: "Plus character (literal)",
+    fixtures: { passes: [{ input: "+" }], fails: [{ input: "*", reason: "asterisk" }] },
+  },
   CARET_CHAR: {
     name: "CARET_CHAR",
     tier: 0,

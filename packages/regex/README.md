@@ -36,7 +36,7 @@ Patterns are organized by tier level:
 - **Tier 4**: Complex composite patterns
 
 `UNDERSCORE_CHAR` is the literal underscore for composing separators and patterns.
-`ASTERISK_CHAR`, `CARET_CHAR`, `DOLLAR_CHAR`, and `TILDE_CHAR` provide literal operator characters.
+`ASTERISK_CHAR`, `PLUS_CHAR`, `CARET_CHAR`, `DOLLAR_CHAR`, and `TILDE_CHAR` provide literal operator characters.
 `EQUALS_CHAR` provides the literal equals sign.
 `AMPERSAND_CHAR` provides the literal ampersand.
 `FILE_EXTENSION` captures a lowercase ASCII filename extension at the end of a string.
@@ -48,7 +48,13 @@ Patterns are organized by tier level:
 `HTML_CUSTOM_ELEMENT_NAME` follows the HTML and DOM rules for valid custom-element names.
 `HTML_ELEMENT_NAME` matches either. `HTML_CUSTOM_ELEMENT_LIKE_NAME` preserves the narrower ASCII
 heuristic used by existing diagnostics. Anchor these sources when validating a complete name.
-`MARKDOWN_BACKTICK_FENCE` matches three backticks, not a complete Markdown fenced block.
+`MARKDOWN_BACKTICK_FENCE` matches three backticks, not a complete Markdown fenced block;
+`MARKDOWN_BACKTICK_FENCE_TEXT` is the literal marker. `MARKDOWN_BACKTICK_FENCE_LINE_PREFIX`
+detects that marker after a line start and optional whitespace, not a complete fenced block.
+`MARKDOWN_SINGLE_BACKTICK_CODE_SPAN` captures a simple single-backtick span, including empty and
+multiline spans; it isn't a complete CommonMark inline parser.
+`MARKDOWN_UNORDERED_LIST_MARKER` and `MARKDOWN_ORDERED_LIST_MARKER` match the marker only; callers
+choose anchoring and required whitespace.
 `MARKDOWN_ATX_HEADING_PREFIX` matches one to six hash marks followed by whitespace.
 `REGEX_METACHARACTER_SOURCE` matches characters that need escaping in regular expressions.
 Use `escapeRegex(text)` to escape those characters throughout a string for use in a regex pattern.

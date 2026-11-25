@@ -16,6 +16,10 @@ import {
   COMMENT_END_TEXT,
   DOC_COMMENT_START,
   DOC_COMMENT_START_TEXT,
+  MARKDOWN_BACKTICK_FENCE,
+  MARKDOWN_BACKTICK_FENCE_TEXT,
+  MARKDOWN_BACKTICK_FENCE_LINE_PREFIX,
+  MARKDOWN_SINGLE_BACKTICK_CODE_SPAN,
 } from "../src/index.ts";
 import { escapeRegex, escapeRegexChar, toRegExp } from "../src/lib.ts";
 
@@ -62,6 +66,25 @@ it("matches the same doc-comment opener as the literal form without consuming ex
 it("matches the literal comment closer without consuming extra stars", () => {
   expect(COMMENT_END.exec("**/")?.[0]).toBe(COMMENT_END_TEXT);
   expect(COMMENT_END.exec("/*")).toBeNull();
+});
+
+it("keeps the literal fence distinct from its regex source and detects indented line prefixes", () => {
+  expect(MARKDOWN_BACKTICK_FENCE.exec("````")?.[0]).toBe(MARKDOWN_BACKTICK_FENCE_TEXT);
+  expect(MARKDOWN_BACKTICK_FENCE_LINE_PREFIX.exec("text\n \t```css")?.[0]).toBe("\n \t```");
+  expect(MARKDOWN_BACKTICK_FENCE_LINE_PREFIX.exec("text ```css")).toBeNull();
+});
+
+it("captures simple code spans when splitting Markdown prose", () => {
+  const pattern = toRegExp(MARKDOWN_SINGLE_BACKTICK_CODE_SPAN);
+  expect("a `x` b `` c `y\nz`".split(pattern)).toEqual([
+    "a ",
+    "`x`",
+    " b ",
+    "``",
+    " c ",
+    "`y\nz`",
+    "",
+  ]);
 });
 
 it.each([
