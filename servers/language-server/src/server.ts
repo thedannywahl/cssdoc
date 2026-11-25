@@ -26,6 +26,7 @@ import {
 } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { type ConfigScope, CssDocLanguageService, type LspDiagnostic } from "./service.ts";
+import { hoverPlaintext } from "./plaintext.ts";
 import {
   type ClientSettings,
   discoverConfigDirectories,
@@ -57,6 +58,7 @@ export function startLanguageServer(): void {
   let watchFiles = false;
   let watchWorkspaceFolders = false;
   let supportsConfiguration = false;
+  let hoverFormat: "markdown" | "plaintext" = "plaintext";
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
   let watcher: { dispose(): void } | undefined;
   let watcherGeneration = 0;
@@ -244,6 +246,13 @@ export function startLanguageServer(): void {
       return path ? [path] : [];
     });
     initialOptions = options;
+    hoverFormat =
+      params.capabilities.textDocument?.hover?.contentFormat?.find(
+        (format) => format === "markdown" || format === "plaintext",
+      ) ?? "plaintext";
+    service.setHoverPresentation(
+      hoverFormat === "markdown" ? (options.hoverPresentation ?? "markdown") : "markdown",
+    );
     watchFiles = params.capabilities.workspace?.didChangeWatchedFiles?.dynamicRegistration === true;
     watchWorkspaceFolders = params.capabilities.workspace?.workspaceFolders === true;
     supportsConfiguration = params.capabilities.workspace?.configuration === true;
@@ -450,7 +459,14 @@ export function startLanguageServer(): void {
       doc.languageId,
       hoverFilterFor(doc.uri, path),
     );
-    return hover ? { contents: { kind: "markdown" as const, value: hover.contents } } : null;
+    return hover
+      ? {
+          contents: {
+            kind: hoverFormat,
+            value: hoverFormat === "plaintext" ? hoverPlaintext(hover.contents) : hover.contents,
+          },
+        }
+      : null;
   });
 
   connection.onDefinition((params) => {

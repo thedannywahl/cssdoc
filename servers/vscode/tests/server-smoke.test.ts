@@ -130,6 +130,55 @@ function ipcServer<T>(
   return { server, request };
 }
 
+test("hover presentation follows client format and VS Code opt-in", async () => {
+  execFileSync("node", ["scripts/build.mjs"], { cwd: root });
+  for (const [format, presentation] of [
+    ["markdown", undefined],
+    ["markdown", "vscode"],
+    ["plaintext", "vscode"],
+  ] as const) {
+    const { server, request } = ipcServer<{ contents: { kind: string; value: string } }>();
+    const uri = "file:///hover.css";
+    try {
+      await request("initialize", {
+        processId: process.pid,
+        rootUri: null,
+        capabilities: { textDocument: { hover: { contentFormat: [format] } } },
+        initializationOptions: { css: [], hoverPresentation: presentation },
+      });
+      server.send({ jsonrpc: "2.0", method: "initialized", params: {} });
+      server.send({
+        jsonrpc: "2.0",
+        method: "textDocument/didOpen",
+        params: {
+          textDocument: {
+            uri,
+            languageId: "css",
+            version: 1,
+            text: '/** @component widget\n * @summary A widget.\n * @example\n * <button class="widget">Save</button>\n */\n.widget {}',
+          },
+        },
+      });
+      const contents = (
+        await request("textDocument/hover", {
+          textDocument: { uri },
+          position: { line: 5, character: 2 },
+        })
+      ).result?.contents;
+      expect(contents?.kind).toBe(format);
+      expect(contents?.value).toContain("A widget.");
+      expect(contents?.value).toContain('<button class="widget">Save</button>');
+      expect(contents?.value.includes("$(symbol-class)")).toBe(
+        format === "markdown" && presentation === "vscode",
+      );
+      expect(contents?.value.includes("```")).toBe(format === "markdown");
+      expect(contents?.value.includes("**")).toBe(format === "markdown");
+    } finally {
+      server.kill();
+    }
+  }
+}, 30_000);
+
 test("the server applies per-folder client settings and reloads them on change", async () => {
   execFileSync("node", ["scripts/build.mjs"], { cwd: root });
   const fixture = mkdtempSync(join(tmpdir(), "cssdoc-settings-"));

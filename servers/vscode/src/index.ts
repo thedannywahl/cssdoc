@@ -28,6 +28,7 @@ function createClient(context: ExtensionContext): LanguageClient {
   };
   const clientOptions: LanguageClientOptions = {
     documentSelector: [...DOCUMENT_SELECTOR],
+    initializationOptions: { hoverPresentation: "vscode" },
     synchronize: { configurationSection: "cssdoc" },
     // Let the hover cards use codicons (`$(icon)`) and a little inline HTML (a themed deprecation
     // accent) — the server emits both; these flags tell the client to render rather than escape them.

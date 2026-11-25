@@ -63,6 +63,7 @@ import {
 import {
   DEFAULT_RULE_SEVERITIES,
   type HoverDetail,
+  type HoverPresentation,
   type HoverSectionOrder,
   type HoverSections,
   type NamingRules,
@@ -263,6 +264,7 @@ function refHoverAt(
   text: string,
   offset: number,
   configuration?: CssDocConfiguration,
+  presentation: HoverPresentation = "vscode",
 ): LspHover | undefined {
   const fallbackLegend = (raw: string): Map<number, string> => {
     const out = new Map<number, string>();
@@ -308,7 +310,7 @@ function refHoverAt(
       const annotation = annotations.get(value);
       if (!annotation) return undefined;
       return {
-        contents: `$(symbol-numeric) @ref ${value}\n\n${annotation}`,
+        contents: `${presentation === "vscode" ? "$(symbol-numeric) " : ""}@ref ${value}\n\n${annotation}`,
       };
     }
   }
@@ -577,6 +579,7 @@ export class CssDocLanguageService {
   private hoverSections: HoverSections = {};
   /** Section render order for the component hover card (`cssdoc.hover.sectionOrder`). */
   private hoverSectionOrder: HoverSectionOrder | undefined;
+  private hoverPresentation: HoverPresentation = "vscode";
 
   constructor(index: CssDocIndex, severities: RuleSeverities = DEFAULT_RULE_SEVERITIES) {
     this.scopes = [{ dir: "", index, severities, naming: {}, ruleOptions: undefined }];
@@ -591,6 +594,11 @@ export class CssDocLanguageService {
     this.hoverDetail = detail;
     this.hoverSections = sections;
     this.hoverSectionOrder = sectionOrder;
+  }
+
+  /** Select the presentation used for hovers. */
+  setHoverPresentation(presentation: HoverPresentation): void {
+    this.hoverPresentation = presentation;
   }
 
   /** Replace the component index (single-scope path; e.g. after the CSS files change). */
@@ -767,7 +775,12 @@ export class CssDocLanguageService {
     exampleFilter?: ExampleFilter | null,
   ): LspHover | undefined {
     const offset = offsetAt(text, position);
-    const refHover = refHoverAt(text, offset, this.scopeForPath(path).configuration);
+    const refHover = refHoverAt(
+      text,
+      offset,
+      this.scopeForPath(path).configuration,
+      this.hoverPresentation,
+    );
     if (refHover) return refHover;
 
     // The governing scope supplies two indexes: `project` (the value graph for `var()` resolution and
@@ -831,6 +844,7 @@ export class CssDocLanguageService {
         this.hoverSections,
         this.hoverSectionOrder,
         exampleFilter,
+        this.hoverPresentation,
       );
       if (h) return { contents: h.contents };
     }
@@ -875,6 +889,7 @@ export class CssDocLanguageService {
         this.hoverSections,
         this.hoverSectionOrder,
         exampleFilter,
+        this.hoverPresentation,
       );
       return h ? card(h.contents) : undefined;
     };
@@ -919,6 +934,7 @@ export class CssDocLanguageService {
           this.hoverSections,
           this.hoverSectionOrder,
           exampleFilter,
+          this.hoverPresentation,
         );
         if (h) return { contents: h.contents };
       }
@@ -933,6 +949,7 @@ export class CssDocLanguageService {
           this.hoverSections,
           this.hoverSectionOrder,
           exampleFilter,
+          this.hoverPresentation,
         );
         if (h) return { contents: h.contents };
       }

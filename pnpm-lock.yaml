@@ -1275,6 +1275,9 @@ importers:
       arkregex:
         specifier: 'catalog:'
         version: 0.0.15
+      markdown-exit:
+        specifier: 'catalog:'
+        version: 2.1.3
       vscode-languageserver:
         specifier: 'catalog:'
         version: 11.0.1

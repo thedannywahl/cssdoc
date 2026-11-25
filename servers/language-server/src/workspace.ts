@@ -32,6 +32,8 @@ export interface ClientSettings extends WorkspaceDiscoveryOptions {
   providerGlobs?: boolean;
   /** How to handle repeated provider paths. */
   circularReferenceMode?: "first" | "last" | "ignore" | "warn" | "error";
+  /** Client-specific hover presentation, supplied at initialization. */
+  hoverPresentation?: "vscode" | "markdown";
 }
 
 /**
@@ -138,6 +140,13 @@ export function parseInitializationOptions(value: unknown): ClientSettings {
     throw new TypeError("cssdoc initialization options must be an object");
   }
   const options = value as Record<string, unknown>;
+  if (
+    "hoverPresentation" in options &&
+    options.hoverPresentation !== "vscode" &&
+    options.hoverPresentation !== "markdown"
+  ) {
+    throw new TypeError("cssdoc initialization hoverPresentation must be vscode or markdown");
+  }
   const settings = parseClientSettings({
     ...("css" in options ? { css: options.css } : {}),
     ...("include" in options ? { include: options.include } : {}),
@@ -157,6 +166,9 @@ export function parseInitializationOptions(value: unknown): ClientSettings {
     },
   });
   if ("css" in options && settings.css === undefined) settings.css = [];
+  if (options.hoverPresentation === "vscode" || options.hoverPresentation === "markdown") {
+    settings.hoverPresentation = options.hoverPresentation;
+  }
   return settings;
 }
 

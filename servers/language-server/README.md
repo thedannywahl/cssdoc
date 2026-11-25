@@ -26,6 +26,8 @@ files. Clients without file watching need a save or server restart to pick up ex
 The [language server reference](https://cssdoc.dev/guide/language-server-reference) lists all
 settings and capabilities. For editor-specific setup, including Neovim and Helix, see the
 [editor guide](https://cssdoc.dev/guide/editor). The server requires Node.js 26 or newer.
+Hovers use portable Markdown by default; clients supporting VS Code's icons and theme HTML can set
+the `hoverPresentation` initialization option to `"vscode"`.
 
 ```jsonc
 {

@@ -80,6 +80,12 @@ test("initialization validates settings and preserves an explicit empty CSS list
     "cssdoc.editor.providerScanDepth",
   );
   expect(() => parseInitializationOptions({ include: "**/*.css" })).toThrow("cssdoc.include");
+  expect(parseInitializationOptions({ hoverPresentation: "vscode" })).toEqual({
+    hoverPresentation: "vscode",
+  });
+  expect(() => parseInitializationOptions({ hoverPresentation: "zed" })).toThrow(
+    "hoverPresentation",
+  );
 });
 
 test("configuration discovery respects depth and skips dependency directories", () => {

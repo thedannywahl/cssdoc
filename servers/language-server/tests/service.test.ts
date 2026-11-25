@@ -172,6 +172,9 @@ test("hover on @ref shows its local @annotations legend text", () => {
   const hover = svc.hover(text, pos, "card.css", "css");
   expect(hover?.contents).toContain("@ref 1");
   expect(hover?.contents).toContain("Focus ring is mandatory.");
+  expect(hover?.contents).toContain("$(symbol-numeric)");
+  svc.setHoverPresentation("markdown");
+  expect(svc.hover(text, pos, "card.css", "css")?.contents).not.toContain("$(symbol-numeric)");
 });
 
 test("definition on a modifier token points at its rule in the CSS file", () => {

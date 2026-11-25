@@ -80,6 +80,11 @@ This initialization option instead indexes only the named file:
 
 ### Hover display
 
+The server uses portable Markdown by default and selects plain text when requested by the client.
+Clients that support VS Code's codicons and theme HTML can set the initialization option
+`hoverPresentation` to `"vscode"` to use that presentation. Its default is `"markdown"`; this is
+an initialization option, not a `cssdoc.json` field.
+
 #### `cssdoc.hover.detail`
 
 `cssdoc.hover.detail` selects `"compact"`, `"full"`, or `"custom"` and defaults to `"full"`.
