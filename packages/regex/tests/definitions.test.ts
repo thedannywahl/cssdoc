@@ -9,8 +9,9 @@
 
 import { describe, it, expect } from "vite-plus/test";
 import type { Regex } from "arkregex";
+import { regex as arkRegex } from "arkregex";
 import { PATTERN_DEFINITIONS, type UnifiedPatternDef } from "../src/definitions.js";
-import { escapeRegex, escapeRegexChar } from "../src/lib.ts";
+import { escapeRegex, escapeRegexChar, toRegExp } from "../src/lib.ts";
 
 function requiredRegex(def: UnifiedPatternDef): Regex {
   if (!def.regex) throw new Error(`Missing compiled regex for ${def.name}`);
@@ -31,6 +32,13 @@ it("escapes each metacharacter in a string while preserving literal text", () =>
   expect(escaped).toBe("é\\.a\\+\\[x\\]\\\\z");
   expect(new RegExp(`^${escaped}$`, "u").test(text)).toBe(true);
   expect(escapeRegex("")).toBe("");
+});
+
+it("adds global matching and anchors while preserving existing regex flags", () => {
+  const pattern = toRegExp(arkRegex.as("item", "iu"), "start-end");
+  expect(pattern.flags).toBe("giu");
+  expect([..."\nITEM\n".matchAll(pattern)]).toEqual([]);
+  expect([..."ITEM".matchAll(pattern)].map((match) => match[0])).toEqual(["ITEM"]);
 });
 
 it.each([

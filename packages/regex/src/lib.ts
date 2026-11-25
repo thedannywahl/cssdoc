@@ -57,9 +57,9 @@ export type AnchorMode = "none" | "start" | "end" | "start-end";
  * }
  * ```
  */
-export const toRegExp = (arkRegex: Regex, anchors: AnchorMode = "none"): RegExp => {
+export const toRegExp = (pattern: Regex, anchors: AnchorMode = "none"): RegExp => {
   // ArkRegex extends RegExp, so .source and .flags are available
-  let source = arkRegex.source;
+  let source = pattern.source;
 
   // Add anchors if requested
   if (anchors === "start" || anchors === "start-end") {
@@ -69,8 +69,8 @@ export const toRegExp = (arkRegex: Regex, anchors: AnchorMode = "none"): RegExp 
     source = `${source}$`;
   }
 
-  const flags = arkRegex.flags.includes("g") ? arkRegex.flags : arkRegex.flags + "g";
-  return new RegExp(source, flags);
+  const flags = pattern.flags.includes("g") ? pattern.flags : pattern.flags + "g";
+  return arkRegex.as(source, flags as Parameters<typeof arkRegex.as>[1]);
 };
 
 /**
