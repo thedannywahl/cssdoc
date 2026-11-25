@@ -48,6 +48,13 @@ it.each(["div", "<div>", "< div", "div >"])("captures the element name from %s",
   expect(token.match(pattern)?.[1]).toBe("div");
 });
 
+it("captures base-class references without admitting modifier or digit prefixes", () => {
+  const pattern = new RegExp(PATTERN_DEFINITIONS.CSSDOC_BASE_CLASS_REFERENCE.source, "gu");
+  expect(
+    [...".Card ._part-1 .-modifier .1part".matchAll(pattern)].map((match) => match[1]),
+  ).toEqual(["Card", "_part-1"]);
+});
+
 describe("Pattern Definitions", () => {
   it("exports at least 40 patterns", () => {
     expect(Object.keys(PATTERN_DEFINITIONS).length).toBeGreaterThanOrEqual(40);

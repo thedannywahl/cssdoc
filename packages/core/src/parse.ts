@@ -28,6 +28,8 @@ import {
   COLON_CHAR,
   COLON_SOURCE,
   CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE,
+  CSSDOC_BASE_CLASS_NAME_SOURCE,
+  CSSDOC_BASE_CLASS_REFERENCE,
   CSSDOC_ELEMENT_TAG_SOURCE,
   CSSDOC_MODIFIER_REFERENCE_SOURCE,
   DASH_SOURCE,
@@ -46,7 +48,6 @@ import {
   QUOTE_SINGLE_CHAR,
   RECORD_REFERENCE_NAME_SOURCE,
   TILDE_CHAR,
-  UNDERSCORE_CHAR,
   WORD_BOUNDARY_SOURCE,
   escapeRegex,
   toRegExp,
@@ -147,9 +148,8 @@ function neutralizeAmp(selector: string): string {
  * namespaced/prefixed base class (`.Button`, `.PFX-badge`) be recognized as the component's class rather
  * than silently mis-inferred to the bare `@name`. Used for base-class inference and the scoped-part scan.
  */
-const CLASS_IDENT = `(?:${ALPHA_SOURCE}|${UNDERSCORE_CHAR})${ALPHANUMERIC_EXTENDED_SOURCE}*`;
 /** A selector that is exactly one class — the base-class inference candidate filter. */
-const SINGLE_CLASS: Regex = arkRegex.as(`^${DOT_SOURCE}${CLASS_IDENT}$`, "u");
+const SINGLE_CLASS: Regex = arkRegex.as(`^${DOT_SOURCE}${CSSDOC_BASE_CLASS_NAME_SOURCE}$`, "u");
 const SELECTOR_COMBINATOR: Regex = arkRegex.as(
   String.raw`[\s${GREATER_THAN_CHAR}+${TILDE_CHAR}]`,
   "u",
@@ -542,7 +542,7 @@ function collect(
     String.raw`([^\s${GREATER_THAN_CHAR}${TILDE_CHAR}+]+)\s*$`,
     "u",
   );
-  const CLASS_REF: Regex = arkRegex.as(`${DOT_SOURCE}(${CLASS_IDENT})`, "gu");
+  const CLASS_REF = toRegExp(CSSDOC_BASE_CLASS_REFERENCE);
   let pendingCanonical: string | undefined;
   let pendingDescription: string | undefined;
 

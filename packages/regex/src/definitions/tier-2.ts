@@ -17,6 +17,39 @@ export const CSSDOC_CARDINALITY_KEYWORDS: Readonly<
 };
 
 export const TIER_2_PATTERNS: Record<string, RawPatternDef> = {
+  CSSDOC_BASE_CLASS_NAME: {
+    name: "CSSDOC_BASE_CLASS_NAME",
+    tier: 2,
+    pattern: (resolve: PatternResolver) =>
+      `(?:${resolve("ALPHA")}|${resolve("UNDERSCORE_CHAR")})${resolve("ALPHANUMERIC_EXTENDED")}*`,
+    description: "Class name accepted for base-class and scoped-part inference",
+    composedFrom: ["ALPHA", "UNDERSCORE_CHAR", "ALPHANUMERIC_EXTENDED"],
+    fixtures: {
+      passes: [{ input: "button" }, { input: "PFX-badge" }, { input: "_part2" }],
+      fails: [
+        { input: "-modifier", reason: "starts with hyphen" },
+        { input: "1part", reason: "starts with digit" },
+        { input: "é", reason: "not ASCII" },
+        { input: "", reason: "empty" },
+      ],
+    },
+  },
+  CSSDOC_BASE_CLASS_REFERENCE: {
+    name: "CSSDOC_BASE_CLASS_REFERENCE",
+    tier: 2,
+    pattern: (resolve: PatternResolver) =>
+      `${resolve("DOT")}(${resolve("CSSDOC_BASE_CLASS_NAME")})`,
+    flags: "u",
+    description: "Class reference for base and scoped-part inference, capturing the name",
+    composedFrom: ["DOT", "CSSDOC_BASE_CLASS_NAME"],
+    fixtures: {
+      passes: [{ input: ".button" }, { input: "._part2" }],
+      fails: [
+        { input: ".-modifier", reason: "starts with hyphen" },
+        { input: "button", reason: "missing dot" },
+      ],
+    },
+  },
   CSSDOC_ELEMENT_TAG: {
     name: "CSSDOC_ELEMENT_TAG",
     tier: 2,

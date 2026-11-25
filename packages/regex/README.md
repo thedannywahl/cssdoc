@@ -55,6 +55,7 @@ dot-separated reference segments accepted in structure tags.
 `CSSDOC_STRUCTURE_SLOT_SOURCE` matches default and named slot selectors in structure nodes.
 `CSSDOC_ELEMENT_TAG_SOURCE` matches an element name with independently optional angle brackets and
 captures the name.
+`CSSDOC_BASE_CLASS_NAME_SOURCE` matches the class names used for base and scoped-part inference.
 `CSSDOC_CARDINALITY_SOURCE` matches the cardinality suffixes supported by `@structure`;
 `CSSDOC_CARDINALITY_KEYWORDS` maps their shorthand and full keywords to canonical values.
 

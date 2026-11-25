@@ -922,6 +922,9 @@ importers:
       '@cssdoc/core':
         specifier: workspace:*
         version: link:../core
+      '@cssdoc/regex':
+        specifier: workspace:*
+        version: link:../regex
       postcss:
         specifier: 'catalog:'
         version: 8.5.33
