@@ -105,4 +105,117 @@ export const TIER_1_HTML_PATTERNS: Record<string, RawPatternDef> = {
       ],
     },
   },
+  HTML_LIKE_TAG_NAME: {
+    name: "HTML_LIKE_TAG_NAME",
+    tier: 1,
+    pattern: (resolve: PatternResolver) => String.raw`${resolve("ALPHA")}[\w${resolve("DASH")}]*`,
+    flags: "u",
+    description: "ASCII host-tag name heuristic with word characters and hyphens",
+    composedFrom: ["ALPHA", "DASH"],
+    fixtures: {
+      passes: [{ input: "div" }, { input: "Button" }, { input: "x_1-item" }],
+      fails: [
+        { input: "my.component", reason: "dot isn't accepted" },
+        { input: "1div", reason: "starts with a digit" },
+        { input: "élément", reason: "non-ASCII initial" },
+      ],
+    },
+  },
+  HTML_LIKE_DOTTED_TAG_NAME: {
+    name: "HTML_LIKE_DOTTED_TAG_NAME",
+    tier: 1,
+    pattern: (resolve: PatternResolver) =>
+      String.raw`${resolve("ALPHA")}[\w${resolve("DOT_CHAR")}${resolve("DASH")}]*`,
+    flags: "u",
+    description: "ASCII host-tag name heuristic that also accepts dots, as in JSX member names",
+    composedFrom: ["ALPHA", "DOT_CHAR", "DASH"],
+    fixtures: {
+      passes: [{ input: "div" }, { input: "Button.Root" }, { input: "x_1-item" }],
+      fails: [
+        { input: "1div", reason: "starts with a digit" },
+        { input: "élément", reason: "non-ASCII initial" },
+      ],
+    },
+  },
+  HTML_QUOTED_ATTRIBUTE_VALUE: {
+    name: "HTML_QUOTED_ATTRIBUTE_VALUE",
+    tier: 1,
+    pattern: (resolve: PatternResolver) => {
+      const double = resolve("QUOTE_DOUBLE_CHAR");
+      const single = resolve("QUOTE_SINGLE_CHAR");
+      return `(?:${double}([^${double}]*)${double}|${single}([^${single}]*)${single})`;
+    },
+    flags: "u",
+    description: "Double- or single-quoted attribute value, capturing the unquoted content",
+    composedFrom: ["QUOTE_DOUBLE_CHAR", "QUOTE_SINGLE_CHAR"],
+    fixtures: {
+      passes: [{ input: '"value"' }, { input: "'value'" }, { input: '""' }, { input: '"a\nb"' }],
+      fails: [
+        { input: "value", reason: "unquoted" },
+        { input: "\"value'", reason: "mismatched quotes" },
+      ],
+    },
+  },
+  HTML_LIKE_CLASS_ATTRIBUTE_NAME: {
+    name: "HTML_LIKE_CLASS_ATTRIBUTE_NAME",
+    tier: 1,
+    source: "(?:className|class)",
+    flags: "u",
+    description: "HTML class or JSX className attribute name",
+    fixtures: {
+      passes: [{ input: "class" }, { input: "className" }],
+      fails: [
+        { input: "classname", reason: "case differs" },
+        { input: "class:list", reason: "directive" },
+      ],
+    },
+  },
+  HTML_QUOTED_ATTRIBUTE: {
+    name: "HTML_QUOTED_ATTRIBUTE",
+    tier: 1,
+    pattern: (resolve: PatternResolver) =>
+      String.raw`([:\w${resolve("DASH")}]+)\s*${resolve("EQUALS_CHAR")}\s*${resolve("HTML_QUOTED_ATTRIBUTE_VALUE")}`,
+    flags: "u",
+    description: "ASCII-like attribute name and quoted value, capturing the name and either value",
+    composedFrom: ["DASH", "EQUALS_CHAR", "HTML_QUOTED_ATTRIBUTE_VALUE"],
+    fixtures: {
+      passes: [{ input: 'class="x"' }, { input: "data-state = 'open'" }, { input: ':class=""' }],
+      fails: [
+        { input: "disabled", reason: "no value" },
+        { input: "class=x", reason: "unquoted value" },
+      ],
+    },
+  },
+  HTML_COMMENT: {
+    name: "HTML_COMMENT",
+    tier: 1,
+    pattern: (resolve: PatternResolver) =>
+      String.raw`${resolve("LESS_THAN_CHAR")}!${resolve("DOUBLE_DASH")}[\s\S]*?${resolve("DOUBLE_DASH")}${resolve("GREATER_THAN_CHAR")}`,
+    flags: "u",
+    description: "Non-greedy HTML comment delimiter heuristic, not a complete HTML comment parser",
+    composedFrom: ["LESS_THAN_CHAR", "DOUBLE_DASH", "GREATER_THAN_CHAR"],
+    fixtures: {
+      passes: [{ input: "<!---->" }, { input: "<!-- text -->" }, { input: "<!-- a\nb -->" }],
+      fails: [
+        { input: "<!-- unfinished", reason: "no closing delimiter" },
+        { input: "/* text */", reason: "CSS comment" },
+      ],
+    },
+  },
+  HTML_LIKE_STYLE_OPEN_TAG: {
+    name: "HTML_LIKE_STYLE_OPEN_TAG",
+    tier: 1,
+    pattern: (resolve: PatternResolver) =>
+      `${resolve("LESS_THAN_CHAR")}style([^${resolve("GREATER_THAN_CHAR")}]*)${resolve("GREATER_THAN_CHAR")}`,
+    flags: "u",
+    description: "Style opener prefix heuristic capturing text up to the first greater-than sign",
+    composedFrom: ["LESS_THAN_CHAR", "GREATER_THAN_CHAR"],
+    fixtures: {
+      passes: [{ input: "<style>" }, { input: '<style lang="scss">' }, { input: "<styles>" }],
+      fails: [
+        { input: "<style", reason: "missing greater-than sign" },
+        { input: "</style>", reason: "closing tag" },
+      ],
+    },
+  },
 };

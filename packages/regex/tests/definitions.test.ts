@@ -20,6 +20,9 @@ import {
   MARKDOWN_BACKTICK_FENCE_TEXT,
   MARKDOWN_BACKTICK_FENCE_LINE_PREFIX,
   MARKDOWN_SINGLE_BACKTICK_CODE_SPAN,
+  HTML_COMMENT,
+  HTML_QUOTED_ATTRIBUTE,
+  HTML_QUOTED_ATTRIBUTE_VALUE,
 } from "../src/index.ts";
 import { escapeRegex, escapeRegexChar, toRegExp } from "../src/lib.ts";
 
@@ -84,6 +87,24 @@ it("captures simple code spans when splitting Markdown prose", () => {
     " c ",
     "`y\nz`",
     "",
+  ]);
+});
+
+it("preserves HTML attribute value captures for either quote style", () => {
+  expect(HTML_QUOTED_ATTRIBUTE_VALUE.exec('"double"')?.slice(1)).toEqual(["double", undefined]);
+  expect(HTML_QUOTED_ATTRIBUTE_VALUE.exec("'single'")?.slice(1)).toEqual([undefined, "single"]);
+  expect(HTML_QUOTED_ATTRIBUTE.exec('data-state = "open"')?.slice(1)).toEqual([
+    "data-state",
+    "open",
+    undefined,
+  ]);
+});
+
+it("matches HTML comments separately, including multiline comments", () => {
+  const comments = toRegExp(HTML_COMMENT);
+  expect([..."<!-- a\nb --> text <!-- c -->".matchAll(comments)].map((match) => match[0])).toEqual([
+    "<!-- a\nb -->",
+    "<!-- c -->",
   ]);
 });
 

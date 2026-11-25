@@ -48,6 +48,14 @@ Patterns are organized by tier level:
 `HTML_CUSTOM_ELEMENT_NAME` follows the HTML and DOM rules for valid custom-element names.
 `HTML_ELEMENT_NAME` matches either. `HTML_CUSTOM_ELEMENT_LIKE_NAME` preserves the narrower ASCII
 heuristic used by existing diagnostics. Anchor these sources when validating a complete name.
+`HTML_LIKE_TAG_NAME` and `HTML_LIKE_DOTTED_TAG_NAME` are ASCII host-scanning heuristics, not
+HTML element-name validators; the latter also accepts JSX-style dotted names.
+`HTML_QUOTED_ATTRIBUTE_VALUE` captures the contents of either quote style, and
+`HTML_QUOTED_ATTRIBUTE` captures an ASCII-like name and its quoted value.
+`HTML_LIKE_CLASS_ATTRIBUTE_NAME` matches `class` and JSX `className`.
+`HTML_COMMENT` matches between comment delimiters without validating HTML comment contents.
+`HTML_LIKE_STYLE_OPEN_TAG` captures text after the `style` prefix through the first `>`; it also
+accepts longer names such as `<styles>` and doesn't handle quoted `>` characters.
 `MARKDOWN_BACKTICK_FENCE` matches three backticks, not a complete Markdown fenced block;
 `MARKDOWN_BACKTICK_FENCE_TEXT` is the literal marker. `MARKDOWN_BACKTICK_FENCE_LINE_PREFIX`
 detects that marker after a line start and optional whitespace, not a complete fenced block.
