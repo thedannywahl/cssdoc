@@ -146,12 +146,12 @@ export const TIER_2_PATTERNS: Record<string, RawPatternDef> = {
     name: "CSSDOC_ELEMENT_TAG",
     tier: 2,
     pattern: (resolve: PatternResolver) => {
-      const name = `${resolve("ALPHA_LOWER")}[${resolve("ALPHA_LOWER", true)}${resolve("DIGIT", true)}${resolve("DASH")}]*`;
+      const name = resolve("HTML_LOWERCASE_TAG_NAME_LIKE");
       return String.raw`${resolve("LESS_THAN")}?\s*(${name})\s*${resolve("GREATER_THAN")}?`;
     },
     flags: "u",
     description: "Element name in an element tag, with independently optional angle brackets",
-    composedFrom: ["LESS_THAN", "ALPHA_LOWER", "DIGIT", "DASH", "GREATER_THAN"],
+    composedFrom: ["LESS_THAN", "HTML_LOWERCASE_TAG_NAME_LIKE", "GREATER_THAN"],
     fixtures: {
       passes: [
         { input: "div" },

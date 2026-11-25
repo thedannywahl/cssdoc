@@ -16,16 +16,31 @@ import { type CssDialect as ParserDialect, resolveParser } from "@cssdoc/dialect
 import { type LintOptions, type Violation, lintCssDocs } from "@cssdoc/lint-core";
 import {
   ALPHA_LOWER_SOURCE,
+  BRACE_CLOSE_CHAR,
+  BRACE_CLOSE_SOURCE,
+  BRACE_OPEN_CHAR,
+  BRACE_OPEN_SOURCE,
+  COLON_CHAR,
   COMMENT_END_SOURCE,
   COMMENT_START_SOURCE,
+  DASH_SOURCE,
   EQUALS_CHAR,
   FILE_EXTENSION,
+  FORWARD_SLASH_CHAR,
+  GREATER_THAN_CHAR,
+  HTML_COMMENT,
+  HTML_LIKE_CLASS_ATTRIBUTE_NAME_SOURCE,
+  HTML_LIKE_DOTTED_TAG_NAME_SOURCE,
+  HTML_LIKE_STYLE_OPEN_TAG_SOURCE,
+  HTML_QUOTED_ATTRIBUTE_VALUE_SOURCE,
+  LESS_THAN_CHAR,
   QUOTE_DOUBLE_CHAR,
   QUOTE_SINGLE_CHAR,
   WORD_BOUNDARY_SOURCE,
   MARKDOWN_BACKTICK_FENCE_SOURCE,
   MARKDOWN_BACKTICK_FENCE_TEXT,
   escapeRegex,
+  toRegExp,
 } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
 
@@ -200,11 +215,11 @@ function scanJs(
 function scanHtml(src: string): { regions: Region[] } {
   const regions: Region[] = [];
   const scan = maskComments(src);
-  const open = /<style([^>]*)>/giu;
+  const open = arkRegex.as(HTML_LIKE_STYLE_OPEN_TAG_SOURCE, "giu");
   let m: RegExpExecArray | null = open.exec(scan);
   while (m) {
     const contentStart = m.index + m[0].length;
-    const close = scan.indexOf("</style", contentStart);
+    const close = scan.indexOf(`${LESS_THAN_CHAR}${FORWARD_SLASH_CHAR}style`, contentStart);
     const end = close === -1 ? scan.length : close;
     const lang = m[1].match(LANG_ATTRIBUTE)?.[1];
     regions.push({ start: contentStart, end, host: "html", dialect: dialectFromLang(lang) });
@@ -350,21 +365,36 @@ export interface ClassUsageSite {
   tokens: ClassToken[];
 }
 
-const TAG_RE = /<([A-Za-z][\w.-]*)\b([^>]*)>/gu;
+const TAG_RE = arkRegex.as(
+  String.raw`${LESS_THAN_CHAR}(${HTML_LIKE_DOTTED_TAG_NAME_SOURCE})${WORD_BOUNDARY_SOURCE}([^${GREATER_THAN_CHAR}]*)${GREATER_THAN_CHAR}`,
+  "gu",
+);
 // Static `class="…"` / `className="…"` — not `:class` / `v-bind:class` (excluded by the lookbehind).
-const STATIC_CLASS_RE = /(?<![:\w-])(?:className|class)\s*=\s*("([^"]*)"|'([^']*)')/gu;
+const STATIC_CLASS_RE = arkRegex.as(
+  String.raw`(?<![${COLON_CHAR}\w${DASH_SOURCE}])${HTML_LIKE_CLASS_ATTRIBUTE_NAME_SOURCE}\s*${EQUALS_CHAR}\s*(${HTML_QUOTED_ATTRIBUTE_VALUE_SOURCE})`,
+  "gu",
+);
 // JSX brace value: `className={ … }` / `class={ … }` (string/template literals inside are class names).
-const JSX_CLASS_RE = /(?<![:\w-])(?:className|class)\s*=\s*\{([^{}]*)\}/gu;
+const JSX_CLASS_RE = arkRegex.as(
+  String.raw`(?<![${COLON_CHAR}\w${DASH_SOURCE}])${HTML_LIKE_CLASS_ATTRIBUTE_NAME_SOURCE}\s*${EQUALS_CHAR}\s*${BRACE_OPEN_SOURCE}([^${BRACE_OPEN_CHAR}${BRACE_CLOSE_CHAR}]*)${BRACE_CLOSE_SOURCE}`,
+  "gu",
+);
 // Vue bound value: `:class="…"` / `v-bind:class="…"` (string literals inside the expression).
-const VUE_BOUND_RE = /(?::class|v-bind:class)\s*=\s*("([^"]*)"|'([^']*)')/gu;
+const VUE_BOUND_RE = arkRegex.as(
+  String.raw`(?:${COLON_CHAR}class|v-bind${COLON_CHAR}class)\s*${EQUALS_CHAR}\s*(${HTML_QUOTED_ATTRIBUTE_VALUE_SOURCE})`,
+  "gu",
+);
 // Svelte directive: `class:name` toggles the class `name`.
-const SVELTE_CLASS_RE = /\bclass:([\w-]+)/gu;
+const SVELTE_CLASS_RE = arkRegex.as(
+  String.raw`${WORD_BOUNDARY_SOURCE}class${COLON_CHAR}([\w${DASH_SOURCE}]+)`,
+  "gu",
+);
 const STRING_LITERAL_RE = /(["'`])((?:(?!\1)[\s\S])*)\1/gu;
 const WORD_RE = /\S+/gu;
 // Comment forms to blank before scanning, so commented-out markup isn't read as a usage. The `//`
 // form guards against `://` (URLs) so a `href="http://…"` isn't mistaken for a line comment.
 const COMMENT_RES = [
-  /<!--[\s\S]*?-->/gu,
+  toRegExp(HTML_COMMENT),
   arkRegex.as(`${COMMENT_START_SOURCE}[\\s\\S]*?${COMMENT_END_SOURCE}`, "gu"),
   /(?<![:/])\/\/[^\n]*/gu,
 ];

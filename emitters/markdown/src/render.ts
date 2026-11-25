@@ -587,7 +587,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
       if (MARKDOWN_BACKTICK_FENCE_LINE_PREFIX.exec(ex) !== null) fragments.examples.push(ex, "");
       else
         fragments.examples.push(
-          `${MARKDOWN_BACKTICK_FENCE_TEXT}${ex.includes("<") ? "html" : "css"}`,
+          `${MARKDOWN_BACKTICK_FENCE_TEXT}${ex.includes(LESS_THAN_CHAR) ? "html" : "css"}`,
           ex,
           MARKDOWN_BACKTICK_FENCE_TEXT,
           "",

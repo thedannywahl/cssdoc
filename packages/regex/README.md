@@ -48,6 +48,8 @@ Patterns are organized by tier level:
 `HTML_CUSTOM_ELEMENT_NAME` follows the HTML and DOM rules for valid custom-element names.
 `HTML_ELEMENT_NAME` matches either. `HTML_CUSTOM_ELEMENT_LIKE_NAME` preserves the narrower ASCII
 heuristic used by existing diagnostics. Anchor these sources when validating a complete name.
+`HTML_LOWERCASE_TAG_NAME_LIKE` preserves the lowercase ASCII and hyphen shape used by cssdoc tags;
+it doesn't validate HTML names or reserved custom-element names.
 `HTML_LIKE_TAG_NAME` and `HTML_LIKE_DOTTED_TAG_NAME` are ASCII host-scanning heuristics, not
 HTML element-name validators; the latter also accepts JSX-style dotted names.
 `HTML_QUOTED_ATTRIBUTE_VALUE` captures the contents of either quote style, and

@@ -31,6 +31,12 @@ test("completions in a class attribute suggest the component's modifiers", () =>
   expect(labels).toEqual(expect.arrayContaining(["-color-secondary", "-variant-old"]));
 });
 
+test("completions retain quote and offset handling for JSX className values", () => {
+  const text = `<Button className={'button '} />`;
+  const labels = service.completions(text, at(text.indexOf("'}")));
+  expect(labels.map((c) => c.label)).toContain("-color-secondary");
+});
+
 test("completions carry sortText so a @global modifier sorts after the component's own", () => {
   const css = `
 /**
@@ -254,6 +260,11 @@ test("attribute (CUBE): a data-attribute modifier on the base element is checked
       .diagnostics(`<div class="card" data-variant="ghost"></div>`)
       .some((d) => d.code === "unknown-modifier"),
   ).toBe(false);
+  const jsx = `<Button className='card' data-variant = 'bogus' />`;
+  const singleQuoted = svc.diagnostics(jsx).find((d) => d.code === "unknown-modifier");
+  expect(singleQuoted?.message).toContain(`[data-variant="bogus"]`);
+  expect(singleQuoted?.range.start.character).toBe(jsx.indexOf("data-variant"));
+  expect(singleQuoted?.range.end.character).toBe(jsx.indexOf(" />"));
 });
 
 test("multi-config: each scope checks consumer usage against its own convention", () => {

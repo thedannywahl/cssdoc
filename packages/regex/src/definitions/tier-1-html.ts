@@ -24,6 +24,23 @@ export const TIER_1_HTML_PATTERNS: Record<string, RawPatternDef> = {
       ],
     },
   },
+  HTML_LOWERCASE_TAG_NAME_LIKE: {
+    name: "HTML_LOWERCASE_TAG_NAME_LIKE",
+    tier: 1,
+    pattern: (resolve: PatternResolver) =>
+      `${resolve("ALPHA_LOWER")}[${resolve("ALPHA_LOWER", true)}${resolve("DIGIT", true)}${resolve("DASH")}]*`,
+    flags: "u",
+    description: "Lowercase ASCII tag-name heuristic with digits and hyphens, not a validator",
+    composedFrom: ["ALPHA_LOWER", "DIGIT", "DASH"],
+    fixtures: {
+      passes: [{ input: "div" }, { input: "h1" }, { input: "x-" }, { input: "font-face" }],
+      fails: [
+        { input: "Button", reason: "uppercase" },
+        { input: "x-a.b", reason: "dot isn't accepted" },
+        { input: "1div", reason: "starts with a digit" },
+      ],
+    },
+  },
   HTML_CUSTOM_ELEMENT_LIKE_NAME: {
     name: "HTML_CUSTOM_ELEMENT_LIKE_NAME",
     tier: 1,

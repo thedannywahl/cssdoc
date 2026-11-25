@@ -12,6 +12,7 @@ import { regex as arkRegex } from "arkregex";
 import {
   ALPHANUMERIC_EXTENDED_SOURCE,
   ASTERISK_SOURCE,
+  BRACE_OPEN_SOURCE,
   CSS_CLASS_ATTRIBUTE_SELECTOR,
   CSSDOC_BASE_CLASS_NAME_SOURCE,
   CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE,
@@ -24,6 +25,16 @@ import {
   DIGIT_SOURCE,
   DOT_CHAR,
   DOT_SOURCE,
+  EQUALS_CHAR,
+  FORWARD_SLASH_CHAR,
+  GREATER_THAN_CHAR,
+  HTML_LIKE_CLASS_ATTRIBUTE_NAME_SOURCE,
+  HTML_LIKE_TAG_NAME_SOURCE,
+  HTML_QUOTED_ATTRIBUTE,
+  LESS_THAN_CHAR,
+  QUOTE_DOUBLE_CHAR,
+  QUOTE_SINGLE_CHAR,
+  WORD_BOUNDARY_SOURCE,
   escapeRegex,
   toRegExp,
 } from "@cssdoc/regex";
@@ -314,7 +325,15 @@ interface ClassAttr {
   valueEnd: number;
 }
 
-const CLASS_ATTR_RE = /\b(?:class|className)\s*=\s*\{?\s*(["'])((?:(?!\1)[\s\S])*)\1/gu;
+const CLASS_ATTR_RE = arkRegex.as(
+  String.raw`${WORD_BOUNDARY_SOURCE}${HTML_LIKE_CLASS_ATTRIBUTE_NAME_SOURCE}\s*${EQUALS_CHAR}\s*${BRACE_OPEN_SOURCE}?\s*([${QUOTE_DOUBLE_CHAR}${QUOTE_SINGLE_CHAR}])((?:(?!\1)[\s\S])*)\1`,
+  "gu",
+);
+const ATTRIBUTE_USAGE_TAG_RE = arkRegex.as(
+  String.raw`${LESS_THAN_CHAR}(${HTML_LIKE_TAG_NAME_SOURCE})([^${LESS_THAN_CHAR}${GREATER_THAN_CHAR}]*?)${FORWARD_SLASH_CHAR}?${GREATER_THAN_CHAR}`,
+  "gu",
+);
+const QUOTED_ATTRIBUTE_RE = toRegExp(HTML_QUOTED_ATTRIBUTE);
 
 /** Every `class`/`className` attribute value in the text, with per-token offsets. */
 function classAttributes(text: string): ClassAttr[] {
@@ -991,9 +1010,9 @@ export class CssDocLanguageService {
     const results: { usage: ClassUsage; start: number; end: number }[] = [];
 
     if (matcher.convention.structure === "attribute") {
-      for (const tag of text.matchAll(/<([a-zA-Z][\w-]*)([^<>]*?)\/?>/gu)) {
+      for (const tag of text.matchAll(ATTRIBUTE_USAGE_TAG_RE)) {
         const tagStart = tag.index ?? 0;
-        const attrs = [...tag[0].matchAll(/([:\w-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/gu)];
+        const attrs = [...tag[0].matchAll(QUOTED_ATTRIBUTE_RE)];
         const tokens: string[] = [];
         const classTokens: { token: string; start: number; end: number }[] = [];
         const elementName = tag[1].toLowerCase();

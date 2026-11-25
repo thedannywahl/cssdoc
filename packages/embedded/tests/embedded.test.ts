@@ -215,6 +215,25 @@ test("scanClassUsages reports accurate offsets", () => {
   expect(site.elementName).toBe("div");
 });
 
+test("scanClassUsages retains dotted host names, quote captures, and token offsets", () => {
+  const src = `<Menu.Item className='btn btn--x' :class="'btn--y'" />`;
+  const [site] = scanClassUsages(src);
+  expect(site.elementName).toBe("menu.item");
+  expect(site.tokens.map(({ token, start, end }) => [token, src.slice(start, end)])).toEqual([
+    ["btn", "btn"],
+    ["btn--x", "btn--x"],
+    ["btn--y", "btn--y"],
+  ]);
+});
+
+test("HTML style scanning preserves the existing prefix and comment heuristics", () => {
+  const src = `<!-- <style>.ignored {}</style> --><STYLES lang='scss'>.kept {}</style>`;
+  const [block] = extractCssBlocks(src, { host: "html" });
+  expect(block.css).toBe(".kept {}");
+  expect(block.dialect).toBe("scss");
+  expect(block.start.offset).toBe(src.indexOf(".kept {}"));
+});
+
 test('a <style lang="scss"> block parses through the SCSS dialect', () => {
   const vue = `<style lang="scss">
 $brand: #06c;
