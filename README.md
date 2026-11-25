@@ -55,10 +55,20 @@ and the CSS/HTML language services share one core.
 ```sh
 vp install        # install dependencies
 vp run -r build   # build every package
-vp check          # format + lint + typecheck
+vp run check      # format + lint + type-check + schema check
+vp run type-check # run tsc across every workspace project
 vp run -r test    # run every package's tests
 vp run -r publint # check each package is publish-ready
 ```
+
+Package configs merge shared lint, format, and library pack settings from `vite.config.base.ts`.
+Package commands remain in each package's `vite.config.ts` as Vite tasks. The remaining
+`package.json` scripts bridge the install-time `prepare` and publish-time `prepublishOnly` lifecycle
+hooks to those tasks.
+
+The TypeScript catalog is pinned to the upstream revision targeted by Vite+'s tsrs checker; a test
+checks that they stay aligned. TypeDoc uses TypeScript 6 separately because of its peer dependency;
+the docs and TypeDoc plugin type-check tasks use the root TypeScript compiler instead.
 
 ## License
 

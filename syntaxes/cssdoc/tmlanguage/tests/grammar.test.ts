@@ -11,7 +11,7 @@ test("is a well-formed injection grammar", () => {
   expect(grammar.patterns.length).toBeGreaterThan(0);
 });
 
-test("the committed JSON is in sync with the builder (run `pnpm build && pnpm generate`)", () => {
+test("the committed JSON is in sync with the builder (run `vp run build && vp run generate`)", () => {
   expect(grammar).toEqual(buildInjectionGrammar());
   expect(atRuleGrammar).toEqual(buildAtRuleInjectionGrammar());
 });

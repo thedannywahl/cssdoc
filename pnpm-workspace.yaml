@@ -11,7 +11,8 @@ catalogMode: prefer
 
 catalog:
   # Toolchain
-  typescript: 7.1.0-dev.20261124.1
+  # Match the upstream TypeScript version used by Vite+'s bundled tsrs.
+  typescript: 7.1.0-beta
   "@types/node": ^26.6.6
   vite: npm:@voidzero-dev/vite-plus-core@8.3.8001
   vite-plus: 1.8.0

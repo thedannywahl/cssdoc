@@ -12,10 +12,11 @@ describe("Pantoken docs theme", () => {
     root.walkDecls((declaration) => {
       declarations.set(declaration.prop, declaration.value.trim());
     });
-    for (const [property, token] of Object.entries(VITEPRESS_TO_INSTUI)) {
-      if (property.startsWith("--vp-c-brand-")) {
-        expect(declarations.get(property)).toBe(`var(${token})`);
-      }
+    const brandTokens = Object.entries(VITEPRESS_TO_INSTUI).filter(([property]) =>
+      property.startsWith("--vp-c-brand-"),
+    );
+    for (const [property, token] of brandTokens) {
+      expect(declarations.get(property)).toBe(`var(${token})`);
     }
     expect(declarations.has("--vp-c-bg")).toBe(false);
     expect(declarations.has("--vp-font-family-base")).toBe(false);

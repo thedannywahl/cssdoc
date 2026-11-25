@@ -1,20 +1,30 @@
-import { defineConfig } from "vite-plus";
+import { defineConfig, mergeConfig } from "vite-plus";
 
 import type { UserConfig } from "vite-plus";
 
-const config: UserConfig = defineConfig({
-  pack: {
-    deps: { resolveDepSubpath: true },
-    dts: true,
-    // Hand-managed: we expose an extra ./grammarkdown.tmLanguage.json subpath that auto-exports drops.
-    exports: false,
-  },
-  lint: {
-    options: {
-      typeAware: true,
-      typeCheck: true,
+import { libraryConfig } from "../../../vite.config.base.ts";
+
+const config: UserConfig = mergeConfig(
+  libraryConfig,
+  defineConfig({
+    run: {
+      tasks: {
+        build: "vp pack",
+        dev: { command: "vp pack --watch", cache: false },
+        test: "vp test",
+        check: "vp check",
+        "type-check": "tsc --noEmit",
+        publint: "publint",
+        generate: {
+          command: "node scripts/generate.mjs && vp fmt grammarkdown.tmLanguage.json",
+          cache: false,
+        },
+      },
     },
-  },
-  fmt: {},
-});
+    pack: {
+      // Hand-managed: we expose an extra ./grammarkdown.tmLanguage.json subpath that auto-exports drops.
+      exports: false,
+    },
+  }),
+);
 export default config;

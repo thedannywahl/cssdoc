@@ -11,7 +11,7 @@
   },
   "type": "module",
   "scripts": {
-    "prepare": "vp config"
+    "prepare": "vp run setup"
   },
   "dependencies": {
     "@codemirror/language": "catalog:",

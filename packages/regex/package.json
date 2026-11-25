@@ -34,13 +34,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "vp pack",
-    "dev": "vp pack --watch",
-    "test": "vp test",
-    "check": "vp check",
-    "type-check": "tsc --noEmit",
-    "prepublishOnly": "vp run build",
-    "publint": "publint"
+    "prepublishOnly": "vp run build"
   },
   "dependencies": {
     "arkregex": "catalog:",

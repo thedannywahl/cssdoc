@@ -32,13 +32,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "vp pack",
-    "dev": "vp pack --watch",
-    "generate": "node scripts/generate.mjs && vp fmt grammarkdown.tmLanguage.json",
-    "test": "vp test",
-    "check": "vp check",
-    "prepublishOnly": "vp run build",
-    "publint": "publint"
+    "prepublishOnly": "vp run build"
   },
   "devDependencies": {
     "@cssdoc/regex": "workspace:*",

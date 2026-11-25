@@ -354,10 +354,7 @@ for (const fixture of [...FIXTURES, SCOPED_FIXTURE, EXTENDS_FIXTURE, OVERRIDES_F
 test("every listed rule fixture actually fires its named rule", async () => {
   for (const fixture of FIXTURES) {
     const diagnostics = await runStylelint(fixture);
-    expect(
-      diagnostics.some((d) => d.rule === fixture.name),
-      fixture.name,
-    ).toBe(true);
+    expect(diagnostics.map((diagnostic) => diagnostic.rule)).toContain(fixture.name);
   }
 });
 

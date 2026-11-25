@@ -18,13 +18,6 @@
   "publisher": "cssdoc",
   "type": "module",
   "main": "./dist/extension.cjs",
-  "scripts": {
-    "build": "node scripts/build.mjs",
-    "check": "vp check",
-    "test": "vp test",
-    "icon": "node scripts/gen-icon.mjs",
-    "package": "vp run -t build && vsce package --no-dependencies -o cssdoc.vsix"
-  },
   "dependencies": {
     "@cssdoc/config": "workspace:*",
     "@cssdoc/language-server": "workspace:*",

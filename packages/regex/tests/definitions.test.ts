@@ -180,16 +180,10 @@ describe("Pattern Definitions", () => {
       });
 
       it("has a compiled ArkRegex or is Tier 0", () => {
-        if (def.tier === 0) {
-          // Tier 0 patterns are character sources, not regex patterns
-          expect(def.regex).toBeUndefined();
-        } else {
-          expect(def.regex).toBeDefined();
-          const regex = requiredRegex(def);
-          // Note: ArkRegex may normalize the source (e.g., escaping), so we just check existence
-          expect(typeof regex.source).toBe("string");
-          expect(regex.source.length).toBeGreaterThan(0);
-        }
+        expect(def.regex === undefined).toBe(def.tier === 0);
+        const source = def.tier === 0 ? def.source : requiredRegex(def).source;
+        expect(typeof source).toBe("string");
+        expect(source.length).toBeGreaterThan(0);
       });
 
       it("has a description", () => {
@@ -197,30 +191,25 @@ describe("Pattern Definitions", () => {
         expect(def.description.length).toBeGreaterThan(0);
       });
 
-      // Test all positive fixtures (only for Tier 1+; Tier 0 are composition primitives)
-      if (def.tier > 0) {
-        def.fixtures.passes.forEach((testCase) => {
-          const note = testCase.note ? ` (${testCase.note})` : "";
-          it(`matches "${testCase.input}"${note}`, () => {
-            // Tier 1+: use the regex anchored to match the full string
-            const compiled = requiredRegex(def);
-            const regex = new RegExp(`^${compiled.source}$`, compiled.flags);
-            expect(regex.test(testCase.input)).toBe(true);
-          });
-        });
-      }
+      const passes = def.tier > 0 ? def.fixtures.passes : [];
+      const fails = def.tier > 0 ? def.fixtures.fails : [];
 
-      // Test all negative fixtures (only for Tier 1+; Tier 0 are composition primitives)
-      if (def.tier > 0) {
-        def.fixtures.fails.forEach((testCase) => {
-          it(`rejects "${testCase.input}" - ${testCase.reason}`, () => {
-            // Tier 1+: use the regex anchored to match the full string
-            const compiled = requiredRegex(def);
-            const regex = new RegExp(`^${compiled.source}$`, compiled.flags);
-            expect(regex.test(testCase.input)).toBe(false);
-          });
+      passes.forEach((testCase) => {
+        const note = testCase.note ? ` (${testCase.note})` : "";
+        it(`matches "${testCase.input}"${note}`, () => {
+          const compiled = requiredRegex(def);
+          const regex = new RegExp(`^${compiled.source}$`, compiled.flags);
+          expect(regex.test(testCase.input)).toBe(true);
         });
-      }
+      });
+
+      fails.forEach((testCase) => {
+        it(`rejects "${testCase.input}" - ${testCase.reason}`, () => {
+          const compiled = requiredRegex(def);
+          const regex = new RegExp(`^${compiled.source}$`, compiled.flags);
+          expect(regex.test(testCase.input)).toBe(false);
+        });
+      });
     });
   });
 });

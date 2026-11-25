@@ -1,21 +1,26 @@
-import { defineConfig } from "vite-plus";
+import { defineConfig, mergeConfig } from "vite-plus";
 import type { UserConfig } from "vite-plus";
-const config: UserConfig = defineConfig({
-  pack: {
-    deps: { resolveDepSubpath: true },
-    // Two entries: the full barrel and the parse-free `./lite` subpath (no postcss). `exports: true`
-    // writes both into package.json `exports`.
-    entry: ["src/index.ts", "src/lite.ts"],
-    dts: true,
-    exports: true,
-  },
-  lint: {
-    options: {
-      typeAware: true,
-      typeCheck: true,
+
+import { libraryConfig } from "../../vite.config.base.ts";
+const config: UserConfig = mergeConfig(
+  libraryConfig,
+  defineConfig({
+    run: {
+      tasks: {
+        build: "vp pack",
+        dev: { command: "vp pack --watch", cache: false },
+        test: "vp test",
+        check: "vp check",
+        "type-check": "tsc --noEmit",
+        publint: "publint",
+      },
     },
-  },
-  fmt: {},
-});
+    pack: {
+      // Two entries: the full barrel and the parse-free `./lite` subpath (no postcss). `exports: true`
+      // writes both into package.json `exports`.
+      entry: ["src/index.ts", "src/lite.ts"],
+    },
+  }),
+);
 
 export default config;
