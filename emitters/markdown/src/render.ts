@@ -29,6 +29,7 @@ import {
   MARKDOWN_UNORDERED_LIST_MARKER_SOURCE,
   PIPE_CHAR,
   STRUCTURE_RECORD_KIND_SOURCE,
+  WHITESPACE_RUN,
   WORD_BOUNDARY_SOURCE,
   toRegExp,
 } from "@cssdoc/regex";
@@ -39,6 +40,8 @@ import {
   toMermaid,
   toMermaidVariants,
 } from "@cssdoc/core";
+
+const WHITESPACE = toRegExp(WHITESPACE_RUN);
 
 /**
  * Resolve a consumed custom property to its type/value for the "Tokens consumed" table. Supplied by the
@@ -350,7 +353,7 @@ function tag(cls: string | undefined, label: string, fallback: string = label): 
 /** A code-span cell: collapse whitespace and escape pipes so it survives a GFM table row. */
 function code(text: string | undefined): string {
   if (!text) return "—";
-  return `\`${text.replace(/\s+/gu, " ").trim().replaceAll(PIPE_CHAR, "\\|")}\``;
+  return `\`${text.replace(WHITESPACE, " ").trim().replaceAll(PIPE_CHAR, "\\|")}\``;
 }
 
 /** Render a GFM table from a header row and body rows (already-formatted cells). */
@@ -647,7 +650,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
       fragments.annotations.push(
         ...table(
           ["Ref", "Annotation"],
-          annotations.map((a) => [`\`${a.ref}\``, cell(a.text.replace(/\n/gu, "<br>"))]),
+          annotations.map((a) => [`\`${a.ref}\``, cell(a.text.replaceAll("\n", "<br>"))]),
         ),
       );
     }
@@ -782,7 +785,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
     if (entry.structureDescription) fragments.structure.push(entry.structureDescription, "");
     // Both views classify each node (root / part / slot / sibling component): `self` keeps the record's
     // own class from reading as a sibling, and `resolveComponent` resolves siblings to component names.
-    const self = entry.className.replace(/^\./u, "");
+    const self = entry.className.startsWith(DOT_CHAR) ? entry.className.slice(1) : entry.className;
     const view = options.structureView ?? "both";
     const variants = entry.structureVariants?.map((variant) => ({
       ...variant,

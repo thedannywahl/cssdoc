@@ -10,7 +10,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import type { CssDocIndex } from "@cssdoc/index";
 
-const stripDot = (name: string): string => name.replace(/^\./u, "");
+const stripDot = (name: string): string => (name.startsWith(".") ? name.slice(1) : name);
 
 interface CemCssProperty {
   name: string;

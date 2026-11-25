@@ -6,6 +6,10 @@
  *
  * @module
  */
+import { ALPHA_LOWER_SOURCE, ALPHANUMERIC_EXTENDED_SOURCE } from "@cssdoc/regex";
+import { regex as arkRegex } from "arkregex";
+
+const VALUE_TYPE = arkRegex.as(`<(${ALPHA_LOWER_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*)>`, "gu");
 
 // Most value types live at /Web/CSS/Reference/Values/<type>; a few have their own pages.
 const MDN_URL: Record<string, string> = {
@@ -32,7 +36,5 @@ export function linkSyntax(
   syntax: string,
   renderLink: (type: string, url: string) => string,
 ): string {
-  return syntax.replace(/<([a-z][\w-]*)>/gu, (_m, type: string) =>
-    renderLink(type, mdnUrlForType(type)),
-  );
+  return syntax.replace(VALUE_TYPE, (_m, type: string) => renderLink(type, mdnUrlForType(type)));
 }

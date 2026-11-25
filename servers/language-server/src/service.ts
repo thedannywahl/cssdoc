@@ -10,7 +10,9 @@ import { CssDocConfiguration, type ExampleFilter, parseDocComment } from "@cssdo
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import {
+  ALPHA_SOURCE,
   ALPHANUMERIC_EXTENDED_SOURCE,
+  AT_SOURCE,
   ASTERISK_SOURCE,
   BRACE_OPEN_SOURCE,
   CSS_CLASS_ATTRIBUTE_SELECTOR,
@@ -19,10 +21,12 @@ import {
   COMMENT_START_SOURCE,
   COMMENT_END_SOURCE,
   COMMENT_END_TEXT,
+  COMMENT_LINE_PREFIX,
   DOC_COMMENT_START_SOURCE,
   DOC_COMMENT_START_TEXT,
   DASH_SOURCE,
   DIGIT_SOURCE,
+  DOUBLE_DASH_SOURCE,
   DOT_CHAR,
   DOT_SOURCE,
   EQUALS_CHAR,
@@ -32,6 +36,7 @@ import {
   HTML_LIKE_TAG_NAME_SOURCE,
   HTML_QUOTED_ATTRIBUTE,
   LESS_THAN_CHAR,
+  PAREN_OPEN_SOURCE,
   QUOTE_DOUBLE_CHAR,
   QUOTE_SINGLE_CHAR,
   WORD_BOUNDARY_SOURCE,
@@ -90,6 +95,25 @@ const DOC_COMMENT: Regex = arkRegex.as(
 );
 const COMMENT_OPENING: Regex = arkRegex.as(`^${COMMENT_START_SOURCE}${ASTERISK_SOURCE}?`);
 const COMMENT_CLOSING: Regex = arkRegex.as(`${COMMENT_END_SOURCE}$`);
+const ANNOTATIONS_TAG = arkRegex.as(String.raw`^\s*${AT_SOURCE}annotations\b`, "u");
+const COMMENT_TAG = arkRegex.as(String.raw`^\s*${AT_SOURCE}${ALPHA_SOURCE}`, "u");
+const ANNOTATION_REF = arkRegex.as(
+  String.raw`${AT_SOURCE}ref\s+(${DIGIT_SOURCE}+)${DOT_SOURCE}?`,
+  "gu",
+);
+const NON_WHITESPACE = arkRegex.as(String.raw`\S+`, "gu");
+const COMPLETION_TAG = arkRegex.as(
+  String.raw`(?:^|[\s*])${AT_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*$`,
+  "u",
+);
+const COMPLETION_VAR = arkRegex.as(
+  String.raw`var${PAREN_OPEN_SOURCE}\s*(${DOUBLE_DASH_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*)$`,
+  "u",
+);
+const SEMANTIC_TAG = arkRegex.as(
+  String.raw`${AT_SOURCE}(${ALPHANUMERIC_EXTENDED_SOURCE}+)(?:\s+([^\s][^*]*?))?(?=\s*(?:\*|$))`,
+  "gu",
+);
 
 /** Map an editor `languageId` to an embedded host, for docs whose path extension isn't decisive. */
 const hostForLanguageId = (languageId?: string): EmbeddedHost | undefined => {
@@ -241,12 +265,12 @@ function refHoverAt(
       .replace(COMMENT_OPENING, "")
       .replace(COMMENT_CLOSING, "")
       .split("\n")
-      .map((line) => line.replace(/^\s*\*\s?/, ""));
-    const at = body.findIndex((line) => /^\s*@annotations\b/u.test(line));
+      .map((line) => line.replace(COMMENT_LINE_PREFIX, ""));
+    const at = body.findIndex((line) => ANNOTATIONS_TAG.test(line));
     if (at < 0) return out;
     let current: number | undefined;
     for (const line of body.slice(at + 1)) {
-      if (/^\s*@[A-Za-z]/u.test(line)) break;
+      if (COMMENT_TAG.exec(line) !== null) break;
       const trimmed = line.trim();
       if (!trimmed) continue;
       const marker = trimmed.match(ANNOTATION_MARKER);
@@ -271,7 +295,7 @@ function refHoverAt(
       (doc as { annotations?: Map<number, string> }).annotations instanceof Map
         ? (doc as { annotations: Map<number, string> }).annotations
         : fallbackLegend(block[0]);
-    for (const ref of block[0].matchAll(/@ref\s+(\d+)\.?/gu)) {
+    for (const ref of block[0].matchAll(ANNOTATION_REF)) {
       const refStart = ref.index ?? 0;
       const refEnd = refStart + ref[0].length;
       if (local < refStart || local > refEnd) continue;
@@ -378,7 +402,7 @@ function classAttributes(text: string): ClassAttr[] {
     const value = m[2];
     const valueStart = (m.index ?? 0) + m[0].length - value.length - 1;
     const members: AttrToken[] = [];
-    for (const t of value.matchAll(/\S+/gu)) {
+    for (const t of value.matchAll(NON_WHITESPACE)) {
       const start = valueStart + (t.index ?? 0);
       members.push({ token: t[0], start, end: start + t[0].length });
     }
@@ -638,11 +662,7 @@ export class CssDocLanguageService {
     // Doc-tag completion: inside an unclosed `/**` block right after an `@`, while authoring CSS — a
     // stylesheet, or an embedded CSS region (a `<style>` block / `css` template / Markdown fence).
     const open = before.lastIndexOf(DOC_COMMENT_START_TEXT);
-    if (
-      open !== -1 &&
-      open > before.lastIndexOf(COMMENT_END_TEXT) &&
-      /(?:^|[\s*])@[\w-]*$/u.test(before)
-    ) {
+    if (open !== -1 && open > before.lastIndexOf(COMMENT_END_TEXT) && COMPLETION_TAG.test(before)) {
       const host = detectEmbeddedHost(path) ?? hostForLanguageId(languageId);
       const authoring =
         (languageId && CSS_LANGUAGES.has(languageId)) ||
@@ -664,7 +684,7 @@ export class CssDocLanguageService {
     }
 
     const scopes = this.scopesFor(text, path);
-    if (/var\(\s*(--[\w-]*)$/u.test(before)) {
+    if (COMPLETION_VAR.exec(before) !== null) {
       const seen = new Set<string>();
       return scopes
         .flatMap((s) => completeCustomProperties(s.index))
@@ -1056,7 +1076,7 @@ export class CssDocLanguageService {
           if (a[1] === "class" || a[1] === "className") {
             const raw = a[2] ?? a[3] ?? "";
             const rawStart = tagStart + (a.index ?? 0) + a[0].length - 1 - raw.length;
-            for (const w of raw.matchAll(/\S+/gu)) {
+            for (const w of raw.matchAll(NON_WHITESPACE)) {
               const token = w[0];
               const start = rawStart + (w.index ?? 0);
               classTokens.push({ token, start, end: start + token.length });
@@ -1256,7 +1276,7 @@ export class CssDocLanguageService {
         charInBlock += line.length + 1; // +1 for newline
 
         // Find @-tags in this line
-        const tagMatches = line.matchAll(/@([\w-]+)(?:\s+([^\s][^*]*?))?(?=\s*(?:\*|$))/gu);
+        const tagMatches = line.matchAll(SEMANTIC_TAG);
         for (const match of tagMatches) {
           const tagName = match[1];
           const tagStart = (match.index ?? 0) + 1; // +1 for @

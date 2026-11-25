@@ -2,10 +2,13 @@ import { toCss } from "@pantoken/css";
 import { pruneCustomProps } from "@pantoken/plugin-prune-custom-props";
 import { byTheme, type Token } from "@pantoken/tokens";
 import { VITEPRESS_TO_INSTUI } from "@pantoken/vitepress";
+import { HEX_DIGIT_SOURCE } from "@cssdoc/regex";
+import { regex as arkRegex } from "arkregex";
 import postcss, { type Plugin as PostcssPlugin } from "postcss";
 import type { Plugin } from "vite-plus";
 
 const auroraPrefix = "--instui-primitive-color-aurora-aurora";
+const HEX_COLOR = arkRegex.as(`^#${HEX_DIGIT_SOURCE}{6}$`, "i");
 
 /** Render Aurora tokens, VitePress brand bridges, and home-page backgrounds as CSS. */
 export function themeCss(tokens: readonly Token[] = byTheme("rebrand")): string {
@@ -19,7 +22,7 @@ export function themeCss(tokens: readonly Token[] = byTheme("rebrand")): string 
   const values = new Map(aurora.map((token) => [token.name, token.value]));
   const color = (step: number): string => {
     const value = values.get(`${auroraPrefix}${step}`);
-    if (!value || !/^#[\da-f]{6}$/i.test(value)) {
+    if (!value || HEX_COLOR.exec(value) === null) {
       throw new Error(`Missing literal Pantoken Aurora ${step}`);
     }
     return value;

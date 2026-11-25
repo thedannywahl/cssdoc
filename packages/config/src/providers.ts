@@ -15,7 +15,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { type CssDocEntry, parseCssDocs } from "@cssdoc/core";
 import { regex as arkRegex } from "arkregex";
-import { DOT_CHAR, escapeRegex } from "@cssdoc/regex";
+import { DOT_CHAR, FORWARD_SLASH_SOURCE, escapeRegex } from "@cssdoc/regex";
 import { CssDocConfigFile, type ProviderRef } from "./CssDocConfigFile.ts";
 
 /** Options for provider resolution. */
@@ -34,6 +34,8 @@ export interface ResolveProvidersOptions {
 }
 
 const stripDot = (name: string): string => (name.startsWith(DOT_CHAR) ? name.slice(1) : name);
+const GLOB_SPECIAL = arkRegex.as(String.raw`[*?[\]{}()!]`);
+const HREF_TRAILING_SLASH = arkRegex.as(`${FORWARD_SLASH_SOURCE}?$`, "u");
 
 /** Type-safe error check for TypeScript 6 compatibility (Error.isError is ES2026). */
 const isErrorInstance = (error: unknown): error is Error => error instanceof Error;
@@ -66,7 +68,7 @@ function loadStylesheet(file: string): CssDocEntry[] {
 
 /** Check if a path contains glob patterns. */
 function hasGlobPattern(path: string): boolean {
-  return /[*?[\]{}()!]/.test(path);
+  return GLOB_SPECIAL.test(path);
 }
 
 /**
@@ -179,7 +181,7 @@ export function resolveProviders(
       }
 
       // A trailing slash keeps `baseHref` join-safe; the page slug matches the markdown emitter (`<name>.md`).
-      const base = provider.baseHref?.replace(/\/?$/u, "/");
+      const base = provider.baseHref?.replace(HREF_TRAILING_SLASH, "/");
       for (const raw of loaded) {
         const entry = provider.prefix ? rewriteEntryPrefix(raw, provider.prefix) : raw;
         entries.push(entry);

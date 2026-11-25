@@ -3,12 +3,15 @@ import process from "node:process";
 import tab from "@bomb.sh/tab/commander";
 import * as clack from "@clack/prompts";
 import { Command, CommanderError, InvalidArgumentError, Option } from "@commander-js/extra-typings";
+import { DASH_SOURCE, DIGIT_SOURCE } from "@cssdoc/regex";
+import { regex as arkRegex } from "arkregex";
 import type { Command as CommanderCommand } from "commander";
 import { runLint, type LintCliOptions, type LintCliResult, type OutputFormat } from "./index.ts";
 
 const { version } = JSON.parse(
   readFileSync(new URL("../package.json", import.meta.url), "utf8"),
 ) as { version: string };
+const INTEGER = arkRegex.as(`^${DASH_SOURCE}?${DIGIT_SOURCE}+$`, "u");
 
 interface PromptAdapter {
   intro(message: string): void;
@@ -52,7 +55,7 @@ const defaultRuntime: CliRuntime = {
 };
 
 function parseMaxWarnings(value: string): number {
-  if (!/^-?\d+$/u.test(value)) {
+  if (INTEGER.exec(value) === null) {
     throw new InvalidArgumentError("must be an integer greater than or equal to -1");
   }
   const parsed = Number(value);

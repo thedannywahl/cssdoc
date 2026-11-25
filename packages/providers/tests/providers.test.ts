@@ -8,7 +8,10 @@ import {
   definitionForClass,
   hoverForClass,
   hoverForCustomProperty,
+  linkSyntax,
   lintModel,
+  NAME_CASE_PRESETS,
+  parseDirectives,
   resolveRuleSeverities,
 } from "../src/index.ts";
 
@@ -32,6 +35,21 @@ const CSS = `
 `;
 
 const index = createIndex(CSS, { file: "components.css", modifierConvention: "rscss" });
+
+test("directive separators retain whitespace and comma handling", () => {
+  expect(parseDirectives("/* cssdoc-disable alpha,\tbeta \t-\t reason - details */")).toMatchObject(
+    [{ rules: ["alpha", "beta"], reason: "reason - details" }],
+  );
+});
+
+test("name presets and syntax links retain their character boundaries", () => {
+  expect(NAME_CASE_PRESETS.pascalCase.test("Card2")).toBe(true);
+  expect(NAME_CASE_PRESETS.pascalCase.test("card-2")).toBe(false);
+  expect(NAME_CASE_PRESETS.camelCase.test("card2")).toBe(true);
+  expect(NAME_CASE_PRESETS.lowercase.test("card-2")).toBe(true);
+  expect(NAME_CASE_PRESETS.lowercase.test("card_2")).toBe(false);
+  expect(linkSyntax("<foo_bar-2> | <Color>", (type) => `[${type}]`)).toBe("[foo_bar-2] | <Color>");
+});
 
 test("lintModel reports author-side hygiene (chip missing summary, -size-sm undocumented)", () => {
   const diagnostics = lintModel(index, resolveRuleSeverities({ "missing-summary": "warn" }));

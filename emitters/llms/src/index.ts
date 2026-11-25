@@ -15,6 +15,8 @@ import {
 } from "@cssdoc/core";
 import { type CssDialect, resolveParser } from "@cssdoc/dialects";
 import { parseCssDocsFromSource } from "@cssdoc/embedded";
+import { WHITESPACE_RUN, PAREN_CLOSE_SOURCE, toRegExp } from "@cssdoc/regex";
+import { regex as arkRegex } from "arkregex";
 
 /** Either a CSS source or an already-parsed model. */
 export interface ModelInput {
@@ -49,27 +51,30 @@ export interface RenderLlmsOptions {
   includeInternal?: boolean;
 }
 
-const clean = (text: string | undefined): string => (text ?? "").replace(/\s+/gu, " ").trim();
+const WHITESPACE = toRegExp(WHITESPACE_RUN);
+const SPACE_BEFORE_CLOSE = arkRegex.as(String.raw`\s+${PAREN_CLOSE_SOURCE}`, "u");
+const clean = (text: string | undefined): string => (text ?? "").replace(WHITESPACE, " ").trim();
+const stripDash = (name: string): string => (name.startsWith("-") ? name.slice(1) : name);
 
 function modifier(m: CssModifier): string {
   if (m.deprecated || m.alias) {
     const tags: string[] = [];
     if (m.deprecated) {
       const via = m.deprecated.canonical
-        ? `→ \`-${m.deprecated.canonical.replace(/^-/u, "")}\``
+        ? `→ \`-${stripDash(m.deprecated.canonical)}\``
         : clean(m.deprecated.note);
       tags.push(`deprecated ${via}`.trim());
     }
     if (m.alias) {
       const via = m.alias.canonical
-        ? `→ \`-${m.alias.canonical.replace(/^-/u, "")}\``
+        ? `→ \`-${stripDash(m.alias.canonical)}\``
         : clean(m.alias.note);
       tags.push(`alias ${via}`.trim());
     }
-    return `\`-${m.name.replace(/^-/u, "")}\` (${tags.join("; ")})`.replace(/\s+\)/u, ")");
+    return `\`-${stripDash(m.name)}\` (${tags.join("; ")})`.replace(SPACE_BEFORE_CLOSE, ")");
   }
   const desc = clean(m.description);
-  return desc ? `\`-${m.name.replace(/^-/u, "")}\` (${desc})` : `\`-${m.name.replace(/^-/u, "")}\``;
+  return desc ? `\`-${stripDash(m.name)}\` (${desc})` : `\`-${stripDash(m.name)}\``;
 }
 
 /**

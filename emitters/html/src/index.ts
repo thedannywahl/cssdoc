@@ -150,7 +150,7 @@ export function renderPage(
     (annotations.length
       ? table(
           ["Ref", "Annotation"],
-          annotations.map((a) => [code(String(a.ref)), esc(a.text).replace(/\n/gu, "<br>")]),
+          annotations.map((a) => [code(String(a.ref)), esc(a.text).replaceAll("\n", "<br>")]),
         )
       : "") +
       (refs.length

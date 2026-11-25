@@ -11,6 +11,7 @@ import type { CssDocConfiguration, CssDocEntry } from "@cssdoc/core";
 import { parseCssDocs } from "@cssdoc/core";
 import { type CssDialect, resolveParser } from "@cssdoc/dialects";
 import { parseCssDocsFromSource } from "@cssdoc/embedded";
+import { DOT_CHAR } from "@cssdoc/regex";
 import {
   type RenderEntryOptions,
   type RenderIndexOptions,
@@ -18,6 +19,8 @@ import {
   renderEntry,
   renderIndex,
 } from "./render.ts";
+
+const stripDot = (name: string): string => (name.startsWith(DOT_CHAR) ? name.slice(1) : name);
 
 /** A `typedoc-vitepress-theme`-compatible sidebar node. */
 export interface SidebarItem {
@@ -128,14 +131,14 @@ export function buildCssApi(options: BuildCssApiOptions): BuildCssApiResult {
   const componentByClass = new Map<string, { name: string; href: string }>();
   for (const e of entries) {
     const info = { name: e.name, href: `${baseHref}${e.name}.md` };
-    componentByClass.set(e.className.replace(/^\./u, ""), info);
+    componentByClass.set(stripDot(e.className), info);
     componentByClass.set(e.name, info);
   }
   // A referenced upstream provider component links to its own page (via the provider's `href`); local
   // components win a name clash. Providers without a resolvable href aren't cross-linked.
   for (const e of options.providers?.entries ?? []) {
     if (!options.includeInternal && e.visibility === "internal") continue;
-    const cls = e.className.replace(/^\./u, "");
+    const cls = stripDot(e.className);
     const href = options.providers?.href(cls);
     if (href && !componentByClass.has(cls)) componentByClass.set(cls, { name: e.name, href });
     if (href && !componentByClass.has(e.name)) componentByClass.set(e.name, { name: e.name, href });

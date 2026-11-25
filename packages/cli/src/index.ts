@@ -87,7 +87,7 @@ function readIgnorePatterns(root: string): IgnorePattern[] {
   const file = resolve(root, ".gitignore");
   if (!existsSync(file)) return [];
   return readFileSync(file, "utf8")
-    .split(/\r?\n/u)
+    .split("\n")
     .map((line) => line.trim())
     .filter((line) => line && !line.startsWith("#"))
     .map((line) => {
@@ -99,11 +99,14 @@ function readIgnorePatterns(root: string): IgnorePattern[] {
 
 function ignorePatternMatches(file: string, pattern: string): boolean {
   const directoryOnly = pattern.endsWith("/");
-  let glob = pattern.replace(/^\//u, "").replace(/\/$/u, "");
+  let glob = pattern.startsWith("/") ? pattern.slice(1) : pattern;
+  if (glob.endsWith("/")) glob = glob.slice(0, -1);
   if (!glob) return false;
   if (!glob.includes("/")) glob = `**/${glob}`;
   if (directoryOnly) glob = `${glob}/**`;
-  return matchesGlob(file, glob) || matchesGlob(file, glob.replace(/^\*\*\//u, ""));
+  return (
+    matchesGlob(file, glob) || matchesGlob(file, glob.startsWith("**/") ? glob.slice(3) : glob)
+  );
 }
 
 function isIgnored(file: string, ignoreRoot: string, patterns: readonly IgnorePattern[]): boolean {

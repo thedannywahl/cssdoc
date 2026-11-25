@@ -4,6 +4,7 @@ import grammarkdown from "@cssdoc/grammarkdown-tmlanguage";
 import cssdoc, { cssdocAtRules } from "@cssdoc/tmlanguage";
 import type { DefaultTheme, UserConfig } from "vitepress";
 import { defineConfig } from "vitepress";
+import { regex as arkRegex } from "arkregex";
 import llmstxt from "vitepress-plugin-llms";
 import { mermaidPlugin } from "./plugins/vitepress-mermaid/index.js";
 import { expandTheme, pruneThemeBundle } from "./plugins/pantoken-theme.js";
@@ -15,6 +16,8 @@ const base = process.env.DOCS_BASE ?? "/";
 
 // Canonical origin, used for the sitemap, per-page canonical links, and absolute social-card URLs.
 const hostname = "https://cssdoc.dev";
+const INDEX_MARKDOWN = arkRegex.as(String.raw`index\.md$`);
+const MARKDOWN_EXTENSION = arkRegex.as(String.raw`\.md$`);
 
 // One site-wide description, ~139 chars — a subset of the home hero tagline, long enough for social
 // unfurl previews (which want 120–140). Feeds the meta description, Open Graph, Twitter, and JSON-LD.
@@ -177,8 +180,8 @@ const config: UserConfig = defineConfig({
     // relativePath is like "guide/introduction.md" or "index.md"; cleanUrls drops the extension and
     // index files map to their directory root.
     const url = `${hostname}/${pageData.relativePath}`
-      .replace(/index\.md$/, "")
-      .replace(/\.md$/, "");
+      .replace(INDEX_MARKDOWN, "")
+      .replace(MARKDOWN_EXTENSION, "");
     return [
       ["link", { rel: "canonical", href: url }],
       ["meta", { property: "og:title", content: title }],

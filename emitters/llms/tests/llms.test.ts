@@ -38,6 +38,13 @@ test("renders a compact per-component digest with a title and blockquote", () =>
   expect(out).toContain("The primary action control.");
 });
 
+test("collapses Unicode whitespace in summaries without changing literal modifier prefixes", () => {
+  const entries = parseCssDocs(CSS);
+  entries[0].summary = "First\u00a0 \nsecond";
+  expect(renderLlms(entries)).toContain("First second");
+  expect(renderLlms(entries)).toContain("`-color-secondary`");
+});
+
 test("summarizes each facet on one line and marks the utility kind", () => {
   const out = renderLlms(parseCssDocs(CSS));
   expect(out).toContain(

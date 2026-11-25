@@ -54,7 +54,7 @@ export function toDtcg(index: CssDocIndex): DtcgDocument {
     const group: Record<string, DtcgToken> = {};
     for (const property of entry.cssPropertiesDeclared) {
       const type = dtcgType(property.syntax);
-      group[property.name.replace(/^--/u, "")] = {
+      group[property.name.startsWith("--") ? property.name.slice(2) : property.name] = {
         $value: property.defaultValue ?? "",
         ...(type ? { $type: type } : {}),
         ...(property.description ? { $description: property.description } : {}),

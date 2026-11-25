@@ -217,7 +217,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
         (candidate) => candidate.document === event.document,
       );
       if (!editor) return;
-      const hasNewline = event.contentChanges.some((change) => /\r?\n/u.test(change.text));
+      const hasNewline = event.contentChanges.some((change) => change.text.includes("\n"));
       const edits = cssDocEdits(event.document.getText(), hasNewline);
       if (edits.length === 0) return;
       applyingCommentEdits = true;

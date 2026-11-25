@@ -10,7 +10,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { CssDocIndex } from "@cssdoc/index";
 
-const stripDot = (name: string): string => name.replace(/^\./u, "");
+const stripDot = (name: string): string => (name.startsWith(".") ? name.slice(1) : name);
 
 /** A CSS custom-data property entry. */
 export interface CssDataProperty {
@@ -76,7 +76,7 @@ export function htmlCustomData(index: CssDocIndex): HtmlCustomData {
     add(stripDot(entry.className), entry.summary);
     for (const m of entry.modifiers) {
       add(
-        `-${m.name.replace(/^-/u, "")}`,
+        `-${m.name.startsWith("-") ? m.name.slice(1) : m.name}`,
         [m.description, m.deprecated && "(deprecated)"].filter(Boolean).join(" ") || undefined,
       );
     }

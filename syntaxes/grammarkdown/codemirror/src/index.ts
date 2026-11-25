@@ -71,7 +71,7 @@ const outsideRules: [RegExp, GrammarkdownTokenType][] = [
 const constraintRules: [RegExp, GrammarkdownTokenType][] = [
   [patterns.keyword, "keyword"],
   [patterns.terminal, "terminal"],
-  [/[+~?]|[∈∉≠]|!=/dy, "operator"],
+  [arkRegex.as("[+~?]|[∈∉≠]|!=", "dy"), "operator"],
   [patterns.parameter, "parameter"],
 ];
 

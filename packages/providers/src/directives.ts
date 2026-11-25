@@ -16,7 +16,7 @@
  * @module
  */
 import type { Diagnostic } from "./types.ts";
-import { COMMENT_END_SOURCE, COMMENT_START_SOURCE } from "@cssdoc/regex";
+import { COMMENT_END_SOURCE, COMMENT_START_SOURCE, DASH_SOURCE } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
 
 type DirectiveKind = "disable" | "enable" | "disable-line" | "disable-next-line" | "expect-error";
@@ -37,6 +37,8 @@ const DIRECTIVE = arkRegex.as(
   String.raw`${COMMENT_START_SOURCE}\s*cssdoc-(disable-next-line|disable-line|disable|enable|expect-error)\b([^*]*?)${COMMENT_END_SOURCE}`,
   "gu",
 );
+const REASON_SEPARATOR = arkRegex.as(String.raw`\s${DASH_SOURCE}\s`, "u");
+const RULE_SEPARATOR = arkRegex.as(String.raw`[\s,]+`, "u");
 
 const lineAt = (source: string, index: number): number => {
   let line = 1;
@@ -51,18 +53,12 @@ export function parseDirectives(source: string): Directive[] {
     const at = m.index ?? 0;
     // A ` - <reason>` suffix (space-hyphen-space) splits the justification off the rule list. Rule ids
     // never contain a standalone ` - `, so this can't swallow one (e.g. `missing-summary` is untouched).
-    const reasonAt = m[2].search(/\s-\s/u);
+    const reasonAt = m[2].search(REASON_SEPARATOR);
     const rulesPart = (reasonAt === -1 ? m[2] : m[2].slice(0, reasonAt)).trim();
-    const reason =
-      reasonAt === -1
-        ? undefined
-        : m[2]
-            .slice(reasonAt)
-            .replace(/^\s-\s/u, "")
-            .trim();
+    const reason = reasonAt === -1 ? undefined : m[2].slice(reasonAt + 3).trim();
     out.push({
       kind: m[1] as DirectiveKind,
-      rules: rulesPart ? rulesPart.split(/[\s,]+/u).filter(Boolean) : null,
+      rules: rulesPart ? rulesPart.split(RULE_SEPARATOR).filter(Boolean) : null,
       reason: reason || undefined,
       startLine: lineAt(source, at),
       endLine: lineAt(source, at + m[0].length - 1),

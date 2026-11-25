@@ -5,6 +5,7 @@
  * @module
  */
 import type { SourceSpan } from "@cssdoc/index";
+import { ALPHA_LOWER_SOURCE, ALPHA_UPPER_SOURCE, ALPHANUMERIC_SOURCE } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
 
 export type { Location, SourceSpan } from "@cssdoc/index";
@@ -301,10 +302,10 @@ export interface NamingRules {
 
 /** The built-in name-case patterns, tested against a class name without its leading dot. */
 export const NAME_CASE_PRESETS: Record<string, RegExp> = {
-  pascalCase: /^[A-Z][A-Za-z0-9]*$/u,
-  camelCase: /^[a-z][A-Za-z0-9]*$/u,
+  pascalCase: arkRegex.as(`^${ALPHA_UPPER_SOURCE}${ALPHANUMERIC_SOURCE}*$`, "u"),
+  camelCase: arkRegex.as(`^${ALPHA_LOWER_SOURCE}${ALPHANUMERIC_SOURCE}*$`, "u"),
   // Lowercase letters, digits, and hyphens — the common CSS/kebab class shape.
-  lowercase: /^[a-z][a-z0-9-]*$/u,
+  lowercase: arkRegex.as(`^${ALPHA_LOWER_SOURCE}(?:${ALPHA_LOWER_SOURCE}|[0-9-])*$`, "u"),
 };
 
 /** A {@link NamingRules} compiled to regexes (custom patterns compiled from their source). */

@@ -25,7 +25,7 @@ test("resolveFiles honors root .gitignore patterns and negations", () => {
   const dir = mkdtempSync(join(tmpdir(), "cssdoc-cli-ignore-"));
   mkdirSync(join(dir, ".git"));
   mkdirSync(join(dir, "src"));
-  writeFileSync(join(dir, ".gitignore"), "ignored.css\n!keep.css\nbuild/\n");
+  writeFileSync(join(dir, ".gitignore"), "ignored.css\r\n!keep.css\r\n/build/\r\n");
   writeFileSync(join(dir, "ignored.css"), "");
   writeFileSync(join(dir, "keep.css"), "");
   writeFileSync(join(dir, "src", "ignored.css"), "");

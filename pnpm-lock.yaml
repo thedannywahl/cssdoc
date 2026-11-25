@@ -489,6 +489,9 @@ importers:
       '@cssdoc/providers':
         specifier: workspace:*
         version: link:../packages/providers
+      '@cssdoc/regex':
+        specifier: workspace:*
+        version: link:../packages/regex
       '@cssdoc/tmlanguage':
         specifier: workspace:*
         version: link:../syntaxes/cssdoc/tmlanguage
@@ -510,6 +513,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.6
+      arkregex:
+        specifier: 'catalog:'
+        version: 0.0.15
       codemirror:
         specifier: 'catalog:'
         version: 6.0.2
@@ -620,6 +626,12 @@ importers:
       '@cssdoc/embedded':
         specifier: workspace:*
         version: link:../../packages/embedded
+      '@cssdoc/regex':
+        specifier: workspace:*
+        version: link:../../packages/regex
+      arkregex:
+        specifier: 'catalog:'
+        version: 0.0.15
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -769,6 +781,12 @@ importers:
       '@cssdoc/lint-core':
         specifier: workspace:*
         version: link:../lint-core
+      '@cssdoc/regex':
+        specifier: workspace:*
+        version: link:../regex
+      arkregex:
+        specifier: 'catalog:'
+        version: 0.0.15
       commander:
         specifier: 'catalog:'
         version: 15.1.0
@@ -6467,6 +6485,7 @@ packages:
   yuku-parser@0.19.0:
     resolution: {integrity: sha512-XrBh9ZiQK5mJVRxZBAvD6LwRyAYrK3MFtH3+onyuxFL5hFD44EC3QOmIC1FjTj6H2MMwq46/NAI+NZxLZPZgxg==}
     engines: {node: '>=14.18.0'}
+    deprecated: 'Yuku is now one package with one core. Use "yuku" instead: https://yuku.fyi/javascript/. Existing installs keep working but get no more fixes.'
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
