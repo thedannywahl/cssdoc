@@ -31,10 +31,12 @@
     "vscode-languageclient": "catalog:"
   },
   "devDependencies": {
+    "@cssdoc/regex": "workspace:*",
     "@resvg/resvg-js": "catalog:",
     "@types/node": "catalog:",
     "@types/vscode": "1.125.0",
     "@vscode/vsce": "catalog:",
+    "arkregex": "catalog:",
     "esbuild": "catalog:",
     "ovsx": "catalog:",
     "typescript": "catalog:",

@@ -5,6 +5,15 @@
  * and message decoration (ESLint's raw `[rule] message`; Stylelint's `[rule] (line N) message.`).
  */
 import { resolve } from "node:path";
+import {
+  ALPHANUMERIC_EXTENDED_SOURCE,
+  BRACKET_CLOSE_SOURCE,
+  BRACKET_OPEN_SOURCE,
+  DIGIT_SOURCE,
+  PAREN_CLOSE_SOURCE,
+  PAREN_OPEN_SOURCE,
+} from "@cssdoc/regex";
+import { regex as arkRegex } from "arkregex";
 import { Linter } from "eslint";
 import stylelint from "stylelint";
 import { expect, test } from "vite-plus/test";
@@ -20,6 +29,10 @@ interface Fixture {
 }
 
 const FIXTURES_DIR = resolve(import.meta.dirname, "fixtures");
+const DIAGNOSTIC_MESSAGE = arkRegex.as(
+  String.raw`^${BRACKET_OPEN_SOURCE}(${ALPHANUMERIC_EXTENDED_SOURCE}+)${BRACKET_CLOSE_SOURCE}\s*(?:${PAREN_OPEN_SOURCE}line ${DIGIT_SOURCE}+${PAREN_CLOSE_SOURCE}\s*)?(.*)$`,
+  "u",
+);
 
 // One fixture per rule `#34` calls out "at minimum", plus config-scoping fixtures (provider
 // resolution, `structureIgnore`, a rule off-list, and `extends`) in nested `cssdoc.jsonc` scopes.
@@ -279,7 +292,7 @@ interface Diagnostic {
 
 /** Strip each host's column base and message decoration down to `{ rule, line, message }`. */
 function normalize(raw: string, line: number, severity: "error" | "warning"): Diagnostic {
-  const m = raw.match(/^\[([\w-]+)\]\s*(?:\(line \d+\)\s*)?(.*)$/u);
+  const m = raw.match(DIAGNOSTIC_MESSAGE);
   const rule = m?.[1] ?? "";
   const message = (m?.[2] ?? raw)
     .trim()

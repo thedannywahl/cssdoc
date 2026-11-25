@@ -10,16 +10,21 @@ import type { CssDocEntry, CssReleaseStage, CssRecordKind, StructureNode } from 
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import {
+  AT_SOURCE,
   BRACE_OPEN_CHAR,
+  BRACE_OPEN_SOURCE,
+  BRACE_CLOSE_SOURCE,
   CSS_CLASS_REFERENCE,
   CSSDOC_CARDINALITY_KEYWORDS,
   CSSDOC_SHORTHAND_STRUCTURE_REFERENCE_SOURCE,
   CSSDOC_STRUCTURE_SLOT_SOURCE,
   CSSDOC_TYPED_STRUCTURE_REFERENCE_SOURCE,
+  DOT_CHAR,
   GREATER_THAN_CHAR,
   LESS_THAN_CHAR,
   PIPE_CHAR,
   STRUCTURE_RECORD_KIND_SOURCE,
+  WORD_BOUNDARY_SOURCE,
   toRegExp,
 } from "@cssdoc/regex";
 import {
@@ -317,6 +322,14 @@ function table(headers: string[], rows: string[][]): string[] {
 /** Match a `slot` / `slot[name="x"]` structure node (a light-DOM content region → the default/named slot). */
 const SLOT_NODE: Regex = arkRegex.as(`^${CSSDOC_STRUCTURE_SLOT_SOURCE}$`, "u");
 const CLASS_REFERENCE_RE = toRegExp(CSS_CLASS_REFERENCE);
+const ALIAS_PREFIX: Regex = arkRegex.as(
+  String.raw`^${AT_SOURCE}alias${WORD_BOUNDARY_SOURCE}\s*`,
+  "u",
+);
+const INLINE_LINK: Regex = arkRegex.as(
+  String.raw`${BRACE_OPEN_SOURCE}${AT_SOURCE}link\s+([^${BRACE_CLOSE_SOURCE}]+)${BRACE_CLOSE_SOURCE}`,
+  "u",
+);
 
 /** Every bare class in a selector, e.g. a comma-separated alternation list `.a, .b` → `["a", "b"]`. */
 const allClasses = (selector: string): string[] =>
@@ -582,8 +595,8 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   if (entry.modifiers.length) {
     const rows = entry.modifiers.map((m) => {
       const aliasFromDescription: { canonical?: string; note?: string } | undefined =
-        !m.alias && m.description?.match(/^@alias\b\s*([\s\S]*)$/u)
-          ? { note: m.description.replace(/^@alias\b\s*/u, "").trim() }
+        !m.alias && m.description?.match(ALIAS_PREFIX)
+          ? { note: m.description.replace(ALIAS_PREFIX, "").trim() }
           : undefined;
       const alias = m.alias ?? aliasFromDescription;
       if (m.deprecated || alias) {
@@ -596,12 +609,15 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
           notes.push(`${marker} — ${escProse(via)}`);
         }
         if (alias) {
+          const link = alias.note?.match(INLINE_LINK)?.[1];
           const canonicalLink = alias.canonical
             ? alias.canonical
-            : alias.note?.match(/\{@link\s+([^}]+)\}/u)?.[1]?.replace(/^\./u, "");
+            : link?.startsWith(DOT_CHAR)
+              ? link.slice(1)
+              : link;
           const via = canonicalLink
             ? `maps to \`.${canonicalLink}\`.`
-            : (alias.note?.replace(/\{@link\s+[^}]+\}/u, "").trim() ?? "");
+            : (alias.note?.replace(INLINE_LINK, "").trim() ?? "");
           const marker = tag(options.classNames?.alias, "Alias", "_Alias_");
           notes.push(`${marker} — ${escProse(via)}`);
         }

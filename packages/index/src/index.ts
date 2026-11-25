@@ -34,8 +34,11 @@ import {
 } from "@cssdoc/core";
 import postcss, { type ChildNode } from "postcss";
 import valueParser from "postcss-value-parser";
+import { regex as arkRegex } from "arkregex";
 import {
+  AT_SOURCE,
   CSSDOC_BASE_CLASS_REFERENCE,
+  CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE,
   CSSDOC_CUSTOM_STATE_SELECTOR,
   CSSDOC_SCANNED_PSEUDO_SELECTOR,
   CSSDOC_SHADOW_PART_SELECTOR,
@@ -48,6 +51,8 @@ import {
  * `-`-led modifiers and digit-led idents are excluded. Shares the parser's class-name pattern.
  */
 const CLASS_REF_RE = toRegExp(CSSDOC_BASE_CLASS_REFERENCE);
+const AUTHORED_MEMBER = arkRegex.as(String.raw`^${AT_SOURCE}(modifier|part)\s+([\s\S]*)$`, "u");
+const CUSTOM_FUNCTION = arkRegex.as(`^(${CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE})`, "u");
 
 /** A 1-based line/column position (matching PostCSS). */
 export interface Position {
@@ -193,7 +198,7 @@ function scanAuthoredTagLines(
   const lines = text.split("\n");
   for (const [i, line] of lines.entries()) {
     const stripped = line.replace(/^\s*\*\s?/, "");
-    const m = stripped.match(/^@(modifier|part)\s+([\s\S]*)$/u);
+    const m = stripped.match(AUTHORED_MEMBER);
     if (!m) continue;
     const lineNumber = startLine + i;
     const span: SourceSpan = {
@@ -524,7 +529,7 @@ function scanNodes(nodes: ChildNode[], build: Build, base: string, matcher: Modi
     } else if (node.type === "atrule") {
       if (node.name === "property") set(memberKey("property", node.params.trim()), node);
       else if (node.name === "function") {
-        const fn = node.params.trim().match(/^(--[\w-]+)/u);
+        const fn = node.params.trim().match(CUSTOM_FUNCTION);
         if (fn) set(memberKey("function", fn[1]), node);
       } else if (node.name === "keyframes") set(memberKey("animation", node.params.trim()), node);
       else if (node.name === "layer") {

@@ -14,7 +14,15 @@
 import { type CssDocEntry, type ParseOptions, parseCssDocs } from "@cssdoc/core";
 import { type CssDialect as ParserDialect, resolveParser } from "@cssdoc/dialects";
 import { type LintOptions, type Violation, lintCssDocs } from "@cssdoc/lint-core";
-import { escapeRegex } from "@cssdoc/regex";
+import {
+  ALPHA_LOWER_SOURCE,
+  EQUALS_CHAR,
+  FILE_EXTENSION,
+  QUOTE_DOUBLE_CHAR,
+  QUOTE_SINGLE_CHAR,
+  WORD_BOUNDARY_SOURCE,
+  escapeRegex,
+} from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
 
 /** A host language cssdoc can pull embedded CSS out of. */
@@ -54,6 +62,11 @@ export const DEFAULT_TAGS: readonly string[] = [
   "injectGlobal",
 ];
 
+const LANG_ATTRIBUTE = arkRegex.as(
+  String.raw`${WORD_BOUNDARY_SOURCE}lang\s*${EQUALS_CHAR}\s*[${QUOTE_DOUBLE_CHAR}${QUOTE_SINGLE_CHAR}]?(${ALPHA_LOWER_SOURCE}+)`,
+  "iu",
+);
+
 interface Region {
   start: number;
   end: number;
@@ -75,7 +88,7 @@ const dialectFromLang = (lang: string | undefined): CssDialect => {
  * (including plain `.css`/`.scss`/`.less`, which callers should feed through as-is rather than project).
  */
 export const detectEmbeddedHost = (filename?: string): EmbeddedHost | undefined => {
-  const ext = filename?.toLowerCase().match(/\.([a-z]+)$/u)?.[1];
+  const ext = filename?.toLowerCase().match(FILE_EXTENSION)?.[1];
   if (!ext) return undefined;
   if (["js", "jsx", "ts", "tsx", "mjs", "cjs", "mts", "cts"].includes(ext)) return "js";
   if (["html", "htm", "vue", "svelte", "astro"].includes(ext)) return "html";
@@ -189,7 +202,7 @@ function scanHtml(src: string): { regions: Region[] } {
     const contentStart = m.index + m[0].length;
     const close = scan.indexOf("</style", contentStart);
     const end = close === -1 ? scan.length : close;
-    const lang = m[1].match(/\blang\s*=\s*["']?([a-z]+)/iu)?.[1];
+    const lang = m[1].match(LANG_ATTRIBUTE)?.[1];
     regions.push({ start: contentStart, end, host: "html", dialect: dialectFromLang(lang) });
     open.lastIndex = close === -1 ? scan.length : close;
     m = open.exec(scan);
@@ -269,7 +282,7 @@ export function extractCssBlocks(source: string, opts: EmbeddedOptions = {}): Cs
   const projected = projectCss(source, opts);
   return scan(source, opts).regions.map((r) => {
     const before = source.slice(0, r.start);
-    const line = (before.match(/\n/gu)?.length ?? 0) + 1;
+    const line = before.split("\n").length;
     const column = r.start - (before.lastIndexOf("\n") + 1);
     return {
       css: projected.slice(r.start, r.end),

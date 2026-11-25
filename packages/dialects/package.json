@@ -37,6 +37,7 @@
     "publint": "publint"
   },
   "dependencies": {
+    "@cssdoc/regex": "workspace:*",
     "postcss": "catalog:",
     "postcss-less": "catalog:",
     "postcss-scss": "catalog:"

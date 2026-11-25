@@ -14,11 +14,17 @@ import {
   ASTERISK_CHAR,
   CSS_CLASS_ATTRIBUTE_SELECTOR,
   CSS_CLASS_REFERENCE,
+  CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE,
+  CSSDOC_QUALIFIED_REFERENCE_SOURCE,
   CSSDOC_SHORTHAND_STRUCTURE_REFERENCE_SOURCE,
   CSSDOC_TYPED_STRUCTURE_REFERENCE_SOURCE,
   DOT_CHAR,
   DOT_SOURCE,
+  GREATER_THAN_CHAR,
+  PAREN_CLOSE_SOURCE,
+  PAREN_OPEN_SOURCE,
   STRUCTURE_RECORD_KIND_SOURCE,
+  TILDE_CHAR,
   escapeRegex,
   toRegExp,
 } from "@cssdoc/regex";
@@ -137,6 +143,16 @@ const globMatch = (pattern: string, value: string): boolean => {
 };
 
 const STRUCTURE_REF_KIND_RE: Regex = arkRegex.as(`^${STRUCTURE_RECORD_KIND_SOURCE}$`, "u");
+const CUSTOM_MEDIA_REFERENCE = String.raw`(${CSSDOC_QUALIFIED_REFERENCE_SOURCE})\s+${PAREN_OPEN_SOURCE}\s*(${CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE})\s*${PAREN_CLOSE_SOURCE}(?:\s+(private))?`;
+const TYPED_CUSTOM_MEDIA_RE: Regex = arkRegex.as(
+  String.raw`^(${STRUCTURE_RECORD_KIND_SOURCE})\s+${CUSTOM_MEDIA_REFERENCE}$`,
+  "u",
+);
+const SHORTHAND_CUSTOM_MEDIA_RE: Regex = arkRegex.as(`^${CUSTOM_MEDIA_REFERENCE}$`, "u");
+const TERMINAL_COMPOUND_RE: Regex = arkRegex.as(
+  String.raw`([^\s${GREATER_THAN_CHAR}${TILDE_CHAR}+]+)\s*$`,
+  "u",
+);
 
 type StructureRecordRef = { kind?: string; name: string; profile?: string; private?: boolean };
 
@@ -156,9 +172,7 @@ const parseStructureRecordRef = (selector: string): StructureRecordRef | undefin
     };
   }
 
-  const typedCustomMedia = raw.match(
-    /^(component|name|utility|rule|declaration|layout)\s+([\w-]+(?:\.[\w-]+)*)\s+\(\s*(--[\w-]+)\s*\)(?:\s+(private))?$/u,
-  );
+  const typedCustomMedia = raw.match(TYPED_CUSTOM_MEDIA_RE);
   if (typedCustomMedia) {
     return {
       kind:
@@ -171,9 +185,7 @@ const parseStructureRecordRef = (selector: string): StructureRecordRef | undefin
     };
   }
 
-  const shorthandCustomMedia = raw.match(
-    /^([\w-]+(?:\.[\w-]+)*)\s+\(\s*(--[\w-]+)\s*\)(?:\s+(private))?$/u,
-  );
+  const shorthandCustomMedia = raw.match(SHORTHAND_CUSTOM_MEDIA_RE);
   if (shorthandCustomMedia) {
     if (STRUCTURE_REF_KIND_RE.test(shorthandCustomMedia[1])) return undefined;
     return {
@@ -1190,7 +1202,7 @@ export const part = {
           // A CSS-derived part is covered when an authored chain @part has it as its terminal compound.
           const cls = `.${p.name}`;
           const coveredByChain = [...info.authoredParts.values()].some(
-            (sel) => (sel.match(/([^\s>~+]+)\s*$/u)?.[1] ?? sel) === cls,
+            (sel) => (sel.match(TERMINAL_COMPOUND_RE)?.[1] ?? sel) === cls,
           );
           if (coveredByChain) continue;
           out.push(

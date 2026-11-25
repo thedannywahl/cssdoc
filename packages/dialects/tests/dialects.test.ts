@@ -21,6 +21,8 @@ test("dialectForFilename maps extensions", () => {
   expect(dialectForFilename("a.scss")).toBe("scss");
   expect(dialectForFilename("a.sass")).toBe("scss");
   expect(dialectForFilename("a.less")).toBe("less");
+  expect(dialectForFilename("dir/A.SCSS")).toBe("scss");
+  expect(dialectForFilename("a.scss1")).toBe("css");
   expect(dialectForFilename("a.css")).toBe("css");
   expect(dialectForFilename(undefined)).toBe("css");
 });

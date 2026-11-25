@@ -65,6 +65,10 @@ import {
 
 /** Language ids handled as CSS (the value/hygiene checks run on these). */
 const CSS_LANGUAGES = new Set(["css", "scss", "less", "postcss"]);
+const ANNOTATION_MARKER = arkRegex.as(
+  String.raw`^(${DIGIT_SOURCE}+)${DOT_SOURCE}\s*([\s\S]*)$`,
+  "u",
+);
 const DOC_COMMENT_RE: Regex = arkRegex.as(
   `${FORWARD_SLASH_SOURCE}${ASTERISK_SOURCE}${ASTERISK_SOURCE}[\\s\\S]*?${ASTERISK_SOURCE}${FORWARD_SLASH_SOURCE}`,
   "gu",
@@ -192,7 +196,7 @@ function refHoverAt(
       if (/^\s*@[A-Za-z]/u.test(line)) break;
       const trimmed = line.trim();
       if (!trimmed) continue;
-      const marker = trimmed.match(/^(\d+)\.\s*([\s\S]*)$/u);
+      const marker = trimmed.match(ANNOTATION_MARKER);
       if (marker) {
         current = Number.parseInt(marker[1], 10);
         out.set(current, marker[2].trim());

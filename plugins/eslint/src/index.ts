@@ -43,6 +43,7 @@ import { scanClassUsages } from "@cssdoc/embedded";
 import { type NamingRules, type RuleName, lintCssDocs } from "@cssdoc/lint-core";
 import { type CssDocIndex, createIndex } from "@cssdoc/index";
 import { type RuleSeverity, checkClassUsage } from "@cssdoc/providers";
+import { CSSDOC_CUSTOM_PROPERTY_TAG_NAME } from "@cssdoc/regex";
 import css from "@eslint/css";
 
 type Position = { line: number; column: number };
@@ -417,7 +418,7 @@ const validCustomProperties: RuleModule = {
         let match;
         const propertyDefs = new Map<string, string>();
         while ((match = regex.exec(context.sourceCode.text)) !== null) {
-          const name = match[0].match(/--[\w-]+/)?.[0];
+          const name = match[0].match(CSSDOC_CUSTOM_PROPERTY_TAG_NAME)?.[0];
           if (name) propertyDefs.set(name, match[1]);
         }
 

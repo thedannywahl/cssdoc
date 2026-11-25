@@ -43,6 +43,7 @@
     "@cssdoc/index": "workspace:*",
     "@cssdoc/lint-core": "workspace:*",
     "@cssdoc/providers": "workspace:*",
+    "@cssdoc/regex": "workspace:*",
     "arkregex": "catalog:"
   },
   "devDependencies": {

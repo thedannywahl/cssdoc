@@ -19,7 +19,8 @@ const lineEnd = (text: string, start: number): number => {
 
 const lineIndent = (text: string, offset: number): string => {
   const start = lineStart(text, offset);
-  return text.slice(start, lineEnd(text, start)).match(/^\s*/u)?.[0] ?? "";
+  const line = text.slice(start, lineEnd(text, start));
+  return line.slice(0, line.length - line.trimStart().length);
 };
 
 const isCssDocRecord = (line: string): boolean => RECORD_TAG.test(line);

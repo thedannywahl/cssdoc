@@ -1,11 +1,20 @@
 import { expect, test } from "vite-plus/test";
 import {
+  detectEmbeddedHost,
   extractCssBlocks,
   lintCssDocsFromSource,
   parseCssDocsFromSource,
   projectCss,
   scanClassUsages,
 } from "../src/index.ts";
+
+test("host detection and style language matching retain their case and offset behavior", () => {
+  expect(detectEmbeddedHost("component.VUE")).toBe("html");
+  expect(detectEmbeddedHost("component.vue1")).toBeUndefined();
+  const [block] = extractCssBlocks("\n\n<STYLE LANG='SCSS'>.card {}</STYLE>", { host: "html" });
+  expect(block.dialect).toBe("scss");
+  expect(block.start.line).toBe(3);
+});
 
 const JS = `import styled from "styled-components";
 

@@ -23,6 +23,7 @@ import postcss, { type Root } from "postcss";
 // @ts-expect-error -- no bundled types
 import less from "postcss-less";
 import scss from "postcss-scss";
+import { FILE_EXTENSION } from "@cssdoc/regex";
 
 /** A stylesheet dialect cssdoc can parse. */
 export type CssDialect = "css" | "scss" | "less";
@@ -39,7 +40,7 @@ export function resolveParser(dialect: CssDialect): CssParse {
 
 /** The dialect implied by a filename's extension (`.scss`/`.sass` → scss, `.less` → less, else css). */
 export function dialectForFilename(filename?: string): CssDialect {
-  const ext = filename?.toLowerCase().match(/\.([a-z]+)$/u)?.[1];
+  const ext = filename?.toLowerCase().match(FILE_EXTENSION)?.[1];
   if (ext === "scss" || ext === "sass") return "scss";
   if (ext === "less") return "less";
   return "css";

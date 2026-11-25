@@ -132,7 +132,7 @@ test("hover on @ref shows its local @annotations legend text", () => {
   const idx = text.indexOf("@ref 1") + 5;
   const before = text.slice(0, idx);
   const pos = {
-    line: (before.match(/\n/gu) ?? []).length,
+    line: before.split("\n").length - 1,
     character: idx - (before.lastIndexOf("\n") + 1),
   };
   const svc = new CssDocLanguageService(createIndex(text));
@@ -386,7 +386,7 @@ test("embedded hover restores ${…} and renders the full card even with an empt
   const off = ts.indexOf("\n.${p}alert {") + 4; // inside the class of the rule declaration
   const before = ts.slice(0, off);
   const position = {
-    line: (before.match(/\n/gu) ?? []).length,
+    line: before.split("\n").length - 1,
     character: off - (before.lastIndexOf("\n") + 1),
   };
   const contents = svc.hover(ts, position, "alert.ts", "typescript")?.contents ?? "";
@@ -415,7 +415,7 @@ test("embedded hover renders an escaped fenced @example: real fence, prose, unma
   const off = ts.indexOf("\n.${p}alert {") + 4;
   const before = ts.slice(0, off);
   const position = {
-    line: (before.match(/\n/gu) ?? []).length,
+    line: before.split("\n").length - 1,
     character: off - (before.lastIndexOf("\n") + 1),
   };
   const contents =
@@ -460,7 +460,7 @@ test("embedded hover: var() chain resolves, [class*] shows the family, a sibling
     return svc.hover(
       ts,
       {
-        line: (before.match(/\n/gu) ?? []).length,
+        line: before.split("\n").length - 1,
         character: off - (before.lastIndexOf("\n") + 1),
       },
       "alert.ts",
@@ -559,7 +559,7 @@ export default defineConfig({
   const at = ts.indexOf("components,utilities");
   const before = ts.slice(0, at);
   const pos = {
-    line: (before.match(/\n/gu) ?? []).length,
+    line: before.split("\n").length - 1,
     character: at - (before.lastIndexOf("\n") + 1),
   };
 
@@ -781,7 +781,7 @@ test("a scope's providers let a consumer stylesheet compose an upstream componen
     svc.hover(
       demo,
       {
-        line: (before.match(/\n/gu) ?? []).length,
+        line: before.split("\n").length - 1,
         character: off - (before.lastIndexOf("\n") + 1),
       },
       "demo.css",
