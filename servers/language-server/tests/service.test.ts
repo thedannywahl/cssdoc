@@ -71,6 +71,33 @@ test("completions after var(--…) suggest declared custom properties", () => {
   expect(labels).toContain("--button-radius");
 });
 
+test("class completions include a governing scope's provider records and modifiers", () => {
+  const provider = parseCssDocs(
+    "/**\n * @component widget\n * @modifier quiet Quiet mode.\n */\n.widget {}\n.widget--quiet {}",
+  );
+  const own = createIndex("");
+  const svc = new CssDocLanguageService(own);
+  svc.setScopes([
+    {
+      dir: "/app",
+      index: own,
+      siblingIndex: indexFromEntries(provider),
+      severities: DEFAULT_RULE_SEVERITIES,
+      naming: {},
+    },
+  ]);
+  const emptyClass = '<div class="">';
+  expect(
+    svc.completions(emptyClass, at(12), "/app/page.html", "html").map((c) => c.label),
+  ).toContain("widget");
+  const withBase = '<div class="widget ">';
+  expect(
+    svc
+      .completions(withBase, at(withBase.indexOf('">')), "/app/page.html", "html")
+      .map((c) => c.label),
+  ).toContain("widget--quiet");
+});
+
 test("hover on a modifier token shows its documentation", () => {
   const text = `<button class="button -color-secondary">x</button>`;
   const hover = service.hover(text, at(text.indexOf("-color-secondary") + 2));

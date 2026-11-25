@@ -565,6 +565,12 @@ export interface ConfigScope {
 /** The language service. Construct with the component index (rebuild it when the CSS changes). */
 export class CssDocLanguageService {
   private scopes: ConfigScope[];
+  private readonly outsideWorkspace: ConfigScope = {
+    dir: "",
+    index: createIndex(""),
+    severities: DEFAULT_RULE_SEVERITIES,
+    naming: {},
+  };
   /** How much a component hover card shows (`cssdoc.hover.detail`). */
   private hoverDetail: HoverDetail = "full";
   /** Per-section visibility for the `custom` hover detail (`cssdoc.hover.sections`). */
@@ -613,9 +619,14 @@ export class CssDocLanguageService {
       .map((scope) => scope.workspaceRoot)
       .filter((root): root is string => !!root && containsPath(root, path))
       .toSorted((a, b) => b.length - a.length);
-    return roots.length
-      ? this.scopes.filter((scope) => !scope.workspaceRoot || scope.workspaceRoot === roots[0])
-      : this.scopes;
+    if (roots.length) {
+      return this.scopes.filter(
+        (scope) => !scope.workspaceRoot || scope.workspaceRoot === roots[0],
+      );
+    }
+    if (!this.scopes.some((scope) => scope.workspaceRoot)) return this.scopes;
+    const shared = this.scopes.filter((scope) => !scope.workspaceRoot);
+    return shared.length ? shared : [this.outsideWorkspace];
   }
 
   /** The scope governing `path` — the deepest `cssdoc.json` dir containing it, else the default. */
@@ -715,9 +726,16 @@ export class CssDocLanguageService {
     // else the components.
     const tokens = classAttrAt(text, offset)?.tokens ?? this.usageSiteAt(text, offset);
     if (tokens) {
-      const scope = this.scopeForBase(tokens, scopes) ?? this.scopeForPath(path);
-      const base = tokens.find((t) => scope.index.componentForClass(t));
-      return completeClasses(base, scope.index).map(toCompletion);
+      const governing = this.scopeForPath(path);
+      const scope =
+        this.scopeForBase(tokens, scopes) ??
+        (tokens.some((token) => governing.siblingIndex?.componentForClass(token))
+          ? governing
+          : undefined) ??
+        governing;
+      const index = scope.siblingIndex ?? scope.index;
+      const base = tokens.find((token) => index.componentForClass(token));
+      return completeClasses(base, index).map(toCompletion);
     }
     return [];
   }

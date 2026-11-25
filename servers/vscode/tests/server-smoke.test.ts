@@ -361,10 +361,16 @@ test("the server indexes workspace folders added after initialization", async ()
   execFileSync("node", ["scripts/build.mjs"], { cwd: root });
   const fixture = mkdtempSync(join(tmpdir(), "cssdoc-folders-"));
   const added = join(fixture, "added");
+  const other = join(fixture, "other");
   mkdirSync(added);
+  mkdirSync(other);
   writeFileSync(
     join(added, "widget.css"),
     "/**\n * @component widget\n * @summary Added workspace\n */\n.widget {}\n",
+  );
+  writeFileSync(
+    join(other, "widget.css"),
+    "/**\n * @component widget\n * @summary Other workspace\n */\n.widget {}\n",
   );
   const { server, request } = ipcServer<{ contents: { value: string } } | null>();
   const uri = pathToFileURL(join(added, "page.html")).href;
@@ -378,8 +384,8 @@ test("the server indexes workspace folders added after initialization", async ()
   try {
     await request("initialize", {
       processId: process.pid,
-      rootUri: null,
-      workspaceFolders: [],
+      rootUri: pathToFileURL(other).href,
+      workspaceFolders: [{ uri: pathToFileURL(other).href, name: "other" }],
       capabilities: { workspace: { workspaceFolders: true } },
     });
     server.send({ jsonrpc: "2.0", method: "initialized", params: {} });
