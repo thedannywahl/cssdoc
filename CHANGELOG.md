@@ -4,6 +4,128 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.20.0
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.19.0...v0.20.0)
+
+### 🚀 Enhancements
+
+- **regex:** Add shared filename extension pattern ([4ab0a7b](https://github.com/thedannywahl/cssdoc/commit/4ab0a7b))
+- **regex:** Distinguish HTML and custom element names ([f559cae](https://github.com/thedannywahl/cssdoc/commit/f559cae))
+- **regex:** Add reusable Markdown syntax patterns ([fe180ef](https://github.com/thedannywahl/cssdoc/commit/fe180ef))
+- **regex:** Add reusable HTML scanning patterns ([e99098c](https://github.com/thedannywahl/cssdoc/commit/e99098c))
+- **regex:** Add JavaScript template scanning patterns ([3173c4e](https://github.com/thedannywahl/cssdoc/commit/3173c4e))
+- **regex:** Add HTML-like style close prefix pattern and update related regex definitions ([57e410b](https://github.com/thedannywahl/cssdoc/commit/57e410b))
+- Add @arethetypeswrong/cli dependency ([6fb45c4](https://github.com/thedannywahl/cssdoc/commit/6fb45c4))
+- Integrate TSDoc support with eslint plugins ([72dec89](https://github.com/thedannywahl/cssdoc/commit/72dec89))
+- Enhance documentation structure and sidebar navigation ([529c070](https://github.com/thedannywahl/cssdoc/commit/529c070))
+- **regex:** Classify grammar pattern associations ([87e0d3e](https://github.com/thedannywahl/cssdoc/commit/87e0d3e))
+- Add lint rule reference data and loader for documentation ([43bed47](https://github.com/thedannywahl/cssdoc/commit/43bed47))
+- **language-server:** Discover workspace stylesheets ([1f516be](https://github.com/thedannywahl/cssdoc/commit/1f516be))
+- **language-server:** Refresh workspace indexes ([bc177da](https://github.com/thedannywahl/cssdoc/commit/bc177da))
+- **language-server:** Support scoped client settings ([ffd8080](https://github.com/thedannywahl/cssdoc/commit/ffd8080))
+- **language-server:** Discover provider configurations ([7d5f421](https://github.com/thedannywahl/cssdoc/commit/7d5f421))
+- **providers:** Support portable hover presentation ([13ea2c8](https://github.com/thedannywahl/cssdoc/commit/13ea2c8))
+- **language-server:** Negotiate portable hover output ([eee9522](https://github.com/thedannywahl/cssdoc/commit/eee9522))
+- **zed:** Add development language server adapter ([9bac6c3](https://github.com/thedannywahl/cssdoc/commit/9bac6c3))
+- **editor:** Enhance editor setup with download buttons for VS Code, VSCodium, and Zed ([7dda6f6](https://github.com/thedannywahl/cssdoc/commit/7dda6f6))
+
+### 🩹 Fixes
+
+- Escape module names in documentation comments for consistency ([35425e3](https://github.com/thedannywahl/cssdoc/commit/35425e3))
+- Enable tsdoc-require-2 rule for stricter documentation enforcement ([922ca84](https://github.com/thedannywahl/cssdoc/commit/922ca84))
+- Use `vendor-` as a generic prefix in documentation. ([4cba128](https://github.com/thedannywahl/cssdoc/commit/4cba128))
+- **spec:** Model tag description spacing ([bce4dfc](https://github.com/thedannywahl/cssdoc/commit/bce4dfc))
+- **spec:** Retain structure grammar and pattern links ([c694a6e](https://github.com/thedannywahl/cssdoc/commit/c694a6e))
+- **spec:** Describe functional custom states ([f02e1cf](https://github.com/thedannywahl/cssdoc/commit/f02e1cf))
+- **config:** Expand provider path globs ([00d3b9c](https://github.com/thedannywahl/cssdoc/commit/00d3b9c))
+- **language-server:** Return valid editor token ranges ([4cff4eb](https://github.com/thedannywahl/cssdoc/commit/4cff4eb))
+- **language-server:** Isolate workspace and provider lookups ([40f0cba](https://github.com/thedannywahl/cssdoc/commit/40f0cba))
+- **language-server:** Validate initialization options ([f9b2d48](https://github.com/thedannywahl/cssdoc/commit/f9b2d48))
+
+### 💅 Refactors
+
+- Migrate inline match expressions ([6874ee4](https://github.com/thedannywahl/cssdoc/commit/6874ee4))
+- **vscode:** Compose doc comment opener from tiers ([153526d](https://github.com/thedannywahl/cssdoc/commit/153526d))
+- **vscode:** Compose record tag pattern from tiers ([ad87e8b](https://github.com/thedannywahl/cssdoc/commit/ad87e8b))
+- **regex:** Share doc comment opener ([b389b2f](https://github.com/thedannywahl/cssdoc/commit/b389b2f))
+- **regex:** Share block comment closer ([44e2a7e](https://github.com/thedannywahl/cssdoc/commit/44e2a7e))
+- Update html-eslint and vscode dependencies to latest versions ([d0b72f2](https://github.com/thedannywahl/cssdoc/commit/d0b72f2))
+- Remove deprecated `@rule` alias and update related documentation ([74b678a](https://github.com/thedannywahl/cssdoc/commit/74b678a))
+- **providers:** Reuse at-sign character ([54b7847](https://github.com/thedannywahl/cssdoc/commit/54b7847))
+- **providers:** Declare keyword regex before use ([cfafec3](https://github.com/thedannywahl/cssdoc/commit/cfafec3))
+- **providers:** Use tier characters in syntax links ([54d4842](https://github.com/thedannywahl/cssdoc/commit/54d4842))
+- **providers:** Reuse tier characters in aspects ([78e9f35](https://github.com/thedannywahl/cssdoc/commit/78e9f35))
+- **regex:** Organize HTML and Markdown tier patterns ([3fb7150](https://github.com/thedannywahl/cssdoc/commit/3fb7150))
+- **regex:** Share Markdown heading prefix ([ae67d5c](https://github.com/thedannywahl/cssdoc/commit/ae67d5c))
+- Reuse shared Markdown patterns ([cd720f7](https://github.com/thedannywahl/cssdoc/commit/cd720f7))
+- Reuse shared HTML scanning patterns ([16f61d9](https://github.com/thedannywahl/cssdoc/commit/16f61d9))
+- **regex:** Separate JSX pattern definitions ([d4de951](https://github.com/thedannywahl/cssdoc/commit/d4de951))
+- **regex:** Name tier files by domain ([21dc140](https://github.com/thedannywahl/cssdoc/commit/21dc140))
+- **embedded:** Use JavaScript tier patterns ([33975d6](https://github.com/thedannywahl/cssdoc/commit/33975d6))
+- **regex:** Rename regex constants for clarity and consistency ([ca3ecdf](https://github.com/thedannywahl/cssdoc/commit/ca3ecdf))
+- **regex:** Share comment and whitespace patterns ([02aee35](https://github.com/thedannywahl/cssdoc/commit/02aee35))
+- Migrate remaining production regex literals ([d355f35](https://github.com/thedannywahl/cssdoc/commit/d355f35))
+- **regex:** Split CSS and common patterns ([7fb7a11](https://github.com/thedannywahl/cssdoc/commit/7fb7a11))
+- **spec:** Order grammar from primitives to comment ([ed2bd74](https://github.com/thedannywahl/cssdoc/commit/ed2bd74))
+- Remove @layout tag and related references from CSSDoc ([452b12c](https://github.com/thedannywahl/cssdoc/commit/452b12c))
+- Reorganize documentation and enhance clarity ([1cfc1ed](https://github.com/thedannywahl/cssdoc/commit/1cfc1ed))
+- **vscode:** Use server workspace discovery ([380b4b1](https://github.com/thedannywahl/cssdoc/commit/380b4b1))
+
+### 📖 Documentation
+
+- **regex:** Document exported patterns ([ed95b52](https://github.com/thedannywahl/cssdoc/commit/ed95b52))
+- **core:** Document parsing and provider APIs ([7f9607a](https://github.com/thedannywahl/cssdoc/commit/7f9607a))
+- Document CLI, plugins, and editor examples ([b6c53d3](https://github.com/thedannywahl/cssdoc/commit/b6c53d3))
+- **site:** Document theme and playground exports ([9cb4aee](https://github.com/thedannywahl/cssdoc/commit/9cb4aee))
+- Clarify core and embedded API contracts ([261f2da](https://github.com/thedannywahl/cssdoc/commit/261f2da))
+- Clarify API documentation conventions and index ([e94237b](https://github.com/thedannywahl/cssdoc/commit/e94237b))
+- Include syntax packages in API reference ([570187d](https://github.com/thedannywahl/cssdoc/commit/570187d))
+- Clarify provider diagnostic contracts ([1fee098](https://github.com/thedannywahl/cssdoc/commit/1fee098))
+- Clarify emitter inputs and output behavior ([cfc5410](https://github.com/thedannywahl/cssdoc/commit/cfc5410))
+- Clarify manifest and token generators ([d59ace8](https://github.com/thedannywahl/cssdoc/commit/d59ace8))
+- Document core model member contracts ([dae9f44](https://github.com/thedannywahl/cssdoc/commit/dae9f44))
+- Document index member contracts ([fb02443](https://github.com/thedannywahl/cssdoc/commit/fb02443))
+- Clarify config and embedded API members ([e063016](https://github.com/thedannywahl/cssdoc/commit/e063016))
+- Document provider aspect APIs ([db4e36e](https://github.com/thedannywahl/cssdoc/commit/db4e36e))
+- Document syntax highlighting API members ([87d4d2b](https://github.com/thedannywahl/cssdoc/commit/87d4d2b))
+- Document emitter and generator result shapes ([5e0d7b4](https://github.com/thedannywahl/cssdoc/commit/5e0d7b4))
+- Document remaining public API members ([52b5622](https://github.com/thedannywahl/cssdoc/commit/52b5622))
+- Clarify index lookup contracts ([1479bcd](https://github.com/thedannywahl/cssdoc/commit/1479bcd))
+- **spec:** Align comment grammar with parser behavior ([439f6d2](https://github.com/thedannywahl/cssdoc/commit/439f6d2))
+- Generate grammar pattern reference ([0c0f6ae](https://github.com/thedannywahl/cssdoc/commit/0c0f6ae))
+- Update configuration guide to clarify selector conventions and examples ([e7bbcf6](https://github.com/thedannywahl/cssdoc/commit/e7bbcf6))
+- Document LSP editor setup ([1018f2b](https://github.com/thedannywahl/cssdoc/commit/1018f2b))
+- **language-server:** Specify client settings ([a5ad6a7](https://github.com/thedannywahl/cssdoc/commit/a5ad6a7))
+- **language-server:** Add user-facing reference ([b43ba1d](https://github.com/thedannywahl/cssdoc/commit/b43ba1d))
+- **language-server:** Describe client settings in prose ([9daddae](https://github.com/thedannywahl/cssdoc/commit/9daddae))
+- **language-server:** Add headings for client settings ([a12ea27](https://github.com/thedannywahl/cssdoc/commit/a12ea27))
+- **zed:** Describe development setup ([8d06f40](https://github.com/thedannywahl/cssdoc/commit/8d06f40))
+- **index:** Update feature details for clarity and consistency ([5cc373b](https://github.com/thedannywahl/cssdoc/commit/5cc373b))
+
+### 🏡 Chore
+
+- Update TypeScript version and refactor build scripts across packages ([f0d00b2](https://github.com/thedannywahl/cssdoc/commit/f0d00b2))
+- Require descriptions for documented returns ([9c908f8](https://github.com/thedannywahl/cssdoc/commit/9c908f8))
+- Fail TypeDoc builds on warnings ([11dfee9](https://github.com/thedannywahl/cssdoc/commit/11dfee9))
+- Validate core API documentation coverage ([62f4156](https://github.com/thedannywahl/cssdoc/commit/62f4156))
+- Validate index API documentation coverage ([e4f3332](https://github.com/thedannywahl/cssdoc/commit/e4f3332))
+- Validate config and embedded API coverage ([9d34662](https://github.com/thedannywahl/cssdoc/commit/9d34662))
+- Validate provider API documentation coverage ([a5c079e](https://github.com/thedannywahl/cssdoc/commit/a5c079e))
+- Expand API documentation coverage checks ([bcde4f2](https://github.com/thedannywahl/cssdoc/commit/bcde4f2))
+- Complete API documentation coverage gates ([6d5c113](https://github.com/thedannywahl/cssdoc/commit/6d5c113))
+- Strengthen TSDoc-compatible JSDoc checks ([0bc3a9a](https://github.com/thedannywahl/cssdoc/commit/0bc3a9a))
+- Update setup-vp action to v1.22.0 in CI workflows ([90bde52](https://github.com/thedannywahl/cssdoc/commit/90bde52))
+
+### ✅ Tests
+
+- **playground:** Add tests for HTML parsing with embedded CSS and JavaScript ([c379d41](https://github.com/thedannywahl/cssdoc/commit/c379d41))
+- Configure test timeout and reset after all tests ([59627ad](https://github.com/thedannywahl/cssdoc/commit/59627ad))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.19.0
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.18.1...v0.19.0)
