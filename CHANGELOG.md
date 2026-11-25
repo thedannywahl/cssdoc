@@ -4,6 +4,25 @@ All notable changes to the cssdoc packages are recorded here. Entries are genera
 [Conventional Commits](https://www.conventionalcommits.org/) by changelogen at release time
 (`vp run release`). All packages share one version.
 
+## v0.20.1
+
+[compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.20.0...v0.20.1)
+
+### 🩹 Fixes
+
+- **zed:** Pin published language server 0.20.0 ([d133f14](https://github.com/thedannywahl/cssdoc/commit/d133f14))
+- **language-server:** Specify doc-tag completion edits ([47836d6](https://github.com/thedannywahl/cssdoc/commit/47836d6))
+- **language-server:** Classify doc tags as keywords ([7ba6760](https://github.com/thedannywahl/cssdoc/commit/7ba6760))
+- **toolchain:** Isolate Vitest module caches ([38a88fb](https://github.com/thedannywahl/cssdoc/commit/38a88fb))
+
+### 📖 Documentation
+
+- **zed:** Note comment continuation limitation ([2c3b566](https://github.com/thedannywahl/cssdoc/commit/2c3b566))
+
+### ❤️ Contributors
+
+- Danny Wahl <dwahl@instructure.com>
+
 ## v0.20.0
 
 [compare changes](https://github.com/thedannywahl/cssdoc/compare/v0.19.0...v0.20.0)

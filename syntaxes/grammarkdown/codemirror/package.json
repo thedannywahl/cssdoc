@@ -1,6 +1,6 @@
 {
   "name": "@cssdoc/grammarkdown-codemirror",
-  "version": "0.20.0",
+  "version": "0.20.1",
   "description": "A CodeMirror 6 highlighter for grammarkdown grammar notation.",
   "keywords": [
     "codemirror",
