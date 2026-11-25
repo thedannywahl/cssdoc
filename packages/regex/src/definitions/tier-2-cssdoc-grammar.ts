@@ -113,6 +113,9 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   },
   CSSDOC_BASE_CLASS_NAME: {
     name: "CSSDOC_BASE_CLASS_NAME",
+    grammarRule: "Identifier",
+    grammarSource: "cssdoc",
+    grammarRelation: "exact",
     tier: 2,
     pattern: (resolve: PatternResolver) =>
       `(?:${resolve("ALPHA")}|${resolve("UNDERSCORE_CHAR")})${resolve("ALPHANUMERIC_EXTENDED")}*`,
@@ -215,6 +218,9 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   },
   CSSDOC_ATTRIBUTE_SELECTOR: {
     name: "CSSDOC_ATTRIBUTE_SELECTOR",
+    grammarRule: "AttributeModifier",
+    grammarSource: "cssdoc",
+    grammarRelation: "related",
     tier: 2,
     pattern: (resolve: PatternResolver) => {
       const open = resolve("BRACKET_OPEN");
@@ -240,6 +246,9 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   },
   CSSDOC_SELECTOR_TOKEN: {
     name: "CSSDOC_SELECTOR_TOKEN",
+    grammarRule: "CssSelectorArgument",
+    grammarSource: "cssdoc",
+    grammarRelation: "exact",
     tier: 2,
     pattern: (resolve: PatternResolver) =>
       String.raw`(?:${resolve("CSSDOC_ATTRIBUTE_SELECTOR")}|[^\s${resolve("BRACKET_OPEN")}]+)+`,
@@ -308,6 +317,9 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   },
   CSSDOC_CUSTOM_PROPERTY_TAG_NAME: {
     name: "CSSDOC_CUSTOM_PROPERTY_TAG_NAME",
+    grammarRule: "CustomPropertyName",
+    grammarSource: "cssdoc",
+    grammarRelation: "exact",
     tier: 2,
     pattern: (resolve: PatternResolver) =>
       `${resolve("DOUBLE_DASH")}${resolve("ALPHANUMERIC_EXTENDED")}+`,
@@ -339,6 +351,9 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   },
   CSSDOC_EXAMPLE_LABEL: {
     name: "CSSDOC_EXAMPLE_LABEL",
+    grammarRule: "ExampleLabels",
+    grammarSource: "cssdoc",
+    grammarRelation: "fragment",
     tier: 2,
     pattern: (resolve: PatternResolver) => {
       const chars = `[${resolve("ALPHA_LOWER", true)}${resolve("DIGIT", true)}]`;
@@ -359,6 +374,9 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   },
   CSSDOC_DESCRIPTION_SEPARATOR: {
     name: "CSSDOC_DESCRIPTION_SEPARATOR",
+    grammarRule: "Separator",
+    grammarSource: "cssdoc",
+    grammarRelation: "exact",
     tier: 2,
     pattern: (resolve: PatternResolver) => `(?:—|${resolve("DASH")}{1,2})`,
     description: "Separator between a cssdoc tag argument and its description",
@@ -428,7 +446,6 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   },
   CSSDOC_TAG_NAME: {
     name: "CSSDOC_TAG_NAME",
-    grammarRule: "TagName",
     tier: 2,
     pattern: (resolve: PatternResolver) => {
       const alpha = resolve("ALPHA", true);
@@ -449,6 +466,8 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   CSSDOC_SELECTOR: {
     name: "CSSDOC_SELECTOR",
     grammarRule: "Selector",
+    grammarSource: "cssdoc",
+    grammarRelation: "related",
     tier: 2,
     pattern: (resolve: PatternResolver) => {
       const start = resolve("CSS_IDENTIFIER_START_WITH_DASH");
@@ -471,6 +490,8 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   CSSDOC_MODIFIER_NAME: {
     name: "CSSDOC_MODIFIER_NAME",
     grammarRule: "ModifierName",
+    grammarSource: "cssdoc",
+    grammarRelation: "related",
     tier: 2,
     pattern: (resolve: PatternResolver) => {
       const start = resolve("CSS_IDENTIFIER_START");
@@ -491,7 +512,9 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   },
   CSSDOC_MODIFIER_ATTRIBUTE: {
     name: "CSSDOC_MODIFIER_ATTRIBUTE",
-    grammarRule: "ModifierAttribute",
+    grammarRule: "AttributeModifier",
+    grammarSource: "cssdoc",
+    grammarRelation: "related",
     tier: 2,
     pattern: (resolve: PatternResolver) => {
       const alpha = resolve("ALPHA", true);
@@ -510,7 +533,6 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   },
   CSSDOC_PSEUDO_SELECTOR: {
     name: "CSSDOC_PSEUDO_SELECTOR",
-    grammarRule: "PseudoSelector",
     tier: 2,
     source: String.raw`(?<pseudo>::?(?:before|after|first-letter|first-line|placeholder|selection|backdrop))`,
     captures: { pseudo: "Pseudo element" },
@@ -529,7 +551,9 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   },
   CSSDOC_CARDINALITY: {
     name: "CSSDOC_CARDINALITY",
-    grammarRule: "Cardinality",
+    grammarRule: "StructureBody",
+    grammarSource: "cssdoc",
+    grammarRelation: "fragment",
     tier: 2,
     pattern: (resolve: PatternResolver) => {
       const keywords = Object.keys(CSSDOC_CARDINALITY_KEYWORDS).join("|");

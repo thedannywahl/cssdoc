@@ -17,8 +17,12 @@ export type PatternResolver = (name: string, unwrap?: boolean) => string;
  * Either `source` or `pattern` should be provided.
  */
 export interface RawPatternDef {
-  /** Grammar rule name from CssDoc.grammarkdown (primary key) */
+  /** Related production name in the grammar identified by `grammarSource`. */
   grammarRule?: string;
+  /** Which grammar owns `grammarRule`. */
+  grammarSource?: "cssdoc" | "css";
+  /** Whether the pattern matches the production, a fragment, or a related heuristic. */
+  grammarRelation?: "exact" | "fragment" | "related";
 
   /** Export name (e.g., ALPHA, CSS_IDENTIFIER) */
   name: string;
@@ -70,8 +74,12 @@ export interface RawPatternDef {
  * Unified pattern definition — combines ArkRegex, string, metadata, and fixtures.
  */
 export interface UnifiedPatternDef {
-  /** Grammar rule name from CssDoc.grammarkdown (primary key) */
+  /** Related production name in the grammar identified by `grammarSource`. */
   grammarRule?: string;
+  /** Which grammar owns `grammarRule`. */
+  grammarSource?: "cssdoc" | "css";
+  /** Whether the pattern matches the production, a fragment, or a related heuristic. */
+  grammarRelation?: "exact" | "fragment" | "related";
 
   /** Export name (e.g., ALPHA, CSS_IDENTIFIER) */
   name: string;

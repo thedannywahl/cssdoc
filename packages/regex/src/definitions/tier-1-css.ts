@@ -11,6 +11,8 @@ export const TIER_1_CSS_PATTERNS: Record<string, RawPatternDef> = {
   CSS_IDENTIFIER: {
     name: "CSS_IDENTIFIER",
     grammarRule: "ident",
+    grammarSource: "css",
+    grammarRelation: "related",
     tier: 1,
     pattern: (resolve: PatternResolver) => {
       const start = resolve("CSS_IDENTIFIER_START");
@@ -35,6 +37,8 @@ export const TIER_1_CSS_PATTERNS: Record<string, RawPatternDef> = {
   CSS_NAME: {
     name: "CSS_NAME",
     grammarRule: "name",
+    grammarSource: "css",
+    grammarRelation: "related",
     tier: 1,
     pattern: (resolve: PatternResolver) => {
       const start = resolve("CSS_IDENTIFIER_START");
@@ -59,6 +63,8 @@ export const TIER_1_CSS_PATTERNS: Record<string, RawPatternDef> = {
   CSS_NUMBER: {
     name: "CSS_NUMBER",
     grammarRule: "number",
+    grammarSource: "css",
+    grammarRelation: "related",
     tier: 1,
     pattern: (resolve: PatternResolver) => {
       const digit = resolve("DIGIT", true);
@@ -86,6 +92,8 @@ export const TIER_1_CSS_PATTERNS: Record<string, RawPatternDef> = {
   CSS_PERCENTAGE: {
     name: "CSS_PERCENTAGE",
     grammarRule: "percentage",
+    grammarSource: "css",
+    grammarRelation: "related",
     tier: 1,
     pattern: (resolve: PatternResolver) => {
       const digit = resolve("DIGIT", true);
@@ -110,6 +118,8 @@ export const TIER_1_CSS_PATTERNS: Record<string, RawPatternDef> = {
   CSS_DIMENSION: {
     name: "CSS_DIMENSION",
     grammarRule: "dimension",
+    grammarSource: "css",
+    grammarRelation: "related",
     tier: 1,
     pattern: (resolve: PatternResolver) => {
       const digit = resolve("DIGIT", true);
@@ -135,6 +145,8 @@ export const TIER_1_CSS_PATTERNS: Record<string, RawPatternDef> = {
   CSS_HASH_COLOR: {
     name: "CSS_HASH_COLOR",
     grammarRule: "hash",
+    grammarSource: "css",
+    grammarRelation: "related",
     tier: 1,
     pattern: (resolve: PatternResolver) => {
       const hex = resolve("HEX_DIGIT", true);
@@ -159,6 +171,8 @@ export const TIER_1_CSS_PATTERNS: Record<string, RawPatternDef> = {
   CSS_FUNCTION: {
     name: "CSS_FUNCTION",
     grammarRule: "function",
+    grammarSource: "css",
+    grammarRelation: "related",
     tier: 1,
     pattern: (resolve: PatternResolver) => {
       const start = resolve("CSS_IDENTIFIER_START_WITH_DASH");
@@ -184,6 +198,8 @@ export const TIER_1_CSS_PATTERNS: Record<string, RawPatternDef> = {
   CSS_KEYWORD: {
     name: "CSS_KEYWORD",
     grammarRule: "keyword",
+    grammarSource: "css",
+    grammarRelation: "related",
     tier: 1,
     source: String.raw`(?<keyword>auto|inherit|initial|revert|revert-layer|unset)`,
     captures: { keyword: "CSS keyword" },
@@ -206,6 +222,8 @@ export const TIER_1_CSS_PATTERNS: Record<string, RawPatternDef> = {
   CSS_UNICODE_RANGE: {
     name: "CSS_UNICODE_RANGE",
     grammarRule: "unicode-range",
+    grammarSource: "css",
+    grammarRelation: "related",
     tier: 1,
     pattern: (resolve: PatternResolver) => {
       const hexWild = resolve("HEX_DIGIT_OR_WILDCARD", true);
@@ -231,6 +249,8 @@ export const TIER_1_CSS_PATTERNS: Record<string, RawPatternDef> = {
   CSS_PROPERTY_NAME: {
     name: "CSS_PROPERTY_NAME",
     grammarRule: "property-name",
+    grammarSource: "css",
+    grammarRelation: "related",
     tier: 1,
     pattern: (resolve: PatternResolver) => {
       const dash = resolve("DOUBLE_DASH");

@@ -122,8 +122,10 @@ interface UnifiedPatternDef {
   // Export name (e.g., ALPHA, CSS_IDENTIFIER)
   name: string;
 
-  // Grammar rule name from CssDoc.grammarkdown
+  // Related grammar production and its relationship to the pattern
   grammarRule?: string;
+  grammarSource?: "cssdoc" | "css";
+  grammarRelation?: "exact" | "fragment" | "related";
 
   // Tier level (0-4)
   tier: 0 | 1 | 2 | 3 | 4;
@@ -154,6 +156,10 @@ interface UnifiedPatternDef {
   relatedPatterns?: string[];
 }
 ```
+
+`exact` means the pattern matches the whole production when anchored; `fragment` covers part of a
+production, and `related` marks a heuristic that isn't equivalent. CSS production names refer to CSS
+specifications, not `CssDoc.grammarkdown`. An absent association doesn't imply a pattern is unused.
 
 ## Contributing
 

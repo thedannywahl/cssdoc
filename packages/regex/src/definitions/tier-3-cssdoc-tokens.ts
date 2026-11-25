@@ -10,7 +10,9 @@ import type { RawPatternDef, PatternResolver } from "../types.ts";
 export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
   CSSDOC_COMPONENT_REF: {
     name: "CSSDOC_COMPONENT_REF",
-    grammarRule: "ComponentRef",
+    grammarRule: "StructureBody",
+    grammarSource: "cssdoc",
+    grammarRelation: "related",
     tier: 3,
     pattern: (resolve: PatternResolver) => {
       const ident = resolve("CSS_IDENTIFIER");
@@ -39,6 +41,8 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
   CSSDOC_PART_NAME: {
     name: "CSSDOC_PART_NAME",
     grammarRule: "PartName",
+    grammarSource: "cssdoc",
+    grammarRelation: "related",
     tier: 3,
     pattern: (resolve: PatternResolver) => {
       const start = resolve("CSS_IDENTIFIER_START");
@@ -58,7 +62,9 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
   },
   CSSDOC_CSSPROP_NAME: {
     name: "CSSDOC_CSSPROP_NAME",
-    grammarRule: "CssPropertyName",
+    grammarRule: "CustomPropertyName",
+    grammarSource: "cssdoc",
+    grammarRelation: "related",
     tier: 3,
     pattern: (resolve: PatternResolver) => {
       const dash = resolve("DOUBLE_DASH");
@@ -79,7 +85,9 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
   },
   CSSDOC_CSSSTATE_NAME: {
     name: "CSSDOC_CSSSTATE_NAME",
-    grammarRule: "CssStateName",
+    grammarRule: "StateName",
+    grammarSource: "cssdoc",
+    grammarRelation: "related",
     tier: 3,
     pattern: (resolve: PatternResolver) => {
       const start = resolve("CSS_IDENTIFIER_START");
@@ -99,7 +107,9 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
   },
   CSSDOC_VARIANT_NAME: {
     name: "CSSDOC_VARIANT_NAME",
-    grammarRule: "VariantName",
+    grammarRule: "StructureBody",
+    grammarSource: "cssdoc",
+    grammarRelation: "related",
     tier: 3,
     pattern: (resolve: PatternResolver) => {
       const start = resolve("CSS_IDENTIFIER_START");
@@ -120,6 +130,8 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
   CSSDOC_SLOT_NAME: {
     name: "CSSDOC_SLOT_NAME",
     grammarRule: "SlotName",
+    grammarSource: "cssdoc",
+    grammarRelation: "related",
     tier: 3,
     pattern: (resolve: PatternResolver) => {
       const alpha = resolve("ALPHA", true);
@@ -139,7 +151,6 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
   },
   CSSDOC_EXAMPLE_LANG: {
     name: "CSSDOC_EXAMPLE_LANG",
-    grammarRule: "ExampleLanguage",
     tier: 3,
     source: String.raw`(?<lang>css|html|javascript|js|typescript|ts|jsx|tsx|json|markdown|md|text|plain)`,
     captures: { lang: "Language identifier" },
@@ -403,7 +414,9 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
   },
   CSSDOC_STRUCTURE_TAG: {
     name: "CSSDOC_STRUCTURE_TAG",
-    grammarRule: "StructureTagName",
+    grammarRule: "StructureBody",
+    grammarSource: "cssdoc",
+    grammarRelation: "related",
     tier: 3,
     source: String.raw`(?:@component|@variant|@modifier|@state|@part)`,
     description: "Structure tag keyword (@component, @variant, etc.)",
@@ -414,7 +427,9 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
   },
   CSSDOC_DEMO_URL: {
     name: "CSSDOC_DEMO_URL",
-    grammarRule: "DemoURL",
+    grammarRule: "Url",
+    grammarSource: "cssdoc",
+    grammarRelation: "related",
     tier: 3,
     source: String.raw`(?<url>https?://[^\s]+)`,
     captures: { url: "URL" },

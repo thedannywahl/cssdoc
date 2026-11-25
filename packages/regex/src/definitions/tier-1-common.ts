@@ -68,6 +68,9 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
   },
   DOC_COMMENT_START: {
     name: "DOC_COMMENT_START",
+    grammarRule: "CommentOpen",
+    grammarSource: "cssdoc",
+    grammarRelation: "exact",
     tier: 1,
     pattern: (resolve: PatternResolver) => `${resolve("COMMENT_START")}${resolve("ASTERISK")}`,
     description: "CSS doc-comment opener (/**)",
@@ -82,6 +85,9 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
   },
   COMMENT_END: {
     name: "COMMENT_END",
+    grammarRule: "CommentClose",
+    grammarSource: "cssdoc",
+    grammarRelation: "exact",
     tier: 1,
     pattern: (resolve: PatternResolver) => `${resolve("ASTERISK")}${resolve("FORWARD_SLASH")}`,
     description: "CSS block comment end (*/)",
@@ -111,6 +117,9 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
   },
   COMMENT_LINE_PREFIX: {
     name: "COMMENT_LINE_PREFIX",
+    grammarRule: "LinePrefix",
+    grammarSource: "cssdoc",
+    grammarRelation: "related",
     tier: 1,
     pattern: (resolve: PatternResolver) => String.raw`^\s*${resolve("COMMENT_LINE_MARKER")}\s?`,
     description: "Leading whitespace and a single block-comment line marker",
@@ -133,6 +142,9 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
   },
   AT: {
     name: "AT",
+    grammarRule: "BlockSigil",
+    grammarSource: "cssdoc",
+    grammarRelation: "exact",
     tier: 1,
     pattern: (resolve: PatternResolver) => resolve("AT_CHAR"),
     description: "At sign (regex pattern)",

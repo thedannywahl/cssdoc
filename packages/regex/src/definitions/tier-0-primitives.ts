@@ -27,6 +27,8 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
   ALPHA: {
     name: "ALPHA",
     grammarRule: "Letter",
+    grammarSource: "cssdoc",
+    grammarRelation: "exact",
     tier: 0,
     source: String.raw`[A-Za-z]`,
     description: "Alphabetic character (ASCII letters)",
@@ -111,6 +113,8 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
   DIGIT: {
     name: "DIGIT",
     grammarRule: "Digit",
+    grammarSource: "cssdoc",
+    grammarRelation: "exact",
     tier: 0,
     source: String.raw`[0-9]`,
     description: "Single digit",
