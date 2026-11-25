@@ -11,7 +11,7 @@
  * @module
  */
 import { createRequire } from "node:module";
-import { readFileSync } from "node:fs";
+import { globSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { type CssDocEntry, parseCssDocs } from "@cssdoc/core";
 import { regex as arkRegex } from "arkregex";
@@ -89,20 +89,6 @@ function rewriteEntryPrefix(
   return { ...entry, className: `${DOT_CHAR}${bare.replace(re, prefix.to ?? "")}` };
 }
 
-/** Expand glob patterns using Node's built-in glob module. */
-function expandGlob(pattern: string, cwd: string): string[] {
-  try {
-    // Use createRequire to load globSync - this works in both ESM and CJS contexts
-    // without relying on module-level helpers that break when bundled to CJS
-    const requireGlob = createRequire(new URL(import.meta.url).pathname);
-    const { globSync } = requireGlob("node:glob");
-    return globSync(pattern, { cwd });
-  } catch {
-    // If glob fails, return the pattern as-is
-    return [pattern];
-  }
-}
-
 /**
  * Resolve every provider a config declares. `.json` paths load a published model; other paths are
  * parsed as stylesheets. Paths starting with `.` resolve relative to the config file; the rest go
@@ -133,7 +119,7 @@ export function resolveProviders(
 
       // If it's a glob pattern and expandGlobs is enabled, expand it
       if (expandGlobs && hasGlobPattern(pathPattern)) {
-        resolvedPaths = expandGlob(pathPattern, from);
+        resolvedPaths = globSync(pathPattern, { cwd: from }).toSorted();
       } else {
         resolvedPaths = [pathPattern];
       }

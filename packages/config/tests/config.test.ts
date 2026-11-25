@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -278,6 +278,29 @@ test("resolveProviders reports an unresolvable provider without throwing", () =>
   );
   expect(entries).toEqual([]);
   expect(messages[0]).toContain("missing.json");
+});
+
+test("resolveProviders expands stylesheet globs and reports unmatched patterns", () => {
+  const dir = mkdtempSync(join(tmpdir(), "cssdoc-provider-globs-"));
+  try {
+    mkdirSync(join(dir, "generated"));
+    for (const name of ["alpha", "beta"]) {
+      writeFileSync(
+        join(dir, "generated", `${name}.css`),
+        `/** @component ${name} */\n.${name} {}\n`,
+      );
+    }
+    const configPath = join(dir, "cssdoc.json");
+    writeFileSync(
+      configPath,
+      JSON.stringify({ providers: [{ path: "./generated/*.css" }, { path: "./missing/*.css" }] }),
+    );
+    const result = resolveProviders(CssDocConfigFile.loadFile(configPath));
+    expect(result.entries.map((entry) => entry.name)).toEqual(["alpha", "beta"]);
+    expect(result.messages).toEqual(['Provider "./missing/*.css": glob pattern matched no files']);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("resolveProviders' prefix rewrite is verbatim — no separator assumed or added", () => {
