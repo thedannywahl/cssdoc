@@ -29,6 +29,14 @@ test("formats blank lines before an existing closer", () => {
 });
 
 test("preserves the comment indentation and line ending", () => {
+  test("formats every doc comment across repeated calls", () => {
+    const text = "/**\n * @component first\n\n */\n.first {}\n/**\n * @component second\n\n */";
+    const expected =
+      "/**\n * @component first\n * \n */\n.first {}\n/**\n * @component second\n * \n */";
+    expect(apply(text, cssDocEdits(text, true))).toBe(expected);
+    expect(apply(text, cssDocEdits(text, true))).toBe(expected);
+  });
+
   const text = "  /**\r\n   * @name button";
   expect(apply(text, cssDocEdits(text, false))).toBe("  /**\r\n   * @name button\r\n   */");
 });
