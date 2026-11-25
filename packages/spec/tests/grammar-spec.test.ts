@@ -1,6 +1,8 @@
 import { fileURLToPath } from "node:url";
-import { Grammar } from "grammarkdown";
+import { Grammar, Nonterminal, Production, TerminalLiteral } from "grammarkdown";
+import type { Node } from "grammarkdown";
 import { expect, test } from "vite-plus/test";
+import { CSSDOC_TAGS } from "../src/index.ts";
 
 // The grammar spec is the source of truth for the doc-comment shape (grammar/CssDoc.grammarkdown); the
 // runtime parser in grammar.ts conforms to it. This test keeps the spec honest: it must be valid
@@ -16,4 +18,55 @@ test("CssDoc.grammarkdown is a valid grammarkdown spec", async () => {
     .filter((info) => !info.warning)
     .map((info) => `line ${(info.range?.start?.line ?? -1) + 1}: ${info.message}`);
   expect(errors).toEqual([]);
+});
+
+test("the grammar includes every standard tag in its reachable block or inline productions", async () => {
+  const grammar = new Grammar([SPEC]);
+  await grammar.parse();
+  const productions = new Map(
+    grammar.rootFiles[0].elements
+      .filter((element): element is Production => element instanceof Production)
+      .map((production) => [production.name.text, production]),
+  );
+  const reachable = new Set<string>();
+  const terminals = new Set<string>();
+  const visit = (node: Node): void => {
+    if (node instanceof TerminalLiteral && node.text) terminals.add(node.text);
+    if (node instanceof Nonterminal && node.name.text && !reachable.has(node.name.text)) {
+      reachable.add(node.name.text);
+      const target = productions.get(node.name.text);
+      if (target) visit(target);
+    }
+    for (const child of node.children()) visit(child);
+  };
+  const block = productions.get("BlockTag");
+  const inline = productions.get("InlineTag");
+  expect(block).toBeDefined();
+  expect(inline).toBeDefined();
+  if (!block || !inline) throw new Error("Missing tag productions");
+  visit(block);
+  visit(inline);
+
+  const missing = CSSDOC_TAGS.filter((tag) =>
+    tag.kind === "inline" ? !terminals.has(tag.name) : !terminals.has(`@${tag.name}`),
+  ).map((tag) => tag.name);
+  expect(missing).toEqual([]);
+});
+
+test("the grammar includes each supported description separator", async () => {
+  const grammar = new Grammar([SPEC]);
+  await grammar.parse();
+  const separator = grammar.rootFiles[0].elements.find(
+    (element): element is Production =>
+      element instanceof Production && element.name.text === "Separator",
+  );
+  expect(separator).toBeDefined();
+  if (!separator) throw new Error("Missing Separator production");
+  const terminals: string[] = [];
+  const visit = (node: Node): void => {
+    if (node instanceof TerminalLiteral && node.text) terminals.push(node.text);
+    for (const child of node.children()) visit(child);
+  };
+  visit(separator);
+  expect(terminals).toEqual(["—", "-", "--"]);
 });

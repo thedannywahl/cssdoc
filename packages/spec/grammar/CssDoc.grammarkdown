@@ -3,6 +3,8 @@
 // Notation: `::` marks a lexical production, `:` a syntactic one. Terminals are in backticks; `> …`
 // lines are prose (character classes and layout-sensitive constructs outside context-free notation).
 // Productions generally define their dependencies first, building to the DocComment goal symbol last.
+// The grammar describes supported authored forms, not a validator: parsing also tolerates malformed
+// input, ignores unregistered tags, and accepts an already-unframed comment body.
 
 // ============================================================================================
 // Lexical grammar
@@ -11,8 +13,12 @@
 SourceCharacter ::
     > any Unicode code point
 
-WhiteSpace ::
+HorizontalWhiteSpace ::
     > a space or a horizontal tab
+
+WhiteSpace ::
+    HorizontalWhiteSpace
+    WhiteSpace HorizontalWhiteSpace
 
 LineTerminator ::
     > a line feed or a carriage return
@@ -36,9 +42,9 @@ InlineOpen ::
 InlineClose ::
     `}`
 
-// The head/description separator on a tag line: an em dash or a hyphen, surrounded by whitespace.
+// The head/description separator on a tag line; `--` is also accepted for compatibility.
 Separator :: one of
-    `—` `-`
+    `—` `-` `--`
 
 Digit :: one of
     `0` `1` `2` `3` `4` `5` `6` `7` `8` `9`
@@ -59,11 +65,10 @@ Identifier ::
     IdentifierStart
     Identifier IdentifierPart
 
-// A record name, e.g. `button` or `progress-circle`. A qualified name (`menu.item`) names a member
-// nested under a dotted-off parent — see MemberOfTag.
+// The record parser takes the first non-whitespace token. A dotted name (`menu.item`) implies
+// membership in its immediate parent. Other consumers may impose narrower name rules.
 RecordName ::
-    Identifier
-    RecordName `.` Identifier
+    > one or more non-whitespace characters
 
 Prop ::
     > an identifier segment of letters and digits, containing no hyphen
@@ -155,6 +160,11 @@ PartName ::
     `.` Identifier
     `.` Identifier WildcardSegment
 
+// Part and wrapper arguments accept selector chains and an optional trailing alias. A bare final
+// word is treated as an alias unless the preceding selector ends in a combinator.
+PartSelector ::
+    > a selector or selector chain, optionally followed by a whitespace-separated alias
+
 // A non-class part selector: an attribute selector, an ID, or a shadow-DOM pseudo (:host).
 // `:host-context(…)` (host in a specific ancestor context) is also accepted — the bracket-aware
 // parser reads the full token until the first unbracketed whitespace.
@@ -176,17 +186,15 @@ ClassSelector ::
 // Compound selectors (e.g. `[class*="x"][data-layout="y"]`) and `:host-context(…)` are also accepted;
 // the bracket-aware parser reads until the first unbracketed whitespace.
 CssSelectorArgument ::
-    ClassSelector
-    NonClassPartSelector
+    > a selector token, including bracketed attributes that may contain whitespace
 
 // A `--`-prefixed custom property (`@property`) or custom function (`@function`) name.
 CustomPropertyName ::
-    `--` Identifier
+    > two hyphens followed by one or more ASCII letters, digits, underscores, or hyphens
 
-// A syntax component name from the CSS Properties and Values API supported-names list.
-SyntaxBody :: one of
-    `angle` `color` `custom-ident` `image` `integer` `length` `length-percentage` `number`
-    `percentage` `resolution` `string` `time` `transform-function` `transform-list` `url`
+// The doc-comment parser captures any nonempty descriptor body; CSS registration validation is separate.
+SyntaxBody ::
+    > one or more characters other than >
 
 // The `<…>` CSS syntax descriptor on a `@cssproperty`/`@property` line, e.g. `<number>`.
 SyntaxDescriptor ::
@@ -210,15 +218,38 @@ Selector ::
 CustomTagContent ::
     > tag-specific content, interpreted per the tag's configured syntax kind
 
+// The selector-token scanner keeps bracketed attributes together, including quoted whitespace.
+ModifierSelector ::
+    > a nonempty selector token with bracketed attributes, or a bare modifier name
+
+ModifierAlias ::
+    > one or more ASCII letters, digits, underscores, or hyphens
+
+MemberName ::
+    > one or more ASCII letters, digits, underscores, or hyphens
+
+AnnotationBody ::
+    > numbered lines, each beginning with digits and a period, with optional continuation lines
+
+ReferenceBody ::
+    > digits followed by an optional period and optional prose
+
+ElementBody ::
+    > an element expression, optionally preceded by a profile and a colon
+
+MembersBody ::
+    > comma-separated member names
+
+StructureBody ::
+    > nested CSS rules, @scope and @variant blocks, and structure reference at-rules
+
 // ============================================================================================
 // Syntactic grammar
 // ============================================================================================
 
-// The target of an inline reference: a modifier, a part, or a record.
+// Inline references are preserved in description text. Downstream consumers interpret their targets.
 CssReference :
-    ModifierName
-    PartName
-    RecordName
+    > an inline reference target, such as a modifier, part, record, or URL
 
 LinkTag :
     InlineOpen `link` WhiteSpace CssReference InlineClose
@@ -284,6 +315,9 @@ RemarksTag :
 PrivateRemarksTag :
     `@privateRemarks` WhiteSpace Description
 
+TodoTag :
+    `@todo` WhiteSpace Description
+
 SeeTag :
     `@see` WhiteSpace Description
 
@@ -323,19 +357,22 @@ ModifierBody :
     Description
     InlineDeprecation
 
-// A modifier; the list itself is derived from the CSS, this supplies prose (or an inline deprecation).
+// A modifier; CSS supplies the modifier set. An inline @deprecated, @alias, @interaction,
+// @global, or @affects marker at the start of the description contributes structured metadata.
 ModifierTag :
-    `@modifier` WhiteSpace ModifierName
-    `@modifier` WhiteSpace ModifierName Separator ModifierBody
+    `@modifier` WhiteSpace ModifierSelector
+    `@modifier` WhiteSpace ModifierSelector Separator ModifierBody
+    `@modifier` WhiteSpace ModifierSelector WhiteSpace ModifierAlias Separator ModifierBody
 
-// A part can now name any simple selector, not only class names. An optional alias overrides the
-// derived name (first attribute key, bare ID/host name, or stripped class name).
+// A part can name a selector chain. An optional alias overrides the name derived from its final
+// compound; wrappers use the same argument parser.
 PartTag :
-    `@part` WhiteSpace PartName
-    `@part` WhiteSpace PartName Separator Description
-    `@part` WhiteSpace NonClassPartSelector
-    `@part` WhiteSpace NonClassPartSelector Separator Description
-    `@part` WhiteSpace NonClassPartSelector WhiteSpace PartAlias Separator Description
+    `@part` WhiteSpace PartSelector
+    `@part` WhiteSpace PartSelector Separator Description
+
+WrapperTag :
+    `@wrapper` WhiteSpace PartSelector
+    `@wrapper` WhiteSpace PartSelector Separator Description
 
 // A shadow-DOM exposed part (`::part(name)`), named by a bare identifier, e.g. `@csspart header`.
 ShadowPartName :
@@ -345,6 +382,9 @@ CssPartTag :
     `@csspart` WhiteSpace ShadowPartName
     `@csspart` WhiteSpace ShadowPartName Separator Description
 
+PseudoTag :
+    `@pseudo` WhiteSpace Description
+
 CssPropertyKeyword :
     `@cssproperty`
     `@property`
@@ -352,9 +392,9 @@ CssPropertyKeyword :
 // A registered custom property; the registration is derived from the `@property` at-rule, this adds prose.
 CssPropertyTag :
     CssPropertyKeyword WhiteSpace CustomPropertyName
-    CssPropertyKeyword WhiteSpace CustomPropertyName SyntaxDescriptor
+    CssPropertyKeyword WhiteSpace CustomPropertyName WhiteSpace? SyntaxDescriptor
     CssPropertyKeyword WhiteSpace CustomPropertyName Separator Description
-    CssPropertyKeyword WhiteSpace CustomPropertyName SyntaxDescriptor Separator Description
+    CssPropertyKeyword WhiteSpace CustomPropertyName WhiteSpace? SyntaxDescriptor Separator Description
 
 // A design token the component consumes (`var(--name)`); the set is derived from the CSS, this adds prose.
 TokensTag :
@@ -426,19 +466,15 @@ AccessibilityKeyword :
 AccessibilityTag :
     AccessibilityKeyword WhiteSpace Description
 
-// The list and node refer to each other, so one reference necessarily points to a later definition.
-StructureNodeList :
-    StructureNode
-    StructureNodeList StructureNode
-
-// `@scope (…) { … }` at-rules inside a @structure body create scope-boundary nodes (StructureNode
-// with scope set to the prelude). The parser recognises @scope as CSS content, not a cssdoc tag.
-StructureNode :
-    Selector `{` StructureNodeList? `}`
-
+// Structure uses the configured CSS parser. Rules become nodes; @scope, @variant, and record
+// references have special meaning. Cardinality may appear as a trailing selector pseudo or
+// reference suffix. Unknown at-rules are ignored, and malformed CSS produces an empty tree.
 StructureTag :
-    `@structure` StructureNodeList
-    `@structure` Description StructureNodeList
+    `@structure` StructureBody
+    `@structure` Description StructureBody
+
+ElementTag :
+    `@element` WhiteSpace ElementBody
 
 Provider ::
     Identifier
@@ -475,14 +511,37 @@ RelatedTag :
 // isn't nested in the parent's own `@structure`. A trailing `private` keyword (named after
 // TypeScript's own scoping keyword) means this record must only ever appear inside that parent.
 MemberOfTag :
-    `@memberOf` WhiteSpace RecordName
-    `@memberOf` WhiteSpace RecordName WhiteSpace `private`
+    `@memberOf` WhiteSpace MemberName
+    `@memberOf` WhiteSpace MemberName WhiteSpace `private`
 
 // Parent-side member declaration (repeatable): `@member child` (or `@member child private`).
 // Inside `@structure`, `@member child` is treated as local structure content (not a new block tag).
 MemberTag :
-    `@member` WhiteSpace RecordName
-    `@member` WhiteSpace RecordName WhiteSpace `private`
+    `@member` WhiteSpace MemberName
+    `@member` WhiteSpace MemberName WhiteSpace `private`
+
+MembersTag :
+    `@members` WhiteSpace MembersBody
+
+AnnotationsTag :
+    `@annotations` WhiteSpace AnnotationBody
+
+RefTag :
+    `@ref` WhiteSpace ReferenceBody
+
+DecoratorTag :
+    `@readonly`
+    `@global`
+    `@preventExtensions`
+    `@noextend`
+    `@sealed`
+    `@frozen`
+
+// These standard block tags can also appear independently. Modifier-body annotations are parsed
+// separately when they occur at the start of a modifier description.
+ModifierAnnotationTag :
+    `@interaction` WhiteSpace? Description?
+    `@alias` WhiteSpace? Description?
 
 CustomTag :
     BlockSigil Identifier
@@ -497,9 +556,12 @@ BlockTag :
     VisibilityTag
     RemarksTag
     PrivateRemarksTag
+    TodoTag
     ModifierTag
     PartTag
+    WrapperTag
     CssPartTag
+    PseudoTag
     CssPropertyTag
     TokensTag
     CssStateTag
@@ -512,6 +574,7 @@ BlockTag :
     SlotTag
     AccessibilityTag
     StructureTag
+    ElementTag
     ExampleTag
     DemoTag
     UsageTag
@@ -519,6 +582,11 @@ BlockTag :
     RelatedTag
     MemberOfTag
     MemberTag
+    MembersTag
+    AnnotationsTag
+    RefTag
+    DecoratorTag
+    ModifierAnnotationTag
     DeprecatedTag
     SeeTag
     SinceTag
@@ -531,9 +599,9 @@ TagList :
     TagList BlockTag
 
 // A doc comment is a sequence of block tags. Leading untagged prose is ignored; each `@tag` opens a
-// block that runs until the next *known* cssdoc `@tag` (so multi-line @example / @summary bodies are
-// captured). Inside a `@structure` block, CSS at-rules whose names are not cssdoc tags (e.g. `@scope`,
-// `@media`, `@layer`) are treated as CSS content, not new block openers.
+// block that runs until the next tag-shaped line. Unknown tags start ignored blocks outside
+// `@structure`. Inside `@structure`, unknown at-rules and indented known tags are kept as CSS content;
+// a known unindented tag opens a new block.
 //
 // Multi-line tag descriptions: Many tags accept a description after the `—` or `-` separator
 // (e.g., `@modifier`, `@part`, `@cssproperty`). Long descriptions may span multiple lines by
