@@ -7,6 +7,7 @@
  * @module
  */
 import { type ExampleFilter, type StructureNode, selectExamples } from "@cssdoc/core";
+import { CSS_CLASS_ATTRIBUTE_SELECTOR, toRegExp } from "@cssdoc/regex";
 import {
   type ClassUsage,
   type CssDocIndex,
@@ -64,7 +65,7 @@ const CUSTOM_ELEMENT_RE = /^[a-z][a-z0-9._-]*-[a-z0-9._-]+$/u;
 const globSource = (name: string): string => name.split("*").map(escapeRe).join("[\\w-]*");
 
 /** `class` attribute selectors, capturing the operator (`~`/`^`/`$`/`*`/`|`/none) and the value. */
-const CLASS_ATTR_RE = /\[\s*class\s*([~^$*|]?)=\s*(?:"([^"]*)"|'([^']*)'|([^\]\s]*))\s*\]/gu;
+const CLASS_ATTR_RE = toRegExp(CSS_CLASS_ATTRIBUTE_SELECTOR);
 
 /**
  * Whether `selectorText` (the record's concatenated selectors) defines the modifier/part `selector`.
