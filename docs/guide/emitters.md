@@ -1,112 +1,46 @@
-# Emitting docs
+# Generate documentation
 
-Emitters consume the model and produce an output format — one package per format, the way
-`typedoc-plugin-markdown` and the default HTML theme are separate emitters over TypeDoc's reflections.
-Each takes CSS (or an already-parsed model) and writes files.
+Turn the `button.css` from [Document a component](/guide/authoring) into a Markdown page and an
+index. You can open the generated files locally or include them in a docs site.
 
-Every emitter also accepts a `lang` (`"js"`, `"html"`, or `"markdown"`) to extract CSS from a host file
-first, and a `dialect` (`"scss"` or `"less"`) to parse a preprocessor source — see
-[Embedded CSS](/guide/embedded-css). So you can emit docs straight from a `.tsx`, `.vue`, or `.scss`.
+## Build Markdown pages
 
-## Markdown
+```sh
+npm install -D @cssdoc/markdown
+```
 
-[`@cssdoc/markdown`](https://www.npmjs.com/package/@cssdoc/markdown) writes one Markdown page per record,
-an index, and a `css-sidebar.json` compatible with `typedoc-plugin-markdown` / `typedoc-vitepress-theme`.
+Save this as `build-css-docs.mjs` next to `button.css`:
 
-```ts
-import { buildCssApi } from "@cssdoc/markdown";
+```js
 import { readFileSync } from "node:fs";
+import { buildCssApi } from "@cssdoc/markdown";
 
 buildCssApi({
-  css: readFileSync("dist/components.css", "utf8"),
-  outDir: "docs/api/css",
-  baseHref: "/api/css/",
+  css: readFileSync("button.css", "utf8"),
+  outDir: "generated/css",
 });
 ```
 
-Records marked `@visibility internal` are omitted from collection output by default. Set
-`includeInternal: true` when generating an author-facing reference.
+Run `node build-css-docs.mjs` from that directory and open `generated/css/button.md`. Look for
+the button summary, the quiet modifier, and the description of `--button-radius`. The build also
+writes `index.md` and `css-sidebar.json`.
 
-Pass a `resolveToken` hook to add a Type/Value column for consumed custom properties (e.g. resolve
-`--your-*` against a design-token source); an authored `@tokens` description adds a Description column.
-Other `renderEntry` options: `resolveSource` (a `**Source:**` link from `entry.source` — set `fileName`
-on the parse to record the file), `importSnippet` (a fenced snippet in the Usage section), `baseHref`
-(the `@related` cross-link prefix), `sectionOrder` (reorder or drop the `##` sections without a
-post-processor), and `classNames` (wrap just the deprecation/release-stage marker _word_ — `Deprecated`,
-`experimental`, etc. — in a `<span>` with your own classes, leaving the reason prose outside, e.g.
-`{ deprecated: "-your-pill", stage: { experimental: "-your-pill" } }` — so a VitePress theme can style
-them as compact pills/tags; off by default to keep the output pure Markdown). `renderEntry(entry)`
-/ `renderIndex(entries)` return strings if you'd rather place the output yourself.
+Use a dedicated output folder so the build can remove generated pages for deleted records.
 
-To cross-link components from an upstream [provider](/guide/config#consuming-another-provider), pass
-`providers` — the result of `resolveProviders` from `@cssdoc/config`. A referenced provider component in
-an `@structure` (or the derived Subcomponents list) then links out to that provider's page:
+## Choose another output
 
-```ts
-import { CssDocConfigFile, resolveProviders } from "@cssdoc/config";
+| I want to…                                                 | Use                                                      |
+| ---------------------------------------------------------- | -------------------------------------------------------- |
+| Publish pages I can open directly in a browser             | [HTML](/reference/@cssdoc/html/functions/buildHtml)      |
+| Pass the full data model to a script or another build step | [JSON](/reference/@cssdoc/json/functions/writeJson)      |
+| Give a language model a condensed description of the CSS   | [llms.txt](/reference/@cssdoc/llms/functions/writeLlms)  |
+| Add CSS pages to an existing TypeDoc site                  | [Publish alongside TypeDoc](/guide/publish-with-typedoc) |
+| Feed another tool a standard file format                   | [Export to other tools](/guide/generators)               |
 
-const configFile = CssDocConfigFile.loadForFolder("packages/app");
-buildCssApi({
-  css: readFileSync("dist/app.css", "utf8"),
-  outDir: "docs/api/css",
-  baseHref: "/api/css/",
-  providers: resolveProviders(configFile), // each provider's `baseHref` prefixes its links
-  exampleFilter: configFile.render.exampleFilters?.markdown,
-});
-```
+## Select examples for your docs
 
-## HTML
-
-[`@cssdoc/html`](https://www.npmjs.com/package/@cssdoc/html) writes standalone, self-contained HTML —
-one page per record plus an index, styled inline, dark-mode aware, no build step.
-
-```ts
-import { buildHtml } from "@cssdoc/html";
-buildHtml({ css, outDir: "docs/api/html", title: "CSS API reference" });
-```
-
-Pass `exampleFilter` to `buildHtml` or `renderPage` to filter examples, for example
-`exampleFilter: configFile.render.exampleFilters?.html`. Set `includeInternal: true` on `buildHtml`
-to include internal records.
-
-## JSON
-
-[`@cssdoc/json`](https://www.npmjs.com/package/@cssdoc/json) writes the model as JSON — a whole-model
-file, optional per-record files with an index, and the model's **JSON Schema** for validating or typing
-the output.
-
-```ts
-import { writeJson } from "@cssdoc/json";
-writeJson({ css, outDir: "docs/api/json", perRecord: true, schema: true });
-```
-
-`writeJson` omits internal records by default; pass `includeInternal: true` to include them.
-
-## llms.txt
-
-[`@cssdoc/llms`](https://www.npmjs.com/package/@cssdoc/llms) writes an
-[`llms.txt`](https://llmstxt.org/)-style digest — a flat, token-efficient Markdown summary of every
-component's surface, sized for an LLM's context window.
-
-```ts
-import { writeLlms } from "@cssdoc/llms";
-writeLlms({ css, outFile: "llms.txt", title: "My CSS" });
-```
-
-`writeLlms` omits internal records by default; pass `includeInternal: true` to include them.
-
-## Alongside a TypeDoc site
-
-[`@cssdoc/typedoc`](https://www.npmjs.com/package/@cssdoc/typedoc) is a TypeDoc plugin: on render it
-emits the CSS reference (via `@cssdoc/markdown`) into the TypeDoc output and merges it into the TypeDoc
-sidebar, so CSS docs sit beside your TS API docs.
-
-```jsonc
-// typedoc.json
-{
-  "plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme", "@cssdoc/typedoc"],
-  "cssdocCss": ["../packages/ui/dist/components.css"],
-  "cssdocConfig": "../packages/ui/cssdoc.json",
-  "cssdocBaseHref": "/api/css/",
-}
-```
+If a stylesheet uses `@example labels=[docs]` to mark examples for publication, set
+`render.exampleFilters.markdown` to `{ "labels": ["docs"], "includeUnlabeled": false }` in
+`cssdoc.json` for TypeDoc. When calling `buildCssApi` directly, pass the same filter as
+`exampleFilter`. See [example filtering](/guide/config-reference#example-filtering) for the
+matching rules and the other output surfaces.

@@ -1,9 +1,8 @@
 ---
 aside: false
-editLink: false
 ---
 
-# Grammar
+# Formal grammar
 
 cssdoc's doc-comment syntax is defined by a formal, RFC-style specification written in
 [grammarkdown](https://github.com/rbuckton/grammarkdown).
@@ -19,5 +18,14 @@ grammarkdown is notation and validation only — it doesn't generate a parser.
 
 The [pattern reference](./patterns) connects grammar productions to the regex patterns that implement
 or approximate them.
+
+## Entry points
+
+- [DocComment](#production-doccomment) defines the comment's outer shape.
+- [BlockTag](#production-blocktag) lists the productions for block and record tags.
+- [CssReference](#production-cssreference) defines targets for inline references.
+- [StructureTag](#production-structuretag) starts the grammar for authored DOM trees.
+
+## Productions
 
 <<< @/../packages/spec/grammar/CssDoc.grammarkdown{grammarkdown}

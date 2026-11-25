@@ -1,17 +1,39 @@
 ---
-aside: false
-editLink: false
+outline: 2
 ---
 
-# Config reference
+# Configuration
 
 `cssdoc.json` and `cssdoc.jsonc` configure tag parsing, lint rules, providers, and rendered output.
 The [configuration guide](/guide/config) shows common setups; this page documents every field accepted
 by the schema.
 
-The schema is published at
-[`https://cssdoc.dev/cssdoc.schema.json`](https://cssdoc.dev/cssdoc.schema.json). Add it to a config
-file for editor validation and completion:
+## Field index
+
+| Field                                       | Type                                             | Default    | Purpose                                                                    |
+| ------------------------------------------- | ------------------------------------------------ | ---------- | -------------------------------------------------------------------------- |
+| [`$schema`](#editor-validation)             | `string`                                         | —          | Schema URL for editor validation and completion.                           |
+| [`extends`](#inheritance)                   | `string[]`                                       | —          | Inherit settings from files or package exports.                            |
+| [`noStandardTags`](#nostandardtags)         | `boolean`                                        | `false`    | Start without the standard tag vocabulary.                                 |
+| [`tagDefinitions`](#tagdefinitions)         | `object[]`                                       | —          | Add custom tags.                                                           |
+| [`supportForTags`](#supportfortags)         | `object`                                         | —          | Enable or disable individual tags.                                         |
+| [`modifierConvention`](#modifierconvention) | `preset` or `object`                             | `bem`      | Recognize modifiers, parts, and states from selectors.                     |
+| [`inlineComments`](#inlinecomments)         | `"append" \| "prepend" \| "replace" \| "ignore"` | `append`   | Combine a member's CSS comment with its tag prose.                         |
+| [`globalPrecedence`](#globalprecedence)     | `"base" \| "global"`                             | `base`     | Choose which modifier wins when a global and explicit definition conflict. |
+| [`providers`](#providers)                   | `object[]`                                       | —          | Consume records from another stylesheet or published model.                |
+| [`rules`](#rules)                           | `object`                                         | Per rule   | Set lint rule severities.                                                  |
+| [`overrides`](#overrides)                   | `object[]`                                       | —          | Set rule severities for matching file globs.                               |
+| [`ruleOptions`](#ruleoptions)               | `object`                                         | Per option | Tune behavior shared by lint rules.                                        |
+| [`naming`](#naming)                         | `object`                                         | —          | Enforce naming conventions for component and part classes.                 |
+| [`structureIgnore`](#structureignore)       | `string[]`                                       | —          | Exempt external classes from `structure-unknown-selector`.                 |
+| [`render`](#render-options)                 | `object`                                         | Per option | Set defaults for generated pages and editor hovers.                        |
+
+Unknown top-level and nested properties aren't allowed. See the [complete schema](#complete-json-schema)
+for exact constraints.
+
+## Editor validation
+
+Add the published schema to your config to get validation and completion in your editor:
 
 ```jsonc
 {
@@ -19,31 +41,7 @@ file for editor validation and completion:
 }
 ```
 
-Both file names accept JSON with comments and trailing commas. `cssdoc.jsonc` makes that format
-explicit. The schema rejects unknown fields, so misspellings are reported rather than silently ignored.
-
-## Top-level fields
-
-| Field                | Type                                             | Purpose                                                                                                |
-| -------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| `$schema`            | string                                           | Schema URL used by editors.                                                                            |
-| `extends`            | string[]                                         | Config files or package exports to inherit. Relative paths resolve from the config that declares them. |
-| `noStandardTags`     | boolean                                          | Disable all standard tags; only custom `tagDefinitions` remain enabled.                                |
-| `tagDefinitions`     | object[]                                         | Add custom doc-comment tags.                                                                           |
-| `supportForTags`     | object                                           | Enable or disable individual tags by name.                                                             |
-| `modifierConvention` | preset or object                                 | Describe how modifier, part, and state selectors are spelled.                                          |
-| `inlineComments`     | `"append" \| "prepend" \| "replace" \| "ignore"` | Choose how a member's CSS comment combines with its tag prose.                                         |
-| `providers`          | object[]                                         | Consume records from another CSS source or published model.                                            |
-| `rules`              | object                                           | Set lint rule severities.                                                                              |
-| `overrides`          | object[]                                         | Set rule severities for matching file globs.                                                           |
-| `ruleOptions`        | object                                           | Tune behavior shared by related lint rules.                                                            |
-| `naming`             | object                                           | Enforce naming conventions for component and part classes.                                             |
-| `structureIgnore`    | string[]                                         | Exempt external class names from `structure-unknown-selector`.                                         |
-| `globalPrecedence`   | `"base" \| "global"`                             | Choose which modifier wins when a global and explicit definition conflict.                             |
-| `render`             | object                                           | Set defaults for rendered API pages and editor hovers. Explicit emitter options take precedence.       |
-
-Unknown top-level and nested properties aren't allowed. See the [complete schema](#complete-json-schema)
-for exact constraints.
+Both file names accept comments and trailing commas. Use `cssdoc.jsonc` to make that format explicit.
 
 <details>
 <summary>Show examples</summary>
@@ -53,8 +51,8 @@ for exact constraints.
 ```jsonc [Basic setup]
 {
   "$schema": "https://cssdoc.dev/cssdoc.schema.json",
-  // Inherit from a preset configuration package
-  "extends": ["@cssdoc/config/web-components"],
+  // Require a summary for every documented record
+  "rules": { "missing-summary": "warn" },
 }
 ```
 
@@ -127,42 +125,36 @@ You can extend from local config files or published npm packages. When you exten
 
 ::: code-group
 
-```jsonc [Local config]
+```jsonc [base.cssdoc.json]
 {
-  // Inherit from another config file in the project
-  "extends": ["./cssdoc.base.json"],
-  // Override specific fields
+  "rules": { "missing-summary": "warn", "undocumented-part": "warn" },
 }
 ```
 
-```jsonc [Package preset]
+```jsonc [cssdoc.json]
 {
-  // Inherit from a published config preset
-  "extends": ["@cssdoc/config/web-components"],
-  // Add or override settings
-  "rules": {
-    "missing-summary": "off", // This overrides the inherited value
-  },
-}
-```
-
-```jsonc [Multiple extends]
-{
-  // Extends are applied in order; later files override earlier ones
-  "extends": [
-    "@cssdoc/config/base", // Apply base rules first
-    "@cssdoc/config/web-components", // Then web-component conventions
-    "./cssdoc.local.json", // Finally, local overrides
-  ],
-  "rules": {
-    "unknown-modifier": "error", // This overrides all inherited values
-  },
+  "extends": ["./base.cssdoc.json"],
+  "rules": { "missing-summary": "error" },
 }
 ```
 
 :::
 
 </details>
+
+Save both files in the same directory. A missing summary now reports an error, and an undocumented
+part still reports a warning from the base config.
+
+For several layers, list the files in application order. Each entry must exist, and a package
+specifier must point to a JSON config exported by that package.
+
+```jsonc
+{
+  // Create cssdoc.local.json with any additional settings, or {} as a starting point.
+  "extends": ["./base.cssdoc.json", "./cssdoc.local.json"],
+  "rules": { "unknown-modifier": "error" },
+}
+```
 
 ### Merge behavior
 
@@ -244,17 +236,23 @@ Some fields have unique merging semantics. `structureIgnore` patterns are combin
 
 ## Tags
 
+### `noStandardTags`
+
+The standard vocabulary is enabled by default. Set `noStandardTags` to `true` to start with
+custom definitions only. Use [`supportForTags`](#supportfortags) to enable individual standard
+tags in that configuration.
+
 ### `tagDefinitions`
 
 Each definition requires `tagName` and `syntaxKind`.
 
-| Property        | Type                                                    | Purpose                                                                                                             |
-| --------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `tagName`       | string                                                  | Tag name, with or without the leading `@`; it must start with a letter and may contain letters, digits, or hyphens. |
-| `syntaxKind`    | `"record" \| "block" \| "modifier" \| "inline"`         | How the parser reads the tag.                                                                                       |
-| `allowMultiple` | boolean                                                 | Allow the tag to appear more than once in a comment.                                                                |
-| `recordKind`    | `"component" \| "utility" \| "declaration" \| "layout"` | Record category for a custom record tag.                                                                            |
-| `aliasFor`      | string                                                  | Identify the tag this custom tag aliases.                                                                           |
+| Property        | Type                                            | Purpose                                                                                                             |
+| --------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `tagName`       | string                                          | Tag name, with or without the leading `@`; it must start with a letter and may contain letters, digits, or hyphens. |
+| `syntaxKind`    | `"record" \| "block" \| "modifier" \| "inline"` | How the parser reads the tag.                                                                                       |
+| `allowMultiple` | boolean                                         | Allow the tag to appear more than once in a comment.                                                                |
+| `recordKind`    | `"component" \| "utility" \| "declaration"`     | Record category for a custom record tag.                                                                            |
+| `aliasFor`      | string                                          | Identify the tag this custom tag aliases.                                                                           |
 
 <details>
 <summary>Show examples</summary>
@@ -285,7 +283,7 @@ Each definition requires `tagName` and `syntaxKind`.
 }
 ```
 
-```jsonc [Custom inline tag with multiple occurrences]
+```jsonc [Custom inline tag]
 {
   "tagDefinitions": [
     {
@@ -371,13 +369,13 @@ The built-in presets are `bem`, `rscss`, and `bare`. A custom convention accepts
 | Property             | Type                                   | Purpose                                                                                                 |
 | -------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | `structure`          | `"chained" \| "suffix" \| "attribute"` | Selector form used for modifiers.                                                                       |
-| `separator`          | string or string[]                     | Modifier separator or separators.                                                                       |
-| `elementSeparator`   | string or string[]                     | BEM-style element delimiter; matching classes become parts.                                             |
-| `statePrefixes`      | string[]                               | Class prefixes that identify states, such as `is-` and `has-`.                                          |
-| `statePseudoClasses` | string[]                               | Native pseudo-classes to treat as states. Supplying this replaces the built-in set.                     |
-| `pseudoElements`     | string[]                               | Native pseudo-elements to document, without the leading `::`. Supplying this replaces the built-in set. |
-| `propValue`          | boolean                                | Split modifier names into property and value segments.                                                  |
-| `propValueSeparator` | string                                 | Separator between those segments when `propValue` is enabled.                                           |
+| `separator`          | `string` or `string[]`                 | Modifier separator or separators.                                                                       |
+| `elementSeparator`   | `string` or `string[]`                 | BEM-style element delimiter; matching classes become parts.                                             |
+| `statePrefixes`      | `string[]`                             | Class prefixes that identify states, such as `is-` and `has-`.                                          |
+| `statePseudoClasses` | `string[]`                             | Native pseudo-classes to treat as states. Supplying this replaces the built-in set.                     |
+| `pseudoElements`     | `string[]`                             | Native pseudo-elements to document, without the leading `::`. Supplying this replaces the built-in set. |
+| `propValue`          | `boolean`                              | Split modifier names into property and value segments.                                                  |
+| `propValueSeparator` | `string`                               | Separator between those segments when `propValue` is enabled.                                           |
 
 `structure` and `separator` are required for a custom object. The preset defaults to BEM when omitted.
 
@@ -406,7 +404,7 @@ Use a built-in preset for conventions matching popular CSS naming systems:
 
 ```jsonc [Bare preset]
 {
-  // Minimal convention: component -modifier
+  // .component.modifier
   "modifierConvention": "bare",
 }
 ```
@@ -427,7 +425,7 @@ Define custom naming conventions by specifying structure, separators, and prefix
 ```jsonc [Chained modifiers]
 {
   "modifierConvention": {
-    "structure": "chained", // Modifiers appear as .component-modifier
+    "structure": "chained", // .component.-featured
     "separator": "-", // Chained modifier separator
     "elementSeparator": "__", // Elements as component__part
     "statePrefixes": ["is-", "has-"], // State prefixes
@@ -450,8 +448,8 @@ Define custom naming conventions by specifying structure, separators, and prefix
   "modifierConvention": {
     "structure": "chained",
     "separator": "-",
-    "propValue": true, // Split .component-color-blue into color=blue
-    "propValueSeparator": ":", // Property and value separated by colon
+    "propValue": true,
+    "propValueSeparator": "-", // .component.-color-blue gives prop "color" and value "blue"
   },
 }
 ```
@@ -687,40 +685,8 @@ Transform class name prefixes before merging documentation from providers:
 
 ### `rules`
 
-Set any supported rule to `off`, `warn`, or `error`. Unspecified rules use their defaults:
-`missing-summary` and `unknown-custom-property` default to `off`; most other rules default to `warn`,
-while duplicate IDs default to `error`. See [linting](/guide/linting) for each rule's behavior.
-
-| Rule                             | Default | Purpose                                                                                    |
-| -------------------------------- | ------- | ------------------------------------------------------------------------------------------ |
-| `alias-requires-canonical`       | warn    | Aliased modifiers must have a canonical replacement via `{@link}` or alias target          |
-| `component-name-case`            | warn    | Component class names must match the configured naming convention                          |
-| `conflicting-global-modifier`    | warn    | Component modifiers conflicting with global modifier definitions must be resolved          |
-| `cssdoc-directive`               | warn    | Unknown or malformed doc-comment directives                                                |
-| `deprecated-modifier`            | warn    | Deprecated modifiers applied in CSS or usage must include deprecation rationale            |
-| `deprecated-requires-canonical`  | warn    | Deprecated modifiers/parts must have a canonical replacement via `{@link}` or note         |
-| `disallowed-element`             | warn    | Component is applied to HTML elements outside its documented allow-list                    |
-| `duplicate-record-id`            | error   | Record identifier is duplicated within the same kind in this scope                         |
-| `duplicate-record-id-cross-kind` | error   | Record identifier is shared across different kinds; use typed structure refs               |
-| `invalid-default-value`          | warn    | Custom property default value doesn't match declared syntax                                |
-| `invalid-fallback-value`         | warn    | Custom property fallback value doesn't match declared syntax                               |
-| `invalid-property-value`         | warn    | Custom property value doesn't match declared syntax                                        |
-| `missing-summary`                | off     | Record lacks a `@summary` description                                                      |
-| `name-not-in-css`                | warn    | Documented modifier or part name is not found in any CSS selector                          |
-| `part-name-case`                 | warn    | Part name must match the configured naming convention                                      |
-| `readonly-redefinition`          | warn    | Read-only record redefines a property with multiple incompatible values                    |
-| `sealed-reset-value`             | warn    | Sealed or frozen record uses disallowed reset-like value keywords                          |
-| `structure-ambiguous-record`     | warn    | `@structure` reference is ambiguous across record kinds; use a typed ref like `@component` |
-| `structure-unknown-record`       | warn    | `@structure` references a record that doesn't exist or isn't the documented kind           |
-| `structure-unknown-selector`     | warn    | `@structure` references a selector that isn't the component class or documented member     |
-| `unknown-annotation-ref`         | warn    | `@ref` doesn't match any annotation legend entry in the record                             |
-| `unknown-custom-property`        | off     | Usage references a custom property that isn't documented                                   |
-| `unknown-modifier`               | warn    | Applied or referenced modifier isn't documented for the component                          |
-| `unknown-part`                   | warn    | Applied or referenced part isn't documented for the component                              |
-| `unknown-state`                  | warn    | Applied or referenced pseudo-class state isn't documented for the component                |
-| `undocumented-css-part`          | warn    | CSS `::part()` selector lacks a corresponding `@csspart` description                       |
-| `undocumented-modifier`          | warn    | Modifier selector lacks a corresponding `@modifier` description                            |
-| `undocumented-part`              | warn    | Part selector lacks a corresponding `@part` description                                    |
+Set any supported rule to `off`, `warn`, or `error`. Unspecified rules use their defaults.
+See the [rule index](/guide/lint-reference#rule-index) for each rule's default and what triggers it.
 
 <details>
 <summary>Show examples</summary>

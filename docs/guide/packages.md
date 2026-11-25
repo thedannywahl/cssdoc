@@ -3,7 +3,7 @@
 cssdoc is a set of small, composable packages — install only what you need. Every package name below
 links to its npm page.
 
-## Start here
+## Parser and programmatic API
 
 | Package                                                          | What it is                                                                                                                                                                             |
 | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -28,7 +28,8 @@ you consume the model, the doc-comment grammar, the tag config, or the helpers (
 without parsing at runtime, import the **parse-free** entry so postcss never enters your bundle:
 
 ```ts
-import { parseDocComment, toJson, CssDocConfiguration, type CssDocEntry } from "@cssdoc/core/lite";
+import type { CssDocEntry } from "@cssdoc/core/lite";
+import { parseDocComment, toJson, CssDocConfiguration } from "@cssdoc/core/lite";
 ```
 
 `@cssdoc/core/lite` re-exports everything except `parseCssDocs`, and pulls in no CSS parser. (The main

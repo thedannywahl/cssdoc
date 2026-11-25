@@ -1,48 +1,23 @@
-# Introduction
+# What is cssdoc?
 
-cssdoc is **TSDoc, for CSS**. You write structured `/** … */` doc comments above your CSS rules; cssdoc
-parses those comments _plus the CSS itself_ into a serializable model, and a family of small packages
-turns that model into documentation, lint rules, standard-format exports, and editor IntelliSense.
+cssdoc turns your CSS and the comments beside it into documentation, editor hints, and lint checks.
+Use it to explain how someone should use a component and which parts of its CSS they can customize.
 
-There's no modern, maintained "TypeDoc for plain CSS" — cssdoc is that missing core.
+[Document your first component](/guide/getting-started) or [try the Playground](/guide/playground).
 
-## Why it's AST-first
+## How it reads your CSS
 
-The doc comments supply **prose** — summaries, descriptions, demos. The **machine facts** — a
-component's base class, its `-modifier` families, sub-element parts, declared and consumed custom
-properties, functions, keyframes, layers, and deprecation links — are read from the actual selectors
-and at-rules. Because those facts come from the CSS, your docs can't drift from what ships.
-
-```css
-/**
- * @component button
- * @summary The primary action control.
- * @modifier -color-secondary — A lower-emphasis action.
- */
-.button {
-  background: var(--color-bg);
-}
-.button.-color-secondary {
-  background: var(--color-bg-secondary);
-}
-```
-
-From that, cssdoc knows the component `button`, its class `.button`, the modifier
-`-color-secondary` (documented) — and, from the selectors alone, any other modifiers you defined.
+Write a `/** … */` comment above a component's CSS. Use `@component` to name it and an optional `@summary` to
+explain what it does. cssdoc reads the CSS syntax tree to find facts such as which modifiers the
+component defines and which custom properties it uses. Your comments explain when to use those
+modifiers or what changing those properties will do.
 
 ## What you can do with it
 
-- **Author anywhere** — a `.css`/`.scss`/`.less` file, a styled-components or Lit template, a Vue or
-  Svelte `<style>` block, or a Markdown fence. See [Embedded CSS](/guide/embedded-css).
-- **Generate documentation** — Markdown, standalone HTML, JSON, or an `llms.txt` digest.
-- **Export to standards** — VS Code custom data, a Custom Elements Manifest, or W3C Design Tokens.
-- **Lint** — flag undocumented or drifted docs (Stylelint/ESLint), and validate the classes your
-  HTML, JSX, Vue, or Svelte templates apply against the documented surface.
-- **Edit with IntelliSense** — completion, hover, go-to-definition, and deprecation quick-fixes via a
-  language server (and a VS Code extension).
+- [Generate documentation](/guide/emitters) from your stylesheet.
+- [Export to other tools](/guide/generators), such as editors and design token pipelines.
+- [Check your docs with a linter](/guide/linting) or [get hints in your editor](/guide/editor).
+- [Document embedded CSS](/guide/embedded-css), such as styles in a Vue file or a tagged template.
 
-## How it's organized
-
-cssdoc is a set of small, composable packages in three tiers — a parser + model, host-agnostic
-providers over it, and thin adapters. You only install the ones you need. See
-[Packages](/guide/packages) for the full map, or jump to [Getting started](/guide/getting-started).
+Each workflow uses the same parsed model. See [Packages](/guide/packages) when you need to choose
+what to install.

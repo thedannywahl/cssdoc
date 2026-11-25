@@ -1,102 +1,31 @@
-# Editor support
+# Set up your editor
 
-cssdoc brings its knowledge into the editor through a language server, so completion, hover,
-go-to-definition, and quick-fixes work anywhere — driven by the same model everything else uses.
+Open a project with documented CSS to get tag completions, hover information, and diagnostics while
+you work.
 
-## VS Code
+## VS Code and compatible editors
 
-Install the extension — it bundles the language server:
+Install the cssdoc extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=cssdoc.cssdoc-vscode)
+or [Open VSX](https://open-vsx.org/extension/cssdoc/cssdoc-vscode). Open `button.css` from
+[Getting started](/guide/getting-started) and type `@` on a new line inside its doc comment.
+The completion menu should list cssdoc tags.
 
-- [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=cssdoc.cssdoc-vscode)
-- [Open VSX](https://open-vsx.org/extension/cssdoc/cssdoc-vscode) — for Cursor, VSCodium, Windsurf,
-  Gitpod, and other non-Microsoft editors
+The extension scans CSS files in your workspace by default. To include Vue styles and limit the
+scan to `src`, add this to `.vscode/settings.json`:
 
-It's **zero-config** — the extension auto-detects the CSS in your workspace. To narrow or widen what it
-scans, set globs (in `.vscode/settings.json` or the Settings UI):
-
-```jsonc
-// .vscode/settings.json
+```json
 {
-  "cssdoc.include": ["dist/**/*.css"], // default: ["**/*.css"]
-  "cssdoc.exclude": ["**/node_modules/**"], // default: ["**/node_modules/**"]
+  "cssdoc.include": ["src/**/*.{css,vue}"]
 }
 ```
 
-For an exact list instead, `cssdoc.css` takes explicit paths and overrides auto-detection. The set
-refreshes automatically when files or settings change.
+The server uses the nearest [cssdoc config](/guide/config) for each stylesheet. For extension
+settings such as hover display, see the
+[VS Code extension README](https://github.com/thedannywahl/cssdoc/tree/main/servers/vscode).
 
-### cssdoc.json is applied automatically
+## Other LSP editors
 
-The server reads the nearest [`cssdoc.json`](/guide/config) walking up from each documented CSS file,
-so your custom tags, [modifier convention](/guide/modifier-conventions), rule severities, and name-case
-rules all take effect in the editor — no extra settings. In a monorepo, each package's `cssdoc.json`
-governs its own CSS independently, so packages can use different conventions side by side. Editing a
-`cssdoc.json` reloads the affected rules live.
-
-In CSS (`.css`, `.scss`, `.less`) and host files (HTML, JSX/TSX, Vue, Svelte, Astro, Markdown) you get:
-
-- **Completion** — cssdoc `@tags` (with their description) while typing inside a `/** */` doc
-  comment; a component's modifiers inside `class`/`className`; and declared custom properties
-  inside `var(--…)`. The extension enables `editor.quickSuggestions` for comments (and, in
-  JS/TS, strings) on these languages by default, so the tag menu pops up the same way JSDoc's does
-  — set it back to `off` in your own settings to disable that;
-- **Hover** — a modifier's or custom property's documentation. A `[class*="-icon-"]` attribute
-  selector shows its `-icon-*` family; a reference to another documented component shows that
-  component's card; and a custom property resolves its `var()` chain through the indexed sheets to a
-  terminal value, the way a browser's dev tools do;
-- **Definition** — jump to the CSS rule that defines a class or `@property`;
-- **Diagnostics + quick-fix** — doc-comment hygiene in embedded CSS, and unknown or deprecated
-  modifiers where classes are used (`class`, `className`, `:class`, `class:name`), plus
-  `@element` host-tag enforcement (`disallowed-element`), with a one-click replace-with-canonical fix
-  for deprecated modifiers.
-
-To cover embedded CSS, widen the scan globs to your host files:
-
-```jsonc
-// .vscode/settings.json
-{
-  "cssdoc.include": ["src/**/*.{css,scss,vue,svelte,tsx}"],
-}
-```
-
-See [Embedded CSS](/guide/embedded-css) for what's read from each host.
-
-A component's hover card links each custom-property `<type>` (e.g. `<color>`, `<length>`) out to its
-MDN reference page, and you can tune the card:
-
-```jsonc
-// .vscode/settings.json
-{
-  "cssdoc.hover.detail": "custom", // "compact" | "full" | "custom"
-  // custom: choose which sections show — "auto" | "on" | "off"
-  "cssdoc.hover.sections": { "examples": "off" },
-  // choose the section order (omitted keys are dropped); empty = default order
-  "cssdoc.hover.sectionOrder": ["summary", "modifiers", "parts", "customProperties"],
-}
-```
-
-To show only selected examples without hiding the whole hover section, set
-[`render.exampleFilters.hover`](./config.md#filtering-examples) in `cssdoc.json`. The config nearest
-the file you're hovering in controls the selection, even for an example from a provider. The
-`cssdoc.hover.sections.examples` setting can still hide the whole section.
-
-## Any LSP editor
-
-[`@cssdoc/language-server`](https://www.npmjs.com/package/@cssdoc/language-server) is editor-agnostic.
-Point your editor's LSP client at the `cssdoc-language-server` binary and pass the CSS paths as
-initialization options:
-
-```jsonc
-{
-  "command": "cssdoc-language-server",
-  "initializationOptions": { "css": ["dist/components.css"] },
-}
-```
-
-That's the same protocol Neovim, Zed, and JetBrains speak, so the features above work there too.
-
-## Zero-setup completions
-
-If you'd rather not run a server, the [VS Code custom data](/guide/generators#vs-code-custom-data)
-generator gives you class-name and custom-property completions through VS Code's built-in language
-services with just a settings entry.
+Install `@cssdoc/language-server` and point your editor's LSP client at `cssdoc-language-server`.
+Pass the project's stylesheet paths in `initializationOptions.css`. See the
+[language server README](https://github.com/thedannywahl/cssdoc/tree/main/servers/language-server#use-it)
+for the initialization options.

@@ -1,187 +1,29 @@
-# Configuration
+# Configure cssdoc
 
-`@cssdoc/core` ships an expansive standard tag vocabulary out of the box, so most projects need no
-configuration. When you want **custom tags** or want to **turn standard ones off**, add a `cssdoc.json`
-and load it with [`@cssdoc/config`](https://www.npmjs.com/package/@cssdoc/config) — the analog of
-`@microsoft/tsdoc-config`.
+Start with a `cssdoc.json` file when your project needs different parsing or lint settings. Put it
+beside your `package.json` so it applies to the stylesheets under that directory.
 
-```sh
-npm i -D @cssdoc/config @cssdoc/core
-```
+## Match your project's modifier classes
 
-## cssdoc.json
-
-```jsonc
-{
-  "$schema": "https://cssdoc.dev/cssdoc.schema.json",
-  "extends": ["./base.cssdoc.json"],
-  "noStandardTags": false,
-  "tagDefinitions": [
-    { "tagName": "@token", "syntaxKind": "block", "allowMultiple": true },
-    { "tagName": "@pattern", "syntaxKind": "record", "recordKind": "layout" },
-  ],
-  "supportForTags": {
-    "@privateRemarks": false,
-  },
-  "modifierConvention": "bem",
-  "rules": {
-    "unknown-modifier": "warn",
-  },
-  "overrides": [{ "files": "docs/**/*.css", "rules": { "missing-summary": "off" } }],
-}
-```
-
-| Field                | Meaning                                                                                                                                                                                                                                                                                     |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `extends`            | Paths (local `./…` or package specifiers) to other `cssdoc.json` files to inherit from.                                                                                                                                                                                                     |
-| `noStandardTags`     | Disable every built-in standard tag; only `tagDefinitions` remain.                                                                                                                                                                                                                          |
-| `tagDefinitions`     | Custom tags: `tagName`, `syntaxKind` (`record`/`block`/`modifier`/`inline`), `allowMultiple?`, `recordKind?`, `aliasFor?`.                                                                                                                                                                  |
-| `supportForTags`     | Enable or disable specific tags by name.                                                                                                                                                                                                                                                    |
-| `modifierConvention` | How modifier classes are spelled — a preset (`bem`, `rscss`, `bare`) or a custom object. A custom object can also map BEM elements to parts (`elementSeparator`), state classes to states (`statePrefixes`), and native pseudo-classes to states (`statePseudoClasses`). Defaults to `bem`. |
-| `rules`              | Per-rule severity overrides (`off`/`warn`/`error`).                                                                                                                                                                                                                                         |
-| `overrides`          | Per-glob rule severity overrides (`[{ files, rules }]`). Globs are relative to the config file where they're authored; inherited overrides keep their original base path. Matching overrides apply in order, so later matches win.                                                          |
-| `naming`             | Name-case to enforce on `component`/`part` class names — a preset (`pascalCase`/`camelCase`/`lowercase`) or a custom regex.                                                                                                                                                                 |
-| `structureIgnore`    | Class names exempt from `structure-unknown-selector` — external classes (utilities, cross-component refs) named in `@structure`. Literal names or simple `*` globs (e.g. `util-*`).                                                                                                         |
-| `providers`          | Upstream cssdoc providers this config consumes — `[{ path, baseHref?, prefix? }]`. Their documented components resolve in this scope's lint and hover. See below.                                                                                                                           |
-
-See [Modifier conventions](/guide/modifier-conventions) for the convention forms and the full rule list.
-
-A `render` block configures markdown output: `structureView` chooses which Structure representation(s)
-render (`"text"`/`"diagram"`/`"both"`, default `"both"`); `structureVariantView` chooses how `@variant`
-alternatives render when authored (`"diagram"`, default — one combined flowchart with a labelled
-subgraph per variant — or `"sections"` for separate `### Variant: <name>` subsections). See
-[Authoring → Alternative structures](/guide/authoring#alternative-structures-variant).
-Use `render.includeInternal: true` when generating an author-facing Markdown reference that should
-include records marked `@visibility internal`; generated public references omit them by default.
-
-## Filtering examples
-
-Use `render.exampleFilters` to choose which [labeled examples](./authoring.md) appear on each surface:
+If your project uses rscss classes such as `.button.-color-secondary`, add this to `cssdoc.json`:
 
 ```json
 {
-  "render": {
-    "exampleFilters": {
-      "markdown": { "labels": ["docs"] },
-      "html": { "labels": ["docs", "demo"] },
-      "hover": { "labels": ["docs"], "includeUnlabeled": false }
-    }
-  }
+  "$schema": "https://cssdoc.dev/cssdoc.schema.json",
+  "modifierConvention": "rscss"
 }
 ```
 
-An example is included if any of its labels match. Unlabeled examples are included unless
-`includeUnlabeled` is `false`. An empty `labels` list therefore shows only unlabeled examples by
-default. Omitting a surface leaves it unfiltered unless it inherits a filter through `extends`. Each
-surface's filter replaces the inherited filter for that surface; set it to `null` to show all examples.
-Filters don't change the source or the JSON model.
+The cssdoc [CLI](/guide/linting) and [editor integration](/guide/editor) pick up the config when
+they read your CSS. Check a record with `.button.-color-secondary`. cssdoc now recognizes
+`-color-secondary` as a modifier of `button`.
 
-## Consuming another provider
+The nearest config applies to each stylesheet. In a monorepo, this lets packages use different
+conventions. Use [extends](/guide/config-reference#inheritance) to share defaults between them.
 
-`extends` inherits **configuration** (tags, convention, rules); `providers` imports another provider's
-**components**, so a consumer can compose them without a false `structure-unknown-selector` and get
-hover on their classes. The two are orthogonal — a consumer typically uses both.
+## Where to go next
 
-```jsonc
-{
-  "extends": ["../vendor/cssdoc.json"], // convention + tags
-  "providers": [
-    { "path": "../vendor/vendor.css", "baseHref": "/vendor/" }, // local source (parsed with its own convention)
-    { "path": "@vendor/ui/model.json", "baseHref": "https://vendor.dev/api/" }, // a published model
-  ],
-}
-```
-
-Each `path` resolves relative (`./…`) or via Node resolution (a package specifier). A `.json` path
-loads a published **model** — the [`@cssdoc/json`](/guide/packages) emitter's `model.json` (a
-`CssDocEntry[]`); any other path is a **source stylesheet**, parsed with the provider's own governing
-`cssdoc.json` convention. `baseHref` prefixes links to the provider's rendered doc pages
-(`<baseHref><name>.md`).
-
-### Rewriting a provider's prefix
-
-A provider's `model.json` is published at one fixed class prefix (e.g. a vendor ships `vendor-`), but a
-consumer may build their own copy of the vendor's CSS under a different prefix — or none at all. Add
-`prefix` to rewrite the provider's base classes at load time, without touching the provider's own build:
-
-```jsonc
-{
-  "providers": [
-    // `to` is spliced in verbatim — no separator like "-" is added or assumed. So `{ from: "vendor-",
-    // to: "i" }` turns `.vendor-alert` into `.ialert`, not `.i-alert`.
-    { "path": "@vendor/ui/model.json", "prefix": { "from": "vendor-", "to": "acme-" } },
-  ],
-}
-```
-
-`from` matches the start of each class name — a literal string by default, or a regex source when
-`isRegExp: true` (always anchored to the start). Omit `to` (or use `""`) to strip the prefix to a bare
-class. Only the base `className` is rewritten; modifier names and `--*` custom properties are untouched.
-Omitting `prefix` entirely leaves the provider's classes exactly as published.
-
-## Rule severities
-
-Each lint rule has a configurable severity — `off`, `warn`, or `error` — set under `rules` in
-`cssdoc.json`:
-
-```jsonc
-{
-  "modifierConvention": "bem",
-  "rules": {
-    "unknown-modifier": "warn",
-    "undocumented-modifier": "error",
-  },
-}
-```
-
-The rule ids:
-
-| Rule                             | Default | Fires when…                                                                      |
-| -------------------------------- | ------- | -------------------------------------------------------------------------------- |
-| `missing-summary`                | `off`   | a record has no `@summary` (optional; enable it to encourage summaries).         |
-| `undocumented-modifier`          | `warn`  | a modifier has no `@modifier` description.                                       |
-| `deprecated-requires-canonical`  | `warn`  | a deprecated modifier has no replacement.                                        |
-| `name-not-in-css`                | `warn`  | a documented modifier/part isn't in any selector.                                |
-| `unknown-modifier`               | `warn`  | a consumer uses a modifier candidate that isn't documented.                      |
-| `deprecated-modifier`            | `warn`  | a consumer uses a deprecated modifier.                                           |
-| `unknown-state`                  | `warn`  | a consumer uses a state class (`statePrefixes`) that isn't documented.           |
-| `unknown-part`                   | `warn`  | a consumer uses an element class (`elementSeparator`) that isn't documented.     |
-| `undocumented-part`              | `warn`  | a part has no `@part` description.                                               |
-| `undocumented-css-part`          | `warn`  | a shadow part (`@csspart`) has no description.                                   |
-| `component-name-case`            | `warn`  | a component class breaks the configured `naming.component` case (see below).     |
-| `part-name-case`                 | `warn`  | a part class breaks the configured `naming.part` case.                           |
-| `disallowed-element`             | `warn`  | a component is used on a host tag outside the documented `@element` allow-list.  |
-| `duplicate-record-id`            | `error` | a record id is duplicated for the same kind in the current scope.                |
-| `duplicate-record-id-cross-kind` | `warn`  | a record id is shared across kinds (for example component + layout).             |
-| `structure-unknown-selector`     | `warn`  | an `@structure` selector names a class that isn't a documented member.           |
-| `structure-unknown-record`       | `warn`  | an `@structure` record reference targets no documented record of that name/kind. |
-| `structure-ambiguous-record`     | `warn`  | an untyped `@structure` record reference matches multiple kinds.                 |
-| `invalid-default-value`          | `warn`  | a registered property's default doesn't match its syntax.                        |
-| `invalid-property-value`         | `warn`  | an assignment doesn't match a property's declared syntax.                        |
-| `invalid-fallback-value`         | `warn`  | a `var(--x, …)` fallback doesn't match the declared syntax.                      |
-| `unknown-custom-property`        | `off`   | a `var(--x)` isn't documented (opt-in via a property prefix).                    |
-| `cssdoc-directive`               | `warn`  | a `cssdoc-expect-error` directive matched no problem (unused expectation).       |
-
-`unknown-modifier` defaults to `warn` because BEM's `--` is an unambiguous signal — only `base--…`
-tokens are candidates. Under weak-signal conventions (`bare`/OOCSS), where every chained class is a
-candidate, set it to `off` to avoid flagging unrelated classes.
-
-## Loading it
-
-```ts
-import { CssDocConfigFile } from "@cssdoc/config";
-import { parseCssDocs } from "@cssdoc/core";
-
-const configFile = CssDocConfigFile.loadForFolder(process.cwd());
-if (configFile.hasErrors) console.warn(configFile.getErrorSummary());
-
-const model = parseCssDocs(css, { configuration: configFile.toConfiguration() });
-```
-
-`loadForFolder` walks up to the nearest `cssdoc.json` (or `cssdoc.jsonc`). A missing file is not an
-error; a malformed one collects messages on `getErrorSummary()` instead of throwing (it's validated
-against a JSON schema). Either name is parsed as JSON with comments, so you can annotate your config
-with `//` comments and trailing commas — name it `cssdoc.jsonc` to make that explicit to your editor.
-
-Every cssdoc tool that reads CSS — the emitters, generators, linters, and language server — accepts the
-same configuration, so a custom tag you register is understood everywhere.
+- [Set rule severity](/guide/linting#set-rule-severity) to change what gets reported.
+- [Connect another project's CSS or model](/guide/config-reference#providers) to reuse its documented components.
+- [Load config from a script](/reference/@cssdoc/config/classes/CssDocConfigFile) when using the parser directly.
+- [Look up a field or its default](/guide/config-reference) in the configuration reference.

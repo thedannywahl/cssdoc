@@ -1,79 +1,66 @@
 # Getting started
 
+Parse one CSS component and see which selector and modifier cssdoc discovers. You'll need Node.js
+and a project with a `package.json`. In an empty directory, run `npm init -y` to create one.
+
 ## Install
 
-For the programmatic API in one install, add `@cssdoc/cssdoc` — it re-exports the parser, the index,
-and the providers (lint, hover, completion):
-
 ```sh
-npm i -D @cssdoc/cssdoc
+npm install -D @cssdoc/cssdoc
 ```
-
-Prefer to pick à la carte? The parser and model alone live in `@cssdoc/core`. Everything else —
-emitters, linters, the language server — builds on the same model; add those as you need them. See
-[Packages](/guide/packages) for the full set.
 
 ## Document a component
 
-Put a `/** … */` comment above a record's CSS. A record begins at a `@component` (or `@name`,
-`@layout`, `@utility`, `@declaration`) tag and runs until the next one. Its required ID is the stable
-documentation name; the base selector is inferred separately. `@summary` is recommended, but
-optional:
+Create `button.css` in your project:
 
 ```css
 /**
  * @component button
- * @summary The primary action control.
- * @modifier -color-secondary — A lower-emphasis action.
- * @cssproperty --button-radius — The corner radius.
+ * @summary Triggers an action.
  */
 .button {
-  border-radius: var(--button-radius);
+  padding: 0.5rem 1rem;
 }
-.button.-color-secondary {
-  background: light-dark(#eee, #111);
+
+.button--quiet {
+  background: transparent;
 }
 ```
 
-The same comment works wherever your CSS lives — a `.css`/`.scss`/`.less` file, a styled-components or
-Lit template, a Vue or Svelte `<style>` block, or a Markdown fence. See [Embedded CSS](/guide/embedded-css).
+`@component button` starts a documentation record named `button`. The default BEM convention lets
+cssdoc recognize `.button--quiet` as a modifier from the selector alone.
 
 ## Parse it
 
-`parseCssDocs` returns one entry per record:
+Create `inspect.mjs` next to `button.css`:
 
-```ts
-import { parseCssDocs, toJson } from "@cssdoc/cssdoc";
-import { readFileSync, writeFileSync } from "node:fs";
+```js
+import { readFileSync } from "node:fs";
+import { parseCssDocs } from "@cssdoc/cssdoc";
 
-const model = parseCssDocs(readFileSync("dist/components.css", "utf8"));
+const css = readFileSync(new URL("./button.css", import.meta.url), "utf8");
+const [button] = parseCssDocs(css);
 
-model[0].name; // "button"
-model[0].className; // ".button"
-model[0].modifiers; // [{ name: "-color-secondary", prop: "color", value: "secondary", description: … }]
-
-writeFileSync("css-docs.json", toJson(model)); // the raw model as JSON
+console.log(button.name, button.className);
+console.log(button.modifiers.map(({ name }) => name).join(", "));
 ```
 
-The model is output-neutral. From here you can:
+Run it:
 
-- turn it into docs — see [Emitting docs](/guide/emitters);
-- export it to a standard format — see [Standard formats](/guide/generators);
-- lint it and its usage — see [Linting](/guide/linting);
-- power your editor — see [Editor support](/guide/editor).
+```sh
+node inspect.mjs
+```
 
-## Use it in your editor
+You should see:
 
-Install the cssdoc extension for completion, hover, go-to-definition, and diagnostics as you write:
+```text
+button .button
+button--quiet
+```
 
-- [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=cssdoc.cssdoc-vscode)
-- [Open VSX](https://open-vsx.org/extension/cssdoc/cssdoc-vscode) — Cursor, VSCodium, Windsurf, Gitpod,
-  and other non-Microsoft editors
+## Next steps
 
-It auto-detects the CSS in your workspace out of the box — see [Editor support](/guide/editor) to narrow
-it with globs, or to use any other LSP editor.
+[Document a component](/guide/authoring) to explain when to use the quiet button and how to customize
+it. When you're ready to publish, [generate documentation](/guide/emitters).
 
-## Learn the grammar
-
-The full tag vocabulary — modifiers, parts, custom properties, functions, states, structure, release
-stages, cross-references, and more — is covered in [Authoring doc comments](/guide/authoring).
+You can also [set up your editor](/guide/editor) or [try a change in the Playground](/guide/playground).

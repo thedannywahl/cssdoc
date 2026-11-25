@@ -1,49 +1,47 @@
-# Standard formats
+# Export to other tools
 
-Generators export the model to standard interchange formats — the cheapest way to get editor support
-and tooling interop, without a bespoke consumer.
+Pick the format the receiving tool already understands.
 
-## VS Code custom data
+| Destination                                | Format                                                                                       |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| Web component documentation tools          | [Custom Elements Manifest](/reference/@cssdoc/cem/functions/writeCem)                        |
+| A design token pipeline                    | [DTCG tokens](/reference/@cssdoc/dtcg/functions/writeDtcg) from declared custom properties   |
+| VS Code's built-in CSS and HTML completion | [VS Code custom data](/reference/@cssdoc/vscode-custom-data/functions/writeVscodeCustomData) |
 
-[`@cssdoc/vscode-custom-data`](https://www.npmjs.com/package/@cssdoc/vscode-custom-data) emits the JSON
-that VS Code's built-in CSS and HTML language services read — so custom properties and documented
-classes get completions and hover with **no extension**.
+## Export a web component's shadow part
 
-```ts
-import { writeVscodeCustomData } from "@cssdoc/vscode-custom-data";
-writeVscodeCustomData({ css, outDir: ".vscode" });
-```
+For example, put this in `toggle.css` to document a shadow part that consumers can style:
 
-```jsonc
-// .vscode/settings.json
-{
-  "css.customData": [".vscode/css-custom-data.json"],
-  "html.customData": [".vscode/html-custom-data.json"],
+```css
+/**
+ * @component x-toggle
+ * @selector x-toggle
+ * @summary Switches a setting on or off.
+ * @csspart label — The text beside the switch.
+ */
+x-toggle {
+  display: inline-flex;
+}
+
+x-toggle::part(label) {
+  font-weight: 600;
 }
 ```
 
-`html.customData` lists your component classes and modifiers as `class`-attribute values;
-`css.customData` lists the declared custom properties.
+```sh
+npm install -D @cssdoc/cssdoc @cssdoc/cem
+```
 
-## Custom Elements Manifest
+Save this as `export-manifest.mjs` next to the stylesheet:
 
-[`@cssdoc/cem`](https://www.npmjs.com/package/@cssdoc/cem) emits a
-[Custom Elements Manifest](https://github.com/webcomponents/custom-elements-manifest) — each record
-becomes a declaration carrying `cssProperties`, `cssParts`, and `cssStates`, interoperable with the CEM
-tooling ecosystem.
-
-```ts
+```js
+import { readFileSync } from "node:fs";
+import { createIndex } from "@cssdoc/cssdoc";
 import { writeCem } from "@cssdoc/cem";
-writeCem({ css, outFile: "custom-elements.json" });
+
+const index = createIndex(readFileSync("toggle.css", "utf8"));
+writeCem({ index });
 ```
 
-## Design Tokens (DTCG)
-
-[`@cssdoc/dtcg`](https://www.npmjs.com/package/@cssdoc/dtcg) exports declared custom properties as
-[W3C Design Tokens](https://tr.designtokens.org/) — `$value` from the `initial-value`, `$type` mapped
-from the `syntax`, `$description` — grouped by record.
-
-```ts
-import { writeDtcg } from "@cssdoc/dtcg";
-writeDtcg({ css, outFile: "tokens.json" });
-```
+Run `node export-manifest.mjs`. Open `custom-elements.json` and look for the `x-toggle` declaration
+with `label` under `cssParts`.
