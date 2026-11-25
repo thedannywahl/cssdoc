@@ -2,10 +2,10 @@
 //
 // Notation: `::` marks a lexical production, `:` a syntactic one. Terminals are in backticks; `> …`
 // lines are prose (character classes and layout-sensitive constructs outside context-free notation).
-// Productions read bottom-up: primitives first, building to the DocComment goal symbol last.
+// Productions generally define their dependencies first, building to the DocComment goal symbol last.
 
 // ============================================================================================
-// Lexical Grammar
+// Lexical grammar
 // ============================================================================================
 
 SourceCharacter ::
@@ -17,9 +17,7 @@ WhiteSpace ::
 LineTerminator ::
     > a line feed or a carriage return
 
-// --- Comment framing ---------------------------------------------------------------------------
 // The comment framing is stripped before the tags are parsed.
-
 CommentOpen ::
     `/**`
 
@@ -28,8 +26,6 @@ CommentClose ::
 
 LinePrefix ::
     WhiteSpace? `*` WhiteSpace?
-
-// --- Tokens ------------------------------------------------------------------------------------
 
 BlockSigil ::
     `@`
@@ -50,8 +46,6 @@ Digit :: one of
 Letter ::
     > an ASCII letter
 
-// --- Names -------------------------------------------------------------------------------------
-
 IdentifierStart ::
     Letter
     `_`
@@ -71,20 +65,25 @@ RecordName ::
     Identifier
     RecordName `.` Identifier
 
-// How a modifier is spelled is configurable. Three structural forms are recognized,
-// shown with their default separators and a neutral `.base` component class;
-// every separator and prefix below is configurable:
-//   suffix    — joined into the base class name:            `.base--name`  (the default, below)
-//   chained   — a separate prefixed class on the base:      `.base.-name`  (optionally split prop/value)
-//   attribute — an attribute selector on the base:          `.base[name="value"]`
+Prop ::
+    > an identifier segment of letters and digits, containing no hyphen
 
-// A modifier name, in whichever of the three structural spellings the convention uses (below). This is
-// what `@modifier` names and what `{@link}`/`{@inheritDoc}` reference; the modifier set itself is derived
-// from the CSS, so this only supplies the reference key.
-ModifierName ::
-    SuffixModifierName
-    ChainedModifierName
-    AttributeModifier
+// A `*` wildcard marks a modifier/part *family*, standing in for the varying segment — e.g. `-icon-*`.
+// Reached through `Value` (suffix/chained names) and `PartName`; the `class`-attribute operator forms
+// (`[class*="-icon-"]`, `[class$=…]`, `[class~=…]`) denote the same families. `name-not-in-css` treats a
+// family as satisfied by a literal instance (`.-icon-foo`) or such a `class` selector.
+WildcardSegment ::
+    `*`
+
+WildcardValue ::
+    WildcardSegment
+    Identifier WildcardSegment
+
+// A modifier value: a literal value, or a `*` family standing in for the varying value, optionally with a
+// literal prefix — `secondary`, `*`, `icon-*`. Reused as the suffix-form tail (SuffixModifierName).
+Value ::
+    Identifier
+    WildcardValue
 
 // The suffix form (the default): the modifier joined into the base class name with a separator. The tail
 // is a `Value`, so it may be a `*` family — `.button--primary`, `.button--icon-arrow`, `.button--size-*`.
@@ -98,33 +97,6 @@ ChainedModifierName ::
     `-` Prop
     `-` Prop `-` Value
 
-Prop ::
-    > an identifier segment of letters and digits, containing no hyphen
-
-// A modifier value: a literal value, or a `*` family standing in for the varying value, optionally with a
-// literal prefix — `secondary`, `*`, `icon-*`. Reused as the suffix-form tail (SuffixModifierName).
-Value ::
-    Identifier
-    WildcardValue
-
-WildcardValue ::
-    WildcardSegment
-    Identifier WildcardSegment
-
-// A `*` wildcard marks a modifier/part *family*, standing in for the varying segment — e.g. `-icon-*`.
-// Reached through `Value` (suffix/chained names) and `PartName`; the `class`-attribute operator forms
-// (`[class*="-icon-"]`, `[class$=…]`, `[class~=…]`) denote the same families. `name-not-in-css` treats a
-// family as satisfied by a literal instance (`.-icon-foo`) or such a `class` selector.
-WildcardSegment ::
-    `*`
-
-// The attribute form: an attribute selector on the base, e.g. `.base[name="value"]` (CUBE), or a
-// `class`-attribute family selector — `.base[class*="-icon-"]` denotes the `-icon-*` WildcardSegment
-// family.
-AttributeModifier ::
-    `[` AttributeName `]`
-    `[` AttributeName AttributeOperator AttributeValue `]`
-
 AttributeName ::
     Identifier
 
@@ -135,16 +107,38 @@ AttributeName ::
 AttributeOperator :: one of
     `=` `~=` `|=` `^=` `$=` `*=`
 
-AttributeValue ::
-    QuotedString
-    Identifier
+StringCharacters ::
+    > one or more SourceCharacters other than the enclosing quote
 
 QuotedString ::
     `"` StringCharacters `"`
     `'` StringCharacters `'`
 
-StringCharacters ::
-    > one or more SourceCharacters other than the enclosing quote
+AttributeValue ::
+    QuotedString
+    Identifier
+
+// The attribute form: an attribute selector on the base, e.g. `.base[name="value"]` (CUBE), or a
+// `class`-attribute family selector — `.base[class*="-icon-"]` denotes the `-icon-*` WildcardSegment
+// family.
+AttributeModifier ::
+    `[` AttributeName `]`
+    `[` AttributeName AttributeOperator AttributeValue `]`
+
+// How a modifier is spelled is configurable. Three structural forms are recognized,
+// shown with their default separators and a neutral `.base` component class;
+// every separator and prefix shown here is configurable:
+//   suffix    — joined into the base class name:            `.base--name`  (the default)
+//   chained   — a separate prefixed class on the base:      `.base.-name`  (optionally split prop/value)
+//   attribute — an attribute selector on the base:          `.base[name="value"]`
+
+// A modifier name, in whichever of the three structural spellings the convention uses. This is
+// what `@modifier` names and what `{@link}`/`{@inheritDoc}` reference; the modifier set itself is derived
+// from the CSS, so this only supplies the reference key.
+ModifierName ::
+    SuffixModifierName
+    ChainedModifierName
+    AttributeModifier
 
 // Two non-modifier roles a convention may name. An element is joined into the base class with `__`,
 // e.g. `.base__part`, and is recorded as a PART. A state class is a class chained to the base whose
@@ -173,6 +167,10 @@ NonClassPartSelector ::
 PartAlias ::
     Identifier
 
+// A base-class selector, e.g. `.base`.
+ClassSelector ::
+    `.` Identifier
+
 // The base selector for a component: a class, attribute selector, ID, or :host pseudo.
 // An explicit @selector value prevents the class from being inferred from the CSS rules.
 // Compound selectors (e.g. `[class*="x"][data-layout="y"]`) and `:host-context(…)` are also accepted;
@@ -181,28 +179,40 @@ CssSelectorArgument ::
     ClassSelector
     NonClassPartSelector
 
-// A base-class selector, e.g. `.base`.
-ClassSelector ::
-    `.` Identifier
-
 // A `--`-prefixed custom property (`@property`) or custom function (`@function`) name.
 CustomPropertyName ::
     `--` Identifier
-
-// The `<…>` CSS syntax descriptor on a `@cssproperty`/`@property` line, e.g. `<number>`.
-SyntaxDescriptor ::
-    `<` SyntaxBody `>`
 
 // A syntax component name from the CSS Properties and Values API supported-names list.
 SyntaxBody :: one of
     `angle` `color` `custom-ident` `image` `integer` `length` `length-percentage` `number`
     `percentage` `resolution` `string` `time` `transform-function` `transform-list` `url`
 
-// ============================================================================================
-// Syntactic Grammar
-// ============================================================================================
+// The `<…>` CSS syntax descriptor on a `@cssproperty`/`@property` line, e.g. `<number>`.
+SyntaxDescriptor ::
+    `<` SyntaxBody `>`
 
-// --- Descriptions & inline tags ----------------------------------------------------------------
+TextRun ::
+    > a run of prose containing no inline tag
+
+LayerName ::
+    > a cascade-layer name, optionally dotted, e.g. theme.dark
+
+// Nested CSS: each rule's selector is a node, and the rules nested inside it are its children. A
+// node's selector is a full compound/complex selector, so `:has()` (contains), `:is()` or a selector
+// list (one-of), and `:not()` (not) express relationships between the related parts.
+// `@scope (…) { … }` at-rules are accepted as scope-boundary nodes (selector is empty; the prelude
+// holds the scope argument). Other CSS at-rules (@media, @layer, etc.) inside the body are forwarded
+// to the parser but treated as unknown and silently omitted.
+Selector ::
+    > a CSS compound or complex selector
+
+CustomTagContent ::
+    > tag-specific content, interpreted per the tag's configured syntax kind
+
+// ============================================================================================
+// Syntactic grammar
+// ============================================================================================
 
 // The target of an inline reference: a modifier, a part, or a record.
 CssReference :
@@ -224,9 +234,6 @@ InlineTag :
     InheritDocTag
     LabelTag
 
-TextRun ::
-    > a run of prose containing no inline tag
-
 DescriptionAtom :
     TextRun
     InlineTag
@@ -235,8 +242,6 @@ DescriptionAtom :
 Description :
     DescriptionAtom
     Description DescriptionAtom
-
-// --- Record-opening tags (choose the CssRecordKind; aliases keep a stable canonical name) -------
 
 RecordKeyword :
     `@component`
@@ -247,8 +252,6 @@ RecordKeyword :
 
 RecordTag :
     RecordKeyword WhiteSpace RecordName
-
-// --- Prose tags --------------------------------------------------------------------------------
 
 // `@selector` explicitly declares the component's base CSS selector when it isn't a plain class —
 // accepts any simple selector: class (`.button`), attribute (`[data-layout="x"]`), ID (`#foo`),
@@ -310,8 +313,6 @@ ExampleLabels :
 ExampleTag :
     `@example` ExampleLabels ExampleBody
     `@example` ExampleBody
-
-// --- CSS-surface tags (existing + Custom Elements Manifest) ------------------------------------
 
 // `@deprecated` on a modifier line: free-text guidance and/or a `{@link -canonical}` replacement.
 InlineDeprecation :
@@ -379,8 +380,6 @@ SlotTag :
     `@slot` WhiteSpace SlotName
     `@slot` WhiteSpace SlotName Separator Description
 
-// --- CSSOM at-rule surfaces (derived from the CSS; prose optional) -----------------------------
-
 // A CSS custom function (`@function --name`), derived from the `@function` at-rule.
 CssFunctionTag :
     `@function` WhiteSpace CustomPropertyName
@@ -397,9 +396,6 @@ KeyframesKeyword :
 KeyframesTag :
     KeyframesKeyword WhiteSpace AnimationName
     KeyframesKeyword WhiteSpace AnimationName Separator Description
-
-LayerName ::
-    > a cascade-layer name, optionally dotted, e.g. theme.dark
 
 // A cascade layer (`@layer`), derived from `@layer` names.
 LayerTag :
@@ -430,25 +426,15 @@ AccessibilityKeyword :
 AccessibilityTag :
     AccessibilityKeyword WhiteSpace Description
 
-// --- Structure & demo --------------------------------------------------------------------------
-
-// Nested CSS: each rule's selector is a node, and the rules nested inside it are its children. A
-// node's selector is a full compound/complex selector, so `:has()` (contains), `:is()` or a selector
-// list (one-of), and `:not()` (not) express relationships between the related parts.
-// `@scope (…) { … }` at-rules are accepted as scope-boundary nodes (selector is empty; the prelude
-// holds the scope argument). Other CSS at-rules (@media, @layer, etc.) inside the body are forwarded
-// to the parser but treated as unknown and silently omitted.
-Selector ::
-    > a CSS compound or complex selector
+// The list and node refer to each other, so one reference necessarily points to a later definition.
+StructureNodeList :
+    StructureNode
+    StructureNodeList StructureNode
 
 // `@scope (…) { … }` at-rules inside a @structure body create scope-boundary nodes (StructureNode
 // with scope set to the prelude). The parser recognises @scope as CSS content, not a cssdoc tag.
 StructureNode :
     Selector `{` StructureNodeList? `}`
-
-StructureNodeList :
-    StructureNode
-    StructureNodeList StructureNode
 
 StructureTag :
     `@structure` StructureNodeList
@@ -470,8 +456,6 @@ DemoSpec :
 
 DemoTag :
     `@demo` WhiteSpace DemoSpec
-
-// --- Usage, compatibility & related ------------------------------------------------------------
 
 // How to include the stylesheet / use the component.
 UsageTag :
@@ -500,16 +484,9 @@ MemberTag :
     `@member` WhiteSpace RecordName
     `@member` WhiteSpace RecordName WhiteSpace `private`
 
-// --- Custom tags: registered by the host tooling; unregistered tags are ignored ---------------
-
-CustomTagContent ::
-    > tag-specific content, interpreted per the tag's configured syntax kind
-
 CustomTag :
     BlockSigil Identifier
     BlockSigil Identifier WhiteSpace CustomTagContent
-
-// --- The doc comment ---------------------------------------------------------------------------
 
 BlockTag :
     RecordTag
