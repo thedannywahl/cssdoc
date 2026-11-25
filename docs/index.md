@@ -17,7 +17,7 @@ features:
       light: /edit-light.svg
       dark: /edit-dark.svg
     title: Author with a grammar
-    details: A small comment vocabulary — @component, @modifier, @cssproperty and more — with the machine facts derived from the selectors.
+    details: A small comment vocabulary — <code>@component</code>, <code>@modifier</code>, <code>@cssproperty</code> and more — with the machine facts derived from the selectors.
   - icon:
       light: /send-light.svg
       dark: /send-dark.svg
@@ -32,5 +32,5 @@ features:
       light: /brain-light.svg
       dark: /brain-dark.svg
     title: Editor IntelliSense
-    details: A language server brings completion, hover, go-to-definition, and deprecation quick-fixes to any LSP editor — with a VS Code extension included.
+    details: A language server brings completion, hover, go-to-definition, and deprecation quick-fixes to any LSP editor — with editor extensions included.
 ---
