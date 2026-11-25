@@ -39,7 +39,9 @@
   "dependencies": {
     "@cssdoc/core": "workspace:*",
     "@cssdoc/dialects": "workspace:*",
-    "@cssdoc/lint-core": "workspace:*"
+    "@cssdoc/lint-core": "workspace:*",
+    "@cssdoc/regex": "workspace:*",
+    "arkregex": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",

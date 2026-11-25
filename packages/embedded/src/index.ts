@@ -14,6 +14,8 @@
 import { type CssDocEntry, type ParseOptions, parseCssDocs } from "@cssdoc/core";
 import { type CssDialect as ParserDialect, resolveParser } from "@cssdoc/dialects";
 import { type LintOptions, type Violation, lintCssDocs } from "@cssdoc/lint-core";
+import { escapeRegex } from "@cssdoc/regex";
+import { regex as arkRegex } from "arkregex";
 
 /** A host language cssdoc can pull embedded CSS out of. */
 export type EmbeddedHost = "js" | "html" | "markdown";
@@ -127,9 +129,10 @@ function scanJs(
   const regions: Region[] = [];
   const masks: Mask[] = [];
   const comments: Mask[] = [];
+  if (tags.length === 0) return { regions, masks, comments };
   // Matches a CSS tag expression immediately before a backtick: `css`, `styled.x`, `styled(x)`, chains.
-  const tagRe = new RegExp(
-    `(?:[^.\\w$]|^)(?:${tags.join("|")})(?:\\.[A-Za-z0-9_$]+|\\([^()]*\\))*\\s*$`,
+  const tagRe = arkRegex.as(
+    `(?:[^.\\w$]|^)(?:${tags.map(escapeRegex).join("|")})(?:\\.[A-Za-z0-9_$]+|\\([^()]*\\))*\\s*$`,
     "u",
   );
   for (let i = 0; i < src.length; i++) {

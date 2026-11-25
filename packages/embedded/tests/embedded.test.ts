@@ -73,6 +73,15 @@ test("`css` inside a JS string or comment is not extracted", () => {
   expect(blocks[0].css).toContain("&.primary");
 });
 
+test("custom template tags are matched literally, and an empty tag list matches nothing", () => {
+  const source = "cssx`.wrong {}`; css`.right {}`; plain`.other {}`;";
+  expect(extractCssBlocks(source, { host: "js", tags: ["css."] })).toEqual([]);
+  expect(extractCssBlocks(source, { host: "js", tags: ["css"] }).map((block) => block.css)).toEqual(
+    [".right {}"],
+  );
+  expect(extractCssBlocks(source, { host: "js", tags: [] })).toEqual([]);
+});
+
 test("parseCssDocsFromSource reads a JS tagged template, a Vue <style scoped>, and a Markdown fence", () => {
   expect(parseCssDocsFromSource(JS, { host: "js" }).map((e) => e.name)).toEqual(["button"]);
   const vue = parseCssDocsFromSource(VUE, { host: "html" });

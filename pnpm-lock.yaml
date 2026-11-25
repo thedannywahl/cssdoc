@@ -912,6 +912,12 @@ importers:
       '@cssdoc/lint-core':
         specifier: workspace:*
         version: link:../lint-core
+      '@cssdoc/regex':
+        specifier: workspace:*
+        version: link:../regex
+      arkregex:
+        specifier: 'catalog:'
+        version: 0.0.15
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
