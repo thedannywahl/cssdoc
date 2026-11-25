@@ -624,6 +624,12 @@ importers:
       '@cssdoc/embedded':
         specifier: workspace:*
         version: link:../../packages/embedded
+      '@cssdoc/regex':
+        specifier: workspace:*
+        version: link:../../packages/regex
+      arkregex:
+        specifier: 'catalog:'
+        version: 0.0.15
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

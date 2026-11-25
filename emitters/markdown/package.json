@@ -39,7 +39,9 @@
   "dependencies": {
     "@cssdoc/core": "workspace:*",
     "@cssdoc/dialects": "workspace:*",
-    "@cssdoc/embedded": "workspace:*"
+    "@cssdoc/embedded": "workspace:*",
+    "@cssdoc/regex": "workspace:*",
+    "arkregex": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",

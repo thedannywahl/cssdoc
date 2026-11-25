@@ -167,6 +167,17 @@ test("@structure renders slot content, cardinality, and a linked Subcomponents s
   expect(md).toContain("- [close-button](./close-button.md)"); // derived + cross-linked
 });
 
+test("structure renders named slots with quoted and unquoted names", () => {
+  const [entry] = parseCssDocs("/** @component card */ .card {}");
+  entry.structure = [
+    { selector: 'slot[name="header"]', children: [] },
+    { selector: "slot[name=body]", children: [] },
+  ];
+  const md = renderEntry(entry);
+  expect(md).toContain("‹content: header›");
+  expect(md).toContain("‹content: body›");
+});
+
 test("@structure bounded `:max-<n>`/`:one-or-more:max-<n>` cardinality renders as a range token", () => {
   const [group] = parseCssDocs(
     [

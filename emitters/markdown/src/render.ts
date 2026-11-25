@@ -7,6 +7,9 @@
  * @module
  */
 import type { CssDocEntry, CssReleaseStage, CssRecordKind, StructureNode } from "@cssdoc/core";
+import type { Regex } from "arkregex";
+import { regex as arkRegex } from "arkregex";
+import { CSSDOC_CARDINALITY_KEYWORDS, CSSDOC_STRUCTURE_SLOT_SOURCE } from "@cssdoc/regex";
 import {
   type ExampleFilter,
   cardinalityToken,
@@ -297,21 +300,13 @@ function table(headers: string[], rows: string[][]): string[] {
 }
 
 /** Match a `slot` / `slot[name="x"]` structure node (a light-DOM content region → the default/named slot). */
-const SLOT_NODE = /^slot(?:\[\s*name\s*=\s*["']?([\w-]+)["']?\s*\])?$/u;
+const SLOT_NODE: Regex = arkRegex.as(`^${CSSDOC_STRUCTURE_SLOT_SOURCE}$`, "u");
 
 /** Every bare class in a selector, e.g. a comma-separated alternation list `.a, .b` → `["a", "b"]`. */
 const allClasses = (selector: string): string[] =>
   [...selector.matchAll(/\.([\w-]+)/gu)].map((m) => m[1]);
 
 const STRUCTURE_REF_KIND_RE = /^(component|name|utility|rule|declaration|layout)$/u;
-const STRUCTURE_REF_CARDINALITY: Record<string, NonNullable<StructureNode["cardinality"]>> = {
-  optional: "optional",
-  opt: "optional",
-  many: "many",
-  "one-or-more": "one-or-more",
-  more: "one-or-more",
-};
-
 const parseStructureRecordRef = (
   selector: string,
 ): { kind?: string; name: string; profile?: string; private?: boolean } | undefined => {
@@ -355,7 +350,7 @@ function normalizeStructureRefCardinality(nodes: readonly StructureNode[]): Stru
     }));
     const ref = parseStructureRecordRef(node.selector);
     if (ref && (!ref.kind || ref.kind === "component") && !node.cardinality) {
-      const card = ref.profile ? STRUCTURE_REF_CARDINALITY[ref.profile] : undefined;
+      const card = ref.profile ? CSSDOC_CARDINALITY_KEYWORDS[ref.profile] : undefined;
       if (card) {
         return {
           ...node,
