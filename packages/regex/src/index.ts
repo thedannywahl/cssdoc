@@ -427,6 +427,14 @@ export const COMMENT_END_SOURCE: string = PATTERN_DEFINITIONS.COMMENT_END.source
 export const COMMENT_LINE_MARKER: Regex = compileRegex(PATTERN_DEFINITIONS.COMMENT_LINE_MARKER);
 /** Regex source for {@link COMMENT_LINE_MARKER}. */
 export const COMMENT_LINE_MARKER_SOURCE: string = PATTERN_DEFINITIONS.COMMENT_LINE_MARKER.source;
+/** Compiled leading block-comment line marker. */
+export const COMMENT_LINE_PREFIX: Regex = compileRegex(PATTERN_DEFINITIONS.COMMENT_LINE_PREFIX);
+/** Regex source for {@link COMMENT_LINE_PREFIX}. */
+export const COMMENT_LINE_PREFIX_SOURCE: string = PATTERN_DEFINITIONS.COMMENT_LINE_PREFIX.source;
+/** Compiled run of JavaScript whitespace. */
+export const WHITESPACE_RUN: Regex = compileRegex(PATTERN_DEFINITIONS.WHITESPACE_RUN);
+/** Regex source for {@link WHITESPACE_RUN}. */
+export const WHITESPACE_RUN_SOURCE: string = PATTERN_DEFINITIONS.WHITESPACE_RUN.source;
 
 // Tier 2-3 - CssDoc patterns
 /** Compiled pattern: Permissive class reference with its name captured. */

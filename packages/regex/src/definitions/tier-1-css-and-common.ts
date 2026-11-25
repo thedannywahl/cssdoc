@@ -381,6 +381,28 @@ export const TIER_1_CSS_AND_COMMON_PATTERNS: Record<string, RawPatternDef> = {
       ],
     },
   },
+  COMMENT_LINE_PREFIX: {
+    name: "COMMENT_LINE_PREFIX",
+    tier: 1,
+    pattern: (resolve: PatternResolver) => String.raw`^\s*${resolve("COMMENT_LINE_MARKER")}\s?`,
+    description: "Leading whitespace and a single block-comment line marker",
+    composedFrom: ["COMMENT_LINE_MARKER"],
+    fixtures: {
+      passes: [{ input: "*" }, { input: "  * " }, { input: "\t*\t" }],
+      fails: [{ input: "  text", reason: "no comment line marker" }],
+    },
+  },
+  WHITESPACE_RUN: {
+    name: "WHITESPACE_RUN",
+    tier: 1,
+    source: String.raw`\s+`,
+    flags: "u",
+    description: "One or more JavaScript whitespace characters",
+    fixtures: {
+      passes: [{ input: " " }, { input: "\t\n" }, { input: "\u00a0" }],
+      fails: [{ input: "", reason: "requires at least one whitespace character" }],
+    },
+  },
   AT: {
     name: "AT",
     tier: 1,

@@ -52,6 +52,7 @@ import {
   QUOTE_SINGLE_CHAR,
   RECORD_REFERENCE_NAME_SOURCE,
   TILDE_CHAR,
+  WHITESPACE_RUN,
   WORD_BOUNDARY_SOURCE,
   escapeRegex,
   toRegExp,
@@ -89,6 +90,8 @@ import type {
   CssTokenConsumed,
   ParseOptions,
 } from "./model.ts";
+
+const WHITESPACE = toRegExp(WHITESPACE_RUN);
 
 /**
  * Reduce an `@scope` at-rule's `params` (e.g. `(.pfx-alert)`) to a bare class name, or `undefined` for
@@ -524,7 +527,6 @@ function collect(
     "u",
   );
   const CSSDOC_DIRECTIVE: Regex = arkRegex.as(String.raw`^\s*cssdoc${DASH_SOURCE}`, "u");
-  const WHITESPACE: Regex = arkRegex.as(String.raw`\s+`, "gu");
   const TRUE: Regex = arkRegex.as("^true$", "iu");
   const CUSTOM_STATE = toRegExp(CSSDOC_CUSTOM_STATE_SELECTOR);
   const ATTRIBUTE_STATE: Regex = arkRegex.as(ATTRIBUTE_STATE_SOURCE, "gu");

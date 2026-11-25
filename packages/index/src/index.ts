@@ -37,11 +37,14 @@ import valueParser from "postcss-value-parser";
 import { regex as arkRegex } from "arkregex";
 import {
   AT_SOURCE,
+  COMMENT_LINE_PREFIX,
   CSSDOC_BASE_CLASS_REFERENCE,
   CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE,
   CSSDOC_CUSTOM_STATE_SELECTOR,
   CSSDOC_SCANNED_PSEUDO_SELECTOR,
   CSSDOC_SHADOW_PART_SELECTOR,
+  DOT_CHAR,
+  WORD_BOUNDARY_SOURCE,
   toRegExp,
 } from "@cssdoc/regex";
 
@@ -53,6 +56,10 @@ import {
 const CLASS_REF = toRegExp(CSSDOC_BASE_CLASS_REFERENCE);
 const AUTHORED_MEMBER = arkRegex.as(String.raw`^${AT_SOURCE}(modifier|part)\s+([\s\S]*)$`, "u");
 const CUSTOM_FUNCTION = arkRegex.as(`^(${CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE})`, "u");
+const RESET_VALUE = arkRegex.as(
+  `${WORD_BOUNDARY_SOURCE}(?:unset|initial|inherit|revert|revert-layer)${WORD_BOUNDARY_SOURCE}`,
+  "u",
+);
 
 /** A 1-based line/column position (matching PostCSS). */
 export interface Position {
@@ -195,7 +202,7 @@ export interface CssDocManifest {
   entries: CssDocEntry[];
 }
 
-const stripDot = (name: string): string => name.replace(/^\./u, "");
+const stripDot = (name: string): string => (name.startsWith(DOT_CHAR) ? name.slice(1) : name);
 
 const spanOf = (node: ChildNode): SourceSpan | undefined => {
   const { source } = node;
@@ -221,7 +228,7 @@ function scanAuthoredTagLines(
   const partLines = new Map<string, SourceSpan>();
   const lines = text.split("\n");
   for (const [i, line] of lines.entries()) {
-    const stripped = line.replace(/^\s*\*\s?/, "");
+    const stripped = line.replace(COMMENT_LINE_PREFIX, "");
     const m = stripped.match(AUTHORED_MEMBER);
     if (!m) continue;
     const lineNumber = startLine + i;
@@ -637,7 +644,7 @@ function scanNodes(nodes: ChildNode[], build: Build, base: string, matcher: Modi
         const values = build.propertyValues.get(property) ?? new Set<string>();
         values.add(value);
         build.propertyValues.set(property, values);
-        if (/\b(?:unset|initial|inherit|revert|revert-layer)\b/u.test(value)) {
+        if (RESET_VALUE.test(value)) {
           build.resetValueUsages.push({ property, value, span: spanOf(child) });
         }
       }

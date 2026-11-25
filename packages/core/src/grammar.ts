@@ -63,7 +63,9 @@ import {
   STRUCTURE_RECORD_KIND_SOURCE,
   COMMENT_START_SOURCE,
   COMMENT_END_SOURCE,
-  COMMENT_LINE_MARKER_SOURCE,
+  COMMENT_LINE_PREFIX,
+  WHITESPACE_RUN,
+  toRegExp,
   MARKDOWN_ATX_HEADING_PREFIX_SOURCE,
   MARKDOWN_ORDERED_LIST_MARKER_SOURCE,
   MARKDOWN_UNORDERED_LIST_MARKER_SOURCE,
@@ -323,10 +325,10 @@ export function deriveSelectorName(sel: string): string {
   if (sel.startsWith(DOT_CHAR)) return sel.slice(1);
   if (sel.startsWith(POUND_CHAR)) return sel.slice(1);
   if (sel.startsWith(":host")) return "host";
-  const SELECTOR_ATTR_KEY: Regex = arkRegex.as(/^\[([^=\s~^$*|[\]]+)/u.source, "u");
+  const SELECTOR_ATTR_KEY: Regex = arkRegex.as(String.raw`^\[([^=\s~^$*|[\]]+)`, "u");
   const attrKey = sel.match(SELECTOR_ATTR_KEY)?.[1];
   if (attrKey) return attrKey;
-  const LEADING_NON_WORD: Regex = arkRegex.as(/^\W+/u.source, "u");
+  const LEADING_NON_WORD: Regex = arkRegex.as(String.raw`^\W+`, "u");
   return sel.replace(LEADING_NON_WORD, "") || sel;
 }
 
@@ -370,7 +372,6 @@ function splitQuery(rest: string): { query: string; description?: string } {
 export function stripCommentFraming(raw: string): string {
   const COMMENT_START: Regex = arkRegex.as(`^${COMMENT_START_SOURCE}${ASTERISK_SOURCE}?`);
   const COMMENT_END: Regex = arkRegex.as(`${COMMENT_END_SOURCE}$`);
-  const COMMENT_LINE_PREFIX: Regex = arkRegex.as(String.raw`^\s*${COMMENT_LINE_MARKER_SOURCE}\s?`);
   return raw
     .replace(COMMENT_START, "")
     .replace(COMMENT_END, "")
@@ -646,8 +647,7 @@ function applyBlockTag(
       break;
     }
     case "summary": {
-      const WHITESPACE: Regex = arkRegex.as(String.raw`\s+`, "gu");
-      doc.summary = rest.replace(WHITESPACE, " ").trim();
+      doc.summary = rest.replace(toRegExp(WHITESPACE_RUN), " ").trim();
       break;
     }
     case "stage":
