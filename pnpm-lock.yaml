@@ -253,9 +253,15 @@ catalogs:
     '@pantoken/css':
       specifier: ^0.4.9
       version: 0.4.9
+    '@pantoken/plugin-custom-icons':
+      specifier: ^0.3.21
+      version: 0.3.21
     '@pantoken/plugin-prune-custom-props':
       specifier: ^0.1.6
       version: 0.1.6
+    '@pantoken/plugin-simple-icons':
+      specifier: ^0.3.18
+      version: 0.3.18
     '@pantoken/tokens':
       specifier: ^0.8.4
       version: 0.8.4
@@ -349,6 +355,9 @@ catalogs:
     publint:
       specifier: ^0.3.25
       version: 0.3.25
+    simple-icons:
+      specifier: ^16.38.0
+      version: 16.38.1
     stylelint:
       specifier: ^18.0.0
       version: 18.0.0
@@ -499,9 +508,15 @@ importers:
       '@pantoken/css':
         specifier: 'catalog:'
         version: 0.4.9
+      '@pantoken/plugin-custom-icons':
+        specifier: 'catalog:'
+        version: 0.3.21
       '@pantoken/plugin-prune-custom-props':
         specifier: 'catalog:'
         version: 0.1.6
+      '@pantoken/plugin-simple-icons':
+        specifier: 'catalog:'
+        version: 0.3.18(simple-icons@16.38.1)
       '@pantoken/tokens':
         specifier: 'catalog:'
         version: 0.8.4
@@ -532,6 +547,9 @@ importers:
       postcss:
         specifier: 'catalog:'
         version: 8.5.33
+      simple-icons:
+        specifier: 'catalog:'
+        version: 16.38.1
       typedoc:
         specifier: 'catalog:'
         version: 0.28.20(typescript@6.0.3)
@@ -2832,6 +2850,10 @@ packages:
     resolution: {integrity: sha512-Xa534aGn7dMc0DbGESRVPtwh3O/SomId45JuLeYagoqc3H8xbi7rLu5ooyYmhxug8mPDjZMPY621G+xdGCZGAA==}
     engines: {node: '>=22.18.0'}
 
+  '@pantoken/plugin-custom-icons@0.3.21':
+    resolution: {integrity: sha512-IwbKccpo2siwi2oLvF2ZyMspXCMzHlNJnquxVhEntc2wDgPi+WWCAo6djd2kATVPsUav5NnhwbcjzXKrWRxh4A==}
+    engines: {node: '>=22.18.0'}
+
   '@pantoken/plugin-kit@0.3.10':
     resolution: {integrity: sha512-zz5wlsy5PTH1sBxxDfhpZRz/1g56UXFkLhF5ioN+RO/etHWEziPrGWGPqKjER7Qz96RBkqhAnNWbYwwq1eG2Jw==}
     engines: {node: '>=22.18.0'}
@@ -2839,6 +2861,12 @@ packages:
   '@pantoken/plugin-prune-custom-props@0.1.6':
     resolution: {integrity: sha512-vathsQFjf4qO4n79C9PfPT2J5v9BZmJsnj0n5e508sRhRXqecRzXQzCWFzvaLTQwDyTSSDEEQ2vd3Cj1JbSZSg==}
     engines: {node: '>=22.18.0'}
+
+  '@pantoken/plugin-simple-icons@0.3.18':
+    resolution: {integrity: sha512-pW6pA7fFvxYownh/i8VbAbPKBN2fgIJ0EIgmevsga18deBiiaWj1AYBIEApo7yYx2CsPf3/WFyJupyPeXQbaXQ==}
+    engines: {node: '>=22.18.0'}
+    peerDependencies:
+      simple-icons: '>=13'
 
   '@pantoken/tokens@0.8.4':
     resolution: {integrity: sha512-4ANJrRGWPeILQXIuvjFCDRWksIE74vOA7KO0R3ZII4tWexmu5Edyx5IqgCSLY9/uYNvGwnLi3mBE641cO77AfQ==}
@@ -5927,6 +5955,10 @@ packages:
     resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
     engines: {node: '>=14'}
 
+  simple-icons@16.38.1:
+    resolution: {integrity: sha512-q4JnGp1cgeASp4jzEsmSh/7BD/e2y7aYO8XST+QBEvOJ5wzZ/9WRmKsI+QUwkfPUSiXC+sfh2+QetD38zl3N0g==}
+    engines: {node: '>=0.12.18'}
+
   simple-invariant@2.0.1:
     resolution: {integrity: sha512-1sbhsxqI+I2tqlmjbz99GXNmZtr6tKIyEgGGnJw/MKGblalqk/XoOYYFJlBzTKZCxx8kLaD3FD5s9BEEjx5Pyg==}
     engines: {node: '>=10'}
@@ -7733,12 +7765,23 @@ snapshots:
 
   '@pantoken/model@0.6.0': {}
 
+  '@pantoken/plugin-custom-icons@0.3.21':
+    dependencies:
+      '@pantoken/model': 0.6.0
+      '@pantoken/plugin-kit': 0.3.10
+
   '@pantoken/plugin-kit@0.3.10':
     dependencies:
       '@pantoken/model': 0.6.0
       '@pantoken/utils': 1.4.3
 
   '@pantoken/plugin-prune-custom-props@0.1.6': {}
+
+  '@pantoken/plugin-simple-icons@0.3.18(simple-icons@16.38.1)':
+    dependencies:
+      '@pantoken/model': 0.6.0
+      '@pantoken/plugin-kit': 0.3.10
+      simple-icons: 16.38.1
 
   '@pantoken/tokens@0.8.4':
     dependencies:
@@ -11176,6 +11219,8 @@ snapshots:
   signal-exit@3.0.7: {}
 
   signal-exit@4.1.0: {}
+
+  simple-icons@16.38.1: {}
 
   simple-invariant@2.0.1: {}
 

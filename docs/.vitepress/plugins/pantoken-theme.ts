@@ -8,11 +8,13 @@ import postcss, { type Plugin as PostcssPlugin } from "postcss";
 import type { Plugin } from "vite-plus";
 
 const auroraPrefix = "--instui-primitive-color-aurora-aurora";
-const exampleStatusTokens = new Set([
+const semanticColorTokens = new Set([
   "--instui-color-text-success",
   "--instui-color-text-error",
+  "--instui-color-text-info",
   "--instui-color-background-pastel-success",
   "--instui-color-background-pastel-error",
+  "--instui-color-background-pastel-info",
 ]);
 const HEX_COLOR = arkRegex.as(`^#${HEX_DIGIT_SOURCE}{6}$`, "i");
 
@@ -27,7 +29,8 @@ export function themeCss(tokens: readonly Token[] = byTheme("rebrand")): string 
   const aurora = tokens.filter((token) => token.name.startsWith(auroraPrefix));
   const statusColors = tokens.filter(
     ({ name }) =>
-      exampleStatusTokens.has(name) ||
+      semanticColorTokens.has(name) ||
+      name.startsWith("--instui-primitive-color-blue-") ||
       name.startsWith("--instui-primitive-color-green-") ||
       name.startsWith("--instui-primitive-color-red-"),
   );

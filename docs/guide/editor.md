@@ -1,12 +1,42 @@
+<script setup>
+import { VPBadge, VPButton } from "vitepress/theme";
+</script>
+
 # Set up your editor
+
+<div class="editor-download-cta">
+  <p>Download the cssdoc extension for your editor.</p>
+  <div class="editor-download-cta__buttons">
+    <VPButton
+      class="pantoken-vscode -icon-vscode"
+      text="VS Code"
+      href="https://marketplace.visualstudio.com/items?itemName=cssdoc.cssdoc-vscode"
+    />
+    <VPButton
+      class="pantoken-vscodium"
+      text="VSCodium"
+      href="https://open-vsx.org/extension/cssdoc/cssdoc-vscode"
+    />
+    <span class="editor-download-cta__button">
+      <VPButton
+        class="pantoken-zed -icon-zedindustries"
+        theme="alt"
+        aria-describedby="zed-coming-soon"
+        disabled
+      >
+        Zed
+      </VPButton>
+      <VPBadge id="zed-coming-soon" text="Coming soon" type="info" class="top-right" />
+    </span>
+  </div>
+</div>
 
 Open a project with documented CSS to get tag completions, hover information, and diagnostics while
 you work.
 
 ## VS Code and compatible editors
 
-Install the cssdoc extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=cssdoc.cssdoc-vscode)
-or [Open VSX](https://open-vsx.org/extension/cssdoc/cssdoc-vscode). Open `button.css` from
+Open `button.css` from
 [Getting started](/guide/getting-started) and type `@` on a new line inside its doc comment.
 The completion menu should list cssdoc tags.
 

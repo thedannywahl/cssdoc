@@ -1,3 +1,5 @@
+@import "@pantoken/plugin-custom-icons/icons/vscode.css";
+@import "@pantoken/plugin-simple-icons/icons/zedindustries.css";
 @cssdoc-theme;
 
 :root {
@@ -46,6 +48,32 @@
   text-underline-offset: 0.2em;
 }
 
+.editor-download-cta {
+  border-radius: 0.5rem;
+  background-image: var(--vp-home-bg-image);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-position: right top;
+  padding: 2rem;
+  position: relative;
+  isolation: isolate;
+}
+
+.editor-download-cta::before {
+  border-radius: 0.5rem;
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: var(--vp-home-pattern-image);
+  background-size: 56.5685424949px 56.5685424949px;
+  background-repeat: repeat;
+  background-position: right top;
+  mask-image: linear-gradient(to left, black, transparent 66.666667%);
+  mask-composite: intersect;
+}
+
 :root:has(.VPHome) {
   position: relative;
   isolation: isolate;
@@ -79,6 +107,70 @@
 
 .VPNavBar.home {
   background-color: var(--vp-nav-bg-color);
+}
+
+.VPButton:is(.pantoken-vscode, .pantoken-vscodium, .pantoken-zed)::before {
+  content: "";
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  flex: 0 0 auto;
+  background-color: currentColor;
+}
+
+.VPButton:is(.pantoken-vscode, .pantoken-zed)::before {
+  -webkit-mask: var(--pantoken-glyph) center / contain no-repeat;
+  mask: var(--pantoken-glyph) center / contain no-repeat;
+}
+
+.VPButton.pantoken-vscodium::before {
+  -webkit-mask: url("/vscodium.svg") center / contain no-repeat;
+  mask: url("/vscodium.svg") center / contain no-repeat;
+}
+
+.VPButton:is(.pantoken-vscode, .pantoken-vscodium, .pantoken-zed) {
+  gap: 0.5rem;
+}
+
+.editor-download-cta .VPButton.alt:disabled {
+  border-color: var(--vp-button-alt-border);
+  color: var(--vp-button-alt-text);
+  background-color: var(--vp-button-alt-bg);
+  cursor: not-allowed;
+}
+
+.editor-download-cta__button {
+  position: relative;
+  display: inline-flex;
+}
+
+.editor-download-cta__button .VPBadge.top-right {
+  position: absolute;
+  top: -0.75rem;
+  right: -3rem;
+  margin: 0;
+  color: var(--instui-color-text-info);
+  background-color: var(--instui-color-background-pastel-info);
+  border: 1px solid currentColor;
+  transform: none;
+}
+
+.editor-download-cta {
+  margin: 2rem auto;
+  text-align: center;
+}
+
+.editor-download-cta > p {
+  margin: 0 0 1rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.editor-download-cta__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
 }
 
 .VPSidebarItem .text::first-letter {

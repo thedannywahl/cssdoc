@@ -75,6 +75,32 @@ describe("Pantoken docs theme", () => {
     }
   });
 
+  it("keeps the info badge's themed colors and their dependencies after pruning", async () => {
+    const styles = readFileSync(new URL("../theme/custom.css", import.meta.url), "utf8");
+    const expanded = await postcss([expandTheme()]).process(styles, { from: undefined });
+    const result = await pruneTheme(expanded.css);
+    const tokens = byTheme("rebrand");
+    for (const name of ["--instui-color-text-info", "--instui-color-background-pastel-info"]) {
+      const token = tokens.find((entry) => entry.name === name);
+      if (!token) throw new Error(`Missing Pantoken token ${name}`);
+      expect(result).toContain(`${name}: ${token.value}`);
+      for (const [, dependency] of token.value.matchAll(/var\(([^)]+)\)/g)) {
+        expect(result).toContain(`${dependency}: #`);
+      }
+    }
+    const badge = postcss
+      .parse(result)
+      .nodes.find(
+        (node) =>
+          node.type === "rule" &&
+          node.selector === ".editor-download-cta__button .VPBadge.top-right",
+      );
+    expect(badge?.toString()).toContain("color: var(--instui-color-text-info)");
+    expect(badge?.toString()).toContain(
+      "background-color: var(--instui-color-background-pastel-info)",
+    );
+  });
+
   it("retains only the Aurora stops referenced by the actual docs theme", async () => {
     const source = readFileSync(new URL("../theme/custom.css", import.meta.url), "utf8");
     const expanded = await postcss([expandTheme()]).process(source, { from: undefined });

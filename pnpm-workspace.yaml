@@ -56,8 +56,11 @@ catalog:
   # Docs site
   "@pantoken/tokens": ^0.8.4
   "@pantoken/css": ^0.4.9
+  "@pantoken/plugin-custom-icons": ^0.3.21
   "@pantoken/plugin-prune-custom-props": ^0.1.6
+  "@pantoken/plugin-simple-icons": ^0.3.18
   "@pantoken/vitepress": ^0.3.0
+  simple-icons: ^16.38.0
   vitepress: 2.0.0-alpha.21
   # Quality gates
   "@vitest/coverage-v8": 5.1.1
