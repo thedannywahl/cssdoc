@@ -17,6 +17,45 @@ export const CSSDOC_CARDINALITY_KEYWORDS: Readonly<
 };
 
 export const TIER_2_PATTERNS: Record<string, RawPatternDef> = {
+  CSSDOC_CUSTOM_STATE_SELECTOR: {
+    name: "CSSDOC_CUSTOM_STATE_SELECTOR",
+    tier: 2,
+    pattern: (resolve: PatternResolver) =>
+      String.raw`${resolve("COLON")}state${resolve("PAREN_OPEN")}\s*(${resolve("ALPHANUMERIC_EXTENDED")}+)\s*${resolve("PAREN_CLOSE")}`,
+    flags: "u",
+    description: "Custom state selector with its name captured",
+    composedFrom: ["COLON", "PAREN_OPEN", "ALPHANUMERIC_EXTENDED", "PAREN_CLOSE"],
+    fixtures: {
+      passes: [{ input: ":state(open)" }, { input: ":state( -x )" }],
+      fails: [{ input: ":state()", reason: "missing state name" }],
+    },
+  },
+  CSSDOC_SHADOW_PART_SELECTOR: {
+    name: "CSSDOC_SHADOW_PART_SELECTOR",
+    tier: 2,
+    pattern: (resolve: PatternResolver) =>
+      String.raw`${resolve("COLON")}${resolve("COLON")}part${resolve("PAREN_OPEN")}\s*(${resolve("ALPHANUMERIC_EXTENDED")}+)\s*${resolve("PAREN_CLOSE")}`,
+    flags: "u",
+    description: "Shadow part selector with its name captured",
+    composedFrom: ["COLON", "PAREN_OPEN", "ALPHANUMERIC_EXTENDED", "PAREN_CLOSE"],
+    fixtures: {
+      passes: [{ input: "::part(label)" }, { input: "::part( -x )" }],
+      fails: [{ input: ":part(label)", reason: "single colon" }],
+    },
+  },
+  CSSDOC_SCANNED_PSEUDO_SELECTOR: {
+    name: "CSSDOC_SCANNED_PSEUDO_SELECTOR",
+    tier: 2,
+    pattern: (resolve: PatternResolver) =>
+      `${resolve("COLON")}${resolve("COLON")}?${resolve("ALPHANUMERIC_EXTENDED")}+(${resolve("PAREN_OPEN")}[^${resolve("PAREN_CLOSE")}]*${resolve("PAREN_CLOSE")})?`,
+    flags: "u",
+    description: "Pseudo selector stripped before scanning classes",
+    composedFrom: ["COLON", "ALPHANUMERIC_EXTENDED", "PAREN_OPEN", "PAREN_CLOSE"],
+    fixtures: {
+      passes: [{ input: ":hover" }, { input: "::part(label)" }, { input: ":not(.x)" }],
+      fails: [{ input: "hover", reason: "missing colon" }],
+    },
+  },
   CSSDOC_TYPED_STRUCTURE_REFERENCE: {
     name: "CSSDOC_TYPED_STRUCTURE_REFERENCE",
     tier: 2,

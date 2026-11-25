@@ -34,7 +34,13 @@ import {
 } from "@cssdoc/core";
 import postcss, { type ChildNode } from "postcss";
 import valueParser from "postcss-value-parser";
-import { CSSDOC_BASE_CLASS_REFERENCE, toRegExp } from "@cssdoc/regex";
+import {
+  CSSDOC_BASE_CLASS_REFERENCE,
+  CSSDOC_CUSTOM_STATE_SELECTOR,
+  CSSDOC_SCANNED_PSEUDO_SELECTOR,
+  CSSDOC_SHADOW_PART_SELECTOR,
+  toRegExp,
+} from "@cssdoc/regex";
 
 /**
  * Every class reference in a selector (name captured, dot dropped). The leading `[A-Za-z_]` accepts any
@@ -456,6 +462,9 @@ interface Build {
 
 /** Scan a record's nodes for member spans, recording each member's first occurrence. */
 function scanNodes(nodes: ChildNode[], build: Build, base: string, matcher: ModifierMatcher): void {
+  const customState = toRegExp(CSSDOC_CUSTOM_STATE_SELECTOR);
+  const shadowPart = toRegExp(CSSDOC_SHADOW_PART_SELECTOR);
+  const pseudo = toRegExp(CSSDOC_SCANNED_PSEUDO_SELECTOR);
   const baseNoDot = stripDot(base);
   const set = (key: string, node: ChildNode): void => {
     const span = spanOf(node);
@@ -470,19 +479,19 @@ function scanNodes(nodes: ChildNode[], build: Build, base: string, matcher: Modi
         if (!build.ruleSpan) build.ruleSpan = spanOf(node);
       }
       for (const selector of node.selector.split(",")) {
-        for (const s of selector.matchAll(/:state\(\s*([\w-]+)\s*\)/gu)) {
+        for (const s of selector.matchAll(customState)) {
           set(memberKey("state", s[1]), node);
         }
         for (const ps of matcher.pseudoStatesIn(selector)) {
           set(memberKey("state", ps.name), node);
         }
-        for (const sp of selector.matchAll(/::part\(\s*([\w-]+)\s*\)/gu)) {
+        for (const sp of selector.matchAll(shadowPart)) {
           set(memberKey("shadow-part", sp[1]), node);
         }
         for (const pe of matcher.pseudoElementsIn(selector)) {
           set(memberKey("pseudo-element", pe.name), node);
         }
-        const bare = selector.replace(/::?[\w-]+(\([^)]*\))?/gu, "");
+        const bare = selector.replace(pseudo, "");
         const modNames = new Set<string>();
         for (const mod of matcher.modifiersIn(bare, baseNoDot)) {
           modNames.add(mod.name);

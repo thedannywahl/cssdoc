@@ -63,6 +63,16 @@ it("captures base-class references without admitting modifier or digit prefixes"
   ).toEqual(["Card", "_part-1"]);
 });
 
+it("preserves selector scanning captures and strips functional pseudo selectors", () => {
+  const state = toRegExp(requiredRegex(PATTERN_DEFINITIONS.CSSDOC_CUSTOM_STATE_SELECTOR));
+  const part = toRegExp(requiredRegex(PATTERN_DEFINITIONS.CSSDOC_SHADOW_PART_SELECTOR));
+  const pseudo = toRegExp(requiredRegex(PATTERN_DEFINITIONS.CSSDOC_SCANNED_PSEUDO_SELECTOR));
+  const selector = ".card:state( -open )::part(label):not(.hidden):hover";
+  expect([...selector.matchAll(state)].map((match) => match[1])).toEqual(["-open"]);
+  expect([...selector.matchAll(part)].map((match) => match[1])).toEqual(["label"]);
+  expect(selector.replace(pseudo, "")).toBe(".card");
+});
+
 it("preserves typed and shorthand structure reference captures", () => {
   const typed = new RegExp(`^${PATTERN_DEFINITIONS.CSSDOC_TYPED_STRUCTURE_REFERENCE.source}$`, "u");
   const shorthand = new RegExp(

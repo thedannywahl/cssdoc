@@ -28,10 +28,13 @@ import {
   COLON_CHAR,
   COLON_SOURCE,
   CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE,
+  CSSDOC_CUSTOM_STATE_SELECTOR,
   CSSDOC_BASE_CLASS_NAME_SOURCE,
   CSSDOC_BASE_CLASS_REFERENCE,
   CSSDOC_ELEMENT_TAG_SOURCE,
   CSSDOC_MODIFIER_REFERENCE_SOURCE,
+  CSSDOC_SCANNED_PSEUDO_SELECTOR,
+  CSSDOC_SHADOW_PART_SELECTOR,
   DASH_SOURCE,
   DIGIT_SOURCE,
   DOT_CHAR,
@@ -525,19 +528,10 @@ function collect(
   const CSSDOC_DIRECTIVE: Regex = arkRegex.as(String.raw`^\s*cssdoc${DASH_SOURCE}`, "u");
   const WHITESPACE: Regex = arkRegex.as(String.raw`\s+`, "gu");
   const TRUE: Regex = arkRegex.as("^true$", "iu");
-  const CUSTOM_STATE: Regex = arkRegex.as(
-    String.raw`${COLON_SOURCE}state${PAREN_OPEN_SOURCE}\s*(${ALPHANUMERIC_EXTENDED_SOURCE}+)\s*${PAREN_CLOSE_SOURCE}`,
-    "gu",
-  );
+  const CUSTOM_STATE = toRegExp(CSSDOC_CUSTOM_STATE_SELECTOR);
   const ATTRIBUTE_STATE: Regex = arkRegex.as(ATTRIBUTE_STATE_SOURCE, "gu");
-  const SHADOW_PART: Regex = arkRegex.as(
-    String.raw`${COLON_SOURCE}${COLON_SOURCE}part${PAREN_OPEN_SOURCE}\s*(${ALPHANUMERIC_EXTENDED_SOURCE}+)\s*${PAREN_CLOSE_SOURCE}`,
-    "gu",
-  );
-  const PSEUDO: Regex = arkRegex.as(
-    `${COLON_SOURCE}${COLON_SOURCE}?${ALPHANUMERIC_EXTENDED_SOURCE}+(${PAREN_OPEN_SOURCE}[^${PAREN_CLOSE_SOURCE}]*${PAREN_CLOSE_SOURCE})?`,
-    "gu",
-  );
+  const SHADOW_PART = toRegExp(CSSDOC_SHADOW_PART_SELECTOR);
+  const PSEUDO = toRegExp(CSSDOC_SCANNED_PSEUDO_SELECTOR);
   const FINAL_COMPOUND: Regex = arkRegex.as(
     String.raw`([^\s${GREATER_THAN_CHAR}${TILDE_CHAR}+]+)\s*$`,
     "u",
