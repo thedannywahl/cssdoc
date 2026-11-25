@@ -4,6 +4,19 @@ Hard-won fixes and gotchas from cssdoc work, including those found in downstream
 Each entry is symptom → root cause → the durable rule. Version and PR numbers are left out; the lesson
 is timeless.
 
+## Playground HTML editor crashes, or preset changes leave stale text
+
+**Symptom** — The HTML editor stayed blank with a Lezer `TreeNode.nextChild` error. A preset selected
+while an editor loaded could leave its text out of sync with the resolved model.
+
+**Root cause** — Different copies of `@lezer/common` broke the HTML parser's tree identity checks.
+Separately, the editor captured its initial document before awaiting the language extension; prop
+changes during that wait couldn't update an editor that didn't exist yet.
+
+**Fix / rule** — Keep Lezer's shared tree runtime on one version through the workspace override.
+Finish loading editor extensions before reading the current props, and skip editor creation if the
+component unmounted while loading.
+
 ## A new `@cssdoc/markdown` render option silently no-ops in TypeDoc output
 
 **Symptom** — A render option (e.g. `classNames` for status-marker pills) worked when calling the

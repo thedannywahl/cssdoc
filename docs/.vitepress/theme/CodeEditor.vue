@@ -17,6 +17,7 @@ const host = ref<HTMLElement>();
 let view: EditorView | undefined;
 let themeCompartment: Compartment | undefined;
 let darkTheme: Extension = [];
+let unmounted = false;
 
 const langExtension = async (lang: typeof props.lang): Promise<Extension> => {
   if (lang === "css") return [(await import("@codemirror/lang-css")).css(), cssdocHighlight()];
@@ -29,6 +30,8 @@ onMounted(async () => {
   const { basicSetup, EditorView } = await import("codemirror");
   const { EditorState, Compartment } = await import("@codemirror/state");
   darkTheme = (await import("@codemirror/theme-one-dark")).oneDark;
+  const language = await langExtension(props.lang);
+  if (unmounted) return;
   themeCompartment = new Compartment();
 
   const chrome = EditorView.theme({
@@ -55,7 +58,7 @@ onMounted(async () => {
       doc: props.modelValue,
       extensions: [
         basicSetup,
-        await langExtension(props.lang),
+        language,
         themeCompartment.of(isDark.value ? darkTheme : []),
         EditorState.readOnly.of(props.readonly ?? false),
         EditorView.editable.of(!props.readonly),
@@ -83,7 +86,10 @@ watch(isDark, (dark) => {
   }
 });
 
-onBeforeUnmount(() => view?.destroy());
+onBeforeUnmount(() => {
+  unmounted = true;
+  view?.destroy();
+});
 </script>
 
 <template>
