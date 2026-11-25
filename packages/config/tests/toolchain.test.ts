@@ -123,6 +123,35 @@ test("TSDoc lint recognizes cssdoc tags without accepting unknown tags", () => {
   }
 });
 
+test("documentation lint accepts TSDoc return descriptions and rejects empty ones", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".tsdoc-check-"));
+  try {
+    const file = join(directory, "returns.ts");
+    const lint = () =>
+      spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd: root,
+        encoding: "utf8",
+      });
+
+    writeFileSync(file, "/** Returns a value.\n * @returns\n */\nexport const value = () => 1;\n");
+    const missing = lint();
+    expect(missing.status).toBe(1);
+    const output: { diagnostics: { code: string }[] } = JSON.parse(missing.stdout);
+    expect(output.diagnostics.map((diagnostic) => diagnostic.code)).toContain(
+      "jsdoc(require-returns-description)",
+    );
+
+    writeFileSync(
+      file,
+      "/** Returns a value.\n * @returns The value.\n */\nexport const value = () => 1;\n",
+    );
+    expect(lint().status).toBe(0);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("the package type check fails on missing declarations and cleans its tarball", () => {
   const directory = mkdtempSync(join(tmpdir(), "cssdoc-attw-test-"));
   try {
