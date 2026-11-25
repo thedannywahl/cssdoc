@@ -19,7 +19,6 @@
   "type": "module",
   "main": "./dist/extension.cjs",
   "dependencies": {
-    "@cssdoc/config": "workspace:*",
     "@cssdoc/language-server": "workspace:*",
     "vscode-languageclient": "catalog:"
   },

@@ -1,13 +1,10 @@
 /**
  * `@cssdoc/vscode` — a thin VS Code extension that starts `@cssdoc/language-server` (bundled alongside
- * as `dist/server.cjs`) and points it at the workspace's documented CSS. By default it auto-detects CSS
- * (`cssdoc.include` / `cssdoc.exclude` globs); an explicit `cssdoc.css` list overrides that. All the
- * intelligence lives in the server and the providers; this is just the client wiring.
+ * as `dist/server.cjs`). Workspace discovery, configuration, and language features live in the
+ * server and providers; this extension supplies client wiring and comment formatting.
  *
  * @module
  */
-import { isAbsolute, join } from "node:path";
-import { readdirSync } from "node:fs";
 import { Range, type ExtensionContext, window, workspace } from "vscode";
 import {
   LanguageClient,
@@ -15,150 +12,23 @@ import {
   type ServerOptions,
   TransportKind,
 } from "vscode-languageclient/node";
-import { CssDocConfigFile } from "@cssdoc/config";
-import {
-  DEFAULT_EXCLUDE,
-  DEFAULT_INCLUDE,
-  DOCUMENT_SELECTOR,
-  type HoverDetail,
-  type HoverSectionOrder,
-  type HoverSections,
-  initializationOptions,
-  toGlob,
-} from "./config.ts";
+import { DOCUMENT_SELECTOR } from "./config.ts";
 import { cssDocEdits } from "./comment-format.ts";
 
-export {
-  DEFAULT_EXCLUDE,
-  DEFAULT_INCLUDE,
-  DOCUMENT_SELECTOR,
-  initializationOptions,
-  toGlob,
-} from "./config.ts";
+export { DOCUMENT_SELECTOR } from "./config.ts";
 
 let client: LanguageClient | undefined;
-/**
- * Serializes restarts: each one waits for the previous stop → create → start to finish before it
- * begins. Without this, concurrent triggers race on the module-level `client` — two overlapping
- * `restart()` calls each reassign it, so the first-started client is dropped without ever being
- * stopped and its server child process leaks (the memory-leak culprit: orphaned servers pile up,
- * each holding a full index, until the host runs out of memory).
- */
-let restartChain: Promise<void> = Promise.resolve();
-/** Pending debounce timer, coalescing a burst of file/config events into a single restart. */
-let restartTimer: ReturnType<typeof setTimeout> | undefined;
 
-/**
- * Discover csddoc.json files in the workspace up to the specified depth, scanning directories
- * recursively. Returns paths to all csddoc.json/csddoc.jsonc files found.
- */
-function discoverConfigFiles(root: string, maxDepth: number, currentDepth = 0): string[] {
-  if (currentDepth > maxDepth) return [];
-  const configs: string[] = [];
-  try {
-    const entries = readdirSync(root, { withFileTypes: true });
-    for (const entry of entries) {
-      if (entry.name === "cssdoc.json" || entry.name === "cssdoc.jsonc") {
-        configs.push(join(root, entry.name));
-      }
-      if (entry.isDirectory() && currentDepth < maxDepth && !entry.name.startsWith(".")) {
-        // Avoid scanning common non-relevant directories
-        if (!["node_modules", ".git", ".vscode", "dist", "build"].includes(entry.name)) {
-          try {
-            configs.push(
-              ...discoverConfigFiles(join(root, entry.name), maxDepth, currentDepth + 1),
-            );
-          } catch {
-            // Skip directories we can't read
-          }
-        }
-      }
-    }
-  } catch {
-    // Return what we found so far if the directory can't be read
-  }
-  return configs;
-}
-
-/**
- * Extract provider file paths from a csddoc.json config file.
- * These are simple path strings that may contain globs; glob expansion
- * will be handled by the language server when it calls resolveProviders().
- */
-function extractProviderPaths(configFile: CssDocConfigFile): string[] {
-  const paths: string[] = [];
-
-  for (const provider of configFile.providers) {
-    // Provider paths are relative to the config file or npm specifiers
-    // Pass them as-is; the server will resolve them via resolveProviders()
-    paths.push(provider.path);
-  }
-
-  return paths;
-}
-
-/**
- * Resolve the documented CSS file paths: an explicit `cssdoc.css` list (resolved against the workspace
- * root) when set, otherwise auto-detected from the `cssdoc.include` / `cssdoc.exclude` globs.
- * Also discovers and resolves provider paths from csddoc.json files if enabled.
- */
-async function resolveCssPaths(): Promise<string[]> {
-  const cfg = workspace.getConfiguration("cssdoc");
-  const root = workspace.workspaceFolders?.[0]?.uri.fsPath;
-
-  const explicit = cfg.get<string[]>("css", []);
-  if (explicit.length > 0) {
-    return explicit.map((p) => (root && !isAbsolute(p) ? join(root, p) : p));
-  }
-
-  const include = toGlob(cfg.get<string[]>("include", [...DEFAULT_INCLUDE]));
-  if (!include) return [];
-  const exclude = toGlob(cfg.get<string[]>("exclude", [...DEFAULT_EXCLUDE]));
-  const uris = await workspace.findFiles(include, exclude);
-  const cssPaths = new Set(uris.map((u) => u.fsPath));
-
-  // Optionally discover and resolve providers from csddoc.json files
-  if (root && cfg.get<boolean>("editor.providerDiscovery", true)) {
-    const scanDepth = cfg.get<number>("editor.providerScanDepth", 3);
-
-    const configFiles = discoverConfigFiles(root, scanDepth);
-    for (const configPath of configFiles) {
-      try {
-        const configFile = CssDocConfigFile.loadFile(configPath);
-        if (!configFile.fileNotFound) {
-          const providerPaths = extractProviderPaths(configFile);
-          for (const path of providerPaths) {
-            cssPaths.add(path);
-          }
-        }
-      } catch {
-        // Skip config files that can't be loaded
-      }
-    }
-  }
-
-  return Array.from(cssPaths).toSorted();
-}
-
-/** Build a language client wired to the bundled server for the given CSS paths. */
-function createClient(context: ExtensionContext, cssPaths: string[]): LanguageClient {
+/** Build a language client wired to the bundled server. */
+function createClient(context: ExtensionContext): LanguageClient {
   const serverModule = context.asAbsolutePath("dist/server.cjs");
   const serverOptions: ServerOptions = {
     run: { module: serverModule, transport: TransportKind.ipc },
     debug: { module: serverModule, transport: TransportKind.ipc },
   };
-  const cfg = workspace.getConfiguration("cssdoc");
-  const hoverDetail = cfg.get<HoverDetail>("hover.detail", "full");
-  const hoverSections = cfg.get<HoverSections>("hover.sections", {});
-  const hoverSectionOrder = cfg.get<HoverSectionOrder>("hover.sectionOrder", []);
   const clientOptions: LanguageClientOptions = {
     documentSelector: [...DOCUMENT_SELECTOR],
-    initializationOptions: initializationOptions(
-      cssPaths,
-      hoverDetail,
-      hoverSections,
-      hoverSectionOrder,
-    ),
+    synchronize: { configurationSection: "cssdoc" },
     // Let the hover cards use codicons (`$(icon)`) and a little inline HTML (a themed deprecation
     // accent) — the server emits both; these flags tell the client to render rather than escape them.
     markdown: { supportHtml: true, supportThemeIcons: true },
@@ -166,47 +36,10 @@ function createClient(context: ExtensionContext, cssPaths: string[]): LanguageCl
   return new LanguageClient("cssdoc", "cssdoc", serverOptions, clientOptions);
 }
 
-/**
- * (Re)start the client, re-resolving the CSS paths first. Serialized through `restartChain` so the
- * old client is always fully stopped before a new one starts — a burst of watcher events can never
- * leave a started-but-unreferenced server process running.
- */
-function restart(context: ExtensionContext): Promise<void> {
-  restartChain = restartChain
-    .then(async () => {
-      const previous = client;
-      client = undefined;
-      if (previous) {
-        try {
-          await previous.stop();
-        } catch {
-          // A stop can reject (e.g. the server was still mid-start); dispose to make sure the child
-          // process is torn down rather than orphaned.
-          await previous.dispose().catch(() => {});
-        }
-      }
-      const next = createClient(context, await resolveCssPaths());
-      client = next;
-      await next.start();
-    })
-    .catch(() => {
-      // Swallow so one failed restart doesn't wedge the chain for every later one.
-    });
-  return restartChain;
-}
-
-/** Coalesce a burst of file-system / configuration events into a single restart. */
-function scheduleRestart(context: ExtensionContext): void {
-  if (restartTimer) clearTimeout(restartTimer);
-  restartTimer = setTimeout(() => {
-    restartTimer = undefined;
-    void restart(context);
-  }, 300);
-}
-
-/** VS Code entry point: launch the language client and keep the CSS set current. */
+/** VS Code entry point: launch the language client. */
 export async function activate(context: ExtensionContext): Promise<void> {
-  await restart(context);
+  client = createClient(context);
+  await client.start();
 
   let applyingCommentEdits = false;
   context.subscriptions.push(
@@ -246,42 +79,9 @@ export async function activate(context: ExtensionContext): Promise<void> {
         );
     }),
   );
-
-  // Re-resolve when a cssdoc setting changes...
-  context.subscriptions.push(
-    workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration("cssdoc")) scheduleRestart(context);
-    }),
-  );
-
-  // ...and when auto-detected CSS files are added or removed, so the set stays current without a reload.
-  const include = toGlob(
-    workspace.getConfiguration("cssdoc").get<string[]>("include", [...DEFAULT_INCLUDE]),
-  );
-  if (include) {
-    const watcher = workspace.createFileSystemWatcher(include, false, true, false);
-    watcher.onDidCreate(() => scheduleRestart(context));
-    watcher.onDidDelete(() => scheduleRestart(context));
-    context.subscriptions.push(watcher);
-  }
-
-  // ...and when any cssdoc.json / cssdoc.jsonc changes, so edited conventions/severities/naming reload live.
-  const configWatcher = workspace.createFileSystemWatcher("**/cssdoc.{json,jsonc}");
-  configWatcher.onDidCreate(() => scheduleRestart(context));
-  configWatcher.onDidChange(() => scheduleRestart(context));
-  configWatcher.onDidDelete(() => scheduleRestart(context));
-  context.subscriptions.push(configWatcher);
-
-  context.subscriptions.push({
-    dispose: () => {
-      if (restartTimer) clearTimeout(restartTimer);
-      void client?.stop();
-    },
-  });
 }
 
 /** VS Code entry point: stop the language client. */
 export function deactivate(): Thenable<void> | undefined {
-  if (restartTimer) clearTimeout(restartTimer);
   return client?.stop();
 }
