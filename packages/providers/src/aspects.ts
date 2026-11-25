@@ -26,6 +26,7 @@ import {
   PAREN_OPEN_SOURCE,
   STRUCTURE_RECORD_KIND_SOURCE,
   TILDE_CHAR,
+  WORD_BOUNDARY_SOURCE,
   escapeRegex,
   toRegExp,
 } from "@cssdoc/regex";
@@ -274,7 +275,13 @@ export const record = {
               "revert-layer",
               ...(options.values.allowInherit ? [] : ["inherit"]),
             ];
-      return keywords.find((k) => arkRegex.as(`\\b${k}\\b`, "u").test(value));
+      return keywords.find((k) => {
+        const KEYWORD: Regex = arkRegex.as(
+          `${WORD_BOUNDARY_SOURCE}${k}${WORD_BOUNDARY_SOURCE}`,
+          "u",
+        );
+        return KEYWORD.test(value);
+      });
     };
     const out: Diagnostic[] = [];
     const sameKindCounts = new Map<string, number>();
