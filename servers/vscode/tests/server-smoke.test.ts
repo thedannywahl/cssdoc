@@ -1,6 +1,6 @@
 import { type ChildProcessWithoutNullStreams, execFileSync, fork, spawn } from "node:child_process";
 import { join } from "node:path";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { pathToFileURL } from "node:url";
 import { fileURLToPath } from "node:url";
@@ -163,6 +163,155 @@ test("the server discovers CSS and keeps workspace folders independent", async (
       expect(reply.result?.contents.value).toContain(expected);
       expect(reply.result?.contents.value).not.toContain(other);
     }
+  } finally {
+    server.kill();
+    rmSync(fixture, { recursive: true, force: true });
+  }
+}, 30_000);
+
+test("the server refreshes discovered files and unsaved stylesheet changes", async () => {
+  execFileSync("node", ["scripts/build.mjs"], { cwd: root });
+  const fixture = mkdtempSync(join(tmpdir(), "cssdoc-refresh-"));
+  const css = join(fixture, "widget.css");
+  const cssUri = pathToFileURL(css).href;
+  const htmlUri = pathToFileURL(join(fixture, "page.html")).href;
+  const text = (summary: string): string =>
+    `/**\n * @component widget\n * @summary ${summary}\n */\n.widget {}\n`;
+  const { server, request } = ipcServer<{ contents: { value: string } } | null>();
+  const hover = async (): Promise<string | undefined> =>
+    (
+      await request("textDocument/hover", {
+        textDocument: { uri: htmlUri },
+        position: { line: 0, character: 13 },
+      })
+    ).result?.contents.value;
+  const waitForHover = async (expected: string | undefined): Promise<void> => {
+    const deadline = Date.now() + 5000;
+    while (Date.now() < deadline) {
+      if ((await hover()) === expected) return;
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    expect(await hover()).toBe(expected);
+  };
+  try {
+    await request("initialize", {
+      processId: process.pid,
+      rootUri: pathToFileURL(fixture).href,
+      capabilities: {},
+    });
+    server.send({ jsonrpc: "2.0", method: "initialized", params: {} });
+    server.send({
+      jsonrpc: "2.0",
+      method: "textDocument/didOpen",
+      params: {
+        textDocument: {
+          uri: htmlUri,
+          languageId: "html",
+          version: 1,
+          text: '<div class="widget"></div>',
+        },
+      },
+    });
+    expect(await hover()).toBeUndefined();
+    writeFileSync(css, text("Disk"));
+    server.send({
+      jsonrpc: "2.0",
+      method: "workspace/didChangeWatchedFiles",
+      params: { changes: [{ uri: cssUri, type: 1 }] },
+    });
+    const deadline = Date.now() + 5000;
+    while (!(await hover())?.includes("Disk") && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    expect(await hover()).toContain("Disk");
+    server.send({
+      jsonrpc: "2.0",
+      method: "textDocument/didOpen",
+      params: {
+        textDocument: { uri: cssUri, languageId: "css", version: 1, text: text("Unsaved") },
+      },
+    });
+    const unsavedDeadline = Date.now() + 5000;
+    while (!(await hover())?.includes("Unsaved") && Date.now() < unsavedDeadline) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    expect(await hover()).toContain("Unsaved");
+    server.send({
+      jsonrpc: "2.0",
+      method: "textDocument/didClose",
+      params: { textDocument: { uri: cssUri } },
+    });
+    unlinkSync(css);
+    server.send({
+      jsonrpc: "2.0",
+      method: "workspace/didChangeWatchedFiles",
+      params: { changes: [{ uri: cssUri, type: 3 }] },
+    });
+    await waitForHover(undefined);
+  } finally {
+    server.kill();
+    rmSync(fixture, { recursive: true, force: true });
+  }
+}, 30_000);
+
+test("the server indexes workspace folders added after initialization", async () => {
+  execFileSync("node", ["scripts/build.mjs"], { cwd: root });
+  const fixture = mkdtempSync(join(tmpdir(), "cssdoc-folders-"));
+  const added = join(fixture, "added");
+  mkdirSync(added);
+  writeFileSync(
+    join(added, "widget.css"),
+    "/**\n * @component widget\n * @summary Added workspace\n */\n.widget {}\n",
+  );
+  const { server, request } = ipcServer<{ contents: { value: string } } | null>();
+  const uri = pathToFileURL(join(added, "page.html")).href;
+  const hover = async (): Promise<string | undefined> =>
+    (
+      await request("textDocument/hover", {
+        textDocument: { uri },
+        position: { line: 0, character: 13 },
+      })
+    ).result?.contents.value;
+  try {
+    await request("initialize", {
+      processId: process.pid,
+      rootUri: null,
+      workspaceFolders: [],
+      capabilities: { workspace: { workspaceFolders: true } },
+    });
+    server.send({ jsonrpc: "2.0", method: "initialized", params: {} });
+    server.send({
+      jsonrpc: "2.0",
+      method: "textDocument/didOpen",
+      params: {
+        textDocument: { uri, languageId: "html", version: 1, text: '<div class="widget"></div>' },
+      },
+    });
+    expect(await hover()).toBeUndefined();
+    server.send({
+      jsonrpc: "2.0",
+      method: "workspace/didChangeWorkspaceFolders",
+      params: {
+        event: { added: [{ uri: pathToFileURL(added).href, name: "added" }], removed: [] },
+      },
+    });
+    const deadline = Date.now() + 5000;
+    while (!(await hover())?.includes("Added workspace") && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    expect(await hover()).toContain("Added workspace");
+    server.send({
+      jsonrpc: "2.0",
+      method: "workspace/didChangeWorkspaceFolders",
+      params: {
+        event: { added: [], removed: [{ uri: pathToFileURL(added).href, name: "added" }] },
+      },
+    });
+    const removedDeadline = Date.now() + 5000;
+    while ((await hover()) !== undefined && Date.now() < removedDeadline) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    expect(await hover()).toBeUndefined();
   } finally {
     server.kill();
     rmSync(fixture, { recursive: true, force: true });

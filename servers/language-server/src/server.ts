@@ -17,6 +17,7 @@ import { type HoverSectionOrder, resolveNaming, resolveRuleSeverities } from "@c
 import {
   CompletionItemTag,
   DiagnosticSeverity,
+  DidChangeWatchedFilesNotification,
   ProposedFeatures,
   TextDocumentSyncKind,
   TextDocuments,
@@ -43,6 +44,10 @@ export function startLanguageServer(): void {
   const hoverFilters = new Map<string, ExampleFilter | null>();
   let cssPaths: string[] = [];
   let workspaceRoots: string[] = [];
+  let discoveryOptions: WorkspaceDiscoveryOptions = {};
+  let watchFiles = false;
+  let watchWorkspaceFolders = false;
+  let refreshTimer: ReturnType<typeof setTimeout> | undefined;
 
   const rootFor = (path: string): string | undefined =>
     workspaceRoots
@@ -75,7 +80,7 @@ export function startLanguageServer(): void {
   // projected to CSS first so their embedded, documented components enter the index.
   const readIndexable = (p: string): string => {
     const host = detectEmbeddedHost(p);
-    const raw = readSafe(p);
+    const raw = documents.get(pathToFileURL(p).href)?.getText() ?? readSafe(p);
     return host ? projectCss(raw, { host }) : raw;
   };
 
@@ -172,6 +177,14 @@ export function startLanguageServer(): void {
     service.setScopes(scopes);
   };
 
+  const discover = (): void => {
+    try {
+      cssPaths = discoverStylesheets(workspaceRoots, discoveryOptions);
+    } catch (error) {
+      connection.console.error(`Cannot discover workspace stylesheets: ${String(error)}`);
+    }
+  };
+
   connection.onInitialize((params) => {
     const options = params.initializationOptions as
       | (WorkspaceDiscoveryOptions & {
@@ -188,12 +201,10 @@ export function startLanguageServer(): void {
       if (!path) connection.console.warn(`Cannot discover CSS in non-file workspace ${uri}`);
       return path ? [path] : [];
     });
-    try {
-      cssPaths = discoverStylesheets(workspaceRoots, options);
-    } catch (error) {
-      connection.console.error(`Cannot discover workspace stylesheets: ${String(error)}`);
-      cssPaths = [];
-    }
+    discoveryOptions = options ?? {};
+    watchFiles = params.capabilities.workspace?.didChangeWatchedFiles?.dynamicRegistration === true;
+    watchWorkspaceFolders = params.capabilities.workspace?.workspaceFolders === true;
+    discover();
     if (options?.hoverDetail)
       service.setHoverDetail(
         options.hoverDetail,
@@ -203,7 +214,11 @@ export function startLanguageServer(): void {
     rebuild();
     return {
       capabilities: {
-        textDocumentSync: TextDocumentSyncKind.Incremental,
+        textDocumentSync: {
+          openClose: true,
+          change: TextDocumentSyncKind.Incremental,
+          save: { includeText: false },
+        },
         completionProvider: { triggerCharacters: ["-", '"', "'", "(", " ", "@"] },
         hoverProvider: true,
         definitionProvider: true,
@@ -216,6 +231,7 @@ export function startLanguageServer(): void {
           full: true,
         },
         inlayHintProvider: true,
+        workspace: { workspaceFolders: { supported: true, changeNotifications: true } },
       },
     };
   });
@@ -232,14 +248,66 @@ export function startLanguageServer(): void {
       }));
     void connection.sendDiagnostics({ uri: doc.uri, diagnostics });
   };
+  const scheduleRefresh = (): void => {
+    if (refreshTimer) clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(() => {
+      refreshTimer = undefined;
+      discover();
+      hoverFilters.clear();
+      rebuild();
+      for (const doc of documents.all()) validate(doc);
+    }, 200);
+  };
+
+  connection.onInitialized(() => {
+    if (watchWorkspaceFolders) {
+      connection.workspace.onDidChangeWorkspaceFolders((event) => {
+        const removed = new Set(event.removed.map((folder) => fsPathOf(folder.uri)));
+        workspaceRoots = workspaceRoots.filter((root) => !removed.has(root));
+        for (const folder of event.added) {
+          const path = fsPathOf(folder.uri);
+          if (path && !workspaceRoots.includes(path)) workspaceRoots.push(path);
+          else if (!path) {
+            connection.console.warn(`Cannot discover CSS in non-file workspace ${folder.uri}`);
+          }
+        }
+        scheduleRefresh();
+      });
+    }
+    if (watchFiles) {
+      const patterns = new Set([
+        "**/*.{css,scss,less,vue,svelte,astro,html,js,jsx,ts,tsx,md,mdx,json,jsonc}",
+        ...(discoveryOptions.include ?? []),
+      ]);
+      void connection.client
+        .register(DidChangeWatchedFilesNotification.type, {
+          watchers: [...patterns].map((globPattern) => ({ globPattern })),
+        })
+        .catch((error: unknown) =>
+          connection.console.warn(`Cannot register file watchers: ${String(error)}`),
+        );
+    }
+  });
+
   documents.onDidChangeContent((e) => {
     validate(e.document);
+    const path = fsPathOf(e.document.uri);
+    if (path && cssPaths.includes(path)) scheduleRefresh();
+  });
+  documents.onDidSave(() => {
+    scheduleRefresh();
   });
   documents.onDidClose((e) => {
     hoverFilters.delete(e.document.uri);
+    void connection.sendDiagnostics({ uri: e.document.uri, diagnostics: [] });
+    const path = fsPathOf(e.document.uri);
+    if (path && cssPaths.includes(path)) scheduleRefresh();
   });
   connection.onDidChangeWatchedFiles(() => {
-    hoverFilters.clear();
+    scheduleRefresh();
+  });
+  connection.onShutdown(() => {
+    if (refreshTimer) clearTimeout(refreshTimer);
   });
 
   connection.onCompletion((params) => {

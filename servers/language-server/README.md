@@ -18,6 +18,10 @@ discovers `**/*.css` in each folder, excluding `node_modules`. Configure discove
 `initializationOptions.css` to an explicit list of paths (including an empty list to disable discovery).
 Relative paths resolve against each workspace folder.
 
+When the client supports watched-file registration, changes to workspace stylesheets and config files
+refresh the index. The server also refreshes on document saves and uses unsaved text from open indexed
+files. Clients without file watching need a save or server restart to pick up external changes.
+
 ```jsonc
 {
   "command": "cssdoc-language-server",
