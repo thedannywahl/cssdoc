@@ -537,6 +537,9 @@ importers:
       '@cssdoc/embedded':
         specifier: workspace:*
         version: link:../../packages/embedded
+      '@cssdoc/regex':
+        specifier: workspace:*
+        version: link:../../packages/regex
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

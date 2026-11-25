@@ -322,6 +322,13 @@ export const TIER_0_PATTERNS: Record<string, RawPatternDef> = {
     description: "Tilde character (literal)",
     fixtures: { passes: [{ input: "~" }], fails: [{ input: "-", reason: "hyphen" }] },
   },
+  AMPERSAND_CHAR: {
+    name: "AMPERSAND_CHAR",
+    tier: 0,
+    source: "&",
+    description: "Ampersand character (literal)",
+    fixtures: { passes: [{ input: "&" }], fails: [{ input: "+", reason: "plus" }] },
+  },
   EQUALS_CHAR: {
     name: "EQUALS_CHAR",
     tier: 0,

@@ -103,10 +103,12 @@ test("renderPage lists a nested @variant group's alternatives under a '(choose o
 
 test("renderPage escapes HTML-unsafe prose", () => {
   const [entry] = parseCssDocs(
-    `/**\n * @component x\n * @summary A <b> & "y" tag.\n */\n.x { color: red; }`,
+    `/**\n * @component x\n * @summary A <b> & "y" tag &amp; <i>"z"</i>.\n */\n.x { color: red; }`,
   );
   const html = renderPage(entry!);
-  expect(html).toContain("A &lt;b&gt; &amp; &quot;y&quot; tag.");
+  expect(html).toContain(
+    "A &lt;b&gt; &amp; &quot;y&quot; tag &amp;amp; &lt;i&gt;&quot;z&quot;&lt;/i&gt;.",
+  );
   expect(html).not.toContain("A <b> &");
 });
 

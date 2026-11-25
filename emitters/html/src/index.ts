@@ -16,6 +16,12 @@ import {
 } from "@cssdoc/core";
 import { type CssDialect, resolveParser } from "@cssdoc/dialects";
 import { parseCssDocsFromSource } from "@cssdoc/embedded";
+import {
+  AMPERSAND_CHAR,
+  GREATER_THAN_CHAR,
+  LESS_THAN_CHAR,
+  QUOTE_DOUBLE_CHAR,
+} from "@cssdoc/regex";
 
 /** Either a CSS source or an already-parsed model. */
 export interface ModelInput {
@@ -39,10 +45,10 @@ function resolveEntries(input: ModelInput): CssDocEntry[] {
 
 const esc = (text: string | undefined): string =>
   (text ?? "")
-    .replace(/&/gu, "&amp;")
-    .replace(/</gu, "&lt;")
-    .replace(/>/gu, "&gt;")
-    .replace(/"/gu, "&quot;");
+    .replaceAll(AMPERSAND_CHAR, "&amp;")
+    .replaceAll(LESS_THAN_CHAR, "&lt;")
+    .replaceAll(GREATER_THAN_CHAR, "&gt;")
+    .replaceAll(QUOTE_DOUBLE_CHAR, "&quot;");
 
 const code = (text: string | undefined): string => (text ? `<code>${esc(text)}</code>` : "—");
 

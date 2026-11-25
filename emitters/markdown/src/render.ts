@@ -10,11 +10,15 @@ import type { CssDocEntry, CssReleaseStage, CssRecordKind, StructureNode } from 
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import {
+  BRACE_OPEN_CHAR,
   CSS_CLASS_REFERENCE,
   CSSDOC_CARDINALITY_KEYWORDS,
   CSSDOC_SHORTHAND_STRUCTURE_REFERENCE_SOURCE,
   CSSDOC_STRUCTURE_SLOT_SOURCE,
   CSSDOC_TYPED_STRUCTURE_REFERENCE_SOURCE,
+  GREATER_THAN_CHAR,
+  LESS_THAN_CHAR,
+  PIPE_CHAR,
   STRUCTURE_RECORD_KIND_SOURCE,
   toRegExp,
 } from "@cssdoc/regex";
@@ -250,14 +254,17 @@ export function escProse(text: string): string {
     .map((seg, i) =>
       i % 2 === 1
         ? seg
-        : seg.replace(/</gu, "&lt;").replace(/>/gu, "&gt;").replace(/\{\{/gu, "&#123;&#123;"),
+        : seg
+            .replaceAll(LESS_THAN_CHAR, "&lt;")
+            .replaceAll(GREATER_THAN_CHAR, "&gt;")
+            .replaceAll(BRACE_OPEN_CHAR.repeat(2), "&#123;&#123;"),
     )
     .join("");
 }
 
 /** A GFM table-cell-safe rendering of prose (escape pipes + Vue-unsafe chars; empty → em dash). */
 export function cell(text: string | undefined): string {
-  return text ? escProse(text).replace(/\|/gu, "\\|") : "—";
+  return text ? escProse(text).replaceAll(PIPE_CHAR, "\\|") : "—";
 }
 
 /**
@@ -294,7 +301,7 @@ function tag(cls: string | undefined, label: string, fallback: string = label): 
 /** A code-span cell: collapse whitespace and escape pipes so it survives a GFM table row. */
 function code(text: string | undefined): string {
   if (!text) return "—";
-  return `\`${text.replace(/\s+/gu, " ").trim().replace(/\|/gu, "\\|")}\``;
+  return `\`${text.replace(/\s+/gu, " ").trim().replaceAll(PIPE_CHAR, "\\|")}\``;
 }
 
 /** Render a GFM table from a header row and body rows (already-formatted cells). */
@@ -599,12 +606,12 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
           notes.push(`${marker} — ${escProse(via)}`);
         }
         if (m.description && !aliasFromDescription) notes.push(escProse(m.description));
-        return [`\`.${m.name}\``, notes.join(" ").replace(/\|/gu, "\\|")];
+        return [`\`.${m.name}\``, notes.join(" ").replaceAll(PIPE_CHAR, "\\|")];
       }
       if (m.interaction) {
         const marker = tag(options.classNames?.interaction, "Interaction", "_Interaction_");
         const cellText = m.description ? `${marker} — ${escProse(m.description)}` : marker;
-        return [`\`.${m.name}\``, cellText.replace(/\|/gu, "\\|")];
+        return [`\`.${m.name}\``, cellText.replaceAll(PIPE_CHAR, "\\|")];
       }
       if (m.affects?.length) {
         const marker = tag(options.classNames?.affects, "Affects", "_Affects_");
@@ -616,7 +623,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
           return a.description ? `${target} — ${escProse(a.description)}` : target;
         });
         const cellText = `${marker}: ${notes.join("; ")}`;
-        return [`\`.${m.name}\``, cellText.replace(/\|/gu, "\\|")];
+        return [`\`.${m.name}\``, cellText.replaceAll(PIPE_CHAR, "\\|")];
       }
       return [`\`.${m.name}\``, cell(m.description)];
     });

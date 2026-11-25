@@ -10,6 +10,7 @@ import {
   renderEntry,
   renderIndex,
 } from "../src/index.ts";
+import { cell, escProse } from "../src/render.ts";
 
 const CSS = `
 /**
@@ -27,6 +28,12 @@ const CSS = `
  */
 .m-sm { margin: var(--spacing-sm); }
 `;
+
+test("escapes repeated Vue and table delimiters while preserving code spans", () => {
+  const text = "<x> {{a}} | `<y> {{b}}` | <z>";
+  expect(escProse(text)).toBe("&lt;x&gt; &#123;&#123;a}} | `<y> {{b}}` | &lt;z&gt;");
+  expect(cell(text)).toBe("&lt;x&gt; &#123;&#123;a}} \\| `<y> {{b}}` \\| &lt;z&gt;");
+});
 
 test("renderEntry renders a title, summary, demo fence, and a modifiers table", () => {
   const [button] = parseCssDocs(CSS);
