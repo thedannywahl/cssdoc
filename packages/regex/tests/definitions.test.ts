@@ -41,6 +41,13 @@ it("adds global matching and anchors while preserving existing regex flags", () 
   expect([..."ITEM".matchAll(pattern)].map((match) => match[0])).toEqual(["ITEM"]);
 });
 
+it("captures only a trailing lowercase ASCII filename extension", () => {
+  const pattern = requiredRegex(PATTERN_DEFINITIONS.FILE_EXTENSION);
+  expect("dir/file.scss".match(pattern)?.[1]).toBe("scss");
+  expect("file.scss1".match(pattern)).toBeNull();
+  expect("file.".match(pattern)).toBeNull();
+});
+
 it.each([
   ['[class*="-icon-"]', ["*", "-icon-", undefined, undefined]],
   ["[ class ~= 'active' ]", ["~", undefined, "active", undefined]],

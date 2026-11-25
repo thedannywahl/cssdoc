@@ -39,6 +39,7 @@ Patterns are organized by tier level:
 `ASTERISK_CHAR`, `CARET_CHAR`, `DOLLAR_CHAR`, and `TILDE_CHAR` provide literal operator characters.
 `EQUALS_CHAR` provides the literal equals sign.
 `AMPERSAND_CHAR` provides the literal ampersand.
+`FILE_EXTENSION` captures a lowercase ASCII filename extension at the end of a string.
 `LESS_THAN_CHAR` and `GREATER_THAN_CHAR` provide literal angle brackets.
 `REGEX_METACHARACTER_SOURCE` matches characters that need escaping in regular expressions.
 Use `escapeRegex(text)` to escape those characters throughout a string for use in a regex pattern.

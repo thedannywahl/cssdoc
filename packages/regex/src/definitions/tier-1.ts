@@ -8,6 +8,21 @@ import type { RawPatternDef, PatternResolver } from "../types.ts";
 import { escapeChar } from "../lib.ts";
 
 export const TIER_1_PATTERNS: Record<string, RawPatternDef> = {
+  FILE_EXTENSION: {
+    name: "FILE_EXTENSION",
+    tier: 1,
+    pattern: (resolve: PatternResolver) => `${resolve("DOT")}(${resolve("ALPHA_LOWER")}+)$`,
+    flags: "u",
+    description: "Lowercase ASCII filename extension, capturing the extension without the dot",
+    composedFrom: ["DOT", "ALPHA_LOWER"],
+    fixtures: {
+      passes: [{ input: ".scss" }, { input: ".js" }],
+      fails: [
+        { input: ".CSS", reason: "uppercase" },
+        { input: ".css1", reason: "non-letter suffix" },
+      ],
+    },
+  },
   CSS_IDENTIFIER: {
     name: "CSS_IDENTIFIER",
     grammarRule: "ident",
