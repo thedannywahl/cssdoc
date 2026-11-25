@@ -63,6 +63,13 @@ it("captures base-class references without admitting modifier or digit prefixes"
   ).toEqual(["Card", "_part-1"]);
 });
 
+it("captures permissive class references, including modifiers and digit prefixes", () => {
+  const pattern = toRegExp(requiredRegex(PATTERN_DEFINITIONS.CSS_CLASS_REFERENCE));
+  expect(
+    [...".Card ._part-1 .-modifier .1part".matchAll(pattern)].map((match) => match[1]),
+  ).toEqual(["Card", "_part-1", "-modifier", "1part"]);
+});
+
 it("preserves selector scanning captures and strips functional pseudo selectors", () => {
   const state = toRegExp(requiredRegex(PATTERN_DEFINITIONS.CSSDOC_CUSTOM_STATE_SELECTOR));
   const part = toRegExp(requiredRegex(PATTERN_DEFINITIONS.CSSDOC_SHADOW_PART_SELECTOR));

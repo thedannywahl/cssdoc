@@ -10,11 +10,13 @@ import type { CssDocEntry, CssReleaseStage, CssRecordKind, StructureNode } from 
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import {
+  CSS_CLASS_REFERENCE,
   CSSDOC_CARDINALITY_KEYWORDS,
   CSSDOC_SHORTHAND_STRUCTURE_REFERENCE_SOURCE,
   CSSDOC_STRUCTURE_SLOT_SOURCE,
   CSSDOC_TYPED_STRUCTURE_REFERENCE_SOURCE,
   STRUCTURE_RECORD_KIND_SOURCE,
+  toRegExp,
 } from "@cssdoc/regex";
 import {
   type ExampleFilter,
@@ -307,10 +309,11 @@ function table(headers: string[], rows: string[][]): string[] {
 
 /** Match a `slot` / `slot[name="x"]` structure node (a light-DOM content region → the default/named slot). */
 const SLOT_NODE: Regex = arkRegex.as(`^${CSSDOC_STRUCTURE_SLOT_SOURCE}$`, "u");
+const CLASS_REFERENCE_RE = toRegExp(CSS_CLASS_REFERENCE);
 
 /** Every bare class in a selector, e.g. a comma-separated alternation list `.a, .b` → `["a", "b"]`. */
 const allClasses = (selector: string): string[] =>
-  [...selector.matchAll(/\.([\w-]+)/gu)].map((m) => m[1]);
+  [...selector.matchAll(CLASS_REFERENCE_RE)].map((m) => m[1]);
 
 const STRUCTURE_REF_KIND_RE: Regex = arkRegex.as(`^${STRUCTURE_RECORD_KIND_SOURCE}$`, "u");
 const parseStructureRecordRef = (
@@ -470,7 +473,7 @@ function subcomponentsOf(
         const c = resolve(ref.name);
         if (c) byName.set(c.name, c);
       }
-      for (const m of node.selector.matchAll(/\.([\w-]+)/gu)) {
+      for (const m of node.selector.matchAll(CLASS_REFERENCE_RE)) {
         if (m[1] === self) continue;
         const c = resolve(m[1]);
         if (c) byName.set(c.name, c);

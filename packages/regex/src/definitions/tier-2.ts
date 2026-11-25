@@ -17,6 +17,22 @@ export const CSSDOC_CARDINALITY_KEYWORDS: Readonly<
 };
 
 export const TIER_2_PATTERNS: Record<string, RawPatternDef> = {
+  CSS_CLASS_REFERENCE: {
+    name: "CSS_CLASS_REFERENCE",
+    tier: 2,
+    pattern: (resolve: PatternResolver) =>
+      `${resolve("DOT")}(${resolve("ALPHANUMERIC_EXTENDED")}+)`,
+    flags: "u",
+    description: "Permissive class reference with its name captured",
+    composedFrom: ["DOT", "ALPHANUMERIC_EXTENDED"],
+    fixtures: {
+      passes: [{ input: ".button" }, { input: ".-modifier" }, { input: ".1item" }],
+      fails: [
+        { input: "button", reason: "missing dot" },
+        { input: ".", reason: "missing name" },
+      ],
+    },
+  },
   CSSDOC_CUSTOM_STATE_SELECTOR: {
     name: "CSSDOC_CUSTOM_STATE_SELECTOR",
     tier: 2,

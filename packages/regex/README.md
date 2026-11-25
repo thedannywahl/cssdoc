@@ -58,6 +58,7 @@ match structure reference bodies and capture their optional profiles and privacy
 `CSSDOC_ELEMENT_TAG_SOURCE` matches an element name with independently optional angle brackets and
 captures the name.
 `CSSDOC_BASE_CLASS_NAME_SOURCE` matches the class names used for base and scoped-part inference.
+`CSS_CLASS_REFERENCE_SOURCE` captures permissive class references, including modifier names.
 `CSSDOC_CUSTOM_STATE_SELECTOR_SOURCE`, `CSSDOC_SHADOW_PART_SELECTOR_SOURCE`, and
 `CSSDOC_SCANNED_PSEUDO_SELECTOR_SOURCE` support parser and index selector scanning.
 `CSSDOC_CARDINALITY_SOURCE` matches the cardinality suffixes supported by `@structure`;

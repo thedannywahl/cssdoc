@@ -13,6 +13,7 @@ import {
   ALPHANUMERIC_EXTENDED_SOURCE,
   ASTERISK_CHAR,
   CSS_CLASS_ATTRIBUTE_SELECTOR,
+  CSS_CLASS_REFERENCE,
   CSSDOC_SHORTHAND_STRUCTURE_REFERENCE_SOURCE,
   CSSDOC_TYPED_STRUCTURE_REFERENCE_SOURCE,
   DOT_CHAR,
@@ -79,6 +80,7 @@ const globSource = (name: string): string =>
 
 /** `class` attribute selectors, capturing the operator (`~`/`^`/`$`/`*`/`|`/none) and the value. */
 const CLASS_ATTR_RE = toRegExp(CSS_CLASS_ATTRIBUTE_SELECTOR);
+const CLASS_REFERENCE_RE = toRegExp(CSS_CLASS_REFERENCE);
 
 /**
  * Whether `selectorText` (the record's concatenated selectors) defines the modifier/part `selector`.
@@ -201,7 +203,8 @@ const structureReferences = (
   recordName: string,
 ): boolean =>
   nodes.some((node) => {
-    if ([...node.selector.matchAll(/\.([\w-]+)/gu)].some((m) => m[1] === className)) return true;
+    if ([...node.selector.matchAll(CLASS_REFERENCE_RE)].some((m) => m[1] === className))
+      return true;
     if (node.colocated && node.colocated.replace(/^[.#]/u, "") === className) return true;
     const ref = parseStructureRecordRef(node.selector);
     if (ref && ref.name === recordName) return true;
@@ -426,7 +429,7 @@ export const record = {
         // descendants. A normal structure (rooted at the component) is unaffected.
         const selfClass = stripDot(info.entry.className);
         const classesOf = (sel: string): string[] =>
-          [...sel.matchAll(/\.([\w-]+)/gu)].map((m) => m[1]);
+          [...sel.matchAll(CLASS_REFERENCE_RE)].map((m) => m[1]);
         const hasSelfBelow = (nodes: StructureNode[]): boolean =>
           nodes.some(
             (n) =>
@@ -544,7 +547,7 @@ export const record = {
               continue;
             }
 
-            for (const m of node.selector.matchAll(/\.([\w-]+)/gu)) {
+            for (const m of node.selector.matchAll(CLASS_REFERENCE_RE)) {
               const cls = m[1];
               if (
                 seen.has(cls) ||
