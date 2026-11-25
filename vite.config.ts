@@ -104,7 +104,8 @@ const config: UserConfig = mergeConfig(
         },
         ready: {
           cache: false,
-          command: "vp run build && vp run check && vp run test && vp run check:publish",
+          command:
+            "vp run build && vp run check && vp run test && vp run check:publish && vp run docs:build",
         },
         "docs:dev": { cache: false, command: "vp run @cssdoc/docs#docs:dev" },
         "docs:build": { cache: false, command: "vp run @cssdoc/docs#docs:build" },

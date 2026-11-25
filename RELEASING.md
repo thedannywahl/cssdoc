@@ -18,7 +18,7 @@ packages' module format.
 vp run release
 ```
 
-That runs the gate, then `bumpp` (recursive) which:
+That runs the gate, including the docs build, then `bumpp` (recursive) which:
 
 1. prompts for the new version and applies it to **every** `package.json`;
 2. runs `changelogen` to prepend the release section to `CHANGELOG.md` from the Conventional Commits
