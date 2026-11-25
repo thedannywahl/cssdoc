@@ -34,11 +34,14 @@ const CSS = `
 const index = createIndex(CSS, { file: "components.css", modifierConvention: "rscss" });
 
 test("lintModel reports author-side hygiene (chip missing summary, -size-sm undocumented)", () => {
-  const rules = lintModel(index, resolveRuleSeverities({ "missing-summary": "warn" })).map(
-    (d) => `${d.record}:${d.rule}`,
-  );
+  const diagnostics = lintModel(index, resolveRuleSeverities({ "missing-summary": "warn" }));
+  const rules = diagnostics.map((d) => `${d.record}:${d.rule}`);
   expect(rules).toContain("chip:missing-summary");
   expect(rules).toContain("button:undocumented-modifier"); // -size-sm
+  expect(
+    diagnostics.find((d) => d.record === "chip" && d.rule === "missing-summary")?.fix?.edits[0]
+      .text,
+  ).toBe(" * @summary TODO.\n");
 });
 
 test("missing-summary is disabled by default", () => {

@@ -14,24 +14,33 @@ import {
   ASTERISK_CHAR,
   AT_CHAR,
   BACKTICK_CHAR,
+  BRACE_CLOSE_CHAR,
+  BRACE_OPEN_CHAR,
   BRACKET_CLOSE_CHAR,
   BRACKET_OPEN_CHAR,
+  CARET_CHAR,
+  COLON_CHAR,
+  COMMENT_END_TEXT,
   CSS_CLASS_ATTRIBUTE_SELECTOR,
   CSS_CLASS_REFERENCE,
   CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE,
   CSSDOC_QUALIFIED_REFERENCE_SOURCE,
   CSSDOC_SHORTHAND_STRUCTURE_REFERENCE_SOURCE,
   CSSDOC_TYPED_STRUCTURE_REFERENCE_SOURCE,
+  DOLLAR_CHAR,
   DOT_CHAR,
   DOT_SOURCE,
+  FORWARD_SLASH_CHAR,
   GREATER_THAN_CHAR,
   LESS_THAN_CHAR,
   PAREN_CLOSE_CHAR,
   PAREN_CLOSE_SOURCE,
   PAREN_OPEN_CHAR,
   PAREN_OPEN_SOURCE,
+  POUND_CHAR,
   STRUCTURE_RECORD_KIND_SOURCE,
   TILDE_CHAR,
+  UNDERSCORE_CHAR,
   WORD_BOUNDARY_SOURCE,
   escapeRegex,
   toRegExp,
@@ -73,6 +82,15 @@ const linkedSyntax = (syntax: string): string => {
   return linked === syntax ? `${BACKTICK_CHAR}${syntax}${BACKTICK_CHAR}` : linked; // no `<type>` to link → plain code span
 };
 
+const codeSpan = (text: string): string => `${BACKTICK_CHAR}${text}${BACKTICK_CHAR}`;
+const bold = (text: string): string =>
+  `${ASTERISK_CHAR.repeat(2)}${text}${ASTERISK_CHAR.repeat(2)}`;
+const codicon = (name: string): string =>
+  `${DOLLAR_CHAR}${PAREN_OPEN_CHAR}${name}${PAREN_CLOSE_CHAR}`;
+const emptySection = `${UNDERSCORE_CHAR}—${UNDERSCORE_CHAR}`;
+const MARKDOWN_FENCE = BACKTICK_CHAR.repeat(3);
+const MARKDOWN_FENCE_RE: Regex = arkRegex.as(String.raw`(^|\n)\s*${MARKDOWN_FENCE}`, "u");
+const SELECTOR_PREFIX_RE: Regex = arkRegex.as(`^[${DOT_CHAR}${POUND_CHAR}]`, "u");
 const stripDot = (name: string): string => (name.startsWith(DOT_CHAR) ? name.slice(1) : name);
 const warn = (d: Omit<Diagnostic, "severity">): Diagnostic => ({ ...d, severity: "warning" });
 const scaffoldDocLine = (commentSpan: SourceSpan | undefined, line: string): Diagnostic["fix"] => {
@@ -84,7 +102,7 @@ const scaffoldDocLine = (commentSpan: SourceSpan | undefined, line: string): Dia
     edits: [
       {
         span: { start: position, end: position },
-        text: `${indentation} * ${line}\n`,
+        text: `${indentation} ${ASTERISK_CHAR} ${line}\n`,
       },
     ],
   };
@@ -129,10 +147,10 @@ export const selectorDefines = (selectorText: string, selector: string): boolean
   for (const m of selectorText.matchAll(CLASS_ATTR_RE)) {
     const op = m[1];
     const v = m[2] ?? m[3] ?? m[4] ?? "";
-    if (!v || op === "^") continue; // ^= targets the attribute start (base class), not a chained modifier
-    if (op === "*") {
+    if (!v || op === CARET_CHAR) continue; // ^= targets the attribute start (base class), not a chained modifier
+    if (op === ASTERISK_CHAR) {
       if (wild ? prefix.includes(v) || v.includes(prefix) : name.includes(v)) return true;
-    } else if (op === "$") {
+    } else if (op === DOLLAR_CHAR) {
       if (wild ? v.endsWith(prefix) || prefix.endsWith(v) : name.endsWith(v)) return true;
     } else if (glob.test(v)) {
       return true; // `~=` / `=` (and `|=` bare value): an exact class in the family
@@ -226,7 +244,7 @@ const structureReferences = (
   nodes.some((node) => {
     if ([...node.selector.matchAll(CLASS_REFERENCE_RE)].some((m) => m[1] === className))
       return true;
-    if (node.colocated && node.colocated.replace(/^[.#]/u, "") === className) return true;
+    if (node.colocated && node.colocated.replace(SELECTOR_PREFIX_RE, "") === className) return true;
     const ref = parseStructureRecordRef(node.selector);
     if (ref && ref.name === recordName) return true;
     if ((node.variants ?? []).some((v) => structureReferences(v.nodes, className, recordName)))
@@ -246,16 +264,24 @@ const renderStructureTree = (nodes: StructureNode[], depth = 0): string[] =>
     if (n.variants !== undefined) {
       // A nested `@variant` group re-serializes as the same blocks it was authored with.
       return n.variants.flatMap((v) => [
-        `${pad}@variant${v.name ? ` ${v.name}` : ""} {`,
+        `${pad}${AT_CHAR}variant${v.name ? ` ${v.name}` : ""} ${BRACE_OPEN_CHAR}`,
         ...renderStructureTree(v.nodes, depth + 1),
-        `${pad}}`,
+        `${pad}${BRACE_CLOSE_CHAR}`,
       ]);
     }
-    const note = n.description ? ` /* ${n.description} */` : "";
-    const colocSuffix = n.colocated ? `:is(${n.colocated})` : "";
+    const note = n.description
+      ? ` ${FORWARD_SLASH_CHAR}${ASTERISK_CHAR} ${n.description} ${COMMENT_END_TEXT}`
+      : "";
+    const colocSuffix = n.colocated
+      ? `${COLON_CHAR}is${PAREN_OPEN_CHAR}${n.colocated}${PAREN_CLOSE_CHAR}`
+      : "";
     const label = `${n.selector}${colocSuffix}`;
     return n.children.length
-      ? [`${pad}${label} {${note}`, ...renderStructureTree(n.children, depth + 1), `${pad}}`]
+      ? [
+          `${pad}${label} ${BRACE_OPEN_CHAR}${note}`,
+          ...renderStructureTree(n.children, depth + 1),
+          `${pad}${BRACE_CLOSE_CHAR}`,
+        ]
       : [`${pad}${label}${note}`];
   });
 
@@ -343,7 +369,7 @@ export const record = {
           warn({
             aspect: "record",
             rule: "duplicate-record-id-cross-kind",
-            message: `Record id "${info.entry.name}" is shared across kinds (${kinds}); use typed structure refs like @component ${info.entry.name}.`,
+            message: `Record id "${info.entry.name}" is shared across kinds (${kinds}); use typed structure refs like ${AT_CHAR}component ${info.entry.name}.`,
             record: info.entry.name,
             span: info.span,
           }),
@@ -364,7 +390,7 @@ export const record = {
             warn({
               aspect: "record",
               rule: "unknown-annotation-ref",
-              message: `@ref ${ref} has no matching annotation legend entry in "${info.entry.name}".`,
+              message: `${AT_CHAR}ref ${ref} has no matching annotation legend entry in "${info.entry.name}".`,
               record: info.entry.name,
               span: info.span,
             }),
@@ -379,7 +405,7 @@ export const record = {
             warn({
               aspect: "record",
               rule: "readonly-redefinition",
-              message: `@${decoratorSet.has("frozen") ? "frozen" : "readonly"} record "${info.entry.name}" redefines "${property}" with multiple values (${[...values].map((v) => `\`${v}\``).join(", ")}).`,
+              message: `${AT_CHAR}${decoratorSet.has("frozen") ? "frozen" : "readonly"} record "${info.entry.name}" redefines "${property}" with multiple values (${[...values].map(codeSpan).join(", ")}).`,
               record: info.entry.name,
               span: info.span,
             }),
@@ -395,7 +421,7 @@ export const record = {
             warn({
               aspect: "record",
               rule: "sealed-reset-value",
-              message: `@${decoratorSet.has("frozen") ? "frozen" : "sealed"} record "${info.entry.name}" uses disallowed reset-like value keyword "${keyword}" on "${usage.property}".`,
+              message: `${AT_CHAR}${decoratorSet.has("frozen") ? "frozen" : "sealed"} record "${info.entry.name}" uses disallowed reset-like value keyword "${keyword}" on "${usage.property}".`,
               record: info.entry.name,
               span: usage.span ?? info.span,
             }),
@@ -408,10 +434,10 @@ export const record = {
           warn({
             aspect: "record",
             rule: "missing-summary",
-            message: `Record "${info.entry.name}" has no @summary.`,
+            message: `Record "${info.entry.name}" has no ${AT_CHAR}summary.`,
             record: info.entry.name,
             span: info.span,
-            fix: scaffoldDocLine(info.span, "@summary TODO."),
+            fix: scaffoldDocLine(info.span, `${AT_CHAR}summary TODO.`),
           }),
         );
       }
@@ -496,13 +522,13 @@ export const record = {
                 seenRefs.add(colocKey);
                 const kinds =
                   siblingByClassName.get(node.colocated) ?? siblingNameKinds.get(node.colocated);
-                const colocName = node.colocated.replace(/^[.#]/u, "");
+                const colocName = node.colocated.replace(SELECTOR_PREFIX_RE, "");
                 if (!kinds || kinds.size === 0) {
                   out.push(
                     warn({
                       aspect: "record",
                       rule: "structure-unknown-record",
-                      message: `@structure co-locates "${node.colocated}" via :is(), but no documented record with selector "${node.colocated}" was found.`,
+                      message: `${AT_CHAR}structure co-locates "${node.colocated}" via :is(), but no documented record with selector "${node.colocated}" was found.`,
                       record: info.entry.name,
                       span: info.span,
                     }),
@@ -512,7 +538,7 @@ export const record = {
                     warn({
                       aspect: "record",
                       rule: "structure-unknown-record",
-                      message: `@structure co-locates "${node.colocated}" via :is(), but "${node.colocated}" isn't documented as a component.`,
+                      message: `${AT_CHAR}structure co-locates "${node.colocated}" via :is(), but "${node.colocated}" isn't documented as a component.`,
                       record: info.entry.name,
                       span: info.span,
                     }),
@@ -522,7 +548,7 @@ export const record = {
                     warn({
                       aspect: "record",
                       rule: "structure-ambiguous-record",
-                      message: `@structure :is() co-location "${node.colocated}" is ambiguous across kinds (${[...kinds].toSorted().join(", ")}); use a typed ref like @component ${colocName}.`,
+                      message: `${AT_CHAR}structure :is() co-location "${node.colocated}" is ambiguous across kinds (${[...kinds].toSorted().join(", ")}); use a typed ref like ${AT_CHAR}component ${colocName}.`,
                       record: info.entry.name,
                       span: info.span,
                     }),
@@ -532,7 +558,7 @@ export const record = {
             }
             const ref = parseStructureRecordRef(node.selector);
             if (ref) {
-              const key = `${ref.kind ?? "*"}:${ref.name}:${ref.profile ?? ""}`;
+              const key = `${ref.kind ?? ASTERISK_CHAR}${COLON_CHAR}${ref.name}${COLON_CHAR}${ref.profile ?? ""}`;
               if (!seenRefs.has(key)) {
                 seenRefs.add(key);
                 const kinds = siblingNameKinds.get(ref.name);
@@ -541,7 +567,7 @@ export const record = {
                     warn({
                       aspect: "record",
                       rule: "structure-unknown-record",
-                      message: `@structure references "${node.selector}", but no documented record named "${ref.name}" was found.`,
+                      message: `${AT_CHAR}structure references "${node.selector}", but no documented record named "${ref.name}" was found.`,
                       record: info.entry.name,
                       span: info.span,
                     }),
@@ -552,7 +578,7 @@ export const record = {
                       warn({
                         aspect: "record",
                         rule: "structure-unknown-record",
-                        message: `@structure references "${node.selector}", but "${ref.name}" isn't documented as kind "${ref.kind}".`,
+                        message: `${AT_CHAR}structure references "${node.selector}", but "${ref.name}" isn't documented as kind "${ref.kind}".`,
                         record: info.entry.name,
                         span: info.span,
                       }),
@@ -563,7 +589,7 @@ export const record = {
                     warn({
                       aspect: "record",
                       rule: "structure-ambiguous-record",
-                      message: `@structure reference "${node.selector}" is ambiguous across kinds (${[...kinds].toSorted().join(", ")}); use a typed ref like @component ${ref.name}.`,
+                      message: `${AT_CHAR}structure reference "${node.selector}" is ambiguous across kinds (${[...kinds].toSorted().join(", ")}); use a typed ref like ${AT_CHAR}component ${ref.name}.`,
                       record: info.entry.name,
                       span: info.span,
                     }),
@@ -588,7 +614,7 @@ export const record = {
                 warn({
                   aspect: "record",
                   rule: "structure-unknown-selector",
-                  message: `@structure references ".${cls}", which isn't the component class or a documented member (add it, or list it under structureIgnore).`,
+                  message: `${AT_CHAR}structure references "${DOT_CHAR}${cls}", which isn't the component class or a documented member (add it, or list it under structureIgnore).`,
                   record: info.entry.name,
                   span: info.span,
                   // The class as it appears in the (possibly projected) source. The language server uses
@@ -613,7 +639,7 @@ export const record = {
             warn({
               aspect: "record",
               rule: "member-of-unknown-component",
-              message: `@memberOf references "${parentName}", but no documented record with that name was found.`,
+              message: `${AT_CHAR}memberOf references "${parentName}", but no documented record with that name was found.`,
               record: info.entry.name,
               span: info.span,
             }),
@@ -634,7 +660,7 @@ export const record = {
               warn({
                 aspect: "record",
                 rule: "private-member-orphaned",
-                message: `"${info.entry.name}" declares @memberOf "${parentName}" private, but "${parentName}"'s own @structure never references it back.`,
+                message: `"${info.entry.name}" declares ${AT_CHAR}memberOf "${parentName}" private, but "${parentName}"'s own ${AT_CHAR}structure never references it back.`,
                 record: info.entry.name,
                 span: info.span,
               }),
@@ -650,7 +676,7 @@ export const record = {
             warn({
               aspect: "record",
               rule: "members-unknown-component",
-              message: `@members references "${memberName}", but no documented record with that name was found.`,
+              message: `${AT_CHAR}members references "${memberName}", but no documented record with that name was found.`,
               record: info.entry.name,
               span: info.span,
             }),
@@ -673,7 +699,7 @@ export const record = {
             warn({
               aspect: "record",
               rule: "private-member-orphaned",
-              message: `"${info.entry.name}" declares @member "${memberDecl.name}" private, but "${memberDecl.name}" doesn't declare a matching @memberOf "${info.entry.name}" private.`,
+              message: `"${info.entry.name}" declares ${AT_CHAR}member "${memberDecl.name}" private, but "${memberDecl.name}" doesn't declare a matching ${AT_CHAR}memberOf "${info.entry.name}" private.`,
               record: info.entry.name,
               span: info.span,
             }),
@@ -693,7 +719,7 @@ export const record = {
             warn({
               aspect: "record",
               rule: "private-member-orphaned",
-              message: `"${info.entry.name}" declares @member "${memberDecl.name}" private, but "${info.entry.name}"'s own @structure never references it back.`,
+              message: `"${info.entry.name}" declares ${AT_CHAR}member "${memberDecl.name}" private, but "${info.entry.name}"'s own ${AT_CHAR}structure never references it back.`,
               record: info.entry.name,
               span: info.span,
             }),
@@ -709,7 +735,7 @@ export const record = {
               warn({
                 aspect: "record",
                 rule: "affects-unknown-component",
-                message: `Modifier "${m.name}" of "${info.entry.name}" declares @affects "${a.component}", but no documented record with that name was found.`,
+                message: `Modifier "${m.name}" of "${info.entry.name}" declares ${AT_CHAR}affects "${a.component}", but no documented record with that name was found.`,
                 record: info.entry.name,
                 span: info.span,
               }),
@@ -747,17 +773,17 @@ export const record = {
     // the palette the injection grammar uses (component → class, modifier/part → field, state/property
     // → variable, function → method).
     const warnHtml = (label: string): string =>
-      `<span style="color:var(--vscode-editorWarning-foreground);">${label}</span>`;
+      `${LESS_THAN_CHAR}span style="color:var(--vscode-editorWarning-foreground);"${GREATER_THAN_CHAR}${label}${LESS_THAN_CHAR}${FORWARD_SLASH_CHAR}span${GREATER_THAN_CHAR}`;
     const styled = (text: string, kind: "class" | "field" | "variable" | "method"): string =>
-      `<code style="color:var(--vscode-symbolIcon-${kind}Foreground);">${text}</code>`;
+      `${LESS_THAN_CHAR}code style="color:var(--vscode-symbolIcon-${kind}Foreground);"${GREATER_THAN_CHAR}${text}${LESS_THAN_CHAR}${FORWARD_SLASH_CHAR}code${GREATER_THAN_CHAR}`;
     const dash = (d?: string): string => (d ? ` — ${d}` : "");
 
-    const head = [`$(symbol-class) ${styled(entry.className, "class")}`, entry.kind];
+    const head = [`${codicon("symbol-class")} ${styled(entry.className, "class")}`, entry.kind];
     if (entry.releaseStage) head.push(entry.releaseStage);
     if (entry.since) head.push(`since ${entry.since}`);
     const lines = [head.join(" · ")];
     const deprecatedLine = entry.deprecated
-      ? `$(warning) ${warnHtml("Deprecated")} — ${entry.deprecated}`
+      ? `${codicon("warning")} ${warnHtml("Deprecated")} — ${entry.deprecated}`
       : undefined;
 
     if (detail === "compact") {
@@ -792,12 +818,16 @@ export const record = {
     const fragments = {} as Record<HoverSectionKey, string[]>;
     const prose = (key: HoverSectionKey, prefix: string, text?: string): void => {
       const w = want(key, Boolean(text?.trim()));
-      if (w !== "skip") fragments[key] = ["", `${prefix}${w === "content" ? text : "_—_"}`];
+      if (w !== "skip") fragments[key] = ["", `${prefix}${w === "content" ? text : emptySection}`];
     };
     const list = (key: HoverSectionKey, icon: string, label: string, rows: string[]): void => {
       const w = want(key, rows.length > 0);
       if (w !== "skip")
-        fragments[key] = ["", `**$(${icon}) ${label}**`, ...(w === "content" ? rows : ["_—_"])];
+        fragments[key] = [
+          "",
+          bold(`${codicon(icon)} ${label}`),
+          ...(w === "content" ? rows : [emptySection]),
+        ];
     };
 
     prose("summary", "", entry.summary);
@@ -806,11 +836,13 @@ export const record = {
       if (w !== "skip")
         fragments.deprecated = [
           "",
-          w === "content" ? (deprecatedLine as string) : `$(warning) ${warnHtml("Deprecated")}`,
+          w === "content"
+            ? (deprecatedLine as string)
+            : `${codicon("warning")} ${warnHtml("Deprecated")}`,
         ];
     }
     prose("remarks", "", entry.remarks);
-    prose("accessibility", "$(accessibility) ", entry.accessibility);
+    prose("accessibility", `${codicon("accessibility")} `, entry.accessibility);
 
     list(
       "modifiers",
@@ -831,21 +863,24 @@ export const record = {
       "parts",
       "symbol-field",
       "Parts",
-      entry.parts.map((p) => `- ${styled(`.${p.name}`, "field")}${dash(p.description)}`),
+      entry.parts.map((p) => `- ${styled(`${DOT_CHAR}${p.name}`, "field")}${dash(p.description)}`),
     );
     list(
       "shadowParts",
       "symbol-namespace",
       "Shadow parts",
       entry.shadowParts.map(
-        (p) => `- ${styled(`::part(${p.name})`, "field")}${dash(p.description)}`,
+        (p) =>
+          `- ${styled(`${COLON_CHAR}${COLON_CHAR}part${PAREN_OPEN_CHAR}${p.name}${PAREN_CLOSE_CHAR}`, "field")}${dash(p.description)}`,
       ),
     );
     list(
       "pseudoElements",
       "symbol-misc",
       "Pseudo-elements",
-      entry.pseudoElements.map((p) => `- ${styled(`::${p.name}`, "field")}${dash(p.description)}`),
+      entry.pseudoElements.map(
+        (p) => `- ${styled(`${COLON_CHAR}${COLON_CHAR}${p.name}`, "field")}${dash(p.description)}`,
+      ),
     );
     list(
       "states",
@@ -853,7 +888,7 @@ export const record = {
       "States",
       entry.states.map(
         (s) =>
-          `- ${styled(s.kind === "custom" ? `:state(${s.name})` : `:${s.name}`, "variable")}${dash(s.description)}`,
+          `- ${styled(s.kind === "custom" ? `${COLON_CHAR}state${PAREN_OPEN_CHAR}${s.name}${PAREN_CLOSE_CHAR}` : `${COLON_CHAR}${s.name}`, "variable")}${dash(s.description)}`,
       ),
     );
     list(
@@ -862,7 +897,7 @@ export const record = {
       "Custom properties",
       entry.cssPropertiesDeclared.map((p) => {
         const syntax = p.syntax ? `: ${linkedSyntax(p.syntax)}` : "";
-        const def = p.defaultValue ? ` (default \`${p.defaultValue}\`)` : "";
+        const def = p.defaultValue ? ` (default ${codeSpan(p.defaultValue)})` : "";
         return `- ${styled(p.name, "variable")}${syntax}${def}${dash(p.description)}`;
       }),
     );
@@ -870,7 +905,10 @@ export const record = {
       "functions",
       "symbol-method",
       "Functions",
-      entry.functions.map((f) => `- ${styled(`${f.name}()`, "method")}${dash(f.description)}`),
+      entry.functions.map(
+        (f) =>
+          `- ${styled(`${f.name}${PAREN_OPEN_CHAR}${PAREN_CLOSE_CHAR}`, "method")}${dash(f.description)}`,
+      ),
     );
     list(
       "slots",
@@ -894,7 +932,9 @@ export const record = {
       "conditions",
       "filter",
       "Conditions",
-      entry.conditions.map((c) => `- \`@${c.type} ${c.query}\`${dash(c.description)}`),
+      entry.conditions.map(
+        (c) => `- ${codeSpan(`${AT_CHAR}${c.type} ${c.query}`)}${dash(c.description)}`,
+      ),
     );
     list(
       "see",
@@ -915,21 +955,28 @@ export const record = {
         Boolean(entry.structure?.length || entry.structureVariants?.length),
       );
       if (w !== "skip") {
-        const frag = ["", "**$(list-tree) Structure**"];
+        const frag = ["", bold(`${codicon("list-tree")} Structure`)];
         if (w === "content") {
           if (entry.structureDescription) frag.push("", entry.structureDescription);
           if (entry.structureVariants?.length) {
-            frag.push("", "```css");
+            frag.push("", `${MARKDOWN_FENCE}css`);
             entry.structureVariants.forEach((variant, i) => {
               if (i > 0) frag.push("");
-              frag.push(`/* Variant: ${variant.name ?? `Variant ${i + 1}`} */`);
+              frag.push(
+                `${FORWARD_SLASH_CHAR}${ASTERISK_CHAR} Variant: ${variant.name ?? `Variant ${i + 1}`} ${COMMENT_END_TEXT}`,
+              );
               frag.push(...renderStructureTree(variant.nodes));
             });
-            frag.push("```");
+            frag.push(MARKDOWN_FENCE);
           } else {
-            frag.push("", "```css", ...renderStructureTree(entry.structure ?? []), "```");
+            frag.push(
+              "",
+              `${MARKDOWN_FENCE}css`,
+              ...renderStructureTree(entry.structure ?? []),
+              MARKDOWN_FENCE,
+            );
           }
-        } else frag.push("", "_—_");
+        } else frag.push("", emptySection);
         fragments.structure = frag;
       }
     }
@@ -937,7 +984,7 @@ export const record = {
       const examples = selectExamples(entry, exampleFilter);
       const w = want("examples", examples.length > 0);
       if (w !== "skip") {
-        const frag = ["", `**$(book) Example${examples.length > 1 ? "s" : ""}**`];
+        const frag = ["", bold(`${codicon("book")} Example${examples.length > 1 ? "s" : ""}`)];
         if (w === "content")
           for (const e of examples) {
             const ex = e.trim();
@@ -945,12 +992,12 @@ export const record = {
             // verbatim. Only bare, fence-less code gets auto-fenced (sniffing markup vs CSS).
             frag.push(
               "",
-              /(^|\n)\s*```/u.test(ex)
+              MARKDOWN_FENCE_RE.exec(ex) !== null
                 ? ex
-                : `\`\`\`${ex.includes("<") ? "html" : "css"}\n${ex}\n\`\`\``,
+                : `${MARKDOWN_FENCE}${ex.includes(LESS_THAN_CHAR) ? "html" : "css"}\n${ex}\n${MARKDOWN_FENCE}`,
             );
           }
-        else frag.push("", "_—_");
+        else frag.push("", emptySection);
         fragments.examples = frag;
       }
     }
@@ -1002,10 +1049,10 @@ export const modifier = {
               warn({
                 aspect: "modifier",
                 rule: "undocumented-modifier",
-                message: `Modifier "${sel}" of "${name}" has no @modifier description.`,
+                message: `Modifier "${sel}" of "${name}" has no ${AT_CHAR}modifier description.`,
                 record: name,
                 span,
-                fix: scaffoldDocLine(info.span, `@modifier ${m.name} — TODO.`),
+                fix: scaffoldDocLine(info.span, `${AT_CHAR}modifier ${m.name} — TODO.`),
               }),
             );
           }
@@ -1015,7 +1062,7 @@ export const modifier = {
             warn({
               aspect: "modifier",
               rule: "alias-requires-canonical",
-              message: `Aliased modifier "${sel}" of "${name}" needs a canonical replacement ({@link}) or an alias target.`,
+              message: `Aliased modifier "${sel}" of "${name}" needs a canonical replacement (${BRACE_OPEN_CHAR}${AT_CHAR}link${BRACE_CLOSE_CHAR}) or an alias target.`,
               record: name,
               span,
             }),
@@ -1026,7 +1073,7 @@ export const modifier = {
             warn({
               aspect: "modifier",
               rule: "deprecated-requires-canonical",
-              message: `Deprecated modifier "${sel}" of "${name}" needs a canonical replacement ({@link}) or a note.`,
+              message: `Deprecated modifier "${sel}" of "${name}" needs a canonical replacement (${BRACE_OPEN_CHAR}${AT_CHAR}link${BRACE_CLOSE_CHAR}) or a note.`,
               record: name,
               span,
             }),
@@ -1172,27 +1219,29 @@ export const modifier = {
     const m = entry?.modifiers.find((x) => x.name === index.matcher.normalizeMember(token));
     if (!m) return undefined;
     const lines = [
-      `\`${index.matcher.selectorFor(m.name)}\` — modifier of \`${entry!.className}\``,
+      `${codeSpan(index.matcher.selectorFor(m.name))} — modifier of ${codeSpan(entry!.className)}`,
     ];
-    if (m.interaction) lines.push("", "**Interaction** — a JS-toggled hook, not styled directly.");
+    if (m.interaction)
+      lines.push("", `${bold("Interaction")} — a JS-toggled hook, not styled directly.`);
     if (m.affects?.length) {
       const notes = m.affects.map(
-        (a) => `\`${a.component}.${a.target}\`${a.description ? ` — ${a.description}` : ""}`,
+        (a) =>
+          `${codeSpan(`${a.component}${DOT_CHAR}${a.target}`)}${a.description ? ` — ${a.description}` : ""}`,
       );
-      lines.push("", `**Affects** — ${notes.join("; ")}`);
+      lines.push("", `${bold("Affects")} — ${notes.join("; ")}`);
     }
     if (m.description) lines.push("", m.description);
     if (m.alias) {
       const advice = m.alias.canonical
-        ? `maps to \`${index.matcher.selectorFor(m.alias.canonical)}\``
+        ? `maps to ${codeSpan(index.matcher.selectorFor(m.alias.canonical))}`
         : (m.alias.note ?? "");
-      lines.push("", `**Alias** — ${advice}`);
+      lines.push("", `${bold("Alias")} — ${advice}`);
     }
     if (m.deprecated) {
       const advice = m.deprecated.canonical
-        ? `use \`${index.matcher.selectorFor(m.deprecated.canonical)}\``
+        ? `use ${codeSpan(index.matcher.selectorFor(m.deprecated.canonical))}`
         : (m.deprecated.note ?? "");
-      lines.push("", `**Deprecated** — ${advice}`);
+      lines.push("", `${bold("Deprecated")} — ${advice}`);
     }
     return { contents: lines.join("\n") };
   },
@@ -1215,7 +1264,7 @@ export const part = {
       for (const p of info.entry.parts) {
         if (!p.description?.trim()) {
           // A CSS-derived part is covered when an authored chain @part has it as its terminal compound.
-          const cls = `.${p.name}`;
+          const cls = `${DOT_CHAR}${p.name}`;
           const coveredByChain = [...info.authoredParts.values()].some(
             (sel) => (sel.match(TERMINAL_COMPOUND_RE)?.[1] ?? sel) === cls,
           );
@@ -1224,13 +1273,13 @@ export const part = {
             warn({
               aspect: "part",
               rule: "undocumented-part",
-              message: `Part ".${p.name}" of "${name}" has no @part description.`,
+              message: `Part "${DOT_CHAR}${p.name}" of "${name}" has no ${AT_CHAR}part description.`,
               record: name,
               span:
                 info.memberSpans.get(memberKey("part", p.name)) ??
                 info.authoredPartLines.get(p.name) ??
                 info.span,
-              fix: scaffoldDocLine(info.span, `@part .${p.name} — TODO.`),
+              fix: scaffoldDocLine(info.span, `${AT_CHAR}part ${DOT_CHAR}${p.name} — TODO.`),
             }),
           );
         }
@@ -1239,7 +1288,7 @@ export const part = {
             warn({
               aspect: "part",
               rule: "part-name-case",
-              message: `Part ".${p.name}" of "${name}" doesn't match the configured name case.`,
+              message: `Part "${DOT_CHAR}${p.name}" of "${name}" doesn't match the configured name case.`,
               record: name,
               span: info.memberSpans.get(memberKey("part", p.name)) ?? info.span,
             }),
@@ -1277,10 +1326,10 @@ export const cssPart = {
             warn({
               aspect: "css-part",
               rule: "undocumented-css-part",
-              message: `Shadow part "::part(${p.name})" of "${name}" has no @csspart description.`,
+              message: `Shadow part "${COLON_CHAR}${COLON_CHAR}part${PAREN_OPEN_CHAR}${p.name}${PAREN_CLOSE_CHAR}" of "${name}" has no ${AT_CHAR}csspart description.`,
               record: name,
               span: info.memberSpans.get(memberKey("shadow-part", p.name)) ?? info.span,
-              fix: scaffoldDocLine(info.span, `@csspart ${p.name} — TODO.`),
+              fix: scaffoldDocLine(info.span, `${AT_CHAR}csspart ${p.name} — TODO.`),
             }),
           );
         }
@@ -1314,7 +1363,7 @@ export function elementUsage(usage: ClassUsage, index: CssDocIndex): Diagnostic[
     warn({
       aspect: "element",
       rule: "disallowed-element",
-      message: `"${entry.className}" is not documented for <${element}> by @element constraints.`,
+      message: `"${entry.className}" is not documented for ${LESS_THAN_CHAR}${element}${GREATER_THAN_CHAR} by ${AT_CHAR}element constraints.`,
       record: entry.name,
       span: usage.loc,
     }),
@@ -1332,7 +1381,7 @@ export function stateUsage(usage: ClassUsage, index: CssDocIndex): Diagnostic[] 
     warn({
       aspect: "state",
       rule: "unknown-state",
-      message: `".${name}" is not a documented state of "${entry.name}".`,
+      message: `"${DOT_CHAR}${name}" is not a documented state of "${entry.name}".`,
       record: entry.name,
       span: usage.loc,
     }),
@@ -1353,7 +1402,7 @@ export function partUsage(usage: ClassUsage, index: CssDocIndex): Diagnostic[] {
     warn({
       aspect: "part",
       rule: "unknown-part",
-      message: `".${name}" is not a documented part of "${entry.name}".`,
+      message: `"${DOT_CHAR}${name}" is not a documented part of "${entry.name}".`,
       record: entry.name,
       span: usage.loc,
     }),
@@ -1385,7 +1434,7 @@ export const customProperty = {
         warn({
           aspect: "custom-property",
           rule: "invalid-default-value",
-          message: `Default \`${property.defaultValue}\` of \`${property.name}\` doesn't match its syntax \`${property.syntax}\`.`,
+          message: `Default ${codeSpan(property.defaultValue)} of ${codeSpan(property.name)} doesn't match its syntax ${codeSpan(property.syntax)}.`,
           record,
           span: index.location(record, memberKey("property", property.name))?.span,
         }),
@@ -1406,7 +1455,7 @@ export const customProperty = {
       warn({
         aspect: "custom-property",
         rule: "invalid-property-value",
-        message: `\`${a.value}\` doesn't match the declared syntax \`${property.syntax}\` of \`${a.name}\`.`,
+        message: `${codeSpan(a.value)} doesn't match the declared syntax ${codeSpan(property.syntax)} of ${codeSpan(a.name)}.`,
         record: found.record.entry.name,
         span: a.loc,
       }),
@@ -1426,7 +1475,7 @@ export const customProperty = {
             warn({
               aspect: "custom-property",
               rule: "invalid-fallback-value",
-              message: `\`var(${usage.name}, …)\` fallback \`${usage.fallback}\` doesn't match the declared syntax \`${property.syntax}\`.`,
+              message: `${codeSpan(`var${PAREN_OPEN_CHAR}${usage.name}, …${PAREN_CLOSE_CHAR}`)} fallback ${codeSpan(usage.fallback)} doesn't match the declared syntax ${codeSpan(property.syntax)}.`,
               span: usage.loc,
             }),
           );
@@ -1443,7 +1492,7 @@ export const customProperty = {
         warn({
           aspect: "custom-property",
           rule: "unknown-custom-property",
-          message: `\`${usage.name}\` is not a documented custom property.`,
+          message: `${codeSpan(usage.name)} is not a documented custom property.`,
           span: usage.loc,
         }),
       );
@@ -1466,11 +1515,11 @@ export const customProperty = {
     // Hover a documented `@property`/`@cssproperty`, or any custom property the value graph knows.
     if (!found && declared === undefined) return undefined;
     const p = found?.record.entry.cssPropertiesDeclared[found.index];
-    const lines = [`\`${name}\`${p?.syntax ? ` — ${linkedSyntax(p.syntax)}` : ""}`];
+    const lines = [`${codeSpan(name)}${p?.syntax ? ` — ${linkedSyntax(p.syntax)}` : ""}`];
     const value = declared ?? p?.defaultValue;
-    if (value) lines.push("", `Value: \`${value}\``);
+    if (value) lines.push("", `Value: ${codeSpan(value)}`);
     // The value it computes to, following `var()` references through the sheet (dev-tools style).
-    if (resolved) lines.push("", `Resolves to: \`${resolved}\``);
+    if (resolved) lines.push("", `Resolves to: ${codeSpan(resolved)}`);
     if (p?.description) lines.push("", p.description);
     return { contents: lines.join("\n") };
   },
@@ -1489,8 +1538,8 @@ export const func = {
       label: fn.name,
       kind: "function" as const,
       detail: fn.result
-        ? `(${fn.parameters.join(", ")}) → ${fn.result}`
-        : `(${fn.parameters.join(", ")})`,
+        ? `${PAREN_OPEN_CHAR}${fn.parameters.join(", ")}${PAREN_CLOSE_CHAR} → ${fn.result}`
+        : `${PAREN_OPEN_CHAR}${fn.parameters.join(", ")}${PAREN_CLOSE_CHAR}`,
       documentation: fn.description,
     }));
   },
@@ -1499,7 +1548,7 @@ export const func = {
     const match = index.allFunctions().find(({ fn }) => fn.name === name);
     if (!match) return undefined;
     const { fn } = match;
-    const sig = `\`${fn.name}(${fn.parameters.join(", ")})\`${fn.result ? ` → \`${fn.result}\`` : ""}`;
+    const sig = `${codeSpan(`${fn.name}${PAREN_OPEN_CHAR}${fn.parameters.join(", ")}${PAREN_CLOSE_CHAR}`)}${fn.result ? ` → ${codeSpan(fn.result)}` : ""}`;
     return { contents: fn.description ? `${sig}\n\n${fn.description}` : sig };
   },
 
