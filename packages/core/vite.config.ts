@@ -1,6 +1,6 @@
 import { defineConfig } from "vite-plus";
-
-export default defineConfig({
+import type { UserConfig } from "vite-plus";
+const config: UserConfig = defineConfig({
   pack: {
     deps: { resolveDepSubpath: true },
     // Two entries: the full barrel and the parse-free `./lite` subpath (no postcss). `exports: true`
@@ -17,3 +17,5 @@ export default defineConfig({
   },
   fmt: {},
 });
+
+export default config;

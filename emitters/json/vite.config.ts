@@ -1,6 +1,8 @@
 import { defineConfig } from "vite-plus";
 
-export default defineConfig({
+import type { UserConfig } from "vite-plus";
+
+const config: UserConfig = defineConfig({
   pack: { deps: { resolveDepSubpath: true }, dts: true, exports: true },
   lint: {
     options: {
@@ -10,3 +12,4 @@ export default defineConfig({
   },
   fmt: {},
 });
+export default config;

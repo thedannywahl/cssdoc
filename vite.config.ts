@@ -1,11 +1,12 @@
 import { configDefaults, defineConfig } from "vite-plus";
+import type { UserConfig } from "vite-plus";
 
 // Coding agents create git worktrees here; each holds a full copy of the repo whose stale source would
 // otherwise be linted, formatted, and (via Vitest's file discovery) test-run. Ignore both the bare and
 // `.claude/`-nested locations across every tool.
 const WORKTREE_IGNORE = ["**/.worktrees/**", "**/.claude/worktrees/**"];
 
-export default defineConfig({
+const config: UserConfig = defineConfig({
   staged: {
     "*": "vp check --fix",
   },
@@ -65,3 +66,4 @@ export default defineConfig({
     },
   },
 });
+export default config;
