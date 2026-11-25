@@ -44,8 +44,10 @@ Patterns are organized by tier level:
 `COMMENT_END_SOURCE` matches a block-comment closer; `COMMENT_END_TEXT` is its literal form.
 `LESS_THAN_CHAR` and `GREATER_THAN_CHAR` provide literal angle brackets.
 `BACKTICK_CHAR` provides a literal backtick.
-`HTML_CUSTOM_ELEMENT_LIKE_NAME` is the ASCII heuristic used to recognize custom-element-shaped names;
-it isn't the complete HTML custom-element name grammar.
+`HTML_STANDARD_ELEMENT_NAME` matches a lowercase ASCII built-in-style name, not a list of known elements.
+`HTML_CUSTOM_ELEMENT_NAME` follows the HTML and DOM rules for valid custom-element names.
+`HTML_ELEMENT_NAME` matches either. `HTML_CUSTOM_ELEMENT_LIKE_NAME` preserves the narrower ASCII
+heuristic used by existing diagnostics. Anchor these sources when validating a complete name.
 `MARKDOWN_BACKTICK_FENCE` matches three backticks, not a complete Markdown fenced block.
 `REGEX_METACHARACTER_SOURCE` matches characters that need escaping in regular expressions.
 Use `escapeRegex(text)` to escape those characters throughout a string for use in a regex pattern.
@@ -63,8 +65,8 @@ dot-separated reference segments accepted in structure tags.
 match structure reference bodies and capture their optional profiles and privacy flags.
 `CSS_CLASS_ATTRIBUTE_SELECTOR_SOURCE` matches a class attribute selector and captures its operator and value.
 `CSSDOC_STRUCTURE_SLOT_SOURCE` matches default and named slot selectors in structure nodes.
-`CSSDOC_ELEMENT_TAG_SOURCE` matches an element name with independently optional angle brackets and
-captures the name.
+`CSSDOC_ELEMENT_TAG_SOURCE` matches a lowercase ASCII element name with letters, digits, and hyphens,
+with independently optional angle brackets, and captures the name.
 `CSSDOC_BASE_CLASS_NAME_SOURCE` matches the class names used for base and scoped-part inference.
 `CSS_CLASS_REFERENCE_SOURCE` captures permissive class references, including modifier names.
 `CSSDOC_CUSTOM_STATE_SELECTOR_SOURCE`, `CSSDOC_SHADOW_PART_SELECTOR_SOURCE`, and
@@ -172,6 +174,8 @@ vp test packages/regex/tests/definitions.test.ts
 
 - [ArkRegex Documentation](https://arktype.io/docs/regex)
 - [W3C CSS Specification](https://www.w3.org/TR/CSS2/)
+- [HTML custom element names](https://html.spec.whatwg.org/multipage/custom-elements.html#valid-custom-element-name)
+- [DOM element local names](https://dom.spec.whatwg.org/#valid-element-local-name)
 - [CssDoc Specification](../spec/grammar/CssDoc.grammarkdown)
 - [MDN CSS Data](https://github.com/mdn/data)
 - [OWASP ReDoS Prevention](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS)
