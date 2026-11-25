@@ -15,36 +15,17 @@ discovery). Relative paths resolve against each workspace folder. Without a work
 discovery is disabled and relative explicit paths resolve against the server's working directory.
 
 When a client supports `workspace/configuration`, the server reads its `cssdoc` settings separately
-for each workspace folder and reloads them after configuration changes. Client settings override
-initialization options. The `cssdoc.css` client setting uses an empty array to select discovery;
-an empty `initializationOptions.css` explicitly selects no files. Hover settings use
-`cssdoc.hover.detail`, `cssdoc.hover.sections`, and `cssdoc.hover.sectionOrder`.
-Clients without `workspace/configuration` can send a `workspace/didChangeConfiguration` notification
-with settings under `cssdoc`.
-
-| Client setting                        | Default                  | Purpose                                          |
-| ------------------------------------- | ------------------------ | ------------------------------------------------ |
-| `cssdoc.css`                          | `[]`                     | Explicit paths; a nonempty list overrides globs. |
-| `cssdoc.include`                      | `["**/*.css"]`           | Workspace-relative discovery globs.              |
-| `cssdoc.exclude`                      | `["**/node_modules/**"]` | Excluded discovery globs.                        |
-| `cssdoc.hover.detail`                 | `"full"`                 | Component hover detail level.                    |
-| `cssdoc.hover.sections`               | `{}`                     | Section visibility in custom-detail hovers.      |
-| `cssdoc.hover.sectionOrder`           | `[]`                     | Hover section order; empty uses the default.     |
-| `cssdoc.editor.providerDiscovery`     | `true`                   | Discover nested configs, even without local CSS. |
-| `cssdoc.editor.providerScanDepth`     | `3`                      | Maximum depth for nested config discovery.       |
-| `cssdoc.editor.providerGlobs`         | `true`                   | Expand provider path globs.                      |
-| `cssdoc.editor.circularReferenceMode` | `"warn"`                 | Handling for repeated provider paths.            |
-
-Initialization options use `css`, `include`, `exclude`, `hoverDetail`, `hoverSections`,
-`hoverSectionOrder`, `providerDiscovery`, `providerScanDepth`, `providerGlobs`, and
-`circularReferenceMode` directly.
+for each workspace folder and reloads them after configuration changes. Other clients can push
+settings under `cssdoc` with `workspace/didChangeConfiguration`. Client settings override
+initialization options; an empty client `cssdoc.css` selects discovery rather than an empty index.
 
 When the client supports watched-file registration, changes to workspace stylesheets and config files
 refresh the index. The server also refreshes on document saves and uses unsaved text from open indexed
 files. Clients without file watching need a save or server restart to pick up external changes.
 
-For editor-specific setup, including Neovim and Helix, see the
-[editor guide](https://cssdoc.dev/guide/editor).
+The [language server reference](https://cssdoc.dev/guide/language-server-reference) lists all
+settings and capabilities. For editor-specific setup, including Neovim and Helix, see the
+[editor guide](https://cssdoc.dev/guide/editor). The server requires Node.js 26 or newer.
 
 ```jsonc
 {

@@ -51,6 +51,7 @@ const reference: SidebarItem[] = [
     items: [
       { text: "Configuration", link: "/guide/config-reference" },
       { text: "Lint rules and diagnostics", link: "/guide/lint-reference" },
+      { text: "Language server", link: "/guide/language-server-reference" },
       { text: "Embedded CSS support", link: "/guide/embedded-css-support" },
     ],
   },

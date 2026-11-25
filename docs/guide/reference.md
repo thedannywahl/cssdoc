@@ -14,6 +14,8 @@ Look up syntax and settings, or explore how cssdoc handles more involved cases.
   providers, overrides, and render settings.
 - [Lint rules and diagnostics](/guide/lint-reference) explains class usage checks, registered-property
   diagnostics, and suppression directives.
+- [Language server](/guide/language-server-reference) covers LSP features, settings, discovery, and
+  refresh behavior.
 - [Embedded CSS support](/guide/embedded-css-support) lists supported host files and dialects and
   explains how tools extract and check their styles.
 

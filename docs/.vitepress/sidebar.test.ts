@@ -113,8 +113,10 @@ describe("createSidebars", () => {
     expect(find(reference, "Project behavior")?.items?.map(({ text }) => text)).toEqual([
       "Configuration",
       "Lint rules and diagnostics",
+      "Language server",
       "Embedded CSS support",
     ]);
+    expect(find(reference, "Language server")?.link).toBe("/guide/language-server-reference");
     expect(find(reference, "Specification")?.items).toEqual([
       { text: "Formal grammar", link: "/guide/grammar" },
       { text: "Regex patterns", link: "/guide/patterns" },

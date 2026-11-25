@@ -20,8 +20,7 @@ scan to `src`, add this to `.vscode/settings.json`:
 ```
 
 The server uses the nearest [cssdoc config](/guide/config) for each stylesheet. For extension
-settings such as hover display, see the
-[VS Code extension README](https://github.com/thedannywahl/cssdoc/tree/main/servers/vscode).
+settings such as hover display, see the [language server reference](/guide/language-server-reference).
 
 ## Other LSP editors
 
@@ -41,8 +40,8 @@ The server discovers `**/*.css` in each workspace folder, excluding `node_module
 nearest [cssdoc config](/guide/config) and can also index files selected by client include/exclude
 settings. Completion, hover, definitions, diagnostics, quick fixes, semantic tokens, and inlay hints
 depend on your client's capabilities and settings. See the
-[language server README](https://github.com/thedannywahl/cssdoc/tree/main/servers/language-server#use-it)
-for initialization options and refresh behavior.
+[language server reference](/guide/language-server-reference) for settings, initialization options,
+and refresh behavior.
 
 ### Neovim
 
