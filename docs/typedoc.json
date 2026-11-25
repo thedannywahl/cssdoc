@@ -27,7 +27,8 @@
     "@cssdoc/core",
     "@cssdoc/index",
     "@cssdoc/config",
-    "@cssdoc/embedded"
+    "@cssdoc/embedded",
+    "@cssdoc/providers"
   ],
   "treatWarningsAsErrors": true
 }
