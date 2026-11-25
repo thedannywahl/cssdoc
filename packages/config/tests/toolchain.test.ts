@@ -152,6 +152,54 @@ test("documentation lint accepts TSDoc return descriptions and rejects empty one
   }
 });
 
+test("documentation lint checks parameter tags without requiring them on every function", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".tsdoc-check-"));
+  try {
+    const file = join(directory, "params.ts");
+    const lint = (source: string) => {
+      writeFileSync(file, source);
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd: root,
+        encoding: "utf8",
+      });
+      const output: { diagnostics: { code: string }[] } = JSON.parse(result.stdout);
+      return output.diagnostics.map((diagnostic) => diagnostic.code);
+    };
+
+    expect(
+      lint(
+        "/** Combines values.\n * @param first - First value.\n */\nexport function combine(first: number, second: number) { return first + second; }\n",
+      ),
+    ).toContain("jsdoc(require-param)");
+    expect(
+      lint(
+        "/** Combines values.\n * @param first\n */\nexport function combine(first: number) { return first; }\n",
+      ),
+    ).toContain("jsdoc(require-param-description)");
+    expect(
+      lint(
+        "/** Combines values.\n * @param\n */\nexport function combine(first: number) { return first; }\n",
+      ),
+    ).toContain("jsdoc(require-param-name)");
+    expect(lint("/** A value.\n * @public extra\n */\nexport const value = 1;\n")).toContain(
+      "jsdoc(empty-tags)",
+    );
+    expect(
+      lint(
+        "/** Combines values. */\nexport function combine(first: number, second: number) { return first + second; }\n",
+      ),
+    ).not.toContain("jsdoc(require-param)");
+    expect(
+      lint(
+        "/** Combines values.\n * @param first - First value.\n * @param second - Second value.\n * @throws If the inputs cannot be combined.\n */\nexport function combine(first: number, second: number) { return first + second; }\n",
+      ),
+    ).toEqual([]);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("the package type check fails on missing declarations and cleans its tarball", () => {
   const directory = mkdtempSync(join(tmpdir(), "cssdoc-attw-test-"));
   try {

@@ -82,8 +82,15 @@ restating the TypeScript types. Add `@throws`, `@remarks`, and runnable `@exampl
 help explain the contract. Keep examples consistent with the implementation and tests.
 
 The root lint configuration checks TSDoc syntax, requires comments on exported source declarations, and
-requires a description when `@returns` is present. CSS doc-comment examples use the cssdoc grammar,
-which is separate from the TSDoc comments documenting the TypeScript APIs.
+uses Oxlint's built-in JSDoc rules to check parameter tags, modifier tags, and `@returns` descriptions.
+If a function documents any parameters, all its parameters must have tags. Functions without any
+parameter tags aren't checked for missing tags. The native parameter-description rule treats a lone
+TSDoc hyphen as a description, so review descriptions for substance. CSS doc-comment examples use the
+cssdoc grammar, which is separate from the TSDoc comments documenting the TypeScript APIs.
+
+The [eslint-plugin-jsdoc TSDoc preset](https://github.com/gajus/eslint-plugin-jsdoc#flat-config-declarative)
+is a guide, not an Oxlint preset: Oxlint implements a subset of its rules. TSDoc syntax validation and
+TypeDoc's public API coverage check complement the native rules.
 
 ## License
 
