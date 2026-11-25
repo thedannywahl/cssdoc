@@ -58,6 +58,7 @@ const common = {
   platform: "node",
   format: "cjs",
   target: "node20",
+  minify: true,
   logLevel: "info",
 };
 
