@@ -39,6 +39,7 @@
     "@cssdoc/core": "workspace:*",
     "@cssdoc/index": "workspace:*",
     "@cssdoc/regex": "workspace:*",
+    "arkregex": "catalog:",
     "css-tree": "catalog:"
   },
   "devDependencies": {

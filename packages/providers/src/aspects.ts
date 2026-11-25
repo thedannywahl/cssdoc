@@ -7,6 +7,8 @@
  * @module
  */
 import { type ExampleFilter, type StructureNode, selectExamples } from "@cssdoc/core";
+import type { Regex } from "arkregex";
+import { regex as arkRegex } from "arkregex";
 import {
   ALPHANUMERIC_EXTENDED_SOURCE,
   ASTERISK_CHAR,
@@ -96,15 +98,14 @@ export const selectorDefines = (selectorText: string, selector: string): boolean
   const prefix = name.split(ASTERISK_CHAR)[0]; // literal part before the first `*`
 
   // 1. A literal class token matching the (glob) name — e.g. `.-icon-foo` for `-icon-*`, `.-foo` for `-foo`.
-  if (
-    new RegExp(`${DOT_SOURCE}${globSource(name)}(?!${ALPHANUMERIC_EXTENDED_SOURCE})`, "u").test(
-      selectorText,
-    )
-  )
-    return true;
+  const CLASS: Regex = arkRegex.as(
+    `${DOT_SOURCE}${globSource(name)}(?!${ALPHANUMERIC_EXTENDED_SOURCE})`,
+    "u",
+  );
+  if (CLASS.exec(selectorText) !== null) return true;
 
   // 2. `class` attribute selectors, evaluated per operator against the modifier as a class token.
-  const glob = new RegExp(`^${globSource(name)}$`, "u");
+  const glob: Regex = arkRegex.as(`^${globSource(name)}$`, "u");
   for (const m of selectorText.matchAll(CLASS_ATTR_RE)) {
     const op = m[1];
     const v = m[2] ?? m[3] ?? m[4] ?? "";
@@ -126,11 +127,14 @@ export const selectorDefines = (selectorText: string, selector: string): boolean
  */
 const globMatch = (pattern: string, value: string): boolean => {
   if (!pattern.includes(ASTERISK_CHAR)) return pattern === value;
-  const re = new RegExp(`^${pattern.split(ASTERISK_CHAR).map(escapeRegex).join(".*")}$`, "u");
+  const re: Regex = arkRegex.as(
+    `^${pattern.split(ASTERISK_CHAR).map(escapeRegex).join(".*")}$`,
+    "u",
+  );
   return re.test(value);
 };
 
-const STRUCTURE_REF_KIND_RE = new RegExp(`^${STRUCTURE_RECORD_KIND_SOURCE}$`, "u");
+const STRUCTURE_REF_KIND_RE: Regex = arkRegex.as(`^${STRUCTURE_RECORD_KIND_SOURCE}$`, "u");
 
 type StructureRecordRef = { kind?: string; name: string; profile?: string; private?: boolean };
 
@@ -139,7 +143,8 @@ const parseStructureRecordRef = (selector: string): StructureRecordRef | undefin
   const raw = selector.slice(1).trim();
   if (!raw) return undefined;
 
-  const typed = raw.match(new RegExp(`^${CSSDOC_TYPED_STRUCTURE_REFERENCE_SOURCE}$`, "u"));
+  const TYPED: Regex = arkRegex.as(`^${CSSDOC_TYPED_STRUCTURE_REFERENCE_SOURCE}$`, "u");
+  const typed = raw.match(TYPED);
   if (typed) {
     return {
       kind: typed[1] === "name" || typed[1] === "rule" ? "component" : typed[1],
@@ -176,7 +181,8 @@ const parseStructureRecordRef = (selector: string): StructureRecordRef | undefin
     };
   }
 
-  const shorthand = raw.match(new RegExp(`^${CSSDOC_SHORTHAND_STRUCTURE_REFERENCE_SOURCE}$`, "u"));
+  const SHORTHAND: Regex = arkRegex.as(`^${CSSDOC_SHORTHAND_STRUCTURE_REFERENCE_SOURCE}$`, "u");
+  const shorthand = raw.match(SHORTHAND);
   if (!shorthand) return undefined;
   // Guard against malformed `@kind` without a name being interpreted as shorthand.
   if (STRUCTURE_REF_KIND_RE.test(shorthand[1])) return undefined;
@@ -255,7 +261,7 @@ export const record = {
               "revert-layer",
               ...(options.values.allowInherit ? [] : ["inherit"]),
             ];
-      return keywords.find((k) => new RegExp(`\\b${k}\\b`, "u").test(value));
+      return keywords.find((k) => arkRegex.as(`\\b${k}\\b`, "u").test(value));
     };
     const out: Diagnostic[] = [];
     const sameKindCounts = new Map<string, number>();

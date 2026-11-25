@@ -7,17 +7,17 @@
  * @module
  */
 import { type Lexer, fork } from "css-tree";
+import type { Regex } from "arkregex";
+import { regex as arkRegex } from "arkregex";
 import { CSS_KEYWORD_SOURCE, CSS_FUNCTION_SOURCE } from "@cssdoc/regex";
 
 // css-tree matches values against *property* grammars, so we register the syntax under a throwaway
 // property name and match against that. Forked lexers are cached per syntax string.
 const PROBE = "-cssdoc-syntax-probe";
 // CSS-wide keywords: initial, inherit, unset, revert, revert-layer (from CSS_KEYWORD pattern)
-// Use new RegExp with start-end anchors, no global flag (for use with .test())
-const CSS_WIDE = new RegExp(`^${CSS_KEYWORD_SOURCE}$`, "ui");
+const CSS_WIDE: Regex = arkRegex.as(`^${CSS_KEYWORD_SOURCE}$`, "iu");
 // var() or env() substitution: use CSS_FUNCTION pattern which matches function calls
-// Use new RegExp without global flag (for use with .test())
-const SUBSTITUTION = new RegExp(`\\b${CSS_FUNCTION_SOURCE}`, "ui");
+const SUBSTITUTION: Regex = arkRegex.as(`\\b${CSS_FUNCTION_SOURCE}`, "iu");
 
 const lexerCache = new Map<string, Lexer | null>();
 

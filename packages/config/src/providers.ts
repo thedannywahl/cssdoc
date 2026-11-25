@@ -14,6 +14,7 @@ import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { type CssDocEntry, parseCssDocs } from "@cssdoc/core";
+import { regex as arkRegex } from "arkregex";
 import { DOT_CHAR, escapeRegex } from "@cssdoc/regex";
 import { CssDocConfigFile, type ProviderRef } from "./CssDocConfigFile.ts";
 
@@ -81,7 +82,7 @@ function rewriteEntryPrefix(
   if (!entry.className?.startsWith(DOT_CHAR)) return entry;
   const bare = entry.className.slice(1);
   const pattern = prefix.isRegExp ? prefix.from : escapeRegex(prefix.from);
-  const re = new RegExp(`^(?:${pattern})`, "u");
+  const re = arkRegex.as(`^(?:${pattern})`, "u");
   if (!re.test(bare)) return entry;
   return { ...entry, className: `${DOT_CHAR}${bare.replace(re, prefix.to ?? "")}` };
 }

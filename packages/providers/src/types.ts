@@ -5,6 +5,7 @@
  * @module
  */
 import type { SourceSpan } from "@cssdoc/index";
+import { regex as arkRegex } from "arkregex";
 
 export type { Location, SourceSpan } from "@cssdoc/index";
 
@@ -304,7 +305,7 @@ function compileNameCase(spec: NameCase | undefined): RegExp | undefined {
   if (spec in NAME_CASE_PRESETS) return NAME_CASE_PRESETS[spec];
   try {
     // Custom user pattern. Tested only against short class names; still the user's own config.
-    return new RegExp(spec, "u");
+    return arkRegex.as(spec, "u");
   } catch {
     return undefined; // an invalid pattern disables the check rather than throwing
   }
