@@ -5,6 +5,9 @@
   "injectionSelector": "L:comment.block.css, L:comment.block.scss, L:comment.block.less",
   "patterns": [
     {
+      "include": "#directive-comment"
+    },
+    {
       "include": "#inline-tag"
     },
     {
@@ -23,6 +26,9 @@
       "include": "#ref-tag"
     },
     {
+      "include": "#member-tag"
+    },
+    {
       "include": "#state-tag"
     },
     {
@@ -36,6 +42,27 @@
     }
   ],
   "repository": {
+    "directive-comment": {
+      "begin": "(?<=/\\*)[ \\t]*(?=cssdoc-(?:disable-next-line|disable-line|disable|enable|expect-error)\\b|$)",
+      "end": "(?=\\*/)|(?=\\S)(?!cssdoc-(?:disable-next-line|disable-line|disable|enable|expect-error)\\b)",
+      "patterns": [
+        {
+          "begin": "(cssdoc-(?:disable-next-line|disable-line|disable|enable|expect-error)\\b)",
+          "beginCaptures": {
+            "1": {
+              "name": "keyword.control.directive.cssdoc"
+            }
+          },
+          "end": "(?=\\*/)|(?=\\s-\\s)|(?=^-\\s)",
+          "patterns": [
+            {
+              "match": "[^\\s,*/]+",
+              "name": "entity.name.tag.rule.cssdoc"
+            }
+          ]
+        }
+      ]
+    },
     "inline-tag": {
       "name": "meta.inline-tag.cssdoc",
       "begin": "(\\{)(@(?:link|inheritDoc|label))\\b",
@@ -65,7 +92,7 @@
       ]
     },
     "record-tag": {
-      "match": "(@(?:component|name|utility|declaration|layout))\\b[ \\t]*([A-Za-z][A-Za-z0-9\\-_]*(?:\\.[A-Za-z][A-Za-z0-9\\-_]*)*)?",
+      "match": "(@(?:component|name|utility|declaration))\\b[ \\t]*([A-Za-z][A-Za-z0-9\\-_]*(?:\\.[A-Za-z][A-Za-z0-9\\-_]*)*)?",
       "captures": {
         "1": {
           "name": "storage.type.class.cssdoc"
@@ -98,7 +125,7 @@
       }
     },
     "part-tag": {
-      "match": "(@(?:part|csspart|wrapper|slot|selector|class|pseudo))\\b[ \\t]*(\\.?[A-Za-z][A-Za-z0-9\\-_]*)?",
+      "match": "(@(?:part|csspart|wrapper|slot|selector|pseudo))\\b[ \\t]*(\\.?[A-Za-z][A-Za-z0-9\\-_]*)?",
       "captures": {
         "1": {
           "name": "storage.type.class.cssdoc"
@@ -127,6 +154,20 @@
         },
         "2": {
           "name": "constant.numeric.cssdoc"
+        }
+      }
+    },
+    "member-tag": {
+      "match": "(@(?:memberOf|member))\\b(?:[ \\t]+([A-Za-z0-9\\-_]+)(?:[ \\t]+(private)(?![A-Za-z0-9\\-_]))?)?",
+      "captures": {
+        "1": {
+          "name": "storage.type.class.cssdoc"
+        },
+        "2": {
+          "name": "entity.name.type.cssdoc"
+        },
+        "3": {
+          "name": "storage.modifier.cssdoc"
         }
       }
     },

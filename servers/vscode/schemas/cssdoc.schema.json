@@ -50,8 +50,7 @@
             "enum": [
               "component",
               "utility",
-              "declaration",
-              "layout"
+              "declaration"
             ]
           },
           "aliasFor": {

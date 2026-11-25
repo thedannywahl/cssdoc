@@ -12,7 +12,7 @@
  *
  * Notable tags:
  * - `@selector` — explicitly declares the component's base CSS selector when it isn't a plain class
- *   (attribute, ID, compound, `:host`). `@class` is its deprecated alias.
+ *   (attribute, ID, compound, `:host`).
  * - `@part` — accepts class, attribute, ID, and `:host`/`:host-context()` selectors, with an optional
  *   alias between the selector and the ` — ` description separator.
  * - `@modifier` — accepts the same selector forms as `@part`; the stored key matches the AST-extracted
@@ -132,7 +132,6 @@ export const RECORD_TAGS: Record<string, CssRecordKind> = {
   name: "component",
   utility: "utility",
   declaration: "declaration",
-  layout: "layout",
 };
 
 /** A custom property documented by a `@cssproperty` tag. */
@@ -196,7 +195,7 @@ export interface ParsedDoc {
   component?: string;
   /** The record kind chosen by the opening tag. */
   kind?: CssRecordKind;
-  /** `@selector` / `@class` — an explicit base CSS selector (any valid simple selector; otherwise inferred from the CSS). */
+  /** `@selector` — an explicit base CSS selector (any valid simple selector; otherwise inferred from the CSS). */
   className?: string;
   /**
    * The full, untruncated `@selector` text as authored, before {@link className} truncates it to its
@@ -311,7 +310,7 @@ export interface ParsedDoc {
     /** Whether the member is private. */
     private: boolean;
   }[];
-  /** Set by a record-level `@global` tag — modifiers of this record apply to any other component/layout/rule/declaration. */
+  /** Set by a record-level `@global` tag — modifiers of this record apply to other records. */
   global?: boolean;
   /** Content of registered custom (block) tags, keyed by tag name without its `@`. */
   customBlocks: Map<string, string[]>;
@@ -1167,14 +1166,7 @@ function parseRef(rest: string): { ref: number; text?: string } | undefined {
 // (required) when the component is used. A pseudo, not a `/* … *\/` comment, because `@structure`
 // lives inside a doc comment where a nested comment would close it early — an unknown pseudo-class is
 // valid selector syntax, and it's stripped from the stored selector here.
-const STRUCTURE_REF_KINDS = new Set([
-  "component",
-  "name",
-  "utility",
-  "rule",
-  "declaration",
-  "layout",
-]);
+const STRUCTURE_REF_KINDS = new Set(["component", "name", "utility", "rule", "declaration"]);
 
 function normalizeStructureAtRuleRef(
   name: string,

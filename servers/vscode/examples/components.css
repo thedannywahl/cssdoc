@@ -145,7 +145,7 @@
 }
 
 /**
- * @layout page
+ * @component page
  * @summary Full-page shell with nav and main content area.
  * @structure
  * .page {

@@ -107,6 +107,7 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
       fails: [
         { input: " ", reason: "space" },
         { input: "", reason: "empty" },
+        { input: ".", reason: "period is not an identifier character" },
       ],
     },
   },
@@ -152,6 +153,7 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
       fails: [
         { input: "-", reason: "single dash" },
         { input: "", reason: "empty" },
+        { input: "---", reason: "three dashes" },
       ],
     },
   },
@@ -162,7 +164,10 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
     description: "Underscore character (literal)",
     fixtures: {
       passes: [{ input: "_" }],
-      fails: [{ input: "-", reason: "hyphen" }],
+      fails: [
+        { input: "-", reason: "hyphen" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
   HEX_DIGIT: {
@@ -203,6 +208,7 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
       fails: [
         { input: "\n", reason: "newline" },
         { input: "", reason: "empty" },
+        { input: "\r", reason: "carriage return" },
       ],
     },
   },
@@ -212,8 +218,11 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
     source: String.raw`\b`,
     description: "Zero-width word boundary",
     fixtures: {
-      passes: [{ input: "a ", note: "boundary after word char" }],
-      fails: [{ input: "aa", reason: "no boundary between letters" }],
+      passes: [{ input: "a ", note: "boundary after word char" }, { input: "a" }, { input: "_!" }],
+      fails: [
+        { input: "  ", reason: "no word characters" },
+        { input: "---", reason: "no word characters" },
+      ],
     },
   },
   CSS_IDENTIFIER_START: {
@@ -222,7 +231,7 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
     source: String.raw`[a-zA-Z_\u0080-\uFFFF]`,
     description: "CSS identifier start",
     fixtures: {
-      passes: [{ input: "a" }, { input: "_" }, { input: "🎨" }],
+      passes: [{ input: "a" }, { input: "_" }, { input: "é" }],
       fails: [
         { input: "0", reason: "digit" },
         { input: "-", reason: "hyphen not allowed at start" },
@@ -236,10 +245,11 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
     source: String.raw`[\w\-\u0080-\uFFFF]`,
     description: "CSS identifier continuation",
     fixtures: {
-      passes: [{ input: "a" }, { input: "0" }, { input: "_" }, { input: "-" }, { input: "🎨" }],
+      passes: [{ input: "a" }, { input: "0" }, { input: "_" }, { input: "-" }, { input: "é" }],
       fails: [
         { input: " ", reason: "space" },
         { input: "", reason: "empty" },
+        { input: ".", reason: "period is not an identifier continuation" },
       ],
     },
   },
@@ -249,7 +259,7 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
     source: String.raw`[\w\u0080-\uFFFF]`,
     description: "CSS identifier continuation (no dash)",
     fixtures: {
-      passes: [{ input: "a" }, { input: "0" }, { input: "_" }, { input: "🎨" }],
+      passes: [{ input: "a" }, { input: "0" }, { input: "_" }, { input: "é" }],
       fails: [
         { input: "-", reason: "dash not allowed" },
         { input: " ", reason: "space" },
@@ -263,7 +273,7 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
     source: String.raw`[a-zA-Z_\-\u0080-\uFFFF]`,
     description: "CSS identifier start (with dash)",
     fixtures: {
-      passes: [{ input: "a" }, { input: "_" }, { input: "-" }, { input: "🎨" }],
+      passes: [{ input: "a" }, { input: "_" }, { input: "-" }, { input: "é" }],
       fails: [
         { input: "0", reason: "digit" },
         { input: " ", reason: "space" },
@@ -276,14 +286,26 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
     tier: 0,
     source: "/",
     description: "Forward slash character (literal)",
-    fixtures: { passes: [{ input: "/" }], fails: [{ input: "\\", reason: "backslash" }] },
+    fixtures: {
+      passes: [{ input: "/" }],
+      fails: [
+        { input: "\\", reason: "backslash" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
+    },
   },
   BACKSLASH_CHAR: {
     name: "BACKSLASH_CHAR",
     tier: 0,
     source: "\\",
     description: "Backslash character (literal)",
-    fixtures: { passes: [{ input: "\\" }], fails: [{ input: "/", reason: "forward slash" }] },
+    fixtures: {
+      passes: [{ input: "\\" }],
+      fails: [
+        { input: "/", reason: "forward slash" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
+    },
   },
   DOC_COMMENT_START_TEXT: {
     name: "DOC_COMMENT_START_TEXT",
@@ -292,7 +314,13 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
       `${resolve("FORWARD_SLASH_CHAR")}${resolve("ASTERISK_CHAR")}${resolve("ASTERISK_CHAR")}`,
     description: "CSS doc-comment opener as literal text",
     composedFrom: ["FORWARD_SLASH_CHAR", "ASTERISK_CHAR"],
-    fixtures: { passes: [{ input: "/**" }], fails: [{ input: "/*", reason: "ordinary comment" }] },
+    fixtures: {
+      passes: [{ input: "/**" }],
+      fails: [
+        { input: "/*", reason: "ordinary comment" },
+        { input: "/***", reason: "extra asterisk" },
+      ],
+    },
   },
   COMMENT_END_TEXT: {
     name: "COMMENT_END_TEXT",
@@ -301,7 +329,13 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
       `${resolve("ASTERISK_CHAR")}${resolve("FORWARD_SLASH_CHAR")}`,
     description: "CSS block comment closer as literal text",
     composedFrom: ["ASTERISK_CHAR", "FORWARD_SLASH_CHAR"],
-    fixtures: { passes: [{ input: "*/" }], fails: [{ input: "/*", reason: "comment opener" }] },
+    fixtures: {
+      passes: [{ input: "*/" }],
+      fails: [
+        { input: "/*", reason: "comment opener" },
+        { input: "**/", reason: "extra asterisk" },
+      ],
+    },
   },
   FORWARD_SLASH: {
     name: "FORWARD_SLASH",
@@ -337,63 +371,117 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
     tier: 0,
     source: "*",
     description: "Asterisk character (literal)",
-    fixtures: { passes: [{ input: "*" }], fails: [{ input: "+", reason: "plus" }] },
+    fixtures: {
+      passes: [{ input: "*" }],
+      fails: [
+        { input: "+", reason: "plus" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
+    },
   },
   PLUS_CHAR: {
     name: "PLUS_CHAR",
     tier: 0,
     source: "+",
     description: "Plus character (literal)",
-    fixtures: { passes: [{ input: "+" }], fails: [{ input: "*", reason: "asterisk" }] },
+    fixtures: {
+      passes: [{ input: "+" }],
+      fails: [
+        { input: "*", reason: "asterisk" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
+    },
   },
   CARET_CHAR: {
     name: "CARET_CHAR",
     tier: 0,
     source: "^",
     description: "Caret character (literal)",
-    fixtures: { passes: [{ input: "^" }], fails: [{ input: "$", reason: "dollar sign" }] },
+    fixtures: {
+      passes: [{ input: "^" }],
+      fails: [
+        { input: "$", reason: "dollar sign" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
+    },
   },
   DOLLAR_CHAR: {
     name: "DOLLAR_CHAR",
     tier: 0,
     source: "$",
     description: "Dollar sign character (literal)",
-    fixtures: { passes: [{ input: "$" }], fails: [{ input: "^", reason: "caret" }] },
+    fixtures: {
+      passes: [{ input: "$" }],
+      fails: [
+        { input: "^", reason: "caret" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
+    },
   },
   TILDE_CHAR: {
     name: "TILDE_CHAR",
     tier: 0,
     source: "~",
     description: "Tilde character (literal)",
-    fixtures: { passes: [{ input: "~" }], fails: [{ input: "-", reason: "hyphen" }] },
+    fixtures: {
+      passes: [{ input: "~" }],
+      fails: [
+        { input: "-", reason: "hyphen" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
+    },
   },
   AMPERSAND_CHAR: {
     name: "AMPERSAND_CHAR",
     tier: 0,
     source: "&",
     description: "Ampersand character (literal)",
-    fixtures: { passes: [{ input: "&" }], fails: [{ input: "+", reason: "plus" }] },
+    fixtures: {
+      passes: [{ input: "&" }],
+      fails: [
+        { input: "+", reason: "plus" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
+    },
   },
   EQUALS_CHAR: {
     name: "EQUALS_CHAR",
     tier: 0,
     source: "=",
     description: "Equals sign character (literal)",
-    fixtures: { passes: [{ input: "=" }], fails: [{ input: "-", reason: "hyphen" }] },
+    fixtures: {
+      passes: [{ input: "=" }],
+      fails: [
+        { input: "-", reason: "hyphen" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
+    },
   },
   LESS_THAN_CHAR: {
     name: "LESS_THAN_CHAR",
     tier: 0,
     source: "<",
     description: "Less-than character (literal)",
-    fixtures: { passes: [{ input: "<" }], fails: [{ input: ">", reason: "greater-than" }] },
+    fixtures: {
+      passes: [{ input: "<" }],
+      fails: [
+        { input: ">", reason: "greater-than" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
+    },
   },
   GREATER_THAN_CHAR: {
     name: "GREATER_THAN_CHAR",
     tier: 0,
     source: ">",
     description: "Greater-than character (literal)",
-    fixtures: { passes: [{ input: ">" }], fails: [{ input: "<", reason: "less-than" }] },
+    fixtures: {
+      passes: [{ input: ">" }],
+      fails: [
+        { input: "<", reason: "less-than" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
+    },
   },
   COLON_CHAR: {
     name: "COLON_CHAR",
@@ -402,7 +490,10 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
     description: "Colon character (literal)",
     fixtures: {
       passes: [{ input: ":" }],
-      fails: [{ input: ";", reason: "semicolon" }],
+      fails: [
+        { input: ";", reason: "semicolon" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
   DOT_CHAR: {
@@ -438,7 +529,10 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
     description: "At sign character (literal)",
     fixtures: {
       passes: [{ input: "@" }],
-      fails: [{ input: "#", reason: "hash" }],
+      fails: [
+        { input: "#", reason: "hash" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
   PIPE_CHAR: {
@@ -448,7 +542,10 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
     description: "Pipe character (literal)",
     fixtures: {
       passes: [{ input: "|" }],
-      fails: [{ input: "-", reason: "dash" }],
+      fails: [
+        { input: "-", reason: "dash" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
   PAREN_OPEN_CHAR: {
@@ -458,7 +555,10 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
     description: "Opening parenthesis character (literal)",
     fixtures: {
       passes: [{ input: "(" }],
-      fails: [{ input: ")", reason: "closing" }],
+      fails: [
+        { input: ")", reason: "closing" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
   PAREN_CLOSE_CHAR: {
@@ -468,7 +568,10 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
     description: "Closing parenthesis character (literal)",
     fixtures: {
       passes: [{ input: ")" }],
-      fails: [{ input: "(", reason: "opening" }],
+      fails: [
+        { input: "(", reason: "opening" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
   BRACKET_OPEN_CHAR: {
@@ -478,7 +581,10 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
     description: "Opening square bracket character (literal)",
     fixtures: {
       passes: [{ input: "[" }],
-      fails: [{ input: "]", reason: "closing" }],
+      fails: [
+        { input: "]", reason: "closing" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
   BRACKET_CLOSE_CHAR: {
@@ -488,7 +594,10 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
     description: "Closing square bracket character (literal)",
     fixtures: {
       passes: [{ input: "]" }],
-      fails: [{ input: "[", reason: "opening" }],
+      fails: [
+        { input: "[", reason: "opening" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
   QUOTE_SINGLE_CHAR: {
@@ -498,7 +607,10 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
     description: "Single quote character (literal)",
     fixtures: {
       passes: [{ input: "'" }],
-      fails: [{ input: '"', reason: "double quote" }],
+      fails: [
+        { input: '"', reason: "double quote" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
   QUOTE_DOUBLE_CHAR: {
@@ -508,7 +620,10 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
     description: "Double quote character (literal)",
     fixtures: {
       passes: [{ input: '"' }],
-      fails: [{ input: "'", reason: "single quote" }],
+      fails: [
+        { input: "'", reason: "single quote" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
   BACKTICK_CHAR: {
@@ -518,7 +633,10 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
     description: "Backtick character (literal)",
     fixtures: {
       passes: [{ input: "`" }],
-      fails: [{ input: "'", reason: "single quote" }],
+      fails: [
+        { input: "'", reason: "single quote" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
   BRACE_OPEN_CHAR: {
@@ -528,7 +646,10 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
     description: "Opening brace character (literal)",
     fixtures: {
       passes: [{ input: "{" }],
-      fails: [{ input: "}", reason: "closing" }],
+      fails: [
+        { input: "}", reason: "closing" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
   BRACE_CLOSE_CHAR: {
@@ -538,7 +659,10 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
     description: "Closing brace character (literal)",
     fixtures: {
       passes: [{ input: "}" }],
-      fails: [{ input: "{", reason: "opening" }],
+      fails: [
+        { input: "{", reason: "opening" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
 };

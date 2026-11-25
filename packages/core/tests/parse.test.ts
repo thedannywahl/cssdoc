@@ -245,7 +245,7 @@ test("base class inference accepts an upper-case-led prefix / PascalCase class, 
   expect(card.className).toBe(".Card");
 });
 
-test("@selector sets className to any CSS selector and @class is an accepted alias", () => {
+test("@selector sets className to any CSS selector", () => {
   const attr = parseCssDocs(
     [
       "/**",
@@ -268,14 +268,24 @@ test("@selector sets className to any CSS selector and @class is an accepted ali
     ),
   );
   expect(host[0].className).toBe(":host");
+});
 
-  // @class is a deprecated alias for @selector — same behaviour.
-  const legacy = parseCssDocs(
-    ["/**", " * @component my-badge", " * @summary A badge.", " * @class .my-badge", " */"].join(
-      "\n",
-    ),
+test("@class is ignored unless registered as a custom tag", () => {
+  const css = `/**\n * @component badge\n * @selector #chosen\n * @class .ignored\n */\n.badge { color: red; }`;
+  const [entry] = parseCssDocs(css);
+  expect(entry.className).toBe("#chosen");
+  expect(entry.customBlocks).toBeUndefined();
+
+  const inferred = `/**\n * @component badge\n * @class .ignored\n */\n.badge { color: red; }`;
+  expect(parseCssDocs(inferred)[0].className).toBe(".badge");
+
+  const configuration = new CssDocConfiguration();
+  configuration.addTagDefinition(
+    new CssDocTagDefinition({ tagName: "@class", syntaxKind: "block" }),
   );
-  expect(legacy[0].className).toBe(".my-badge");
+  const [custom] = parseCssDocs(css, { configuration });
+  expect(custom.className).toBe("#chosen");
+  expect(custom.customBlocks).toEqual({ class: [".ignored"] });
 });
 
 test("@part derives name from selector type and stores selector on the part when non-class", () => {
@@ -1269,8 +1279,14 @@ test("record-opening tags set the kind; @name remains a component alias", () => 
   expect(parseCssDocs(`/**\n * @rule base\n */\nbody { margin: 0; }`)).toEqual([]);
   const [decl] = parseCssDocs(`/**\n * @declaration tokens\n */\n:root { --x: 1; }`);
   expect(decl.kind).toBe("declaration");
-  const [layout] = parseCssDocs(`/**\n * @layout template\n */\n.wrapper {}`);
-  expect(layout.kind).toBe("layout");
+  expect(parseCssDocs(`/**\n * @layout template\n */\n.wrapper {}`)).toEqual([]);
+});
+
+test("an unknown record tag does not split a documented record", () => {
+  const entries = parseCssDocs(
+    "/** @component shell */\n.shell {}\n/** @layout ignored */\n.child {}\n/** @component next */\n.next {}",
+  );
+  expect(entries.map((entry) => entry.name)).toEqual(["shell", "next"]);
 });
 
 test("@structure keeps record references authored as CSS at-rules", () => {
@@ -1295,7 +1311,7 @@ test("@structure record refs do not redefine the record", () => {
   const [layout] = parseCssDocs(
     [
       "/**",
-      " * @layout app-shell",
+      " * @component app-shell",
       " * @summary App shell layout.",
       " * @structure",
       " * .app-shell {",
@@ -1308,7 +1324,7 @@ test("@structure record refs do not redefine the record", () => {
   );
 
   expect(layout.name).toBe("app-shell");
-  expect(layout.kind).toBe("layout");
+  expect(layout.kind).toBe("component");
   expect(layout.summary).toBe("App shell layout.");
   expect(layout.structure).toEqual([
     {
@@ -1439,53 +1455,11 @@ test("@element supports named profiles and MDN-style groups", () => {
   expect(entry.elements?.profiles.nav.allowed).not.toContain("form");
 });
 
-test("layout infers structure from rules below when @structure is absent", () => {
-  const [layout] = parseCssDocs(
-    [
-      "/**",
-      " * @layout template",
-      " * @summary The base template.",
-      " */",
-      "html {",
-      "  body {",
-      "    .wrapper {",
-      "      @nav (--nav) {}",
-      "    }",
-      "  }",
-      "}",
-    ].join("\n"),
-  );
-  expect(layout.kind).toBe("layout");
-  expect(layout.structure?.[0]?.selector).toBe("html");
-  expect(layout.structure?.[0]?.children[0]?.selector).toBe("body");
-  expect(layout.structure?.[0]?.children[0]?.children[0]?.selector).toBe(".wrapper");
-  expect(layout.structure?.[0]?.children[0]?.children[0]?.children[0]?.selector).toBe(
-    "@nav (--nav)",
-  );
-});
-
-test("layout explicit @structure wins over implicit structure inference", () => {
-  const [layout] = parseCssDocs(
-    [
-      "/**",
-      " * @layout template",
-      " * @summary The default layout.",
-      " * @structure",
-      " * .manual { .x {} }",
-      " */",
-      "html { body { .wrapper {} } }",
-    ].join("\n"),
-  );
-  expect(layout.structure).toEqual([
-    { selector: ".manual", children: [{ selector: ".x", children: [] }] },
-  ]);
-});
-
 test("structureCustomMediaRefs: collects custom-media profile references", () => {
   const entries = parseCssDocs(
     [
       "/**",
-      " * @layout app-shell",
+      " * @component app-shell",
       " * @structure",
       " * .app-shell {",
       " *   @nav (--nav) {}",
@@ -1504,7 +1478,7 @@ test("structureCustomMediaRefs: collects custom-media profile references", () =>
   expect(structureCustomMediaRefs(entries)).toEqual([
     {
       sourceRecord: "app-shell",
-      sourceKind: "layout",
+      sourceKind: "component",
       selector: "@nav (--nav)",
       record: "nav",
       recordKind: undefined,
@@ -1512,7 +1486,7 @@ test("structureCustomMediaRefs: collects custom-media profile references", () =>
     },
     {
       sourceRecord: "app-shell",
-      sourceKind: "layout",
+      sourceKind: "component",
       selector: "@component nav (--top-nav)",
       record: "nav",
       recordKind: "component",
@@ -1525,7 +1499,7 @@ test("buildCustomMediaDeclarations: emits deduped @custom-media declarations", (
   const entries = parseCssDocs(
     [
       "/**",
-      " * @layout app-shell",
+      " * @component app-shell",
       " * @structure",
       " * .app-shell {",
       " *   @nav (--nav) {}",
@@ -1559,7 +1533,7 @@ test("buildCustomMediaDeclarations: uses resolveValue output", () => {
   const entries = parseCssDocs(
     [
       "/**",
-      " * @layout app-shell",
+      " * @component app-shell",
       " * @structure",
       " * .app-shell {",
       " *   @component nav (--top-nav) {}",
@@ -1584,7 +1558,7 @@ test("buildCustomMediaDeclarations: uses resolveValue output", () => {
 test("compileCustomMediaDeclarations: compiles declarations directly from CSS", () => {
   const css = [
     "/**",
-    " * @layout app-shell",
+    " * @component app-shell",
     " * @structure",
     " * .app-shell {",
     " *   @nav (--nav) {}",
@@ -1607,7 +1581,7 @@ test("compileCustomMediaDeclarations: compiles declarations directly from CSS", 
 test("compileCustomMediaDeclarations: passes parse and resolver options", () => {
   const css = [
     "/**",
-    " * @layout app-shell",
+    " * @component app-shell",
     " * @structure",
     " * .app-shell {",
     " *   @component nav (--top-nav) {}",
@@ -1635,7 +1609,7 @@ test("compileCustomMediaDeclarations: absorbs inline @custom-media declarations"
     "@custom-media --desktop-filters (width >= 64rem);",
     "",
     "/**",
-    " * @layout app-shell",
+    " * @component app-shell",
     " * @structure",
     " * .app-shell {",
     " *   @component top-nav (--desktop-nav) {}",
@@ -1665,7 +1639,7 @@ test("compileCustomMediaDeclarations: resolver overrides absorbed inline declara
     "@custom-media --desktop-nav (width >= 48rem);",
     "",
     "/**",
-    " * @layout app-shell",
+    " * @component app-shell",
     " * @structure",
     " * .app-shell {",
     " *   @component top-nav (--desktop-nav) {}",
@@ -1684,25 +1658,6 @@ test("compileCustomMediaDeclarations: resolver overrides absorbed inline declara
       resolveValue: (profile) => (profile === "--desktop-nav" ? "(width >= 64rem)" : undefined),
     }),
   ).toBe("@custom-media --desktop-nav (width >= 64rem);\n");
-});
-
-test("inferred layout references validate each name and profile independently", () => {
-  const [layout] = parseCssDocs(
-    "/** @layout shell */ .shell { @nav:wide {} @header {} @sidebar {} @component footer {} @bad:5 {} }",
-  );
-  expect(layout.structure?.[0].children.map((node) => node.selector)).toEqual([
-    "@nav:wide",
-    "@header",
-    "@sidebar",
-    "@component footer",
-  ]);
-});
-
-test("layout implicit structure is discarded when multiple top-level roots are present", () => {
-  const [layout] = parseCssDocs(
-    ["/**", " * @layout template", " */", "html {}", "main {}"].join("\n"),
-  );
-  expect(layout.structure).toBeUndefined();
 });
 
 test("@structure parses nested CSS into a tree, and toMermaid renders it", () => {
@@ -1870,10 +1825,9 @@ test.each([
   ["max-5", "max-5"],
   ["one-or-more:max-3", "one-or-more-max-3"],
   ["more:max-4", "one-or-more-max-4"],
-])("explicit and inferred structures agree on :%s", (suffix, cardinality) => {
+])("explicit structure parses :%s", (suffix, cardinality) => {
   const css = `.root { .item:${suffix} {} @component button:${suffix} {} }`;
   const explicit = parseStructure(css, postcss.parse);
-  const [layout] = parseCssDocs(`/** @layout root */\n.root { .item:${suffix} {} }`);
   const expected = [
     {
       selector: ".root",
@@ -1884,9 +1838,6 @@ test.each([
     },
   ];
   expect(explicit).toEqual(expected);
-  expect(layout.structure).toEqual([
-    { selector: ".root", children: [{ selector: ".item", cardinality, children: [] }] },
-  ]);
 });
 
 test("@structure preserves private member flags after cardinality", () => {
@@ -2075,27 +2026,6 @@ test("@structure :is(.<class>) extracts a co-located component class from the se
   const multi = parseStructure(".foo:is(.a, .b) {}", postcss.parse);
   expect(multi[0].selector).toBe(".foo:is(.a, .b)");
   expect(multi[0].colocated).toBeUndefined();
-});
-
-test("layout implicit structure handles :is() co-location the same as explicit @structure", () => {
-  const [layout] = parseCssDocs(
-    [
-      "/**",
-      " * @layout shell",
-      " * @summary A shell.",
-      " */",
-      ".shell {",
-      "  .utilities:optional { button:one-or-more:is(.pfx-button) {} }",
-      "}",
-    ].join("\n"),
-  );
-  const utilNode = layout.structure?.[0]?.children[0];
-  expect(utilNode?.selector).toBe(".utilities");
-  expect(utilNode?.cardinality).toBe("optional");
-  const btnNode = utilNode?.children[0];
-  expect(btnNode?.selector).toBe("button");
-  expect(btnNode?.cardinality).toBe("one-or-more");
-  expect(btnNode?.colocated).toBe(".pfx-button");
 });
 
 test("prose tags surface on the entry, including stage and visibility", () => {

@@ -19,6 +19,19 @@ export const CSSDOC_CARDINALITY_KEYWORDS: Readonly<
 
 /** CssDoc grammar, selector, and structure reference pattern definitions. */
 export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
+  CSSDOC_DIRECTIVE_KIND: {
+    name: "CSSDOC_DIRECTIVE_KIND",
+    tier: 2,
+    source: String.raw`(?:disable-next-line|disable-line|disable|enable|expect-error)\b`,
+    description: "Kind of an inline cssdoc diagnostic directive",
+    fixtures: {
+      passes: [{ input: "disable" }, { input: "disable-next-line" }, { input: "expect-error" }],
+      fails: [
+        { input: "disable-next", reason: "unsupported directive" },
+        { input: "enabled", reason: "not a directive" },
+      ],
+    },
+  },
   CSS_CLASS_REFERENCE: {
     name: "CSS_CLASS_REFERENCE",
     tier: 2,
@@ -47,8 +60,11 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     description: "Custom state selector with its name captured",
     composedFrom: ["COLON", "PAREN_OPEN", "ALPHANUMERIC_EXTENDED", "PAREN_CLOSE"],
     fixtures: {
-      passes: [{ input: ":state(open)" }, { input: ":state( -x )" }],
-      fails: [{ input: ":state()", reason: "missing state name" }],
+      passes: [{ input: ":state(open)" }, { input: ":state( -x )" }, { input: ":state(active)" }],
+      fails: [
+        { input: ":state()", reason: "missing state name" },
+        { input: ":state(open", reason: "missing closing parenthesis" },
+      ],
     },
   },
   CSSDOC_SHADOW_PART_SELECTOR: {
@@ -60,8 +76,11 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     description: "Shadow part selector with its name captured",
     composedFrom: ["COLON", "PAREN_OPEN", "ALPHANUMERIC_EXTENDED", "PAREN_CLOSE"],
     fixtures: {
-      passes: [{ input: "::part(label)" }, { input: "::part( -x )" }],
-      fails: [{ input: ":part(label)", reason: "single colon" }],
+      passes: [{ input: "::part(label)" }, { input: "::part( -x )" }, { input: "::part(content)" }],
+      fails: [
+        { input: ":part(label)", reason: "single colon" },
+        { input: "::part()", reason: "missing part name" },
+      ],
     },
   },
   CSSDOC_SCANNED_PSEUDO_SELECTOR: {
@@ -74,7 +93,10 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     composedFrom: ["COLON", "ALPHANUMERIC_EXTENDED", "PAREN_OPEN", "PAREN_CLOSE"],
     fixtures: {
       passes: [{ input: ":hover" }, { input: "::part(label)" }, { input: ":not(.x)" }],
-      fails: [{ input: "hover", reason: "missing colon" }],
+      fails: [
+        { input: "hover", reason: "missing colon" },
+        { input: ":", reason: "missing pseudo name" },
+      ],
     },
   },
   CSSDOC_TYPED_STRUCTURE_REFERENCE: {
@@ -94,7 +116,11 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
       "ALPHANUMERIC_EXTENDED",
     ],
     fixtures: {
-      passes: [{ input: "component menu.item:compact private" }, { input: "utility spacing" }],
+      passes: [
+        { input: "component menu.item:compact private" },
+        { input: "utility spacing" },
+        { input: "declaration tokens:compact" },
+      ],
       fails: [
         { input: "component", reason: "missing name" },
         { input: "unknown menu", reason: "unknown kind" },
@@ -113,7 +139,11 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     description: "Shorthand structure reference body with name, profile, and privacy captures",
     composedFrom: ["CSSDOC_QUALIFIED_REFERENCE", "COLON", "ALPHANUMERIC_EXTENDED"],
     fixtures: {
-      passes: [{ input: "menu.item:compact private" }, { input: "spacing" }],
+      passes: [
+        { input: "menu.item:compact private" },
+        { input: "spacing" },
+        { input: "menu.item private" },
+      ],
       fails: [
         { input: ".menu", reason: "empty first segment" },
         { input: "menu:", reason: "empty profile" },
@@ -149,7 +179,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     description: "Class reference for base and scoped-part inference, capturing the name",
     composedFrom: ["DOT", "CSSDOC_BASE_CLASS_NAME"],
     fixtures: {
-      passes: [{ input: ".button" }, { input: "._part2" }],
+      passes: [{ input: ".button" }, { input: "._part2" }, { input: ".PFX-badge" }],
       fails: [
         { input: ".-modifier", reason: "starts with hyphen" },
         { input: "button", reason: "missing dot" },
@@ -508,7 +538,11 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
         { input: "#my-id", note: "id selector" },
         { input: ".class > .nested", note: "child combinator" },
       ],
-      fails: [{ input: "", reason: "empty" }],
+      fails: [
+        { input: "", reason: "empty" },
+        { input: "@", reason: "at sign is outside this selector pattern" },
+        { input: "!", reason: "exclamation mark is outside this selector pattern" },
+      ],
     },
   },
   CSSDOC_MODIFIER_NAME: {
@@ -548,10 +582,15 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     description: "Modifier with attribute selector",
     composedFrom: ["ALPHA"],
     fixtures: {
-      passes: [{ input: "[type=button]" }, { input: "[role = tab]", note: "with spaces" }],
+      passes: [
+        { input: "[type=button]" },
+        { input: "[role = tab]", note: "with spaces" },
+        { input: "[disabled=true]" },
+      ],
       fails: [
         { input: "[type]", reason: "missing value" },
         { input: "", reason: "empty" },
+        { input: "[type=button", reason: "missing closing bracket" },
       ],
     },
   },
@@ -570,6 +609,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
       fails: [
         { input: "before", reason: "missing colon" },
         { input: "", reason: "empty" },
+        { input: "::", reason: "missing pseudo name" },
       ],
     },
   },
@@ -649,7 +689,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     description: "Any @-prefixed tag keyword",
     composedFrom: ["AT", "ALPHA", "WORD_BOUNDARY"],
     fixtures: {
-      passes: [{ input: "@structure" }, { input: "@component" }],
+      passes: [{ input: "@structure" }, { input: "@component" }, { input: "@part" }],
       fails: [
         { input: "@123", reason: "not alphabetic" },
         { input: "structure", reason: "no @" },
@@ -677,15 +717,14 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   STRUCTURE_RECORD_KIND: {
     name: "STRUCTURE_RECORD_KIND",
     tier: 2,
-    source: String.raw`(?:component|name|utility|declaration|layout)`,
-    description: "Structure record kind (component, name, utility, declaration, or layout)",
+    source: String.raw`(?:component|name|utility|declaration)`,
+    description: "Structure record kind (component, name, utility, or declaration)",
     fixtures: {
       passes: [
         { input: "component" },
         { input: "name" },
         { input: "utility" },
         { input: "declaration" },
-        { input: "layout" },
       ],
       fails: [
         { input: "rule", reason: "not a valid record kind" },

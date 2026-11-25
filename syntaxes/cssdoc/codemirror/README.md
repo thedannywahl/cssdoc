@@ -28,7 +28,8 @@ new EditorView({
 
 Colours ship as a base theme that follows the editor's light/dark theme, so it works out of the box.
 Override any token by styling its class: `.cm-cssdoc-tag`, `.cm-cssdoc-modifier`, `.cm-cssdoc-part`,
-`.cm-cssdoc-property`, `.cm-cssdoc-link`, `.cm-cssdoc-punct`.
+`.cm-cssdoc-property`, `.cm-cssdoc-link`, `.cm-cssdoc-punct`, `.cm-cssdoc-record`,
+`.cm-cssdoc-keyword`, or `.cm-cssdoc-rule`.
 
 ## What it highlights
 
@@ -40,3 +41,7 @@ Override any token by styling its class: `.cm-cssdoc-tag`, `.cm-cssdoc-modifier`
 | Custom properties     | `--tabs-gap`                                 | `cm-cssdoc-property` |
 | Inline link text      | the target inside `{@link …}`                | `cm-cssdoc-link`     |
 | Braces                | `{` and `}` around an inline tag             | `cm-cssdoc-punct`    |
+| Record name           | `side-nav-bar` after `@memberOf`             | `cm-cssdoc-record`   |
+| Membership keyword    | `private` after `@memberOf` or `@member`     | `cm-cssdoc-keyword`  |
+| Suppression directive | `cssdoc-disable-next-line`                   | `cm-cssdoc-keyword`  |
+| Suppressed rule       | `undocumented-modifier`                      | `cm-cssdoc-rule`     |

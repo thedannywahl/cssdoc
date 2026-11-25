@@ -179,7 +179,7 @@ export const cssDocEntrySchema: {
   additionalProperties: false,
   properties: {
     name: { type: "string" },
-    kind: { enum: ["component", "utility", "declaration", "layout"] },
+    kind: { enum: ["component", "utility", "declaration"] },
     className: { type: "string" },
     summary: { type: "string" },
     remarks: { type: "string" },

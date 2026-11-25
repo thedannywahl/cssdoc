@@ -13,7 +13,7 @@ const STRUCTURE_RECORD_KIND: Regex = arkRegex.as(`^${STRUCTURE_RECORD_KIND_SOURC
 
 function canonicalRecordKind(kind: string): CssRecordKind | undefined {
   if (kind === "name") return "component";
-  if (kind === "component" || kind === "utility" || kind === "declaration" || kind === "layout") {
+  if (kind === "component" || kind === "utility" || kind === "declaration") {
     return kind;
   }
   return undefined;

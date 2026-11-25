@@ -90,6 +90,13 @@ test("the shipped JSON Schema validates the model output (schema stays in step w
   expect(ok).toBe(true);
 });
 
+test("the model schema rejects the removed record kind", () => {
+  const entries = parseCssDocs(CSS);
+  const removedKind = JSON.parse(JSON.stringify(entries));
+  removedKind[0].kind = "layout";
+  expect(new Ajv().compile(cssDocSchema)(removedKind)).toBe(false);
+});
+
 test("@members round-trips through JSON and validates against the schema", () => {
   const css = `
 /**

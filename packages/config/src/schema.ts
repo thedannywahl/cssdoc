@@ -63,7 +63,7 @@ export const cssDocSchema: Record<string, unknown> = {
           },
           allowMultiple: { type: "boolean" },
           recordKind: {
-            enum: ["component", "utility", "declaration", "layout"],
+            enum: ["component", "utility", "declaration"],
           },
           aliasFor: { type: "string" },
         },

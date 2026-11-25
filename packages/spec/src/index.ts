@@ -18,7 +18,7 @@
 export type CssdocTagKind = "record" | "block" | "modifier" | "inline";
 
 /** The record kind a `record` tag opens. */
-export type CssdocRecordKind = "component" | "utility" | "declaration" | "layout";
+export type CssdocRecordKind = "component" | "utility" | "declaration";
 
 /** The argument shape a tag accepts, for grammars that highlight it distinctly. */
 export type CssdocTagArgument = "modifier-name" | "part-name" | "custom-property";
@@ -72,25 +72,13 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
     recordKind: "declaration",
     description: "Opens a custom-property or custom-function declaration record.",
   },
-  {
-    name: "layout",
-    kind: "record",
-    recordKind: "layout",
-    description: "Opens a layout record — a container/grid pattern rather than a component.",
-  },
   // Prose (TSDoc-adopted).
   // `@selector` declares the component's base CSS selector when it isn't a plain class:
-  // attribute, ID, compound, or :host/:host-context(). `@class` is its deprecated alias.
+  // attribute, ID, compound, or :host/:host-context().
   {
     name: "selector",
     kind: "block",
     description: "Declares the record's base CSS selector when it isn't a plain class.",
-  },
-  {
-    name: "class",
-    kind: "block",
-    aliasFor: "selector",
-    description: "Deprecated alias for @selector.",
   },
   { name: "summary", kind: "block", description: "A one-line description of the record." },
   {

@@ -207,11 +207,11 @@ export interface CssCondition {
 
 /**
  * What kind of CSS surface a record documents. `component` is a component or general selector-based
- * surface; `utility` is a single-purpose class family; `layout` describes composition; `declaration`
+ * surface; `utility` is a single-purpose class family; `declaration`
  * describes custom-property or custom-function declarations. The record-opening tag chooses it;
  * `@name` is an alias for `@component`.
  */
-export type CssRecordKind = "component" | "utility" | "declaration" | "layout";
+export type CssRecordKind = "component" | "utility" | "declaration";
 
 /**
  * The resolved element constraints for one `@element` declaration profile.

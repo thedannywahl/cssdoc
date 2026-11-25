@@ -103,6 +103,18 @@ test("an invalid cssdoc.json reports schema errors instead of throwing", () => {
   expect(configuration.tryGetTagDefinition("@bad")).toBeUndefined();
 });
 
+test("a removed record kind fails configuration validation", () => {
+  const dir = mkdtempSync(join(tmpdir(), "cssdoc-record-kind-"));
+  const file = join(dir, "cssdoc.json");
+  writeFileSync(
+    file,
+    JSON.stringify({
+      tagDefinitions: [{ tagName: "@pattern", syntaxKind: "record", recordKind: "layout" }],
+    }),
+  );
+  expect(CssDocConfigFile.loadFile(file).hasErrors).toBe(true);
+});
+
 test("a missing file yields fileNotFound, not an error", () => {
   const configFile = CssDocConfigFile.loadForFolder("/nonexistent-folder-xyz");
   expect(configFile.fileNotFound).toBe(true);

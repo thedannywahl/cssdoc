@@ -178,8 +178,8 @@ test("createIndex preserves same-name records across kinds", () => {
       " */",
       ".badge {}",
       "/**",
-      " * @layout badge",
-      " * @summary Badge layout.",
+      " * @utility badge",
+      " * @summary Badge utility.",
       " */",
       ".badge-layout {}",
     ].join("\n"),
@@ -189,5 +189,5 @@ test("createIndex preserves same-name records across kinds", () => {
     .filter((r) => r.entry.name === "badge")
     .map((r) => r.entry.kind)
     .sort();
-  expect(badgeKinds).toEqual(["component", "layout"]);
+  expect(badgeKinds).toEqual(["component", "utility"]);
 });

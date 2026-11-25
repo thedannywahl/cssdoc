@@ -24,6 +24,15 @@ test("tag names are unique and match CSSDOC_TAG_NAMES order", () => {
   expect(new Set(CSSDOC_TAG_NAMES).size).toBe(CSSDOC_TAG_NAMES.length);
 });
 
+test("@class is not a standard tag", () => {
+  expect(CSSDOC_TAG_NAMES).not.toContain("class");
+  expect(CSSDOC_TAG_NAMES).toContain("selector");
+});
+
+test("the removed record tag is absent from the standard vocabulary", () => {
+  expect(CSSDOC_TAG_NAMES).not.toContain("layout");
+});
+
 test("every alias points at a real canonical tag of the same kind", () => {
   for (const tag of CSSDOC_TAGS) {
     if (!tag.aliasFor) continue;

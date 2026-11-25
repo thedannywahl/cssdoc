@@ -437,6 +437,11 @@ export const WHITESPACE_RUN: Regex = compileRegex(PATTERN_DEFINITIONS.WHITESPACE
 export const WHITESPACE_RUN_SOURCE: string = PATTERN_DEFINITIONS.WHITESPACE_RUN.source;
 
 // Tier 2-3 - CssDoc patterns
+/** Compiled pattern: Kind of an inline cssdoc diagnostic directive. */
+export const CSSDOC_DIRECTIVE_KIND: Regex = compileRegex(PATTERN_DEFINITIONS.CSSDOC_DIRECTIVE_KIND);
+/** Regex source for {@link CSSDOC_DIRECTIVE_KIND}. */
+export const CSSDOC_DIRECTIVE_KIND_SOURCE: string =
+  PATTERN_DEFINITIONS.CSSDOC_DIRECTIVE_KIND.source;
 /** Compiled pattern: Permissive class reference with its name captured. */
 export const CSS_CLASS_REFERENCE: Regex = compileRegex(PATTERN_DEFINITIONS.CSS_CLASS_REFERENCE);
 /** Regex source for {@link CSS_CLASS_REFERENCE}. */
@@ -848,7 +853,7 @@ export const TOKENIZER_REF_TAG: Regex = compileRegex(PATTERN_DEFINITIONS.TOKENIZ
 export const TOKENIZER_REF_TAG_SOURCE: string = PATTERN_DEFINITIONS.TOKENIZER_REF_TAG.source;
 
 // Structure custom-media patterns
-/** Compiled pattern: Structure record kind (component, name, utility, declaration, or layout). */
+/** Compiled pattern: Structure record kind (component, name, utility, or declaration). */
 export const STRUCTURE_RECORD_KIND: Regex = compileRegex(PATTERN_DEFINITIONS.STRUCTURE_RECORD_KIND);
 /** Regex source for {@link STRUCTURE_RECORD_KIND}. */
 export const STRUCTURE_RECORD_KIND_SOURCE: string =

@@ -330,7 +330,7 @@ test(":is() co-location emits structure-unknown-record when the class has no mat
   expect(unknowns[0].message).toContain("unknown-card");
 });
 
-test(":is() co-location emits structure-unknown-record when the class is a layout, not a component", () => {
+test(":is() co-location emits structure-unknown-record when the class is a utility, not a component", () => {
   const css = [
     "/**",
     " * @component shell",
@@ -342,8 +342,8 @@ test(":is() co-location emits structure-unknown-record when the class is a layou
     " */",
     ".shell {}",
     "/**",
-    " * @layout pfx-layout",
-    " * @summary A layout.",
+    " * @utility pfx-layout",
+    " * @summary A utility.",
     " */",
     ".pfx-layout {}",
   ].join("\n");
@@ -665,8 +665,8 @@ test("duplicate record ids flag same-kind as error and cross-kind as warning", (
     " */",
     ".badge-alt {}",
     "/**",
-    " * @layout badge",
-    " * @summary A badge layout.",
+    " * @utility badge",
+    " * @summary A badge utility.",
     " */",
     ".badge-layout {}",
   ].join("\n");
@@ -699,8 +699,8 @@ test("structure record refs flag unknown and ambiguous records", () => {
     " */",
     ".badge {}",
     "/**",
-    " * @layout badge",
-    " * @summary Badge layout.",
+    " * @utility badge",
+    " * @summary Badge utility.",
     " */",
     ".badge-layout {}",
   ].join("\n");
@@ -731,8 +731,8 @@ test("typed structure record refs resolve by kind", () => {
     " */",
     ".badge {}",
     "/**",
-    " * @layout badge",
-    " * @summary Badge layout.",
+    " * @utility badge",
+    " * @summary Badge utility.",
     " */",
     ".badge-layout {}",
   ].join("\n");
@@ -758,8 +758,8 @@ test("typed structure refs flag mismatched kinds", () => {
     " */",
     ".shell {}",
     "/**",
-    " * @layout frame",
-    " * @summary A frame layout.",
+    " * @utility frame",
+    " * @summary A frame utility.",
     " */",
     ".frame {}",
   ].join("\n");

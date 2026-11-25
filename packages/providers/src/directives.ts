@@ -16,7 +16,12 @@
  * @module
  */
 import type { Diagnostic } from "./types.ts";
-import { COMMENT_END_SOURCE, COMMENT_START_SOURCE, DASH_SOURCE } from "@cssdoc/regex";
+import {
+  COMMENT_END_SOURCE,
+  COMMENT_START_SOURCE,
+  CSSDOC_DIRECTIVE_KIND_SOURCE,
+  DASH_SOURCE,
+} from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
 
 type DirectiveKind = "disable" | "enable" | "disable-line" | "disable-next-line" | "expect-error";
@@ -32,9 +37,8 @@ interface Directive {
   endLine: number;
 }
 
-// `disable-next-line` before `disable-line` before `disable` so the longer keyword wins the alternation.
 const DIRECTIVE = arkRegex.as(
-  String.raw`${COMMENT_START_SOURCE}\s*cssdoc-(disable-next-line|disable-line|disable|enable|expect-error)\b([^*]*?)${COMMENT_END_SOURCE}`,
+  String.raw`${COMMENT_START_SOURCE}\s*cssdoc-(${CSSDOC_DIRECTIVE_KIND_SOURCE})([^*]*?)${COMMENT_END_SOURCE}`,
   "gu",
 );
 const REASON_SEPARATOR = arkRegex.as(String.raw`\s${DASH_SOURCE}\s`, "u");

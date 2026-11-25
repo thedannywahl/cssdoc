@@ -71,16 +71,16 @@ test("member names get semantic scopes: record name, modifier like part, cssstat
   expect(g.repository["block-tag"]?.match).not.toContain("cssstate");
 });
 
-test("@selector, @pseudo, @class are in part-tag with value highlighting", () => {
+test("@selector and @pseudo have value highlighting, but @class is not a tag", () => {
   const g = buildInjectionGrammar();
   const partTagMatch = g.repository["part-tag"]?.match ?? "";
   expect(partTagMatch).toContain("selector");
   expect(partTagMatch).toContain("pseudo");
-  expect(partTagMatch).toContain("class");
+  expect(new RegExp(partTagMatch).test("@class .example")).toBe(false);
   // These should NOT be in block-tag since they have values.
   expect(g.repository["block-tag"]?.match).not.toContain("selector");
   expect(g.repository["block-tag"]?.match).not.toContain("pseudo");
-  // Note: "class" might appear in scopes, but shouldn't be a bare tag keyword
+  expect(new RegExp(g.repository["block-tag"]?.match ?? "").test("@class")).toBe(false);
 });
 
 test("@structure region highlights @component and @variant with names", () => {
@@ -162,6 +162,20 @@ test("@ref has a dedicated numeric capture", () => {
   expect(g.repository["ref-tag"]?.captures?.["2"]?.name).toBe("constant.numeric.cssdoc");
 });
 
+test.each(["memberOf", "member"])("@%s highlights its name and private keyword", (tag) => {
+  const rule = buildInjectionGrammar().repository["member-tag"];
+  const pattern = new RegExp(rule?.match ?? "");
+  const match = `@${tag} side-nav-bar private`.match(pattern);
+  expect(match?.slice(1)).toEqual([`@${tag}`, "side-nav-bar", "private"]);
+  expect(`@${tag} panel`.match(pattern)?.slice(1)).toEqual([`@${tag}`, "panel", undefined]);
+  expect(`@${tag} panel private-extra`.match(pattern)?.[3]).toBeUndefined();
+  expect("@members tab, panel".match(pattern)).toBeNull();
+  expect("private".match(pattern)).toBeNull();
+  expect(rule?.captures?.["1"]?.name).toBe("storage.type.class.cssdoc");
+  expect(rule?.captures?.["2"]?.name).toBe("entity.name.type.cssdoc");
+  expect(rule?.captures?.["3"]?.name).toBe("storage.modifier.cssdoc");
+});
+
 test("@annotations is highlighted as a block tag", () => {
   const g = buildInjectionGrammar();
   expect(g.repository["block-tag"]?.match).toContain("annotations");
@@ -170,7 +184,9 @@ test("@annotations is highlighted as a block tag", () => {
 test("at-rule grammar highlights typed record refs and profile suffixes", () => {
   const g = buildAtRuleInjectionGrammar();
   expect(g.repository["record-ref-atrule"]?.match).toContain("component");
-  expect(g.repository["record-ref-atrule"]?.match).toContain("layout");
+  expect(new RegExp(g.repository["record-ref-atrule"]?.match ?? "").test("@layout shell")).toBe(
+    false,
+  );
   expect(g.repository["record-ref-atrule"]?.match).toContain("utility");
   expect(g.repository["record-ref-atrule"]?.match).toContain("declaration");
   expect(g.repository["record-ref-atrule"]?.captures?.["1"]?.name).toBe(
@@ -188,4 +204,11 @@ test("at-rule grammar highlights typed record refs and profile suffixes", () => 
   expect(g.repository["untyped-ref-atrule"]?.captures?.["2"]?.name).toBe(
     "support.type.custom-property.cssdoc",
   );
+});
+
+test("the removed record tag is not highlighted in doc comments", () => {
+  const g = buildInjectionGrammar();
+  for (const name of ["record-tag", "block-tag"]) {
+    expect(new RegExp(g.repository[name]?.match ?? "").test("@layout shell")).toBe(false);
+  }
 });

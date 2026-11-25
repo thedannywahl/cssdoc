@@ -31,6 +31,72 @@ function requiredRegex(def: UnifiedPatternDef): Regex {
   return def.regex;
 }
 
+const SINGLE_VALUE_PATTERNS = new Set([
+  "DASH",
+  "DOUBLE_DASH",
+  "UNDERSCORE_CHAR",
+  "FORWARD_SLASH_CHAR",
+  "BACKSLASH_CHAR",
+  "DOC_COMMENT_START_TEXT",
+  "COMMENT_END_TEXT",
+  "FORWARD_SLASH",
+  "ASTERISK",
+  "ASTERISK_CHAR",
+  "PLUS_CHAR",
+  "CARET_CHAR",
+  "DOLLAR_CHAR",
+  "TILDE_CHAR",
+  "AMPERSAND_CHAR",
+  "EQUALS_CHAR",
+  "LESS_THAN_CHAR",
+  "GREATER_THAN_CHAR",
+  "COLON_CHAR",
+  "DOT_CHAR",
+  "POUND_CHAR",
+  "AT_CHAR",
+  "PIPE_CHAR",
+  "PAREN_OPEN_CHAR",
+  "PAREN_CLOSE_CHAR",
+  "BRACKET_OPEN_CHAR",
+  "BRACKET_CLOSE_CHAR",
+  "QUOTE_SINGLE_CHAR",
+  "QUOTE_DOUBLE_CHAR",
+  "BACKTICK_CHAR",
+  "BRACE_OPEN_CHAR",
+  "BRACE_CLOSE_CHAR",
+  "LESS_THAN",
+  "GREATER_THAN",
+  "COMMENT_START",
+  "DOC_COMMENT_START",
+  "COMMENT_END",
+  "COMMENT_LINE_MARKER",
+  "AT",
+  "PIPE",
+  "PAREN_OPEN",
+  "PAREN_CLOSE",
+  "COLON",
+  "DOT",
+  "POUND",
+  "BRACKET_OPEN",
+  "BRACKET_CLOSE",
+  "QUOTE_SINGLE",
+  "QUOTE_DOUBLE",
+  "BRACE_OPEN",
+  "BRACE_CLOSE",
+  "HTML_LIKE_STYLE_CLOSE_PREFIX",
+  "MARKDOWN_BACKTICK_FENCE",
+  "CSSDOC_STRUCTURE_TAG_KEYWORD",
+]);
+const TWO_VALUE_PATTERNS = new Set(["SPACE_TAB", "HTML_LIKE_CLASS_ATTRIBUTE_NAME"]);
+
+function matchesFixture(name: string, def: UnifiedPatternDef, input: string): boolean {
+  if (def.tier === 0 && (name.endsWith("_CHAR") || name.endsWith("_TEXT"))) {
+    return input === def.source;
+  }
+  if (name === "WORD_BOUNDARY") return new RegExp(def.source, def.flags).test(input);
+  return new RegExp(`^(?:${def.source})$`, def.flags).test(input);
+}
+
 it("escapes regex metacharacters without changing ordinary characters", () => {
   for (const char of ".*+?^${}()|[]\\") {
     expect(escapeRegexChar(char)).toBe(`\\${char}`);
@@ -191,23 +257,28 @@ describe("Pattern Definitions", () => {
         expect(def.description.length).toBeGreaterThan(0);
       });
 
-      const passes = def.tier > 0 ? def.fixtures.passes : [];
-      const fails = def.tier > 0 ? def.fixtures.fails : [];
+      it("has the required distinct passing and nonempty failing examples", () => {
+        const passes = new Set(def.fixtures.passes.map(({ input }) => input));
+        const fails = new Set(def.fixtures.fails.map(({ input }) => input).filter(Boolean));
+        const minimumPasses = SINGLE_VALUE_PATTERNS.has(name)
+          ? 1
+          : TWO_VALUE_PATTERNS.has(name)
+            ? 2
+            : 3;
+        expect(passes.size).toBeGreaterThanOrEqual(minimumPasses);
+        expect(fails.size).toBeGreaterThanOrEqual(2);
+      });
 
-      passes.forEach((testCase) => {
+      def.fixtures.passes.forEach((testCase) => {
         const note = testCase.note ? ` (${testCase.note})` : "";
         it(`matches "${testCase.input}"${note}`, () => {
-          const compiled = requiredRegex(def);
-          const regex = new RegExp(`^${compiled.source}$`, compiled.flags);
-          expect(regex.test(testCase.input)).toBe(true);
+          expect(matchesFixture(name, def, testCase.input)).toBe(true);
         });
       });
 
-      fails.forEach((testCase) => {
+      def.fixtures.fails.forEach((testCase) => {
         it(`rejects "${testCase.input}" - ${testCase.reason}`, () => {
-          const compiled = requiredRegex(def);
-          const regex = new RegExp(`^${compiled.source}$`, compiled.flags);
-          expect(regex.test(testCase.input)).toBe(false);
+          expect(matchesFixture(name, def, testCase.input)).toBe(false);
         });
       });
     });

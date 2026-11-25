@@ -53,10 +53,11 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     description: "Part name",
     composedFrom: ["CSS_IDENTIFIER_START", "CSS_IDENTIFIER_CONT"],
     fixtures: {
-      passes: [{ input: "button" }, { input: "my-part" }],
+      passes: [{ input: "button" }, { input: "my-part" }, { input: "icon2" }],
       fails: [
         { input: "-part", reason: "starts with dash" },
         { input: "", reason: "empty" },
+        { input: "2part", reason: "starts with a digit" },
       ],
     },
   },
@@ -76,10 +77,11 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     description: "Property or custom property name",
     composedFrom: ["DOUBLE_DASH", "CSS_IDENTIFIER_START", "CSS_IDENTIFIER_CONT"],
     fixtures: {
-      passes: [{ input: "background-color" }, { input: "--my-color" }],
+      passes: [{ input: "background-color" }, { input: "--my-color" }, { input: "color" }],
       fails: [
         { input: "-color", reason: "single dash not valid" },
         { input: "", reason: "empty" },
+        { input: "--1color", reason: "custom name starts with a digit" },
       ],
     },
   },
@@ -98,10 +100,11 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     description: "State name",
     composedFrom: ["CSS_IDENTIFIER_START", "CSS_IDENTIFIER_CONT"],
     fixtures: {
-      passes: [{ input: "active" }, { input: "my-state" }],
+      passes: [{ input: "active" }, { input: "my-state" }, { input: "open2" }],
       fails: [
         { input: "-state", reason: "starts with dash" },
         { input: "", reason: "empty" },
+        { input: "2state", reason: "starts with a digit" },
       ],
     },
   },
@@ -120,10 +123,11 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     description: "Variant name",
     composedFrom: ["CSS_IDENTIFIER_START", "CSS_IDENTIFIER_CONT"],
     fixtures: {
-      passes: [{ input: "default" }, { input: "button-group" }],
+      passes: [{ input: "default" }, { input: "button-group" }, { input: "compact2" }],
       fails: [
         { input: "-variant", reason: "starts with dash" },
         { input: "", reason: "empty" },
+        { input: "2variant", reason: "starts with a digit" },
       ],
     },
   },
@@ -160,6 +164,7 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
       fails: [
         { input: "python", reason: "not a web language" },
         { input: "", reason: "empty" },
+        { input: "CSS", reason: "language identifiers are lowercase" },
       ],
     },
   },
@@ -169,8 +174,11 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     source: String.raw`[ \t]*`,
     description: "Horizontal whitespace (space or tab)",
     fixtures: {
-      passes: [{ input: " " }, { input: "\t" }],
-      fails: [{ input: "\n", reason: "newline" }],
+      passes: [{ input: " " }, { input: "\t" }, { input: "" }],
+      fails: [
+        { input: "\n", reason: "newline" },
+        { input: "x", reason: "not whitespace" },
+      ],
     },
   },
   TOKEN_IDENTIFIER: {
@@ -185,7 +193,10 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     composedFrom: ["ALPHA", "ALPHANUMERIC_EXTENDED"],
     fixtures: {
       passes: [{ input: "name" }, { input: "my_name" }, { input: "my-name" }],
-      fails: [{ input: "-name", reason: "starts with dash" }],
+      fails: [
+        { input: "-name", reason: "starts with dash" },
+        { input: "1name", reason: "starts with a digit" },
+      ],
     },
   },
   TOKEN_QUALIFIED_IDENTIFIER: {
@@ -200,8 +211,11 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     description: "Qualified identifier (dot-separated)",
     composedFrom: ["ALPHA", "ALPHANUMERIC_EXTENDED", "DOT"],
     fixtures: {
-      passes: [{ input: "name" }, { input: "menu.item" }],
-      fails: [{ input: "menu.", reason: "trailing dot" }],
+      passes: [{ input: "name" }, { input: "menu.item" }, { input: "menu.item.icon" }],
+      fails: [
+        { input: "menu.", reason: "trailing dot" },
+        { input: "menu..item", reason: "empty segment" },
+      ],
     },
   },
   TOKEN_QUALIFIED_IDENTIFIER_OPTIONAL: {
@@ -216,8 +230,11 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     description: "Optional qualified identifier",
     composedFrom: ["ALPHA", "ALPHANUMERIC_EXTENDED", "DOT"],
     fixtures: {
-      passes: [{ input: "name" }, { input: "" }],
-      fails: [],
+      passes: [{ input: "name" }, { input: "" }, { input: "menu.item" }],
+      fails: [
+        { input: "menu.", reason: "trailing dot" },
+        { input: ".menu", reason: "empty first segment" },
+      ],
     },
   },
   TOKEN_MODIFIER_NAME: {
@@ -231,8 +248,12 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     description: "Modifier name (optional leading dash)",
     composedFrom: ["ALPHA", "ALPHANUMERIC_EXTENDED"],
     fixtures: {
-      passes: [{ input: "name" }, { input: "-name" }],
-      fails: [{ input: "", reason: "empty" }],
+      passes: [{ input: "name" }, { input: "-name" }, { input: "-color-primary" }],
+      fails: [
+        { input: "", reason: "empty" },
+        { input: "--name", reason: "two leading dashes" },
+        { input: "1name", reason: "starts with a digit" },
+      ],
     },
   },
   TOKEN_MODIFIER_NAME_OPTIONAL: {
@@ -246,8 +267,11 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     description: "Optional modifier name",
     composedFrom: ["ALPHA", "ALPHANUMERIC_EXTENDED"],
     fixtures: {
-      passes: [{ input: "name" }, { input: "" }],
-      fails: [],
+      passes: [{ input: "name" }, { input: "" }, { input: "-dark" }],
+      fails: [
+        { input: "--dark", reason: "two leading dashes" },
+        { input: "1name", reason: "starts with a digit" },
+      ],
     },
   },
   TOKEN_CLASS_SELECTOR: {
@@ -262,8 +286,12 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     description: "Class selector (optional leading dot)",
     composedFrom: ["DOT", "ALPHA", "ALPHANUMERIC_EXTENDED"],
     fixtures: {
-      passes: [{ input: "name" }, { input: ".name" }],
-      fails: [{ input: "", reason: "empty" }],
+      passes: [{ input: "name" }, { input: ".name" }, { input: ".button-primary" }],
+      fails: [
+        { input: "", reason: "empty" },
+        { input: ".1button", reason: "name starts with a digit" },
+        { input: "..button", reason: "two leading dots" },
+      ],
     },
   },
   TOKEN_CLASS_SELECTOR_REQUIRED_DOT: {
@@ -278,7 +306,7 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     description: "Class selector with required leading dot",
     composedFrom: ["DOT", "ALPHA", "ALPHANUMERIC_EXTENDED"],
     fixtures: {
-      passes: [{ input: ".name" }],
+      passes: [{ input: ".name" }, { input: ".button" }, { input: ".menu-item" }],
       fails: [
         { input: "name", reason: "missing dot" },
         { input: ".123", reason: "starts with digit" },
@@ -297,8 +325,11 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     description: "Optional class selector",
     composedFrom: ["DOT", "ALPHA", "ALPHANUMERIC_EXTENDED"],
     fixtures: {
-      passes: [{ input: "name" }, { input: "" }],
-      fails: [],
+      passes: [{ input: "name" }, { input: "" }, { input: ".button" }],
+      fails: [
+        { input: ".1button", reason: "name starts with a digit" },
+        { input: "..button", reason: "two leading dots" },
+      ],
     },
   },
   TOKEN_CUSTOM_PROPERTY: {
@@ -313,8 +344,11 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     description: "Custom CSS property (--name)",
     composedFrom: ["DOUBLE_DASH", "ALPHA", "ALPHANUMERIC_EXTENDED"],
     fixtures: {
-      passes: [{ input: "--color" }],
-      fails: [{ input: "color", reason: "no dash" }],
+      passes: [{ input: "--color" }, { input: "--button-color" }, { input: "--size" }],
+      fails: [
+        { input: "color", reason: "no dash" },
+        { input: "--1color", reason: "name starts with a digit" },
+      ],
     },
   },
   TOKEN_CUSTOM_PROPERTY_OPTIONAL: {
@@ -329,8 +363,11 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     description: "Optional custom CSS property",
     composedFrom: ["DOUBLE_DASH", "ALPHA", "ALPHANUMERIC_EXTENDED"],
     fixtures: {
-      passes: [{ input: "--color" }, { input: "" }],
-      fails: [],
+      passes: [{ input: "--color" }, { input: "" }, { input: "--button-color" }],
+      fails: [
+        { input: "color", reason: "missing double dash" },
+        { input: "--1color", reason: "name starts with a digit" },
+      ],
     },
   },
   TOKEN_REF_NUMBER: {
@@ -348,6 +385,7 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
       fails: [
         { input: "", reason: "empty" },
         { input: ".", reason: "just a dot" },
+        { input: "1.a", reason: "non-numeric suffix" },
       ],
     },
   },
@@ -362,8 +400,11 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     description: "Optional numeric reference",
     composedFrom: ["DIGIT", "DOT"],
     fixtures: {
-      passes: [{ input: "1" }, { input: "" }],
-      fails: [],
+      passes: [{ input: "1" }, { input: "" }, { input: "42." }],
+      fails: [
+        { input: ".", reason: "missing digits" },
+        { input: "1.2", reason: "additional digits after dot" },
+      ],
     },
   },
   TOKEN_PSEUDO_CLASS: {
@@ -381,7 +422,11 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     composedFrom: ["COLON", "ALPHA", "ALPHANUMERIC_EXTENDED", "PAREN_OPEN", "PAREN_CLOSE"],
     fixtures: {
       passes: [{ input: "active" }, { input: ":active" }, { input: "state(open)" }],
-      fails: [{ input: "", reason: "empty" }],
+      fails: [
+        { input: "", reason: "empty" },
+        { input: ":", reason: "missing name" },
+        { input: ":state(open", reason: "missing closing parenthesis" },
+      ],
     },
   },
   TOKEN_PSEUDO_CLASS_OPTIONAL: {
@@ -398,8 +443,11 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     description: "Optional pseudo-class or state",
     composedFrom: ["COLON", "ALPHA", "ALPHANUMERIC_EXTENDED", "PAREN_OPEN", "PAREN_CLOSE"],
     fixtures: {
-      passes: [{ input: "active" }, { input: "" }],
-      fails: [],
+      passes: [{ input: "active" }, { input: "" }, { input: ":state(open)" }],
+      fails: [
+        { input: ":", reason: "missing name" },
+        { input: ":state(open", reason: "missing closing parenthesis" },
+      ],
     },
   },
   TOKEN_INLINE_CONTENT: {
@@ -408,8 +456,11 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     source: String.raw`[^}]*`,
     description: "Inline content (anything except closing brace)",
     fixtures: {
-      passes: [{ input: "link text" }],
-      fails: [],
+      passes: [{ input: "link text" }, { input: "" }, { input: "label|text" }],
+      fails: [
+        { input: "}", reason: "closing brace" },
+        { input: "link}text", reason: "contains a closing brace" },
+      ],
     },
   },
   CSSDOC_STRUCTURE_TAG: {
@@ -421,8 +472,11 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     source: String.raw`(?:@component|@variant|@modifier|@state|@part)`,
     description: "Structure tag keyword (@component, @variant, etc.)",
     fixtures: {
-      passes: [{ input: "@component" }, { input: "@variant" }],
-      fails: [{ input: "component", reason: "no @" }],
+      passes: [{ input: "@component" }, { input: "@variant" }, { input: "@part" }],
+      fails: [
+        { input: "component", reason: "no @" },
+        { input: "@unknown", reason: "not a structure tag" },
+      ],
     },
   },
   CSSDOC_DEMO_URL: {
@@ -435,10 +489,15 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     captures: { url: "URL" },
     description: "@demo URL",
     fixtures: {
-      passes: [{ input: "https://example.com" }, { input: "http://localhost:3000" }],
+      passes: [
+        { input: "https://example.com" },
+        { input: "http://localhost:3000" },
+        { input: "https://example.com/demo" },
+      ],
       fails: [
         { input: "example.com", reason: "missing protocol" },
         { input: "", reason: "empty" },
+        { input: "ftp://example.com", reason: "unsupported protocol" },
       ],
     },
   },
@@ -458,8 +517,12 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
       passes: [
         { input: "{@link https://example.com}", note: "with URL" },
         { input: "{@label foo}", note: "with label" },
+        { input: "{@link target" },
       ],
-      fails: [{ input: "@link text", reason: "missing braces" }],
+      fails: [
+        { input: "@link text", reason: "missing braces" },
+        { input: "{link target}", reason: "missing at sign" },
+      ],
     },
   },
   TOKENIZER_RECORD_TAG: {
@@ -479,7 +542,10 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
         { input: "@component button.variant" },
         { input: "@component", note: "optional name" },
       ],
-      fails: [],
+      fails: [
+        { input: "component button", reason: "missing at sign" },
+        { input: "@component 123", reason: "name starts with a digit" },
+      ],
     },
   },
   TOKENIZER_MODIFIER_TAG: {
@@ -494,8 +560,11 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     description: "Modifier tag tokenizer: @tag -name",
     composedFrom: ["WORD_BOUNDARY", "SPACE_TAB", "TOKEN_MODIFIER_NAME"],
     fixtures: {
-      passes: [{ input: "@modifier -dark" }, { input: "@modifier" }],
-      fails: [],
+      passes: [{ input: "@modifier -dark" }, { input: "@modifier" }, { input: "@modifier color" }],
+      fails: [
+        { input: "modifier -dark", reason: "missing at sign" },
+        { input: "@modifier --dark", reason: "two leading dashes" },
+      ],
     },
   },
   TOKENIZER_PART_TAG: {
@@ -511,7 +580,10 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     composedFrom: ["WORD_BOUNDARY", "SPACE_TAB", "TOKEN_CLASS_SELECTOR"],
     fixtures: {
       passes: [{ input: "@part .button" }, { input: "@csspart .icon" }, { input: "@slot" }],
-      fails: [],
+      fails: [
+        { input: "part .button", reason: "missing at sign" },
+        { input: "@part .1button", reason: "name starts with a digit" },
+      ],
     },
   },
   TOKENIZER_PROPERTY_TAG: {
@@ -526,8 +598,15 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     description: "Custom property tag tokenizer: @tag --name",
     composedFrom: ["WORD_BOUNDARY", "SPACE_TAB", "TOKEN_CUSTOM_PROPERTY"],
     fixtures: {
-      passes: [{ input: "@property --color" }, { input: "@cssproperty --size" }],
-      fails: [],
+      passes: [
+        { input: "@property --color" },
+        { input: "@cssproperty --size" },
+        { input: "@property" },
+      ],
+      fails: [
+        { input: "property --color", reason: "missing at sign" },
+        { input: "@property --1color", reason: "name starts with a digit" },
+      ],
     },
   },
   TOKENIZER_REF_TAG: {
@@ -542,8 +621,11 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     description: "Ref tag tokenizer: @ref 1 or @ref 1.2",
     composedFrom: ["WORD_BOUNDARY", "SPACE_TAB", "TOKEN_REF_NUMBER"],
     fixtures: {
-      passes: [{ input: "@ref 1" }, { input: "@ref 1.2" }],
-      fails: [{ input: "@ref abc", reason: "not a number" }],
+      passes: [{ input: "@ref 1" }, { input: "@ref 1.2" }, { input: "@ref" }],
+      fails: [
+        { input: "@ref abc", reason: "not a number" },
+        { input: "ref 1", reason: "missing at sign" },
+      ],
     },
   },
   TYPED_STRUCTURE_MEDIA: {
@@ -566,7 +648,11 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
       "TOKEN_CUSTOM_PROPERTY",
     ],
     fixtures: {
-      passes: [{ input: "@component nav (--top-nav)" }, { input: "@utility spacing (--sizes)" }],
+      passes: [
+        { input: "@component nav (--top-nav)" },
+        { input: "@utility spacing (--sizes)" },
+        { input: "@declaration tokens (--theme)" },
+      ],
       fails: [
         { input: "@unknown nav (--x)", reason: "unknown record kind" },
         { input: "component nav (--x)", reason: "missing @" },
@@ -586,7 +672,11 @@ export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
     description: "Untyped structure custom-media reference (@name (--profile))",
     composedFrom: ["AT_CHAR", "TOKEN_IDENTIFIER", "SPACE_TAB", "TOKEN_CUSTOM_PROPERTY"],
     fixtures: {
-      passes: [{ input: "@sidebar (--layouts)" }, { input: "@custom-ref (--profile)" }],
+      passes: [
+        { input: "@sidebar (--layouts)" },
+        { input: "@custom-ref (--profile)" },
+        { input: "@nav (--compact)" },
+      ],
       fails: [
         { input: "sidebar (--x)", reason: "missing @" },
         { input: "@sidebar", reason: "missing parentheses" },

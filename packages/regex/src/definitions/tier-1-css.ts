@@ -31,6 +31,7 @@ export const TIER_1_CSS_PATTERNS: Record<string, RawPatternDef> = {
       fails: [
         { input: "-my-class", reason: "cannot start with dash" },
         { input: "", reason: "empty" },
+        { input: "2button", reason: "starts with a digit" },
       ],
     },
   },
@@ -52,6 +53,7 @@ export const TIER_1_CSS_PATTERNS: Record<string, RawPatternDef> = {
       passes: [
         { input: "background", note: "simple" },
         { input: "color", note: "simple" },
+        { input: "_private" },
       ],
       fails: [
         { input: "my-name", reason: "dashes not allowed" },
@@ -86,6 +88,7 @@ export const TIER_1_CSS_PATTERNS: Record<string, RawPatternDef> = {
       fails: [
         { input: "a", reason: "not a number" },
         { input: "", reason: "empty" },
+        { input: "1.", reason: "missing decimal digits" },
       ],
     },
   },
@@ -112,6 +115,7 @@ export const TIER_1_CSS_PATTERNS: Record<string, RawPatternDef> = {
       fails: [
         { input: "50", reason: "missing %" },
         { input: "", reason: "empty" },
+        { input: "%50", reason: "percent sign precedes number" },
       ],
     },
   },
@@ -134,6 +138,7 @@ export const TIER_1_CSS_PATTERNS: Record<string, RawPatternDef> = {
       passes: [
         { input: "16px", note: "pixels" },
         { input: "2.5em", note: "decimal em" },
+        { input: "12rem" },
       ],
       fails: [
         { input: "px16", reason: "unit after number" },
@@ -192,6 +197,7 @@ export const TIER_1_CSS_PATTERNS: Record<string, RawPatternDef> = {
       fails: [
         { input: "rgb)", reason: "closing paren" },
         { input: "", reason: "empty" },
+        { input: "1rgb(", reason: "name starts with a digit" },
       ],
     },
   },
@@ -216,6 +222,7 @@ export const TIER_1_CSS_PATTERNS: Record<string, RawPatternDef> = {
       fails: [
         { input: "normal", reason: "not a reserved keyword" },
         { input: "", reason: "empty" },
+        { input: "inheritance", reason: "keyword followed by additional characters" },
       ],
     },
   },
@@ -270,6 +277,7 @@ export const TIER_1_CSS_PATTERNS: Record<string, RawPatternDef> = {
       fails: [
         { input: "-color", reason: "single dash not valid" },
         { input: "", reason: "empty" },
+        { input: "--1color", reason: "custom name starts with a digit" },
       ],
     },
   },

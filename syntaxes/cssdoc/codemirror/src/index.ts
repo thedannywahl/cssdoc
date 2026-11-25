@@ -4,8 +4,8 @@
  * counterpart to the TextMate grammar in `@cssdoc/tmlanguage`, sharing the same tag vocabulary and
  * regex patterns from `@cssdoc/regex`.
  *
- * The extension scans visible lines beginning with a CSS comment opener or a leading `*`; it does not
- * parse the CSS syntax tree. Colours ship as a base theme and can be overridden.
+ * The extension scans CSS comment nodes in the visible syntax tree. Colours ship as a base theme and
+ * can be overridden.
  *
  * Uses tier-organized regex patterns from `@cssdoc/regex` for consistency and maintainability.
  *
@@ -20,8 +20,8 @@
  *
  * @module \@cssdoc/codemirror
  */
-import { RangeSetBuilder } from "@codemirror/state";
-import type { Extension } from "@codemirror/state";
+import { syntaxTree } from "@codemirror/language";
+import type { Extension, Range } from "@codemirror/state";
 import { CSSDOC_TAGS, cssdocTagNamesByArgument, cssdocTagNamesByKind } from "@cssdoc/spec";
 import { regex as arkRegex } from "arkregex";
 import {
@@ -32,17 +32,19 @@ import {
   type ViewUpdate,
 } from "@codemirror/view";
 import {
+  ALPHANUMERIC_EXTENDED_SOURCE,
+  SPACE_TAB_SOURCE,
   WORD_BOUNDARY_SOURCE,
   toRegExp,
   TOKEN_CLASS_SELECTOR_REQUIRED_DOT,
   COMMENT_START_SOURCE,
-  COMMENT_LINE_MARKER_SOURCE,
   BRACE_OPEN_SOURCE,
   BRACE_CLOSE_SOURCE,
   BRACE_OPEN_CHAR,
   BRACE_CLOSE_CHAR,
   CSSDOC_STRUCTURE_TAG_KEYWORD,
   CSSDOC_ANY_TAG_KEYWORD,
+  CSSDOC_DIRECTIVE_KIND_SOURCE,
   TOKEN_CUSTOM_PROPERTY_SOURCE,
   TOKENIZER_INLINE_TAG_SOURCE,
   TOKENIZER_RECORD_TAG_SOURCE,
@@ -61,7 +63,9 @@ export type CssdocTokenType =
   | "link"
   | "punct"
   | "ref"
-  | "record";
+  | "record"
+  | "keyword"
+  | "rule";
 
 /** A highlighted span within a comment. `from`/`to` are offsets into the scanned comment text. */
 export interface CssdocToken {
@@ -78,7 +82,7 @@ const alt = (names: readonly string[]): string => names.join("|");
 const INLINE_TAGS = cssdocTagNamesByKind("inline");
 const RECORD_TAGS = cssdocTagNamesByKind("record");
 const MODIFIER_TAGS = cssdocTagNamesByArgument("modifier-name");
-const PART_TAGS = [...cssdocTagNamesByArgument("part-name"), "selector", "class", "pseudo"];
+const PART_TAGS = [...cssdocTagNamesByArgument("part-name"), "selector", "pseudo"];
 const PROPERTY_TAGS = cssdocTagNamesByArgument("custom-property");
 const PLAIN_TAGS = CSSDOC_TAGS.filter(
   (t) =>
@@ -86,7 +90,6 @@ const PLAIN_TAGS = CSSDOC_TAGS.filter(
     t.kind !== "record" &&
     !t.argument &&
     t.name !== "selector" &&
-    t.name !== "class" &&
     t.name !== "pseudo",
 ).map((t) => t.name);
 
@@ -122,6 +125,7 @@ const TOKEN = arkRegex.as(
     injectTags(TOKENIZER_PART_TAG_SOURCE, PART_TAGS),
     injectTags(TOKENIZER_PROPERTY_TAG_SOURCE, PROPERTY_TAGS),
     injectTags(TOKENIZER_REF_TAG_SOURCE, ["ref"]),
+    `(?<membertag>@(?:memberOf|member))${WORD_BOUNDARY_SOURCE}(?:${SPACE_TAB_SOURCE}+(?<membername>${ALPHANUMERIC_EXTENDED_SOURCE}+)(?:${SPACE_TAB_SOURCE}+(?<memberprivate>private)(?!${ALPHANUMERIC_EXTENDED_SOURCE}))?)?`,
     // bare block and record tags
     `(?<btag>@(?:${alt(PLAIN_TAGS)})${WORD_BOUNDARY_SOURCE})`,
     // a custom property named anywhere in the comment
@@ -149,13 +153,40 @@ const GROUP_TYPE: Record<string, CssdocTokenType> = {
   ref: "ref",
   reftag: "tag",
   refnum: "ref",
+  membertag: "tag",
+  membername: "record",
+  memberprivate: "keyword",
   btag: "tag",
   cprop: "property",
 };
 
+const DIRECTIVE: RegExp = arkRegex.as(
+  String.raw`^${COMMENT_START_SOURCE}\s*(cssdoc-${CSSDOC_DIRECTIVE_KIND_SOURCE})([^*]*?)\*/`,
+  "du",
+);
+const DIRECTIVE_REASON = arkRegex.as(String.raw`\s-\s`, "u");
+const DIRECTIVE_RULE = arkRegex.as(String.raw`[^\s,]+`, "gu");
+
 /** Tokenize one CSS comment's text into cssdoc doc-tag spans (offsets are relative to `text`). */
 export const tokenizeComment = (text: string): CssdocToken[] => {
   const out: CssdocToken[] = [];
+  const directive = DIRECTIVE.exec(text);
+  if (directive) {
+    const keywordRange = directive.indices?.[1];
+    const rulesRange = directive.indices?.[2];
+    if (!keywordRange || !rulesRange) throw new Error("Missing directive capture indices");
+    const [from, to] = keywordRange;
+    out.push({ from, to, type: "keyword" });
+    const rules = directive[2];
+    const reasonAt = rules.search(DIRECTIVE_REASON);
+    const rulesPart = reasonAt === -1 ? rules : rules.slice(0, reasonAt);
+    const rulesStart = rulesRange[0];
+    for (const match of rulesPart.matchAll(DIRECTIVE_RULE)) {
+      const start = rulesStart + match.index;
+      out.push({ from: start, to: start + match[0].length, type: "rule" });
+    }
+    return out;
+  }
   for (const m of text.matchAll(TOKEN)) {
     const groups = m.indices?.groups;
     if (!groups) continue;
@@ -219,38 +250,34 @@ const cssdocPlugin = ViewPlugin.fromClass(
     }
 
     update(update: ViewUpdate) {
-      if (update.docChanged || update.viewportChanged) {
+      if (
+        update.docChanged ||
+        update.viewportChanged ||
+        syntaxTree(update.startState) !== syntaxTree(update.state)
+      ) {
         this.decorations = this.generateDecorations(update.view);
       }
     }
 
     private generateDecorations(view: EditorView): DecorationSet {
-      const builder = new RangeSetBuilder<Decoration>();
-
-      for (const { from: startLine, to: endLine } of view.visibleRanges) {
-        for (let pos = startLine; pos < endLine;) {
-          const line = view.state.doc.lineAt(pos);
-          const lineText = line.text;
-
-          // Only process CSS comments (/* ... */)
-          const trimmed = lineText.trim();
-          if (
-            trimmed.startsWith(COMMENT_START_SOURCE) ||
-            trimmed.startsWith(COMMENT_LINE_MARKER_SOURCE)
-          ) {
-            const tokens = tokenizeAndDecorate(lineText);
-            for (const token of tokens) {
-              const cls_name = `cm-cssdoc-${token.type}`;
-              const decoration = Decoration.mark({ class: cls_name });
-              builder.add(line.from + token.from, line.from + token.to, decoration);
+      const decorations: Range<Decoration>[] = [];
+      const seen = new Set<number>();
+      for (const { from, to } of view.visibleRanges) {
+        syntaxTree(view.state).iterate({
+          from,
+          to,
+          enter(node) {
+            if (node.name !== "Comment" || seen.has(node.from)) return;
+            seen.add(node.from);
+            const text = view.state.doc.sliceString(node.from, node.to);
+            for (const token of tokenizeAndDecorate(text)) {
+              const decoration = Decoration.mark({ class: `cm-cssdoc-${token.type}` });
+              decorations.push(decoration.range(node.from + token.from, node.from + token.to));
             }
-          }
-
-          pos = line.to + 1;
-        }
+          },
+        });
       }
-
-      return builder.finish();
+      return Decoration.set(decorations, true);
     }
   },
   {
@@ -273,5 +300,7 @@ export const cssdocHighlight = (): Extension => [
     ".cm-cssdoc-punct": { color: "#6a737d" },
     ".cm-cssdoc-ref": { color: "#032f62" },
     ".cm-cssdoc-record": { color: "#24292e", fontWeight: "bold" },
+    ".cm-cssdoc-keyword": { color: "#d73a49" },
+    ".cm-cssdoc-rule": { color: "#6f42c1" },
   }),
 ];

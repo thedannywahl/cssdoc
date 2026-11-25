@@ -4,6 +4,29 @@ import { tokenizeComment } from "../src/index.ts";
 const label = (src: string) =>
   tokenizeComment(src).map((t) => ({ type: t.type, text: src.slice(t.from, t.to) }));
 
+test.each(["disable", "enable", "disable-line", "disable-next-line", "expect-error"])(
+  "highlights the cssdoc-%s directive and its rule names",
+  (kind) => {
+    const src = `/* cssdoc-${kind} missing-summary, undocumented-modifier - reason @component */`;
+    expect(label(src)).toEqual([
+      { type: "keyword", text: `cssdoc-${kind}` },
+      { type: "rule", text: "missing-summary" },
+      { type: "rule", text: "undocumented-modifier" },
+    ]);
+  },
+);
+
+test("handles multiline and unscoped directives without highlighting prose", () => {
+  expect(label("/*\ncssdoc-enable\nmissing-summary, undocumented-modifier\n- reason\n*/")).toEqual([
+    { type: "keyword", text: "cssdoc-enable" },
+    { type: "rule", text: "missing-summary" },
+    { type: "rule", text: "undocumented-modifier" },
+  ]);
+  expect(label("/* cssdoc-disable */")).toEqual([{ type: "keyword", text: "cssdoc-disable" }]);
+  expect(label("/* prose cssdoc-disable missing-summary */")).toEqual([]);
+  expect(label("/* cssdoc-enabled missing-summary */")).toEqual([]);
+});
+
 test("categorizes cssdoc doc-comment tags", () => {
   const src =
     "@component tabs\n@part .list\n@slot label\n@cssproperty --tabs-gap\n@modifier -x\n@a11y ok";
@@ -19,9 +42,40 @@ test("categorizes cssdoc doc-comment tags", () => {
   expect(toks).toContainEqual({ type: "tag", text: "@a11y" });
 });
 
+test("highlights @selector but not the removed @class tag", () => {
+  expect(label("@selector .chosen")).toContainEqual({ type: "tag", text: "@selector" });
+  expect(label("@selector .chosen")).toContainEqual({ type: "part", text: ".chosen" });
+  expect(label("@class .ignored")).toEqual([]);
+});
+
+test("does not highlight a removed record tag", () => {
+  expect(label("@layout shell")).toEqual([]);
+});
+
 test("highlights a dotted @component name as one qualified record token", () => {
   const toks = label("@component menu.item\n@memberOf menu");
   expect(toks).toContainEqual({ type: "record", text: "menu.item" });
+});
+
+test.each(["memberOf", "member"])("highlights @%s names and private keywords", (tag) => {
+  expect(label(`@${tag} side-nav-bar private`)).toEqual([
+    { type: "tag", text: `@${tag}` },
+    { type: "record", text: "side-nav-bar" },
+    { type: "keyword", text: "private" },
+  ]);
+  expect(label(`@${tag} panel`)).toEqual([
+    { type: "tag", text: `@${tag}` },
+    { type: "record", text: "panel" },
+  ]);
+  expect(label(`@${tag} panel private-extra`)).not.toContainEqual({
+    type: "keyword",
+    text: "private",
+  });
+});
+
+test("does not highlight private in prose or treat @members as @member", () => {
+  expect(label("private")).toEqual([]);
+  expect(label("@members tab, panel")).toEqual([{ type: "tag", text: "@members" }]);
 });
 
 test("splits an inline {@link …} into punctuation, tag, and link text", () => {

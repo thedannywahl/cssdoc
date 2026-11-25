@@ -17,7 +17,7 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
     description: "Lowercase ASCII filename extension, capturing the extension without the dot",
     composedFrom: ["DOT", "ALPHA_LOWER"],
     fixtures: {
-      passes: [{ input: ".scss" }, { input: ".js" }],
+      passes: [{ input: ".scss" }, { input: ".js" }, { input: ".css" }],
       fails: [
         { input: ".CSS", reason: "uppercase" },
         { input: ".css1", reason: "non-letter suffix" },
@@ -32,7 +32,10 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
     composedFrom: ["LESS_THAN_CHAR"],
     fixtures: {
       passes: [{ input: "<" }],
-      fails: [{ input: ">", reason: "greater-than" }],
+      fails: [
+        { input: ">", reason: "greater-than" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
   GREATER_THAN: {
@@ -43,7 +46,10 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
     composedFrom: ["GREATER_THAN_CHAR"],
     fixtures: {
       passes: [{ input: ">" }],
-      fails: [{ input: "<", reason: "less-than" }],
+      fails: [
+        { input: "<", reason: "less-than" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
   COMMENT_START: {
@@ -126,7 +132,10 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
     composedFrom: ["COMMENT_LINE_MARKER"],
     fixtures: {
       passes: [{ input: "*" }, { input: "  * " }, { input: "\t*\t" }],
-      fails: [{ input: "  text", reason: "no comment line marker" }],
+      fails: [
+        { input: "  text", reason: "no comment line marker" },
+        { input: "**", reason: "two comment markers" },
+      ],
     },
   },
   WHITESPACE_RUN: {
@@ -137,7 +146,11 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
     description: "One or more JavaScript whitespace characters",
     fixtures: {
       passes: [{ input: " " }, { input: "\t\n" }, { input: "\u00a0" }],
-      fails: [{ input: "", reason: "requires at least one whitespace character" }],
+      fails: [
+        { input: "", reason: "requires at least one whitespace character" },
+        { input: "x", reason: "letter" },
+        { input: " \tx", reason: "contains a letter" },
+      ],
     },
   },
   AT: {
@@ -151,7 +164,10 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
     composedFrom: ["AT_CHAR"],
     fixtures: {
       passes: [{ input: "@" }],
-      fails: [{ input: "#", reason: "hash" }],
+      fails: [
+        { input: "#", reason: "hash" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
   PIPE: {
@@ -162,7 +178,10 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
     composedFrom: ["PIPE_CHAR"],
     fixtures: {
       passes: [{ input: "|" }],
-      fails: [{ input: "-", reason: "dash" }],
+      fails: [
+        { input: "-", reason: "dash" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
   PAREN_OPEN: {
@@ -173,7 +192,10 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
     composedFrom: ["PAREN_OPEN_CHAR"],
     fixtures: {
       passes: [{ input: "(" }],
-      fails: [{ input: ")", reason: "closing" }],
+      fails: [
+        { input: ")", reason: "closing" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
   PAREN_CLOSE: {
@@ -184,7 +206,10 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
     composedFrom: ["PAREN_CLOSE_CHAR"],
     fixtures: {
       passes: [{ input: ")" }],
-      fails: [{ input: "(", reason: "opening" }],
+      fails: [
+        { input: "(", reason: "opening" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
   COLON: {
@@ -195,7 +220,10 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
     composedFrom: ["COLON_CHAR"],
     fixtures: {
       passes: [{ input: ":" }],
-      fails: [{ input: ";", reason: "semicolon" }],
+      fails: [
+        { input: ";", reason: "semicolon" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
   DOT: {
@@ -234,7 +262,10 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
     composedFrom: ["BRACKET_OPEN_CHAR"],
     fixtures: {
       passes: [{ input: "[" }],
-      fails: [{ input: "]", reason: "closing" }],
+      fails: [
+        { input: "]", reason: "closing" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
   BRACKET_CLOSE: {
@@ -245,7 +276,10 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
     composedFrom: ["BRACKET_CLOSE_CHAR"],
     fixtures: {
       passes: [{ input: "]" }],
-      fails: [{ input: "[", reason: "opening" }],
+      fails: [
+        { input: "[", reason: "opening" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
   QUOTE_SINGLE: {
@@ -256,7 +290,10 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
     composedFrom: ["QUOTE_SINGLE_CHAR"],
     fixtures: {
       passes: [{ input: "'" }],
-      fails: [{ input: '"', reason: "double quote" }],
+      fails: [
+        { input: '"', reason: "double quote" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
   QUOTE_DOUBLE: {
@@ -267,7 +304,10 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
     composedFrom: ["QUOTE_DOUBLE_CHAR"],
     fixtures: {
       passes: [{ input: '"' }],
-      fails: [{ input: "'", reason: "single quote" }],
+      fails: [
+        { input: "'", reason: "single quote" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
   BRACE_OPEN: {
@@ -278,7 +318,10 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
     composedFrom: ["BRACE_OPEN_CHAR"],
     fixtures: {
       passes: [{ input: "{" }],
-      fails: [{ input: "}", reason: "closing" }],
+      fails: [
+        { input: "}", reason: "closing" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
   BRACE_CLOSE: {
@@ -289,7 +332,10 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
     composedFrom: ["BRACE_CLOSE_CHAR"],
     fixtures: {
       passes: [{ input: "}" }],
-      fails: [{ input: "{", reason: "opening" }],
+      fails: [
+        { input: "{", reason: "opening" },
+        { input: "a", reason: "letter, not the punctuation" },
+      ],
     },
   },
 };

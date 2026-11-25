@@ -283,7 +283,6 @@ RecordKeyword :
     `@name`
     `@utility`
     `@declaration`
-    `@layout`
 
 RecordTag :
     RecordKeyword WhiteSpace RecordName
@@ -291,12 +290,8 @@ RecordTag :
 // `@selector` explicitly declares the component's base CSS selector when it isn't a plain class —
 // accepts any simple selector: class (`.button`), attribute (`[data-layout="x"]`), ID (`#foo`),
 // compound (`[class*="x"][data-layout="y"]`), or shadow-DOM pseudo (`:host`, `:host-context(…)`).
-// `@class` is a deprecated alias for `@selector` with identical semantics.
 SelectorTag :
     `@selector` WhiteSpace CssSelectorArgument
-
-ClassTag :
-    `@class` WhiteSpace CssSelectorArgument
 
 SummaryTag :
     `@summary` WhiteSpace Description
@@ -567,7 +562,6 @@ CustomTag :
 BlockTag :
     RecordTag
     SelectorTag
-    ClassTag
     SummaryTag
     StageTag
     VisibilityTag

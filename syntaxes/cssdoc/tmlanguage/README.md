@@ -11,6 +11,8 @@ including CSS embedded in HTML `<style>`.
 It highlights the record and block tags (`@component`, `@modifier`, `@part`, `@cssproperty`, …), the
 release metadata (`@stage`, `@visibility`), inline tags (`{@link}`, `{@inheritDoc}`,
 `{@label}`), and custom properties (`--foo`).
+For `@memberOf` and `@member`, it also highlights the record name and trailing `private` keyword.
+Suppression comments highlight the directive and rule names, leaving the optional reason as comment text.
 
 ## Use with Shiki or VitePress
 

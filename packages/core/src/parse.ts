@@ -17,7 +17,6 @@ import {
   ALPHA_SOURCE,
   ALPHANUMERIC_EXTENDED_SOURCE,
   ASTERISK_CHAR,
-  AT_CHAR,
   AT_SOURCE,
   BRACE_CLOSE_SOURCE,
   BRACE_OPEN_SOURCE,
@@ -44,13 +43,11 @@ import {
   GREATER_THAN_CHAR,
   TOKEN_CUSTOM_PROPERTY_SOURCE,
   PSEUDO_SELECTOR_FUNCTIONAL,
-  PAREN_CLOSE_CHAR,
   PAREN_CLOSE_SOURCE,
   PAREN_OPEN_CHAR,
   PAREN_OPEN_SOURCE,
   QUOTE_DOUBLE_CHAR,
   QUOTE_SINGLE_CHAR,
-  RECORD_REFERENCE_NAME_SOURCE,
   TILDE_CHAR,
   WHITESPACE_RUN,
   WORD_BOUNDARY_SOURCE,
@@ -58,11 +55,6 @@ import {
   toRegExp,
 } from "@cssdoc/regex";
 import { CssDocConfiguration, type InlineCommentMode } from "./configuration.ts";
-import {
-  cardinalityFromMatch,
-  splitTrailingCardinality,
-  STRUCTURE_CARDINALITY,
-} from "./cardinality.ts";
 import {
   deriveSelectorName,
   parseDocComment,
@@ -75,7 +67,6 @@ import type {
   CssAnimation,
   CssCondition,
   CssDocEntry,
-  CssRecordKind,
   CssElementConstraints,
   CssElementProfile,
   CssFunction,
@@ -161,15 +152,6 @@ const SELECTOR_COMBINATOR: Regex = arkRegex.as(
   String.raw`[\s${GREATER_THAN_CHAR}+${TILDE_CHAR}]`,
   "u",
 );
-const RECORD_REF_KINDS = new Set(["component", "name", "utility", "declaration", "layout"]);
-
-function canonicalRecordKind(kind: string): CssRecordKind | undefined {
-  if (kind === "name") return "component";
-  if (kind === "component" || kind === "utility" || kind === "declaration" || kind === "layout") {
-    return kind;
-  }
-  return undefined;
-}
 // A curated allow-list of ARIA/data-* attributes that reflect element *state* (not identity or
 // labeling) — avoids false positives on incidental attribute selectors like `[data-testid]`.
 const ATTRIBUTE_STATE_SOURCE = String.raw`${BRACKET_OPEN_SOURCE}\s*(aria-${ALPHANUMERIC_EXTENDED_SOURCE}+|data-state)\s*${EQUALS_CHAR}\s*(${QUOTE_DOUBLE_CHAR}(?:[^${QUOTE_DOUBLE_CHAR}\\]|\\.)*${QUOTE_DOUBLE_CHAR}|${QUOTE_SINGLE_CHAR}(?:[^${QUOTE_SINGLE_CHAR}\\]|\\.)*${QUOTE_SINGLE_CHAR}|${ALPHANUMERIC_EXTENDED_SOURCE}+)\s*${BRACKET_CLOSE_SOURCE}`;
@@ -183,117 +165,6 @@ const unquote = (value: string): string => {
 };
 const sortUnique = (values: Iterable<string>): string[] =>
   [...new Set([...values].map((v) => v.toLowerCase()))].toSorted((a, b) => a.localeCompare(b));
-
-function normalizeStructureAtRuleRef(
-  name: string,
-  params: string,
-): { selector: string; cardinality?: NonNullable<StructureNode["cardinality"]> } | undefined {
-  const RECORD_REF_NAME: Regex = arkRegex.as(`^${RECORD_REFERENCE_NAME_SOURCE}$`, "u");
-  const PROFILE: Regex = arkRegex.as(
-    String.raw`^${COLON_SOURCE}\s*(${ALPHANUMERIC_EXTENDED_SOURCE}+)$`,
-    "u",
-  );
-  const TYPED: Regex = arkRegex.as(
-    `^(${ALPHANUMERIC_EXTENDED_SOURCE}+)(?:${COLON_SOURCE}(${ALPHANUMERIC_EXTENDED_SOURCE}+))?$`,
-    "u",
-  );
-  const CUSTOM_MEDIA: Regex = arkRegex.as(
-    String.raw`^${PAREN_OPEN_SOURCE}\s*(${CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE})\s*${PAREN_CLOSE_SOURCE}$`,
-    "u",
-  );
-  const TYPED_CUSTOM_MEDIA: Regex = arkRegex.as(
-    String.raw`^(${ALPHANUMERIC_EXTENDED_SOURCE}+)\s+${PAREN_OPEN_SOURCE}\s*(${CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE})\s*${PAREN_CLOSE_SOURCE}$`,
-    "u",
-  );
-  const cardSplit = splitTrailingCardinality(params);
-  if (name.includes(COLON_CHAR)) {
-    if (cardSplit.params.trim()) return undefined;
-    const [record, profile] = name.split(COLON_CHAR, 2);
-    if (!RECORD_REF_NAME.test(record) || !profile || !RECORD_REF_NAME.test(profile)) {
-      return undefined;
-    }
-    return {
-      selector: `${AT_CHAR}${record}${COLON_CHAR}${profile}`,
-      cardinality: cardSplit.cardinality,
-    };
-  }
-  if (!RECORD_REF_NAME.test(name)) return undefined;
-  const trimmed = cardSplit.params;
-  if (RECORD_REF_KINDS.has(name)) {
-    const typedMedia = trimmed.match(TYPED_CUSTOM_MEDIA);
-    if (typedMedia) {
-      const kind = canonicalRecordKind(name);
-      if (!kind) return undefined;
-      return {
-        selector: `${AT_CHAR}${kind} ${typedMedia[1]} ${PAREN_OPEN_CHAR}${typedMedia[2]}${PAREN_CLOSE_CHAR}`,
-        cardinality: cardSplit.cardinality,
-      };
-    }
-    const typed = trimmed.match(TYPED);
-    if (!typed) return undefined;
-    const kind = canonicalRecordKind(name);
-    if (!kind) return undefined;
-    return {
-      selector: `${AT_CHAR}${kind} ${typed[1]}${typed[2] ? `${COLON_CHAR}${typed[2]}` : ""}`,
-      cardinality: cardSplit.cardinality,
-    };
-  }
-  if (!trimmed) return { selector: `${AT_CHAR}${name}`, cardinality: cardSplit.cardinality };
-  const customMedia = trimmed.match(CUSTOM_MEDIA);
-  if (customMedia) {
-    return {
-      selector: `${AT_CHAR}${name} ${PAREN_OPEN_CHAR}${customMedia[1]}${PAREN_CLOSE_CHAR}`,
-      cardinality: cardSplit.cardinality,
-    };
-  }
-  const profile = trimmed.match(PROFILE);
-  if (!profile) return undefined;
-  return {
-    selector: `${AT_CHAR}${name}${COLON_CHAR}${profile[1]}`,
-    cardinality: cardSplit.cardinality,
-  };
-}
-
-function buildStructureFromNodes(nodes: readonly ChildNode[]): StructureNode[] {
-  const STRUCT_COLOC: Regex = arkRegex.as(
-    String.raw`${COLON_SOURCE}is${PAREN_OPEN_SOURCE}\s*([^,${PAREN_CLOSE_SOURCE}]+?)\s*${PAREN_CLOSE_SOURCE}`,
-    "u",
-  );
-  const out: StructureNode[] = [];
-  for (const node of nodes) {
-    if (node.type === "atrule" && node.name === "scope") {
-      out.push({
-        selector: "",
-        scope: node.params.trim(),
-        children: buildStructureFromNodes(node.nodes ?? []),
-      });
-      continue;
-    }
-    if (node.type === "atrule") {
-      const resolved = normalizeStructureAtRuleRef(node.name, node.params);
-      if (!resolved) continue;
-      out.push({
-        selector: resolved.selector,
-        cardinality: resolved.cardinality,
-        children: buildStructureFromNodes(node.nodes ?? []),
-      });
-      continue;
-    }
-    if (node.type !== "rule") continue;
-    const rawSel = node.selector.trim();
-    const coloc = rawSel.match(STRUCT_COLOC);
-    const withoutColoc = coloc ? rawSel.replace(STRUCT_COLOC, "").trim() : rawSel;
-    const card = withoutColoc.match(STRUCTURE_CARDINALITY);
-    const entry: StructureNode = {
-      selector: card ? withoutColoc.slice(0, card.index).trim() : withoutColoc,
-      children: buildStructureFromNodes(node.nodes ?? []),
-    };
-    if (card?.groups) entry.cardinality = cardinalityFromMatch(card.groups);
-    if (coloc) entry.colocated = coloc[1].trim();
-    out.push(entry);
-  }
-  return out;
-}
 
 function parseElementToken(
   token: string,
@@ -757,7 +628,7 @@ function buildEntry(
 ): CssDocEntry {
   const ATTRIBUTE_STATE_TAG: Regex = arkRegex.as(`^${ATTRIBUTE_STATE_SOURCE}$`, "u");
   const LEADING_DOT: Regex = arkRegex.as(`^${DOT_SOURCE}`, "u");
-  // Base selector: an explicit @selector/@class wins immediately when set.
+  // Base selector: an explicit @selector wins immediately when set.
   // Otherwise infer from bare single-class rules — preferring the one ending with the record name.
   let className = doc.className ?? "";
   if (className && !SINGLE_CLASS.test(className)) {
@@ -1026,15 +897,7 @@ function buildEntry(
     else consumedTokens.set(tokenName, { name: tokenName, description: description || undefined });
   }
 
-  // Layouts can author `@structure` explicitly, or infer it from the CSS rules under the layout block.
-  const structure =
-    doc.structure ??
-    ((doc.kind ?? "component") === "layout"
-      ? (() => {
-          const inferred = buildStructureFromNodes(nodes);
-          return inferred.length === 1 ? inferred : undefined;
-        })()
-      : undefined);
+  const structure = doc.structure;
 
   // Attach `@wrapper` prose to the matching `@structure` node(s) by derived selector name or aliased selector.
   if (doc.wrappers.size && structure?.length) {
