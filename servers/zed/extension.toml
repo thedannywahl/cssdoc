@@ -1,0 +1,39 @@
+id = "cssdoc-language-server"
+name = "cssdoc Language Server"
+version = "0.1.0"
+schema_version = 1
+authors = ["Danny Wahl"]
+description = "Editor support for cssdoc, powered by the cssdoc language server."
+repository = "https://github.com/thedannywahl/cssdoc"
+capabilities = [{ kind = "process:exec", command = "*", args = ["--version"] }]
+
+[language_servers.cssdoc-language-server]
+name = "cssdoc Language Server"
+languages = [
+  "CSS",
+  "SCSS",
+  "LESS",
+  "HTML",
+  "Vue.js",
+  "Svelte",
+  "Astro",
+  "Markdown",
+  "JavaScript",
+  "JSX",
+  "TypeScript",
+  "TSX",
+]
+
+[language_servers.cssdoc-language-server.language_ids]
+CSS = "css"
+SCSS = "scss"
+LESS = "less"
+HTML = "html"
+"Vue.js" = "vue"
+Svelte = "svelte"
+Astro = "astro"
+Markdown = "markdown"
+JavaScript = "javascript"
+JSX = "javascriptreact"
+TypeScript = "typescript"
+TSX = "typescriptreact"
