@@ -27,14 +27,19 @@ export type RuleSeverityOverride = "off" | "warn" | "error";
 
 /** A per-glob rule override block, as spelled in `cssdoc.json`. */
 export interface RuleOverrideBlock {
+  /** File globs matched relative to the config file. */
   files: string | readonly string[];
+  /** Per-rule severities applied to matching files. */
   rules: Record<string, RuleSeverityOverride>;
 }
 
 /** A loaded per-glob rule override block, with globs normalized to this file's directory. */
 export interface ResolvedRuleOverrideBlock {
+  /** File globs normalized to an array. */
   files: readonly string[];
+  /** Per-rule severities applied to matching files. */
   rules: Readonly<Record<string, RuleSeverityOverride>>;
+  /** Directory against which the globs are resolved. */
   basePath: string;
 }
 
@@ -74,10 +79,14 @@ export interface RenderConfig {
 
 /** Policy options for rule behavior families (`ruleOptions` in cssdoc.json). */
 export interface RuleOptionsConfig {
+  /** Policy for reset-like values in decorator checks. */
   values?: {
+    /** Allow `inherit` where reset-like values are otherwise disallowed; defaults to `false`. */
     allowInherit?: boolean;
   };
+  /** Sealed-rule behavior. */
   sealed?: {
+    /** Sealed-rule policy; defaults to `strict`. */
     mode?: "strict" | "compat";
   };
 }
@@ -89,7 +98,9 @@ export interface RuleOptionsConfig {
  * `baseHref` prefixes links to the provider's rendered doc pages (`<baseHref><name>.md`).
  */
 export interface ProviderRef {
+  /** Model or stylesheet path, resolved relative to this config or as a package specifier. */
   path: string;
+  /** Prefix for links to the provider's rendered pages. */
   baseHref?: string;
   /**
    * Rewrite the provider's base-class prefix before merging its records — for a provider published
@@ -101,7 +112,14 @@ export interface ProviderRef {
    * `.vendor-alert` into `.ialert`, and `{ from: "vendor-", to: "" }` (or omitting `to`) strips it to
    * a bare `.alert`. Omit `prefix` entirely to use the provider's classes exactly as published.
    */
-  prefix?: { from: string; to?: string; isRegExp?: boolean };
+  prefix?: {
+    /** Prefix to match, or regex source when `isRegExp` is enabled. */
+    from: string;
+    /** Literal replacement; defaults to an empty string. */
+    to?: string;
+    /** Treat `from` as a regex source anchored at the start; defaults to `false`. */
+    isRegExp?: boolean;
+  };
 }
 
 interface RawTagDefinition {

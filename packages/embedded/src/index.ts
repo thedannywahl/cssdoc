@@ -78,7 +78,14 @@ export interface CssBlock {
   /** The region's stylesheet dialect (from a `lang` attribute, fence info-string, or `"css"`). */
   dialect: CssDialect;
   /** Region start: 1-based line, 0-based column, and 0-based UTF-16 offset in the host source. */
-  start: { line: number; column: number; offset: number };
+  start: {
+    /** 1-based line number. */
+    line: number;
+    /** 0-based column number. */
+    column: number;
+    /** 0-based UTF-16 offset in the host source. */
+    offset: number;
+  };
 }
 
 /** The default JS tags treated as CSS templates. */
@@ -397,8 +404,11 @@ export function lintCssDocsFromSource(
 
 /** One class token used on an element, with its offset span in the source. */
 export interface ClassToken {
+  /** Class token text. */
   token: string;
+  /** 0-based UTF-16 start offset in the host source. */
   start: number;
+  /** Exclusive 0-based UTF-16 end offset in the host source. */
   end: number;
 }
 
@@ -406,6 +416,7 @@ export interface ClassToken {
 export interface ClassUsageSite {
   /** The host tag name for the usage site, lowercased when available (e.g. `button`). */
   elementName?: string;
+  /** Class tokens found on this element. */
   tokens: ClassToken[];
 }
 
