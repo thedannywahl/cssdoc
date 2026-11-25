@@ -34,7 +34,8 @@ import {
   GREATER_THAN_CHAR,
   HTML_CUSTOM_ELEMENT_LIKE_NAME_SOURCE,
   LESS_THAN_CHAR,
-  MARKDOWN_BACKTICK_FENCE_SOURCE,
+  MARKDOWN_BACKTICK_FENCE_LINE_PREFIX,
+  MARKDOWN_BACKTICK_FENCE_TEXT,
   PAREN_CLOSE_CHAR,
   PAREN_CLOSE_SOURCE,
   PAREN_OPEN_CHAR,
@@ -90,11 +91,6 @@ const bold = (text: string): string =>
 const codicon = (name: string): string =>
   `${DOLLAR_CHAR}${PAREN_OPEN_CHAR}${name}${PAREN_CLOSE_CHAR}`;
 const emptySection = `${UNDERSCORE_CHAR}—${UNDERSCORE_CHAR}`;
-const MARKDOWN_FENCE = BACKTICK_CHAR.repeat(3);
-const MARKDOWN_FENCE_RE: Regex = arkRegex.as(
-  String.raw`(^|\n)\s*${MARKDOWN_BACKTICK_FENCE_SOURCE}`,
-  "u",
-);
 const SELECTOR_PREFIX_RE: Regex = arkRegex.as(`^[${DOT_CHAR}${POUND_CHAR}]`, "u");
 const stripDot = (name: string): string => (name.startsWith(DOT_CHAR) ? name.slice(1) : name);
 const warn = (d: Omit<Diagnostic, "severity">): Diagnostic => ({ ...d, severity: "warning" });
@@ -964,7 +960,7 @@ export const record = {
         if (w === "content") {
           if (entry.structureDescription) frag.push("", entry.structureDescription);
           if (entry.structureVariants?.length) {
-            frag.push("", `${MARKDOWN_FENCE}css`);
+            frag.push("", `${MARKDOWN_BACKTICK_FENCE_TEXT}css`);
             entry.structureVariants.forEach((variant, i) => {
               if (i > 0) frag.push("");
               frag.push(
@@ -972,13 +968,13 @@ export const record = {
               );
               frag.push(...renderStructureTree(variant.nodes));
             });
-            frag.push(MARKDOWN_FENCE);
+            frag.push(MARKDOWN_BACKTICK_FENCE_TEXT);
           } else {
             frag.push(
               "",
-              `${MARKDOWN_FENCE}css`,
+              `${MARKDOWN_BACKTICK_FENCE_TEXT}css`,
               ...renderStructureTree(entry.structure ?? []),
-              MARKDOWN_FENCE,
+              MARKDOWN_BACKTICK_FENCE_TEXT,
             );
           }
         } else frag.push("", emptySection);
@@ -997,9 +993,9 @@ export const record = {
             // verbatim. Only bare, fence-less code gets auto-fenced (sniffing markup vs CSS).
             frag.push(
               "",
-              MARKDOWN_FENCE_RE.exec(ex) !== null
+              MARKDOWN_BACKTICK_FENCE_LINE_PREFIX.exec(ex) !== null
                 ? ex
-                : `${MARKDOWN_FENCE}${ex.includes(LESS_THAN_CHAR) ? "html" : "css"}\n${ex}\n${MARKDOWN_FENCE}`,
+                : `${MARKDOWN_BACKTICK_FENCE_TEXT}${ex.includes(LESS_THAN_CHAR) ? "html" : "css"}\n${ex}\n${MARKDOWN_BACKTICK_FENCE_TEXT}`,
             );
           }
         else frag.push("", emptySection);

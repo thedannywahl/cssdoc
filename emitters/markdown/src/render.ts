@@ -22,6 +22,11 @@ import {
   DOT_CHAR,
   GREATER_THAN_CHAR,
   LESS_THAN_CHAR,
+  MARKDOWN_BACKTICK_FENCE_LINE_PREFIX,
+  MARKDOWN_BACKTICK_FENCE_TEXT,
+  MARKDOWN_ORDERED_LIST_MARKER_SOURCE,
+  MARKDOWN_SINGLE_BACKTICK_CODE_SPAN,
+  MARKDOWN_UNORDERED_LIST_MARKER_SOURCE,
   PIPE_CHAR,
   STRUCTURE_RECORD_KIND_SOURCE,
   WORD_BOUNDARY_SOURCE,
@@ -248,6 +253,12 @@ export function groupEntries(
     .map((label) => ({ label, entries: byLabel.get(label)! }));
 }
 
+const CODE_SPAN_RE = toRegExp(MARKDOWN_SINGLE_BACKTICK_CODE_SPAN);
+const LIST_ITEM_PREFIX: Regex = arkRegex.as(
+  `^(?:${MARKDOWN_UNORDERED_LIST_MARKER_SOURCE}|${MARKDOWN_ORDERED_LIST_MARKER_SOURCE}) `,
+  "u",
+);
+
 /**
  * Escape prose for VitePress markdown (which compiles through Vue's SFC parser): a raw `<tag>` reads as
  * an HTML element and `{{ }}` as interpolation. Backticked code spans are exempt (Vue skips them), so
@@ -255,7 +266,7 @@ export function groupEntries(
  */
 export function escProse(text: string): string {
   return text
-    .split(/(`[^`]*`)/gu)
+    .split(CODE_SPAN_RE)
     .map((seg, i) =>
       i % 2 === 1
         ? seg
@@ -282,10 +293,10 @@ export function normalizeProseMarkdown(text: string): string {
   const out: string[] = [];
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!;
-    if (/^[-*+] |^\d+\. /u.test(line) && out.length > 0) {
+    if (LIST_ITEM_PREFIX.exec(line) !== null && out.length > 0) {
       const prev = out.at(-1)!;
       // Only insert a blank line when the previous non-empty line is not itself a list item.
-      if (prev !== "" && !/^[-*+] |^\d+\. /u.test(prev)) out.push("");
+      if (prev !== "" && LIST_ITEM_PREFIX.exec(prev) === null) out.push("");
     }
     out.push(line);
   }
@@ -556,7 +567,15 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   for (const key of DEFAULT_SECTION_ORDER) fragments[key] = [];
 
   const spec = options.resolveDemo ? options.resolveDemo(entry) : entry.demo;
-  if (spec) fragments.demo.push("## Demo", "", "```demo", spec, "```", "");
+  if (spec)
+    fragments.demo.push(
+      "## Demo",
+      "",
+      `${MARKDOWN_BACKTICK_FENCE_TEXT}demo`,
+      spec,
+      MARKDOWN_BACKTICK_FENCE_TEXT,
+      "",
+    );
 
   const examples = selectExamples(entry, options.exampleFilter);
   if (examples.length) {
@@ -565,8 +584,14 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
       const ex = raw.trim();
       // An example that already carries a fenced block is Markdown (prose + code) — emit it verbatim.
       // Only bare, fence-less code gets auto-fenced (sniffing markup vs CSS).
-      if (/(^|\n)\s*```/u.test(ex)) fragments.examples.push(ex, "");
-      else fragments.examples.push(`\`\`\`${ex.includes("<") ? "html" : "css"}`, ex, "```", "");
+      if (MARKDOWN_BACKTICK_FENCE_LINE_PREFIX.exec(ex) !== null) fragments.examples.push(ex, "");
+      else
+        fragments.examples.push(
+          `${MARKDOWN_BACKTICK_FENCE_TEXT}${ex.includes("<") ? "html" : "css"}`,
+          ex,
+          MARKDOWN_BACKTICK_FENCE_TEXT,
+          "",
+        );
     }
   }
 
@@ -574,7 +599,13 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   if (entry.usage || importSnippet) {
     fragments.usage.push("## Usage", "");
     if (entry.usage) fragments.usage.push(escProse(normalizeProseMarkdown(entry.usage)), "");
-    if (importSnippet) fragments.usage.push("```css", importSnippet, "```", "");
+    if (importSnippet)
+      fragments.usage.push(
+        `${MARKDOWN_BACKTICK_FENCE_TEXT}css`,
+        importSnippet,
+        MARKDOWN_BACKTICK_FENCE_TEXT,
+        "",
+      );
   }
 
   if ((annotations.length || refs.length) && options.includeAnnotations) {
@@ -732,9 +763,9 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
         fragments.structure.push(`### Variant: ${variant.name ?? `Variant ${i + 1}`}`, "");
         if (view !== "diagram") {
           fragments.structure.push(
-            "```text",
+            `${MARKDOWN_BACKTICK_FENCE_TEXT}text`,
             ...renderTree(variant.nodes, self, options.resolveComponent),
-            "```",
+            MARKDOWN_BACKTICK_FENCE_TEXT,
             "",
           );
         }
@@ -743,7 +774,13 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
             self,
             resolveComponent: options.resolveComponent,
           });
-          if (mermaid) fragments.structure.push("```mermaid", mermaid, "```", "");
+          if (mermaid)
+            fragments.structure.push(
+              `${MARKDOWN_BACKTICK_FENCE_TEXT}mermaid`,
+              mermaid,
+              MARKDOWN_BACKTICK_FENCE_TEXT,
+              "",
+            );
         }
       });
     } else if (variants?.length) {
@@ -752,9 +789,9 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
         variants.forEach((variant, i) => {
           fragments.structure.push(`\`// Variant: ${variant.name ?? `Variant ${i + 1}`}\``, "");
           fragments.structure.push(
-            "```text",
+            `${MARKDOWN_BACKTICK_FENCE_TEXT}text`,
             ...renderTree(variant.nodes, self, options.resolveComponent),
-            "```",
+            MARKDOWN_BACKTICK_FENCE_TEXT,
             "",
           );
         });
@@ -764,14 +801,20 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
           self,
           resolveComponent: options.resolveComponent,
         });
-        if (mermaid) fragments.structure.push("```mermaid", mermaid, "```", "");
+        if (mermaid)
+          fragments.structure.push(
+            `${MARKDOWN_BACKTICK_FENCE_TEXT}mermaid`,
+            mermaid,
+            MARKDOWN_BACKTICK_FENCE_TEXT,
+            "",
+          );
       }
     } else {
       if (view !== "diagram") {
         fragments.structure.push(
-          "```text",
+          `${MARKDOWN_BACKTICK_FENCE_TEXT}text`,
           ...renderTree(normalizedStructure, self, options.resolveComponent),
-          "```",
+          MARKDOWN_BACKTICK_FENCE_TEXT,
           "",
         );
       }
@@ -780,7 +823,13 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
           self,
           resolveComponent: options.resolveComponent,
         });
-        if (mermaid) fragments.structure.push("```mermaid", mermaid, "```", "");
+        if (mermaid)
+          fragments.structure.push(
+            `${MARKDOWN_BACKTICK_FENCE_TEXT}mermaid`,
+            mermaid,
+            MARKDOWN_BACKTICK_FENCE_TEXT,
+            "",
+          );
       }
     }
 

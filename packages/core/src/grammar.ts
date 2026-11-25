@@ -65,6 +65,10 @@ import {
   COMMENT_END_SOURCE,
   COMMENT_LINE_MARKER_SOURCE,
   MARKDOWN_ATX_HEADING_PREFIX_SOURCE,
+  MARKDOWN_ORDERED_LIST_MARKER_SOURCE,
+  MARKDOWN_UNORDERED_LIST_MARKER_SOURCE,
+  BACKTICK_CHAR,
+  GREATER_THAN_CHAR,
   ASTERISK_SOURCE,
   FORWARD_SLASH_SOURCE,
   AT_SOURCE,
@@ -72,7 +76,6 @@ import {
   DOT_SOURCE,
   RECORD_REFERENCE_NAME_SOURCE,
   DIGIT_SOURCE,
-  DASH_SOURCE,
   ALPHANUMERIC_EXTENDED_SOURCE,
   COLON_CHAR,
   COLON_SOURCE,
@@ -578,9 +581,12 @@ export function parseDocComment(
         ];
       }
       // Unescape Markdown fences authored inside a JS `css` template.
-      const ESCAPED_BACKTICK: Regex = arkRegex.as(/\\`/gu.source, "gu");
+      const ESCAPED_BACKTICK: Regex = arkRegex.as(String.raw`\\${BACKTICK_CHAR}`, "gu");
       doc.examples.push(
-        (header ? m[2].slice(header[0].length).trim() : rest).replace(ESCAPED_BACKTICK, "`"),
+        (header ? m[2].slice(header[0].length).trim() : rest).replace(
+          ESCAPED_BACKTICK,
+          BACKTICK_CHAR,
+        ),
       );
       continue;
     }
@@ -930,7 +936,7 @@ export function recordNameOf(
 function normalizeMultilineDescription(text: string): string {
   const lines = text.split("\n").map((l) => l.trim());
   const MARKDOWN_STRUCTURE: Regex = arkRegex.as(
-    String.raw`^[>${ASTERISK_SOURCE}+${DASH_SOURCE}]\s|${DIGIT_SOURCE}+${DOT_SOURCE}\s|^${MARKDOWN_ATX_HEADING_PREFIX_SOURCE}`,
+    String.raw`^(?:${GREATER_THAN_CHAR}|${MARKDOWN_UNORDERED_LIST_MARKER_SOURCE})\s|${MARKDOWN_ORDERED_LIST_MARKER_SOURCE}\s|^${MARKDOWN_ATX_HEADING_PREFIX_SOURCE}`,
   );
 
   // Look ahead: does this description contain Markdown structure?

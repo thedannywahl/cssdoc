@@ -99,6 +99,23 @@ test("parseCssDocsFromSource reads a JS tagged template, a Vue <style scoped>, a
   expect(md.map((e) => e.name)).toEqual(["card"]);
 });
 
+test("Markdown fence scanning preserves offsets and skips non-CSS blocks between CSS blocks", () => {
+  const source = "intro\n```css\n.a {}\n```\n```js\nignore\n```\n```scss\n.b {}\n```\n";
+  const blocks = extractCssBlocks(source, { host: "markdown" });
+  expect(blocks.map(({ css, dialect, start }) => ({ css, dialect, start }))).toEqual([
+    {
+      css: ".a {}\n",
+      dialect: "css",
+      start: { offset: source.indexOf(".a {}"), line: 3, column: 0 },
+    },
+    {
+      css: ".b {}\n",
+      dialect: "scss",
+      start: { offset: source.indexOf(".b {}"), line: 9, column: 0 },
+    },
+  ]);
+});
+
 test("Markdown prose and non-CSS fences containing comment-like globs stay masked", () => {
   const md = `# Tooling notes
 

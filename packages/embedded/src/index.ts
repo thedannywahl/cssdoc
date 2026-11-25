@@ -24,6 +24,7 @@ import {
   QUOTE_SINGLE_CHAR,
   WORD_BOUNDARY_SOURCE,
   MARKDOWN_BACKTICK_FENCE_SOURCE,
+  MARKDOWN_BACKTICK_FENCE_TEXT,
   escapeRegex,
 } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
@@ -224,12 +225,12 @@ function scanMarkdown(src: string): { regions: Region[] } {
   while (m) {
     const lang = m[2].toLowerCase();
     const contentStart = m.index + m[0].length;
-    const close = src.indexOf("\n```", contentStart - 1);
+    const close = src.indexOf(`\n${MARKDOWN_BACKTICK_FENCE_TEXT}`, contentStart - 1);
     const end = close === -1 ? src.length : close + 1;
     if (["css", "scss", "sass", "less"].includes(lang)) {
       regions.push({ start: contentStart, end, host: "markdown", dialect: dialectFromLang(lang) });
     }
-    fence.lastIndex = close === -1 ? src.length : close + 4;
+    fence.lastIndex = close === -1 ? src.length : close + 1 + MARKDOWN_BACKTICK_FENCE_TEXT.length;
     m = fence.exec(src);
   }
   return { regions };

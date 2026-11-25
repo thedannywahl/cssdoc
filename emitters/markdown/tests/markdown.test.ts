@@ -35,6 +35,12 @@ test("escapes repeated Vue and table delimiters while preserving code spans", ()
   expect(cell(text)).toBe("&lt;x&gt; &#123;&#123;a}} \\| `<y> {{b}}` \\| &lt;z&gt;");
 });
 
+test("escapes prose around empty, multiline, and unmatched backtick spans", () => {
+  expect(escProse("<a> `` `<b>\n{{c}}` <d> `unclosed")).toBe(
+    "&lt;a&gt; `` `<b>\n{{c}}` &lt;d&gt; `unclosed",
+  );
+});
+
 test("renderEntry renders a title, summary, demo fence, and a modifiers table", () => {
   const [button] = parseCssDocs(CSS);
   const md = renderEntry(button!);
@@ -858,6 +864,13 @@ test("normalizeProseMarkdown does not double-insert blank lines already present"
 test("normalizeProseMarkdown does not insert blanks between consecutive list items", () => {
   const input = "- First item\n- Second item\n- Third item";
   expect(normalizeProseMarkdown(input)).toBe(input);
+});
+
+test("normalizeProseMarkdown accepts only unindented markers followed by a literal space", () => {
+  const input = "Intro\n* item\n+ item\n12. item\n\t- indented\n- item\n1.\ttab\n- item";
+  expect(normalizeProseMarkdown(input)).toBe(
+    "Intro\n\n* item\n+ item\n12. item\n\t- indented\n\n- item\n1.\ttab\n\n- item",
+  );
 });
 
 test("multiline @remarks with bullet list renders list items as separate Markdown lines", () => {

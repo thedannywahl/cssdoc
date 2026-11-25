@@ -2575,3 +2575,12 @@ test("multi-line descriptions preserve heading prefixes only with one to six has
   expect(remarks("####### Title")).toBe("Intro ####### Title More text");
   expect(remarks("#Title")).toBe("Intro #Title More text");
 });
+
+test("multi-line descriptions retain the existing list and blockquote structure heuristic", () => {
+  const remarks = (body: string) =>
+    parseDocComment(`/**\n * @remarks Intro\n * ${body}\n * Tail\n */`).remarks;
+  for (const marker of ["- ", "* ", "+ ", "> ", "12.\t", "Version 1. "]) {
+    expect(remarks(`${marker}item`)).toBe(`Intro\n${marker}item\nTail`);
+  }
+  expect(remarks("1) item")).toBe("Intro 1) item Tail");
+});
