@@ -295,20 +295,6 @@ export const TIER_1_PATTERNS: Record<string, RawPatternDef> = {
       ],
     },
   },
-  HTML_ELEMENT_NAME: {
-    name: "HTML_ELEMENT_NAME",
-    tier: 1,
-    source: String.raw`[a-z][a-z0-9-]*`,
-    description: "HTML element name (lowercase letters, digits, hyphens)",
-    fixtures: {
-      passes: [{ input: "div" }, { input: "button" }, { input: "my-element" }, { input: "h1" }],
-      fails: [
-        { input: "Button", reason: "uppercase" },
-        { input: "-div", reason: "starts with hyphen" },
-        { input: "", reason: "empty" },
-      ],
-    },
-  },
   LESS_THAN: {
     name: "LESS_THAN",
     tier: 1,

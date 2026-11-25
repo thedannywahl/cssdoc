@@ -30,7 +30,7 @@ console.log(pattern.fixtures); // { passes: [...], fails: [...] }
 Patterns are organized by tier level:
 
 - **Tier 0**: Character classes (single characters, digits, word boundaries)
-- **Tier 1**: CSS specification patterns (identifiers, colors, functions, dimensions)
+- **Tier 1**: CSS, HTML, and Markdown patterns and their primitives
 - **Tier 2**: CssDoc grammar patterns (tags, modifiers, cardinality, record names)
 - **Tier 3**: cssdoc-specific patterns (parts, properties, states, variants, slots)
 - **Tier 4**: Complex composite patterns
@@ -44,6 +44,9 @@ Patterns are organized by tier level:
 `COMMENT_END_SOURCE` matches a block-comment closer; `COMMENT_END_TEXT` is its literal form.
 `LESS_THAN_CHAR` and `GREATER_THAN_CHAR` provide literal angle brackets.
 `BACKTICK_CHAR` provides a literal backtick.
+`HTML_CUSTOM_ELEMENT_LIKE_NAME` is the ASCII heuristic used to recognize custom-element-shaped names;
+it isn't the complete HTML custom-element name grammar.
+`MARKDOWN_BACKTICK_FENCE` matches three backticks, not a complete Markdown fenced block.
 `REGEX_METACHARACTER_SOURCE` matches characters that need escaping in regular expressions.
 Use `escapeRegex(text)` to escape those characters throughout a string for use in a regex pattern.
 `CSSDOC_DESCRIPTION_SEPARATOR_SOURCE` matches `—`, `-`, and the parser's legacy `--` separator.
@@ -128,7 +131,7 @@ When adding or modifying patterns in `definitions.ts`:
 
 1. **Choose the right tier**:
    - **Tier 0**: Character classes and basic building blocks
-   - **Tier 1**: W3C CSS specification patterns
+   - **Tier 1**: CSS, HTML, and Markdown patterns
    - **Tier 2**: CssDoc grammar patterns from CssDoc.grammarkdown
    - **Tier 3**: cssdoc implementation-specific patterns
    - **Tier 4**: Complex composite patterns

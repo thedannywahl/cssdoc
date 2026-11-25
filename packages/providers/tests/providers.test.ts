@@ -1091,6 +1091,9 @@ test("checkClassUsage flags disallowed host elements from @element constraints",
   expect(rulesFor("div")).toEqual(["disallowed-element"]);
   // Custom elements are outside the HTML-element vocabulary used by @element.
   expect(rulesFor("x-button")).toEqual([]);
+  expect(rulesFor("X-Button")).toEqual([]);
+  expect(rulesFor("x-")).toEqual(["disallowed-element"]);
+  expect(rulesFor("x-ñ")).toEqual(["disallowed-element"]);
 });
 
 test("completions: components with no base, modifiers with a base", () => {

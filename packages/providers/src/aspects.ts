@@ -32,7 +32,9 @@ import {
   DOT_SOURCE,
   FORWARD_SLASH_CHAR,
   GREATER_THAN_CHAR,
+  HTML_CUSTOM_ELEMENT_LIKE_NAME_SOURCE,
   LESS_THAN_CHAR,
+  MARKDOWN_BACKTICK_FENCE_SOURCE,
   PAREN_CLOSE_CHAR,
   PAREN_CLOSE_SOURCE,
   PAREN_OPEN_CHAR,
@@ -89,7 +91,10 @@ const codicon = (name: string): string =>
   `${DOLLAR_CHAR}${PAREN_OPEN_CHAR}${name}${PAREN_CLOSE_CHAR}`;
 const emptySection = `${UNDERSCORE_CHAR}—${UNDERSCORE_CHAR}`;
 const MARKDOWN_FENCE = BACKTICK_CHAR.repeat(3);
-const MARKDOWN_FENCE_RE: Regex = arkRegex.as(String.raw`(^|\n)\s*${MARKDOWN_FENCE}`, "u");
+const MARKDOWN_FENCE_RE: Regex = arkRegex.as(
+  String.raw`(^|\n)\s*${MARKDOWN_BACKTICK_FENCE_SOURCE}`,
+  "u",
+);
 const SELECTOR_PREFIX_RE: Regex = arkRegex.as(`^[${DOT_CHAR}${POUND_CHAR}]`, "u");
 const stripDot = (name: string): string => (name.startsWith(DOT_CHAR) ? name.slice(1) : name);
 const warn = (d: Omit<Diagnostic, "severity">): Diagnostic => ({ ...d, severity: "warning" });
@@ -108,7 +113,7 @@ const scaffoldDocLine = (commentSpan: SourceSpan | undefined, line: string): Dia
   };
 };
 
-const CUSTOM_ELEMENT_RE = /^[a-z][a-z0-9._-]*-[a-z0-9._-]+$/u;
+const CUSTOM_ELEMENT_RE: Regex = arkRegex.as(`^${HTML_CUSTOM_ELEMENT_LIKE_NAME_SOURCE}$`, "u");
 
 /** A `*`-glob name (e.g. `-icon-*`) as a regex source over one class token (`*` → any `[\w-]` run). */
 const globSource = (name: string): string =>
@@ -1352,7 +1357,7 @@ export function elementUsage(usage: ClassUsage, index: CssDocIndex): Diagnostic[
 
   const element = usage.elementName.toLowerCase();
   // `@element` models HTML elements/groups; custom elements are out of scope.
-  if (CUSTOM_ELEMENT_RE.test(element)) return [];
+  if (CUSTOM_ELEMENT_RE.exec(element) !== null) return [];
 
   const allowed = profile.any
     ? !profile.exclude.includes(element)

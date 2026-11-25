@@ -23,6 +23,7 @@ import {
   QUOTE_DOUBLE_CHAR,
   QUOTE_SINGLE_CHAR,
   WORD_BOUNDARY_SOURCE,
+  MARKDOWN_BACKTICK_FENCE_SOURCE,
   escapeRegex,
 } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
@@ -215,7 +216,10 @@ function scanHtml(src: string): { regions: Region[] } {
 /** Find fenced ` ```css `/` ```scss ` … code blocks in Markdown/MDX. */
 function scanMarkdown(src: string): { regions: Region[] } {
   const regions: Region[] = [];
-  const fence = /(^|\n)```([a-zA-Z]+)[^\n]*\n/gu;
+  const fence = arkRegex.as(
+    String.raw`(^|\n)${MARKDOWN_BACKTICK_FENCE_SOURCE}([a-zA-Z]+)[^\n]*\n`,
+    "gu",
+  );
   let m: RegExpExecArray | null = fence.exec(src);
   while (m) {
     const lang = m[2].toLowerCase();
