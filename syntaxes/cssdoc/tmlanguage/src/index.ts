@@ -64,16 +64,23 @@ interface TmRule {
 
 /** A TextMate injection grammar. */
 export interface InjectionGrammar {
+  /** TextMate grammar schema URL. */
   $schema: string;
+  /** Human-readable grammar name. */
   name: string;
+  /** Scope assigned to the injection grammar. */
   scopeName: string;
+  /** Host scopes into which this grammar injects its patterns. */
   injectionSelector: string;
+  /** Top-level TextMate patterns. */
   patterns: TmRule[];
+  /** Named rules referenced by the patterns. */
   repository: Record<string, TmRule>;
 }
 
 /** A Shiki/VS Code registration: grammar + inject targets. */
 export interface InjectionLanguageRegistration extends InjectionGrammar {
+  /** Host language scopes to register as injection targets. */
   injectTo: string[];
 }
 

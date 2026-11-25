@@ -65,8 +65,11 @@ export type CssdocTokenType =
 
 /** A highlighted span within a comment. `from`/`to` are offsets into the scanned comment text. */
 export interface CssdocToken {
+  /** Inclusive start offset in the scanned comment. */
   from: number;
+  /** Exclusive end offset in the scanned comment. */
   to: number;
+  /** Highlight category for the span. */
   type: CssdocTokenType;
 }
 

@@ -40,11 +40,17 @@ interface TmRule {
 
 /** A grammarkdown TextMate grammar. */
 export interface GrammarkdownGrammar {
+  /** TextMate grammar schema URL. */
   $schema: string;
+  /** Human-readable grammar name. */
   name: string;
+  /** Scope assigned to grammarkdown source. */
   scopeName: string;
+  /** File extensions associated with the grammar. */
   fileTypes: string[];
+  /** Top-level TextMate patterns. */
   patterns: TmRule[];
+  /** Named rules referenced by the patterns. */
   repository: Record<string, TmRule>;
 }
 

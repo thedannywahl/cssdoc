@@ -27,8 +27,11 @@ export type GrammarkdownTokenType =
 
 /** A highlighted span, with offsets relative to the tokenized text. */
 export interface GrammarkdownToken {
+  /** Inclusive start offset in the scanned text. */
   from: number;
+  /** Exclusive end offset in the scanned text. */
   to: number;
+  /** Highlight category for the span. */
   type: GrammarkdownTokenType;
 }
 
