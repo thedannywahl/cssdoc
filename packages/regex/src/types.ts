@@ -43,8 +43,20 @@ export interface RawPatternDef {
 
   /** Test fixtures */
   fixtures: {
-    passes: Array<{ input: string; note?: string }>;
-    fails: Array<{ input: string; reason: string }>;
+    /** Inputs expected to match the pattern. */
+    passes: Array<{
+      /** Input to test. */
+      input: string;
+      /** Optional context for the example. */
+      note?: string;
+    }>;
+    /** Inputs expected not to match the pattern. */
+    fails: Array<{
+      /** Input to test. */
+      input: string;
+      /** Why the input should not match. */
+      reason: string;
+    }>;
   };
 
   /** Names of patterns this composes */
@@ -84,8 +96,20 @@ export interface UnifiedPatternDef {
 
   /** Test fixtures */
   fixtures: {
-    passes: Array<{ input: string; note?: string }>;
-    fails: Array<{ input: string; reason: string }>;
+    /** Inputs expected to match the pattern. */
+    passes: Array<{
+      /** Input to test. */
+      input: string;
+      /** Optional context for the example. */
+      note?: string;
+    }>;
+    /** Inputs expected not to match the pattern. */
+    fails: Array<{
+      /** Input to test. */
+      input: string;
+      /** Why the input should not match. */
+      reason: string;
+    }>;
   };
 
   /** Names of patterns this composes */

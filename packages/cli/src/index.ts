@@ -14,8 +14,9 @@ import { lintCssDocs, type LintOptions, type Violation } from "@cssdoc/lint-core
 
 /** One file's lint results. */
 export interface FileResult {
-  /** Path relative to the current working directory. */
+  /** Path relative to the lint run's working directory. */
   file: string;
+  /** Violations reported for this file. */
   violations: Violation[];
 }
 
@@ -26,6 +27,7 @@ export type OutputFormat = "pretty" | "json" | "github";
 export interface LintCliOptions {
   /** Positional glob patterns / file paths. */
   globs: string[];
+  /** Report format; defaults to `pretty`. */
   format?: OutputFormat;
   /** Suppress warning-severity violations from the report (they never fail the run on their own). */
   quiet?: boolean;
@@ -33,15 +35,21 @@ export interface LintCliOptions {
   maxWarnings?: number;
   /** Apply deterministic autofixes before reporting. */
   fix?: boolean;
+  /** Working directory for resolving paths; defaults to the process working directory. */
   cwd?: string;
 }
 
 /** Output, per-file violations, counts, and exit code from a CLI lint run. */
 export interface LintCliResult {
+  /** `1` for errors or a warning-limit overage, otherwise `0`. */
   exitCode: number;
+  /** Formatted report. */
   output: string;
+  /** Results for each matched file after quiet filtering, if enabled. */
   results: FileResult[];
+  /** Number of reported error-severity violations. */
   errorCount: number;
+  /** Number of reported warning-severity violations. */
   warningCount: number;
 }
 

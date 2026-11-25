@@ -43,7 +43,10 @@ export const messages: Record<string, (message: string) => string> = utils.ruleM
 });
 
 /** Documentation metadata attached to the Stylelint rule. */
-export const meta = { url: "https://cssdoc.dev" };
+export const meta = {
+  /** URL for the rule's documentation. */
+  url: "https://cssdoc.dev",
+};
 
 /**
  * Secondary options: per-rule severity (`off`/`warn`/`error`, or a boolean) and the modifier
@@ -121,8 +124,11 @@ rule.meta = meta;
 
 /** A ready-to-spread config that enables the rule. */
 export const configs: {
+  /** Enable the cssdoc rule using its default options. */
   readonly recommended: {
+    /** Plugin modules Stylelint loads. */
     readonly plugins: readonly string[];
+    /** Rules enabled by this configuration. */
     readonly rules: Partial<Record<string, boolean>>;
   };
 } = {
@@ -132,4 +138,5 @@ export const configs: {
   },
 };
 
+/** Stylelint plugin registration for the cssdoc rule. */
 export default createPlugin(ruleName, rule) as ReturnType<typeof createPlugin>;

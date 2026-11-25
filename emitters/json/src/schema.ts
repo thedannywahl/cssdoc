@@ -141,9 +141,13 @@ const elementProfile: {
 
 /** JSON Schema for a single {@link https://cssdoc.dev/reference/@cssdoc/core/interfaces/CssDocEntry | CssDocEntry}. */
 export const cssDocEntrySchema: {
+  /** JSON Schema type for a record. */
   readonly type: "object";
+  /** Required model field names. */
   readonly required: readonly string[];
+  /** Whether fields not listed in the schema are allowed. */
   readonly additionalProperties: false;
+  /** Schemas keyed by model field name. */
   readonly properties: Record<string, any>;
 } = {
   type: "object",
@@ -327,12 +331,19 @@ export const cssDocEntrySchema: {
 
 /** JSON Schema (draft-07) for the whole model: a `CssDocEntry[]`. */
 export const cssDocSchema: {
+  /** JSON Schema dialect URI. */
   readonly $schema: string;
+  /** Canonical schema identifier. */
   readonly $id: string;
+  /** Human-readable schema title. */
   readonly title: string;
+  /** Human-readable description of the model. */
   readonly description: string;
+  /** JSON Schema type for the model. */
   readonly type: "array";
+  /** Schema for each model record. */
   readonly items: typeof cssDocEntrySchema;
+  /** Reusable schema definitions. */
   readonly $defs: Record<string, any>;
 } = {
   $schema: "http://json-schema.org/draft-07/schema#",

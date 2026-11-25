@@ -56,9 +56,13 @@ export function renderJson(
 
 /** A lightweight index row (name, kind, class, summary) for `index.json`. */
 export interface JsonIndexRow {
+  /** Record name. */
   name: string;
+  /** Record kind. */
   kind: string;
+  /** Base class selector. */
   className: string;
+  /** Authored summary, when present. */
   summary?: string;
 }
 
@@ -76,10 +80,15 @@ export interface WriteJsonOptions extends ModelInput {
 
 /** What {@link writeJson} produced. */
 export interface WriteJsonResult {
+  /** Visible entries, sorted by name. */
   entries: CssDocEntry[];
+  /** Path of the whole-model JSON file. */
   modelPath: string;
+  /** Paths of individual record files, when requested. */
   recordPaths: string[];
+  /** Path of the record index, when requested. */
   indexPath?: string;
+  /** Path of the model schema, when requested. */
   schemaPath?: string;
 }
 

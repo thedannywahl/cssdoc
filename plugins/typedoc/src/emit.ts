@@ -81,9 +81,10 @@ export function mergeCssSidebar(
  * @param options - {@link EmitCssApiOptions}.
  * @returns The {@link BuildCssApiResult} and whether the sidebar was merged.
  */
-export function emitCssApi(
-  options: EmitCssApiOptions,
-): BuildCssApiResult & { sidebarMerged: boolean } {
+export function emitCssApi(options: EmitCssApiOptions): BuildCssApiResult & {
+  /** Whether an existing TypeDoc sidebar was updated. */
+  sidebarMerged: boolean;
+} {
   // Render defaults come from the `cssdoc.json` `render` block when a `configFile` is supplied; any
   // explicit option passed here wins over it. The parse `configuration` likewise falls back to the file.
   const render = options.configFile?.render;

@@ -114,57 +114,93 @@ const hostForLanguageId = (languageId?: string): EmbeddedHost | undefined => {
 
 /** A 0-based LSP position. */
 export interface LspPosition {
+  /** Zero-based line number. */
   line: number;
+  /** Zero-based UTF-16 code-unit offset within the line. */
   character: number;
 }
 /** An LSP range. */
 export interface LspRange {
+  /** Inclusive start position. */
   start: LspPosition;
+  /** Exclusive end position. */
   end: LspPosition;
 }
 /** A completion item. */
 export interface LspCompletion {
+  /** Label shown in the completion list. */
   label: string;
+  /** Additional completion detail, when available. */
   detail?: string;
+  /** Documentation shown with the completion, when available. */
   documentation?: string;
+  /** Whether the suggested item is deprecated. */
   deprecated?: boolean;
+  /** Text used to order the completion, when supplied. */
   sortText?: string;
 }
 /** Hover content. */
 export interface LspHover {
+  /** Markdown content shown on hover. */
   contents: string;
 }
 /** A definition location (uri from the index's file). */
 export interface LspLocation {
+  /** Document URI, when available from the index. */
   uri?: string;
+  /** Range of the definition. */
   range: LspRange;
 }
 /** A diagnostic; `data.replace` carries a quick-fix replacement when available. */
 export interface LspDiagnostic {
+  /** Range where the issue was found. */
   range: LspRange;
+  /** Human-readable issue description. */
   message: string;
+  /** LSP severity: 1 for an error, 2 for a warning. */
   severity: 1 | 2;
+  /** Rule identifier, when available. */
   code?: string;
-  data?: { replace?: string };
+  /** Additional data used to create a quick fix. */
+  data?: {
+    /** Replacement text for the diagnostic range, when a fix is available. */
+    replace?: string;
+  };
 }
 /** A code action (a single-edit quick fix). */
 export interface LspCodeAction {
+  /** Label shown for the action. */
   title: string;
-  edit: { range: LspRange; newText: string };
+  /** Edit applied to the current document. */
+  edit: {
+    /** Range replaced by the edit. */
+    range: LspRange;
+    /** Replacement text. */
+    newText: string;
+  };
 }
 /** A semantic token: position, length, token type, and modifiers. */
 export interface LspSemanticToken {
+  /** Zero-based line number. */
   line: number;
+  /** Zero-based UTF-16 code-unit offset within the line. */
   startCharacter: number;
+  /** Token length in UTF-16 code units. */
   length: number;
+  /** Token type index in the server's legend. */
   tokenType: number;
+  /** Bit set of modifier indexes in the server's legend. */
   tokenModifiers: number;
 }
 /** An inlay hint: label and position in the document. */
 export interface LspInlayHint {
+  /** Position where the hint appears. */
   position: LspPosition;
+  /** Label displayed for the hint. */
   label: string;
+  /** LSP hint kind: 1 for type, 2 for parameter. */
   kind?: 1 | 2; // 1 = type, 2 = parameter
+  /** Additional information shown on hover, when available. */
   tooltip?: string;
 }
 

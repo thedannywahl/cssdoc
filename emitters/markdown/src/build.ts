@@ -21,9 +21,13 @@ import {
 
 /** A `typedoc-vitepress-theme`-compatible sidebar node. */
 export interface SidebarItem {
+  /** Label displayed in the sidebar. */
   text: string;
+  /** Page link, when the node links to a page. */
   link?: string;
+  /** Whether a node's children start collapsed. */
   collapsed?: boolean;
+  /** Nested sidebar nodes, when present. */
   items?: SidebarItem[];
 }
 
@@ -47,7 +51,9 @@ export interface BuildCssApiOptions extends RenderEntryOptions, RenderIndexOptio
    * at a provider component links out to the provider's rendered page (via its `href`).
    */
   providers?: {
+    /** Provider records available as cross-link targets. */
     entries: readonly CssDocEntry[];
+    /** Resolve a provider base class to its documentation URL. */
     href: (className: string) => string | undefined;
   };
 }

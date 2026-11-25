@@ -14,26 +14,41 @@ const stripDot = (name: string): string => name.replace(/^\./u, "");
 
 /** A CSS custom-data property entry. */
 export interface CssDataProperty {
+  /** Custom-property name, including `--`. */
   name: string;
+  /** Syntax and authored description, when present. */
   description?: string;
 }
 
 /** The `css.customData` document shape. */
 export interface CssCustomData {
+  /** VS Code custom-data format version. */
   version: 1.1;
+  /** Declared custom properties. */
   properties: CssDataProperty[];
 }
 
 /** An HTML custom-data attribute value. */
 export interface HtmlAttributeValue {
+  /** Class value suggested by the HTML language service. */
   name: string;
+  /** Summary or modifier description, including a deprecation marker when applicable. */
   description?: string;
 }
 
 /** The `html.customData` document shape (only the `class` global attribute is populated). */
 export interface HtmlCustomData {
+  /** VS Code custom-data format version. */
   version: 1.1;
-  globalAttributes: { name: string; description?: string; values: HtmlAttributeValue[] }[];
+  /** Global attributes offered by this data set. */
+  globalAttributes: {
+    /** Attribute name. */
+    name: string;
+    /** Attribute description, when supplied. */
+    description?: string;
+    /** Suggested attribute values. */
+    values: HtmlAttributeValue[];
+  }[];
 }
 
 /** Build the `css.customData` document: the declared custom properties. */
@@ -76,7 +91,9 @@ export function htmlCustomData(index: CssDocIndex): HtmlCustomData {
 
 /** Write `css-custom-data.json` and `html-custom-data.json` into `outDir`. */
 export function writeVscodeCustomData(options: { index: CssDocIndex; outDir: string }): {
+  /** Path of the CSS custom-data file. */
   cssPath: string;
+  /** Path of the HTML custom-data file. */
   htmlPath: string;
 } {
   mkdirSync(options.outDir, { recursive: true });

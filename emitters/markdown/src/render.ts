@@ -45,10 +45,24 @@ import {
  * caller; when absent, tokens are listed
  * without type/value columns.
  */
-export type ResolveToken = (name: string) => { syntax?: string; value?: string } | undefined;
+export type ResolveToken = (name: string) =>
+  | {
+      /** Token syntax, when known. */
+      syntax?: string;
+      /** Token value, when known. */
+      value?: string;
+    }
+  | undefined;
 
 /** Resolve a record to a source link (file/line), for the "Source" line. Supplied by the caller. */
-export type ResolveSource = (entry: CssDocEntry) => { href: string; label?: string } | undefined;
+export type ResolveSource = (entry: CssDocEntry) =>
+  | {
+      /** Link to the source. */
+      href: string;
+      /** Link text; defaults to `source`. */
+      label?: string;
+    }
+  | undefined;
 
 /**
  * The reorderable `##` sections of a record page, in default render order. The page header (title,
@@ -127,13 +141,25 @@ export interface RenderEntryOptions {
    * references) — returns the component's name + page href, else `undefined`. Supplied by `buildCssApi`
    * from the full set of records; powers the "Subcomponents" section.
    */
-  resolveComponent?: (className: string) => { name: string; href: string } | undefined;
+  resolveComponent?: (className: string) =>
+    | {
+        /** Component record name. */
+        name: string;
+        /** URL of the component's page. */
+        href: string;
+      }
+    | undefined;
   /**
    * Sibling records that declared `@memberOf` naming this record as their parent — the inverse
    * direction of `@structure` containment. Supplied by `buildCssApi` from the full set of records;
    * merged into the "Subcomponents" section alongside structurally-nested children.
    */
-  members?: readonly { name: string; href: string }[];
+  members?: readonly {
+    /** Member record name. */
+    name: string;
+    /** URL of the member's page. */
+    href: string;
+  }[];
   /** Reorder (or drop) the `##` sections; defaults to {@link DEFAULT_SECTION_ORDER}. */
   sectionOrder?: readonly SectionKey[];
   /**
@@ -204,7 +230,12 @@ export interface RenderIndexOptions {
 }
 
 /** Sidebar/index groups, in display order. Only kinds with records appear. */
-export const KIND_GROUPS: readonly { kind: CssRecordKind; label: string }[] = [
+export const KIND_GROUPS: readonly {
+  /** Record kind assigned to this group. */
+  kind: CssRecordKind;
+  /** Group label shown in the index and sidebar. */
+  label: string;
+}[] = [
   { kind: "component", label: "Components" },
   { kind: "utility", label: "Utilities" },
   { kind: "declaration", label: "Declarations" },
@@ -212,7 +243,9 @@ export const KIND_GROUPS: readonly { kind: CssRecordKind; label: string }[] = [
 
 /** One sidebar/index group: a display label and the records under it (name-sorted, from `entries`). */
 export interface EntryGroup {
+  /** Group label shown in the index and sidebar. */
   label: string;
+  /** Records in this group, sorted by name. */
   entries: CssDocEntry[];
 }
 
