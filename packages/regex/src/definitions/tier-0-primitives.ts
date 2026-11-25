@@ -1,5 +1,5 @@
 /**
- * @cssdoc/regex/definitions/tier-0
+ * @cssdoc/regex/definitions/tier-0-primitives
  * Tier 0 character class patterns
  * @module
  */
@@ -8,7 +8,7 @@ import type { RawPatternDef, PatternResolver } from "../types.ts";
 
 export const REGEX_METACHARACTER_SOURCE: string = String.raw`[\\^$.|?*+()[\]{}]`;
 
-export const TIER_0_PATTERNS: Record<string, RawPatternDef> = {
+export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
   REGEX_METACHARACTER: {
     name: "REGEX_METACHARACTER",
     tier: 0,

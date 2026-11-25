@@ -1,12 +1,12 @@
 /**
- * @cssdoc/regex/definitions/tier-3
+ * @cssdoc/regex/definitions/tier-3-cssdoc-tokens
  * Tier 3+ CssDoc and tokenizer patterns
  * @module
  */
 
 import type { RawPatternDef, PatternResolver } from "../types.ts";
 
-export const TIER_3_PATTERNS: Record<string, RawPatternDef> = {
+export const TIER_3_CSSDOC_TOKENS_PATTERNS: Record<string, RawPatternDef> = {
   CSSDOC_COMPONENT_REF: {
     name: "CSSDOC_COMPONENT_REF",
     grammarRule: "ComponentRef",

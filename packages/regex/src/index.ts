@@ -366,7 +366,7 @@ export const CSSDOC_PSEUDO_SELECTOR: Regex = compileRegex(
 );
 export const CSSDOC_PSEUDO_SELECTOR_SOURCE: string =
   PATTERN_DEFINITIONS.CSSDOC_PSEUDO_SELECTOR.source;
-export { CSSDOC_CARDINALITY_KEYWORDS } from "./definitions/tier-2.ts";
+export { CSSDOC_CARDINALITY_KEYWORDS } from "./definitions/tier-2-cssdoc-grammar.ts";
 export const CSSDOC_CARDINALITY: Regex = compileRegex(PATTERN_DEFINITIONS.CSSDOC_CARDINALITY);
 export const CSSDOC_CARDINALITY_SOURCE: string = PATTERN_DEFINITIONS.CSSDOC_CARDINALITY.source;
 export const CSSDOC_COMPONENT_REF: Regex = compileRegex(PATTERN_DEFINITIONS.CSSDOC_COMPONENT_REF);

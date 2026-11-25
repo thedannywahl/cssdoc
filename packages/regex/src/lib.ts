@@ -7,7 +7,7 @@
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import type { PatternResolver, UnifiedPatternDef } from "./types.ts";
-import { REGEX_METACHARACTER_SOURCE } from "./definitions/tier-0.ts";
+import { REGEX_METACHARACTER_SOURCE } from "./definitions/tier-0-primitives.ts";
 
 export type AnchorMode = "none" | "start" | "end" | "start-end";
 

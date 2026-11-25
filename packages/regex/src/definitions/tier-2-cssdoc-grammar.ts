@@ -1,6 +1,6 @@
 /**
- * @cssdoc/regex/definitions/tier-2
- * Tier 2 CSS specification patterns
+ * @cssdoc/regex/definitions/tier-2-cssdoc-grammar
+ * Tier 2 CssDoc grammar and selector patterns
  * @module
  */
 
@@ -16,7 +16,7 @@ export const CSSDOC_CARDINALITY_KEYWORDS: Readonly<
   more: "one-or-more",
 };
 
-export const TIER_2_PATTERNS: Record<string, RawPatternDef> = {
+export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   CSS_CLASS_REFERENCE: {
     name: "CSS_CLASS_REFERENCE",
     tier: 2,

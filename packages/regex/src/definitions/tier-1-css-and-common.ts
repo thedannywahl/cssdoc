@@ -1,13 +1,13 @@
 /**
- * @cssdoc/regex/definitions/tier-1
- * Tier 1 composed patterns
+ * @cssdoc/regex/definitions/tier-1-css-and-common
+ * Tier 1 CSS and common composed patterns
  * @module
  */
 
 import type { RawPatternDef, PatternResolver } from "../types.ts";
 import { escapeChar } from "../lib.ts";
 
-export const TIER_1_PATTERNS: Record<string, RawPatternDef> = {
+export const TIER_1_CSS_AND_COMMON_PATTERNS: Record<string, RawPatternDef> = {
   FILE_EXTENSION: {
     name: "FILE_EXTENSION",
     tier: 1,
