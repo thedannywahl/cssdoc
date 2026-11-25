@@ -272,6 +272,13 @@ export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
     description: "Forward slash character (literal)",
     fixtures: { passes: [{ input: "/" }], fails: [{ input: "\\", reason: "backslash" }] },
   },
+  BACKSLASH_CHAR: {
+    name: "BACKSLASH_CHAR",
+    tier: 0,
+    source: "\\",
+    description: "Backslash character (literal)",
+    fixtures: { passes: [{ input: "\\" }], fails: [{ input: "/", reason: "forward slash" }] },
+  },
   DOC_COMMENT_START_TEXT: {
     name: "DOC_COMMENT_START_TEXT",
     tier: 0,

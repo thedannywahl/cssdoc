@@ -30,13 +30,13 @@ console.log(pattern.fixtures); // { passes: [...], fails: [...] }
 Patterns are organized by tier level:
 
 - **Tier 0**: Character classes (single characters, digits, word boundaries)
-- **Tier 1**: CSS, HTML, JSX, and Markdown patterns and their primitives
+- **Tier 1**: CSS, HTML, JavaScript, JSX, and Markdown patterns and their primitives
 - **Tier 2**: CssDoc grammar patterns (tags, modifiers, cardinality, record names)
 - **Tier 3**: cssdoc-specific patterns (parts, properties, states, variants, slots)
 - **Tier 4**: Complex composite patterns
 
 Definitions live in `tier-<number>-<domain>.ts` files. Tier 1 keeps CSS and common patterns together
-in `tier-1-css-and-common.ts`, alongside separate HTML, JSX, and Markdown files.
+in `tier-1-css-and-common.ts`, alongside separate HTML, JavaScript, JSX, and Markdown files.
 
 `UNDERSCORE_CHAR` is the literal underscore for composing separators and patterns.
 `ASTERISK_CHAR`, `PLUS_CHAR`, `CARET_CHAR`, `DOLLAR_CHAR`, and `TILDE_CHAR` provide literal operator characters.
@@ -46,7 +46,7 @@ in `tier-1-css-and-common.ts`, alongside separate HTML, JSX, and Markdown files.
 `DOC_COMMENT_START_SOURCE` matches a doc-comment opener; `DOC_COMMENT_START_TEXT` is its literal form.
 `COMMENT_END_SOURCE` matches a block-comment closer; `COMMENT_END_TEXT` is its literal form.
 `LESS_THAN_CHAR` and `GREATER_THAN_CHAR` provide literal angle brackets.
-`BACKTICK_CHAR` provides a literal backtick.
+`BACKTICK_CHAR` and `BACKSLASH_CHAR` provide literal backtick and backslash characters.
 `HTML_STANDARD_ELEMENT_NAME` matches a lowercase ASCII built-in-style name, not a list of known elements.
 `HTML_CUSTOM_ELEMENT_NAME` follows the HTML and DOM rules for valid custom-element names.
 `HTML_ELEMENT_NAME` matches either. `HTML_CUSTOM_ELEMENT_LIKE_NAME` preserves the narrower ASCII
@@ -63,6 +63,10 @@ reflect their use across HTML-like hosts.
 `HTML_COMMENT` matches between comment delimiters without validating HTML comment contents.
 `HTML_LIKE_STYLE_OPEN_TAG` captures text after the `style` prefix through the first `>`; it also
 accepts longer names such as `<styles>` and doesn't handle quoted `>` characters.
+`JAVASCRIPT_TAGGED_TEMPLATE_BOUNDARY` and `JAVASCRIPT_TAGGED_TEMPLATE_CHAIN_SEGMENT` compose the
+embedded scanner's permissive tag-expression heuristic, not a full JavaScript parser.
+`JAVASCRIPT_QUOTED_OR_TEMPLATE_LITERAL_LIKE` captures simple quoted and backtick-delimited text
+without handling escaped delimiters.
 `MARKDOWN_BACKTICK_FENCE` matches three backticks, not a complete Markdown fenced block;
 `MARKDOWN_BACKTICK_FENCE_TEXT` is the literal marker. `MARKDOWN_BACKTICK_FENCE_LINE_PREFIX`
 detects that marker after a line start and optional whitespace, not a complete fenced block.
@@ -155,7 +159,7 @@ When adding or modifying patterns in `definitions.ts`:
 
 1. **Choose the right tier**:
    - **Tier 0**: Character classes and basic building blocks
-   - **Tier 1**: CSS, HTML, JSX, and Markdown patterns
+   - **Tier 1**: CSS, HTML, JavaScript, JSX, and Markdown patterns
    - **Tier 2**: CssDoc grammar patterns from CssDoc.grammarkdown
    - **Tier 3**: cssdoc implementation-specific patterns
    - **Tier 4**: Complex composite patterns
