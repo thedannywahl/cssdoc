@@ -421,6 +421,62 @@ test("the server indexes workspace folders added after initialization", async ()
   }
 }, 30_000);
 
+test("the server discovers nested provider configs without a local stylesheet", async () => {
+  execFileSync("node", ["scripts/build.mjs"], { cwd: root });
+  const fixture = mkdtempSync(join(tmpdir(), "cssdoc-provider-scope-"));
+  const consumer = join(fixture, "consumer");
+  const vendor = join(fixture, "vendor");
+  mkdirSync(consumer);
+  mkdirSync(vendor);
+  writeFileSync(
+    join(vendor, "widget.css"),
+    "/**\n * @component widget\n * @summary Provider widget\n */\n.widget {}\n",
+  );
+  writeFileSync(
+    join(consumer, "cssdoc.json"),
+    JSON.stringify({ providers: [{ path: "../vendor/*.css" }] }),
+  );
+  const { server, request } = ipcServer<{ contents: { value: string } } | null>();
+  const uri = pathToFileURL(join(consumer, "page.html")).href;
+  const hover = async (): Promise<string | undefined> =>
+    (
+      await request("textDocument/hover", {
+        textDocument: { uri },
+        position: { line: 0, character: 13 },
+      })
+    ).result?.contents.value;
+  try {
+    await request("initialize", {
+      processId: process.pid,
+      rootUri: pathToFileURL(fixture).href,
+      capabilities: {},
+      initializationOptions: { exclude: ["**/vendor/**"], providerScanDepth: 0 },
+    });
+    server.send({ jsonrpc: "2.0", method: "initialized", params: {} });
+    server.send({
+      jsonrpc: "2.0",
+      method: "textDocument/didOpen",
+      params: {
+        textDocument: { uri, languageId: "html", version: 1, text: '<div class="widget"></div>' },
+      },
+    });
+    expect(await hover()).toBeUndefined();
+    server.send({
+      jsonrpc: "2.0",
+      method: "workspace/didChangeConfiguration",
+      params: { settings: { cssdoc: { editor: { providerScanDepth: 1 } } } },
+    });
+    const deadline = Date.now() + 5000;
+    while (!(await hover())?.includes("Provider widget") && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    expect(await hover()).toContain("Provider widget");
+  } finally {
+    server.kill();
+    rmSync(fixture, { recursive: true, force: true });
+  }
+}, 30_000);
+
 test("definitions from a multi-file index retain their source URI and local line", async () => {
   execFileSync("node", ["scripts/build.mjs"], { cwd: root });
   const fixture = mkdtempSync(join(tmpdir(), "cssdoc-definitions-"));

@@ -25,7 +25,12 @@ import {
 } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { type ConfigScope, CssDocLanguageService, type LspDiagnostic } from "./service.ts";
-import { type ClientSettings, discoverStylesheets, parseClientSettings } from "./workspace.ts";
+import {
+  type ClientSettings,
+  discoverConfigDirectories,
+  discoverStylesheets,
+  parseClientSettings,
+} from "./workspace.ts";
 
 /** The absolute file path for a document URI, or `undefined` for non-file URIs. */
 const fsPathOf = (uri: string): string | undefined => {
@@ -110,11 +115,24 @@ export function startLanguageServer(): void {
       if (file) g.files.push(file);
       groups.set(key, g);
     };
-    for (const root of workspaceRoots) add(CssDocConfigFile.loadForFolder(root), root);
+    for (const root of workspaceRoots) {
+      add(CssDocConfigFile.loadForFolder(root), root);
+      const options = optionsFor(root);
+      if (options.providerDiscovery !== false) {
+        try {
+          for (const dir of discoverConfigDirectories(root, options.providerScanDepth ?? 3)) {
+            add(CssDocConfigFile.loadForFolder(dir), root);
+          }
+        } catch (error) {
+          connection.console.warn(`Cannot discover configs in ${root}: ${String(error)}`);
+        }
+      }
+    }
     for (const p of cssPaths) add(CssDocConfigFile.loadForFolder(dirname(p)), rootFor(p), p);
     if (groups.size === 0) add(CssDocConfigFile.loadForFolder(process.cwd()));
 
     const scopes: ConfigScope[] = [...groups.values()].map((g) => {
+      if (g.configFile.hasErrors) connection.console.warn(g.configFile.getErrorSummary());
       const configuration = g.configFile.toConfiguration();
       const parse = resolveParser(
         g.files.some((f) => dialectForFilename(f) === "scss")
@@ -138,7 +156,17 @@ export function startLanguageServer(): void {
       // Declared providers add their components to the sibling set (lint + cross-component hover) — the
       // real, span-carrying `index` stays the source for `var()` resolution. Pass this scope's own
       // matcher so a non-BEM convention (rscss, attribute, …) still applies to the merged index.
-      const providers = resolveProviders(g.configFile);
+      const options = optionsFor(g.workspaceRoot);
+      let providers: ReturnType<typeof resolveProviders>;
+      try {
+        providers = resolveProviders(g.configFile, {
+          expandGlobs: options.providerGlobs,
+          circularReferenceMode: options.circularReferenceMode,
+        });
+      } catch (error) {
+        connection.console.error(`Cannot resolve providers for ${g.dir}: ${String(error)}`);
+        providers = { entries: [], messages: [], href: () => undefined };
+      }
       for (const message of providers.messages) connection.console.warn(message);
       const siblingIndex = providers.entries.length
         ? indexFromEntries(

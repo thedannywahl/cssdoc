@@ -4,7 +4,7 @@
  * @module
  */
 import { globSync, statSync } from "node:fs";
-import { isAbsolute, resolve } from "node:path";
+import { dirname, isAbsolute, resolve } from "node:path";
 
 /** Options for discovering documented stylesheets. */
 export interface WorkspaceDiscoveryOptions {
@@ -24,6 +24,14 @@ export interface ClientSettings extends WorkspaceDiscoveryOptions {
   hoverSections?: Record<string, "on" | "off" | "auto">;
   /** Order of hover sections. */
   hoverSectionOrder?: string[];
+  /** Whether to discover nested configuration files with providers. */
+  providerDiscovery?: boolean;
+  /** Maximum directory depth for configuration discovery. */
+  providerScanDepth?: number;
+  /** Whether to expand provider path globs. */
+  providerGlobs?: boolean;
+  /** How to handle repeated provider paths. */
+  circularReferenceMode?: "first" | "last" | "ignore" | "warn" | "error";
 }
 
 /**
@@ -80,7 +88,60 @@ export function parseClientSettings(value: unknown): ClientSettings {
       settings.hoverSections = sections;
     }
   }
+  if ("editor" in config) {
+    if (!config.editor || typeof config.editor !== "object" || Array.isArray(config.editor)) {
+      throw new TypeError("cssdoc.editor must be an object");
+    }
+    const editor = config.editor as Record<string, unknown>;
+    for (const key of ["providerDiscovery", "providerGlobs"] as const) {
+      if (key in editor) {
+        if (typeof editor[key] !== "boolean") {
+          throw new TypeError(`cssdoc.editor.${key} must be a boolean`);
+        }
+        settings[key] = editor[key];
+      }
+    }
+    if ("providerScanDepth" in editor) {
+      const depth = editor.providerScanDepth;
+      if (typeof depth !== "number" || !Number.isInteger(depth) || depth < 0) {
+        throw new TypeError("cssdoc.editor.providerScanDepth must be a non-negative integer");
+      }
+      settings.providerScanDepth = depth;
+    }
+    if ("circularReferenceMode" in editor) {
+      const mode = editor.circularReferenceMode;
+      if (
+        mode !== "first" &&
+        mode !== "last" &&
+        mode !== "ignore" &&
+        mode !== "warn" &&
+        mode !== "error"
+      ) {
+        throw new TypeError("cssdoc.editor.circularReferenceMode is invalid");
+      }
+      settings.circularReferenceMode = mode;
+    }
+  }
   return settings;
+}
+
+/**
+ * Find configuration directories up to a workspace-relative depth.
+ *
+ * @param root - The absolute workspace folder path.
+ * @param depth - Maximum directory depth below the root.
+ * @returns Sorted, unique directories containing a cssdoc configuration.
+ */
+export function discoverConfigDirectories(root: string, depth: number): string[] {
+  const patterns = Array.from(
+    { length: depth + 1 },
+    (_, level) => `${"*/".repeat(level)}cssdoc.{json,jsonc}`,
+  );
+  const dirs = globSync(patterns, {
+    cwd: root,
+    exclude: ["**/node_modules/**", "**/.git/**", "**/.vscode/**", "**/dist/**", "**/build/**"],
+  }).map((file) => dirname(resolve(root, file)));
+  return [...new Set(dirs)].toSorted();
 }
 
 /**

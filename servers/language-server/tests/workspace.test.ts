@@ -2,7 +2,11 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test } from "vite-plus/test";
-import { discoverStylesheets, parseClientSettings } from "../src/workspace.ts";
+import {
+  discoverConfigDirectories,
+  discoverStylesheets,
+  parseClientSettings,
+} from "../src/workspace.ts";
 
 test("discovers CSS in every root, excludes node_modules, and supports custom globs", () => {
   const fixture = mkdtempSync(join(tmpdir(), "cssdoc-discovery-"));
@@ -55,4 +59,35 @@ test("client configuration maps discovery and hover settings and rejects malform
   expect(() => parseClientSettings({ hover: { sections: { summary: "sometimes" } } })).toThrow(
     "cssdoc.hover.sections.summary",
   );
+  expect(
+    parseClientSettings({ editor: { providerDiscovery: false, providerScanDepth: 0 } }),
+  ).toEqual({
+    providerDiscovery: false,
+    providerScanDepth: 0,
+  });
+  expect(() => parseClientSettings({ editor: { providerScanDepth: -1 } })).toThrow(
+    "cssdoc.editor.providerScanDepth",
+  );
+});
+
+test("configuration discovery respects depth and skips dependency directories", () => {
+  const root = mkdtempSync(join(tmpdir(), "cssdoc-config-discovery-"));
+  try {
+    mkdirSync(join(root, "nested", "deep"), { recursive: true });
+    mkdirSync(join(root, "node_modules", "pkg"), { recursive: true });
+    for (const dir of [
+      root,
+      join(root, "nested"),
+      join(root, "nested", "deep"),
+      join(root, "node_modules", "pkg"),
+    ]) {
+      writeFileSync(join(dir, "cssdoc.json"), "{}");
+    }
+    expect(discoverConfigDirectories(root, 1)).toEqual([root, join(root, "nested")].toSorted());
+    expect(discoverConfigDirectories(root, 3)).toEqual(
+      [root, join(root, "nested"), join(root, "nested", "deep")].toSorted(),
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

@@ -23,6 +23,9 @@ for each workspace folder and reloads them after configuration changes. Client s
 initialization options. The `cssdoc.css` client setting uses an empty array to select discovery;
 an empty `initializationOptions.css` explicitly selects no files. Hover settings use
 `cssdoc.hover.detail`, `cssdoc.hover.sections`, and `cssdoc.hover.sectionOrder`.
+The server also discovers nested config files (three directories deep by default) so their providers
+work even when the folder has no indexed stylesheet. Client settings under `cssdoc.editor` control
+provider discovery, scan depth, glob expansion, and repeated provider paths.
 
 When the client supports watched-file registration, changes to workspace stylesheets and config files
 refresh the index. The server also refreshes on document saves and uses unsaved text from open indexed
