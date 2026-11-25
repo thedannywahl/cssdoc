@@ -21,7 +21,7 @@ export type AnchorMode = "none" | "start" | "end" | "start-end";
  *
  * Works with patterns from any tier: W3C CSS, CssDoc Grammar, or cssdoc-specific patterns.
  *
- * @param arkRegex - An ArkRegex pattern object (which extends RegExp)
+ * @param pattern - An ArkRegex pattern object (which extends RegExp)
  * @param anchors - Anchor mode: "none" (default), "start", "end", or "start-end"
  * @returns A RegExp with the global flag enabled and optional anchors
  *
@@ -41,7 +41,7 @@ export type AnchorMode = "none" | "start" | "end" | "start-end";
  *
  * // Match entire string from start to end
  * const fullMatch = toRegExp(RECORD_REFERENCE_NAME, "start-end");
- * if (fullMatch.test(value)) {
+ * if (value.match(fullMatch)) {
  *   console.log("Valid record reference name");
  * }
  * ```
