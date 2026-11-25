@@ -227,6 +227,7 @@ export type HoverDetail = "compact" | "full" | "custom";
  * placeholder); `off` hides it. Keys are the card's section names — see {@link HOVER_SECTION_KEYS}.
  */
 export type HoverSectionMode = "on" | "off" | "auto";
+/** Visibility settings keyed by hover section name. */
 export type HoverSections = Record<string, HoverSectionMode>;
 
 /** The card's section keys, in default render order — the `custom` map is keyed by these. */

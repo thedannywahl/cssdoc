@@ -287,6 +287,7 @@ const renderStructureTree = (nodes: StructureNode[], depth = 0): string[] =>
 
 // ── record ──────────────────────────────────────────────────────────────────────────────────────
 
+/** Providers for documented records and their usage. */
 export const record = {
   model(
     index: CssDocIndex,
@@ -1020,6 +1021,7 @@ export const record = {
 
 // ── modifier ────────────────────────────────────────────────────────────────────────────────────
 
+/** Providers for modifier documentation and usage. */
 export const modifier = {
   model(index: CssDocIndex): Diagnostic[] {
     const out: Diagnostic[] = [];
@@ -1256,6 +1258,7 @@ export const modifier = {
 
 // ── part ────────────────────────────────────────────────────────────────────────────────────────
 
+/** Providers for documented class-based parts. */
 export const part = {
   model(index: CssDocIndex, naming?: ResolvedNaming): Diagnostic[] {
     const out: Diagnostic[] = [];
@@ -1315,6 +1318,7 @@ export const part = {
 
 // ── shadow parts (`::part()`) ─────────────────────────────────────────────────────────────────────
 
+/** Providers for documented shadow parts. */
 export const cssPart = {
   model(index: CssDocIndex): Diagnostic[] {
     const out: Diagnostic[] = [];
@@ -1422,6 +1426,7 @@ function findProperty(
   return undefined;
 }
 
+/** Providers for custom property documentation and usage. */
 export const customProperty = {
   /** Author-side: a registered property's default (`initial-value`/`@defaultValue`) must match its syntax. */
   model(index: CssDocIndex): Diagnostic[] {
@@ -1532,6 +1537,7 @@ export const customProperty = {
 
 // ── function ────────────────────────────────────────────────────────────────────────────────────
 
+/** Providers for documented CSS functions. */
 export const func = {
   completions(index: CssDocIndex): Completion[] {
     return index.allFunctions().map(({ fn }) => ({

@@ -1,5 +1,6 @@
 import type { CssDocEntry } from "./model.ts";
 
+/** Label selection for examples, including whether to keep unlabeled examples. */
 export interface ExampleFilter {
   /** An example matches if it has any of these labels. */
   labels: readonly string[];

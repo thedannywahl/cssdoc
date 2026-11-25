@@ -1028,6 +1028,7 @@ export function splitPartArg(rest: string): {
   return { selector: selectorPlusAlias, name: deriveSelectorName(finalSeg), description };
 }
 
+/** Split a modifier tag argument into its selector, alias or derived name, and optional description. */
 export function splitModifierArg(rest: string): {
   selector: string;
   name: string;
@@ -1320,6 +1321,7 @@ function buildStructureNodes(nodes: readonly ChildNode[], currentParent?: string
   return out;
 }
 
+/** Parse a structure body into nodes; return an empty array without a parser or for malformed input. */
 export function parseStructure(
   raw: string,
   parse?: CssParse,

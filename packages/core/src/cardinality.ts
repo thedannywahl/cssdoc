@@ -16,6 +16,7 @@ import type { StructureNode } from "./model.ts";
 
 type Cardinality = NonNullable<StructureNode["cardinality"]>;
 
+/** Match a structure cardinality suffix at the end of a string. */
 export const STRUCTURE_CARDINALITY: Regex = arkRegex.as(
   String.raw`${COLON_SOURCE}${CSSDOC_CARDINALITY_SOURCE}\s*$`,
   "u",
@@ -27,6 +28,7 @@ const TRAILING_CARDINALITY: Regex = arkRegex.as(
 const BOUNDED_MAX: Regex = arkRegex.as(`^max-(${DIGIT_SOURCE}+)$`, "u");
 const BOUNDED_ONE_OR_MORE_MAX: Regex = arkRegex.as(`^one-or-more-max-(${DIGIT_SOURCE}+)$`, "u");
 
+/** Convert captured cardinality groups to a canonical value, if one is recognized. */
 export function cardinalityFromMatch(
   groups: Record<string, string | undefined>,
 ): Cardinality | undefined {
@@ -38,6 +40,7 @@ export function cardinalityFromMatch(
   return undefined;
 }
 
+/** Separate a trailing cardinality from structure parameters, retaining any private marker. */
 export function splitTrailingCardinality(raw: string): {
   params: string;
   cardinality?: Cardinality;

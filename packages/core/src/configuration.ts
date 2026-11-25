@@ -92,6 +92,13 @@ function def(options: CssDocTagDefinitionOptions): CssDocTagDefinition {
 }
 
 /**
+ * How a `/* … *\/` comment on a member's rule combines with the member's authored tag prose:
+ * `append` (tag then comment, the default), `prepend` (comment then tag), `replace` (comment wins when
+ * present), or `ignore` (comments are never used as descriptions).
+ */
+export type InlineCommentMode = "append" | "prepend" | "replace" | "ignore";
+
+/**
  * A parse configuration: the set of tag definitions plus which are supported. Construct one to get the
  * full standard vocabulary, then add custom tags or disable standard ones.
  *
@@ -104,13 +111,6 @@ function def(options: CssDocTagDefinitionOptions): CssDocTagDefinition {
  * const model = parseCssDocs(css, { configuration: config });
  * ```
  */
-/**
- * How a `/* … *\/` comment on a member's rule combines with the member's authored tag prose:
- * `append` (tag then comment, the default), `prepend` (comment then tag), `replace` (comment wins when
- * present), or `ignore` (comments are never used as descriptions).
- */
-export type InlineCommentMode = "append" | "prepend" | "replace" | "ignore";
-
 export class CssDocConfiguration {
   private readonly _tagDefinitions: CssDocTagDefinition[] = [];
   private readonly _byName = new Map<string, CssDocTagDefinition>();
