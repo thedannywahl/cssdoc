@@ -7,6 +7,7 @@ import { defineConfig } from "vitepress";
 import llmstxt from "vitepress-plugin-llms";
 import { mermaidPlugin } from "./plugins/vitepress-mermaid/index.js";
 import { expandTheme, pruneThemeBundle } from "./plugins/pantoken-theme.js";
+import { createSidebars } from "./sidebar.js";
 
 // The site is served at its own apex domain (cssdoc.dev), so it lives at the root. DOCS_BASE can still
 // override this (e.g. to preview under a project-pages subpath).
@@ -193,41 +194,11 @@ const config: UserConfig = defineConfig({
     },
     logo: { light: "/icon.svg", dark: "/icon-dark.svg" },
     nav: [
-      { text: "Guide", link: "/guide/introduction" },
-      { text: "Packages", link: "/guide/packages" },
-      { text: "API Reference", link: "/reference/" },
+      { text: "Guides", link: "/guide/introduction" },
+      { text: "API", link: "/api/" },
+      { text: "Reference", link: "/guide/reference" },
     ],
-    sidebar: {
-      "/reference/": apiSidebar,
-      "/": [
-        {
-          text: "Guide",
-          items: [
-            { text: "Introduction", link: "/guide/introduction" },
-            { text: "Getting started", link: "/guide/getting-started" },
-            { text: "Authoring doc comments", link: "/guide/authoring" },
-            { text: "Layouts", link: "/guide/layouts" },
-            { text: "Modifier conventions", link: "/guide/modifier-conventions" },
-            { text: "Configuration", link: "/guide/config" },
-            { text: "Embedded CSS", link: "/guide/embedded-css" },
-            { text: "Emitting docs", link: "/guide/emitters" },
-            { text: "Standard formats", link: "/guide/generators" },
-            { text: "Linting", link: "/guide/linting" },
-            { text: "Editor support", link: "/guide/editor" },
-          ],
-        },
-        {
-          text: "Reference",
-          items: [
-            { text: "Playground", link: "/guide/playground" },
-            { text: "Packages", link: "/guide/packages" },
-            { text: "Grammar", link: "/guide/grammar" },
-            { text: "Config reference", link: "/guide/config-reference" },
-            { text: "API Reference", link: "/reference/" },
-          ],
-        },
-      ],
-    },
+    sidebar: createSidebars(apiSidebar),
     outline: "deep",
     search: { provider: "local" },
     socialLinks: [
