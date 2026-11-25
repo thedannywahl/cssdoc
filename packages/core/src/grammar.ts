@@ -135,14 +135,19 @@ export const RECORD_TAGS: Record<string, CssRecordKind> = {
 
 /** A custom property documented by a `@cssproperty` tag. */
 export interface DocCssProperty {
+  /** Custom-property name, including its `--` prefix. */
   name: string;
+  /** Authored syntax descriptor, when supplied. */
   syntax?: string;
+  /** Authored default value, when supplied. */
   defaultValue?: string;
+  /** Authored descriptive prose, when supplied. */
   description?: string;
 }
 
 /** The prose a `@modifier` tag contributes: a description and/or an inline deprecation replacement note. */
 export interface DocModifier {
+  /** Authored descriptive prose, when supplied. */
   description?: string;
   /** Set when the modifier carries a bare `@deprecated` (no note and no canonical link). */
   deprecatedFlag?: boolean;
@@ -163,13 +168,23 @@ export interface DocModifier {
   /** Set from an inline `@global` marker — this modifier applies to any record (not just its parent). */
   global?: boolean;
   /** Set from an inline `@affects <component>.<target>` marker — a descendant record this modifier changes the rendering of. */
-  affects?: { component: string; target: string; description?: string }[];
+  affects?: {
+    /** Name of the affected record. */
+    component: string;
+    /** Name of the affected part, pseudo-element, or state. */
+    target: string;
+    /** Optional authored explanation of the effect. */
+    description?: string;
+  }[];
 }
 
 /** An authored conditional-support tag (`@container`/`@supports`/`@media`/`@responsive`). */
 export interface DocCondition {
+  /** Condition kind; responsive tags are represented as media conditions. */
   type: "container" | "supports" | "media";
+  /** The authored condition query. */
   query: string;
+  /** Authored descriptive prose, when supplied. */
   description?: string;
 }
 
@@ -252,6 +267,7 @@ export interface ParsedDoc {
   conditions: DocCondition[];
   /** `@example` blocks. */
   examples: string[];
+  /** Example labels keyed by zero-based index into {@link examples}. */
   exampleLabels?: Record<number, readonly string[]>;
   /** `@structure` — the nested-CSS body, parsed into a selector tree by {@link parseStructure}. */
   structure?: StructureNode[];
@@ -278,11 +294,21 @@ export interface ParsedDoc {
   /** `@related` component cross-references. */
   related: CssRelated[];
   /** `@memberOf <component> [private]`, when authored. */
-  memberOf?: { component: string; private: boolean };
+  memberOf?: {
+    /** Name of the containing record. */
+    component: string;
+    /** Whether the relationship is private. */
+    private: boolean;
+  };
   /** `@members <name>, <name>, …` — the inverse direction, when authored. */
   members?: string[];
   /** Repeatable `@member <name> [private]` declarations on the parent record. */
-  memberEntries: { name: string; private: boolean }[];
+  memberEntries: {
+    /** Name of the member record. */
+    name: string;
+    /** Whether the member is private. */
+    private: boolean;
+  }[];
   /** Set by a record-level `@global` tag — modifiers of this record apply to any other component/layout/rule/declaration. */
   global?: boolean;
   /** Content of registered custom (block) tags, keyed by tag name without its `@`. */
@@ -994,8 +1020,11 @@ function normalizeMultilineDescription(text: string): string {
  * @example `@part A > B > C — Desc`                     → `{ selector: "A > B > C", name: "<derived from C>", description: "Desc" }`
  */
 export function splitPartArg(rest: string): {
+  /** Original selector, excluding an optional alias and description. */
   selector: string;
+  /** Explicit alias or a name derived from the selector. */
   name: string;
+  /** Description after the separator, when supplied. */
   description?: string;
 } {
   // Split on the description separator to isolate selector+alias from description.
@@ -1030,8 +1059,11 @@ export function splitPartArg(rest: string): {
 
 /** Split a modifier tag argument into its selector, alias or derived name, and optional description. */
 export function splitModifierArg(rest: string): {
+  /** The selector portion of the modifier argument. */
   selector: string;
+  /** Explicit alias or a name derived from the selector. */
   name: string;
+  /** Description after the separator, when supplied. */
   description?: string;
 } {
   // Grab the selector with the same bracket-aware regex as splitPartArg.

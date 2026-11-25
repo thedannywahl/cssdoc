@@ -225,6 +225,7 @@ function attributeChain(baseEsc: string): Regex {
  * token look like a modifier usage?". Constructed once per parse from the resolved convention.
  */
 export class ModifierMatcher {
+  /** Convention used to recognize and render modifiers. */
   readonly convention: ModifierConvention;
   /** The separator(s), longest-first so overlapping prefixes (e.g. `--` before `-`) match greedily. */
   private readonly separators: string[];
@@ -374,7 +375,15 @@ export class ModifierMatcher {
    * as parts, each with any element-scoped modifiers (`.base__element--mod` → element `base__element`
    * with modifier `mod`). Only meaningful for `suffix` conventions with an `elementSeparator`.
    */
-  elementsIn(selector: string, baseNoDot: string): { name: string; modifiers: ModifierHit[] }[] {
+  elementsIn(
+    selector: string,
+    baseNoDot: string,
+  ): {
+    /** Element class without its leading dot. */
+    name: string;
+    /** Modifiers found on the element class. */
+    modifiers: ModifierHit[];
+  }[] {
     if (this.convention.structure !== "suffix" || this.elementSepAlt === "") return [];
     const baseEsc = escapeRegex(baseNoDot);
     const ELEMENT: Regex = arkRegex.as(
@@ -417,7 +426,13 @@ export class ModifierMatcher {
    * of the convention's {@link ModifierConvention.statePrefixes} (e.g. `.tabs.is-open` → `is-open`).
    * Empty when the convention sets no state prefixes.
    */
-  statesIn(selector: string, baseNoDot: string): { name: string }[] {
+  statesIn(
+    selector: string,
+    baseNoDot: string,
+  ): {
+    /** State class without its leading dot. */
+    name: string;
+  }[] {
     if (this.statePrefixes.length === 0) return [];
     const baseEsc = escapeRegex(baseNoDot);
     const prefixAlt = `(?:${this.statePrefixes.map(escapeRegex).join("|")})`;
@@ -447,7 +462,10 @@ export class ModifierMatcher {
    * convention's {@link ModifierConvention.statePseudoClasses} (e.g. `.tab:disabled` → `disabled`).
    * Pseudo-elements (`::part`) and pseudos not in the set are ignored.
    */
-  pseudoStatesIn(selector: string): { name: string }[] {
+  pseudoStatesIn(selector: string): {
+    /** Pseudo-class name without its leading colon. */
+    name: string;
+  }[] {
     if (this.statePseudoClasses.size === 0) return [];
     const PSEUDO_STATE: Regex = arkRegex.as(
       `(?<!${COLON_SOURCE})${COLON_SOURCE}(${ALPHANUMERIC_EXTENDED_SOURCE}+)`,
@@ -470,7 +488,10 @@ export class ModifierMatcher {
    * is in the convention's {@link ModifierConvention.pseudoElements} (e.g. `.alert::before` → `before`).
    * `::part()`/`::slotted()` and pseudo-elements not in the set are ignored.
    */
-  pseudoElementsIn(selector: string): { name: string }[] {
+  pseudoElementsIn(selector: string): {
+    /** Pseudo-element name without its leading colons. */
+    name: string;
+  }[] {
     if (this.pseudoElements.size === 0) return [];
     const PSEUDO_ELEMENT: Regex = arkRegex.as(
       `${COLON_SOURCE}${COLON_SOURCE}(${ALPHANUMERIC_EXTENDED_SOURCE}+)`,
@@ -489,7 +510,12 @@ export class ModifierMatcher {
   }
 
   /** Derive `prop`/`value` for a modifier `name` (as returned by {@link modifiersIn} or authored). */
-  analyze(name: string): { prop: string; value?: string } {
+  analyze(name: string): {
+    /** Grouping key derived from the modifier. */
+    prop: string;
+    /** Value segment, when the convention splits the name into property and value. */
+    value?: string;
+  } {
     if (name.includes(ASTERISK_CHAR)) {
       const WILDCARD: Regex = arkRegex.as(ASTERISK_SOURCE, "gu");
       const TRAILING_DASHES: Regex = arkRegex.as(`${DASH_SOURCE}+$`, "u");

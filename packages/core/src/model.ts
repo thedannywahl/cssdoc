@@ -47,12 +47,22 @@ export interface CssModifier {
    * to use instead; `note` (from an authored inline deprecation tag on the `@modifier` line) is
    * free-text replacement guidance for cases where the replacement isn't itself a modifier.
    */
-  deprecated?: { canonical?: string; note?: string };
+  deprecated?: {
+    /** Modifier to use instead, when known. */
+    canonical?: string;
+    /** Authored replacement guidance, when supplied. */
+    note?: string;
+  };
   /**
    * Set when the modifier is an alias of another modifier. `canonical` names the canonical modifier;
    * `note` carries optional authored guidance from an inline `@alias` tag.
    */
-  alias?: { canonical?: string; note?: string };
+  alias?: {
+    /** Modifier this alias maps to, when known. */
+    canonical?: string;
+    /** Authored alias guidance, when supplied. */
+    note?: string;
+  };
   /**
    * Set via an authored inline `@modifier -x — @interaction …` marker: a class toggled by script (a
    * JS interaction hook, e.g. `-should-animate`) that carries no CSS declarations of its own. Exempts
@@ -73,7 +83,14 @@ export interface CssModifier {
    * or state name on `component`; the CSS rule causing the effect lives in that other record's own
    * stylesheet, not this one, so there'd otherwise be nothing on this modifier pointing a reader there.
    */
-  affects?: { component: string; target: string; description?: string }[];
+  affects?: {
+    /** Name of the affected record. */
+    component: string;
+    /** Name of the affected part, pseudo-element, or state. */
+    target: string;
+    /** Optional authored explanation of the effect. */
+    description?: string;
+  }[];
 }
 
 /** A sub-element ("part") of a component — a scoped child class like `.item` or `.tip`. */
