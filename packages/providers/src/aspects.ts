@@ -91,7 +91,7 @@ const bold = (text: string): string =>
 const codicon = (name: string): string =>
   `${DOLLAR_CHAR}${PAREN_OPEN_CHAR}${name}${PAREN_CLOSE_CHAR}`;
 const emptySection = `${UNDERSCORE_CHAR}—${UNDERSCORE_CHAR}`;
-const SELECTOR_PREFIX_RE: Regex = arkRegex.as(`^[${DOT_CHAR}${POUND_CHAR}]`, "u");
+const SELECTOR_PREFIX: Regex = arkRegex.as(`^[${DOT_CHAR}${POUND_CHAR}]`, "u");
 const stripDot = (name: string): string => (name.startsWith(DOT_CHAR) ? name.slice(1) : name);
 const warn = (d: Omit<Diagnostic, "severity">): Diagnostic => ({ ...d, severity: "warning" });
 const scaffoldDocLine = (commentSpan: SourceSpan | undefined, line: string): Diagnostic["fix"] => {
@@ -109,15 +109,15 @@ const scaffoldDocLine = (commentSpan: SourceSpan | undefined, line: string): Dia
   };
 };
 
-const CUSTOM_ELEMENT_RE: Regex = arkRegex.as(`^${HTML_CUSTOM_ELEMENT_LIKE_NAME_SOURCE}$`, "u");
+const CUSTOM_ELEMENT: Regex = arkRegex.as(`^${HTML_CUSTOM_ELEMENT_LIKE_NAME_SOURCE}$`, "u");
 
 /** A `*`-glob name (e.g. `-icon-*`) as a regex source over one class token (`*` → any `[\w-]` run). */
 const globSource = (name: string): string =>
   name.split(ASTERISK_CHAR).map(escapeRegex).join(`${ALPHANUMERIC_EXTENDED_SOURCE}*`);
 
 /** `class` attribute selectors, capturing the operator (`~`/`^`/`$`/`*`/`|`/none) and the value. */
-const CLASS_ATTR_RE = toRegExp(CSS_CLASS_ATTRIBUTE_SELECTOR);
-const CLASS_REFERENCE_RE = toRegExp(CSS_CLASS_REFERENCE);
+const CLASS_ATTR = toRegExp(CSS_CLASS_ATTRIBUTE_SELECTOR);
+const CLASS_REFERENCE = toRegExp(CSS_CLASS_REFERENCE);
 
 /**
  * Whether `selectorText` (the record's concatenated selectors) defines the modifier/part `selector`.
@@ -145,7 +145,7 @@ export const selectorDefines = (selectorText: string, selector: string): boolean
 
   // 2. `class` attribute selectors, evaluated per operator against the modifier as a class token.
   const glob: Regex = arkRegex.as(`^${globSource(name)}$`, "u");
-  for (const m of selectorText.matchAll(CLASS_ATTR_RE)) {
+  for (const m of selectorText.matchAll(CLASS_ATTR)) {
     const op = m[1];
     const v = m[2] ?? m[3] ?? m[4] ?? "";
     if (!v || op === CARET_CHAR) continue; // ^= targets the attribute start (base class), not a chained modifier
@@ -173,14 +173,14 @@ const globMatch = (pattern: string, value: string): boolean => {
   return re.test(value);
 };
 
-const STRUCTURE_REF_KIND_RE: Regex = arkRegex.as(`^${STRUCTURE_RECORD_KIND_SOURCE}$`, "u");
+const STRUCTURE_REF_KIND: Regex = arkRegex.as(`^${STRUCTURE_RECORD_KIND_SOURCE}$`, "u");
 const CUSTOM_MEDIA_REFERENCE = String.raw`(${CSSDOC_QUALIFIED_REFERENCE_SOURCE})\s+${PAREN_OPEN_SOURCE}\s*(${CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE})\s*${PAREN_CLOSE_SOURCE}(?:\s+(private))?`;
-const TYPED_CUSTOM_MEDIA_RE: Regex = arkRegex.as(
+const TYPED_CUSTOM_MEDIA: Regex = arkRegex.as(
   String.raw`^(${STRUCTURE_RECORD_KIND_SOURCE})\s+${CUSTOM_MEDIA_REFERENCE}$`,
   "u",
 );
-const SHORTHAND_CUSTOM_MEDIA_RE: Regex = arkRegex.as(`^${CUSTOM_MEDIA_REFERENCE}$`, "u");
-const TERMINAL_COMPOUND_RE: Regex = arkRegex.as(
+const SHORTHAND_CUSTOM_MEDIA: Regex = arkRegex.as(`^${CUSTOM_MEDIA_REFERENCE}$`, "u");
+const TERMINAL_COMPOUND: Regex = arkRegex.as(
   String.raw`([^\s${GREATER_THAN_CHAR}${TILDE_CHAR}+]+)\s*$`,
   "u",
 );
@@ -203,7 +203,7 @@ const parseStructureRecordRef = (selector: string): StructureRecordRef | undefin
     };
   }
 
-  const typedCustomMedia = raw.match(TYPED_CUSTOM_MEDIA_RE);
+  const typedCustomMedia = raw.match(TYPED_CUSTOM_MEDIA);
   if (typedCustomMedia) {
     return {
       kind: typedCustomMedia[1] === "name" ? "component" : typedCustomMedia[1],
@@ -213,9 +213,9 @@ const parseStructureRecordRef = (selector: string): StructureRecordRef | undefin
     };
   }
 
-  const shorthandCustomMedia = raw.match(SHORTHAND_CUSTOM_MEDIA_RE);
+  const shorthandCustomMedia = raw.match(SHORTHAND_CUSTOM_MEDIA);
   if (shorthandCustomMedia) {
-    if (STRUCTURE_REF_KIND_RE.test(shorthandCustomMedia[1])) return undefined;
+    if (STRUCTURE_REF_KIND.test(shorthandCustomMedia[1])) return undefined;
     return {
       name: shorthandCustomMedia[1],
       profile: shorthandCustomMedia[2],
@@ -227,7 +227,7 @@ const parseStructureRecordRef = (selector: string): StructureRecordRef | undefin
   const shorthand = raw.match(SHORTHAND);
   if (!shorthand) return undefined;
   // Guard against malformed `@kind` without a name being interpreted as shorthand.
-  if (STRUCTURE_REF_KIND_RE.test(shorthand[1])) return undefined;
+  if (STRUCTURE_REF_KIND.test(shorthand[1])) return undefined;
   return { name: shorthand[1], profile: shorthand[2], private: Boolean(shorthand[3]) };
 };
 
@@ -243,9 +243,8 @@ const structureReferences = (
   recordName: string,
 ): boolean =>
   nodes.some((node) => {
-    if ([...node.selector.matchAll(CLASS_REFERENCE_RE)].some((m) => m[1] === className))
-      return true;
-    if (node.colocated && node.colocated.replace(SELECTOR_PREFIX_RE, "") === className) return true;
+    if ([...node.selector.matchAll(CLASS_REFERENCE)].some((m) => m[1] === className)) return true;
+    if (node.colocated && node.colocated.replace(SELECTOR_PREFIX, "") === className) return true;
     const ref = parseStructureRecordRef(node.selector);
     if (ref && ref.name === recordName) return true;
     if ((node.variants ?? []).some((v) => structureReferences(v.nodes, className, recordName)))
@@ -483,7 +482,7 @@ export const record = {
         // descendants. A normal structure (rooted at the component) is unaffected.
         const selfClass = stripDot(info.entry.className);
         const classesOf = (sel: string): string[] =>
-          [...sel.matchAll(CLASS_REFERENCE_RE)].map((m) => m[1]);
+          [...sel.matchAll(CLASS_REFERENCE)].map((m) => m[1]);
         const hasSelfBelow = (nodes: StructureNode[]): boolean =>
           nodes.some(
             (n) =>
@@ -523,7 +522,7 @@ export const record = {
                 seenRefs.add(colocKey);
                 const kinds =
                   siblingByClassName.get(node.colocated) ?? siblingNameKinds.get(node.colocated);
-                const colocName = node.colocated.replace(SELECTOR_PREFIX_RE, "");
+                const colocName = node.colocated.replace(SELECTOR_PREFIX, "");
                 if (!kinds || kinds.size === 0) {
                   out.push(
                     warn({
@@ -601,7 +600,7 @@ export const record = {
               continue;
             }
 
-            for (const m of node.selector.matchAll(CLASS_REFERENCE_RE)) {
+            for (const m of node.selector.matchAll(CLASS_REFERENCE)) {
               const cls = m[1];
               if (
                 seen.has(cls) ||
@@ -1267,7 +1266,7 @@ export const part = {
           // A CSS-derived part is covered when an authored chain @part has it as its terminal compound.
           const cls = `${DOT_CHAR}${p.name}`;
           const coveredByChain = [...info.authoredParts.values()].some(
-            (sel) => (sel.match(TERMINAL_COMPOUND_RE)?.[1] ?? sel) === cls,
+            (sel) => (sel.match(TERMINAL_COMPOUND)?.[1] ?? sel) === cls,
           );
           if (coveredByChain) continue;
           out.push(
@@ -1353,7 +1352,7 @@ export function elementUsage(usage: ClassUsage, index: CssDocIndex): Diagnostic[
 
   const element = usage.elementName.toLowerCase();
   // `@element` models HTML elements/groups; custom elements are out of scope.
-  if (CUSTOM_ELEMENT_RE.exec(element) !== null) return [];
+  if (CUSTOM_ELEMENT.exec(element) !== null) return [];
 
   const allowed = profile.any
     ? !profile.exclude.includes(element)

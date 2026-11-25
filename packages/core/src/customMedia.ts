@@ -7,9 +7,9 @@ import {
   UNTYPED_STRUCTURE_MEDIA_SOURCE,
 } from "@cssdoc/regex";
 
-const TYPED_STRUCTURE_MEDIA_RE: Regex = arkRegex.as(`^${TYPED_STRUCTURE_MEDIA_SOURCE}$`, "u");
-const UNTYPED_STRUCTURE_MEDIA_RE: Regex = arkRegex.as(`^${UNTYPED_STRUCTURE_MEDIA_SOURCE}$`, "u");
-const STRUCTURE_RECORD_KIND_RE: Regex = arkRegex.as(`^${STRUCTURE_RECORD_KIND_SOURCE}$`, "u");
+const TYPED_STRUCTURE_MEDIA: Regex = arkRegex.as(`^${TYPED_STRUCTURE_MEDIA_SOURCE}$`, "u");
+const UNTYPED_STRUCTURE_MEDIA: Regex = arkRegex.as(`^${UNTYPED_STRUCTURE_MEDIA_SOURCE}$`, "u");
+const STRUCTURE_RECORD_KIND: Regex = arkRegex.as(`^${STRUCTURE_RECORD_KIND_SOURCE}$`, "u");
 
 function canonicalRecordKind(kind: string): CssRecordKind | undefined {
   if (kind === "name") return "component";
@@ -57,7 +57,7 @@ function parseStructureCustomMediaSelector(selector: string): {
   recordKind?: CssRecordKind;
   profile: string;
 } | null {
-  const typed = selector.match(TYPED_STRUCTURE_MEDIA_RE);
+  const typed = selector.match(TYPED_STRUCTURE_MEDIA);
   if (typed) {
     const recordKind = canonicalRecordKind(typed[1]);
     if (!recordKind) return null;
@@ -67,10 +67,10 @@ function parseStructureCustomMediaSelector(selector: string): {
       profile: typed[3],
     };
   }
-  const untyped = selector.match(UNTYPED_STRUCTURE_MEDIA_RE);
+  const untyped = selector.match(UNTYPED_STRUCTURE_MEDIA);
   if (!untyped) return null;
   // Guard malformed `@component (--x)` and peers from being treated as untyped record names.
-  if (STRUCTURE_RECORD_KIND_RE.test(untyped[1])) return null;
+  if (STRUCTURE_RECORD_KIND.test(untyped[1])) return null;
   return { record: untyped[1], profile: untyped[2] };
 }
 

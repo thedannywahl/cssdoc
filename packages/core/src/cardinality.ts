@@ -24,8 +24,8 @@ const TRAILING_CARDINALITY: Regex = arkRegex.as(
   String.raw`^(?<base>[\s\S]*?)${COLON_SOURCE}${CSSDOC_CARDINALITY_SOURCE}(?:\s+(?<private>private))?\s*$`,
   "u",
 );
-const BOUNDED_MAX_RE: Regex = arkRegex.as(`^max-(${DIGIT_SOURCE}+)$`, "u");
-const BOUNDED_ONE_OR_MORE_MAX_RE: Regex = arkRegex.as(`^one-or-more-max-(${DIGIT_SOURCE}+)$`, "u");
+const BOUNDED_MAX: Regex = arkRegex.as(`^max-(${DIGIT_SOURCE}+)$`, "u");
+const BOUNDED_ONE_OR_MORE_MAX: Regex = arkRegex.as(`^one-or-more-max-(${DIGIT_SOURCE}+)$`, "u");
 
 export function cardinalityFromMatch(
   groups: Record<string, string | undefined>,
@@ -61,9 +61,9 @@ export function cardinalityToken(cardinality: Cardinality): string {
     case "one-or-more":
       return "1..n";
     default: {
-      const boundedMax = cardinality.match(BOUNDED_MAX_RE);
+      const boundedMax = cardinality.match(BOUNDED_MAX);
       if (boundedMax) return `0..${boundedMax[1]}`;
-      const boundedOneOrMoreMax = cardinality.match(BOUNDED_ONE_OR_MORE_MAX_RE);
+      const boundedOneOrMoreMax = cardinality.match(BOUNDED_ONE_OR_MORE_MAX);
       if (boundedOneOrMoreMax) return `1..${boundedOneOrMoreMax[1]}`;
       return cardinality;
     }

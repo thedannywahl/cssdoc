@@ -378,32 +378,32 @@ export interface ClassUsageSite {
   tokens: ClassToken[];
 }
 
-const TAG_RE = arkRegex.as(
+const TAG = arkRegex.as(
   String.raw`${LESS_THAN_CHAR}(${HTML_LIKE_DOTTED_TAG_NAME_SOURCE})${WORD_BOUNDARY_SOURCE}([^${GREATER_THAN_CHAR}]*)${GREATER_THAN_CHAR}`,
   "gu",
 );
 // Static `class="…"` / `className="…"` — not `:class` / `v-bind:class` (excluded by the lookbehind).
-const STATIC_CLASS_RE = arkRegex.as(
+const STATIC_CLASS = arkRegex.as(
   String.raw`(?<![${COLON_CHAR}\w${DASH_SOURCE}])${HTML_LIKE_CLASS_ATTRIBUTE_NAME_SOURCE}\s*${EQUALS_CHAR}\s*(${HTML_QUOTED_ATTRIBUTE_VALUE_SOURCE})`,
   "gu",
 );
 // JSX brace value: `className={ … }` / `class={ … }` (string/template literals inside are class names).
-const JSX_CLASS_RE = arkRegex.as(
+const JSX_CLASS = arkRegex.as(
   String.raw`(?<![${COLON_CHAR}\w${DASH_SOURCE}])${HTML_LIKE_CLASS_ATTRIBUTE_NAME_SOURCE}\s*${EQUALS_CHAR}\s*${BRACE_OPEN_SOURCE}([^${BRACE_OPEN_CHAR}${BRACE_CLOSE_CHAR}]*)${BRACE_CLOSE_SOURCE}`,
   "gu",
 );
 // Vue bound value: `:class="…"` / `v-bind:class="…"` (string literals inside the expression).
-const VUE_BOUND_RE = arkRegex.as(
+const VUE_BOUND = arkRegex.as(
   String.raw`(?:${COLON_CHAR}class|v-bind${COLON_CHAR}class)\s*${EQUALS_CHAR}\s*(${HTML_QUOTED_ATTRIBUTE_VALUE_SOURCE})`,
   "gu",
 );
 // Svelte directive: `class:name` toggles the class `name`.
-const SVELTE_CLASS_RE = arkRegex.as(
+const SVELTE_CLASS = arkRegex.as(
   String.raw`${WORD_BOUNDARY_SOURCE}class${COLON_CHAR}([\w${DASH_SOURCE}]+)`,
   "gu",
 );
-const STRING_LITERAL_RE = toRegExp(JAVASCRIPT_QUOTED_OR_TEMPLATE_LITERAL_LIKE);
-const WORD_RE = arkRegex.as(String.raw`\S+`, "gu");
+const STRING_LITERAL = toRegExp(JAVASCRIPT_QUOTED_OR_TEMPLATE_LITERAL_LIKE);
+const WORD = arkRegex.as(String.raw`\S+`, "gu");
 // Comment forms to blank before scanning, so commented-out markup isn't read as a usage. The `//`
 // form guards against `://` (URLs) so a `href="http://…"` isn't mistaken for a line comment.
 const COMMENT_RES = [
@@ -455,36 +455,36 @@ export function scanClassUsages(source: string): ClassUsageSite[] {
   // Blank comments first (same length, so offsets still map to `source`) — commented-out markup like
   // `<!-- <div class="tabs tabs--boxed"></div> -->` must not be read as a real usage.
   const scanned = maskComments(source);
-  for (const tag of scanned.matchAll(TAG_RE)) {
+  for (const tag of scanned.matchAll(TAG)) {
     const attrs = tag[2];
     if (!attrs) continue;
     const elementName = tag[1]?.toLowerCase();
     const base = (tag.index ?? 0) + tag[0].length - 1 - attrs.length; // absolute start of the attrs
     const tokens: ClassToken[] = [];
     const pushWords = (raw: string, rawBase: number): void => {
-      for (const w of raw.matchAll(WORD_RE)) {
+      for (const w of raw.matchAll(WORD)) {
         const start = rawBase + (w.index ?? 0);
         tokens.push({ token: w[0], start, end: start + w[0].length });
       }
     };
     const pushLiterals = (expr: string, exprBase: number): void => {
-      for (const s of expr.matchAll(STRING_LITERAL_RE)) {
+      for (const s of expr.matchAll(STRING_LITERAL)) {
         const body = s[1] === BACKTICK_CHAR ? maskTemplateInterpolations(s[2]) : s[2];
         pushWords(body, exprBase + (s.index ?? 0) + 1); // +1 skips the opening quote
       }
     };
-    for (const a of attrs.matchAll(STATIC_CLASS_RE)) {
+    for (const a of attrs.matchAll(STATIC_CLASS)) {
       const raw = a[2] ?? a[3] ?? "";
       pushWords(raw, base + (a.index ?? 0) + a[0].length - 1 - raw.length);
     }
-    for (const a of attrs.matchAll(JSX_CLASS_RE)) {
+    for (const a of attrs.matchAll(JSX_CLASS)) {
       pushLiterals(a[1], base + (a.index ?? 0) + a[0].length - 1 - a[1].length);
     }
-    for (const a of attrs.matchAll(VUE_BOUND_RE)) {
+    for (const a of attrs.matchAll(VUE_BOUND)) {
       const raw = a[2] ?? a[3] ?? "";
       pushLiterals(raw, base + (a.index ?? 0) + a[0].length - 1 - raw.length);
     }
-    for (const a of attrs.matchAll(SVELTE_CLASS_RE)) {
+    for (const a of attrs.matchAll(SVELTE_CLASS)) {
       const start = base + (a.index ?? 0) + a[0].length - a[1].length;
       tokens.push({ token: a[1], start, end: start + a[1].length });
     }

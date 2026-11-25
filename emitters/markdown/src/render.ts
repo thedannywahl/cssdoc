@@ -253,7 +253,7 @@ export function groupEntries(
     .map((label) => ({ label, entries: byLabel.get(label)! }));
 }
 
-const CODE_SPAN_RE = toRegExp(MARKDOWN_SINGLE_BACKTICK_CODE_SPAN);
+const CODE_SPAN = toRegExp(MARKDOWN_SINGLE_BACKTICK_CODE_SPAN);
 const LIST_ITEM_PREFIX: Regex = arkRegex.as(
   `^(?:${MARKDOWN_UNORDERED_LIST_MARKER_SOURCE}|${MARKDOWN_ORDERED_LIST_MARKER_SOURCE}) `,
   "u",
@@ -266,7 +266,7 @@ const LIST_ITEM_PREFIX: Regex = arkRegex.as(
  */
 export function escProse(text: string): string {
   return text
-    .split(CODE_SPAN_RE)
+    .split(CODE_SPAN)
     .map((seg, i) =>
       i % 2 === 1
         ? seg
@@ -332,7 +332,7 @@ function table(headers: string[], rows: string[][]): string[] {
 
 /** Match a `slot` / `slot[name="x"]` structure node (a light-DOM content region → the default/named slot). */
 const SLOT_NODE: Regex = arkRegex.as(`^${CSSDOC_STRUCTURE_SLOT_SOURCE}$`, "u");
-const CLASS_REFERENCE_RE = toRegExp(CSS_CLASS_REFERENCE);
+const CLASS_REFERENCE = toRegExp(CSS_CLASS_REFERENCE);
 const ALIAS_PREFIX: Regex = arkRegex.as(
   String.raw`^${AT_SOURCE}alias${WORD_BOUNDARY_SOURCE}\s*`,
   "u",
@@ -344,9 +344,9 @@ const INLINE_LINK: Regex = arkRegex.as(
 
 /** Every bare class in a selector, e.g. a comma-separated alternation list `.a, .b` → `["a", "b"]`. */
 const allClasses = (selector: string): string[] =>
-  [...selector.matchAll(CLASS_REFERENCE_RE)].map((m) => m[1]);
+  [...selector.matchAll(CLASS_REFERENCE)].map((m) => m[1]);
 
-const STRUCTURE_REF_KIND_RE: Regex = arkRegex.as(`^${STRUCTURE_RECORD_KIND_SOURCE}$`, "u");
+const STRUCTURE_REF_KIND: Regex = arkRegex.as(`^${STRUCTURE_RECORD_KIND_SOURCE}$`, "u");
 const parseStructureRecordRef = (
   selector: string,
 ): { kind?: string; name: string; profile?: string; private?: boolean } | undefined => {
@@ -368,7 +368,7 @@ const parseStructureRecordRef = (
   const SHORTHAND: Regex = arkRegex.as(`^${CSSDOC_SHORTHAND_STRUCTURE_REFERENCE_SOURCE}$`, "u");
   const shorthand = raw.match(SHORTHAND);
   if (!shorthand) return undefined;
-  if (STRUCTURE_REF_KIND_RE.test(shorthand[1])) return undefined;
+  if (STRUCTURE_REF_KIND.test(shorthand[1])) return undefined;
   return { name: shorthand[1], profile: shorthand[2], private: Boolean(shorthand[3]) };
 };
 
@@ -504,7 +504,7 @@ function subcomponentsOf(
         const c = resolve(ref.name);
         if (c) byName.set(c.name, c);
       }
-      for (const m of node.selector.matchAll(CLASS_REFERENCE_RE)) {
+      for (const m of node.selector.matchAll(CLASS_REFERENCE)) {
         if (m[1] === self) continue;
         const c = resolve(m[1]);
         if (c) byName.set(c.name, c);

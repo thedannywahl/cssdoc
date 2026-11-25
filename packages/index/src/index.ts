@@ -50,7 +50,7 @@ import {
  * case, so a PascalCase or namespaced/prefixed class (`.Button`, `.PFX-badge`) is picked up as a part —
  * `-`-led modifiers and digit-led idents are excluded. Shares the parser's class-name pattern.
  */
-const CLASS_REF_RE = toRegExp(CSSDOC_BASE_CLASS_REFERENCE);
+const CLASS_REF = toRegExp(CSSDOC_BASE_CLASS_REFERENCE);
 const AUTHORED_MEMBER = arkRegex.as(String.raw`^${AT_SOURCE}(modifier|part)\s+([\s\S]*)$`, "u");
 const CUSTOM_FUNCTION = arkRegex.as(`^(${CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE})`, "u");
 
@@ -509,7 +509,7 @@ function scanNodes(nodes: ChildNode[], build: Build, base: string, matcher: Modi
         for (const st of matcher.statesIn(bare, baseNoDot)) {
           set(memberKey("state", st.name), node);
         }
-        for (const p of bare.matchAll(CLASS_REF_RE)) {
+        for (const p of bare.matchAll(CLASS_REF)) {
           if (modNames.has(p[1])) continue; // a modifier, not a part
           set(memberKey("part", p[1]), node);
         }

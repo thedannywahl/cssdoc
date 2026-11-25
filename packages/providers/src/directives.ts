@@ -33,7 +33,7 @@ interface Directive {
 }
 
 // `disable-next-line` before `disable-line` before `disable` so the longer keyword wins the alternation.
-const DIRECTIVE_RE = arkRegex.as(
+const DIRECTIVE = arkRegex.as(
   String.raw`${COMMENT_START_SOURCE}\s*cssdoc-(disable-next-line|disable-line|disable|enable|expect-error)\b([^*]*?)${COMMENT_END_SOURCE}`,
   "gu",
 );
@@ -47,7 +47,7 @@ const lineAt = (source: string, index: number): number => {
 /** Parse every `cssdoc-*` directive comment out of a CSS source. */
 export function parseDirectives(source: string): Directive[] {
   const out: Directive[] = [];
-  for (const m of source.matchAll(DIRECTIVE_RE)) {
+  for (const m of source.matchAll(DIRECTIVE)) {
     const at = m.index ?? 0;
     // A ` - <reason>` suffix (space-hyphen-space) splits the justification off the rule list. Rule ids
     // never contain a standalone ` - `, so this can't swallow one (e.g. `missing-summary` is untouched).

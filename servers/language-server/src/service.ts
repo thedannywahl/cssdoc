@@ -84,12 +84,12 @@ const ANNOTATION_MARKER = arkRegex.as(
   String.raw`^(${DIGIT_SOURCE}+)${DOT_SOURCE}\s*([\s\S]*)$`,
   "u",
 );
-const DOC_COMMENT_RE: Regex = arkRegex.as(
+const DOC_COMMENT: Regex = arkRegex.as(
   `${DOC_COMMENT_START_SOURCE}[\\s\\S]*?${COMMENT_END_SOURCE}`,
   "gu",
 );
-const COMMENT_OPENING_RE: Regex = arkRegex.as(`^${COMMENT_START_SOURCE}${ASTERISK_SOURCE}?`);
-const COMMENT_CLOSING_RE: Regex = arkRegex.as(`${COMMENT_END_SOURCE}$`);
+const COMMENT_OPENING: Regex = arkRegex.as(`^${COMMENT_START_SOURCE}${ASTERISK_SOURCE}?`);
+const COMMENT_CLOSING: Regex = arkRegex.as(`${COMMENT_END_SOURCE}$`);
 
 /** Map an editor `languageId` to an embedded host, for docs whose path extension isn't decisive. */
 const hostForLanguageId = (languageId?: string): EmbeddedHost | undefined => {
@@ -202,8 +202,8 @@ function refHoverAt(
   const fallbackLegend = (raw: string): Map<number, string> => {
     const out = new Map<number, string>();
     const body = raw
-      .replace(COMMENT_OPENING_RE, "")
-      .replace(COMMENT_CLOSING_RE, "")
+      .replace(COMMENT_OPENING, "")
+      .replace(COMMENT_CLOSING, "")
       .split("\n")
       .map((line) => line.replace(/^\s*\*\s?/, ""));
     const at = body.findIndex((line) => /^\s*@annotations\b/u.test(line));
@@ -224,7 +224,7 @@ function refHoverAt(
     return out;
   };
 
-  const comments = text.matchAll(DOC_COMMENT_RE);
+  const comments = text.matchAll(DOC_COMMENT);
   for (const block of comments) {
     const start = block.index ?? 0;
     const end = start + block[0].length;
@@ -325,20 +325,20 @@ interface ClassAttr {
   valueEnd: number;
 }
 
-const CLASS_ATTR_RE = arkRegex.as(
+const CLASS_ATTR = arkRegex.as(
   String.raw`${WORD_BOUNDARY_SOURCE}${HTML_LIKE_CLASS_ATTRIBUTE_NAME_SOURCE}\s*${EQUALS_CHAR}\s*${BRACE_OPEN_SOURCE}?\s*([${QUOTE_DOUBLE_CHAR}${QUOTE_SINGLE_CHAR}])((?:(?!\1)[\s\S])*)\1`,
   "gu",
 );
-const ATTRIBUTE_USAGE_TAG_RE = arkRegex.as(
+const ATTRIBUTE_USAGE_TAG = arkRegex.as(
   String.raw`${LESS_THAN_CHAR}(${HTML_LIKE_TAG_NAME_SOURCE})([^${LESS_THAN_CHAR}${GREATER_THAN_CHAR}]*?)${FORWARD_SLASH_CHAR}?${GREATER_THAN_CHAR}`,
   "gu",
 );
-const QUOTED_ATTRIBUTE_RE = toRegExp(HTML_QUOTED_ATTRIBUTE);
+const QUOTED_ATTRIBUTE = toRegExp(HTML_QUOTED_ATTRIBUTE);
 
 /** Every `class`/`className` attribute value in the text, with per-token offsets. */
 function classAttributes(text: string): ClassAttr[] {
   const attrs: ClassAttr[] = [];
-  for (const m of text.matchAll(CLASS_ATTR_RE)) {
+  for (const m of text.matchAll(CLASS_ATTR)) {
     const value = m[2];
     const valueStart = (m.index ?? 0) + m[0].length - value.length - 1;
     const members: AttrToken[] = [];
@@ -409,14 +409,14 @@ function resolveCssClass(
   return owner ? { base: stripLeadingDot(owner.className), token } : undefined;
 }
 
-const CLASS_ATTR_SELECTOR_RE = toRegExp(CSS_CLASS_ATTRIBUTE_SELECTOR);
+const CLASS_ATTR_SELECTOR = toRegExp(CSS_CLASS_ATTRIBUTE_SELECTOR);
 
 /** The `[class OP="value"]` attribute selector under `offset` (its operator, value, and start), if any. */
 function cssClassAttrSelectorAt(
   text: string,
   offset: number,
 ): { op: string; value: string; start: number } | undefined {
-  for (const m of text.matchAll(CLASS_ATTR_SELECTOR_RE)) {
+  for (const m of text.matchAll(CLASS_ATTR_SELECTOR)) {
     if (m[4] !== undefined) continue;
     const start = m.index ?? 0;
     if (offset >= start && offset <= start + m[0].length) {
@@ -1010,9 +1010,9 @@ export class CssDocLanguageService {
     const results: { usage: ClassUsage; start: number; end: number }[] = [];
 
     if (matcher.convention.structure === "attribute") {
-      for (const tag of text.matchAll(ATTRIBUTE_USAGE_TAG_RE)) {
+      for (const tag of text.matchAll(ATTRIBUTE_USAGE_TAG)) {
         const tagStart = tag.index ?? 0;
-        const attrs = [...tag[0].matchAll(QUOTED_ATTRIBUTE_RE)];
+        const attrs = [...tag[0].matchAll(QUOTED_ATTRIBUTE)];
         const tokens: string[] = [];
         const classTokens: { token: string; start: number; end: number }[] = [];
         const elementName = tag[1].toLowerCase();
@@ -1206,7 +1206,7 @@ export class CssDocLanguageService {
     };
 
     // Parse doc comments in CSS to find cssdoc tags
-    const docComments = text.matchAll(DOC_COMMENT_RE);
+    const docComments = text.matchAll(DOC_COMMENT);
     for (const block of docComments) {
       const blockText = block[0];
       const blockStart = block.index ?? 0;

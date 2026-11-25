@@ -46,12 +46,12 @@ export interface CssDocTagDefinitionOptions {
   description?: string;
 }
 
-const TAG_NAME_RE: Regex = arkRegex.as(
+const TAG_NAME: Regex = arkRegex.as(
   String.raw`^${AT_SOURCE}?${ALPHA_SOURCE}(?:${ALPHANUMERIC_SOURCE}|-)*$`,
   "u",
 );
 
-const LEADING_AT_RE: Regex = arkRegex.as(String.raw`^${AT_SOURCE}`, "u");
+const LEADING_AT: Regex = arkRegex.as(String.raw`^${AT_SOURCE}`, "u");
 
 /** One tag in the vocabulary: its name, kind, and how it may be used. */
 export class CssDocTagDefinition {
@@ -69,10 +69,10 @@ export class CssDocTagDefinition {
 
   constructor(options: CssDocTagDefinitionOptions) {
     const raw = options.tagName.trim();
-    if (!TAG_NAME_RE.test(raw)) {
+    if (!TAG_NAME.test(raw)) {
       throw new Error(`Invalid CSS-doc tag name: ${JSON.stringify(options.tagName)}`);
     }
-    this.tagNameWithoutAt = raw.replace(LEADING_AT_RE, "");
+    this.tagNameWithoutAt = raw.replace(LEADING_AT, "");
     this.tagName = `${AT_CHAR}${this.tagNameWithoutAt}`;
     this.syntaxKind = options.syntaxKind;
     this.allowMultiple = options.allowMultiple ?? false;
@@ -190,7 +190,7 @@ export class CssDocConfiguration {
 
   /** Look up a tag definition by name (with or without a leading `@`). */
   tryGetTagDefinition(tagName: string): CssDocTagDefinition | undefined {
-    return this._byName.get(tagName.replace(LEADING_AT_RE, ""));
+    return this._byName.get(tagName.replace(LEADING_AT, ""));
   }
 
   /** Whether a tag definition is supported. */
