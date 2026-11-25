@@ -49,6 +49,11 @@ const generated: Item[] = [
       },
     ],
   },
+  {
+    text: "@cssdoc/codemirror",
+    link: "/reference/@cssdoc/codemirror/",
+    items: [{ text: "Functions", items: [{ text: "cssdocHighlight", link: "/highlight.md" }] }],
+  },
   { text: "@cssdoc/new-package", link: "/reference/@cssdoc/new-package/" },
 ];
 
@@ -115,6 +120,15 @@ describe("createSidebars", () => {
     );
     expect(find(core, "buildHtml")).toBeUndefined();
     expect(find(regex, "ALPHA")).toBeDefined();
+    expect(find(overview, "Syntax highlighting")?.items?.[0]?.link).toBe(
+      "/reference/@cssdoc/codemirror/",
+    );
+    expect(
+      find(
+        sidebarFor(routes, "/reference/@cssdoc/codemirror/functions/highlight.html"),
+        "cssdocHighlight",
+      ),
+    ).toBeDefined();
     expect(find(overview, "Other")?.items?.[0]?.link).toBe("/reference/@cssdoc/new-package/");
   });
 

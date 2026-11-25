@@ -50,6 +50,15 @@ const apiGroups = [
     packages: ["@cssdoc/cem", "@cssdoc/dtcg", "@cssdoc/vscode-custom-data"],
   },
   {
+    text: "Syntax highlighting",
+    packages: [
+      "@cssdoc/codemirror",
+      "@cssdoc/tmlanguage",
+      "@cssdoc/grammarkdown-codemirror",
+      "@cssdoc/grammarkdown-tmlanguage",
+    ],
+  },
+  {
     text: "Integrations",
     packages: [
       "@cssdoc/cli",

@@ -27,6 +27,7 @@
       "@cssdoc/eslint-plugin": ["../plugins/eslint/src/index.ts"],
       "@cssdoc/stylelint-plugin": ["../plugins/stylelint/src/index.ts"],
       "@cssdoc/typedoc": ["../plugins/typedoc/src/index.ts"],
+      "@cssdoc/grammarkdown-tmlanguage": ["../syntaxes/grammarkdown/tmlanguage/src/index.ts"],
       "@cssdoc/language-server": ["../servers/language-server/src/index.ts"]
     }
   },
@@ -35,6 +36,7 @@
     "../emitters/*/src/index.ts",
     "../generators/*/src/index.ts",
     "../plugins/*/src/index.ts",
+    "../syntaxes/*/*/src/index.ts",
     "../servers/language-server/src/index.ts"
   ]
 }

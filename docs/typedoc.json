@@ -7,6 +7,7 @@
     "../emitters/*/src/index.ts",
     "../generators/*/src/index.ts",
     "../plugins/*/src/index.ts",
+    "../syntaxes/*/*/src/index.ts",
     "../servers/language-server/src/index.ts"
   ],
   "tsconfig": "tsconfig.typedoc.json",

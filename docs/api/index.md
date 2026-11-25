@@ -22,6 +22,10 @@ providers.
 | [`@cssdoc/embedded`](/reference/@cssdoc/embedded/)   | Extracts CSS from host languages.                          |
 | [`@cssdoc/dialects`](/reference/@cssdoc/dialects/)   | Resolves parsers for CSS dialects.                         |
 
+The `@cssdoc/core/lite` entry point shares most exports with `@cssdoc/core`, but omits
+`parseCssDocs` and other exports that require the CSS parser. See its [source documentation](https://github.com/thedannywahl/cssdoc/blob/main/packages/core/src/lite.ts)
+for import guidance.
+
 ## Emitters
 
 Turn the model into documentation.
@@ -42,6 +46,17 @@ Export documentation in standard interchange formats.
 | [`@cssdoc/cem`](/reference/@cssdoc/cem/)                               | A Custom Elements Manifest.       |
 | [`@cssdoc/dtcg`](/reference/@cssdoc/dtcg/)                             | W3C Design Tokens.                |
 | [`@cssdoc/vscode-custom-data`](/reference/@cssdoc/vscode-custom-data/) | VS Code CSS and HTML custom data. |
+
+## Syntax highlighting
+
+Highlight cssdoc and grammarkdown in editors and documentation.
+
+| Package                                                                          | What it does                           |
+| -------------------------------------------------------------------------------- | -------------------------------------- |
+| [`@cssdoc/codemirror`](/reference/@cssdoc/codemirror/)                           | Highlights cssdoc in CodeMirror.       |
+| [`@cssdoc/tmlanguage`](/reference/@cssdoc/tmlanguage/)                           | Provides cssdoc TextMate grammars.     |
+| [`@cssdoc/grammarkdown-codemirror`](/reference/@cssdoc/grammarkdown-codemirror/) | Highlights grammarkdown in CodeMirror. |
+| [`@cssdoc/grammarkdown-tmlanguage`](/reference/@cssdoc/grammarkdown-tmlanguage/) | Provides a grammarkdown grammar.       |
 
 ## Integrations
 

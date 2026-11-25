@@ -4,9 +4,8 @@
  * counterpart to the TextMate grammar in `@cssdoc/tmlanguage`, sharing the same tag vocabulary and
  * regex patterns from `@cssdoc/regex`.
  *
- * Matches are found by walking the CSS syntax tree and scanning **comment nodes only**, so real CSS
- * at-rules like `@property`, `@scope`, and `@media` are never touched. Colours ship as a base theme
- * that adapts to the editor's light/dark theme, so it works out of the box and can be overridden.
+ * The extension scans visible lines beginning with a CSS comment opener or a leading `*`; it does not
+ * parse the CSS syntax tree. Colours ship as a base theme and can be overridden.
  *
  * Uses tier-organized regex patterns from `@cssdoc/regex` for consistency and maintainability.
  *
@@ -14,7 +13,9 @@
  * ```ts
  * import { cssdocHighlight } from "@cssdoc/codemirror";
  * import { css } from "@codemirror/lang-css";
- * new EditorView({ extensions: [css(), cssdocHighlight()], parent });
+ * import { EditorView } from "@codemirror/view";
+ *
+ * new EditorView({ extensions: [css(), cssdocHighlight()], parent: document.body });
  * ```
  *
  * @module \@cssdoc/codemirror
