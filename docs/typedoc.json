@@ -39,7 +39,17 @@
     "@cssdoc/html",
     "@cssdoc/llms",
     "@cssdoc/cem",
-    "@cssdoc/dtcg"
+    "@cssdoc/dtcg",
+    "@cssdoc/regex",
+    "@cssdoc/json",
+    "@cssdoc/vscode-custom-data",
+    "@cssdoc/cli",
+    "@cssdoc/stylelint-plugin",
+    "@cssdoc/typedoc",
+    "@cssdoc/eslint-plugin",
+    "@cssdoc/markdown",
+    "@cssdoc/language-server",
+    "@cssdoc/cssdoc"
   ],
   "treatWarningsAsErrors": true
 }
