@@ -664,6 +664,26 @@ test("doc-tag completion: `@` inside a /** */ comment in a stylesheet suggests c
   expect(svc.completions("/**\n * @", { line: 1, character: 4 }, "a.ts", "typescript")).toEqual([]);
 });
 
+test("doc-tag completion replaces the complete tag without duplicating @", () => {
+  const svc = new CssDocLanguageService(createIndex(""));
+  for (const [text, position, end] of [
+    ["/**\n * @\n */", { line: 1, character: 4 }, 4],
+    ["/**\n * @pa\n */", { line: 1, character: 6 }, 6],
+    ["/**\n * @pold\n */", { line: 1, character: 5 }, 8],
+    ["/**\r\n * 😀 @pa\r\n */", { line: 1, character: 9 }, 9],
+  ] as const) {
+    const part = svc.completions(text, position, "a.css", "css").find((c) => c.label === "@part");
+    const start = text.split("\n")[position.line].indexOf("@");
+    expect(part?.textEdit).toEqual({
+      range: {
+        start: { line: position.line, character: start },
+        end: { ...position, character: end },
+      },
+      newText: "@part",
+    });
+  }
+});
+
 test("hover works inside clsx() and inside embedded CSS (css`` template, Markdown fence)", () => {
   const pos = (text: string, needle: string) => {
     const i = text.indexOf(needle) + 1;

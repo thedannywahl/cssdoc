@@ -130,6 +130,58 @@ function ipcServer<T>(
   return { server, request };
 }
 
+test("the bundled server returns an explicit replacement for doc-tag completions", async () => {
+  execFileSync("node", ["scripts/build.mjs"], { cwd: root });
+  const { server, request } =
+    ipcServer<{ label: string; textEdit?: { range: unknown; newText: string } }[]>();
+  const uri = "file:///completion.css";
+  try {
+    await request("initialize", {
+      processId: process.pid,
+      rootUri: null,
+      capabilities: {},
+      initializationOptions: { css: [] },
+    });
+    server.send({ jsonrpc: "2.0", method: "initialized", params: {} });
+    server.send({
+      jsonrpc: "2.0",
+      method: "textDocument/didOpen",
+      params: {
+        textDocument: {
+          uri,
+          languageId: "css",
+          version: 1,
+          text: "/**\n * \n */\n.button {}",
+        },
+      },
+    });
+    server.send({
+      jsonrpc: "2.0",
+      method: "textDocument/didChange",
+      params: {
+        textDocument: { uri, version: 2 },
+        contentChanges: [
+          {
+            range: { start: { line: 1, character: 3 }, end: { line: 1, character: 3 } },
+            text: "@pa",
+          },
+        ],
+      },
+    });
+    const reply = await request("textDocument/completion", {
+      textDocument: { uri },
+      position: { line: 1, character: 6 },
+      context: { triggerKind: 1 },
+    });
+    expect(reply.result?.find((item) => item.label === "@part")?.textEdit).toEqual({
+      range: { start: { line: 1, character: 3 }, end: { line: 1, character: 6 } },
+      newText: "@part",
+    });
+  } finally {
+    server.kill();
+  }
+}, 20_000);
+
 test("hover presentation follows client format and VS Code opt-in", async () => {
   execFileSync("node", ["scripts/build.mjs"], { cwd: root });
   for (const [format, presentation] of [

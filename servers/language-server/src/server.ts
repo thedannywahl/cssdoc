@@ -439,6 +439,7 @@ export function startLanguageServer(): void {
         documentation: c.documentation,
         tags: c.deprecated ? [CompletionItemTag.Deprecated] : undefined,
         sortText: c.sortText,
+        textEdit: c.textEdit,
       }));
   });
 

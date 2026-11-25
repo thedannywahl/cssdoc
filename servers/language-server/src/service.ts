@@ -112,6 +112,7 @@ const COMPLETION_TAG = arkRegex.as(
   String.raw`(?:^|[\s*])${AT_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*$`,
   "u",
 );
+const COMPLETION_TAG_SUFFIX = arkRegex.as(String.raw`^${ALPHANUMERIC_EXTENDED_SOURCE}*`, "u");
 const COMPLETION_VAR = arkRegex.as(
   String.raw`var${PAREN_OPEN_SOURCE}\s*(${DOUBLE_DASH_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*)$`,
   "u",
@@ -168,6 +169,8 @@ export interface LspCompletion {
   deprecated?: boolean;
   /** Text used to order the completion, when supplied. */
   sortText?: string;
+  /** Text and range to replace when the completion is accepted. */
+  textEdit?: { range: LspRange; newText: string };
 }
 /** Hover content. */
 export interface LspHover {
@@ -711,12 +714,16 @@ export class CssDocLanguageService {
       if (authoring) {
         const config = this.scopeForPath(path).configuration ?? new CssDocConfiguration();
         const seen = new Set<string>();
+        const tagStart = before.lastIndexOf("@");
+        const tagEnd = offset + (COMPLETION_TAG_SUFFIX.exec(text.slice(offset))?.[0].length ?? 0);
+        const range = rangeOf(text, tagStart, tagEnd);
         return config.supportedTagDefinitions
           .filter((t) => (seen.has(t.tagName) ? false : seen.add(t.tagName)))
           .map((t) => ({
             label: t.tagName,
             detail: `${t.syntaxKind} tag`,
             documentation: t.description,
+            textEdit: { range, newText: t.tagName },
           }));
       }
     }
