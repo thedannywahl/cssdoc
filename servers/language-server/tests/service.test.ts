@@ -657,6 +657,7 @@ test("doc-tag completion: `@` inside a /** */ comment in a stylesheet suggests c
   expect(labels).toEqual(expect.arrayContaining(["@component", "@modifier", "@part", "@summary"]));
   // Each suggestion carries a description of the tag's purpose alongside its kind.
   const summary = completions.find((c) => c.label === "@summary");
+  expect(summary?.kind).toBe(14);
   expect(summary?.detail).toBe("block tag");
   expect(summary?.documentation).toBe("A one-line description of the record.");
   // Not offered outside a doc comment, or in a non-stylesheet document.

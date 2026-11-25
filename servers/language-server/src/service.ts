@@ -161,6 +161,8 @@ export interface LspRange {
 export interface LspCompletion {
   /** Label shown in the completion list. */
   label: string;
+  /** LSP completion kind, when known. */
+  kind?: 14;
   /** Additional completion detail, when available. */
   detail?: string;
   /** Documentation shown with the completion, when available. */
@@ -721,6 +723,7 @@ export class CssDocLanguageService {
           .filter((t) => (seen.has(t.tagName) ? false : seen.add(t.tagName)))
           .map((t) => ({
             label: t.tagName,
+            kind: 14 as const,
             detail: `${t.syntaxKind} tag`,
             documentation: t.description,
             textEdit: { range, newText: t.tagName },

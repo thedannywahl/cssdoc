@@ -435,6 +435,7 @@ export function startLanguageServer(): void {
       )
       .map((c) => ({
         label: c.label,
+        kind: c.kind,
         detail: c.detail,
         documentation: c.documentation,
         tags: c.deprecated ? [CompletionItemTag.Deprecated] : undefined,

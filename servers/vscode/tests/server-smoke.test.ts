@@ -133,7 +133,7 @@ function ipcServer<T>(
 test("the bundled server returns an explicit replacement for doc-tag completions", async () => {
   execFileSync("node", ["scripts/build.mjs"], { cwd: root });
   const { server, request } =
-    ipcServer<{ label: string; textEdit?: { range: unknown; newText: string } }[]>();
+    ipcServer<{ label: string; kind?: number; textEdit?: { range: unknown; newText: string } }[]>();
   const uri = "file:///completion.css";
   try {
     await request("initialize", {
@@ -173,7 +173,9 @@ test("the bundled server returns an explicit replacement for doc-tag completions
       position: { line: 1, character: 6 },
       context: { triggerKind: 1 },
     });
-    expect(reply.result?.find((item) => item.label === "@part")?.textEdit).toEqual({
+    const part = reply.result?.find((item) => item.label === "@part");
+    expect(part?.kind).toBe(14);
+    expect(part?.textEdit).toEqual({
       range: { start: { line: 1, character: 3 }, end: { line: 1, character: 6 } },
       newText: "@part",
     });
