@@ -172,7 +172,12 @@ export interface LspCompletion {
   /** Text used to order the completion, when supplied. */
   sortText?: string;
   /** Text and range to replace when the completion is accepted. */
-  textEdit?: { range: LspRange; newText: string };
+  textEdit?: {
+    /** Range replaced by the completion. */
+    range: LspRange;
+    /** Text inserted in place of the range. */
+    newText: string;
+  };
 }
 /** Hover content. */
 export interface LspHover {
