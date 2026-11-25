@@ -138,11 +138,12 @@ export interface LintOptions {
 }
 
 /**
- * Check a CSS string for doc-comment-hygiene problems.
+ * Check a CSS string for doc-comment hygiene and registered-property value problems. Inline cssdoc
+ * directives filter the resulting diagnostics. Parse errors from the selected CSS parser propagate.
  *
  * @param css - The CSS source.
- * @param options - {@link LintOptions}.
- * @returns The violations found.
+ * @param options - Parser, rule severity, naming, and provider options.
+ * @returns Enabled violations, with 1-based lines and source spans when available.
  */
 export function lintCssDocs(css: string, options: LintOptions = {}): Violation[] {
   const index = createIndex(css, {

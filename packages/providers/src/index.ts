@@ -85,7 +85,19 @@ export const ASPECTS = [
   "condition",
 ] as const;
 
-/** Author-side hygiene diagnostics over the whole model (missing summaries, undocumented members, drift, invalid defaults). */
+/**
+ * Check the indexed model for author-side hygiene issues, including missing summaries, undocumented
+ * members, drift, and invalid defaults. Rules set to `off` are omitted; the remaining diagnostics
+ * carry the configured severity.
+ *
+ * @param index - The records to check.
+ * @param severities - Resolved rule severities; defaults to {@link DEFAULT_RULE_SEVERITIES}.
+ * @param naming - Optional resolved naming conventions for records and parts.
+ * @param structureIgnore - Class names or glob patterns exempt from structure selector checks.
+ * @param siblingIndex - Project-wide records used for sibling references; defaults to `index`.
+ * @param ruleOptions - Additional rule-specific options.
+ * @returns Diagnostics for the indexed records.
+ */
 export function lintModel(
   index: CssDocIndex,
   severities: RuleSeverities = DEFAULT_RULE_SEVERITIES,
@@ -108,7 +120,14 @@ export function lintModel(
   );
 }
 
-/** Consumer-side diagnostics for custom-property assignments (`--x: value` must match its `@property` syntax). */
+/**
+ * Check custom-property assignments against the syntax of registered properties.
+ *
+ * @param assignments - Assignment sites to check.
+ * @param index - The index containing property registrations.
+ * @param severities - Resolved rule severities; defaults to {@link DEFAULT_RULE_SEVERITIES}.
+ * @returns Enabled diagnostics with their resolved severity.
+ */
 export function checkPropertyAssignments(
   assignments: readonly PropertyAssignment[],
   index: CssDocIndex,
@@ -123,6 +142,11 @@ export function checkPropertyAssignments(
 /**
  * Consumer-side diagnostics for class-attribute usage: unknown/deprecated modifiers, plus unknown
  * state classes (`statePrefixes`) and unknown BEM element classes, routed by the token's kind.
+ *
+ * @param usages - Class or attribute usage sites to check.
+ * @param index - The index used to resolve components and their members.
+ * @param severities - Resolved rule severities; defaults to {@link DEFAULT_RULE_SEVERITIES}.
+ * @returns Enabled diagnostics with their resolved severity.
  */
 export function checkClassUsage(
   usages: readonly ClassUsage[],
@@ -141,7 +165,16 @@ export function checkClassUsage(
   );
 }
 
-/** Consumer-side diagnostics for `var(--…)` references (unknown custom properties; opt-in via prefix). */
+/**
+ * Check `var(--…)` references and their fallback values. Unknown-property checks are opt-in through
+ * {@link UsageOptions}; fallback validation also uses the property's registered syntax when available.
+ *
+ * @param usages - Custom-property reference sites to check.
+ * @param index - The index containing property registrations.
+ * @param options - Consumer usage options, including the prefix for unknown-property checks.
+ * @param severities - Resolved rule severities; defaults to {@link DEFAULT_RULE_SEVERITIES}.
+ * @returns Enabled diagnostics with their resolved severity.
+ */
 export function checkPropertyUsage(
   usages: readonly PropertyUsage[],
   index: CssDocIndex,
@@ -188,6 +221,11 @@ export function hoverForClass(
 /**
  * Hover for a `var(--…)` custom property. `valueIndex` (default `index`) supplies the value graph for
  * `var()` resolution — pass a project-wide index so a chain that runs through other sheets resolves.
+ *
+ * @param name - The custom-property name, including its `--` prefix.
+ * @param index - The index containing the property documentation.
+ * @param valueIndex - The index containing values to resolve; defaults to `index`.
+ * @returns Hover content, or `undefined` if the property is neither documented nor in the value graph.
  */
 export function hoverForCustomProperty(
   name: string,
