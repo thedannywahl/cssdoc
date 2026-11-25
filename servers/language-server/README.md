@@ -1,22 +1,18 @@
 # @cssdoc/language-server
 
 An editor-agnostic [LSP](https://microsoft.github.io/language-server-protocol/) server for the
-documented CSS surface, over [`@cssdoc/providers`](../../packages/providers). It offers:
-
-- **completion** — a component's modifiers inside `class`/`className`, and declared custom properties
-  inside `var(--…)`;
-- **hover** — a modifier's or custom property's documentation;
-- **definition** — jump to the CSS rule that defines a class or `@property`;
-- **diagnostics + quick-fix** — unknown and deprecated modifiers, with a one-click replace-with-canonical
-  fix.
+documented CSS surface, over [`@cssdoc/providers`](../../packages/providers). It offers tag, class, modifier, and custom-property completions; documentation hover; definitions;
+diagnostics and deprecation quick fixes; semantic tokens for doc comments; and custom-property inlay
+hints. Client capabilities and settings determine which features are displayed.
 
 ## Use it
 
-Editors spawn the built binary and provide workspace folders through LSP. By default, the server
-discovers `**/*.css` in each folder, excluding `node_modules`. Configure discovery with
+Start `cssdoc-language-server --stdio` and provide workspace folders through LSP. By default, the
+server discovers `**/*.css` in each folder, excluding `node_modules`. Configure discovery with
 `initializationOptions.include` and `initializationOptions.exclude`, or set
-`initializationOptions.css` to an explicit list of paths (including an empty list to disable discovery).
-Relative paths resolve against each workspace folder.
+`initializationOptions.css` to an explicit list of paths (including an empty list to disable
+discovery). Relative paths resolve against each workspace folder. Without a workspace folder, automatic
+discovery is disabled and relative explicit paths resolve against the server's working directory.
 
 When a client supports `workspace/configuration`, the server reads its `cssdoc` settings separately
 for each workspace folder and reloads them after configuration changes. Client settings override
@@ -30,6 +26,9 @@ provider discovery, scan depth, glob expansion, and repeated provider paths.
 When the client supports watched-file registration, changes to workspace stylesheets and config files
 refresh the index. The server also refreshes on document saves and uses unsaved text from open indexed
 files. Clients without file watching need a save or server restart to pick up external changes.
+
+For editor-specific setup, including Neovim and Helix, see the
+[editor guide](https://cssdoc.dev/guide/editor).
 
 ```jsonc
 {
