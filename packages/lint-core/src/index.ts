@@ -176,6 +176,7 @@ export function lintCssDocs(css: string, options: LintOptions = {}): Violation[]
       ...checkPropertyUsage(usages, index, {}, severities), // invalid-fallback-value (unknown-property opt-in, off here)
     ],
     css, // honor `/* cssdoc-disable … */` and friends
+    severities["cssdoc-directive"],
   );
   return diagnostics.map((d) => ({
     rule: d.rule as RuleName,

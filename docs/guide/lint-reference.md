@@ -200,6 +200,7 @@ directive with the suppressed example:
 
 Use `cssdoc-expect-error` to require and suppress a matching diagnostic on the next line. If none
 matches, cssdoc reports [`cssdoc-directive`](#cssdoc-directive).
+Its configured severity controls that report, and directives can suppress it by rule ID.
 
 <style module>
 .rules th,

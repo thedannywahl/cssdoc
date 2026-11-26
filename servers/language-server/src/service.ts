@@ -1257,6 +1257,7 @@ export class CssDocLanguageService {
           ...checkPropertyUsage(usages, index, {}, scope.severities),
         ],
         text, // honor `/* cssdoc-disable … */` directives in the source
+        scope.severities["cssdoc-directive"],
       );
       const out: LspDiagnostic[] = [];
       for (const d of diags) {

@@ -15,7 +15,7 @@
  *
  * @module
  */
-import type { Diagnostic } from "./types.ts";
+import { DEFAULT_RULE_SEVERITIES, type Diagnostic, type RuleSeverity } from "./types.ts";
 import {
   COMMENT_END_SOURCE,
   COMMENT_START_SOURCE,
@@ -80,9 +80,14 @@ const scopesRule = (d: Directive, rule: string): boolean =>
  *
  * @param diagnostics - The diagnostics to filter (author-side, with CSS spans).
  * @param source - The CSS the diagnostics came from (the same text passed to the linter).
+ * @param directiveSeverity - The configured severity for unused expectations.
  * @returns The surviving diagnostics.
  */
-export function applyDirectives(diagnostics: Diagnostic[], source: string): Diagnostic[] {
+export function applyDirectives(
+  diagnostics: Diagnostic[],
+  source: string,
+  directiveSeverity: RuleSeverity = DEFAULT_RULE_SEVERITIES["cssdoc-directive"],
+): Diagnostic[] {
   const directives = parseDirectives(source);
   if (directives.length === 0) return diagnostics;
 
@@ -145,9 +150,16 @@ export function applyDirectives(diagnostics: Diagnostic[], source: string): Diag
     if (!blockDisabled(line, diag.rule)) kept.push(diag);
   }
 
-  for (const d of perLine) {
-    if (d.kind === "expect-error" && !satisfied.has(d)) {
-      kept.push({
+  const directiveDiagnostics: Diagnostic[] = [];
+  for (const d of perLine.toReversed()) {
+    if (d.kind === "expect-error" && !satisfied.has(d) && directiveSeverity !== "off") {
+      const hit = lineDirectiveFor(d.startLine, "cssdoc-directive");
+      if (hit) {
+        satisfied.add(hit);
+        continue;
+      }
+      if (blockDisabled(d.startLine, "cssdoc-directive")) continue;
+      directiveDiagnostics.push({
         aspect: "directive",
         rule: "cssdoc-directive",
         message:
@@ -156,9 +168,10 @@ export function applyDirectives(diagnostics: Diagnostic[], source: string): Diag
           start: { line: d.startLine, column: 1 },
           end: { line: d.endLine, column: 2 },
         },
-        severity: "warning",
+        severity: directiveSeverity === "error" ? "error" : "warning",
       });
     }
   }
+  kept.push(...directiveDiagnostics.reverse());
   return kept;
 }

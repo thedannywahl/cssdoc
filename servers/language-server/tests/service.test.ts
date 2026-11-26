@@ -25,6 +25,30 @@ const summaryWarnSeverities = resolveRuleSeverities({ "missing-summary": "warn" 
 // Single-line helper: cursor at `character` on line 0.
 const at = (character: number) => ({ line: 0, character });
 
+test("CSS diagnostics honor the configured unused-expectation severity", () => {
+  const index = createIndex("");
+  const svc = new CssDocLanguageService(index);
+  const source = "/* cssdoc-expect-error missing-summary */\n.plain {}";
+  for (const [setting, severity] of [
+    ["off", undefined],
+    ["warn", 2],
+    ["error", 1],
+  ] as const) {
+    svc.setScopes([
+      {
+        dir: "/app",
+        index,
+        severities: resolveRuleSeverities({ "cssdoc-directive": setting }),
+        naming: {},
+      },
+    ]);
+    expect(
+      svc.diagnostics(source, "css", "/app/test.css").find((d) => d.code === "cssdoc-directive")
+        ?.severity,
+    ).toBe(severity);
+  }
+});
+
 test("completions in a class attribute suggest the component's modifiers", () => {
   const text = `<button class="button ">x</button>`;
   const labels = service.completions(text, at(text.indexOf('">'))).map((c) => c.label);

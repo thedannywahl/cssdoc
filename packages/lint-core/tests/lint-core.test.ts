@@ -71,6 +71,47 @@ test("directives: a ` - <reason>` suffix is ignored for rule scoping", () => {
   expect(byRule(lintWithMissingSummary(otherRule), "missing-summary")).toHaveLength(1);
 });
 
+test("unused expect-error honors directive severity and rule-scoped suppression", () => {
+  const unused = "/* cssdoc-expect-error missing-summary */\n.plain {}";
+  for (const [setting, severity] of [
+    ["warn", "warning"],
+    ["error", "error"],
+  ] as const) {
+    const diagnostics = byRule(
+      lintCssDocs(unused, { rules: { "cssdoc-directive": setting } }),
+      "cssdoc-directive",
+    );
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0].severity).toBe(severity);
+  }
+  expect(
+    byRule(lintCssDocs(unused, { rules: { "cssdoc-directive": "off" } }), "cssdoc-directive"),
+  ).toHaveLength(0);
+  expect(
+    byRule(lintCssDocs(`/* cssdoc-disable cssdoc-directive */\n${unused}`), "cssdoc-directive"),
+  ).toHaveLength(0);
+  expect(
+    byRule(
+      lintCssDocs(`/* cssdoc-disable-next-line cssdoc-directive */\n${unused}`),
+      "cssdoc-directive",
+    ),
+  ).toHaveLength(0);
+  expect(
+    byRule(
+      lintCssDocs(
+        `/* cssdoc-disable cssdoc-directive */\n${unused}\n/* cssdoc-enable cssdoc-directive */\n${unused}`,
+      ),
+      "cssdoc-directive",
+    ),
+  ).toHaveLength(1);
+  expect(
+    byRule(
+      lintCssDocs(`/* cssdoc-expect-error cssdoc-directive */\n${unused}`),
+      "cssdoc-directive",
+    ),
+  ).toHaveLength(0);
+});
+
 test("flags an AST modifier without a @modifier description", () => {
   const v = byRule(lintCssDocs(CSS), "undocumented-modifier");
   // -size-sm has no description; -color-secondary is documented; -variant-old is deprecated.
