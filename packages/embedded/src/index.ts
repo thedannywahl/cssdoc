@@ -366,18 +366,15 @@ export const projectionDialect = (source: string, opts: EmbeddedOptions = {}): P
  *
  * @param source - The complete host-language source.
  * @param opts - Projection and core parser options.
- * @returns The parsed records, or an empty array if projection or parsing throws.
+ * @returns The parsed records.
+ * @throws If projection or parsing fails.
  */
 export function parseCssDocsFromSource(
   source: string,
   opts: EmbeddedOptions & ParseOptions = {},
 ): CssDocEntry[] {
-  try {
-    const parse = opts.parse ?? resolveParser(projectionDialect(source, opts));
-    return parseCssDocs(projectCss(source, opts), { ...opts, parse });
-  } catch {
-    return [];
-  }
+  const parse = opts.parse ?? resolveParser(projectionDialect(source, opts));
+  return parseCssDocs(projectCss(source, opts), { ...opts, parse });
 }
 
 /**
@@ -386,18 +383,15 @@ export function parseCssDocsFromSource(
  *
  * @param source - The complete host-language source.
  * @param opts - Projection and lint options.
- * @returns Violations with source-relative line numbers, or an empty array if projection or linting throws.
+ * @returns Violations with source-relative line numbers.
+ * @throws If projection or linting fails.
  */
 export function lintCssDocsFromSource(
   source: string,
   opts: EmbeddedOptions & LintOptions = {},
 ): Violation[] {
-  try {
-    const parse = opts.parse ?? resolveParser(projectionDialect(source, opts));
-    return lintCssDocs(projectCss(source, opts), { ...opts, parse });
-  } catch {
-    return [];
-  }
+  const parse = opts.parse ?? resolveParser(projectionDialect(source, opts));
+  return lintCssDocs(projectCss(source, opts), { ...opts, parse });
 }
 
 // ── consumer class-usage scanning (where component classes are *used* in templates) ───────────────

@@ -1,4 +1,6 @@
 import { expect, test } from "vite-plus/test";
+import { blockSourceRange, collectDocCommentBlocks } from "../../core/src/blocks.ts";
+import { CssDocConfiguration } from "../../core/src/configuration.ts";
 import {
   detectEmbeddedHost,
   extractCssBlocks,
@@ -73,6 +75,30 @@ test("the projection preserves length and newlines exactly", () => {
   const p = projectCss(JS, { host: "js" });
   expect(p.length).toBe(JS.length);
   expect(p.split("\n").length).toBe(JS.split("\n").length);
+});
+
+test("framed block text ranges map back through an embedded CSS projection", () => {
+  const source = [
+    "<p>😀</p>",
+    "<style>",
+    "/**",
+    " * @remarks 😀 first",
+    " *   second",
+    " */",
+    ".card {}",
+    "</style>",
+  ].join("\r\n");
+  const projection = projectCss(source, { host: "html" });
+  const commentStart = projection.indexOf("/**");
+  const commentEnd = projection.indexOf("*/", commentStart) + 2;
+  const comment = projection.slice(commentStart, commentEnd);
+  const [block] = collectDocCommentBlocks(comment, new CssDocConfiguration());
+  const start = block.text.indexOf("😀");
+  const end = block.text.indexOf("second") + "second".length;
+  const span = blockSourceRange(block, start, end);
+  expect(source.slice(commentStart + span.start, commentStart + span.end)).toBe(
+    "😀 first\r\n *   second",
+  );
 });
 
 test("a tagged template is kept, the surrounding JS is blanked, and the doc comment above it survives", () => {
@@ -251,8 +277,20 @@ test("lint violations carry absolute source lines", () => {
   expect(summary?.line).toBeGreaterThan(1); // absolute in the source, inside the <style> block
 });
 
-test("a malformed source yields [] rather than throwing", () => {
-  expect(parseCssDocsFromSource("<style>.a { color:", { host: "html" })).toEqual([]);
+test("malformed projected CSS reports a parser error", () => {
+  expect(() => parseCssDocsFromSource("<style>.a { color:", { host: "html" })).toThrow(
+    "Unclosed block",
+  );
+});
+
+test("embedded parsing and linting surface parser failures", () => {
+  const failure = new Error("parser failure");
+  const parse = () => {
+    throw failure;
+  };
+  const source = "<style>.card {}</style>";
+  expect(() => parseCssDocsFromSource(source, { host: "html", parse })).toThrow(failure);
+  expect(() => lintCssDocsFromSource(source, { host: "html", parse })).toThrow(failure);
 });
 
 test("scanClassUsages reads class tokens from HTML, JSX, Vue, and Svelte, per element", () => {

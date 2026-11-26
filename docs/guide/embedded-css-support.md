@@ -20,6 +20,8 @@ the filename to select a scanner. When calling an emitter, pass the host or dial
 table above. If you parse directly, use [`@cssdoc/dialects`](/reference/@cssdoc/dialects/)
 to select a parser. cssdoc reads CSS selectors and properties in those files. It skips preprocessor
 constructs such as mixins and masks JavaScript interpolations.
+Parsing or linting errors from the projected CSS are reported to the caller rather than returned as
+an empty result.
 
 In styled-components, the base class is generated, so authored tags supply details cssdoc cannot
 infer from the template. If JSDoc tooling reads a cssdoc comment above the JavaScript declaration,
