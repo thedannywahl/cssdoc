@@ -35,17 +35,18 @@ the first release gate; they don't close that gate or replace the detailed imple
 These are the agreed defaults for new or changed 1.0 rules. Retained rule IDs keep their existing
 defaults unless another decision changes them.
 
-| Default | Rule IDs                                                                                                                                                                                                                                                                                                                                                                                                    |
-| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `error` | `malformed-tag-header`, `missing-prose-divider`, `duplicate-singleton-tag`, `duplicate-singleton-metadata`, `invalid-surface-subject`, `inheritance-cycle`, `conflicting-annotation-definition`                                                                                                                                                                                                             |
-| `warn`  | `unknown-block-tag`, `disabled-block-tag`, `unknown-remark-kind`, `disabled-remark-kind`, `invalid-inline-tag`, `unknown-inline-tag`, `empty-prose`, `surface-not-found`, `ambiguous-surface`, `undocumented-surface`, `reference-not-found`, `ambiguous-reference`, `relationship-conflict`, `restriction-mismatch`, `modifier-guidance-mismatch`, `public-ref-to-private-annotation`, `unsafe-prose-link` |
-| `off`   | `tag-order`, `missing-membership-reciprocity`, `record-deprecation-requires-replacement`, `markdown-unclosed-fence`, `markdown-in-plain-prose`                                                                                                                                                                                                                                                              |
+| Default | Rule IDs                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `error` | `malformed-tag-header`, `missing-prose-divider`, `duplicate-singleton-tag`, `duplicate-singleton-metadata`, `invalid-surface-subject`, `inheritance-cycle`, `conflicting-annotation-definition`                                                                                                                                                                                                                                                                                              |
+| `warn`  | `unknown-block-tag`, `disabled-block-tag`, `unknown-remark-kind`, `disabled-remark-kind`, `invalid-inline-tag`, `unknown-inline-tag`, `empty-prose`, `surface-not-found`, `ambiguous-surface`, `undocumented-surface`, `conflicting-token-description`, `property-descriptor-conflict`, `reference-not-found`, `ambiguous-reference`, `relationship-conflict`, `restriction-mismatch`, `modifier-guidance-mismatch`, `public-ref-to-private-annotation`, `unsafe-prose-link`, `since-format` |
+| `off`   | `tag-order`, `missing-membership-reciprocity`, `record-deprecation-requires-replacement`, `markdown-unclosed-fence`, `markdown-in-plain-prose`                                                                                                                                                                                                                                                                                                                                               |
 
 `tag-order` defaults to `warn` when an order is explicitly configured, unless its severity is also
 explicitly set. Tag-specific severities override general severities within a layer; later matching
 layers apply afterward.
 
-`conflicting-token-description` and `property-descriptor-conflict` also default to `warn`.
+`since-format` checks identifiers only when the effective format is `semver` or a pattern; an
+explicit severity still controls enforcement.
 
 ### Detailed decisions
 
@@ -59,7 +60,8 @@ layers apply afterward.
 - **Automatic prose:** Select Markdown for a CommonMark parse containing emphasis, strong emphasis,
   a link, image, code, heading, list, blockquote, thematic break, hard break, or more than one
   paragraph. Raw HTML, ordinary punctuation, soft breaks, and CSSDoc inline tags alone remain
-  plain. Detection doesn't change block ownership.
+  plain. Ignore Markdown syntax inside recognized CSSDoc inline-tag spans, including plain-text link
+  labels. Detection doesn't change block ownership.
 - **Empty prose:** Check recognized, enabled, structurally valid `@remarks`, `@example`, and
   `@annotation` blocks with no meaningful body, plus any valid header with an explicitly opened
   but empty prose body. Whitespace and empty formatting shells are empty; visible text, an inline
@@ -88,7 +90,9 @@ layers apply afterward.
   `--acme-<nonempty suffix>` case-sensitively after CSS escape decoding, for documented property
   subjects only. Compare property `inherits` as a boolean, `syntax` as parsed grammar, and
   `initial-value` as normalized CSS tokens, retaining distinctions such as `0` and `0px`. On
-  `property-descriptor-conflict`, the CSS descriptor remains effective.
+  `property-descriptor-conflict`, the CSS descriptor remains effective. Reserve `{@initial}` for
+  registration semantics. Migrate a legacy documented default to it only when the codemod can
+  establish that it describes the registration; otherwise preserve the declaration for review.
 - **Effects and sections:** `@affects modifier(.table--stacked) -> component:table.cell#pseudo-element(::before)`
   resolves the modifier in the current record and targets through shared references. Split target
   lists at top-level commas; the effect is authored documentation and doesn't require a connecting
@@ -96,8 +100,14 @@ layers apply afterward.
   `usage`, `compat`, `accessibility`, and `see` to `remarks:usage`, `remarks:compat`,
   `remarks:a11y`, and `remarks:see`. Keep the usage import snippet even when it's the only section
   content, retain other non-remark section keys except `demo`, and add `scopes`. Targeted alias and
-  deprecation remarks render with their modifier. Ordinary CSS comments recognize only
-  `@remarks todo` as a remark directive; other kinds follow existing ordinary-comment behavior.
+  deprecation remarks render with their modifier. When `sectionOrder` is omitted, configured custom
+  kinds with content follow built-in remark sections in first-occurrence order; an explicit list
+  includes only named sections. Ordinary CSS comments recognize only `@remarks todo` as a remark
+  directive; other kinds follow existing ordinary-comment behavior.
+- **Incomplete inheritance:** If any required link in an inheritance chain is inconclusive,
+  preserve the child's local documentation and leave the entire inheritance unresolved. Don't
+  publish partial inherited prose, even when the direct base resolves. JSON and rendered outputs
+  use the same result.
 
 ## Representative fixtures
 
@@ -252,9 +262,97 @@ different token descriptions, and the rendered view uses `First description.` Bo
 declarations and scope occurrences retain their source spans. Suppressing either warning doesn't
 change those outcomes.
 
+### Auto detection and inline labels
+
+With `prose.mode` set to `auto` and `button` resolving uniquely:
+
+```css
+/**
+ * @component link-demo - Link examples.
+ * @remarks - {@link button | *Open*}
+ * @remarks - **Notice** {@link button | *Open*}
+ */
+.link-demo {
+}
+```
+
+**Expected:** The first remark uses `plain` and displays `*Open*` literally as the link label.
+The second uses Markdown because the emphasis is outside the inline tag; its link label still
+displays `*Open*` literally. Both references resolve normally.
+
+### Custom remark section order
+
+Configure `troubleshooting` as an enabled remark kind and give `usage` and `troubleshooting` content:
+
+```css
+/**
+ * @component button - An action.
+ * @remarks troubleshooting - Check the connection.
+ * @remarks usage - Press to continue.
+ */
+.button {
+}
+```
+
+**Expected:** With `sectionOrder` omitted, `remarks:usage` appears before
+`remarks:troubleshooting`, even though the custom remark occurs first in the source. With the
+explicit order `["remarks:usage"]`, the usage section appears and the troubleshooting section
+doesn't. Multiple configured custom kinds with content follow the built-ins in first-occurrence
+order.
+
+### Incomplete inheritance chain
+
+The direct local base resolves, but its provider-backed base is unavailable:
+
+```css
+/**
+ * @component base-button - Base summary.
+ * @extends provider(ui)::component:foundation
+ */
+.base-button {
+}
+
+/**
+ * @component button
+ * @extends component:base-button
+ * @remarks - Local note.
+ */
+.button {
+}
+```
+
+**Expected:** The button's inheritance stays unresolved and its local remark remains available.
+Neither JSON nor rendered output supplies `Base summary.` as a partial inherited summary. Report
+the provider failure rather than a missing-reference warning; suppressing diagnostics doesn't
+change the unresolved result.
+
+### Documented default versus registered initial value
+
+In 0.20.x, the control's documented default differs from the registration:
+
+```css
+@property --control-size {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 1rem;
+}
+
+/**
+ * @component control
+ * @cssproperty --control-size
+ * @defaultValue 2rem
+ */
+.control {
+  --control-size: 2rem;
+}
+```
+
+**Expected:** The codemod preserves the legacy `@defaultValue 2rem` declaration and marks the file
+`needs-review`; it doesn't rewrite that declaration as `{@initial 2rem}`. The registered
+`initial-value: 1rem` remains authoritative. A no-op migration rerun preserves the unresolved
+issue and the file bytes.
+
 ## Review status
 
-The decision table and seven fixtures await approval. The parser engine's integrated boundary,
-safety, and complete bundle checks remain a separate phase 2 gate. The detailed implementation plan
-also tracks remaining implementation-specific questions, including the default for the since-format
-rule and handling separately documented property defaults.
+The decision table and eleven fixtures await approval. The parser engine's integrated boundary,
+safety, and complete bundle checks remain a separate phase 2 gate.
