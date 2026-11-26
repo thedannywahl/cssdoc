@@ -5,12 +5,16 @@ import {
   BRACE_OPEN_CHAR,
   BRACKET_CLOSE_CHAR,
   BRACKET_OPEN_CHAR,
+  CSSDOC_DESCRIPTION_SEPARATOR_SOURCE,
+  DASH_SOURCE,
   FORWARD_SLASH_CHAR,
   PAREN_CLOSE_CHAR,
   PAREN_OPEN_CHAR,
   QUOTE_DOUBLE_CHAR,
   QUOTE_SINGLE_CHAR,
 } from "@cssdoc/regex";
+import type { Regex } from "arkregex";
+import { regex as arkRegex } from "arkregex";
 
 /** CSS lexical state carried between lines of a structure block. */
 export interface StructureBoundaryState {
@@ -32,8 +36,30 @@ export interface StructureBoundaryState {
  * @returns Whether the line opened a top-level CSS block.
  */
 export function scanStructureLine(line: string, state: StructureBoundaryState): boolean {
+  return scanStructure(line, state, false).opened;
+}
+
+/**
+ * Check for a documentation divider outside CSS strings and nested constructs.
+ *
+ * @param line - A potential at-rule or documentation tag line.
+ * @returns Whether the line has a top-level description divider.
+ */
+export function hasStructureDocDivider(line: string): boolean {
+  return scanStructure(line, { stack: [], comment: false, escaped: false }, true).divider;
+}
+
+function scanStructure(
+  line: string,
+  state: StructureBoundaryState,
+  findDivider: boolean,
+): { opened: boolean; divider: boolean } {
+  const SEPARATOR: Regex | undefined = findDivider
+    ? arkRegex.as(`^(?!${DASH_SOURCE}{2})${CSSDOC_DESCRIPTION_SEPARATOR_SOURCE}(?=\\s|$)`, "u")
+    : undefined;
   if (line.endsWith("\r")) line = line.slice(0, -1);
   let opened = false;
+  let divider = false;
   for (let i = 0; i < line.length; i++) {
     const char = line[i];
     const next = line[i + 1];
@@ -56,6 +82,16 @@ export function scanStructureLine(line: string, state: StructureBoundaryState): 
       if (char === state.quote) state.quote = undefined;
       continue;
     }
+    if (
+      SEPARATOR &&
+      state.stack.length === 0 &&
+      i > 0 &&
+      (line[i - 1] === " " || line[i - 1] === "\t") &&
+      SEPARATOR.test(line.slice(i))
+    ) {
+      divider = true;
+      break;
+    }
     if (char === FORWARD_SLASH_CHAR && next === ASTERISK_CHAR) {
       state.comment = true;
       i++;
@@ -74,5 +110,5 @@ export function scanStructureLine(line: string, state: StructureBoundaryState): 
   }
   if (state.escaped) state.escaped = false;
   else state.quote = undefined;
-  return opened;
+  return { opened, divider };
 }

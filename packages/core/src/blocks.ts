@@ -9,7 +9,11 @@ import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import { CssDocConfiguration } from "./configuration.ts";
 import { frameCommentLines } from "./framing.ts";
-import { scanStructureLine, type StructureBoundaryState } from "./structure-boundaries.ts";
+import {
+  hasStructureDocDivider,
+  scanStructureLine,
+  type StructureBoundaryState,
+} from "./structure-boundaries.ts";
 
 /** A tag block and its source range within a doc-comment input. */
 export interface DocCommentBlock {
@@ -19,6 +23,58 @@ export interface DocCommentBlock {
   start: number;
   /** Exclusive UTF-16 offset of the last non-whitespace character in the block. */
   end: number;
+  /** Framing-free text segments and their corresponding source offsets. */
+  segments: DocCommentSegment[];
+}
+
+/** A contiguous UTF-16 range shared by block text and the original comment. */
+export interface DocCommentSegment {
+  /** Inclusive offset into the block text. */
+  textStart: number;
+  /** Inclusive offset into the original comment. */
+  sourceStart: number;
+  /** Length in UTF-16 code units. */
+  length: number;
+}
+
+/**
+ * Map a range of framing-free block text back to the original comment.
+ *
+ * @param block - The block containing the range.
+ * @param start - Inclusive UTF-16 offset in the block text.
+ * @param end - Exclusive UTF-16 offset in the block text.
+ * @returns The corresponding half-open range in the comment.
+ * @throws If the offsets are not a valid range in the block.
+ */
+export function blockSourceRange(
+  block: DocCommentBlock,
+  start: number,
+  end: number,
+): { start: number; end: number } {
+  if (
+    !Number.isInteger(start) ||
+    !Number.isInteger(end) ||
+    start < 0 ||
+    end < start ||
+    end > block.text.length
+  ) {
+    throw new RangeError("Invalid doc-comment block range");
+  }
+  const point = (offset: number, preferPrevious: boolean): number => {
+    for (const segment of block.segments) {
+      const segmentEnd = segment.textStart + segment.length;
+      if (
+        (offset >= segment.textStart && offset < segmentEnd) ||
+        (preferPrevious && offset === segmentEnd)
+      ) {
+        return segment.sourceStart + offset - segment.textStart;
+      }
+    }
+    const last = block.segments[block.segments.length - 1];
+    return last.sourceStart + last.length;
+  };
+  const sourceStart = point(start, false);
+  return { start: sourceStart, end: start === end ? sourceStart : point(end, true) };
 }
 
 /**
@@ -58,22 +114,42 @@ export function collectDocCommentBlocks(
     const tagMatch = line.match(TAG_LINE);
     const isKnownTag =
       tagMatch !== null && configuration.tryGetTagDefinition(tagMatch[1]) !== undefined;
+    const inNestedStructure = inStructureBlock && structureState.stack.includes(BRACE_OPEN_CHAR);
+    const hasDocDivider =
+      tagMatch !== null && inStructureBlock && !inNestedStructure && hasStructureDocDivider(line);
     const startsBlock =
       tagMatch !== null &&
-      (isKnownTag
-        ? !(
-            inStructureBlock &&
-            (structureState.stack.includes(BRACE_OPEN_CHAR) ||
-              (tagMatch[1] !== "structure" && INDENTED_AT_RULE.test(line)))
-          )
-        : !inStructureBlock);
+      (hasDocDivider ||
+        (isKnownTag
+          ? !(
+              inNestedStructure ||
+              (inStructureBlock && tagMatch[1] !== "structure" && INDENTED_AT_RULE.test(line))
+            )
+          : !inStructureBlock));
     const lastNonWhitespace = line.trimEnd().length;
     if (startsBlock && tagMatch) {
       const tagStart = line.indexOf(AT_CHAR);
+      const text = line.trim();
+      const carriageReturn = line.endsWith("\r");
+      const segments: DocCommentSegment[] = [
+        {
+          textStart: 0,
+          sourceStart: sourceStart + tagStart,
+          length: lastNonWhitespace - tagStart,
+        },
+      ];
+      if (carriageReturn) {
+        segments.push({
+          textStart: text.length,
+          sourceStart: sourceStart + line.length - 1,
+          length: 1,
+        });
+      }
       blocks.push({
-        text: line.trim(),
+        text: carriageReturn ? `${text}\r` : text,
         start: sourceStart + tagStart,
         end: sourceStart + lastNonWhitespace,
+        segments,
       });
       inStructureBlock = tagMatch[1] === "structure";
       if (inStructureBlock) {
@@ -82,6 +158,18 @@ export function collectDocCommentBlocks(
       }
     } else if (blocks.length) {
       const block = blocks[blocks.length - 1];
+      block.segments.push({
+        textStart: block.text.length,
+        sourceStart: lines[lineIndex - 1].end,
+        length: 1,
+      });
+      if (line.length) {
+        block.segments.push({
+          textStart: block.text.length + 1,
+          sourceStart,
+          length: line.length,
+        });
+      }
       block.text += `\n${line}`;
       if (lastNonWhitespace > 0) block.end = sourceStart + lastNonWhitespace;
       if (inStructureBlock) scanStructureLine(line, structureState);

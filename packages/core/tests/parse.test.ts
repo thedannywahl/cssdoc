@@ -10,7 +10,7 @@ import {
   toMermaidVariants,
 } from "../src/index.ts";
 import postcss from "postcss";
-import { collectDocCommentBlocks } from "../src/blocks.ts";
+import { blockSourceRange, collectDocCommentBlocks } from "../src/blocks.ts";
 import { frameCommentLines } from "../src/framing.ts";
 import {
   parseDocComment,
@@ -63,10 +63,35 @@ test("tag block ranges map multiline framed text back to UTF-16 source offsets",
     "@example\r\n *   content",
   ]);
   expect(blocks.map((block) => block.text)).toEqual([
-    "@component button",
-    "@summary 😀 First\n  second\r",
-    "@example\n  content",
+    "@component button\r",
+    "@summary 😀 First\r\n  second\r",
+    "@example\r\n  content",
   ]);
+});
+
+test("block text ranges map through CRLF framing and UTF-16 characters", () => {
+  const raw = "/**\r\n * @remarks 😀 first\r\n *   second\r\n */";
+  const [block] = collectDocCommentBlocks(raw, new CssDocConfiguration());
+  for (const segment of block.segments) {
+    expect(raw.slice(segment.sourceStart, segment.sourceStart + segment.length)).toBe(
+      block.text.slice(segment.textStart, segment.textStart + segment.length),
+    );
+  }
+  const emoji = block.text.indexOf("😀");
+  const second = block.text.indexOf("second");
+  const newline = block.text.indexOf("\r\n");
+  const lineBreak = blockSourceRange(block, newline, newline + 2);
+  expect(raw.slice(lineBreak.start, lineBreak.end)).toBe("\r\n");
+  const span = blockSourceRange(block, emoji, second + "second".length);
+  expect(raw.slice(span.start, span.end)).toBe("😀 first\r\n *   second");
+  const nextLine = blockSourceRange(block, second, second + "second".length);
+  expect(raw.slice(nextLine.start, nextLine.end)).toBe("second");
+  expect(blockSourceRange(block, second, second)).toEqual({
+    start: raw.indexOf("second"),
+    end: raw.indexOf("second"),
+  });
+  expect(() => blockSourceRange(block, -1, 0)).toThrow(RangeError);
+  expect(() => blockSourceRange(block, 0, block.text.length + 1)).toThrow(RangeError);
 });
 
 test("structure lexical state ignores braces in selectors, strings, escapes, and comments", () => {
@@ -117,6 +142,43 @@ test("unfinished punctuation in a structure description does not hide the next t
   expect(parseDocComment(raw).summary).toBe("Card.");
 });
 
+test("top-level documentation dividers end structures without splitting nested CSS at-rules", () => {
+  const raw = [
+    "/**",
+    " * @structure",
+    ' * @scope ([data-label=" - "]) {',
+    " *   .card { .label {} }",
+    " * }",
+    " * @scope (.card) - Documents the CSS scope.",
+    " * @summary - Summary.",
+    " */",
+  ].join("\r\n");
+  const blocks = collectDocCommentBlocks(raw, new CssDocConfiguration());
+  expect(blocks.map((block) => raw.slice(block.start, block.end))).toEqual([
+    '@structure\r\n * @scope ([data-label=" - "]) {\r\n *   .card { .label {} }\r\n * }',
+    "@scope (.card) - Documents the CSS scope.",
+    "@summary - Summary.",
+  ]);
+});
+
+test("a top-level divider in a nested CSS construct does not split a structure", () => {
+  const raw = [
+    "/**",
+    " * @structure",
+    " * .card {",
+    " * @media (width > 20px) {",
+    " * @unknown - Still nested.",
+    " * }",
+    " * }",
+    " * @custom {@private} — Documented.",
+    " */",
+  ].join("\n");
+  const blocks = collectDocCommentBlocks(raw, new CssDocConfiguration());
+  expect(blocks).toHaveLength(2);
+  expect(blocks[0]?.text).toContain("@unknown - Still nested.");
+  expect(blocks[1]?.text).toBe("@custom {@private} — Documented.");
+});
+
 test("record boundaries ignore record-shaped text in prose and nested structure", () => {
   const raw = [
     "/**",
@@ -156,6 +218,13 @@ test("framing removes only one space after a marker and preserves tabs", () => {
 test("the parser preserves tabs and CRLF on framed example lines", () => {
   const raw = "/**\r\n * @example\r\n * First\r\n *\tTabbed\r\n *\r\n *  Spaced\r\n */";
   expect(parseDocComment(raw).examples).toEqual(["First\r\n\tTabbed\r\n\r\n Spaced"]);
+});
+
+test("the parser reads example labels from CRLF-framed comments", () => {
+  const raw = "/**\r\n * @example labels=[docs]\r\n * Example\r\n */";
+  const parsed = parseDocComment(raw);
+  expect(parsed.exampleLabels).toEqual({ 0: ["docs"] });
+  expect(parsed.examples).toEqual(["Example"]);
 });
 
 test.each(["/* text */", "/** text */", " text "])(

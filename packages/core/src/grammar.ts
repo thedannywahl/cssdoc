@@ -554,7 +554,7 @@ export function parseDocComment(
 
     if (definition.canonicalName === "example") {
       const LABELS_HEADER: Regex = arkRegex.as(
-        String.raw`^labels=${BRACKET_OPEN_SOURCE}(${CSSDOC_EXAMPLE_LABEL_SOURCE}(?:${SPACE_TAB_SOURCE}*,${SPACE_TAB_SOURCE}*${CSSDOC_EXAMPLE_LABEL_SOURCE})*)${BRACKET_CLOSE_SOURCE}(?:\n|$)`,
+        String.raw`^labels=${BRACKET_OPEN_SOURCE}(${CSSDOC_EXAMPLE_LABEL_SOURCE}(?:${SPACE_TAB_SOURCE}*,${SPACE_TAB_SOURCE}*${CSSDOC_EXAMPLE_LABEL_SOURCE})*)${BRACKET_CLOSE_SOURCE}(?:\r?\n|$)`,
         "u",
       );
       const header = LABELS_HEADER.exec(m[2]);
