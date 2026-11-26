@@ -21,21 +21,21 @@ vp run release
 That runs the gate, including the docs build, then `bumpp` (recursive) which:
 
 1. prompts for the new version and applies it to **every** `package.json`;
-2. runs `changelogen` to prepend the release section to `CHANGELOG.md` from the Conventional Commits
+2. synchronizes the Zed extension manifest, Cargo crate and lockfile, and pinned language-server
+   version with the bumped language-server package;
+3. runs `changelogen` to prepend the release section to `CHANGELOG.md` from the Conventional Commits
    since the last tag;
-3. commits `chore(release): vX.Y.Z` and creates the `vX.Y.Z` tag — but does **not** push.
+4. commits `chore(release): vX.Y.Z` and creates the `vX.Y.Z` tag.
 
-Review the commit and `CHANGELOG.md`, then push to ship:
-
-```sh
-git push --follow-tags
-```
+The command then runs `git push --follow-tags` to ship the release.
 
 Pushing the `v*` tag triggers `.github/workflows/release.yml`, which re-runs the gate and, in parallel:
 
 - publishes all public npm packages with `vp pm publish -r --provenance` and creates a GitHub Release;
 - builds the VS Code extension and publishes it to the **VS Code Marketplace** (`vsce`) and **Open VSX**
-  (`ovsx`). `bumpp -r` already bumped the extension to the same version, so it stays in sync.
+  (`ovsx`). `bumpp -r` already bumped the extension to the same version, so it stays in sync;
+- builds the Zed extension for `wasm32-wasip2` and attaches a versioned archive to the GitHub Release,
+  with registry update PRs temporarily disabled.
 
 ## One-time setup
 
@@ -50,6 +50,12 @@ Pushing the `v*` tag triggers `.github/workflows/release.yml`, which re-runs the
 - **VS Code extension tokens** — the Marketplace has no OIDC, so publishing needs stored PATs. Add repo
   secrets `VSCE_PAT` (an Azure DevOps token for the `cssdoc` publisher) and `OVSX_PAT` (an Open VSX
   token). The `cssdoc` publisher must exist on both marketplaces.
+- **Zed registry updates** — merge the initial submission in `zed-industries/extensions` first. Add
+  a `ZED_REGISTRY_TOKEN` repo secret for a GitHub account that can push to `thedannywahl/extensions`
+  and open and edit pull requests against `zed-industries/extensions` (a classic PAT with
+  `public_repo` scope works for these public repositories). The release commit must be reachable
+  from `main`. Set the repository variable `ZED_REGISTRY_UPDATE_ENABLED` to `true` to enable update
+  PRs. Review and follow up on the registry PR; opening it doesn't publish the extension.
 - **Branch protection** — require the CI `verify` and `commitlint` checks on `main`.
 - **GitHub Pages** — Settings → Pages → Source: GitHub Actions (for the docs deploy).
 - **Local commit hook (optional)** — to catch bad commit messages before pushing, add a `commit-msg`
@@ -63,3 +69,7 @@ Pushing the `v*` tag triggers `.github/workflows/release.yml`, which re-runs the
   (`vsce`) is best-effort, so a failing PAT there doesn't skip Open VSX. Build/publish by hand with
   `vp run ext:package`, then `vp run ext:publish:vsce` and/or `vp run ext:publish:ovsx`.
 - `vp run publish:dry` does a full dry-run publish without touching the registry.
+- `vp run zed:package` builds the Zed archive locally with Rust and the `wasm32-wasip2` target.
+  Extract it to a permanent directory and use **zed: install dev extension** to select that directory.
+  This overrides the registry extension. The prebuilt archive doesn't include Rust source; the
+  extension still needs Node.js 26 or newer and network access to install the pinned language server.

@@ -68,3 +68,52 @@ jobs:
         run: vp run ext:publish:ovsx
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
+
+  package-zed:
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
+        with:
+          cache: true
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip2
+      - name: Test Zed extension
+        run: cargo test --locked --manifest-path servers/zed/Cargo.toml
+      - name: Build and package Zed extension
+        run: |
+          version="$(node -p "require('./servers/language-server/package.json').version")"
+          if [[ "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "Release tag $GITHUB_REF_NAME does not match language server version $version" >&2
+            exit 1
+          fi
+          vp run zed:package
+      - name: Attach Zed extension to the release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: dist/cssdoc-zed-*.tar.gz
+          fail_on_unmatched_files: true
+
+  update-zed-registry:
+    # Disabled unless the repository variable is explicitly set to true.
+    if: ${{ vars.ZED_REGISTRY_UPDATE_ENABLED == 'true' }}
+    needs: package-zed
+    runs-on: ubuntu-latest
+    concurrency:
+      group: zed-registry-update
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
+        with:
+          cache: true
+      - name: Create or update Zed registry pull request
+        run: |
+          gh auth setup-git
+          bash scripts/update-zed-registry.sh
+        env:
+          GH_TOKEN: ${{ secrets.ZED_REGISTRY_TOKEN }}

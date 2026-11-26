@@ -93,7 +93,8 @@ const config: UserConfig = mergeConfig(
         // `check` also verifies the compiler projects and schema mirrors.
         check: {
           cache: false,
-          command: "vp check && vp run type-check && node scripts/sync-schema.ts --check",
+          command:
+            "vp check && vp run type-check && node scripts/sync-schema.ts --check && node scripts/sync-zed-version.mjs --check",
         },
         "type-check": { cache: false, command: "tsc --noEmit && vp run --no-cache -r type-check" },
         "sync:schema": { cache: false, command: "node scripts/sync-schema.ts" },
@@ -123,6 +124,7 @@ const config: UserConfig = mergeConfig(
         "ext:package": { cache: false, command: "vp run --filter cssdoc-vscode package" },
         "ext:publish:vsce": { cache: false, command: "vp run --filter cssdoc-vscode publish:vsce" },
         "ext:publish:ovsx": { cache: false, command: "vp run --filter cssdoc-vscode publish:ovsx" },
+        "zed:package": { cache: false, command: "bash scripts/package-zed.sh" },
       },
     },
   }),

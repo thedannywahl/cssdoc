@@ -12,7 +12,8 @@ features and settings.
 
 The extension starts a configured binary first, then `cssdoc-language-server` on the worktree's
 `PATH`. Otherwise, it installs the pinned `@cssdoc/language-server` package using Zed's npm API.
-Automatic installation requires network access and Node.js 26 or newer. The current pin is 0.20.1.
+Automatic installation requires network access and Node.js 26 or newer. The pin matches the release
+version of the language server.
 To use a local server instead, build the workspace language server and configure its executable
 explicitly.
 
@@ -52,6 +53,9 @@ when you press Enter. Add the prefix manually.
 
 ## Release
 
-Keep the pinned server version in `src/lib.rs` aligned with `servers/language-server/package.json`.
-Publish that server version before publishing the extension. Test the exact extension commit in Zed,
-including installation, startup, settings, hover, and semantic tokens, before registry submission.
+The release command synchronizes the extension and pinned server versions. After publishing the
+server, CI attaches a prebuilt archive to the GitHub Release. Zed registry update PRs are temporarily
+disabled.
+See [Releasing](../../RELEASING.md) for setup and installation details. Test the exact extension
+commit in Zed, including installation, startup, settings, hover, and semantic tokens, before the
+registry PR is merged.
