@@ -41,6 +41,7 @@ import type { ChildNode } from "postcss";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import { CssDocConfiguration } from "./configuration.ts";
+import { frameCommentLines } from "./framing.ts";
 import {
   cardinalityFromMatch,
   splitTrailingCardinality,
@@ -61,9 +62,6 @@ import {
   CSSDOC_MODIFIER_ANNOTATION_PREFIX_SOURCE,
   CSSDOC_MODIFIER_REFERENCE_SOURCE,
   STRUCTURE_RECORD_KIND_SOURCE,
-  COMMENT_START_SOURCE,
-  COMMENT_END_SOURCE,
-  COMMENT_LINE_PREFIX,
   WHITESPACE_RUN,
   toRegExp,
   MARKDOWN_ATX_HEADING_PREFIX_SOURCE,
@@ -369,13 +367,8 @@ function splitQuery(rest: string): { query: string; description?: string } {
 
 /** Strip the comment framing (`/**`, `*\/`, and leading ` * `) from a raw block-comment body. */
 export function stripCommentFraming(raw: string): string {
-  const COMMENT_START: Regex = arkRegex.as(`^${COMMENT_START_SOURCE}${ASTERISK_SOURCE}?`);
-  const COMMENT_END: Regex = arkRegex.as(`${COMMENT_END_SOURCE}$`);
-  return raw
-    .replace(COMMENT_START, "")
-    .replace(COMMENT_END, "")
-    .split("\n")
-    .map((line) => line.replace(COMMENT_LINE_PREFIX, ""))
+  return frameCommentLines(raw, "legacy")
+    .map((line) => line.text)
     .join("\n")
     .trim();
 }

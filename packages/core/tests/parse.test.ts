@@ -10,8 +10,45 @@ import {
   toMermaidVariants,
 } from "../src/index.ts";
 import postcss from "postcss";
-import { parseDocComment, parseStructure, splitPartArg } from "../src/grammar.ts";
+import { frameCommentLines } from "../src/framing.ts";
+import {
+  parseDocComment,
+  parseStructure,
+  splitPartArg,
+  stripCommentFraming,
+} from "../src/grammar.ts";
 import { ModifierMatcher } from "../src/modifier.ts";
+
+test("comment framing preserves source ranges through CRLF and non-BMP text", () => {
+  const raw = "/**\r\n * @remarks - 😀 First\r\n *   second\r\n *\r\n */";
+  const lines = frameCommentLines(raw, "framed");
+  expect(lines.map((line) => line.text)).toEqual([
+    "\r",
+    "@remarks - 😀 First\r",
+    "  second\r",
+    "\r",
+    " ",
+  ]);
+  for (const line of lines) {
+    expect(raw.slice(line.start, line.end)).toBe(line.text);
+  }
+  const remark = lines[1]!;
+  expect(remark.start).toBe(raw.indexOf("@remarks"));
+  expect(
+    raw.slice(
+      remark.start + remark.text.indexOf("😀"),
+      remark.start + remark.text.indexOf("😀") + 2,
+    ),
+  ).toBe("😀");
+  expect(stripCommentFraming(raw)).toBe("@remarks - 😀 First\r\n  second");
+});
+
+test("unframed text retains a leading Markdown list marker when framing is disabled", () => {
+  const raw = "* First\n  * Second";
+  const lines = frameCommentLines(raw, "none");
+  expect(lines.map((line) => line.text)).toEqual(["* First", "  * Second"]);
+  expect(lines.map((line) => raw.slice(line.start, line.end))).toEqual(["* First", "  * Second"]);
+});
 
 test.each(["—", "-", "--"])("parses %s description separators across tag kinds", (separator) => {
   const doc = parseDocComment(`/**
