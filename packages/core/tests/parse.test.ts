@@ -57,6 +57,19 @@ test("framing removes only one space after a marker and preserves tabs", () => {
   expect(lines[2]?.text).toBe("\ttabbed");
 });
 
+test.each(["/* text */", "/** text */", " text "])(
+  "comment delimiters preserve the source range of %s",
+  (raw) => {
+    const [line] = frameCommentLines(raw, "none");
+    expect(line?.text).toBe(" text ");
+    expect(raw.slice(line?.start, line?.end)).toBe(" text ");
+  },
+);
+
+test("a comment terminator before a final newline is not stripped", () => {
+  expect(frameCommentLines("text*/\n", "none").map((line) => line.text)).toEqual(["text*/", ""]);
+});
+
 test.each(["—", "-", "--"])("parses %s description separators across tag kinds", (separator) => {
   const doc = parseDocComment(`/**
  * @slot action ${separator} Slot description

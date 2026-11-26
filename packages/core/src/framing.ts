@@ -1,4 +1,11 @@
-import { COMMENT_LINE_MARKER_SOURCE, COMMENT_LINE_PREFIX, SPACE_TAB_SOURCE } from "@cssdoc/regex";
+import {
+  ASTERISK_SOURCE,
+  COMMENT_END_SOURCE,
+  COMMENT_LINE_MARKER_SOURCE,
+  COMMENT_LINE_PREFIX,
+  COMMENT_START_SOURCE,
+  SPACE_TAB_SOURCE,
+} from "@cssdoc/regex";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 
@@ -6,6 +13,9 @@ const FRAMED_COMMENT_LINE_PREFIX: Regex = arkRegex.as(
   `^${SPACE_TAB_SOURCE}*${COMMENT_LINE_MARKER_SOURCE} ?`,
   "u",
 );
+const COMMENT_OPENING: Regex = arkRegex.as(`^${COMMENT_START_SOURCE}${ASTERISK_SOURCE}?`, "u");
+// `$` also matches before a final newline; only strip a terminator at the actual end.
+const COMMENT_CLOSING: Regex = arkRegex.as(`${COMMENT_END_SOURCE}(?![\\s\\S])`, "u");
 
 /** One comment line after optional framing removal, with offsets into the original input. */
 export interface FramedCommentLine {
@@ -28,8 +38,8 @@ export function frameCommentLines(
   raw: string,
   prefixes: "framed" | "none" | "legacy",
 ): FramedCommentLine[] {
-  const start = raw.startsWith("/**") ? 3 : raw.startsWith("/*") ? 2 : 0;
-  const end = raw.slice(start).endsWith("*/") ? raw.length - 2 : raw.length;
+  const start = raw.match(COMMENT_OPENING)?.[0].length ?? 0;
+  const end = raw.length - (raw.slice(start).match(COMMENT_CLOSING)?.[0].length ?? 0);
   const lines: FramedCommentLine[] = [];
 
   for (let cursor = start; cursor <= end;) {
