@@ -45,6 +45,60 @@ defaults unless another decision changes them.
 explicitly set. Tag-specific severities override general severities within a layer; later matching
 layers apply afterward.
 
+`conflicting-token-description` and `property-descriptor-conflict` also default to `warn`.
+
+### Detailed decisions
+
+- **Inline prose:** In every mode an odd run of backslashes before `{@` escapes the opener;
+  `\{@` renders as literal `{@` without the escape. Preserve original bytes for source mapping and
+  migration, and preserve protected code verbatim. Links use `{@link TARGET}` or
+  `{@link TARGET | Label}`. Labels are nonempty plain text with `\\`, `\|`, and `\}` escapes;
+  the first unescaped top-level pipe separates the label. External links use a JSON-quoted
+  `url("…")` target and accept only absolute `https:`, `http:`, or `mailto:` destinations, checked
+  after decoding.
+- **Automatic prose:** Select Markdown for a CommonMark parse containing emphasis, strong emphasis,
+  a link, image, code, heading, list, blockquote, thematic break, hard break, or more than one
+  paragraph. Raw HTML, ordinary punctuation, soft breaks, and CSSDoc inline tags alone remain
+  plain. Detection doesn't change block ownership.
+- **Empty prose:** Check recognized, enabled, structurally valid `@remarks`, `@example`, and
+  `@annotation` blocks with no meaningful body, plus any valid header with an explicitly opened
+  but empty prose body. Whitespace and empty formatting shells are empty; visible text, an inline
+  reference, and non-whitespace example code are content. Bare flags, reference-only `@ref`, and
+  optional descriptions without dividers remain valid.
+- **Names and versions:** Stage and remark-kind names match `^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$`
+  case-sensitively; preserve authored spelling. Compile `sinceFormat` patterns as JavaScript regexes
+  in Unicode mode, require a full-identifier match, and reject invalid patterns when loading
+  config. The `semver` policy accepts SemVer 2.0.0, including prerelease and build metadata.
+- **Membership:** Use `{@restricted}` on membership tags and `restricted` in `@structure`. Migrate
+  positional `private` when it expresses a usage restriction. Preserve repeated parent claims in
+  source order and coalesce edges; any restriction on the pair restricts the edge. Repeated
+  `@memberOf` is a singleton violation; conflicting child claims leave that choice unresolved.
+  `tabs.item.icon` implies `tabs.item` only without explicit child or parent-side claims; implication
+  supplies neither restriction nor reciprocity. An incomplete required scope keeps the edge
+  inconclusive and defers dependent unknown-target, reciprocity, and usage diagnostics.
+- **Surface matching:** Match within owned CSS by surface kind and canonical subject, using parsed
+  selectors, canonical identifiers, or parsed condition preludes as appropriate. Normalize comments,
+  escapes, and insignificant whitespace according to CSS grammar, preserving meaningful order.
+  Associate every CSS `@scope` occurrence with records whose owned rules it encloses. An unqualified
+  scope tag requires exactly one occurrence; an explicit prelude matches parsed root and limit.
+  Multiple matches are ambiguous.
+- **Tokens and properties:** Identical token descriptions coalesce in the rendered view but retain
+  every source span. Different nonempty descriptions emit `conflicting-token-description` and use
+  the first in source order; unqualified token prose stays separate. Namespace `acme` matches
+  `--acme-<nonempty suffix>` case-sensitively after CSS escape decoding, for documented property
+  subjects only. Compare property `inherits` as a boolean, `syntax` as parsed grammar, and
+  `initial-value` as normalized CSS tokens, retaining distinctions such as `0` and `0px`. On
+  `property-descriptor-conflict`, the CSS descriptor remains effective.
+- **Effects and sections:** `@affects modifier(.table--stacked) -> component:table.cell#pseudo-element(::before)`
+  resolves the modifier in the current record and targets through shared references. Split target
+  lists at top-level commas; the effect is authored documentation and doesn't require a connecting
+  selector. Use `remarks` for unkinded remarks and `remarks:<kind>` for named kinds. Migrate
+  `usage`, `compat`, `accessibility`, and `see` to `remarks:usage`, `remarks:compat`,
+  `remarks:a11y`, and `remarks:see`. Keep the usage import snippet even when it's the only section
+  content, retain other non-remark section keys except `demo`, and add `scopes`. Targeted alias and
+  deprecation remarks render with their modifier. Ordinary CSS comments recognize only
+  `@remarks todo` as a remark directive; other kinds follow existing ordinary-comment behavior.
+
 ## Representative fixtures
 
 These are review fixtures with expected outcomes, not executable tests against the current parser.
@@ -125,17 +179,82 @@ reference.` as plain text. They don't expose the private record, target identity
 tag, or link-resolution metadata. The same projection applies with link diagnostics enabled or
 disabled. Internal output can retain the private record and resolved link.
 
-## Open decisions before approval
+### Escaped and labeled links
 
-- Define the literal inline-tag escape and link-label/URL grammar. The private-link fixture above
-  intentionally uses the already-decided no-label fallback.
-- Set exact `auto` prose detection and `empty-prose` applicability, stage and remark-kind name
-  validation, and regular-expression matching semantics for `sinceFormat`.
-- Confirm the membership restriction marker and settle repeated claims, dotted-name relationships,
-  and incomplete-index behavior.
-- Specify surface-specific matching, scope association, token-description conflicts, property
-  namespace boundaries, and authored-versus-CSS descriptor conflict comparison.
-- Settle `@affects` target syntax and whether to check connecting CSS; choose the remaining
-  section keys and the treatment of non-todo remark kinds in ordinary CSS comments.
-- Approve the decision table and before-and-after fixtures. The parser engine's integrated
-  boundary, safety, and complete bundle checks remain a separate phase 2 gate.
+Assume `source("src/a|b.css")::component:button` uniquely resolves to a public record:
+
+```css
+/**
+ * @component link-demo - Link examples.
+ * @remarks - Literal \{@link button}; see {@link source("src/a|b.css")::component:button | Open \| close \}}.
+ * @remarks - Visit {@link url("https://example.com/docs") | Guide}.
+ * @remarks - Code: `\{@link button}`.
+ */
+.link-demo {
+}
+```
+
+**Expected:** The first opener is literal and displays `{@link button}` without its escape.
+The source-key pipe isn't a label separator; the linked label is `Open | close }`. `Guide` links
+to the validated HTTPS URL. The backslash and tag inside code remain verbatim. Preserve the
+authored bytes and source ranges for all four occurrences.
+
+### Empty prose versus a bare flag
+
+```css
+/**
+ * @component button - An action.
+ * @remarks -
+ * @example -
+ * @deprecated
+ */
+.button {
+}
+```
+
+**Expected:** `empty-prose` reports the empty remark and example, but not the bare
+`@deprecated`. Disabling the diagnostic doesn't change the parsed blocks.
+
+### Partial membership with a dotted name
+
+An available child record is named `tabs.item.icon`, has no `@memberOf`, and is evaluated while
+the scope containing possible parent-side claims is incomplete. A unique `tabs.item` parent exists.
+
+**Expected:** The parent edge remains inconclusive; don't assert the implied edge or emit dependent
+unknown-target, missing-reciprocity, or usage diagnostics. Once the scope is complete and establishes
+that there are no parent-side claims, infer `tabs.item` as the parent without a restriction or
+reciprocal evidence. An explicit parent-side claim prevents that dotted-name implication.
+
+### Matching scopes and conflicting token descriptions
+
+```css
+/**
+ * @component card - A card.
+ * @scope (.card) - Card scope.
+ * @token --accent - First description.
+ * @token --accent - Second description.
+ */
+@scope (.card) {
+  .card {
+    color: var(--accent);
+  }
+}
+@scope (.card) {
+  .card {
+    border-color: var(--accent);
+  }
+}
+```
+
+**Expected:** Both scope occurrences belong to `card`, so the doc tag is ambiguous and produces
+`ambiguous-surface`; neither occurrence is selected. `conflicting-token-description` reports the
+different token descriptions, and the rendered view uses `First description.` Both token
+declarations and scope occurrences retain their source spans. Suppressing either warning doesn't
+change those outcomes.
+
+## Review status
+
+The decision table and seven fixtures await approval. The parser engine's integrated boundary,
+safety, and complete bundle checks remain a separate phase 2 gate. The detailed implementation plan
+also tracks remaining implementation-specific questions, including the default for the since-format
+rule and handling separately documented property defaults.
