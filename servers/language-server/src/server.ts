@@ -210,9 +210,9 @@ export function startLanguageServer(): void {
         definitionIndexes,
         siblingIndex,
         providerHref: providers.href,
-        severities: resolveRuleSeverities(
-          g.configFile.ruleSeverities as Parameters<typeof resolveRuleSeverities>[0],
-        ),
+        severities: resolveRuleSeverities(g.configFile.ruleSeverities),
+        severitiesForFile: (path: string) =>
+          resolveRuleSeverities(g.configFile.ruleSeveritiesForFile(path)),
         ruleOptions: g.configFile.ruleOptions,
         naming: resolveNaming(g.configFile.naming),
         structureIgnore: g.configFile.structureIgnore,

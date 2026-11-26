@@ -130,6 +130,105 @@ function ipcServer<T>(
   return { server, request };
 }
 
+test("the bundled server applies file overrides and reloads them for open documents", async () => {
+  execFileSync("node", ["scripts/build.mjs"], { cwd: root });
+  const fixture = mkdtempSync(join(tmpdir(), "cssdoc-rule-overrides-"));
+  const configPath = join(fixture, "cssdoc.json");
+  const writeConfig = (severity: "off" | "warn") =>
+    writeFileSync(
+      configPath,
+      JSON.stringify({
+        rules: { "missing-summary": "error", "cssdoc-directive": "error" },
+        overrides: [
+          {
+            files: ["docs/*.css", "docs/*.vue"],
+            rules: { "missing-summary": severity, "cssdoc-directive": "warn" },
+          },
+        ],
+      }),
+    );
+  writeConfig("off");
+  const { server, request } = ipcServer();
+  type Diagnostic = { code: string; severity: number };
+  const nextDiagnostics = (uri: string): Promise<Diagnostic[]> =>
+    new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        server.off("message", onMessage);
+        reject(new Error(`No diagnostics for ${uri}`));
+      }, 10_000);
+      const onMessage = (message: unknown): void => {
+        if (!message || typeof message !== "object" || !("method" in message)) return;
+        if (message.method !== "textDocument/publishDiagnostics" || !("params" in message)) return;
+        const params = message.params as { uri: string; diagnostics: Diagnostic[] };
+        if (params.uri !== uri) return;
+        clearTimeout(timer);
+        server.off("message", onMessage);
+        resolve(params.diagnostics);
+      };
+      server.on("message", onMessage);
+    });
+  const source =
+    "/* cssdoc-expect-error unknown-annotation-ref */\n/**\n * @component widget\n */\n.widget {}";
+  const open = (uri: string, languageId: string, text: string) =>
+    server.send({
+      jsonrpc: "2.0",
+      method: "textDocument/didOpen",
+      params: {
+        textDocument: {
+          uri,
+          languageId,
+          version: 1,
+          text,
+        },
+      },
+    });
+  const srcUri = pathToFileURL(join(fixture, "src", "widget.css")).href;
+  const docsUri = pathToFileURL(join(fixture, "docs", "widget.css")).href;
+  const embeddedUri = pathToFileURL(join(fixture, "docs", "widget.vue")).href;
+  try {
+    await request("initialize", {
+      processId: process.pid,
+      rootUri: pathToFileURL(fixture).href,
+      capabilities: {},
+      initializationOptions: { css: [] },
+    });
+    server.send({ jsonrpc: "2.0", method: "initialized", params: {} });
+
+    const srcDiagnostics = nextDiagnostics(srcUri);
+    open(srcUri, "css", source);
+    expect(await srcDiagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: "missing-summary", severity: 1 }),
+        expect.objectContaining({ code: "cssdoc-directive", severity: 1 }),
+      ]),
+    );
+
+    const docsDiagnostics = nextDiagnostics(docsUri);
+    open(docsUri, "css", source);
+    const before = await docsDiagnostics;
+    expect(before.find((d) => d.code === "missing-summary")).toBeUndefined();
+    expect(before.find((d) => d.code === "cssdoc-directive")?.severity).toBe(2);
+
+    const embeddedDiagnostics = nextDiagnostics(embeddedUri);
+    open(embeddedUri, "vue", `<style>\n${source}\n</style>`);
+    const embedded = await embeddedDiagnostics;
+    expect(embedded.find((d) => d.code === "missing-summary")).toBeUndefined();
+    expect(embedded.find((d) => d.code === "cssdoc-directive")?.severity).toBe(2);
+
+    const reloadedDiagnostics = nextDiagnostics(docsUri);
+    writeConfig("warn");
+    server.send({
+      jsonrpc: "2.0",
+      method: "workspace/didChangeWatchedFiles",
+      params: { changes: [{ uri: pathToFileURL(configPath).href, type: 2 }] },
+    });
+    expect((await reloadedDiagnostics).find((d) => d.code === "missing-summary")?.severity).toBe(2);
+  } finally {
+    server.kill();
+    rmSync(fixture, { recursive: true, force: true });
+  }
+}, 20_000);
+
 test("the bundled server returns an explicit replacement for doc-tag completions", async () => {
   execFileSync("node", ["scripts/build.mjs"], { cwd: root });
   const { server, request } =

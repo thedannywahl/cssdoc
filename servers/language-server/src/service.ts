@@ -568,6 +568,8 @@ export interface ConfigScope {
   /** A provider component's doc-page URL, from its `baseHref` (for cross-links). */
   providerHref?: (className: string) => string | undefined;
   severities: RuleSeverities;
+  /** Resolve rule severities for a document path, including file overrides. */
+  severitiesForFile?: (path: string) => RuleSeverities;
   ruleOptions?: RuleOptions;
   naming: ResolvedNaming;
   /** Class names exempt from the `structure-unknown-selector` rule. */
@@ -1096,8 +1098,11 @@ export class CssDocLanguageService {
     const seen = new Set<string>();
     for (const scope of this.scopesFor(text, path, languageId)) {
       const usageIndex = scope.siblingIndex ?? scope.index;
+      const severities = path
+        ? (scope.severitiesForFile?.(path) ?? scope.severities)
+        : scope.severities;
       for (const { usage, start, end } of this.modifierUsages(text, scope)) {
-        for (const d of checkClassUsage([usage], usageIndex, scope.severities)) {
+        for (const d of checkClassUsage([usage], usageIndex, severities)) {
           const key = `${start}:${end}:${d.rule}:${d.message}`;
           if (seen.has(key)) continue;
           seen.add(key);
@@ -1239,6 +1244,9 @@ export class CssDocLanguageService {
   ): LspDiagnostic[] {
     try {
       const scope = this.scopeForPath(path);
+      const severities = path
+        ? (scope.severitiesForFile?.(path) ?? scope.severities)
+        : scope.severities;
       const index = createIndex(text, { configuration: scope.configuration, parse });
       const { assignments, usages } = cssValueSites(text, { parse });
       const diags = applyDirectives(
@@ -1247,17 +1255,17 @@ export class CssDocLanguageService {
           // Recognize this scope's own components AND any declared providers' components as siblings.
           ...lintModel(
             index,
-            scope.severities,
+            severities,
             scope.naming,
             scope.structureIgnore,
             scope.siblingIndex ?? scope.index,
             scope.ruleOptions,
           ),
-          ...checkPropertyAssignments(assignments, index, scope.severities),
-          ...checkPropertyUsage(usages, index, {}, scope.severities),
+          ...checkPropertyAssignments(assignments, index, severities),
+          ...checkPropertyUsage(usages, index, {}, severities),
         ],
         text, // honor `/* cssdoc-disable … */` directives in the source
-        scope.severities["cssdoc-directive"],
+        severities["cssdoc-directive"],
       );
       const out: LspDiagnostic[] = [];
       for (const d of diags) {

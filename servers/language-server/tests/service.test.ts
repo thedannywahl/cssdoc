@@ -49,6 +49,30 @@ test("CSS diagnostics honor the configured unused-expectation severity", () => {
   }
 });
 
+test("consumer diagnostics apply file-specific severities from the relevant scope", () => {
+  const svc = new CssDocLanguageService(createIndex(""));
+  const index = createIndex(CSS, { modifierConvention: "rscss" });
+  svc.setScopes([
+    {
+      dir: "/app",
+      index,
+      severities: resolveRuleSeverities({ "deprecated-modifier": "error" }),
+      severitiesForFile: (path) =>
+        resolveRuleSeverities({
+          "deprecated-modifier": path.endsWith("ignored.html") ? "off" : "warn",
+        }),
+      naming: {},
+    },
+  ]);
+  const source = '<button class="button -variant-old"></button>';
+  expect(svc.diagnostics(source, "html", "/app/ignored.html")).toEqual([]);
+  expect(
+    svc
+      .diagnostics(source, "html", "/app/checked.html")
+      .find((d) => d.code === "deprecated-modifier")?.severity,
+  ).toBe(2);
+});
+
 test("completions in a class attribute suggest the component's modifiers", () => {
   const text = `<button class="button ">x</button>`;
   const labels = service.completions(text, at(text.indexOf('">'))).map((c) => c.label);

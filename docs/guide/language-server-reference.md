@@ -178,6 +178,9 @@ support or enable each feature; it controls how results appear.
 | Semantic tokens | Provides full-document tokens for tags and values in doc comments; the client and theme determine highlighting.                                                                                                            |
 | Inlay hints     | Shows indexed custom-property metadata at matching property names. The client controls whether hints are displayed.                                                                                                        |
 
+File-glob rule severity overrides apply to the open document's path, including embedded CSS and
+class usage checks. After a config refresh, the server republishes diagnostics for open documents.
+
 CSS inside supported hosts is projected for editor features; the server also recognizes CSS in the
 open host document itself. See [Embedded CSS support](/guide/embedded-css-support) for supported
 hosts and extraction limits. Workspace lookups depend on indexed files and declared providers.
