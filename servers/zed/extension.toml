@@ -1,6 +1,6 @@
 id = "cssdoc-language-server"
 name = "cssdoc Language Server"
-version = "0.1.0"
+version = "0.20.1"
 schema_version = 1
 authors = ["Danny Wahl"]
 description = "Editor support for cssdoc, powered by the cssdoc language server."
