@@ -712,7 +712,7 @@ export function createIndex(
       const name = recordNameOf(node.text, options.configuration);
       const entry = name ? entryQueues.get(name)?.shift() : undefined;
       if (name && entry) {
-        const doc = parseDocComment(node.text, options.configuration);
+        const doc = parseDocComment(node.toString(), options.configuration);
         const startLine = spanOf(node)?.start.line ?? 1;
         const { modifierLines, partLines } = scanAuthoredTagLines(node.text, startLine);
         const docSpan = spanOf(node);

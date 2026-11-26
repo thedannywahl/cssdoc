@@ -1060,7 +1060,7 @@ export function parseCssDocs(css: string, options: ParseOptions = {}): CssDocEnt
             : undefined;
         current = {
           name,
-          doc: parseDocComment(node.text, configuration, parse),
+          doc: parseDocComment(node.toString(), configuration, parse),
           nodes: [],
           source,
         };

@@ -483,11 +483,11 @@ function parseModifierBody(description: string | undefined): DocModifier {
 }
 
 /**
- * Parse a doc-comment's INNER text (already stripped of `/* *\/` framing, or a raw block — both are
- * handled) into a {@link ParsedDoc}. The `configuration` decides which tags are active and which custom
- * tags to capture; unknown or unsupported tags are ignored, so the grammar degrades gracefully.
+ * Parse a doc-comment's inner text or a complete block into a {@link ParsedDoc}. The `configuration`
+ * decides which tags are active and which custom tags to capture; unknown or unsupported tags are
+ * ignored, so the grammar degrades gracefully.
  *
- * @param raw - The comment text (with or without `/** … *\/` framing).
+ * @param raw - A complete doc comment or unframed text without leading comment markers.
  * @param configuration - The active tag configuration (defaults to the full standard vocabulary).
  * @param parse - An optional CSS parser used to build structure trees.
  * @returns The structured tags.
@@ -497,8 +497,6 @@ export function parseDocComment(
   configuration: CssDocConfiguration = new CssDocConfiguration(),
   parse?: CssParse,
 ): ParsedDoc {
-  // Works on either a raw `/** … *\/` block or PostCSS's already-unframed `Comment.text` (which keeps
-  // the inner `*` line prefixes) — stripCommentFraming no-ops the frame removal when it's absent.
   const doc: ParsedDoc = {
     modifiers: new Map(),
     modifierSelectors: new Map(),

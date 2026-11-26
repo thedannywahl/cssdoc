@@ -1,4 +1,9 @@
-import { AT_CHAR, AT_SOURCE, CSSDOC_BLOCK_TAG_NAME_SOURCE } from "@cssdoc/regex";
+import {
+  AT_CHAR,
+  AT_SOURCE,
+  COMMENT_START_SOURCE,
+  CSSDOC_BLOCK_TAG_NAME_SOURCE,
+} from "@cssdoc/regex";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import { CssDocConfiguration } from "./configuration.ts";
@@ -30,7 +35,8 @@ export function collectDocCommentBlocks(
     "u",
   );
   const INDENTED_AT_RULE: Regex = arkRegex.as(String.raw`^\s+${AT_SOURCE}`, "u");
-  const lines = frameCommentLines(raw, "framed");
+  const COMMENT_OPENING: Regex = arkRegex.as(`^${COMMENT_START_SOURCE}`, "u");
+  const lines = frameCommentLines(raw, COMMENT_OPENING.test(raw) ? "framed" : "none");
   const text = lines.map((line) => line.text).join("\n");
   const start = text.length - text.trimStart().length;
   const body = text.slice(start, text.trimEnd().length);

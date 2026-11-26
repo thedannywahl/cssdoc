@@ -32,6 +32,9 @@ import type { CssDocEntry } from "@cssdoc/core/lite";
 import { parseDocComment, toJson, CssDocConfiguration } from "@cssdoc/core/lite";
 ```
 
+`parseDocComment` accepts a complete doc comment or unframed text without leading comment markers.
+For a PostCSS comment node, pass `node.toString()` rather than `node.text`.
+
 `@cssdoc/core/lite` re-exports everything except `parseCssDocs`, and pulls in no CSS parser. (The main
 `@cssdoc/core` entry statically imports postcss for `parseCssDocs`, so importing from it can still bundle
 postcss even if you only use parse-free names — use `/lite` when keeping postcss out matters.) When you

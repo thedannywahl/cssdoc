@@ -74,6 +74,13 @@ test("unframed text retains a leading Markdown list marker when framing is disab
   expect(lines.map((line) => raw.slice(line.start, line.end))).toEqual(["* First", "  * Second"]);
 });
 
+test("the parser preserves list markers in framed and unframed examples", () => {
+  const body = "@example\n* First\n  * Second";
+  expect(parseDocComment(body).examples).toEqual(["* First\n  * Second"]);
+  const css = "/**\n * @component list\n * @example\n * * First\n *   * Second\n */\n.list {}";
+  expect(parseCssDocs(css)[0]?.examples).toEqual(["* First\n  * Second"]);
+});
+
 test("framing removes only one space after a marker and preserves tabs", () => {
   const raw = "/**\n\t*   spaced\n *\ttabbed\n */";
   const lines = frameCommentLines(raw, "framed");
