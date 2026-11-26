@@ -12,6 +12,7 @@ import {
   PAREN_OPEN_CHAR,
   QUOTE_DOUBLE_CHAR,
   QUOTE_SINGLE_CHAR,
+  TOKENIZER_INLINE_TAG_SOURCE,
 } from "@cssdoc/regex";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
@@ -49,16 +50,32 @@ export function hasStructureDocDivider(line: string): boolean {
   return scanStructure(line, { stack: [], comment: false, escaped: false }, true).divider;
 }
 
+/**
+ * Check whether a top-level at-rule line opens a CSS block rather than header metadata.
+ *
+ * @param line - The potential at-rule line.
+ * @returns Whether it opens a CSS block.
+ */
+export function opensStructureAtRule(line: string): boolean {
+  const result = scanStructure(line, { stack: [], comment: false, escaped: false }, false);
+  if (result.openAt === undefined) return false;
+  const INLINE_TAG: Regex = arkRegex.as(`^${TOKENIZER_INLINE_TAG_SOURCE}`, "u");
+  const tag = line.slice(result.openAt).match(INLINE_TAG)?.[0];
+  if (tag?.endsWith(BRACE_CLOSE_CHAR) && tag.indexOf(BRACE_OPEN_CHAR, 1) === -1) return false;
+  return true;
+}
+
 function scanStructure(
   line: string,
   state: StructureBoundaryState,
   findDivider: boolean,
-): { opened: boolean; divider: boolean } {
+): { opened: boolean; divider: boolean; openAt?: number } {
   const SEPARATOR: Regex | undefined = findDivider
     ? arkRegex.as(`^(?!${DASH_SOURCE}{2})${CSSDOC_DESCRIPTION_SEPARATOR_SOURCE}(?=\\s|$)`, "u")
     : undefined;
   if (line.endsWith("\r")) line = line.slice(0, -1);
   let opened = false;
+  let openAt: number | undefined;
   let divider = false;
   for (let i = 0; i < line.length; i++) {
     const char = line[i];
@@ -98,7 +115,10 @@ function scanStructure(
     } else if (char === QUOTE_SINGLE_CHAR || char === QUOTE_DOUBLE_CHAR) {
       state.quote = char;
     } else if (char === BRACE_OPEN_CHAR || char === BRACKET_OPEN_CHAR || char === PAREN_OPEN_CHAR) {
-      if (char === BRACE_OPEN_CHAR && state.stack.length === 0) opened = true;
+      if (char === BRACE_OPEN_CHAR && state.stack.length === 0) {
+        opened = true;
+        openAt ??= i;
+      }
       state.stack.push(char);
     } else if (
       (char === BRACE_CLOSE_CHAR && state.stack.at(-1) === BRACE_OPEN_CHAR) ||
@@ -110,5 +130,5 @@ function scanStructure(
   }
   if (state.escaped) state.escaped = false;
   else state.quote = undefined;
-  return { opened, divider };
+  return { opened, divider, openAt };
 }

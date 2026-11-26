@@ -94,6 +94,16 @@ test("block text ranges map through CRLF framing and UTF-16 characters", () => {
   expect(() => blockSourceRange(block, 0, block.text.length + 1)).toThrow(RangeError);
 });
 
+test("block collection preserves header whitespace before a continuation", () => {
+  const raw = "/**\r\n * @remarks - First  \r\n *   second\r\n */";
+  const [block] = collectDocCommentBlocks(raw, new CssDocConfiguration());
+  expect(block.text).toBe("@remarks - First  \r\n  second");
+  const start = block.text.indexOf("First");
+  const end = block.text.indexOf("second");
+  const range = blockSourceRange(block, start, end);
+  expect(raw.slice(range.start, range.end)).toBe("First  \r\n *   ");
+});
+
 test("structure lexical state ignores braces in selectors, strings, escapes, and comments", () => {
   const state: StructureBoundaryState = { stack: [], comment: false, escaped: false };
   expect(scanStructureLine('.card[data-x="}"] {', state)).toBe(true);
@@ -177,6 +187,26 @@ test("a top-level divider in a nested CSS construct does not split a structure",
   expect(blocks).toHaveLength(2);
   expect(blocks[0]?.text).toContain("@unknown - Still nested.");
   expect(blocks[1]?.text).toBe("@custom {@private} — Documented.");
+});
+
+test("top-level CSS at-rules with doc-tag names remain part of the structure", () => {
+  const raw = [
+    "/**",
+    " * @structure",
+    " * @media (width > 30rem) {",
+    " *   .card {}",
+    " * }",
+    ' * @media (selector([data-text="{@private}"])) {@supports (display: grid) {.card {}}}',
+    " * @component child {}",
+    " * @component next {@private}",
+    " */",
+  ].join("\n");
+  const blocks = collectDocCommentBlocks(raw, new CssDocConfiguration());
+  expect(blocks).toHaveLength(2);
+  expect(blocks[0]?.text).toContain("@media (width > 30rem) {");
+  expect(blocks[0]?.text).toContain('@media (selector([data-text="{@private}"]))');
+  expect(blocks[0]?.text).toContain("@component child {}");
+  expect(blocks[1]?.text).toBe("@component next {@private}");
 });
 
 test("record boundaries ignore record-shaped text in prose and nested structure", () => {

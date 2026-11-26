@@ -11,6 +11,7 @@ import { CssDocConfiguration } from "./configuration.ts";
 import { frameCommentLines } from "./framing.ts";
 import {
   hasStructureDocDivider,
+  opensStructureAtRule,
   scanStructureLine,
   type StructureBoundaryState,
 } from "./structure-boundaries.ts";
@@ -117,8 +118,15 @@ export function collectDocCommentBlocks(
     const inNestedStructure = inStructureBlock && structureState.stack.includes(BRACE_OPEN_CHAR);
     const hasDocDivider =
       tagMatch !== null && inStructureBlock && !inNestedStructure && hasStructureDocDivider(line);
+    const opensCssBlock =
+      tagMatch !== null &&
+      inStructureBlock &&
+      !inNestedStructure &&
+      !hasDocDivider &&
+      opensStructureAtRule(line);
     const startsBlock =
       tagMatch !== null &&
+      !opensCssBlock &&
       (hasDocDivider ||
         (isKnownTag
           ? !(
@@ -129,27 +137,12 @@ export function collectDocCommentBlocks(
     const lastNonWhitespace = line.trimEnd().length;
     if (startsBlock && tagMatch) {
       const tagStart = line.indexOf(AT_CHAR);
-      const text = line.trim();
-      const carriageReturn = line.endsWith("\r");
-      const segments: DocCommentSegment[] = [
-        {
-          textStart: 0,
-          sourceStart: sourceStart + tagStart,
-          length: lastNonWhitespace - tagStart,
-        },
-      ];
-      if (carriageReturn) {
-        segments.push({
-          textStart: text.length,
-          sourceStart: sourceStart + line.length - 1,
-          length: 1,
-        });
-      }
+      const text = line.slice(tagStart);
       blocks.push({
-        text: carriageReturn ? `${text}\r` : text,
+        text,
         start: sourceStart + tagStart,
         end: sourceStart + lastNonWhitespace,
-        segments,
+        segments: [{ textStart: 0, sourceStart: sourceStart + tagStart, length: text.length }],
       });
       inStructureBlock = tagMatch[1] === "structure";
       if (inStructureBlock) {
