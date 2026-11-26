@@ -179,7 +179,7 @@ interface ConfigFileInit {
   ruleOptions: RuleOptionsConfig;
   naming: NamingOverride;
   structureIgnore: string[];
-  globalPrecedence: "base" | "global";
+  globalPrecedence?: "base" | "global";
   render: RenderConfig;
 }
 
@@ -233,6 +233,7 @@ export class CssDocConfigFile {
    * Merged across the `extends` chain (this file wins). Passed to `@cssdoc/index` for validation.
    */
   readonly globalPrecedence: "base" | "global";
+  private readonly configuredGlobalPrecedence?: "base" | "global";
   /**
    * Presentation options merged across the `extends` chain (this file wins). Hosts read these as
    * defaults; explicit options still override. Not part of the parser `CssDocConfiguration`.
@@ -260,7 +261,7 @@ export class CssDocConfigFile {
       if (exampleFilters) render.exampleFilters = { ...render.exampleFilters, ...exampleFilters };
     };
     const overrides: ResolvedRuleOverrideBlock[] = [];
-    let globalPrecedence: "base" | "global" = "base";
+    let globalPrecedence: "base" | "global" | undefined;
     const structureIgnore = new Set<string>();
     for (const extended of init.extendsFiles) {
       Object.assign(severities, extended.ruleSeverities);
@@ -268,7 +269,7 @@ export class CssDocConfigFile {
       Object.assign(naming, extended.naming);
       Object.assign(ruleOptions, extended.ruleOptions);
       mergeRender(extended.render);
-      globalPrecedence = extended.globalPrecedence;
+      globalPrecedence = extended.configuredGlobalPrecedence ?? globalPrecedence;
       for (const g of extended.structureIgnore) structureIgnore.add(g);
     }
     Object.assign(severities, init.rules);
@@ -276,14 +277,15 @@ export class CssDocConfigFile {
     Object.assign(naming, init.naming);
     Object.assign(ruleOptions, init.ruleOptions);
     mergeRender(init.render);
-    globalPrecedence = init.globalPrecedence;
+    globalPrecedence = init.globalPrecedence ?? globalPrecedence;
     for (const g of init.structureIgnore) structureIgnore.add(g);
     this.ruleSeverities = severities;
     this.ruleOverrides = overrides;
     this.naming = naming;
     this.ruleOptions = ruleOptions;
     this.render = render;
-    this.globalPrecedence = globalPrecedence;
+    this.configuredGlobalPrecedence = globalPrecedence;
+    this.globalPrecedence = globalPrecedence ?? "base";
     this.structureIgnore = [...structureIgnore];
   }
 
@@ -396,7 +398,6 @@ export class CssDocConfigFile {
       ruleOptions: {},
       naming: {},
       structureIgnore: [],
-      globalPrecedence: "base",
       render: {},
     });
   }
@@ -418,7 +419,6 @@ export class CssDocConfigFile {
         ruleOptions: {},
         naming: {},
         structureIgnore: [],
-        globalPrecedence: "base",
         render: {},
       });
 
@@ -496,7 +496,7 @@ export class CssDocConfigFile {
       ruleOptions: raw.ruleOptions ?? {},
       naming: raw.naming ?? {},
       structureIgnore: raw.structureIgnore ?? [],
-      globalPrecedence: raw.globalPrecedence ?? "base",
+      globalPrecedence: raw.globalPrecedence,
       render: raw.render ?? {},
     });
   }

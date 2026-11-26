@@ -141,6 +141,33 @@ test("modifierConvention and rules load onto the configuration and config file",
   expect(button.modifiers.map((m) => m.name)).toEqual(["-color-x"]);
 });
 
+test("globalPrecedence inherits explicit values before applying its default", () => {
+  const dir = mkdtempSync(join(tmpdir(), "cssdoc-global-precedence-"));
+  const write = (file: string, value: object) =>
+    writeFileSync(join(dir, file), JSON.stringify(value));
+  try {
+    write("global.json", { globalPrecedence: "global" });
+    write("unset.json", {});
+    write("inherited.json", { extends: ["./global.json"] });
+    write("multiple.json", { extends: ["./inherited.json", "./unset.json"] });
+    write("base.json", { extends: ["./multiple.json"], globalPrecedence: "base" });
+
+    for (const [file, expected] of [
+      ["unset.json", "base"],
+      ["inherited.json", "global"],
+      ["multiple.json", "global"],
+      ["base.json", "base"],
+    ] as const) {
+      const config = CssDocConfigFile.loadFile(join(dir, file));
+      expect(config.hasErrors).toBe(false);
+      expect(config.globalPrecedence).toBe(expected);
+      expect(config.toConfiguration().globalPrecedence).toBe(expected);
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("rule overrides apply to matching files in declaration order", () => {
   const dir = mkdtempSync(join(tmpdir(), "cssdoc-overrides-"));
   writeFileSync(

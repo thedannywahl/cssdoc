@@ -524,6 +524,8 @@ Choose how to resolve a modifier defined both explicitly and with `@global`:
 - `base` lets the explicit modifier take precedence (default).
 - `global` lets the global modifier take precedence.
 
+An omitted value inherits from extended configs. If none specifies a value, `base` is used.
+
 <details>
 <summary>Show examples</summary>
 
