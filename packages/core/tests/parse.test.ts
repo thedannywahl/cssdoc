@@ -10,6 +10,7 @@ import {
   toMermaidVariants,
 } from "../src/index.ts";
 import postcss from "postcss";
+import { collectDocCommentBlocks } from "../src/blocks.ts";
 import { frameCommentLines } from "../src/framing.ts";
 import {
   parseDocComment,
@@ -41,6 +42,29 @@ test("comment framing preserves source ranges through CRLF and non-BMP text", ()
     ),
   ).toBe("😀");
   expect(stripCommentFraming(raw)).toBe("@remarks - 😀 First\r\n  second");
+});
+
+test("tag block ranges map multiline framed text back to UTF-16 source offsets", () => {
+  const raw = [
+    "/**",
+    " * @component button",
+    " * @summary 😀 First",
+    " *   second",
+    " * @example",
+    " *   content",
+    " */",
+  ].join("\r\n");
+  const blocks = collectDocCommentBlocks(raw, new CssDocConfiguration());
+  expect(blocks.map((block) => raw.slice(block.start, block.end))).toEqual([
+    "@component button",
+    "@summary 😀 First\r\n *   second",
+    "@example\r\n *   content",
+  ]);
+  expect(blocks.map((block) => block.text)).toEqual([
+    "@component button",
+    "@summary 😀 First\n  second\r",
+    "@example\n  content",
+  ]);
 });
 
 test("unframed text retains a leading Markdown list marker when framing is disabled", () => {

@@ -41,6 +41,7 @@ import type { ChildNode } from "postcss";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import { CssDocConfiguration } from "./configuration.ts";
+import { collectDocCommentBlocks } from "./blocks.ts";
 import { frameCommentLines } from "./framing.ts";
 import {
   cardinalityFromMatch,
@@ -498,7 +499,6 @@ export function parseDocComment(
 ): ParsedDoc {
   // Works on either a raw `/** … *\/` block or PostCSS's already-unframed `Comment.text` (which keeps
   // the inner `*` line prefixes) — stripCommentFraming no-ops the frame removal when it's absent.
-  const body = stripCommentFraming(raw);
   const doc: ParsedDoc = {
     modifiers: new Map(),
     modifierSelectors: new Map(),
@@ -534,47 +534,12 @@ export function parseDocComment(
     customBlocks: new Map(),
   };
 
-  // Group lines into tag blocks (the TagList / BlockTag productions): a line starting with `@tag` opens
-  // a block that continues until the next `@tag`. CSS at-rules (e.g. @scope, @media) inside a
-  // @structure block are NOT treated as new tag openers — they're part of the CSS content.
-  const blocks: string[] = [];
-  const TAG_LINE: Regex = arkRegex.as(
-    String.raw`^\s*${AT_SOURCE}(${CSSDOC_BLOCK_TAG_NAME_SOURCE})`,
-    "u",
-  );
-  const INDENTED_AT_RULE: Regex = arkRegex.as(String.raw`^\s+${AT_SOURCE}`, "u");
-  let inStructureBlock = false;
-  for (const line of body.split("\n")) {
-    const tagMatch = line.match(TAG_LINE);
-    if (tagMatch) {
-      const isKnownTag = configuration.tryGetTagDefinition(tagMatch[1]) !== undefined;
-      if (isKnownTag) {
-        // Inside `@structure`, indented `@...` lines are CSS content (record refs and at-rules),
-        // not new doc-tag blocks.
-        if (inStructureBlock && tagMatch[1] !== "structure" && INDENTED_AT_RULE.test(line)) {
-          if (blocks.length) blocks[blocks.length - 1] += `\n${line}`;
-          continue;
-        }
-        blocks.push(line.trim());
-        inStructureBlock = tagMatch[1] === "structure";
-      } else if (inStructureBlock) {
-        // CSS at-rule inside @structure body — keep it in the structure block.
-        if (blocks.length) blocks[blocks.length - 1] += `\n${line}`;
-      } else {
-        // Unknown tag outside @structure — own block so the existing skip logic handles it.
-        blocks.push(line.trim());
-      }
-    } else if (blocks.length) {
-      blocks[blocks.length - 1] += `\n${line}`;
-    }
-  }
-
   const BLOCK_HEADER: Regex = arkRegex.as(
     String.raw`^${AT_SOURCE}(${CSSDOC_BLOCK_TAG_NAME_SOURCE})${SPACE_TAB_SOURCE}*([\s\S]*)$`,
     "u",
   );
-  for (const block of blocks) {
-    const m = block.match(BLOCK_HEADER);
+  for (const block of collectDocCommentBlocks(raw, configuration)) {
+    const m = block.text.match(BLOCK_HEADER);
     if (!m) continue;
     const tagName = m[1];
     const rest = m[2].trim();
