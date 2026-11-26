@@ -112,6 +112,31 @@ test("renderPage escapes HTML-unsafe prose", () => {
   expect(html).not.toContain("A <b> &");
 });
 
+test("HTML navigation links reject unsafe destinations", () => {
+  const [entry] = parseCssDocs(CSS);
+  for (const href of [
+    "javascript:alert(1)",
+    "data:text/html,test",
+    "ftp://example.test/",
+    "//example.test/path",
+    "java\nscript:alert(1)",
+    "\\\\example.test",
+  ]) {
+    expect(renderPage(entry, { indexHref: href })).toContain("<p>← Index</p>");
+  }
+  for (const href of [
+    "../index.html",
+    "#index",
+    "https://example.test/",
+    "mailto:docs@example.test",
+  ]) {
+    expect(renderPage(entry, { indexHref: href })).toContain(`<a href="${href}">← Index</a>`);
+  }
+  const index = renderIndex([{ ...entry, name: "javascript:alert(1)" }]);
+  expect(index).not.toContain('href="javascript:');
+  expect(index).toContain("javascript:alert(1)");
+});
+
 test("buildHtml writes a page per record and an index linking to them", () => {
   const outDir = mkdtempSync(join(tmpdir(), "cssdoc-html-"));
   const result = buildHtml({ css: CSS, outDir });

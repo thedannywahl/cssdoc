@@ -37,6 +37,9 @@ Use a dedicated output folder so the build can remove generated pages for delete
 | Add CSS pages to an existing TypeDoc site                  | [Publish alongside TypeDoc](/guide/publish-with-typedoc) |
 | Feed another tool a standard file format                   | [Export to other tools](/guide/generators)               |
 
+HTML navigation links accept relative URLs, HTTP(S), and `mailto:`. Unsafe destinations render as
+unlinked text.
+
 ## Select examples for your docs
 
 If a stylesheet uses `@example labels=[docs]` to mark examples for publication, set

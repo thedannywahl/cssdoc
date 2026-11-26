@@ -55,6 +55,23 @@ const esc = (text: string | undefined): string =>
 
 const code = (text: string | undefined): string => (text ? `<code>${esc(text)}</code>` : "—");
 
+function safeLinkUrl(value: string): boolean {
+  if (!value || value !== value.trim() || value.startsWith("//") || value.includes("\\")) {
+    return false;
+  }
+  for (let i = 0; i < value.length; i++) {
+    const char = value.charCodeAt(i);
+    if (char <= 0x1f || (char >= 0x7f && char <= 0x9f)) return false;
+  }
+  try {
+    const url = new URL(value, "https://cssdoc.invalid/");
+    return url.protocol === "https:" || url.protocol === "http:" || url.protocol === "mailto:";
+  } catch (error) {
+    if (error instanceof TypeError) return false;
+    throw error;
+  }
+}
+
 // Base64 encode helper for TypeScript 6 compatibility (Uint8Array.toBase64 is ES2026)
 const toBase64 = (bytes: Uint8Array): string => Buffer.from(bytes).toString("base64");
 
@@ -116,7 +133,8 @@ function structureList(nodes: StructureNode[]): string {
  * Render one record to a standalone HTML page with inline styles.
  *
  * @param entry - The record to render, including internal records if passed directly.
- * @param options - Optional index link and example-label filter.
+ * @param options - Optional index link and example-label filter. Unsafe index URLs are shown as
+ * unlinked text.
  * @returns A complete HTML document.
  */
 export function renderPage(
@@ -126,7 +144,12 @@ export function renderPage(
   const annotations = entry.annotations ?? [];
   const refs = entry.refs ?? [];
   const parts: string[] = [];
-  if (options.indexHref) parts.push(`<p><a href="${esc(options.indexHref)}">← Index</a></p>`);
+  if (options.indexHref) {
+    const link = safeLinkUrl(options.indexHref)
+      ? `<a href="${esc(options.indexHref)}">← Index</a>`
+      : "← Index";
+    parts.push(`<p>${link}</p>`);
+  }
   const stage = entry.releaseStage ? ` <span class="badge">${esc(entry.releaseStage)}</span>` : "";
   const visibility = entry.visibility === "internal" ? ' <span class="badge">internal</span>' : "";
   parts.push(`<h1>${esc(entry.name)}${stage}${visibility}</h1>`);
@@ -307,7 +330,8 @@ export function renderPage(
 }
 
 /**
- * Render a standalone index linking to record pages named `<record-name>.html`.
+ * Render a standalone index linking to record pages named `<record-name>.html`. Unsafe destinations
+ * are shown as unlinked names.
  *
  * @param entries - Records to list, in display order.
  * @param options - Index title and whether to include internal records.
@@ -321,11 +345,14 @@ export function renderIndex(
   const visibleEntries = options.includeInternal
     ? entries
     : entries.filter((entry) => entry.visibility !== "internal");
-  const rows = visibleEntries.map((e) => [
-    `<a href="${esc(e.name)}.html">${esc(e.name)}</a>`,
-    code(e.className),
-    esc(e.summary) || "—",
-  ]);
+  const rows = visibleEntries.map((e) => {
+    const href = `${e.name}.html`;
+    return [
+      safeLinkUrl(href) ? `<a href="${esc(href)}">${esc(e.name)}</a>` : esc(e.name),
+      code(e.className),
+      esc(e.summary) || "—",
+    ];
+  });
   return doc(title, `<h1>${esc(title)}</h1>\n${table(["Name", "Class", "Summary"], rows)}`);
 }
 
