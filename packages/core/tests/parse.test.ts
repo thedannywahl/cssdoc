@@ -50,6 +50,13 @@ test("unframed text retains a leading Markdown list marker when framing is disab
   expect(lines.map((line) => raw.slice(line.start, line.end))).toEqual(["* First", "  * Second"]);
 });
 
+test("framing removes only one space after a marker and preserves tabs", () => {
+  const raw = "/**\n\t*   spaced\n *\ttabbed\n */";
+  const lines = frameCommentLines(raw, "framed");
+  expect(lines[1]?.text).toBe("  spaced");
+  expect(lines[2]?.text).toBe("\ttabbed");
+});
+
 test.each(["—", "-", "--"])("parses %s description separators across tag kinds", (separator) => {
   const doc = parseDocComment(`/**
  * @slot action ${separator} Slot description

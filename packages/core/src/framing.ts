@@ -1,4 +1,11 @@
-import { COMMENT_LINE_PREFIX } from "@cssdoc/regex";
+import { COMMENT_LINE_MARKER_SOURCE, COMMENT_LINE_PREFIX, SPACE_TAB_SOURCE } from "@cssdoc/regex";
+import type { Regex } from "arkregex";
+import { regex as arkRegex } from "arkregex";
+
+const FRAMED_COMMENT_LINE_PREFIX: Regex = arkRegex.as(
+  `^${SPACE_TAB_SOURCE}*${COMMENT_LINE_MARKER_SOURCE} ?`,
+  "u",
+);
 
 /** One comment line after optional framing removal, with offsets into the original input. */
 export interface FramedCommentLine {
@@ -33,7 +40,7 @@ export function frameCommentLines(
       prefixes === "legacy"
         ? rawLine.match(COMMENT_LINE_PREFIX)?.[0]
         : prefixes === "framed"
-          ? rawLine.match(/^[ \t]*\* ?/)?.[0]
+          ? rawLine.match(FRAMED_COMMENT_LINE_PREFIX)?.[0]
           : undefined;
     const prefixLength = prefix?.length ?? 0;
     const lineStart = cursor + prefixLength;
