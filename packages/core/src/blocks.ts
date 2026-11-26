@@ -1,6 +1,7 @@
 import {
   AT_CHAR,
   AT_SOURCE,
+  BRACE_OPEN_CHAR,
   COMMENT_START_SOURCE,
   CSSDOC_BLOCK_TAG_NAME_SOURCE,
 } from "@cssdoc/regex";
@@ -8,6 +9,7 @@ import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import { CssDocConfiguration } from "./configuration.ts";
 import { frameCommentLines } from "./framing.ts";
+import { scanStructureLine, type StructureBoundaryState } from "./structure-boundaries.ts";
 
 /** A tag block and its source range within a doc-comment input. */
 export interface DocCommentBlock {
@@ -49,6 +51,7 @@ export function collectDocCommentBlocks(
 
   const blocks: DocCommentBlock[] = [];
   let inStructureBlock = false;
+  let structureState: StructureBoundaryState = { stack: [], comment: false, escaped: false };
   let leadingTrim = start - lineStart;
   for (const line of body.split("\n")) {
     const sourceStart = lines[lineIndex].start + leadingTrim;
@@ -58,7 +61,11 @@ export function collectDocCommentBlocks(
     const startsBlock =
       tagMatch !== null &&
       (isKnownTag
-        ? !(inStructureBlock && tagMatch[1] !== "structure" && INDENTED_AT_RULE.test(line))
+        ? !(
+            inStructureBlock &&
+            (structureState.stack.includes(BRACE_OPEN_CHAR) ||
+              (tagMatch[1] !== "structure" && INDENTED_AT_RULE.test(line)))
+          )
         : !inStructureBlock);
     const lastNonWhitespace = line.trimEnd().length;
     if (startsBlock && tagMatch) {
@@ -69,10 +76,15 @@ export function collectDocCommentBlocks(
         end: sourceStart + lastNonWhitespace,
       });
       inStructureBlock = tagMatch[1] === "structure";
+      if (inStructureBlock) {
+        structureState = { stack: [], comment: false, escaped: false };
+        scanStructureLine(line.slice(tagMatch[0].length), structureState);
+      }
     } else if (blocks.length) {
       const block = blocks[blocks.length - 1];
       block.text += `\n${line}`;
       if (lastNonWhitespace > 0) block.end = sourceStart + lastNonWhitespace;
+      if (inStructureBlock) scanStructureLine(line, structureState);
     }
     lineIndex++;
     leadingTrim = 0;

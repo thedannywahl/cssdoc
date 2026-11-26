@@ -709,7 +709,7 @@ export function createIndex(
   let current: Build | undefined;
   for (const node of root.nodes) {
     if (node.type === "comment") {
-      const name = recordNameOf(node.text, options.configuration);
+      const name = recordNameOf(node.toString(), options.configuration);
       const entry = name ? entryQueues.get(name)?.shift() : undefined;
       if (name && entry) {
         const doc = parseDocComment(node.toString(), options.configuration);

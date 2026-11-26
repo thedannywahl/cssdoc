@@ -1041,8 +1041,6 @@ export function parseCssDocs(css: string, options: ParseOptions = {}): CssDocEnt
   const matcher = new ModifierMatcher(
     resolveModifierConvention(options.modifierConvention ?? configuration.modifierConvention),
   );
-  const boundary =
-    options.isRecordBoundary ?? ((text: string) => recordNameOf(text, configuration));
   const parse = options.parse ?? postcss.parse;
   const root = parse(css);
   type Record_ = { name: string; doc: ParsedDoc; nodes: ChildNode[]; source?: CssSource };
@@ -1051,7 +1049,9 @@ export function parseCssDocs(css: string, options: ParseOptions = {}): CssDocEnt
 
   for (const node of root.nodes) {
     if (node.type === "comment" && isDocComment(node, css)) {
-      const name = boundary(node.text);
+      const name = options.isRecordBoundary
+        ? options.isRecordBoundary(node.text)
+        : recordNameOf(node.toString(), configuration);
       if (name) {
         const start = node.source?.start;
         const source: CssSource | undefined =

@@ -857,7 +857,7 @@ function applyBlockTag(
  * Whether a comment's text opens a record — i.e. carries a record tag. Uses the `configuration`'s
  * record tags when given, else the default {@link RECORD_TAGS}.
  *
- * @param commentText - The comment body.
+ * @param commentText - A complete doc comment or unframed comment body.
  * @param configuration - The active configuration (optional).
  * @returns The record name, or `undefined`.
  */
@@ -872,11 +872,17 @@ export function recordNameOf(
     : Object.keys(RECORD_TAGS);
   if (tagNames.length === 0) return undefined;
   const RECORD_TAG: Regex = arkRegex.as(
-    String.raw`${AT_SOURCE}(?:${tagNames.join("|")})\s+(\S+)`,
+    String.raw`^${AT_SOURCE}(?:${tagNames.join("|")})\s+(\S+)`,
     "u",
   );
-  const m = commentText.match(RECORD_TAG);
-  return m?.[1];
+  for (const block of collectDocCommentBlocks(
+    commentText,
+    configuration ?? new CssDocConfiguration(),
+  )) {
+    const match = block.text.match(RECORD_TAG);
+    if (match) return match[1];
+  }
+  return undefined;
 }
 
 /**

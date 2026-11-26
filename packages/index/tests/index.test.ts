@@ -27,6 +27,28 @@ test("createIndex parses the model and resolves class lookups", () => {
   expect(index.isModifier(".button", "-nope")).toBe(false);
 });
 
+test("record spans ignore record-shaped prose and nested structure references", () => {
+  const css = [
+    "/** @component card */",
+    ".card {}",
+    "/**",
+    " * @remarks Mentions @component fake.",
+    " * @structure",
+    " * .card {",
+    " * @component child {}",
+    " * }",
+    " */",
+    ".card__part {}",
+    "/** @component next */",
+    ".next {}",
+  ].join("\n");
+  const result = createIndex(css);
+  expect(result.recordInfo("card")?.docCommentSpan?.start.line).toBe(1);
+  expect(result.recordInfo("next")?.docCommentSpan?.start.line).toBe(11);
+  expect(result.recordInfo("fake")).toBeUndefined();
+  expect(result.recordInfo("child")).toBeUndefined();
+});
+
 test("member and record spans are captured from the CSS", () => {
   const modSpan = index
     .recordInfo("button")

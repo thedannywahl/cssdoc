@@ -15,10 +15,12 @@ import { frameCommentLines } from "../src/framing.ts";
 import {
   parseDocComment,
   parseStructure,
+  recordNameOf,
   splitPartArg,
   stripCommentFraming,
 } from "../src/grammar.ts";
 import { ModifierMatcher } from "../src/modifier.ts";
+import { scanStructureLine, type StructureBoundaryState } from "../src/structure-boundaries.ts";
 
 test("comment framing preserves source ranges through CRLF and non-BMP text", () => {
   const raw = "/**\r\n * @remarks - 😀 First\r\n *   second\r\n *\r\n */";
@@ -65,6 +67,69 @@ test("tag block ranges map multiline framed text back to UTF-16 source offsets",
     "@summary 😀 First\n  second\r",
     "@example\n  content",
   ]);
+});
+
+test("structure lexical state ignores braces in selectors, strings, escapes, and comments", () => {
+  const state: StructureBoundaryState = { stack: [], comment: false, escaped: false };
+  expect(scanStructureLine('.card[data-x="}"] {', state)).toBe(true);
+  expect(scanStructureLine('  content: "}"; /* { */', state)).toBe(false);
+  expect(scanStructureLine("  .escaped\\{name {", state)).toBe(false);
+  expect(state.stack).toEqual(["{", "{"]);
+  scanStructureLine("  }", state);
+  scanStructureLine("}", state);
+  expect(state.stack).toEqual([]);
+});
+
+test("structure lexical state preserves escaped CRLF inside a CSS string", () => {
+  const state: StructureBoundaryState = { stack: [], comment: false, escaped: false };
+  scanStructureLine('.card { content: "a\\\r', state);
+  scanStructureLine('}b";', state);
+  expect(state.stack).toEqual(["{"]);
+  scanStructureLine("}", state);
+  expect(state.stack).toEqual([]);
+});
+
+test("nested structure at-rules remain inside the structure regardless of indentation", () => {
+  const raw = [
+    "/**",
+    " * @component card",
+    " * @structure",
+    " * .card[data-text='}'] {",
+    " * @component child {}",
+    " * }",
+    " * @summary Card.",
+    " */",
+  ].join("\n");
+  const blocks = collectDocCommentBlocks(raw, new CssDocConfiguration());
+  expect(blocks.map((block) => block.text)).toEqual([
+    "@component card",
+    "@structure\n.card[data-text='}'] {\n@component child {}\n}",
+    "@summary Card.",
+  ]);
+  expect(raw.slice(blocks[1]!.start, blocks[1]!.end)).toBe(
+    "@structure\n * .card[data-text='}'] {\n * @component child {}\n * }",
+  );
+  expect(parseDocComment(raw, undefined, postcss.parse).component).toBe("card");
+});
+
+test("unfinished punctuation in a structure description does not hide the next tag", () => {
+  const raw = "/**\n * @structure An unfinished note (\n * @summary Card.\n */";
+  expect(parseDocComment(raw).summary).toBe("Card.");
+});
+
+test("record boundaries ignore record-shaped text in prose and nested structure", () => {
+  const raw = [
+    "/**",
+    " * @remarks This mentions @component fake.",
+    " * @structure",
+    " * .card {",
+    " * @component child {}",
+    " * }",
+    " */",
+  ].join("\n");
+  expect(recordNameOf(raw)).toBeUndefined();
+  expect(parseCssDocs(`${raw}\n.card {}`).map((entry) => entry.name)).toEqual([]);
+  expect(recordNameOf("/**\n * @component actual\n */")).toBe("actual");
 });
 
 test("unframed text retains a leading Markdown list marker when framing is disabled", () => {
