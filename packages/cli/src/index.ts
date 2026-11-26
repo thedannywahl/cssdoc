@@ -181,6 +181,7 @@ export function lintFiles(
     const lintOptions: LintOptions = {
       configuration: configFile.toConfiguration(),
       rules: configFile.ruleSeveritiesForFile(file) as LintOptions["rules"],
+      ruleOptions: configFile.ruleOptions,
       modifierConvention: configFile.modifierConvention,
       naming: configFile.naming,
       structureIgnore: configFile.structureIgnore,

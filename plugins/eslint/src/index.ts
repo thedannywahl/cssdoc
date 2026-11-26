@@ -160,6 +160,7 @@ const validDocComments: RuleModule = {
               : configFile.ruleSeverities),
             ...options.rules,
           } as DocCommentsOptions["rules"],
+          ruleOptions: configFile.ruleOptions,
           modifierConvention: options.modifierConvention ?? configFile.modifierConvention,
           naming: { ...configFile.naming, ...options.naming } as NamingRules,
           structureIgnore: options.structureIgnore ?? configFile.structureIgnore,

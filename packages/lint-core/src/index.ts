@@ -22,6 +22,7 @@ import {
   resolveRuleSeverities,
   type Diagnostic,
   type NamingRules,
+  type RuleOptions,
   type RuleSeverity,
   type Severity,
 } from "@cssdoc/providers";
@@ -29,6 +30,7 @@ import {
 export type {
   NamingRules,
   RuleId,
+  RuleOptions,
   RuleSeverities,
   RuleSeverity,
   Severity,
@@ -123,6 +125,8 @@ export interface LintOptions {
    * `off`.
    */
   rules?: Partial<Record<RuleName, RuleSeverity | boolean>>;
+  /** Rule-specific behavior options. */
+  ruleOptions?: RuleOptions;
   /** Name-case conventions to enforce (`component`/`part`); drives the `*-name-case` rules. */
   naming?: NamingRules;
   /** Class names exempt from the `structure-unknown-selector` rule (literal names or `*` globs). */
@@ -171,6 +175,7 @@ export function lintCssDocs(css: string, options: LintOptions = {}): Violation[]
               index.matcher,
             )
           : index,
+        options.ruleOptions,
       ),
       ...checkPropertyAssignments(assignments, index, severities), // invalid-property-value
       ...checkPropertyUsage(usages, index, {}, severities), // invalid-fallback-value (unknown-property opt-in, off here)

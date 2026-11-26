@@ -112,6 +112,17 @@ test("unused expect-error honors directive severity and rule-scoped suppression"
   ).toHaveLength(0);
 });
 
+test("rule options control sealed value diagnostics", () => {
+  const css = "/**\n * @component card\n * @sealed\n */\n.card { margin: inherit; }";
+  expect(byRule(lintCssDocs(css), "sealed-reset-value")).toHaveLength(1);
+  expect(
+    byRule(
+      lintCssDocs(css, { ruleOptions: { values: { allowInherit: true } } }),
+      "sealed-reset-value",
+    ),
+  ).toHaveLength(0);
+});
+
 test("flags an AST modifier without a @modifier description", () => {
   const v = byRule(lintCssDocs(CSS), "undocumented-modifier");
   // -size-sm has no description; -color-secondary is documented; -variant-old is deprecated.

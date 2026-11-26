@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { Linter } from "eslint";
 import { expect, test } from "vite-plus/test";
 import plugin from "../src/index.ts";
@@ -41,4 +44,24 @@ test("a fully documented stylesheet produces no messages", () => {
 .chip--color-info { color: blue; }
 `;
   expect(lint(clean)).toEqual([]);
+});
+
+test("the rule passes configured rule options to authoring checks", () => {
+  for (const allowInherit of [false, true]) {
+    const dir = mkdtempSync(join(tmpdir(), "cssdoc-eslint-rule-options-"));
+    try {
+      writeFileSync(
+        join(dir, "cssdoc.json"),
+        JSON.stringify({ ruleOptions: { values: { allowInherit } } }),
+      );
+      const messages = new Linter({ cwd: dir }).verify(
+        "/**\n * @component card\n * @sealed\n */\n.card { margin: inherit; }",
+        plugin.configs.recommended as Parameters<Linter["verify"]>[1],
+        join(dir, "a.css"),
+      );
+      expect(messages.some((m) => m.message.includes("sealed-reset-value"))).toBe(!allowInherit);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
 });

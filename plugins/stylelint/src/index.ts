@@ -94,6 +94,7 @@ const rule: Rule<boolean, SecondaryOptions> = (primary, secondaryOptions) => (ro
       ...(file ? configFile.ruleSeveritiesForFile(file) : configFile.ruleSeverities),
       ...secondaryOptions?.rules,
     } as SecondaryOptions["rules"],
+    ruleOptions: configFile.ruleOptions,
     modifierConvention: secondaryOptions?.modifierConvention ?? configFile.modifierConvention,
     naming: { ...configFile.naming, ...secondaryOptions?.naming } as NamingRules,
     structureIgnore: secondaryOptions?.structureIgnore ?? configFile.structureIgnore,

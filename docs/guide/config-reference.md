@@ -789,6 +789,8 @@ The `rules` object accepts the same rule names and severities as the top-level `
 
 ### `ruleOptions`
 
+The CLI, language server, Stylelint, and ESLint use these options for authoring checks.
+
 | Property              | Type                   | Purpose                                                                                 |
 | --------------------- | ---------------------- | --------------------------------------------------------------------------------------- |
 | `values.allowInherit` | boolean                | Allow `inherit` in sealed/frozen value checks (default `false`).                        |

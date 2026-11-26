@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { expect, test } from "vite-plus/test";
@@ -73,6 +73,27 @@ test("lintFiles applies per-glob rule overrides from cssdoc.jsonc", () => {
   const results = lintFiles(["**/*.css"], dir);
   expect(results.find((r) => r.file === "src/a.css")?.violations[0]?.severity).toBe("error");
   expect(results.find((r) => r.file === "docs/a.css")?.violations).toEqual([]);
+});
+
+test("lintFiles passes configured rule options to authoring checks", () => {
+  for (const allowInherit of [false, true]) {
+    const dir = mkdtempSync(join(tmpdir(), "cssdoc-cli-rule-options-"));
+    try {
+      writeFileSync(
+        join(dir, "cssdoc.json"),
+        JSON.stringify({ ruleOptions: { values: { allowInherit } } }),
+      );
+      writeFileSync(
+        join(dir, "a.css"),
+        "/**\n * @component card\n * @sealed\n */\n.card { margin: inherit; }",
+      );
+      expect(
+        lintFiles(["*.css"], dir)[0].violations.some((v) => v.rule === "sealed-reset-value"),
+      ).toBe(!allowInherit);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
 });
 
 test("runLint exits 0 on a clean tree", () => {

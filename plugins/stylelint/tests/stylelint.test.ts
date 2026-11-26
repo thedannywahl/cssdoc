@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import stylelint from "stylelint";
 import { expect, test } from "vite-plus/test";
 import plugin, { ruleName } from "../src/index.ts";
@@ -67,6 +70,28 @@ test("the rule preserves lint-core warning severity", async () => {
     "warning",
     "warning",
   ]);
+});
+
+test("the rule passes configured rule options to authoring checks", async () => {
+  for (const allowInherit of [false, true]) {
+    const dir = mkdtempSync(join(tmpdir(), "cssdoc-stylelint-rule-options-"));
+    try {
+      writeFileSync(
+        join(dir, "cssdoc.json"),
+        JSON.stringify({ ruleOptions: { values: { allowInherit } } }),
+      );
+      const result = await stylelint.lint({
+        code: "/**\n * @component card\n * @sealed\n */\n.card { margin: inherit; }",
+        codeFilename: join(dir, "a.css"),
+        config: { plugins: [plugin], rules: { [ruleName]: true } },
+      });
+      expect(result.results[0].warnings.some((w) => w.text.includes("sealed-reset-value"))).toBe(
+        !allowInherit,
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
 });
 
 test("the rule preserves cssdoc-configured error severity", async () => {
