@@ -57,6 +57,11 @@ test("framing removes only one space after a marker and preserves tabs", () => {
   expect(lines[2]?.text).toBe("\ttabbed");
 });
 
+test("the parser preserves tabs and CRLF on framed example lines", () => {
+  const raw = "/**\r\n * @example\r\n * First\r\n *\tTabbed\r\n *\r\n *  Spaced\r\n */";
+  expect(parseDocComment(raw).examples).toEqual(["First\r\n\tTabbed\r\n\r\n Spaced"]);
+});
+
 test.each(["/* text */", "/** text */", " text "])(
   "comment delimiters preserve the source range of %s",
   (raw) => {

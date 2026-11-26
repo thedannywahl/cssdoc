@@ -367,7 +367,7 @@ function splitQuery(rest: string): { query: string; description?: string } {
 
 /** Strip the comment framing (`/**`, `*\/`, and leading ` * `) from a raw block-comment body. */
 export function stripCommentFraming(raw: string): string {
-  return frameCommentLines(raw, "legacy")
+  return frameCommentLines(raw, "framed")
     .map((line) => line.text)
     .join("\n")
     .trim();
