@@ -638,6 +638,10 @@ function canonicalCssNumber(text: string): string | undefined {
   return `${negative ? "-" : ""}${digits.slice(start, end)}e${exponent}`;
 }
 
+function numberTokenType(text: string): "integer" | "number" {
+  return text.includes(".") || text.toLowerCase().includes("e") ? "number" : "integer";
+}
+
 function validQueryCondition(condition: Condition): boolean {
   const children = condition.children.toArray();
   const operator = (index: number): string | undefined => {
@@ -738,12 +742,7 @@ function supportsKey(input: string): SupportsKey {
         case "Percentage": {
           if (node.type === "Dimension")
             node.unit = ident.encode(asciiLower(ident.decode(node.unit)));
-          if (node.type === "Number")
-            numberTypes.push(
-              node.value.includes(".") || node.value.toLowerCase().includes("e")
-                ? "number"
-                : "integer",
-            );
+          if (node.type === "Number") numberTypes.push(numberTokenType(node.value));
           const value = canonicalCssNumber(node.value);
           if (value === undefined) unsupported = true;
           else node.value = value;
@@ -774,7 +773,12 @@ function supportsKey(input: string): SupportsKey {
   }
 }
 
-function queryKey(input: string, kind: "media" | "container"): SelectorKey {
+type QueryKey =
+  | { status: "valid"; key: string; numericKey: string }
+  | { status: "invalid" }
+  | { status: "unsupported" };
+
+function queryKey(input: string, kind: "media" | "container"): QueryKey {
   try {
     const ast = parse(input, {
       context: "atrulePrelude",
@@ -815,6 +819,7 @@ function queryKey(input: string, kind: "media" | "container"): SelectorKey {
 
     let unsupported = false;
     let invalid = false;
+    const numberTypes: string[] = [];
     const keyword = (name: string): string => {
       const decoded = ident.decode(name);
       if (decoded.startsWith("--")) unsupported = true;
@@ -846,6 +851,7 @@ function queryKey(input: string, kind: "media" | "container"): SelectorKey {
         case "Number":
           {
             if (node.type === "Dimension") node.unit = keyword(node.unit);
+            if (node.type === "Number") numberTypes.push(numberTokenType(node.value));
             const value = canonicalCssNumber(node.value);
             if (value === undefined) unsupported = true;
             else node.value = value;
@@ -866,7 +872,8 @@ function queryKey(input: string, kind: "media" | "container"): SelectorKey {
     });
     if (invalid) return { status: "invalid" };
     if (unsupported) return { status: "unsupported" };
-    return { status: "valid", key: generate(ast) };
+    const numericKey = generate(ast);
+    return { status: "valid", key: JSON.stringify([numericKey, numberTypes]), numericKey };
   } catch (error) {
     // css-tree doesn't parse all valid nested query conditions.
     if (error instanceof SyntaxError)
@@ -906,6 +913,8 @@ export function resolveMediaMemberReference(
     const candidateKey = queryKey(occurrence.prelude, "media");
     if (candidateKey.status !== "valid") return { status: "unavailable", candidates: [record] };
     if (candidateKey.key === key.key) candidates.push({ record, occurrence });
+    else if (candidateKey.numericKey === key.numericKey)
+      return { status: "unavailable", candidates: [record] };
   }
   if (candidates.length === 0) return { status: "missing" };
   if (candidates.length > 1) return { status: "ambiguous", stage: "member", candidates };
@@ -942,6 +951,8 @@ export function resolveContainerMemberReference(
     const candidateKey = queryKey(occurrence.prelude, "container");
     if (candidateKey.status !== "valid") return { status: "unavailable", candidates: [record] };
     if (candidateKey.key === key.key) candidates.push({ record, occurrence });
+    else if (candidateKey.numericKey === key.numericKey)
+      return { status: "unavailable", candidates: [record] };
   }
   if (candidates.length === 0) return { status: "missing" };
   if (candidates.length > 1) return { status: "ambiguous", stage: "member", candidates };

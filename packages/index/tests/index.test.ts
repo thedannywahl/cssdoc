@@ -542,6 +542,8 @@ test("media members use owned source occurrences and parsed query identity", () 
   expect(resolve("other#media((color))")).toMatchObject({ status: "resolved" });
   const equivalent = createIndex("/** @component card */ @media (width: 1.0px) { .card {} }");
   expect(resolve("card#media((width:1px))", equivalent)).toMatchObject({ status: "resolved" });
+  const integer = createIndex("/** @component card */ @media (color: 1) { .card {} }");
+  expect(resolve("card#media((color:1.0))", integer)).toMatchObject({ status: "unavailable" });
 });
 
 test("container members preserve occurrences, names, and complete lookup semantics", () => {
@@ -611,6 +613,10 @@ test("container members preserve occurrences, names, and complete lookup semanti
     "/** @component card */ @container style(--theme: dark) { .card {} }",
   );
   expect(resolve("card#container((width > 1px))", unsupported)).toMatchObject({
+    status: "unavailable",
+  });
+  const integer = createIndex("/** @component card */ @container (unknown: 1) { .card {} }");
+  expect(resolve("card#container((unknown: 1.0))", integer)).toMatchObject({
     status: "unavailable",
   });
   const parsed = parseReference("card#container(layout (width > 30px))");

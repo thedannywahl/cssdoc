@@ -48,8 +48,9 @@ including nested scopes and source spans. Model-only indexes and indexes built w
 parser return unavailable for scope members. Unsupported selector syntax also returns unavailable.
 `resolveMediaMemberReference` and `resolveContainerMemberReference` similarly use source-backed
 query occurrences and compare CSS numbers without losing decimal precision. Container names retain
-their case. Unsupported query syntax, including style queries and nested conditions that the CSS
-parser can't represent, returns unavailable.
+their case. They return unavailable when a numeric spelling changes the token's integer type.
+Unsupported query syntax, including style queries and nested conditions that the CSS parser can't
+represent, also returns unavailable.
 `resolveSupportsMemberReference` uses source-backed supports occurrences for declaration conditions.
 It preserves value case and integer token types where CSS interpretation may differ, returning
 unavailable when those differences could affect a match. Unsupported functions, custom-property
