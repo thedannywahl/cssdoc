@@ -544,6 +544,41 @@ test("TypeScript lint rejects the unsafe Function type", () => {
   }
 });
 
+test("type-aware lint rejects unsafe enum assignments", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/type-aware-check-"));
+  try {
+    writeFileSync(
+      join(directory, "tsconfig.json"),
+      JSON.stringify({ extends: join(root, "tsconfig.base.json"), include: ["*.ts"] }),
+    );
+    const file = join(directory, "enums.ts");
+    writeFileSync(
+      file,
+      [
+        "enum Status { Ready, Done }",
+        "function unsafe(value: number) { const status: Status = value; return status; }",
+        "function safe() { const status: Status = Status.Ready; return status; }",
+        "console.error(unsafe(0), safe());",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "typescript(no-unsafe-enum-assignment)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["error", 2]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("type import lint requires type-only imports", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, "packages/config/tests/type-aware-check-"));

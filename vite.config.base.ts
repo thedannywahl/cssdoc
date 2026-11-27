@@ -57,6 +57,7 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-unsafe-member-access": "error",
       "typescript/no-unsafe-return": "error",
       "typescript/no-unsafe-function-type": "error",
+      "typescript/no-unsafe-enum-assignment": "error",
       "eslint/no-fallthrough": "error",
       // Re-enable newly activated TypeScript rules individually after review.
       "typescript/no-unnecessary-type-assertion": "off",
