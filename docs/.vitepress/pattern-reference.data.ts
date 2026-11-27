@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 
+import { regex as arkRegex } from "arkregex";
 import ts from "typescript";
 import { createMarkdownRenderer } from "vitepress";
 
@@ -31,6 +32,10 @@ declare const data: PatternReferenceGroup[];
 export { data };
 
 const definitions = new URL("../../packages/regex/src/definitions/", import.meta.url);
+const CODE_GROUP_ATTRIBUTE = arkRegex.as(
+  String.raw`(?<attribute>name|id|for)="(?<identifier>(?:group|tab)-\d+)"`,
+  "gu",
+);
 const tierSections: Record<
   UnifiedPatternDef["tier"],
   Pick<PatternReferenceGroup, "name" | "description">
@@ -139,7 +144,7 @@ const loader: { watch: string; load: () => Promise<PatternReferenceGroup[]> } = 
       );
       // VitePress numbers tabs within each render. Scope the radio IDs and names to each card.
       const codeGroupHtml = codeGroup.replace(/<(?:input|label) [^>]+>/gu, (tag) =>
-        tag.replace(/(name|id|for)="((?:group|tab)-\d+)"/gu, `$1="regex-${pattern.name}-$2"`),
+        tag.replace(CODE_GROUP_ATTRIBUTE, `$<attribute>="regex-${pattern.name}-$<identifier>"`),
       );
       let group =
         pattern.grammarSource === "cssdoc"

@@ -163,12 +163,13 @@ export const tokenizeComment = (
 ): CssdocToken[] => {
   const out: CssdocToken[] = [];
   const directives = highlightDirectives(text);
-  if (directives.length)
+  if (directives.length) {
     return directives.map((range) => ({
       from: range.start,
       to: range.end,
       type: range.role === "directive" ? "keyword" : "rule",
     }));
+  }
   const highlights = highlightDocComment(text, configuration);
   const blockTags = highlights.filter((highlight) => highlight.role === "blockTag");
   const allowedTags = new Set(blockTags.map((tag) => tag.start));
@@ -190,8 +191,9 @@ export const tokenizeComment = (
           m.index >= range.start &&
           m.index < range.end,
       )
-    )
+    ) {
       continue;
+    }
     const blockTag =
       groups.rtag ??
       groups.mtag ??

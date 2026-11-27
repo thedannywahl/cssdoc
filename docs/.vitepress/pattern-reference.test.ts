@@ -1,7 +1,12 @@
+import { regex as arkRegex } from "arkregex";
 import { expect, test } from "vite-plus/test";
 
 import { PATTERN_DEFINITIONS } from "../../packages/regex/src/definitions.ts";
 import loader from "./pattern-reference.data.ts";
+
+const CODE_CONTENT = arkRegex.as(String.raw`<code>(?<content>[\s\S]*?)</code>`, "u");
+const TAB_IDS = arkRegex.as(String.raw`<input [^>]*id="(?<id>[^"]+)"`, "gu");
+const LABEL_TARGETS = arkRegex.as(String.raw`<label [^>]*for="(?<target>[^"]+)"`, "gu");
 
 test("the pattern reference preserves registry patterns and their test fixtures", async () => {
   const groups = await loader.load();
@@ -19,6 +24,14 @@ test("the pattern reference preserves registry patterns and their test fixtures"
     expect(row.codeGroupHtml).toContain('data-title="Actual"');
     expect(row.codeGroupHtml).toContain('data-title="Resolved"');
     expect(row.codeGroupHtml).toContain(`name="regex-${row.name}-group-`);
+    expect(row.codeGroupHtml).toContain(`id="regex-${row.name}-tab-`);
+    expect(row.codeGroupHtml).toContain(`for="regex-${row.name}-tab-`);
+    const ids = [...row.codeGroupHtml.matchAll(TAB_IDS)].map((match) => match.groups!.id);
+    const targets = [...row.codeGroupHtml.matchAll(LABEL_TARGETS)].map(
+      (match) => match.groups!.target,
+    );
+    expect(ids).toHaveLength(2);
+    expect(targets).toEqual(ids);
     expect(row.codeGroupHtml).toContain("language-ts");
     expect(row.codeGroupHtml).toContain("language-regex");
     expect(row.codeGroupHtml.match(/class="shiki /gu)).toHaveLength(2);
@@ -28,7 +41,7 @@ test("the pattern reference preserves registry patterns and their test fixtures"
   expect(fileExtension).toContain("ALPHA_LOWER");
   expect(fileExtension).toContain("[a-z]");
   const commentStart = rows.find((row) => row.name === "COMMENT_START")?.codeGroupHtml;
-  const actual = commentStart?.match(/<code>([\s\S]*?)<\/code>/u)?.[1]?.replace(/<[^>]+>/gu, "");
+  const actual = commentStart?.match(CODE_CONTENT)?.groups?.content?.replace(/<[^>]+>/gu, "");
   expect(actual).toContain('\n  const slash = resolve("FORWARD_SLASH");');
   expect(actual).toMatch(/\n\}$/u);
   expect(

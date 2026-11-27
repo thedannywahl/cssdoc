@@ -2,10 +2,14 @@ import { readFileSync } from "node:fs";
 
 import { byTheme } from "@pantoken/tokens";
 import { VITEPRESS_TO_INSTUI } from "@pantoken/vitepress";
+import { regex as arkRegex } from "arkregex";
 import postcss, { parse as parsePostcss } from "postcss";
 import { describe, expect, it } from "vite-plus/test";
 
 import { expandTheme, pruneTheme, themeCss } from "./pantoken-theme.js";
+
+const SVG_DATA = arkRegex.as(String.raw`data:image/svg\+xml,(?<data>[^"]+)`, "gu");
+const CUSTOM_PROPERTY_REFERENCE = arkRegex.as(String.raw`var\((?<dependency>[^)]+)\)`, "gu");
 
 describe("Pantoken docs theme", () => {
   it("uses the official brand bridge without changing neutral surfaces or typography", () => {
@@ -26,8 +30,8 @@ describe("Pantoken docs theme", () => {
 
   it("uses official Aurora colors in background-only light and dark SVGs", () => {
     const css = themeCss();
-    const images = [...css.matchAll(/data:image\/svg\+xml,([^"]+)/gu)].map((match) =>
-      decodeURIComponent(match[1]),
+    const images = [...css.matchAll(SVG_DATA)].map((match) =>
+      decodeURIComponent(match.groups!.data),
     );
     expect(images).toHaveLength(2);
     expect(css).toContain("linear-gradient(135deg, #D8FCEB, #C8F3DF)");
@@ -71,8 +75,8 @@ describe("Pantoken docs theme", () => {
     expect(colors).toHaveLength(4);
     for (const { name, value } of colors) {
       expect(result).toContain(`${name}: ${value}`);
-      for (const [, dependency] of value.matchAll(/var\(([^)]+)\)/gu)) {
-        expect(result).toContain(`${dependency}: #`);
+      for (const match of value.matchAll(CUSTOM_PROPERTY_REFERENCE)) {
+        expect(result).toContain(`${match.groups!.dependency}: #`);
       }
     }
   });
@@ -86,8 +90,8 @@ describe("Pantoken docs theme", () => {
       const token = tokens.find((entry) => entry.name === name);
       if (!token) throw new Error(`Missing Pantoken token ${name}`);
       expect(result).toContain(`${name}: ${token.value}`);
-      for (const [, dependency] of token.value.matchAll(/var\(([^)]+)\)/gu)) {
-        expect(result).toContain(`${dependency}: #`);
+      for (const match of token.value.matchAll(CUSTOM_PROPERTY_REFERENCE)) {
+        expect(result).toContain(`${match.groups!.dependency}: #`);
       }
     }
     const badge = parsePostcss(result).nodes.find(

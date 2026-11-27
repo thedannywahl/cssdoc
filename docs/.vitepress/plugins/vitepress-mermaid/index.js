@@ -7,7 +7,7 @@
 // and diagram export (SVG download/copy). Compatible with both markdown-it v15.0+ and
 // markdown-exit v2.0+ via the shared plugin API.
 export const mermaidPlugin = (md) => {
-  const fence = md.renderer.rules.fence;
+  const { fence } = md.renderer.rules;
   if (!fence) return;
 
   md.renderer.rules.fence = (...args) => {

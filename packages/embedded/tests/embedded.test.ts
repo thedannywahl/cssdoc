@@ -81,8 +81,8 @@ Some prose.
 
 test("the projection preserves length and newlines exactly", () => {
   const p = projectCss(JS, { host: "js" });
-  expect(p.length).toBe(JS.length);
-  expect(p.split("\n").length).toBe(JS.split("\n").length);
+  expect(p).toHaveLength(JS.length);
+  expect(p.split("\n")).toHaveLength(JS.split("\n").length);
 });
 
 test("framed block text ranges map back through an embedded CSS projection", () => {
@@ -251,7 +251,7 @@ test("CR-only host lines retain embedded comment offsets and region positions", 
 test("CR-only line breaks survive masked JavaScript interpolations", () => {
   const source = "// styles\rconst styles = css`\r.card { color: ${\r  value\r}; }\r`;";
   const projection = projectCss(source, { host: "js" });
-  expect(projection.length).toBe(source.length);
+  expect(projection).toHaveLength(source.length);
   expect([...projection].filter((char) => char === "\r")).toHaveLength(5);
   expect(extractCssBlocks(source, { host: "js" })[0].start).toEqual({
     line: 2,
@@ -309,9 +309,9 @@ test("CSS-in-JS tag scanning preserves member, call, and boundary behavior", () 
 test("CSS-in-JS interpolation masking preserves nested strings and template offsets", () => {
   const source = 'const x = css`a { color: ${fn({ v: "}" }, `nested ${x}`)}; }`;';
   const [block] = extractCssBlocks(source, { host: "js" });
-  expect(block.css.length).toBe(source.indexOf("`;", block.start.offset) - block.start.offset);
+  expect(block.css).toHaveLength(source.indexOf("`;", block.start.offset) - block.start.offset);
   expect(block.css).toMatch(/^a \{ color: a+; \}$/u);
-  expect(projectCss(source, { host: "js" }).length).toBe(source.length);
+  expect(projectCss(source, { host: "js" })).toHaveLength(source.length);
 });
 
 test("parseCssDocsFromSource reads a JS tagged template, a Vue <style scoped>, and a Markdown fence", () => {

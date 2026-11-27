@@ -328,8 +328,9 @@ function parseLegendFromInlineComment(text: string): {
   const body = lines.slice(1).join("\n");
   const legendAnnotations = parseLegendRows(body);
   // Merge: legend rows take precedence; inline @ref prose fills in any gaps.
-  for (const [k, v] of inlineAnnotations)
+  for (const [k, v] of inlineAnnotations) {
     if (!legendAnnotations.has(k)) legendAnnotations.set(k, v);
+  }
   return { annotations: legendAnnotations, refs };
 }
 
@@ -480,7 +481,7 @@ function collect(
       } else if (node.name === "media") {
         addCondition(acc, { type: "media", query: node.params.trim() });
       }
-      if (node.nodes)
+      if (node.nodes) {
         collect(
           node.nodes,
           acc,
@@ -496,6 +497,7 @@ function collect(
             : ampBase,
           ownScopeEligible,
         );
+      }
       continue;
     }
     if (node.type === "rule") {
@@ -510,21 +512,24 @@ function collect(
           if (!acc.states.has(s[1])) acc.states.set(s[1], { name: s[1], kind: "custom" });
         }
         for (const ps of matcher.pseudoStatesIn(selector)) {
-          if (!acc.states.has(ps.name))
+          if (!acc.states.has(ps.name)) {
             acc.states.set(ps.name, { name: ps.name, kind: "pseudo-class" });
+          }
         }
         for (const as of selector.matchAll(ATTRIBUTE_STATE)) {
           const attrSelector = `${BRACKET_OPEN_CHAR}${as[1]}${EQUALS_CHAR}${as[2]}${BRACKET_CLOSE_CHAR}`;
           const name = `${as[1]}${EQUALS_CHAR}${unquote(as[2])}`;
-          if (!acc.states.has(name))
+          if (!acc.states.has(name)) {
             acc.states.set(name, { name, kind: "attribute", selector: attrSelector });
+          }
         }
         for (const sp of selector.matchAll(SHADOW_PART)) {
           if (!acc.shadowParts.has(sp[1])) acc.shadowParts.set(sp[1], { name: sp[1] });
         }
         for (const pe of matcher.pseudoElementsIn(selector)) {
-          if (!acc.pseudoElements.has(pe.name))
+          if (!acc.pseudoElements.has(pe.name)) {
             acc.pseudoElements.set(pe.name, { name: pe.name, description: pendingDescription });
+          }
         }
         const bare = selector.replace(PSEUDO, ""); // drop pseudos
         const matchable = ampEnabled ? bare : neutralizeAmp(bare);
@@ -565,14 +570,16 @@ function collect(
             if (modNames.has(part)) continue; // a modifier, not a part
             if (part === baseNoDot) continue; // the record's own base class, not a part of itself
             if (prefixNoDot && part.startsWith(prefixNoDot)) continue; // a component ref, not a part
-            if (!acc.parts.has(part))
+            if (!acc.parts.has(part)) {
               acc.parts.set(part, { name: part, description: pendingDescription });
+            }
           }
         }
       }
       for (const child of node.nodes ?? []) {
-        if (child.type === "decl")
+        if (child.type === "decl") {
           for (const m of child.value.matchAll(VAR)) acc.consumed.add(m[1]);
+        }
       }
       if (node.nodes) {
         // `&`/`:scope` keep meaning this same scope root one level deeper only while every comma branch
@@ -816,13 +823,13 @@ function buildEntry(
   }
   for (const [pseudo, description] of doc.pseudoElements) {
     const existing = acc.pseudoElements.get(pseudo);
-    if (existing)
+    if (existing) {
       existing.description = combineDescription(
         inlineMode,
         description || undefined,
         existing.description,
       );
-    else acc.pseudoElements.set(pseudo, { name: pseudo, description: description || undefined });
+    } else acc.pseudoElements.set(pseudo, { name: pseudo, description: description || undefined });
   }
   for (const [rawState, description] of doc.cssStates) {
     // A `:`-prefixed authored name (`@cssstate :disabled`) is a native pseudo-class state; a bracketed
@@ -838,7 +845,7 @@ function buildEntry(
         : rawState;
     const existing = acc.states.get(state);
     if (existing) existing.description = description || existing.description;
-    else
+    else {
       acc.states.set(state, {
         name: state,
         kind: isPseudo ? "pseudo-class" : attrMatch ? "attribute" : "custom",
@@ -849,6 +856,7 @@ function buildEntry(
             }
           : {}),
       });
+    }
   }
   for (const prop of doc.cssProperties) {
     const existing = acc.declared.get(prop.name);
@@ -863,12 +871,13 @@ function buildEntry(
   for (const [fnName, description] of doc.functions) {
     const existing = acc.functions.get(fnName);
     if (existing) existing.description = description || existing.description;
-    else
+    else {
       acc.functions.set(fnName, {
         name: fnName,
         parameters: [],
         description: description || undefined,
       });
+    }
   }
   for (const [animName, description] of doc.animations) {
     const existing = acc.animations.get(animName);
@@ -900,7 +909,7 @@ function buildEntry(
     else consumedTokens.set(tokenName, { name: tokenName, description: description || undefined });
   }
 
-  const structure = doc.structure;
+  const { structure } = doc;
 
   // Attach `@wrapper` prose to the matching `@structure` node(s) by derived selector name or aliased selector.
   if (doc.wrappers.size && structure?.length) {
@@ -939,13 +948,14 @@ function buildEntry(
 
   const memberDeclsByName = new Map<string, { name: string; private: boolean }>();
   for (const memberName of doc.members ?? []) {
-    if (!memberDeclsByName.has(memberName))
+    if (!memberDeclsByName.has(memberName)) {
       memberDeclsByName.set(memberName, { name: memberName, private: false });
+    }
   }
   for (const member of doc.memberEntries) {
     const existing = memberDeclsByName.get(member.name);
     if (existing) {
-      existing.private = existing.private || member.private;
+      existing.private ||= member.private;
       continue;
     }
     memberDeclsByName.set(member.name, { ...member });

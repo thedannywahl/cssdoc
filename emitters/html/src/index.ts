@@ -169,8 +169,9 @@ export function renderPage(
   parts.push(
     `<div>${code(entry.className)}${entry.summary ? ` — ${prose(entry.summary)}` : ""}</div>`,
   );
-  if (entry.deprecated)
+  if (entry.deprecated) {
     parts.push(`<div class="warn"><strong>Deprecated</strong> — ${prose(entry.deprecated)}</div>`);
+  }
   if (entry.remarks) {
     const mode = entry.prose?.find((body) => body.field === "remarks")?.mode;
     parts.push(renderProse(entry.remarks, false, mode));
@@ -322,7 +323,7 @@ export function renderPage(
       ]),
     ),
   );
-  if (entry.structureVariants?.length)
+  if (entry.structureVariants?.length) {
     section(
       "Structure",
       (entry.structureDescription ? renderProse(entry.structureDescription) : "") +
@@ -333,14 +334,15 @@ export function renderPage(
           )
           .join(""),
     );
-  else if (entry.structure?.length)
+  } else if (entry.structure?.length) {
     section(
       "Structure",
       (entry.structureDescription ? renderProse(entry.structureDescription) : "") +
         structureList(entry.structure),
     );
+  }
   const examples = selectExampleIndices(entry, options.exampleFilter);
-  if (examples.length)
+  if (examples.length) {
     section(
       "Examples",
       examples
@@ -350,9 +352,11 @@ export function renderPage(
         })
         .join("\n"),
     );
+  }
   if (entry.accessibility) section("Accessibility", renderProse(entry.accessibility));
-  if (entry.see.length)
+  if (entry.see.length) {
     section("See also", `<ul>${entry.see.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>`);
+  }
 
   return doc(entry.name, parts.join("\n"));
 }

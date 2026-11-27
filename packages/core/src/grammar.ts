@@ -384,8 +384,9 @@ function deriveModifierKey(sel: string): string {
   if (sel.startsWith(DOT_CHAR)) return sel.slice(1);
   if (sel.startsWith(POUND_CHAR)) return sel.slice(1);
   if (sel.startsWith(":host")) return "host";
-  if (sel.startsWith(BRACKET_OPEN_CHAR) && sel.endsWith(BRACKET_CLOSE_CHAR))
+  if (sel.startsWith(BRACKET_OPEN_CHAR) && sel.endsWith(BRACKET_CLOSE_CHAR)) {
     return sel.slice(1, -1);
+  }
   return sel;
 }
 
@@ -802,8 +803,9 @@ function applyBlockTag(
         `^[${DOT_CHAR}${POUND_CHAR}${BRACKET_OPEN_SOURCE}${COLON_CHAR}${FORWARD_SLASH_SOURCE}]`,
         "u",
       );
-      if (mSel !== `${DOT_CHAR}${mName}` && SELECTOR_PREFIX.test(mSel))
+      if (mSel !== `${DOT_CHAR}${mName}` && SELECTOR_PREFIX.test(mSel)) {
         doc.modifierSelectors.set(mName, mSel);
+      }
       break;
     }
     case "part": {
@@ -978,12 +980,14 @@ function applyBlockTag(
           ...(privateMarker ? { private: true } : {}),
           attachment: "record",
         });
-        if (privateMarker)
+        if (privateMarker) {
           doc.privateAnnotationIds.add(NUMERIC_REF_ID.test(id) ? Number.parseInt(id, 10) : id);
+        }
         if (text) {
           const numericId = NUMERIC_REF_ID.test(id) ? Number.parseInt(id, 10) : undefined;
-          if (numericId !== undefined && !doc.annotations.has(numericId))
+          if (numericId !== undefined && !doc.annotations.has(numericId)) {
             doc.annotations.set(numericId, text);
+          }
           if (numericId === undefined) {
             const existing = doc.namedAnnotations.get(id);
             doc.namedAnnotations.set(id, {
@@ -1236,12 +1240,13 @@ export function splitModifierArg(rest: string): {
     "u",
   );
   const aliasMatch = after.match(ALIAS);
-  if (aliasMatch)
+  if (aliasMatch) {
     return {
       selector,
       name: aliasMatch[1],
       description: normalizeMultilineDescription(aliasMatch[2]),
     };
+  }
 
   const DESCRIPTION: Regex = arkRegex.as(
     String.raw`^${CSSDOC_DESCRIPTION_SEPARATOR_SOURCE}\s+([\s\S]*)$`,

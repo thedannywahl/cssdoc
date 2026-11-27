@@ -2,6 +2,7 @@ import { defineConfig, mergeConfig } from "vite-plus";
 import type { UserConfig } from "vite-plus";
 
 import { libraryConfig } from "../../vite.config.base.ts";
+
 const config: UserConfig = mergeConfig(
   libraryConfig,
   defineConfig({

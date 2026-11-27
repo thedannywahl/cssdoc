@@ -109,8 +109,9 @@ export function projectPublicEntry(entry: CssDocEntry): CssDocEntry {
     projected.privateRemarks === undefined &&
     projected.todos.length === 0 &&
     privateFields.size === 0
-  )
+  ) {
     return projected;
+  }
   const { privateRemarks: _privateRemarks, ...rest } = projected;
   return {
     ...rest,

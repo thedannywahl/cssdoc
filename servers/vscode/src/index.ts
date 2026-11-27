@@ -46,8 +46,12 @@ export async function activate(context: ExtensionContext): Promise<void> {
   let applyingCommentEdits = false;
   context.subscriptions.push(
     workspace.onDidChangeTextDocument((event) => {
-      if (applyingCommentEdits || !new Set(["css", "scss", "less"]).has(event.document.languageId))
+      if (
+        applyingCommentEdits ||
+        !new Set(["css", "scss", "less"]).has(event.document.languageId)
+      ) {
         return;
+      }
       const editor = window.visibleTextEditors.find(
         (candidate) => candidate.document === event.document,
       );

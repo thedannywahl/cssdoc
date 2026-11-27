@@ -24,9 +24,9 @@ import {
   hasStructureDocDivider,
   opensStructureAtRule,
   scanStructureLine,
+  type DocCommentHeaderAnalysis,
   type StructureBoundaryState,
 } from "./structure-boundaries.ts";
-import type { DocCommentHeaderAnalysis } from "./structure-boundaries.ts";
 
 /** A tag block and its source range within a doc-comment input. */
 export interface DocCommentBlock {
@@ -73,9 +73,10 @@ export function docCommentFenceRanges(
       const end = ending?.index ?? block.text.length;
       const line = block.text.slice(start, end);
       const proseStart = first ? docProseStart(line) : 0;
-      const before = !!state.fence;
-      if (proseStart !== undefined)
+      const before = Boolean(state.fence);
+      if (proseStart !== undefined) {
         scanCodeBoundaryLine(normalizedCodeBoundaryText(line.slice(proseStart)), state);
+      }
       if ((before || state.fence) && end > start) {
         ranges.push(blockSourceRange(block, start + (first ? (proseStart ?? 0) : 0), end));
       }
@@ -223,12 +224,13 @@ export function collectDocCommentBlocks(
         scanStructureLine(line.slice(tagMatch[0].length), structureState);
       } else {
         const proseStart = docProseStart(line);
-        if (proseStart !== undefined)
+        if (proseStart !== undefined) {
           scanCodeBoundaryLine(normalizedCodeBoundaryText(line.slice(proseStart)), codeState);
+        }
       }
     } else if (blocks.length) {
       const block = blocks[blocks.length - 1];
-      const ending = lines[lineIndex - 1].ending;
+      const { ending } = lines[lineIndex - 1];
       block.segments.push({
         textStart: block.text.length,
         sourceStart: lines[lineIndex - 1].end,

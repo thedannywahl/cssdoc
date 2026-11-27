@@ -9,8 +9,9 @@ import { syncZedVersion } from "./sync-zed-version.mjs";
 const directories = [];
 
 afterEach(() => {
-  for (const directory of directories.splice(0))
+  for (const directory of directories.splice(0)) {
     rmSync(directory, { recursive: true, force: true });
+  }
 });
 
 function fixture() {
@@ -37,6 +38,18 @@ test("updates all Zed release versions and detects drift", () => {
   expect(() => syncZedVersion(directory)).toThrow("Zed versions differ");
   expect(syncZedVersion(directory, true)).toBe("1.2.3-beta.1");
   expect(syncZedVersion(directory)).toBe("1.2.3-beta.1");
+  expect(readFileSync(join(directory, "servers/zed/extension.toml"), "utf8")).toBe(
+    'id = "test"\nversion = "1.2.3-beta.1"\n',
+  );
+  expect(readFileSync(join(directory, "servers/zed/Cargo.toml"), "utf8")).toBe(
+    '[package]\nname = "cssdoc-zed"\nversion = "1.2.3-beta.1"\n',
+  );
+  expect(readFileSync(join(directory, "servers/zed/src/lib.rs"), "utf8")).toBe(
+    'const VERSION: &str = "1.2.3-beta.1";\n',
+  );
+  expect(readFileSync(join(directory, "servers/zed/Cargo.lock"), "utf8")).toContain(
+    'name = "cssdoc-zed"\nversion = "1.2.3-beta.1"',
+  );
   expect(readFileSync(join(directory, "servers/zed/Cargo.lock"), "utf8")).toContain(
     'name = "dependency"\nversion = "0.1.0"',
   );

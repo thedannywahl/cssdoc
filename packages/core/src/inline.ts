@@ -94,8 +94,9 @@ export function scanInlineTags(
       !definition ||
       definition.syntaxKind !== "inline" ||
       !configuration.isTagSupported(definition)
-    )
+    ) {
       continue;
+    }
 
     const nameEnd = start + 2 + name.length;
     const stack: string[] = [];
@@ -181,8 +182,9 @@ export function scanInlineTagsOutsideCode(
       range.start < cursor ||
       range.end < range.start ||
       range.end > text.length
-    )
+    ) {
       throw new RangeError("Invalid protected code range");
+    }
     append(cursor, range.start);
     cursor = range.end;
   }
@@ -223,8 +225,9 @@ export function parseInlineLink(text: string, tag: InlineTag): InlineLinkResult 
         continue;
       }
       const next = raw[++i];
-      if (next !== BACKSLASH_CHAR && next !== PIPE_CHAR && next !== BRACE_CLOSE_CHAR)
+      if (next !== BACKSLASH_CHAR && next !== PIPE_CHAR && next !== BRACE_CLOSE_CHAR) {
         return { ok: false, error: "invalid-label" };
+      }
       label += next;
     }
     if (!label.trim()) return { ok: false, error: "invalid-label" };
@@ -251,8 +254,9 @@ export function parseInlineLink(text: string, tag: InlineTag): InlineLinkResult 
       if (
         (url.protocol !== "http:" && url.protocol !== "https:" && url.protocol !== "mailto:") ||
         (url.protocol === "mailto:" && !url.pathname)
-      )
+      ) {
         return { ok: false, error: "invalid-url" };
+      }
     } catch (error) {
       if (error instanceof TypeError) return { ok: false, error: "invalid-url" };
       throw error;

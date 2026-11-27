@@ -261,14 +261,14 @@ describe("Pattern Definitions", () => {
     describe(`${name} (Tier ${def.tier})`, () => {
       it("has a source string", () => {
         expect(def.source).toBeDefined();
-        expect(typeof def.source).toBe("string");
+        expect(def.source).toBeTypeOf("string");
         expect(def.source.length).toBeGreaterThan(0);
       });
 
       it("has a compiled ArkRegex or is Tier 0", () => {
         expect(def.regex === undefined).toBe(def.tier === 0);
         const source = def.tier === 0 ? def.source : requiredRegex(def).source;
-        expect(typeof source).toBe("string");
+        expect(source).toBeTypeOf("string");
         expect(source.length).toBeGreaterThan(0);
       });
 
@@ -291,6 +291,7 @@ describe("Pattern Definitions", () => {
 
       def.fixtures.passes.forEach((testCase) => {
         const note = testCase.note ? ` (${testCase.note})` : "";
+
         it(`matches "${testCase.input}"${note}`, () => {
           expect(matchesFixture(name, def, testCase.input)).toBe(true);
         });

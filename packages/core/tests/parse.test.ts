@@ -27,8 +27,7 @@ import {
   toMermaid,
   toMermaidVariants,
 } from "../src/index.ts";
-import { parseDocComment as parseLiteDocComment } from "../src/lite.ts";
-import { inlineCodeRanges } from "../src/lite.ts";
+import { inlineCodeRanges, parseDocComment as parseLiteDocComment } from "../src/lite.ts";
 import { ModifierMatcher } from "../src/modifier.ts";
 import { projectPrivateLinks } from "../src/prose.ts";
 import { scanStructureLine, type StructureBoundaryState } from "../src/structure-boundaries.ts";

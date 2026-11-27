@@ -6,9 +6,14 @@
  *
  * @module
  */
-import type { CssDocEntry, CssReleaseStage, CssRecordKind, StructureNode } from "@cssdoc/core";
+import type {
+  CssDocEntry,
+  CssReleaseStage,
+  CssRecordKind,
+  ExampleFilter,
+  StructureNode,
+} from "@cssdoc/core";
 import {
-  type ExampleFilter,
   cardinalityToken,
   literalMarkdownText,
   selectExampleIndices,
@@ -628,8 +633,9 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   const meta: string[] = [];
   if (entry.since) meta.push(`**Since:** ${escProse(entry.since)}`);
   if (entry.group) meta.push(`**Group:** ${escProse(entry.group)}`);
-  if (options.includeDecorators && entry.decorators?.length)
+  if (options.includeDecorators && entry.decorators?.length) {
     meta.push(`**Decorators:** ${entry.decorators.map((d) => `\`@${d}\``).join(" ")}`);
+  }
   const src = options.resolveSource?.(entry);
   if (src) meta.push(`**Source:** [${escProse(src.label ?? "source")}](${src.href})`);
   if (meta.length) lines.push(meta.join(" · "), "");
@@ -824,8 +830,9 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   const structuralSubs: { name: string; href: string }[] = [];
   if (entry.structure?.length || entry.structureVariants?.length) {
     fragments.structure.push("## Structure", "");
-    if (entry.structureDescription)
+    if (entry.structureDescription) {
       fragments.structure.push(safeMarkdownBlock(entry.structureDescription), "");
+    }
     // Both views classify each node (root / part / slot / sibling component): `self` keeps the record's
     // own class from reading as a sibling, and `resolveComponent` resolves siblings to component names.
     const self = entry.className.startsWith(DOT_CHAR) ? entry.className.slice(1) : entry.className;

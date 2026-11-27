@@ -21,6 +21,7 @@ import {
 import { regex as arkRegex } from "arkregex";
 
 import { tokenize, tokenTypes } from "./css-tokenizer.ts";
+
 export { highlightDirectives } from "./directives.ts";
 export type { DirectiveHighlight } from "./directives.ts";
 
@@ -89,8 +90,9 @@ function addStructureHighlights(
       brackets = 1;
     } else if (type === tokenTypes.Hash) append(from, to, "structureSelector");
     else if (type === tokenTypes.AtKeyword) append(from, to, "structureAtRule");
-    else if (type === tokenTypes.LeftCurlyBracket || type === tokenTypes.RightCurlyBracket)
+    else if (type === tokenTypes.LeftCurlyBracket || type === tokenTypes.RightCurlyBracket) {
       append(from, to, "structurePunctuation");
+    }
   });
   if (bracketStart !== undefined) append(bracketStart, text.length, "structureSelector");
 }
@@ -144,8 +146,9 @@ function mappedRanges(
     while (
       to > from &&
       (block.text[to - 1] === CARRIAGE_RETURN_CHAR || block.text[to - 1] === LINE_FEED_CHAR)
-    )
+    ) {
       to--;
+    }
     return from < to ? [blockSourceRange(block, from, to)] : [];
   });
 }

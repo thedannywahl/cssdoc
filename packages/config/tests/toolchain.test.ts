@@ -1,5 +1,13 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -15,6 +23,7 @@ import regexConfig from "../../regex/vite.config.ts";
 import { CSSDOC_TAG_NAMES, CSSDOC_TAGS } from "../../spec/src/index.ts";
 
 vi.setConfig({ testTimeout: 30_000 });
+
 afterAll(() => vi.resetConfig());
 
 test("the TypeScript catalog matches the compiler revision targeted by Vite+'s tsrs", () => {
@@ -100,6 +109,75 @@ test("unassigned CSS imports are allowed while other side-effect imports warn", 
           .filter((diagnostic) => diagnostic.code === "import(no-unassigned-import)")
           .map((diagnostic) => [diagnostic.severity, diagnostic.labels[0].span.line]),
       ).toEqual([["warning", 4]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("style fixes preserve explicit Vitest imports, strict assertions, and catalog order", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".style-check-"));
+  try {
+    const file = join(directory, "style.test.ts");
+    writeFileSync(
+      file,
+      [
+        'import { expect, test } from "vite-plus/test";',
+        "",
+        'test("checks a catalog", () => {',
+        "  const catalog = { zebra: 1, alpha: 2 };",
+        "  let actual = false;",
+        "  if (catalog.zebra)",
+        "    actual = true;",
+        "  expect(actual).toBe(true);",
+        "  expect(false).toBe(false);",
+        "});",
+        "",
+      ].join("\n"),
+    );
+    const lint = (...args: string[]) =>
+      spawnSync("vp", ["lint", "--no-ignore", "--format", "json", ...args, file], {
+        cwd: root,
+        encoding: "utf8",
+      });
+    const before = lint();
+    expect(before.status, `${before.stdout}\n${before.stderr}`).toBe(0);
+    const diagnostics: { diagnostics: { code: string }[] } = JSON.parse(before.stdout);
+    expect(diagnostics.diagnostics.map(({ code }) => code)).toContain("eslint(curly)");
+    expect(lint("--fix").status).toBe(0);
+    const after: { diagnostics: { code: string }[] } = JSON.parse(lint().stdout);
+    expect(after.diagnostics.map(({ code }) => code)).not.toContain("eslint(curly)");
+    const fixed = readFileSync(file, "utf8");
+    expect(fixed).toContain('from "vite-plus/test"');
+    expect(fixed).toContain("expect(actual).toBe(true)");
+    expect(fixed).toContain("expect(false).toBe(false)");
+    expect(fixed).toContain("{ zebra: 1, alpha: 2 }");
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("style lint allows literal security fixtures but checks production strings", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".style-check-"));
+  try {
+    const source = 'const template = "${value}";\nconst url = "javascript:alert(1)";\n';
+    const diagnostics = (name: string) => {
+      const file = join(directory, name);
+      writeFileSync(file, source);
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd: root,
+        encoding: "utf8",
+      });
+      const output: { diagnostics: { code: string }[] } = JSON.parse(result.stdout);
+      return output.diagnostics.map(({ code }) => code);
+    };
+    const fixture = diagnostics("literal.test.js");
+    const production = diagnostics("literal.js");
+    for (const rule of ["eslint(no-template-curly-in-string)", "eslint(no-script-url)"]) {
+      expect(fixture).not.toContain(rule);
+      expect(production).toContain(rule);
     }
   } finally {
     rmSync(directory, { recursive: true, force: true });

@@ -70,7 +70,7 @@ import { regex as arkRegex } from "arkregex";
 
 import { linkSyntax } from "./mdn.ts";
 import { matchesSyntax } from "./syntax.ts";
-import { HOVER_SECTION_KEYS } from "./types.ts";
+import { HOVER_SECTION_KEYS, resolveRuleOptions } from "./types.ts";
 import type {
   Completion,
   Diagnostic,
@@ -84,7 +84,6 @@ import type {
   ResolvedNaming,
   UsageOptions,
 } from "./types.ts";
-import { resolveRuleOptions } from "./types.ts";
 
 /** Render a `@property` syntax descriptor with each `<type>` linked to its MDN reference page. */
 const linkedSyntax = (syntax: string): string => {
@@ -264,8 +263,9 @@ const structureReferences = (
     if (node.colocated && node.colocated.replace(SELECTOR_PREFIX, "") === className) return true;
     const ref = parseStructureRecordRef(node.selector);
     if (ref && ref.name === recordName) return true;
-    if ((node.variants ?? []).some((v) => structureReferences(v.nodes, className, recordName)))
+    if ((node.variants ?? []).some((v) => structureReferences(v.nodes, className, recordName))) {
       return true;
+    }
     return structureReferences(node.children, className, recordName);
   });
 
@@ -319,7 +319,7 @@ export const record = {
   ): Diagnostic[] {
     const options = resolveRuleOptions(ruleOptions);
     const disallowedKeyword = (value: string): string | undefined => {
-      const mode = options.sealed.mode;
+      const { mode } = options.sealed;
       const keywords =
         mode === "compat"
           ? ["unset", "initial"]
@@ -627,8 +627,9 @@ export const record = {
                 known.has(cls) ||
                 isSibling(cls) ||
                 structureIgnore.some((g) => globMatch(g, cls))
-              )
+              ) {
                 continue;
+              }
               seen.add(cls);
               out.push(
                 warn({
@@ -861,24 +862,26 @@ export const record = {
     };
     const list = (key: HoverSectionKey, iconName: string, label: string, rows: string[]): void => {
       const w = want(key, rows.length > 0);
-      if (w !== "skip")
+      if (w !== "skip") {
         fragments[key] = [
           "",
           bold(`${presentation === "vscode" ? `${codicon(iconName)} ` : ""}${label}`),
           ...(w === "content" ? rows : [emptySection]),
         ];
+      }
     };
 
     prose("summary", "", entry.summary);
     {
       const w = want("deprecated", Boolean(entry.deprecated));
-      if (w !== "skip")
+      if (w !== "skip") {
         fragments.deprecated = [
           "",
           w === "content"
             ? (deprecatedLine as string)
             : `${icon("warning")}${warnHtml("Deprecated")}`,
         ];
+      }
     }
     const remarksMode = entry.prose?.find((body) => body.field === "remarks")?.mode;
     prose(
@@ -1033,7 +1036,7 @@ export const record = {
       const w = want("examples", examples.length > 0);
       if (w !== "skip") {
         const frag = ["", bold(`${icon("book")}Example${examples.length > 1 ? "s" : ""}`)];
-        if (w === "content")
+        if (w === "content") {
           for (const exampleIndex of examples) {
             const text = entry.examples[exampleIndex];
             const exampleProse = entry.prose?.find((body) => body.exampleIndex === exampleIndex);
@@ -1051,7 +1054,7 @@ export const record = {
                     : ex,
             );
           }
-        else frag.push("", emptySection);
+        } else frag.push("", emptySection);
         fragments.examples = frag;
       }
     }
@@ -1081,7 +1084,7 @@ export const modifier = {
   model(index: CssDocIndex): Diagnostic[] {
     const out: Diagnostic[] = [];
     for (const info of index.records) {
-      const name = info.entry.name;
+      const { name } = info.entry;
       for (const m of info.entry.modifiers) {
         const sel = index.matcher.selectorFor(m.name);
         const span =
@@ -1281,8 +1284,9 @@ export const modifier = {
     const lines = [
       `${codeSpan(index.matcher.selectorFor(m.name))} — modifier of ${codeSpan(entry!.className)}`,
     ];
-    if (m.interaction)
+    if (m.interaction) {
       lines.push("", `${bold("Interaction")} — a JS-toggled hook, not styled directly.`);
+    }
     if (m.affects?.length) {
       const notes = m.affects.map(
         (a) =>
@@ -1323,7 +1327,7 @@ export const part = {
   model(index: CssDocIndex, naming?: ResolvedNaming): Diagnostic[] {
     const out: Diagnostic[] = [];
     for (const info of index.records) {
-      const name = info.entry.name;
+      const { name } = info.entry;
       for (const p of info.entry.parts) {
         if (!p.description?.trim()) {
           // A CSS-derived part is covered when an authored chain @part has it as its terminal compound.
@@ -1384,7 +1388,7 @@ export const cssPart = {
   model(index: CssDocIndex): Diagnostic[] {
     const out: Diagnostic[] = [];
     for (const info of index.records) {
-      const name = info.entry.name;
+      const { name } = info.entry;
       for (const p of info.entry.shadowParts) {
         if (!p.description?.trim()) {
           out.push(

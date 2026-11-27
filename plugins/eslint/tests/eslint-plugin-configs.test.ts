@@ -23,7 +23,7 @@ test("plugin.configs.relaxed is an array", () => {
 });
 
 test("plugin.configs.classUsage is a function", () => {
-  expect(typeof plugin.configs.classUsage).toBe("function");
+  expect(plugin.configs.classUsage).toBeTypeOf("function");
 });
 
 test("plugin.configs.classUsage() returns an array", () => {
@@ -32,7 +32,7 @@ test("plugin.configs.classUsage() returns an array", () => {
 });
 
 test("plugin.configs.full is a function", () => {
-  expect(typeof plugin.configs.full).toBe("function");
+  expect(plugin.configs.full).toBeTypeOf("function");
 });
 
 test("plugin.configs.full() returns an array", () => {
@@ -90,7 +90,7 @@ test("plugin.configs.relaxed includes warn-level with relaxed options", () => {
 
 test("plugin.configs.classUsage() returns config for JS and HTML files", () => {
   const result = plugin.configs.classUsage() as unknown[];
-  expect(result.length).toBe(2);
+  expect(result).toHaveLength(2);
   expect((result[0] as Record<string, unknown>).files).toContain("**/*.{js,jsx,ts,tsx}");
   expect((result[1] as Record<string, unknown>).files).toContain("**/*.html");
 });
@@ -108,12 +108,12 @@ test("plugin.configs.classUsage() with options passes css option to rules", () =
 test("plugin.configs.full() combines recommended and classUsage", () => {
   const result = plugin.configs.full({ css: ["dist/components.css"] }) as unknown[];
   // Should have recommended config + classUsage configs (3 total: 1 from recommended + 2 from classUsage)
-  expect(result.length).toBe(3);
+  expect(result).toHaveLength(3);
 });
 
 test("plugin.configs.full() without options returns recommended + classUsage", () => {
   const result = plugin.configs.full() as unknown[];
-  expect(result.length).toBe(3);
+  expect(result).toHaveLength(3);
 });
 
 // ── require-component-docs ────────────────────────────────────────────────────────────
@@ -164,8 +164,8 @@ test("require-component-docs create function returns object with Rule visitor", 
     sourceCode: { text: "" },
   };
   const visitors = rule.create(mockContext as never);
-  expect(typeof visitors).toBe("object");
-  expect(typeof visitors.Rule).toBe("function");
+  expect(visitors).toBeTypeOf("object");
+  expect(visitors.Rule).toBeTypeOf("function");
 });
 
 test("require-component-docs matches configured component names before selector suffixes", () => {
@@ -213,8 +213,8 @@ test("valid-custom-properties create function returns object with Declaration vi
     cwd: process.cwd(),
   };
   const visitors = rule.create(mockContext as never);
-  expect(typeof visitors).toBe("object");
-  expect(typeof visitors.Declaration).toBe("function");
+  expect(visitors).toBeTypeOf("object");
+  expect(visitors.Declaration).toBeTypeOf("function");
 });
 
 test("valid-custom-properties applies each declared syntax on repeated visits", () => {
@@ -308,7 +308,7 @@ test("plugin.rules has all expected rules", () => {
 test("plugin.rules exports have required meta structure", () => {
   for (const [_name, rule] of Object.entries(plugin.rules)) {
     expect(rule.meta).toBeDefined();
-    expect(rule.meta.type).toMatch(/^(problem|suggestion)$/u);
+    expect(["problem", "suggestion"]).toContain(rule.meta.type);
     expect(rule.meta.docs).toBeDefined();
     expect(rule.meta.docs.description).toBeDefined();
     expect(rule.meta.schema).toBeDefined();
@@ -317,7 +317,7 @@ test("plugin.rules exports have required meta structure", () => {
 
 test("plugin.rules exports have create function", () => {
   for (const [_name, rule] of Object.entries(plugin.rules)) {
-    expect(typeof rule.create).toBe("function");
+    expect(rule.create).toBeTypeOf("function");
   }
 });
 
@@ -329,9 +329,9 @@ test("plugin has proper meta", () => {
 });
 
 test("plugin has configs object", () => {
-  expect(typeof plugin.configs).toBe("object");
+  expect(plugin.configs).toBeTypeOf("object");
 });
 
 test("plugin has rules object", () => {
-  expect(typeof plugin.rules).toBe("object");
+  expect(plugin.rules).toBeTypeOf("object");
 });

@@ -67,17 +67,16 @@
  * console.log(def.fixtures.fails);        // Test cases that should not match
  * ```
  */
+import type { Regex } from "arkregex";
+
+import { PATTERN_DEFINITIONS } from "./definitions.js";
+import { compileRegex } from "./lib.js";
 
 export { PATTERN_DEFINITIONS, type UnifiedPatternDef } from "./definitions.js";
 export { toRegExp, type AnchorMode, compileRegex, escapeRegex, escapeRegexChar } from "./lib.js";
 
-import type { Regex } from "arkregex";
-
 // Dynamic exports of all patterns as regex objects from PATTERN_DEFINITIONS
 // This avoids duplication and ensures all patterns are always available
-import { PATTERN_DEFINITIONS } from "./definitions.js";
-import { compileRegex } from "./lib.js";
-
 // Map all patterns from PATTERN_DEFINITIONS to individual exports
 // Export both the regex object and the source string for each pattern
 

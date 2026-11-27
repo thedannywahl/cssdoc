@@ -75,8 +75,9 @@ const config: UserConfig = defineConfig({
           if (!diagnostic) return;
           const [, level, target] = diagnostic;
           const start = code.indexOf(target);
-          if (start === -1)
+          if (start === -1) {
             throw new Error(`Diagnostic target missing from code example: ${target}`);
+          }
           (options.decorations ??= []).push({
             start,
             end: start + target.length,

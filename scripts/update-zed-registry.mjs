@@ -29,8 +29,9 @@ export function updateRegistryVersion(content, version) {
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const [file, version] = process.argv.slice(2);
-  if (!file || !version)
+  if (!file || !version) {
     throw new Error("Usage: node update-zed-registry.mjs <extensions.toml> <version>");
+  }
   const content = readFileSync(file, "utf8");
   writeFileSync(file, updateRegistryVersion(content, version));
 }

@@ -47,14 +47,16 @@ export function frameCommentLines(raw: string, prefixes: "framed" | "none"): Fra
       lineEnd < end &&
       raw[lineEnd] !== CARRIAGE_RETURN_CHAR &&
       raw[lineEnd] !== LINE_FEED_CHAR
-    )
+    ) {
       lineEnd++;
+    }
     if (
       lineEnd < end &&
       raw[lineEnd] === CARRIAGE_RETURN_CHAR &&
       raw[lineEnd + 1] === LINE_FEED_CHAR
-    )
+    ) {
       lineEnd++;
+    }
     const ending =
       lineEnd < end
         ? raw[lineEnd] === LINE_FEED_CHAR

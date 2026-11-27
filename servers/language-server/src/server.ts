@@ -185,7 +185,9 @@ export function startLanguageServer(): void {
       // Keep the combined index for cross-file value resolution, but resolve definitions against
       // individual source files: concatenation loses file URIs and shifts every later file's spans.
       const definitionCache = new Map<string, ReturnType<typeof createIndex>>();
-      const definitionIndexes = function* (): Iterable<ReturnType<typeof createIndex>> {
+      const definitionIndexes = function* definitionIndexes(): Iterable<
+        ReturnType<typeof createIndex>
+      > {
         for (const file of g.files) {
           let sourceIndex = definitionCache.get(file);
           if (!sourceIndex) {
@@ -259,12 +261,13 @@ export function startLanguageServer(): void {
     watchWorkspaceFolders = params.capabilities.workspace?.workspaceFolders === true;
     supportsConfiguration = params.capabilities.workspace?.configuration === true;
     discover();
-    if (options?.hoverDetail)
+    if (options?.hoverDetail) {
       service.setHoverDetail(
         options.hoverDetail,
         options.hoverSections ?? {},
         options.hoverSectionOrder as HoverSectionOrder | undefined,
       );
+    }
     rebuild();
     return {
       capabilities: {

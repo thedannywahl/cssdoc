@@ -74,6 +74,11 @@ but other imports can move around them. Separate a file-level comment from impor
 so sorting doesn't move it with an import. Generated files with byte-exact checks remain owned by
 their generators.
 
+Style linting follows the formatter's import order and preserves authored ordering in catalogs,
+schemas, and fixtures. It permits concise single-line guards but requires braces for multiline
+control flow. Tests import Vitest explicitly and use strict boolean assertions where intended;
+fixtures may include literal template placeholders and unsafe URLs.
+
 The TypeScript catalog is pinned to the upstream revision targeted by Vite+'s tsrs checker; a test
 checks that they stay aligned. TypeDoc uses TypeScript 6 separately because of its peer dependency;
 the docs and TypeDoc plugin type-check tasks use the root TypeScript compiler instead.

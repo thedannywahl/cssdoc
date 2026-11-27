@@ -4,15 +4,24 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const fields = [
-  ["servers/zed/extension.toml", /^(version = ")([^"]+)(")$/gmu],
-  ["servers/zed/Cargo.toml", /^(\[package\]\nname = "cssdoc-zed"\nversion = ")([^"]+)(")$/gmu],
-  ["servers/zed/Cargo.lock", /^(\[\[package\]\]\nname = "cssdoc-zed"\nversion = ")([^"]+)(")$/gmu],
-  ["servers/zed/src/lib.rs", /^(const VERSION: &str = ")([^"]+)(";)$/gmu],
+  ["servers/zed/extension.toml", /^(?<prefix>version = ")(?<version>[^"]+)(?<suffix>")$/gmu],
+  [
+    "servers/zed/Cargo.toml",
+    /^(?<prefix>\[package\]\nname = "cssdoc-zed"\nversion = ")(?<version>[^"]+)(?<suffix>")$/gmu,
+  ],
+  [
+    "servers/zed/Cargo.lock",
+    /^(?<prefix>\[\[package\]\]\nname = "cssdoc-zed"\nversion = ")(?<version>[^"]+)(?<suffix>")$/gmu,
+  ],
+  [
+    "servers/zed/src/lib.rs",
+    /^(?<prefix>const VERSION: &str = ")(?<version>[^"]+)(?<suffix>";)$/gmu,
+  ],
 ];
 
 export function syncZedVersion(directory, write = false) {
   const packagePath = resolve(directory, "servers/language-server/package.json");
-  const version = JSON.parse(readFileSync(packagePath, "utf8")).version;
+  const { version } = JSON.parse(readFileSync(packagePath, "utf8"));
   if (typeof version !== "string" || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/u.test(version)) {
     throw new Error(`Invalid language-server version in ${packagePath}: ${version}`);
   }
@@ -22,12 +31,12 @@ export function syncZedVersion(directory, write = false) {
     const content = readFileSync(file, "utf8");
     const matches = [...content.matchAll(pattern)];
     if (matches.length !== 1) throw new Error(`Expected one version field in ${path}`);
-    const current = matches[0][2];
+    const current = matches[0].groups.version;
     return {
       file,
       path,
       current,
-      content: content.replace(pattern, (_match, before, _old, after) => before + version + after),
+      content: content.replace(pattern, `$<prefix>${version}$<suffix>`),
     };
   });
 

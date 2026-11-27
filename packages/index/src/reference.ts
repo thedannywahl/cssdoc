@@ -152,8 +152,13 @@ export function resolveRecordReference(
   const candidates: ReferenceCandidate[] = [];
   let unknownSource = false;
   for (const source of scope.sources) {
-    if (sourceKey !== undefined && source.sourceKey !== undefined && source.sourceKey !== sourceKey)
+    if (
+      sourceKey !== undefined &&
+      source.sourceKey !== undefined &&
+      source.sourceKey !== sourceKey
+    ) {
       continue;
+    }
     for (const record of source.index.records) {
       if (record.entry.name !== reference.name) continue;
       if (reference.kind !== undefined && record.entry.kind !== reference.kind) continue;
@@ -276,7 +281,7 @@ export function resolveNamedMemberReference(
   reference: CssDocReference,
   lookup: ReferenceLookup,
 ): NamedMemberResolution {
-  const member = reference.member;
+  const { member } = reference;
   if (!member) return { status: "unavailable", candidates: [] };
   const { kind, subject } = member;
   const supported = ["csspart", "slot", "property", "token", "function", "keyframes", "layer"];
@@ -286,17 +291,23 @@ export function resolveNamedMemberReference(
   if (
     (kind === "property" || kind === "token" || kind === "function") &&
     (!key[0].startsWith("--") || key[0].length <= 2)
-  )
+  ) {
     return { status: "invalid-subject" };
+  }
   const resolution = resolveRecordReference(reference, lookup);
   if (resolution.status === "missing") return { status: "missing" };
-  if (resolution.status === "ambiguous")
+  if (resolution.status === "ambiguous") {
     return { status: "ambiguous", stage: "record", candidates: resolution.candidates };
+  }
   if (resolution.status === "unavailable") return resolution;
-  if (!resolution.candidate.membersComplete || resolution.candidate.namedMembersAvailable === false)
+  if (
+    !resolution.candidate.membersComplete ||
+    resolution.candidate.namedMembersAvailable === false
+  ) {
     return { status: "unavailable", candidates: [resolution.candidate] };
+  }
   const record = resolution.candidate;
-  const entry = record.record.entry;
+  const { entry } = record.record;
   const members: readonly { member: NamedMemberCandidate["member"]; span?: SourceSpan }[] =
     record.namedMemberOccurrences
       ? record.namedMemberOccurrences.filter((occurrence) => occurrence.kind === kind)
@@ -318,13 +329,14 @@ export function resolveNamedMemberReference(
   for (const occurrence of members) {
     const candidateKey = identifierKey(occurrence.member.name, kind === "layer", kind === "slot");
     if (candidateKey === undefined) return { status: "unavailable", candidates: [record] };
-    if (JSON.stringify(candidateKey) === JSON.stringify(key))
+    if (JSON.stringify(candidateKey) === JSON.stringify(key)) {
       candidates.push({
         record,
         kind,
         member: occurrence.member,
         ...(occurrence.span ? { span: occurrence.span } : {}),
       });
+    }
   }
   if (candidates.length === 0) return { status: "missing" };
   if (candidates.length > 1) return { status: "ambiguous", stage: "member", candidates };
@@ -366,20 +378,22 @@ function selectorKey(input: string, kind: SelectorMemberOccurrence["kind"]): Sel
       },
     });
     if (ast.type !== "Selector" || ast.children.size === 0) return { status: "invalid" };
-    const first = ast.children.first;
+    const { first } = ast.children;
     if (
       kind === "pseudo-element" &&
       (ast.children.size !== 1 || first?.type !== "PseudoElementSelector" || first.children)
-    )
+    ) {
       return { status: "invalid" };
+    }
     if (
       kind === "state" &&
       (ast.children.size !== 1 ||
         (first?.type !== "ClassSelector" &&
           first?.type !== "AttributeSelector" &&
           first?.type !== "PseudoClassSelector"))
-    )
+    ) {
       return { status: "invalid" };
+    }
 
     let unsupported = false;
     let invalid = false;
@@ -417,11 +431,13 @@ function selectorKey(input: string, kind: SelectorMemberOccurrence["kind"]): Sel
       } else if (node.type === "TypeSelector") {
         if (node.name.includes("\\") || node.name.includes("|")) unsupported = true;
       } else if (node.type === "AttributeSelector") {
-        if (node.value?.type === "Identifier")
+        if (node.value?.type === "Identifier") {
           node.value = { type: "String", value: ident.decode(node.value.name) };
+        }
         if (node.flags) node.flags = asciiLower(node.flags);
-        if (node.flags === "i" && node.value?.type === "String")
+        if (node.flags === "i" && node.value?.type === "String") {
           node.value.value = asciiLower(node.value.value);
+        }
       } else if (node.type === "Raw" && !normalizedRaw.has(node)) {
         unsupported = true;
       }
@@ -449,7 +465,7 @@ export function resolveSelectorMemberReference(
   reference: CssDocReference,
   lookup: ReferenceLookup,
 ): SelectorMemberResolution {
-  const member = reference.member;
+  const { member } = reference;
   if (
     !member ||
     (member.kind !== "modifier" &&
@@ -457,19 +473,22 @@ export function resolveSelectorMemberReference(
       member.kind !== "wrapper" &&
       member.kind !== "state" &&
       member.kind !== "pseudo-element")
-  )
+  ) {
     return { status: "unavailable", candidates: [] };
+  }
   const key = selectorKey(member.subject, member.kind);
   if (key.status === "invalid") return { status: "invalid-subject" };
   if (key.status === "unsupported") return { status: "unavailable", candidates: [] };
   const resolution = resolveRecordReference(reference, lookup);
   if (resolution.status === "missing") return { status: "missing" };
-  if (resolution.status === "ambiguous")
+  if (resolution.status === "ambiguous") {
     return { status: "ambiguous", stage: "record", candidates: resolution.candidates };
+  }
   if (resolution.status === "unavailable") return resolution;
   const record = resolution.candidate;
-  if (!record.selectorMembersComplete || !record.selectorMemberOccurrences)
+  if (!record.selectorMembersComplete || !record.selectorMemberOccurrences) {
     return { status: "unavailable", candidates: [record] };
+  }
   const candidates: SelectorMemberCandidate[] = [];
   for (const occurrence of record.selectorMemberOccurrences) {
     if (occurrence.kind !== member.kind) continue;
@@ -553,8 +572,9 @@ export function resolveScopeMemberReference(
   if (key.status === "unsupported") return { status: "unavailable", candidates: [] };
   const resolution = resolveRecordReference(reference, lookup);
   if (resolution.status === "missing") return { status: "missing" };
-  if (resolution.status === "ambiguous")
+  if (resolution.status === "ambiguous") {
     return { status: "ambiguous", stage: "record", candidates: resolution.candidates };
+  }
   if (resolution.status === "unavailable") return resolution;
   const record = resolution.candidate;
   const occurrences = record.record.scopeOccurrences;
@@ -674,8 +694,9 @@ function classifyQueryCondition(
     if (child.type === "Condition") nestedConditions.add(child);
   }
   if (validQueryCondition(condition)) return "valid";
-  if (nestedConditions.has(condition) && condition.children.first?.type === "Identifier")
+  if (nestedConditions.has(condition) && condition.children.first?.type === "Identifier") {
     return "unsupported";
+  }
   return "invalid";
 }
 
@@ -783,8 +804,9 @@ function supportsKey(input: string): SupportsKey {
         case "Dimension":
         case "Number":
         case "Percentage": {
-          if (node.type === "Dimension")
+          if (node.type === "Dimension") {
             node.unit = ident.encode(asciiLower(ident.decode(node.unit)));
+          }
           if (node.type === "Number") numberTypes.push(numberTokenType(node.value));
           const value = canonicalCssNumber(node.value);
           if (value === undefined) unsupported = true;
@@ -803,15 +825,17 @@ function supportsKey(input: string): SupportsKey {
     if (invalid) return { status: "invalid" };
     if (unsupported) return { status: "unsupported" };
     const key = JSON.stringify([generate(ast), numberTypes]);
-    for (const node of valueIdentifiers)
+    for (const node of valueIdentifiers) {
       node.name = ident.encode(asciiLower(ident.decode(node.name)));
+    }
     for (const node of valueStrings) node.value = asciiLower(node.value);
     return { status: "valid", key, caseFoldedKey: generate(ast) };
   } catch (error) {
-    if (error instanceof SyntaxError)
+    if (error instanceof SyntaxError) {
       return {
         status: hasNestedQuery(input) || mayBeGeneralEnclosed(input) ? "unsupported" : "invalid",
       };
+    }
     throw error;
   }
 }
@@ -852,8 +876,9 @@ function queryKey(input: string, kind: "media" | "container"): QueryKey {
             "revert",
             "revert-layer",
           ].includes(name)
-        )
+        ) {
           return { status: "invalid" };
+        }
       } else if (children.length !== 1) return { status: "invalid" };
       if (children[children.length - 1].type !== "Condition") return { status: "unsupported" };
     }
@@ -899,8 +924,9 @@ function queryKey(input: string, kind: "media" | "container"): QueryKey {
               (child) =>
                 child.type === "Identifier" && asciiLower(ident.decode(child.name)) === "or",
             )
-          )
+          ) {
             invalid = true;
+          }
           if (node.mediaType) node.mediaType = keyword(node.mediaType);
           if (node.modifier) node.modifier = asciiLower(node.modifier);
           break;
@@ -943,10 +969,11 @@ function queryKey(input: string, kind: "media" | "container"): QueryKey {
     const numericKey = generate(ast);
     return { status: "valid", key: JSON.stringify([numericKey, numberTypes]), numericKey, opaque };
   } catch (error) {
-    if (error instanceof SyntaxError)
+    if (error instanceof SyntaxError) {
       return {
         status: hasNestedQuery(input) || mayBeGeneralEnclosed(input) ? "unsupported" : "invalid",
       };
+    }
     throw error;
   }
 }
@@ -971,8 +998,9 @@ export function resolveMediaMemberReference(
   if (key.status === "unsupported") return { status: "unavailable", candidates: [] };
   const resolution = resolveRecordReference(reference, lookup);
   if (resolution.status === "missing") return { status: "missing" };
-  if (resolution.status === "ambiguous")
+  if (resolution.status === "ambiguous") {
     return { status: "ambiguous", stage: "record", candidates: resolution.candidates };
+  }
   if (resolution.status === "unavailable") return resolution;
   const record = resolution.candidate;
   const occurrences = record.record.mediaOccurrences;
@@ -982,8 +1010,9 @@ export function resolveMediaMemberReference(
     const candidateKey = queryKey(occurrence.prelude, "media");
     if (candidateKey.status !== "valid") return { status: "unavailable", candidates: [record] };
     if (candidateKey.key === key.key) candidates.push({ record, occurrence });
-    else if (candidateKey.numericKey === key.numericKey)
+    else if (candidateKey.numericKey === key.numericKey) {
       return { status: "unavailable", candidates: [record] };
+    }
   }
   if (candidates.length === 0) return { status: "missing" };
   if (candidates.length > 1) return { status: "ambiguous", stage: "member", candidates };
@@ -1009,8 +1038,9 @@ export function resolveContainerMemberReference(
   if (key.status === "unsupported") return { status: "unavailable", candidates: [] };
   const resolution = resolveRecordReference(reference, lookup);
   if (resolution.status === "missing") return { status: "missing" };
-  if (resolution.status === "ambiguous")
+  if (resolution.status === "ambiguous") {
     return { status: "ambiguous", stage: "record", candidates: resolution.candidates };
+  }
   if (resolution.status === "unavailable") return resolution;
   const record = resolution.candidate;
   const occurrences = record.record.containerOccurrences;
@@ -1020,8 +1050,9 @@ export function resolveContainerMemberReference(
     const candidateKey = queryKey(occurrence.prelude, "container");
     if (candidateKey.status !== "valid") return { status: "unavailable", candidates: [record] };
     if (candidateKey.key === key.key) candidates.push({ record, occurrence });
-    else if (candidateKey.opaque || key.opaque || candidateKey.numericKey === key.numericKey)
+    else if (candidateKey.opaque || key.opaque || candidateKey.numericKey === key.numericKey) {
       return { status: "unavailable", candidates: [record] };
+    }
   }
   if (candidates.length === 0) return { status: "missing" };
   if (candidates.length > 1) return { status: "ambiguous", stage: "member", candidates };
@@ -1048,8 +1079,9 @@ export function resolveSupportsMemberReference(
   if (key.status === "unsupported") return { status: "unavailable", candidates: [] };
   const resolution = resolveRecordReference(reference, lookup);
   if (resolution.status === "missing") return { status: "missing" };
-  if (resolution.status === "ambiguous")
+  if (resolution.status === "ambiguous") {
     return { status: "ambiguous", stage: "record", candidates: resolution.candidates };
+  }
   if (resolution.status === "unavailable") return resolution;
   const record = resolution.candidate;
   const occurrences = record.record.supportsOccurrences;
@@ -1059,8 +1091,9 @@ export function resolveSupportsMemberReference(
     const candidateKey = supportsKey(occurrence.prelude);
     if (candidateKey.status !== "valid") return { status: "unavailable", candidates: [record] };
     if (candidateKey.key === key.key) candidates.push({ record, occurrence });
-    else if (candidateKey.caseFoldedKey === key.caseFoldedKey)
+    else if (candidateKey.caseFoldedKey === key.caseFoldedKey) {
       return { status: "unavailable", candidates: [record] };
+    }
   }
   if (candidates.length === 0) return { status: "missing" };
   if (candidates.length > 1) return { status: "ambiguous", stage: "member", candidates };

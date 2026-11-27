@@ -104,8 +104,9 @@ function sourceKey(text: string): string | undefined {
     value.includes(BACKSLASH_CHAR) ||
     DRIVE_ROOT.exec(value) !== null ||
     value.split(FORWARD_SLASH_CHAR).some((part) => !part || part === "." || part === "..")
-  )
+  ) {
     return undefined;
+  }
   for (const char of value) {
     const code = char.codePointAt(0)!;
     if (code <= 0x1f || (code >= 0x7f && code <= 0x9f)) return undefined;
@@ -151,9 +152,9 @@ function memberReference(text: string): CssDocReference["member"] | undefined {
     else if (char === FORWARD_SLASH_CHAR && next === ASTERISK_CHAR) {
       comment = true;
       i++;
-    } else if (char === PAREN_OPEN_CHAR || char === BRACKET_OPEN_CHAR || char === BRACE_OPEN_CHAR)
+    } else if (char === PAREN_OPEN_CHAR || char === BRACKET_OPEN_CHAR || char === BRACE_OPEN_CHAR) {
       stack.push(char);
-    else if (
+    } else if (
       char === PAREN_CLOSE_CHAR ||
       char === BRACKET_CLOSE_CHAR ||
       char === BRACE_CLOSE_CHAR
@@ -167,8 +168,9 @@ function memberReference(text: string): CssDocReference["member"] | undefined {
       if (stack.pop() !== expected) return undefined;
       if (!stack.length) {
         const subject = text.slice(open + 1, i);
-        if (i !== text.length - 1 || (!subject.trim() && kind !== "slot" && kind !== "scope"))
+        if (i !== text.length - 1 || (!subject.trim() && kind !== "slot" && kind !== "scope")) {
           return undefined;
+        }
         return { kind, subject };
       }
     }
@@ -193,8 +195,9 @@ export function parseReference(input: string): ReferenceParseResult {
     const provider = text.startsWith(providerPrefix);
     const prefix = provider ? providerPrefix : sourcePrefix;
     const close = qualifierEnd(text, prefix.length);
-    if (close === undefined || text.slice(close + 1, close + 3) !== COLON_CHAR.repeat(2))
+    if (close === undefined || text.slice(close + 1, close + 3) !== COLON_CHAR.repeat(2)) {
       return { ok: false, error: "invalid-reference" };
+    }
     const argument = text.slice(prefix.length, close).trim();
     if (provider) {
       const comma = argument.indexOf(",");
@@ -225,8 +228,9 @@ export function parseReference(input: string): ReferenceParseResult {
       rawKind !== "utility" &&
       rawKind !== "declaration") ||
     (scope.kind !== "workspace" && rawKind === undefined)
-  )
+  ) {
     return { ok: false, error: "invalid-reference" };
+  }
   const member = hash < 0 ? undefined : memberReference(text.slice(hash + 1));
   if (hash >= 0 && !member) return { ok: false, error: "invalid-reference" };
   return {

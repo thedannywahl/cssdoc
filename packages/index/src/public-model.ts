@@ -86,15 +86,17 @@ export function projectPublicModel(
             options.configuration,
           ),
         );
-        if (results.some((result) => result.unavailable))
+        if (results.some((result) => result.unavailable)) {
           throw new Error(`Cannot establish reference visibility in ${original.name} at ${path}`);
+        }
         const first = results[0];
         if (
           results.some(
             (result) => JSON.stringify(result.fragments) !== JSON.stringify(first.fragments),
           )
-        )
+        ) {
           throw new Error(`Cannot establish prose mode in ${original.name} at ${path}`);
+        }
         return first.fragments
           .map((fragment) =>
             fragment.kind === "literal"

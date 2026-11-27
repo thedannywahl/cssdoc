@@ -972,11 +972,11 @@ test("semanticTokens: extracts doc comment tags as tokens", () => {
 
   // Tokens should have required fields
   for (const token of tokens) {
-    expect(typeof token.line).toBe("number");
-    expect(typeof token.startCharacter).toBe("number");
-    expect(typeof token.length).toBe("number");
-    expect(typeof token.tokenType).toBe("number");
-    expect(typeof token.tokenModifiers).toBe("number");
+    expect(token.line).toBeTypeOf("number");
+    expect(token.startCharacter).toBeTypeOf("number");
+    expect(token.length).toBeTypeOf("number");
+    expect(token.tokenType).toBeTypeOf("number");
+    expect(token.tokenModifiers).toBeTypeOf("number");
   }
 
   // Find a decorator token (for @-prefixed tags)

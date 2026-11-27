@@ -13,7 +13,7 @@ export const baseConfig: UserConfig = defineConfig({
       correctness: "error",
       pedantic: "warn",
       perf: "warn",
-      style: "off",
+      style: "warn",
       restriction: "off",
       suspicious: "warn",
       nursery: "off",
@@ -21,6 +21,67 @@ export const baseConfig: UserConfig = defineConfig({
     options: { typeAware: true, typeCheck: true },
     plugins: ["import", "node", "promise", "vitest", "jsdoc"],
     rules: {
+      // These rules conflict with explicit test imports, precise assertions, and shared setup.
+      "vitest/no-importing-vitest-globals": "off",
+      "vitest/prefer-importing-vitest-globals": "warn",
+      "vitest/no-hooks": "off",
+      "vitest/require-hook": "off",
+      "vitest/prefer-expect-assertions": "off",
+      "vitest/require-top-level-describe": "off",
+      "vitest/max-expects": "off",
+      "vitest/prefer-strict-equal": "off",
+      "vitest/prefer-to-be-truthy": "off",
+      "vitest/prefer-to-be-falsy": "off",
+      "vitest/prefer-strict-boolean-matchers": "off",
+      "vitest/prefer-comparison-matcher": "off",
+      "vitest/prefer-expect-resolves": "off",
+      "vitest/consistent-test-it": "off",
+      "vitest/prefer-lowercase-title": "off",
+      "vitest/prefer-describe-function-title": "off",
+      // Named exports, grouped public APIs, Node entry points, and mixed type imports are intentional.
+      "import/no-named-export": "off",
+      "import/prefer-default-export": "off",
+      "import/no-nodejs-modules": "off",
+      "import/group-exports": "off",
+      "import/exports-last": "off",
+      "import/consistent-type-specifier-style": "off",
+      "import/no-namespace": "off",
+      "import/no-anonymous-default-export": "off",
+      // Oxfmt owns import ordering; keep value and type imports separate when appropriate.
+      "eslint/sort-imports": "off",
+      "eslint/no-duplicate-imports": "off",
+      // Catalog and fixture ordering, short parser names, numeric examples, and concise guards carry meaning.
+      "eslint/sort-keys": "off",
+      "eslint/sort-vars": "off",
+      "eslint/one-var": "off",
+      "eslint/no-magic-numbers": "off",
+      "eslint/id-length": "off",
+      "eslint/curly": ["warn", "multi-line"],
+      "eslint/capitalized-comments": "off",
+      "eslint/prefer-destructuring": [
+        "warn",
+        {
+          VariableDeclarator: { array: false, object: true },
+          AssignmentExpression: { array: false, object: false },
+        },
+      ],
+      "eslint/new-cap": ["warn", { capIsNewExceptions: ["Rule", "Declaration"] }],
+      // Pick the clearest control flow and declaration form for each case.
+      "eslint/no-ternary": "off",
+      "eslint/no-nested-ternary": "off",
+      "eslint/no-continue": "off",
+      "eslint/func-style": "off",
+      "eslint/init-declarations": "off",
+      // Synchronous I/O is appropriate in build tools and isolated tests.
+      "node/no-sync": "off",
+      // Promise chains and callbacks also bridge event-based and Thenable APIs.
+      "promise/prefer-await-to-then": "off",
+      "promise/prefer-await-to-callbacks": "off",
+      "promise/prefer-catch": "off",
+      "promise/avoid-new": "off",
+      // As with the other size limits, these don't fit parsers, generators, and tests.
+      "eslint/max-statements": "off",
+      "eslint/max-params": "off",
       // allow CSS sideeffect imports in vitepress
       "import/no-unassigned-import": ["warn", { allow: ["**/*.css"] }],
       // ignore cssdoc tags in jsdoc checks
@@ -52,6 +113,23 @@ export const baseConfig: UserConfig = defineConfig({
         // VitePress's Markdown renderer maintains state across renders.
         files: ["**/pattern-reference.data.ts"],
         rules: { "eslint/no-await-in-loop": "off" },
+      },
+      {
+        // Fixtures deliberately contain literal template placeholders and unsafe URLs.
+        files: [
+          "**/*.test.{ts,tsx,mts,cts,js,jsx,mjs,cjs}",
+          "**/*.spec.{ts,tsx,mts,cts,js,jsx,mjs,cjs}",
+        ],
+        rules: {
+          "eslint/no-template-curly-in-string": "off",
+          "eslint/no-script-url": "off",
+          "eslint/prefer-template": "off",
+        },
+      },
+      {
+        // The extension's bundled CommonJS shim must load this dependency with require.
+        files: ["**/shims/css-tree.ts"],
+        rules: { "node/global-require": "off" },
       },
     ],
   },

@@ -3,10 +3,10 @@ import { expect, test } from "vite-plus/test";
 import { createIndex, lintModel, parseCssDocs, toMermaid } from "../src/index.ts";
 
 test("re-exports the core + index + providers API from one entry", () => {
-  expect(typeof parseCssDocs).toBe("function");
-  expect(typeof createIndex).toBe("function");
-  expect(typeof lintModel).toBe("function");
-  expect(typeof toMermaid).toBe("function");
+  expect(parseCssDocs).toBeTypeOf("function");
+  expect(createIndex).toBeTypeOf("function");
+  expect(lintModel).toBeTypeOf("function");
+  expect(toMermaid).toBeTypeOf("function");
 });
 
 test("the umbrella round-trips a small component", () => {

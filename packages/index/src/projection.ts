@@ -25,7 +25,7 @@ export function referenceVisibility(
   reference: CssDocReference,
   lookup: ReferenceLookup,
 ): "public" | "private" | "unavailable" {
-  const member = reference.member;
+  const { member } = reference;
   if (!member) {
     if (reference.name.startsWith("-")) return "public";
     if (reference.name.includes("--")) return "public";

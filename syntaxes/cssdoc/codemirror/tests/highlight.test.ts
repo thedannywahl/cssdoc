@@ -181,7 +181,7 @@ test("lightly highlights an @structure body — class selectors and braces, noth
   expect(toks).toContainEqual({ type: "part", text: ".list" });
   expect(toks).toContainEqual({ type: "part", text: ".tab" });
   // Braces read as punctuation.
-  expect(toks.filter((t) => t.type === "punct" && t.text === "{").length).toBe(2);
+  expect(toks.filter((t) => t.type === "punct" && t.text === "{")).toHaveLength(2);
   // The region stops at the next tag — @a11y is still a tag, not swallowed.
   expect(toks).toContainEqual({ type: "tag", text: "@a11y" });
   // The pseudo-class itself stays plain (no CSS grammar): `:has` isn't tokenized.

@@ -167,8 +167,9 @@ function skipTemplate(src: string, i: number): number {
   for (i += 1; i < src.length; i++) {
     if (src[i] === BACKSLASH_CHAR) i++;
     else if (src[i] === BACKTICK_CHAR) return i;
-    else if (src[i] === DOLLAR_CHAR && src[i + 1] === BRACE_OPEN_CHAR)
+    else if (src[i] === DOLLAR_CHAR && src[i + 1] === BRACE_OPEN_CHAR) {
       i = skipInterpolation(src, i) - 1;
+    }
   }
   return i;
 }
@@ -195,8 +196,9 @@ function scanJs(
       const start = i;
       const isDoc = src[i + 2] === ASTERISK_CHAR;
       i += 2;
-      while (i < src.length && !(src[i] === ASTERISK_CHAR && src[i + 1] === FORWARD_SLASH_CHAR))
+      while (i < src.length && !(src[i] === ASTERISK_CHAR && src[i + 1] === FORWARD_SLASH_CHAR)) {
         i++;
+      }
       const closed = i < src.length;
       i += 1; // land on the '/'; loop's i++ moves past
       if (isDoc && closed) comments.push({ start, end: Math.min(i + 1, src.length) });
@@ -282,8 +284,9 @@ function scan(
   const tags = opts.tags ?? DEFAULT_TAGS;
   if (host === "js") return scanJs(source, tags);
   if (host === "html") return { regions: scanHtml(source).regions, masks: [], comments: [] };
-  if (host === "markdown")
+  if (host === "markdown") {
     return { regions: scanMarkdown(source).regions, masks: [], comments: [] };
+  }
   // "auto" with no filename hint: run all finders and union the regions.
   const js = scanJs(source, tags);
   return {
@@ -318,11 +321,14 @@ export function projectCss(source: string, opts: EmbeddedOptions = {}): string {
   const out: string[] = Array.from({ length: source.length }, (_, i) =>
     source[i] === LINE_FEED_CHAR || source[i] === CARRIAGE_RETURN_CHAR ? source[i] : " ",
   );
-  for (const k of keep)
+  for (const k of keep) {
     for (let i = k.start; i < k.end && i < source.length; i++) out[i] = source[i];
-  for (const m of masks)
-    for (let i = m.start; i < m.end && i < source.length; i++)
+  }
+  for (const m of masks) {
+    for (let i = m.start; i < m.end && i < source.length; i++) {
       out[i] = source[i] === LINE_FEED_CHAR || source[i] === CARRIAGE_RETURN_CHAR ? source[i] : "a";
+    }
+  }
   return out.join("");
 }
 
@@ -482,12 +488,14 @@ function maskTemplateInterpolations(body: string): string {
 /** Blank every comment's characters to spaces (newlines kept), preserving length and offsets. */
 function maskComments(source: string): string {
   const ranges: Array<[number, number]> = [];
-  for (const re of COMMENT_RES)
+  for (const re of COMMENT_RES) {
     for (const m of source.matchAll(re)) ranges.push([m.index ?? 0, (m.index ?? 0) + m[0].length]);
+  }
   if (ranges.length === 0) return source;
   const out = Array.from({ length: source.length }, (_, i) => source[i]);
-  for (const [s, e] of ranges)
+  for (const [s, e] of ranges) {
     for (let i = s; i < e && i < source.length; i++) if (out[i] !== LINE_FEED_CHAR) out[i] = " ";
+  }
   return out.join("");
 }
 

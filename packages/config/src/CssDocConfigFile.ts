@@ -388,7 +388,7 @@ export class CssDocConfigFile {
    */
   static loadForFolder(folderPath: string): CssDocConfigFile {
     let current = resolve(folderPath);
-    const root = parsePath(current).root;
+    const { root } = parsePath(current);
     for (;;) {
       for (const name of CSSDOC_CONFIG_FILENAMES) {
         const candidate = resolve(current, name);
@@ -489,7 +489,7 @@ export class CssDocConfigFile {
       }
     }
 
-    let prose = raw.prose;
+    let { prose } = raw;
     if (prose) {
       const configuration = new CssDocConfiguration();
       for (const extended of extendsFiles) extended.configureParser(configuration);

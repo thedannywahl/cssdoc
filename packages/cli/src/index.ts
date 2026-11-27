@@ -76,7 +76,7 @@ function posixRelative(from: string, to: string): string {
 
 function findIgnoreRoot(cwd: string): string {
   let current = resolve(cwd);
-  const root = parsePath(current).root;
+  const { root } = parsePath(current);
   for (;;) {
     if (existsSync(resolve(current, ".git"))) return current;
     if (current === root) return resolve(cwd);

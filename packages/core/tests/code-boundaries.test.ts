@@ -39,7 +39,7 @@ test.each([
   const codeLines = new Set<number>();
   const visit = (node: (typeof tree)["children"][number]): void => {
     if (node.type === "code" && node.position) {
-      for (let line = node.position.start.line; line <= node.position.end.line; line++) {
+      for (let { line } = node.position.start; line <= node.position.end.line; line++) {
         codeLines.add(line);
       }
     }

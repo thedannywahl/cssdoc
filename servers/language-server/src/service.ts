@@ -646,7 +646,9 @@ export class CssDocLanguageService {
     if (!path) return this.scopes;
     const roots = this.scopes
       .map((scope) => scope.workspaceRoot)
-      .filter((root): root is string => !!root && containsPath(root, path))
+      .filter(
+        (root): root is string => root !== undefined && root !== "" && containsPath(root, path),
+      )
       .toSorted((a, b) => b.length - a.length);
     if (roots.length) {
       return this.scopes.filter(
@@ -1351,7 +1353,7 @@ export class CssDocLanguageService {
     // Parse doc comments in CSS to find cssdoc tags
     const host = path ? detectEmbeddedHost(path) : undefined;
     const projected = host ? projectCss(text, { host }) : text;
-    const configuration = this.scopeForPath(path).configuration;
+    const { configuration } = this.scopeForPath(path);
     for (const directive of highlightDirectives(projected)) {
       const position = positionAt(text, directive.start);
       tokens.push({
@@ -1459,7 +1461,7 @@ export class CssDocLanguageService {
    */
   inlayHints(text: string, path?: string): LspInlayHint[] {
     const hints: LspInlayHint[] = [];
-    const index = this.scopeForPath(path).index;
+    const { index } = this.scopeForPath(path);
 
     // Show custom property metadata when used
     for (const prop of index.allCustomProperties()) {

@@ -345,13 +345,14 @@ async function runStylelint(fixture: Fixture): Promise<Diagnostic[]> {
 const sortDiagnostics = (diagnostics: Diagnostic[]): Diagnostic[] =>
   [...diagnostics].sort((a, b) => a.line - b.line || a.rule.localeCompare(b.rule));
 
-for (const fixture of [...FIXTURES, SCOPED_FIXTURE, EXTENDS_FIXTURE, OVERRIDES_FIXTURE]) {
-  test(`stylelint and eslint agree on: ${fixture.name}`, async () => {
+test.each([...FIXTURES, SCOPED_FIXTURE, EXTENDS_FIXTURE, OVERRIDES_FIXTURE])(
+  "stylelint and eslint agree on: $name",
+  async (fixture) => {
     const eslintDiagnostics = sortDiagnostics(runEslint(fixture));
     const stylelintDiagnostics = sortDiagnostics(await runStylelint(fixture));
     expect(stylelintDiagnostics).toEqual(eslintDiagnostics);
-  });
-}
+  },
+);
 
 test.each(FIXTURES)("the $name fixture fires its named rule", async (fixture) => {
   const diagnostics = await runStylelint(fixture);

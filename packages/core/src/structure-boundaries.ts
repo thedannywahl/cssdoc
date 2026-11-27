@@ -63,8 +63,9 @@ export function analyzeDocCommentHeader(
   while (
     argumentStart < line.length &&
     (line[argumentStart] === " " || line[argumentStart] === "\t")
-  )
+  ) {
     argumentStart++;
+  }
   return {
     argumentStart,
     argumentEnd: result.dividerAt,

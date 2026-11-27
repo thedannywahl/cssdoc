@@ -174,8 +174,9 @@ export function resolveProviders(
       for (const raw of loaded) {
         const entry = provider.prefix ? rewriteEntryPrefix(raw, provider.prefix) : raw;
         entries.push(entry);
-        if (base && entry.className)
+        if (base && entry.className) {
           hrefByClass.set(stripDot(entry.className), `${base}${entry.name}.md`);
+        }
       }
     }
   }

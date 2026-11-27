@@ -149,8 +149,9 @@ export function escapedInlineOpenerRanges(
       text[i] === BRACE_OPEN_CHAR &&
       text[i + 1] === AT_CHAR &&
       !code.some((range) => start >= range.start && start < range.end)
-    )
+    ) {
       ranges.push({ start, end: i });
+    }
   }
   return ranges;
 }
@@ -221,10 +222,12 @@ function effectiveMode(
       node.type === "definition" &&
       "identifier" in node &&
       typeof node.identifier === "string"
-    )
+    ) {
       references.add(node.identifier);
-    if ("children" in node && Array.isArray(node.children))
+    }
+    if ("children" in node && Array.isArray(node.children)) {
       for (const child of node.children) collectReferences(child);
+    }
   };
   collectReferences(tree);
   let markdown = false;
@@ -243,8 +246,9 @@ function effectiveMode(
       "identifier" in node &&
       typeof node.identifier === "string" &&
       references.has(node.identifier)
-    )
+    ) {
       markdown = true;
+    }
     if (signals.has(node.type)) markdown = true;
     if (node.type === "paragraph") paragraphs++;
     if ("children" in node) {
