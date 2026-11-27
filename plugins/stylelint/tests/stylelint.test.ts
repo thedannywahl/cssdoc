@@ -74,8 +74,9 @@ test("the rule preserves lint-core warning severity", async () => {
   ]);
 });
 
-test("the rule passes configured rule options to authoring checks", async () => {
-  for (const allowInherit of [false, true]) {
+test.each([false, true])(
+  "the rule passes allowInherit=%s to authoring checks",
+  async (allowInherit) => {
     const dir = mkdtempSync(join(tmpdir(), "cssdoc-stylelint-rule-options-"));
     try {
       writeFileSync(
@@ -93,8 +94,8 @@ test("the rule passes configured rule options to authoring checks", async () => 
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
-  }
-});
+  },
+);
 
 test("the rule preserves cssdoc-configured error severity", async () => {
   const result = await stylelint.lint({

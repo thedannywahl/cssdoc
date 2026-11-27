@@ -12,7 +12,7 @@ export const baseConfig: UserConfig = defineConfig({
     categories: {
       correctness: "error",
       pedantic: "warn",
-      perf: "off",
+      perf: "warn",
       style: "off",
       restriction: "off",
       suspicious: "warn",
@@ -21,9 +21,9 @@ export const baseConfig: UserConfig = defineConfig({
     options: { typeAware: true, typeCheck: true },
     plugins: ["import", "node", "promise", "vitest", "jsdoc"],
     rules: {
-      /* allow CSS sideeffect imports in vitepress */
+      // allow CSS sideeffect imports in vitepress
       "import/no-unassigned-import": ["warn", { allow: ["**/*.css"] }],
-      /* ignore cssdoc tags in jsdoc checks */
+      // ignore cssdoc tags in jsdoc checks
       "jsdoc/check-tag-names": ["error", { definedTags: [...CSSDOC_TAG_NAMES] }],
       // TSDoc uses TypeScript types and asks for return descriptions when useful, not on every function.
       "jsdoc/require-param": ["warn", { ignoreWhenAllParamsMissing: true }],
@@ -42,6 +42,18 @@ export const baseConfig: UserConfig = defineConfig({
       "eslint/max-lines-per-function": "off",
       "import/max-dependencies": "off",
     },
+    overrides: [
+      {
+        // LSP smoke tests poll for state changes and send ordered document notifications.
+        files: ["**/server-smoke.test.ts"],
+        rules: { "eslint/no-await-in-loop": "off" },
+      },
+      {
+        // VitePress's Markdown renderer maintains state across renders.
+        files: ["**/pattern-reference.data.ts"],
+        rules: { "eslint/no-await-in-loop": "off" },
+      },
+    ],
   },
   fmt: {
     sortImports: {

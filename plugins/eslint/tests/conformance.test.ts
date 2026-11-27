@@ -353,11 +353,9 @@ for (const fixture of [...FIXTURES, SCOPED_FIXTURE, EXTENDS_FIXTURE, OVERRIDES_F
   });
 }
 
-test("every listed rule fixture actually fires its named rule", async () => {
-  for (const fixture of FIXTURES) {
-    const diagnostics = await runStylelint(fixture);
-    expect(diagnostics.map((diagnostic) => diagnostic.rule)).toContain(fixture.name);
-  }
+test.each(FIXTURES)("the $name fixture fires its named rule", async (fixture) => {
+  const diagnostics = await runStylelint(fixture);
+  expect(diagnostics.map((diagnostic) => diagnostic.rule)).toContain(fixture.name);
 });
 
 test("the scoped fixture's off-list, providers, and structureIgnore all suppress their target rule", async () => {

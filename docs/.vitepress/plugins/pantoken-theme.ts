@@ -103,14 +103,11 @@ export function pruneThemeBundle(): Plugin {
           (output) => output.type === "asset" && output.fileName.endsWith(".css"),
         );
         if (styles.length > 1) throw new Error("Pantoken pruning requires composed CSS");
-        for (const style of styles) {
-          if (style.type !== "asset") continue;
-          const source =
-            typeof style.source === "string"
-              ? style.source
-              : new TextDecoder().decode(style.source);
-          style.source = await pruneTheme(source);
-        }
+        const [style] = styles;
+        if (!style || style.type !== "asset") return;
+        const source =
+          typeof style.source === "string" ? style.source : new TextDecoder().decode(style.source);
+        style.source = await pruneTheme(source);
       },
     },
   };

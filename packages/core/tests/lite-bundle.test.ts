@@ -124,32 +124,35 @@ test("packed lite and its transitive module graph contain no Markdown engine", a
 }, 20_000);
 
 test("phase two bundle gate reports lite, full core, and highlighter sizes", async () => {
-  const metrics = [] as { name: string; bytes: number; gzip: number }[];
-  for (const [name, entry] of [
-    ["lite", "packages/core/src/lite.ts"],
-    ["full-core", "packages/core/src/index.ts"],
-    ["highlighter", "packages/providers/src/highlighting.ts"],
-  ] as const) {
-    const result = await build({
-      absWorkingDir: root,
-      entryPoints: [entry],
-      bundle: true,
-      platform: "browser",
-      format: "esm",
-      minify: true,
-      sourcemap: true,
-      write: false,
-    });
-    const output = result.outputFiles.find(
-      (file) => !file.path.endsWith(".map") && file.contents.byteLength > 0,
-    );
-    if (!output) throw new Error(`No JavaScript output for ${name}`);
-    metrics.push({
-      name,
-      bytes: output.contents.byteLength,
-      gzip: gzipSync(output.contents).byteLength,
-    });
-  }
+  const metrics = await Promise.all(
+    (
+      [
+        ["lite", "packages/core/src/lite.ts"],
+        ["full-core", "packages/core/src/index.ts"],
+        ["highlighter", "packages/providers/src/highlighting.ts"],
+      ] as const
+    ).map(async ([name, entry]) => {
+      const result = await build({
+        absWorkingDir: root,
+        entryPoints: [entry],
+        bundle: true,
+        platform: "browser",
+        format: "esm",
+        minify: true,
+        sourcemap: true,
+        write: false,
+      });
+      const output = result.outputFiles.find(
+        (file) => !file.path.endsWith(".map") && file.contents.byteLength > 0,
+      );
+      if (!output) throw new Error(`No JavaScript output for ${name}`);
+      return {
+        name,
+        bytes: output.contents.byteLength,
+        gzip: gzipSync(output.contents).byteLength,
+      };
+    }),
+  );
   for (const metric of metrics) expect(metric.bytes).toBeGreaterThan(0);
   expect(metrics.find((metric) => metric.name === "full-core")!.bytes).toBeGreaterThan(
     metrics.find((metric) => metric.name === "lite")!.bytes,
