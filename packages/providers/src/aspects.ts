@@ -12,6 +12,7 @@ import {
   literalMarkdownText,
   selectExampleIndices,
 } from "@cssdoc/core";
+import { unescapeInlineOpeners } from "@cssdoc/core/prose";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import {
@@ -96,7 +97,10 @@ const linkedSyntax = (syntax: string): string => {
 const codeSpan = (text: string): string => `${BACKTICK_CHAR}${text}${BACKTICK_CHAR}`;
 const LINE_ENDING: Regex = arkRegex.as(LINE_ENDING_SOURCE, "gu");
 const plainHoverProse = (text: string): string =>
-  literalMarkdownText(text).replace(LINE_ENDING, `  ${LINE_FEED_CHAR}`);
+  literalMarkdownText(unescapeInlineOpeners(text, "plain")).replace(
+    LINE_ENDING,
+    `  ${LINE_FEED_CHAR}`,
+  );
 const bold = (text: string): string =>
   `${ASTERISK_CHAR.repeat(2)}${text}${ASTERISK_CHAR.repeat(2)}`;
 const codicon = (name: string): string =>
@@ -866,7 +870,11 @@ export const record = {
     prose(
       "remarks",
       "",
-      entry.remarks && remarksMode === "plain" ? plainHoverProse(entry.remarks) : entry.remarks,
+      entry.remarks && remarksMode
+        ? remarksMode === "plain"
+          ? plainHoverProse(entry.remarks)
+          : unescapeInlineOpeners(entry.remarks, "markdown")
+        : entry.remarks,
     );
     prose("accessibility", icon("accessibility"), entry.accessibility);
 
@@ -1022,9 +1030,11 @@ export const record = {
               "",
               prose?.mode === "plain"
                 ? plainHoverProse(text)
-                : MARKDOWN_BACKTICK_FENCE_LINE_PREFIX.exec(ex) !== null
-                  ? ex
-                  : `${MARKDOWN_BACKTICK_FENCE_TEXT}${ex.includes(LESS_THAN_CHAR) ? "html" : "css"}\n${ex}\n${MARKDOWN_BACKTICK_FENCE_TEXT}`,
+                : prose?.mode === "markdown"
+                  ? unescapeInlineOpeners(text, "markdown")
+                  : MARKDOWN_BACKTICK_FENCE_LINE_PREFIX.exec(ex) !== null
+                    ? ex
+                    : `${MARKDOWN_BACKTICK_FENCE_TEXT}${ex.includes(LESS_THAN_CHAR) ? "html" : "css"}\n${ex}\n${MARKDOWN_BACKTICK_FENCE_TEXT}`,
             );
           }
         else frag.push("", emptySection);

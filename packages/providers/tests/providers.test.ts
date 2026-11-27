@@ -207,6 +207,18 @@ test("filtered plain examples stay literal in hover after private examples", () 
   expect(hover).not.toContain("```");
 });
 
+test("hover respects Markdown example prose and escaped openers", () => {
+  const idx = createIndex(`/** @component button
+ * @remarks - ${String.raw`\{@link literal}`}
+ * @example docs - **Prose** ${String.raw`\{@link literal}`}
+ */
+.button {}`);
+  const hover = hoverForClass("button", "button", idx, "full")?.contents ?? "";
+  expect(hover).toContain("&#123;@link literal}");
+  expect(hover).toContain("**Prose** &#123;@link literal}");
+  expect(hover).not.toContain("```css\n**Prose**");
+});
+
 test("directive separators retain whitespace and comma handling", () => {
   expect(parseDirectives("/* cssdoc-disable alpha,\tbeta \t-\t reason - details */")).toMatchObject(
     [{ rules: ["alpha", "beta"], reason: "reason - details" }],
