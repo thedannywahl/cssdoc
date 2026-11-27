@@ -92,6 +92,62 @@ test("mode settings resolve aliases and clear inherited overrides", () => {
   );
 });
 
+test.each(["plain", "markdown", "auto"] as const)(
+  "unclosed fenced examples retain ownership and spans in %s mode",
+  (mode) => {
+    const raw = [
+      "/**",
+      " * @component card",
+      " * @example docs -",
+      " * ```css",
+      " * 😀 @remarks - example content",
+      " * {@link missing}",
+      " */",
+    ].join("\r\n");
+    const configuration = new CssDocConfiguration();
+    configuration.setProseSettings({ mode });
+    const full = parseFullDocComment(raw, configuration);
+    const lite = parseLiteDocComment(raw, configuration);
+    expect(full.blocks.map((block) => block.text)).toEqual(lite.blocks.map((block) => block.text));
+    expect(full.blocks).toHaveLength(2);
+    expect(full.examples).toEqual(["```css\r\n😀 @remarks - example content\r\n{@link missing}"]);
+    expect(full.exampleSpans).toEqual(lite.exampleSpans);
+    const span = full.exampleSpans![0];
+    expect(raw.slice(span.start, span.end)).toBe(
+      "```css\r\n * 😀 @remarks - example content\r\n * {@link missing}",
+    );
+    expect(full.prose[0].span).toEqual(span);
+    expect(lite.prose[0].span).toEqual(span);
+  },
+);
+
+test.each(["plain", "markdown", "auto"] as const)(
+  "nested CSS scopes and following documentation scopes retain boundaries in %s mode",
+  (mode) => {
+    const raw = [
+      "/**",
+      " * @component card",
+      " * @structure - Overview.",
+      " * @scope (.card) {",
+      " *   .card { .label {} }",
+      " * }",
+      " * @scope (.card) - Documents the CSS scope.",
+      " */",
+    ].join("\r\n");
+    const configuration = new CssDocConfiguration();
+    configuration.setProseSettings({ mode });
+    const full = parseFullDocComment(raw, configuration, postcss.parse);
+    const lite = parseLiteDocComment(raw, configuration, postcss.parse);
+    expect(full.blocks.map((block) => raw.slice(block.start, block.end))).toEqual([
+      "@component card",
+      "@structure - Overview.\r\n * @scope (.card) {\r\n *   .card { .label {} }\r\n * }",
+      "@scope (.card) - Documents the CSS scope.",
+    ]);
+    expect(full.blocks).toEqual(lite.blocks);
+    expect(full.prose.map((body) => body.span)).toEqual(lite.prose.map((body) => body.span));
+  },
+);
+
 test("comment framing preserves source ranges through CRLF and non-BMP text", () => {
   const raw = "/**\r\n * @remarks - 😀 First\r\n *   second\r\n *\r\n */";
   const lines = frameCommentLines(raw, "framed");
