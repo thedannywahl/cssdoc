@@ -59,7 +59,9 @@ const esc = (text: string | undefined): string =>
     .replaceAll(AMPERSAND_CHAR, "&amp;")
     .replaceAll(LESS_THAN_CHAR, "&lt;")
     .replaceAll(GREATER_THAN_CHAR, "&gt;")
-    .replaceAll(QUOTE_DOUBLE_CHAR, "&quot;");
+    .replaceAll(QUOTE_DOUBLE_CHAR, "&quot;")
+    .replaceAll("{", "&#123;")
+    .replaceAll("}", "&#125;");
 
 const code = (text: string | undefined): string => (text ? `<code>${esc(text)}</code>` : "—");
 

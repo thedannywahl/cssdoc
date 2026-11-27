@@ -45,6 +45,19 @@ test("private example links project to plain legacy-example text", () => {
   expect(markdown).not.toContain("component:card");
 });
 
+test("private-link labels stay literal around HTML, Vue, and code", () => {
+  const css = `/** @component visible
+ * @summary Read {@link component:card | <tag>{{secret}}}.
+ * @example - \`{@link component:card | code-only}\`
+ */ .visible {}
+/** @component card {@private} */ .card {}`;
+  const index = createIndex(css);
+  const lookup = { workspace: { complete: true, sources: [{ index }] } };
+  const markdown = renderEntry(index.entries[0], { lookupFor: () => lookup });
+  expect(markdown).toContain("&#60;tag&#62;");
+  expect(markdown).toContain("&#123;");
+});
+
 test("private examples never appear in Markdown output", () => {
   const [entry] = parseCssDocs(`/** @component button
  * @example docs - Visible example.

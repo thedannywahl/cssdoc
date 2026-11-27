@@ -32,6 +32,20 @@ test("private example links project to plain legacy-example text", () => {
   expect(html).not.toContain("component:card");
 });
 
+test("private-link labels stay escaped HTML text", () => {
+  const css = `/** @component visible
+ * @summary Read {@link component:card | <tag>{{secret}}}.
+ */ .visible {}
+/** @component card {@private} */ .card {}`;
+  const index = createIndex(css);
+  const lookup = { workspace: { complete: true, sources: [{ index }] } };
+  const html = renderPage(index.entries[0], { lookupFor: () => lookup });
+  expect(html).not.toContain("{@link");
+  expect(html).not.toContain("component:card");
+  expect(html).toContain("&#x3C;tag>");
+  expect(html).toContain("{{secret}}");
+});
+
 test("private examples never appear in HTML output", () => {
   const [entry] = parseCssDocs(`/** @component button
  * @example docs - Visible example.

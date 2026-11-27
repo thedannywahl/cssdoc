@@ -11,6 +11,7 @@ import {
   type CssDocConfiguration,
   type CssDocEntry,
   type CssModifier,
+  literalMarkdownText,
   parseCssDocs,
 } from "@cssdoc/core";
 import { type CssDialect, resolveParser } from "@cssdoc/dialects";
@@ -107,6 +108,7 @@ export function renderLlms(
           includeInternal: options.includeInternal,
           lookupFor:
             options.lookupFor ?? (() => ({ workspace: { complete: true, sources: [{ index }] } })),
+          literalText: (text) => literalMarkdownText(text),
         });
       })();
   const lines: string[] = [`# ${options.title ?? "CSS components"}`, ""];

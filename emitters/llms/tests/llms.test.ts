@@ -71,6 +71,20 @@ test("projects private links in llms output", () => {
   expect(digest).not.toContain("component:card");
 });
 
+test("private-link labels stay plain and escaped in llms Markdown", () => {
+  const css = `/** @component visible
+ * @summary Read {@link component:card | <tag>{{secret}}}.
+ */ .visible {}
+/** @component card {@private} */ .card {}`;
+  const index = createIndex(css);
+  const lookup = { workspace: { complete: true, sources: [{ index }] } };
+  const digest = renderLlms(index.entries, { lookupFor: () => lookup });
+  expect(digest).not.toContain("{@link");
+  expect(digest).not.toContain("component:card");
+  expect(digest).toContain("&#60;tag&#62;");
+  expect(digest).toContain("&#123;");
+});
+
 test("omits internal records by default and includes them on request", () => {
   const entries = parseCssDocs(`
 /** @component public-card */
