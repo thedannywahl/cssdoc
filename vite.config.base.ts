@@ -38,7 +38,6 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-unnecessary-type-assertion": "off",
       "typescript/explicit-member-accessibility": "off",
       "typescript/no-unsafe-type-assertion": "off",
-      "typescript/explicit-function-return-type": "off",
       "typescript/prefer-nullish-coalescing": "off",
       "typescript/strict-void-return": "off",
       "typescript/method-signature-style": "off",
@@ -82,6 +81,8 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-dynamic-delete": "off",
       // isTTY can be absent at runtime when standard streams are redirected.
       "typescript/no-unnecessary-boolean-literal-compare": "off",
+      // Public boundaries have explicit types; local helpers can use inference.
+      "typescript/explicit-function-return-type": "off",
       "unicorn/prefer-node-protocol": "error",
       // Re-enable newly activated Unicorn rules individually after review.
       "unicorn/explicit-length-check": "off",
