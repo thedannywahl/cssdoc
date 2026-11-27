@@ -47,7 +47,6 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/array-type": "off",
       "typescript/prefer-regexp-exec": "off",
       "typescript/no-explicit-any": "error",
-      "typescript/ban-types": "off",
       "typescript/consistent-return": "off",
       "typescript/restrict-template-expressions": "off",
       "typescript/no-deprecated": "off",
@@ -83,6 +82,8 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-unnecessary-boolean-literal-compare": "off",
       // Public boundaries have explicit types; local helpers can use inference.
       "typescript/explicit-function-return-type": "off",
+      // Vue's component declaration and autocomplete-friendly string unions use empty object types.
+      "typescript/ban-types": "off",
       "unicorn/prefer-node-protocol": "error",
       // Re-enable newly activated Unicorn rules individually after review.
       "unicorn/explicit-length-check": "off",
