@@ -213,6 +213,10 @@ test("reference grammar retains scoped identities and nested member subjects", (
     ok: true,
     reference: { member: { kind: "slot", subject: "" } },
   });
+  expect(parseReference(String.raw`button#part( .name\ )`)).toMatchObject({
+    ok: true,
+    reference: { member: { kind: "part", subject: String.raw` .name\ ` } },
+  });
 });
 
 test.each([

@@ -129,7 +129,7 @@ test("named member resolution uses CSS identifiers and preserves duplicates", ()
   const record = {
     ...base,
     shadowParts: [{ name: "label" }],
-    slots: [{ name: "" }],
+    slots: [{ name: "" }, { name: String.raw`name\ ` }],
     cssPropertiesDeclared: [{ name: "--accent" }],
     cssPropertiesConsumed: [{ name: "--token" }],
     functions: [{ name: "--scale", parameters: [] }],
@@ -150,6 +150,8 @@ test("named member resolution uses CSS identifiers and preserves duplicates", ()
   for (const reference of [
     "button#csspart(lab\\65 l)",
     "button#slot()",
+    "button#slot( /* default slot */ )",
+    String.raw`button#slot(name\ )`,
     "button#property(--accent)",
     "button#token(--token)",
     "button#function(--scale)",

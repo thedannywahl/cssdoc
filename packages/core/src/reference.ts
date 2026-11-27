@@ -54,7 +54,7 @@ export interface CssDocReference {
   kind?: CssRecordKind;
   /** Canonical record name. */
   name: string;
-  /** Optional typed member and its authored CSS subject. */
+  /** Optional typed member and its authored CSS subject, including surrounding whitespace. */
   member?: { kind: ReferenceMemberKind; subject: string };
 }
 
@@ -165,8 +165,8 @@ function memberReference(text: string): CssDocReference["member"] | undefined {
             : BRACE_OPEN_CHAR;
       if (stack.pop() !== expected) return undefined;
       if (!stack.length) {
-        const subject = text.slice(open + 1, i).trim();
-        if (i !== text.length - 1 || (!subject && kind !== "slot" && kind !== "scope"))
+        const subject = text.slice(open + 1, i);
+        if (i !== text.length - 1 || (!subject.trim() && kind !== "slot" && kind !== "scope"))
           return undefined;
         return { kind, subject };
       }

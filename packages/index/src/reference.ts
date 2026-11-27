@@ -166,7 +166,13 @@ export type NamedMemberResolution =
   | { status: "invalid-subject" };
 
 function identifierKey(input: string, layer: boolean, empty: boolean): string[] | undefined {
-  if (empty && !input.trim()) return [];
+  if (empty) {
+    let hasToken = false;
+    tokenize(input, (type) => {
+      if (type !== tokenTypes.Comment && type !== tokenTypes.WhiteSpace) hasToken = true;
+    });
+    if (!hasToken) return [];
+  }
   try {
     const ast = parse(input, {
       context: layer ? "atrulePrelude" : "value",
