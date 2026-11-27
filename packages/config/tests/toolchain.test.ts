@@ -2022,14 +2022,14 @@ test("type-aware lint flags unsafe template interpolations", () => {
           encoding: "utf8",
         },
       );
-      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
       expect(
         parseLintOutput(result.stdout)
           .diagnostics.filter(({ code }) => code === "typescript(restrict-template-expressions)")
           .map(({ severity, labels }) => [severity, labels[0].span.line]),
       ).toEqual([
-        ["warning", 2],
-        ["warning", 2],
+        ["error", 2],
+        ["error", 2],
       ]);
     }
   } finally {
@@ -2424,6 +2424,99 @@ test("lint permits workspace filename conventions but rejects snake-case module 
           .diagnostics.filter(({ code }) => code === "unicorn(filename-case)")
           .map(({ severity, filename }) => [severity, filename.endsWith("snake_case.test.ts")]),
       ).toEqual([["warning", true]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("lint treats dynamic execution, lost exports, and invalid interpolation as errors", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/.severity-check-"));
+  try {
+    writeFileSync(
+      join(directory, "tsconfig.json"),
+      JSON.stringify({ extends: "../../../../tsconfig.base.json", include: ["*.ts"] }),
+    );
+    const templates = join(directory, "templates.test.ts");
+    writeFileSync(
+      templates,
+      [
+        "export function object(value: { id: string }): string { return `${value}`; }",
+        "export function missing(value: string | undefined): string { return `${value}`; }",
+        "export function symbol(value: symbol): string { return `${value}`; }",
+        "export function primitive(value: string | number | boolean): string { return `${value}`; }",
+        "export function url(value: URL): string { return `${value}`; }",
+        "export function error(value: Error): string { return `${value}`; }",
+        "export function parameters(value: URLSearchParams): string { return `${value}`; }",
+        "export function explicit(value: symbol | null): string { return `${String(value)}`; }",
+        "export function serialized(value: object): string { return `${JSON.stringify(value)}`; }",
+        "export function lookalike(): string { class URL {} const value = new URL(); return `${value}`; }",
+      ].join("\n"),
+    );
+    const execution = join(directory, "execution.mjs");
+    writeFileSync(
+      execution,
+      [
+        'setTimeout("console.error(1)", 0);',
+        "setTimeout(() => console.error(1), 0);",
+        'const dynamic = new Function("return 1");',
+        "const fixed = () => 1;",
+        "const scheduler = { setTimeout(name) { console.error(name); } };",
+        'scheduler.setTimeout("job");',
+        "function shadowed() { class Function {} return new Function(); }",
+        "console.error(dynamic(), fixed(), shadowed());",
+      ].join("\n"),
+    );
+    const exports = join(directory, "exports.cjs");
+    writeFileSync(
+      exports,
+      [
+        "exports = { value: 1 };",
+        "exports.value = 2;",
+        "module.exports = exports = { value: 3 };",
+        "exports = module.exports = { value: 4 };",
+      ].join("\n"),
+    );
+    const checked = new Set([
+      "typescript(restrict-template-expressions)",
+      "eslint(no-implied-eval)",
+      "eslint(no-new-func)",
+      "node(no-exports-assign)",
+    ]);
+    for (const cwd of [root, fileURLToPath(new URL("../../core/", import.meta.url))]) {
+      const result = spawnSync(
+        "vp",
+        [
+          "lint",
+          "--config",
+          join(root, "vite.config.ts"),
+          "--no-ignore",
+          "--format",
+          "json",
+          templates,
+          execution,
+          exports,
+        ],
+        { cwd, encoding: "utf8" },
+      );
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => checked.has(code))
+          .toSorted(
+            (a, b) => a.code.localeCompare(b.code) || a.labels[0].span.line - b.labels[0].span.line,
+          )
+          .map(({ code, severity, labels }) => [code, severity, labels[0].span.line]),
+      ).toEqual([
+        ["eslint(no-implied-eval)", "error", 1],
+        ["eslint(no-new-func)", "error", 3],
+        ["node(no-exports-assign)", "error", 1],
+        ["typescript(restrict-template-expressions)", "error", 1],
+        ["typescript(restrict-template-expressions)", "error", 2],
+        ["typescript(restrict-template-expressions)", "error", 3],
+        ["typescript(restrict-template-expressions)", "error", 10],
+      ]);
     }
   } finally {
     rmSync(directory, { recursive: true, force: true });

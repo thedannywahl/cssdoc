@@ -101,6 +101,14 @@ Thenables. Event-to-promise adapters use `Promise.withResolvers` to keep listene
 cleanup outside promise executors. Type-only imports use top-level `import type`; mixed imports
 can retain inline `type` specifiers.
 
+Severity follows the contract, not just the rule's category. String-based timers, dynamic `Function`
+construction, detached CommonJS `exports` assignments, and invalid TypeScript template interpolation
+are errors. Callback timers, correctly synchronized export aliases, primitives, and explicit
+serialization remain valid. Template interpolation also accepts Error, URL, and URLSearchParams from
+the standard libraries or Node's declarations; a user-defined type with the same name isn't exempt.
+Syntax, layout, copying, and heuristic recommendations remain warnings rather than automatic
+correctness failures.
+
 Disabled rules remain deliberate, not a waiver for existing diagnostics:
 
 | Rules                                                                                                           | Why they stay off                                                                                                                                                                                                           |

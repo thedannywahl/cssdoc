@@ -61,6 +61,10 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-unsafe-enum-assignment": "error",
       "typescript/no-unsafe-enum-comparison": "error",
       "eslint/no-fallthrough": "error",
+      // Dynamic source execution and broken CommonJS exports aren't stylistic issues.
+      "eslint/no-implied-eval": "error",
+      "eslint/no-new-func": "error",
+      "node/no-exports-assign": "error",
       // Evaluate declaration conventions separately from assertion safety.
       "typescript/no-unnecessary-type-assertion": "warn",
       // Public members are implicit; constructor parameter properties can require an access modifier.
@@ -85,8 +89,15 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-explicit-any": "error",
       "typescript/consistent-return": "warn",
       "typescript/restrict-template-expressions": [
-        "warn",
-        { allowAny: false, allowNullish: false },
+        "error",
+        {
+          allowAny: false,
+          allowNullish: false,
+          allow: [
+            { from: "lib", name: ["Error", "URL", "URLSearchParams"] },
+            { from: "package", package: "@types/node", name: ["URL", "URLSearchParams"] },
+          ],
+        },
       ],
       // LSP clients may still send rootUri; the VS Code client still forwards push settings.
       "typescript/no-deprecated": [
