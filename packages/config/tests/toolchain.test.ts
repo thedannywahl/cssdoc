@@ -468,15 +468,17 @@ test("type-aware lint detects unsafe boundaries", () => {
         encoding: "utf8",
       });
       expect(configured.status, `${configured.stdout}\n${configured.stderr}`).toBe(1);
-      const diagnostics = parseLintOutput(configured.stdout).diagnostics.filter(
-        ({ code }) => code === "typescript(no-unsafe-assignment)",
-      );
-      expect(
-        diagnostics.some(
-          ({ severity, filename }) => severity === "error" && filename.endsWith("unsafe.ts"),
-        ),
-      ).toBe(true);
-      expect(diagnostics.some(({ filename }) => filename.endsWith("/safe.ts"))).toBe(false);
+      for (const rule of ["no-unsafe-assignment", "no-unsafe-argument"]) {
+        const diagnostics = parseLintOutput(configured.stdout).diagnostics.filter(
+          ({ code }) => code === `typescript(${rule})`,
+        );
+        expect(
+          diagnostics.some(
+            ({ severity, filename }) => severity === "error" && filename.endsWith("unsafe.ts"),
+          ),
+        ).toBe(true);
+        expect(diagnostics.some(({ filename }) => filename.endsWith("/safe.ts"))).toBe(false);
+      }
     }
   } finally {
     rmSync(directory, { recursive: true, force: true });

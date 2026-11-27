@@ -30,7 +30,7 @@ export const baseConfig: UserConfig = defineConfig({
         { considerDefaultExhaustiveForUnions: true },
       ],
       "typescript/no-unsafe-assignment": "error",
-      "typescript/no-unsafe-argument": "off",
+      "typescript/no-unsafe-argument": "error",
       "typescript/no-unsafe-call": "off",
       "typescript/no-unsafe-member-access": "off",
       "typescript/no-unsafe-return": "off",
@@ -219,9 +219,12 @@ export const baseConfig: UserConfig = defineConfig({
     },
     overrides: [
       {
-        // Untyped JavaScript files don't provide reliable type information for this check.
+        // Untyped JavaScript files don't provide reliable type information for these checks.
         files: ["**/*.{js,jsx,mjs,cjs}"],
-        rules: { "typescript/no-unsafe-assignment": "off" },
+        rules: {
+          "typescript/no-unsafe-assignment": "off",
+          "typescript/no-unsafe-argument": "off",
+        },
       },
       {
         // This demo intentionally imports Lit without installing it in the extension workspace.
