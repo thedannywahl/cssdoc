@@ -1,4 +1,5 @@
 import { literalMarkdownText, safeProseUrl } from "@cssdoc/core";
+import { unescapeInlineOpeners } from "@cssdoc/core/prose";
 import {
   BACKTICK_CHAR,
   BRACE_OPEN_CHAR,
@@ -49,7 +50,10 @@ function vueSafeCode(value: string, inline: boolean): string {
  */
 export function plainProse(text: string): string {
   const LINE_ENDING: Regex = arkRegex.as(LINE_ENDING_SOURCE, "gu");
-  return literalMarkdownText(text).replace(LINE_ENDING, `<br>${LINE_FEED_CHAR}`);
+  return literalMarkdownText(unescapeInlineOpeners(text, "plain")).replace(
+    LINE_ENDING,
+    `<br>${LINE_FEED_CHAR}`,
+  );
 }
 
 function escapeFree(text: string): string {
@@ -65,7 +69,7 @@ function escapeFree(text: string): string {
  * @returns Safe Markdown with code regions preserved.
  */
 export function safeMarkdownProse(text: string): string {
-  return sanitize(text, true);
+  return sanitize(unescapeInlineOpeners(text, "markdown"), true);
 }
 
 /**

@@ -1,8 +1,14 @@
-import { CARRIAGE_RETURN_CHAR, LINE_FEED_CHAR } from "@cssdoc/regex";
+import {
+  AT_CHAR,
+  BACKSLASH_CHAR,
+  BRACE_OPEN_CHAR,
+  CARRIAGE_RETURN_CHAR,
+  LINE_FEED_CHAR,
+} from "@cssdoc/regex";
 import { fromMarkdown } from "mdast-util-from-markdown";
 import { CssDocConfiguration, type ProseMode } from "./configuration.ts";
 import { parseDocComment as parsePlainDocComment, type ParsedDoc } from "./grammar.ts";
-import { scanInlineTags } from "./inline.ts";
+import { fencedProseRanges, scanInlineTags } from "./inline.ts";
 import type { CssParse } from "./model.ts";
 
 /**
@@ -46,6 +52,64 @@ export function markdownCodeRanges(
         ),
     )
     .map(({ start, end }) => ({ start, end }));
+}
+
+/**
+ * Find odd backslash runs that escape inline openers outside protected code.
+ *
+ * @param text - Framing-free authored prose.
+ * @param mode - Effective prose mode.
+ * @param configuration - Active inline-tag vocabulary.
+ * @returns Half-open ranges covering the backslash runs, in source order.
+ */
+export function escapedInlineOpenerRanges(
+  text: string,
+  mode: "plain" | "markdown",
+  configuration: CssDocConfiguration = new CssDocConfiguration(),
+): { start: number; end: number }[] {
+  const code =
+    mode === "markdown" ? markdownCodeRanges(text, configuration) : fencedProseRanges(text);
+  const ranges: { start: number; end: number }[] = [];
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] !== BACKSLASH_CHAR) continue;
+    const start = i;
+    while (text[i] === BACKSLASH_CHAR) i++;
+    if (
+      (i - start) % 2 === 1 &&
+      text[i] === BRACE_OPEN_CHAR &&
+      text[i + 1] === AT_CHAR &&
+      !code.some((range) => start >= range.start && start < range.end)
+    )
+      ranges.push({ start, end: i });
+  }
+  return ranges;
+}
+
+/**
+ * Remove the escaping backslash from inline openers while preserving protected code.
+ *
+ * Markdown output uses entities for remaining backslashes so the Markdown parser doesn't consume
+ * them as escapes. The result is intended for rendering, not storage or source mapping.
+ *
+ * @param text - Framing-free authored prose.
+ * @param mode - Effective prose mode.
+ * @param configuration - Active inline-tag vocabulary.
+ * @returns Prose prepared for the selected renderer.
+ */
+export function unescapeInlineOpeners(
+  text: string,
+  mode: "plain" | "markdown",
+  configuration?: CssDocConfiguration,
+): string {
+  let cursor = 0;
+  let result = "";
+  for (const range of escapedInlineOpenerRanges(text, mode, configuration)) {
+    result += text.slice(cursor, range.start);
+    result += (mode === "markdown" ? "&#92;" : BACKSLASH_CHAR).repeat(range.end - range.start - 1);
+    if (mode === "markdown") result += "&#123;";
+    cursor = range.end + (mode === "markdown" ? 1 : 0);
+  }
+  return result + text.slice(cursor);
 }
 
 function maskInlineTags(text: string, configuration: CssDocConfiguration): string {

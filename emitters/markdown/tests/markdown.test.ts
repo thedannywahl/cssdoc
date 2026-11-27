@@ -91,6 +91,27 @@ test("plain prose preserves CRLF, CR, and LF as individual line breaks", () => {
   expect(plainProse("one\r\ntwo\rthree\nfour")).toBe("one<br>\ntwo<br>\nthree<br>\nfour");
 });
 
+test("escaped inline openers render literally while code keeps its source", async () => {
+  const text = [
+    String.raw`\{@link one} \\\{@link three}`,
+    "",
+    String.raw`    \{@link indented}`,
+    "",
+    "```",
+    String.raw`\{@link fenced}`,
+    "```",
+  ].join("\n");
+  const renderer = await createMarkdownRenderer(process.cwd());
+  const markdown = await renderer.renderAsync(safeMarkdownBlock(text));
+  expect(markdown).toContain("&#123;@link one} &#92;&#92;&#123;@link three}");
+  expect(markdown).toContain(String.raw`\{@link indented}`);
+  expect(markdown).toContain(String.raw`\{@link fenced}`);
+  const plain = await renderer.renderAsync(plainProse(text));
+  expect(plain).toContain("&#123;&#64;link one&#125;");
+  expect(plain).toContain("&#92;&#92;&#123;&#64;link three&#125;");
+  expect(plain).toContain("&#92;&#123;&#64;link fenced&#125;");
+});
+
 test("escapes prose around empty, multiline, and unmatched backtick spans", () => {
   expect(escProse("<a> `` `<b>\n{{c}}` <d> `unclosed")).toBe(
     '&lt;a> `` <code v-pre="">&#x3C;b> {{c}}</code> &lt;d> `unclosed',

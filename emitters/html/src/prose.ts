@@ -3,6 +3,7 @@ import { toHast } from "mdast-util-to-hast";
 import { toHtml } from "hast-util-to-html";
 import { sanitize } from "hast-util-sanitize";
 import { safeProseUrl } from "@cssdoc/core";
+import { unescapeInlineOpeners } from "@cssdoc/core/prose";
 
 type MarkdownNode = {
   type: string;
@@ -44,12 +45,13 @@ export function renderProse(
   inline = false,
   mode: "plain" | "markdown" = "markdown",
 ): string {
+  const prepared = unescapeInlineOpeners(text, mode);
   if (mode === "plain") {
-    const escaped = toHtml({ type: "text", value: text });
+    const escaped = toHtml({ type: "text", value: prepared });
     const tag = inline ? "span" : "p";
     return `<${tag} class="prose-plain">${escaped}</${tag}>`;
   }
-  const tree = fromMarkdown(text);
+  const tree = fromMarkdown(prepared);
   escapeRawHtml(tree);
   const html = sanitize(toHast(tree));
   if (html.type !== "root") throw new Error("Expected a sanitized HTML root");

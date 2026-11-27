@@ -139,6 +139,33 @@ test("sanitizes HAST without turning authored HTML into active elements", () => 
   expect(html).toContain(".card { color: red }");
 });
 
+test("escaped inline openers lose one backslash outside protected code", () => {
+  const text = [
+    String.raw`\{@link one} \\\{@link three} \\{@link even} ` +
+      "`" +
+      String.raw`\{@link inline}` +
+      "`",
+    "",
+    String.raw`    \{@link indented}`,
+    "",
+    "```",
+    String.raw`\{@link fenced}`,
+    "```",
+  ].join("\n");
+  const markdown = renderProse(text);
+  expect(markdown).toContain(String.raw`{@link one} \\{@link three}`);
+  expect(markdown).toContain(String.raw`\{@link even}`);
+  expect(markdown).toContain(String.raw`\{@link inline}`);
+  expect(markdown).toContain(String.raw`\{@link indented}`);
+  expect(markdown).toContain(String.raw`\{@link fenced}`);
+  const plain = renderProse(text, false, "plain");
+  expect(plain).toContain(String.raw`{@link one} \\{@link three}`);
+  expect(plain).toContain(String.raw`\\{@link even}`);
+  expect(plain).toContain(String.raw`{@link inline}`);
+  expect(plain).toContain(String.raw`    {@link indented}`);
+  expect(plain).toContain(String.raw`\{@link fenced}`);
+});
+
 test("renderPage produces a standalone, escaped HTML document", () => {
   const [button] = parseCssDocs(CSS);
   const html = renderPage(button!);
