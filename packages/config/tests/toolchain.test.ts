@@ -1339,6 +1339,39 @@ test("lint groups adjacent collection writes but preserves interleaved observati
   }
 });
 
+test("lint prefers logical fallbacks without conflating empty values and nullish values", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".logical-fallback-check-"));
+  try {
+    const file = join(directory, "fallbacks.mjs");
+    writeFileSync(
+      file,
+      [
+        'const value = "";',
+        'console.error(value ? value : "fallback");',
+        'console.error(value || "fallback");',
+        'console.error(value ?? "fallback");',
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(
+            ({ code }) => code === "unicorn(prefer-logical-operator-over-ternary)",
+          )
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["warning", 2]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));

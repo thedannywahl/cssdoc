@@ -734,11 +734,8 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
         }
         if (alias) {
           const link = alias.note?.match(INLINE_LINK)?.[1];
-          const canonicalLink = alias.canonical
-            ? alias.canonical
-            : link?.startsWith(DOT_CHAR)
-              ? link.slice(1)
-              : link;
+          const canonicalLink =
+            alias.canonical || (link?.startsWith(DOT_CHAR) ? link.slice(1) : link);
           const via = canonicalLink
             ? `maps to \`.${canonicalLink}\`.`
             : (alias.note?.replace(INLINE_LINK, "").trim() ?? "");

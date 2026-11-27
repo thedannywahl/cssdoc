@@ -171,7 +171,7 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/new-for-builtins": "warn",
       "unicorn/prefer-includes": "warn",
       "unicorn/prefer-array-flat": "warn",
-      "unicorn/prefer-logical-operator-over-ternary": "off",
+      "unicorn/prefer-logical-operator-over-ternary": "warn",
       "unicorn/prefer-module": "off",
       "unicorn/no-useless-spread": "warn",
       // JSON, LSP, and DOM APIs use null as part of their contracts.
