@@ -28,6 +28,37 @@ export function normalizedCodeBoundaryText(text: string): string {
   return result;
 }
 
+/** Find complete inline-backtick code spans without carrying unmatched openers across lines. */
+export function inlineCodeRanges(text: string): { start: number; end: number }[] {
+  const ranges: { start: number; end: number }[] = [];
+  let start = 0;
+  while (start < text.length) {
+    if (text[start] !== BACKTICK_CHAR) {
+      start++;
+      continue;
+    }
+    let openingLength = 1;
+    while (text[start + openingLength] === BACKTICK_CHAR) openingLength++;
+    let end = start + openingLength;
+    while (end < text.length) {
+      if (text[end] !== BACKTICK_CHAR) {
+        end++;
+        continue;
+      }
+      let closingLength = 1;
+      while (text[end + closingLength] === BACKTICK_CHAR) closingLength++;
+      if (closingLength === openingLength) {
+        ranges.push({ start, end: end + closingLength });
+        start = end + closingLength;
+        break;
+      }
+      end += closingLength;
+    }
+    if (end >= text.length) break;
+  }
+  return ranges;
+}
+
 type Cursor = { index: number; column: number; virtual: number };
 
 function isBlank(text: string): boolean {

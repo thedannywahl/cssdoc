@@ -40,6 +40,7 @@ export type {
   ReferenceScope,
 } from "./reference.ts";
 export { literalMarkdownText } from "./prose-text.ts";
+export { inlineCodeRanges } from "./code-boundaries.ts";
 export { safeProseUrl } from "./prose-url.ts";
 export { CssDocConfiguration, CssDocTagDefinition } from "./configuration.ts";
 export type {

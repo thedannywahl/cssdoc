@@ -27,6 +27,7 @@ import {
   splitPartArg,
   stripCommentFraming,
 } from "../src/grammar.ts";
+import { inlineCodeRanges } from "../src/lite.ts";
 import { ModifierMatcher } from "../src/modifier.ts";
 import { projectPrivateLinks } from "../src/prose.ts";
 import { scanStructureLine, type StructureBoundaryState } from "../src/structure-boundaries.ts";
@@ -902,6 +903,28 @@ test("closed inline backticks do not swallow later tag-shaped lines", () => {
     "@summary Still outside code.",
   ]);
   expect(recordNameOf(raw)).toBe("card");
+});
+
+test("unmatched inline backticks do not own or swallow later tag-shaped lines", () => {
+  const raw = [
+    "/**",
+    " * @component card",
+    " * @remarks - Use `unfinished literal",
+    " * @summary Still outside code.",
+    " */",
+  ].join("\n");
+  const blocks = collectDocCommentBlocks(raw);
+  expect(blocks.map((block) => block.text)).toEqual([
+    "@component card",
+    "@remarks - Use `unfinished literal",
+    "@summary Still outside code.",
+  ]);
+  expect(recordNameOf(raw)).toBe("card");
+});
+
+test("inline code ranges leave unmatched backticks unowned", () => {
+  expect(inlineCodeRanges("Use `closed`")).toEqual([{ start: 4, end: 12 }]);
+  expect(inlineCodeRanges("Use `unfinished")).toEqual([]);
 });
 
 test("a partially consumed tab can close a fence in a list", () => {
