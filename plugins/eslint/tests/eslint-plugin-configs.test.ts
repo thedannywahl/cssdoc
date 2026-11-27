@@ -317,7 +317,8 @@ test("plugin.rules exports have required meta structure", () => {
 
 test("plugin.rules exports have create function", () => {
   for (const [_name, rule] of Object.entries(plugin.rules)) {
-    expect(rule.create).toBeTypeOf("function");
+    const isFunction = typeof rule.create === "function";
+    expect(isFunction).toBe(true);
   }
 });
 

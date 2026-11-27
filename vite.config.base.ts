@@ -71,7 +71,7 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/prefer-includes": "off",
       "typescript/no-base-to-string": "error",
       "typescript/non-nullable-type-assertion-style": "off",
-      "typescript/unbound-method": "off",
+      "typescript/unbound-method": "error",
       "typescript/no-unnecessary-template-expression": "off",
       "typescript/no-unnecessary-type-parameters": "off",
       "unicorn/prefer-node-protocol": "error",
