@@ -23,6 +23,11 @@ index.location("button", "modifier:-color-secondary"); // → { file, span } | u
 `createIndex(css)` includes spans; `indexFromEntries(entries)` builds a lookup-only index from a model
 snapshot (`index.toManifest()`), without spans.
 
+`resolveRecordReference` resolves the record portion of a parsed reference across explicitly
+provided workspace or provider indexes. Supply each source's portable key and scope completeness;
+the result distinguishes missing, ambiguous, and unavailable lookups without selecting the last
+duplicate. Member resolution is separate and isn't implemented by this function.
+
 ## License
 
 MIT

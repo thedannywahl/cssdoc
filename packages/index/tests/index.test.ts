@@ -1,6 +1,12 @@
-import { CssDocConfiguration } from "@cssdoc/core";
+import { CssDocConfiguration, parseReference } from "@cssdoc/core";
 import { expect, test } from "vite-plus/test";
-import { type CssDocIndex, createIndex, indexFromEntries, memberKey } from "../src/index.ts";
+import {
+  type CssDocIndex,
+  createIndex,
+  indexFromEntries,
+  memberKey,
+  resolveRecordReference,
+} from "../src/index.ts";
 
 const CSS = `
 /**
@@ -19,6 +25,71 @@ const CSS = `
 `;
 
 let index: CssDocIndex;
+
+test("reference resolution retains duplicates and distinguishes unavailable scopes", () => {
+  const first = createIndex("/** @component button */ .button {}", { file: "a.css" });
+  const second = createIndex("/** @component button */ .button {}", { file: "b.css" });
+  const third = createIndex("/** @utility button */ .button {}", { file: "utility.css" });
+  const lookup = {
+    workspace: {
+      complete: true,
+      sources: [
+        { index: first, sourceKey: "a.css" },
+        { index: second, sourceKey: "b.css" },
+        { index: third, sourceKey: "utility.css" },
+      ],
+    },
+    providers: new Map([
+      ["ready", { complete: true, sources: [{ index: second, sourceKey: "a.css" }] }],
+      ["failed", { complete: false, sources: [{ index: first, sourceKey: "a.css" }] }],
+    ]),
+  };
+  const resolve = (text: string) => {
+    const parsed = parseReference(text);
+    if (!parsed.ok) throw new Error(parsed.error);
+    return resolveRecordReference(parsed.reference, lookup);
+  };
+  expect(resolve("button")).toMatchObject({ status: "ambiguous", candidates: [{}, {}, {}] });
+  expect(resolve("utility:button")).toMatchObject({
+    status: "resolved",
+    candidate: { sourceKey: "utility.css", record: { entry: { kind: "utility" } } },
+  });
+  expect(resolve('source("b.css")::component:button')).toMatchObject({
+    status: "resolved",
+    candidate: { sourceKey: "b.css" },
+  });
+  expect(resolve('provider(ready, "a.css")::component:button')).toMatchObject({
+    status: "resolved",
+    candidate: { providerId: "ready", sourceKey: "a.css" },
+  });
+  expect(resolve("provider(failed)::component:button")).toMatchObject({
+    status: "unavailable",
+    candidates: [{}],
+  });
+  expect(resolve("provider(absent)::component:button")).toEqual({
+    status: "unavailable",
+    candidates: [],
+  });
+  expect(resolve("component:absent")).toEqual({ status: "missing" });
+  expect(
+    resolveRecordReference(
+      { scope: { kind: "workspace" }, name: "button" },
+      { workspace: { complete: false, sources: [{ index: first }] } },
+    ),
+  ).toMatchObject({ status: "unavailable", candidates: [{}] });
+});
+
+test("reference resolution doesn't overwrite duplicates within one index", () => {
+  const base = createIndex("/** @component button */ .button {}").entries[0];
+  const duplicate = indexFromEntries([base, { ...base }]);
+  expect(
+    resolveRecordReference(
+      { scope: { kind: "workspace" }, name: "button" },
+      { workspace: { complete: true, sources: [{ index: duplicate }] } },
+    ),
+  ).toMatchObject({ status: "ambiguous", candidates: [{}, {}] });
+});
+
 test("createIndex parses the model and resolves class lookups", () => {
   index = createIndex(CSS, { file: "components.css", modifierConvention: "rscss" });
   expect(index.componentForClass(".button")?.name).toBe("button");

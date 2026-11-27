@@ -47,6 +47,14 @@ import {
   WORD_BOUNDARY_SOURCE,
   toRegExp,
 } from "@cssdoc/regex";
+export { resolveRecordReference } from "./reference.ts";
+export type {
+  RecordReferenceResolution,
+  ReferenceCandidate,
+  ReferenceLookup,
+  ReferenceLookupScope,
+  ReferenceSource,
+} from "./reference.ts";
 
 /**
  * Every class reference in a selector (name captured, dot dropped). The leading `[A-Za-z_]` accepts any
