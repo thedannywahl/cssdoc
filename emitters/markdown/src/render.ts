@@ -657,13 +657,14 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
       const ex = raw.trim();
       // An example that already carries a fenced block is Markdown (prose + code) — emit it verbatim.
       // Only bare, fence-less code gets auto-fenced (sniffing markup vs CSS).
-      if (MARKDOWN_BACKTICK_FENCE_LINE_PREFIX.exec(ex) !== null)
-        fragments.examples.push(safeMarkdownBlock(ex), "");
-      else
+      if (MARKDOWN_BACKTICK_FENCE_LINE_PREFIX.exec(ex) === null) {
         fragments.examples.push(
           ...fencedBlock(ex.includes(LESS_THAN_CHAR) ? "html" : "css", ex),
           "",
         );
+      } else {
+        fragments.examples.push(safeMarkdownBlock(ex), "");
+      }
     }
   }
 

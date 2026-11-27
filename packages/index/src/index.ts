@@ -343,11 +343,11 @@ function resolveValue(
       comma >= 0 ? valueParser.stringify(node.nodes.slice(comma + 1)).trim() : undefined;
     const declared = seen.has(ref) ? undefined : values.get(ref);
     const replacement =
-      declared !== undefined
-        ? resolveValue(declared, values, new Set([...seen, ref]))
-        : fallback !== undefined
-          ? resolveValue(fallback, values, seen)
-          : undefined;
+      declared === undefined
+        ? fallback === undefined
+          ? undefined
+          : resolveValue(fallback, values, seen)
+        : resolveValue(declared, values, new Set([...seen, ref]));
     if (replacement !== undefined) {
       (node as unknown as { type: string; value: string; nodes: [] }).type = "word";
       node.value = replacement;

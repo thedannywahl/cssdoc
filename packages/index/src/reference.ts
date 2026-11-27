@@ -391,10 +391,11 @@ function selectorKey(input: string, kind: SelectorMemberOccurrence["kind"]): Sel
           invalid = true;
         } else {
           const value = identifierKey(raw.value, false, false);
-          if (!value) invalid = true;
-          else {
+          if (value) {
             raw.value = ident.encode(value[0]);
             normalizedRaw.add(raw);
+          } else {
+            invalid = true;
           }
         }
       }

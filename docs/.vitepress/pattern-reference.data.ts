@@ -70,7 +70,7 @@ function readAuthoredPatterns(): Map<string, string> {
       readFileSync(new URL(filename, definitions), "utf8"),
       ts.ScriptTarget.Latest,
     );
-    function visit(node: ts.Node): void {
+    const visit = (node: ts.Node): void => {
       if (ts.isObjectLiteralExpression(node)) {
         const properties = node.properties.filter(ts.isPropertyAssignment);
         const name = properties.find(
@@ -89,7 +89,7 @@ function readAuthoredPatterns(): Map<string, string> {
         }
       }
       ts.forEachChild(node, visit);
-    }
+    };
     visit(file);
   }
   return authored;
@@ -97,7 +97,10 @@ function readAuthoredPatterns(): Map<string, string> {
 
 function codeFence(language: string, title: string, source: string): string {
   // A fence longer than any run of tildes keeps the code literal.
-  const fenceLength = Math.max(3, ...Array.from(source.matchAll(/~+/g), ([run]) => run.length + 1));
+  const fenceLength = Math.max(
+    3,
+    ...Array.from(source.matchAll(/~+/gu), ([run]) => run.length + 1),
+  );
   const fence = "~".repeat(fenceLength);
   return `${fence}${language} [${title}]\n${source}\n${fence}`;
 }

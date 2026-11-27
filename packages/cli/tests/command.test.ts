@@ -49,8 +49,8 @@ function createHarness(options: HarnessOptions = {}) {
       intro: (message) => promptEvents.push(`intro:${message}`),
       outro: (message) => promptEvents.push(`outro:${message}`),
       cancel: (message) => promptEvents.push(`cancel:${message}`),
-      text: async () => options.textValue ?? "**/*.css",
-      confirm: async () => confirmValues.shift() ?? false,
+      text: () => Promise.resolve(options.textValue ?? "**/*.css"),
+      confirm: () => Promise.resolve(confirmValues.shift() ?? false),
       isCancel: (value): value is symbol => typeof value === "symbol",
       log: {
         error: (message) => promptEvents.push(`error:${message}`),

@@ -1046,9 +1046,9 @@ export const record = {
                 ? plainHoverProse(text)
                 : exampleProse?.mode === "markdown"
                   ? unescapeInlineOpeners(text, "markdown")
-                  : MARKDOWN_BACKTICK_FENCE_LINE_PREFIX.exec(ex) !== null
-                    ? ex
-                    : `${MARKDOWN_BACKTICK_FENCE_TEXT}${ex.includes(LESS_THAN_CHAR) ? "html" : "css"}\n${ex}\n${MARKDOWN_BACKTICK_FENCE_TEXT}`,
+                  : MARKDOWN_BACKTICK_FENCE_LINE_PREFIX.exec(ex) === null
+                    ? `${MARKDOWN_BACKTICK_FENCE_TEXT}${ex.includes(LESS_THAN_CHAR) ? "html" : "css"}\n${ex}\n${MARKDOWN_BACKTICK_FENCE_TEXT}`
+                    : ex,
             );
           }
         else frag.push("", emptySection);

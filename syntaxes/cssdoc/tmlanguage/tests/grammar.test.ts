@@ -1,3 +1,4 @@
+/* oxlint-disable eslint/require-unicode-regexp -- TextMate patterns use Oniguruma syntax. */
 import { CSSDOC_TAG_NAMES } from "@cssdoc/spec";
 import { createHighlighter } from "shiki";
 import { expect, test } from "vite-plus/test";

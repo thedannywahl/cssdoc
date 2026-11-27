@@ -87,8 +87,9 @@ export function tokenizeGrammarkdown(text: string): GrammarkdownToken[] {
   let inConstraint = false;
 
   for (const line of text.split("\n")) {
+    const lineOffset = offset;
     const add = (from: number, to: number, type: GrammarkdownTokenType): void => {
-      if (from < to) tokens.push({ from: offset + from, to: offset + to, type });
+      if (from < to) tokens.push({ from: lineOffset + from, to: lineOffset + to, type });
     };
 
     for (let pos = 0; pos < line.length;) {

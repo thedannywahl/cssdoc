@@ -2,6 +2,7 @@ import { type ChildProcessWithoutNullStreams, execFileSync, fork, spawn } from "
 import { mkdirSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import { pathToFileURL } from "node:url";
 import { fileURLToPath } from "node:url";
 
@@ -388,7 +389,7 @@ test("the server applies per-folder client settings and reloads them on change",
     }
     const deadline = Date.now() + 5000;
     while (!(await hover(first))?.includes("Scoped settings") && Date.now() < deadline) {
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await delay(50);
     }
     expect(await hover(first)).toContain("Scoped settings");
     expect(await hover(second)).toBeUndefined();
@@ -401,7 +402,7 @@ test("the server applies per-folder client settings and reloads them on change",
     });
     const changedDeadline = Date.now() + 5000;
     while (!(await hover(second))?.includes("Scoped settings") && Date.now() < changedDeadline) {
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await delay(50);
     }
     expect(await hover(first)).toBeUndefined();
     expect(await hover(second)).toContain("Scoped settings");
@@ -484,7 +485,7 @@ test("the server refreshes discovered files and unsaved stylesheet changes", asy
     const deadline = Date.now() + 5000;
     while (Date.now() < deadline) {
       if ((await hover()) === expected) return;
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await delay(50);
     }
     expect(await hover()).toBe(expected);
   };
@@ -516,7 +517,7 @@ test("the server refreshes discovered files and unsaved stylesheet changes", asy
     });
     const deadline = Date.now() + 5000;
     while (!(await hover())?.includes("Disk") && Date.now() < deadline) {
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await delay(50);
     }
     expect(await hover()).toContain("Disk");
     server.send({
@@ -528,7 +529,7 @@ test("the server refreshes discovered files and unsaved stylesheet changes", asy
     });
     const unsavedDeadline = Date.now() + 5000;
     while (!(await hover())?.includes("Unsaved") && Date.now() < unsavedDeadline) {
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await delay(50);
     }
     expect(await hover()).toContain("Unsaved");
     server.send({
@@ -551,7 +552,7 @@ test("the server refreshes discovered files and unsaved stylesheet changes", asy
     });
     const configDeadline = Date.now() + 5000;
     while (!(await hover())?.includes("Pushed settings") && Date.now() < configDeadline) {
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await delay(50);
     }
     expect(await hover()).toContain("Pushed settings");
   } finally {
@@ -609,7 +610,7 @@ test("the server indexes workspace folders added after initialization", async ()
     });
     const deadline = Date.now() + 5000;
     while (!(await hover())?.includes("Added workspace") && Date.now() < deadline) {
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await delay(50);
     }
     expect(await hover()).toContain("Added workspace");
     server.send({
@@ -621,7 +622,7 @@ test("the server indexes workspace folders added after initialization", async ()
     });
     const removedDeadline = Date.now() + 5000;
     while ((await hover()) !== undefined && Date.now() < removedDeadline) {
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await delay(50);
     }
     expect(await hover()).toBeUndefined();
   } finally {
@@ -677,7 +678,7 @@ test("the server discovers nested provider configs without a local stylesheet", 
     });
     const deadline = Date.now() + 5000;
     while (!(await hover())?.includes("Provider widget") && Date.now() < deadline) {
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await delay(50);
     }
     expect(await hover()).toContain("Provider widget");
   } finally {

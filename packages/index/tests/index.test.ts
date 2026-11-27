@@ -98,7 +98,7 @@ test("public model projection uses the supplied context and rejects incomplete l
     projectPublicModel(source.entries, {
       lookupFor: () => ({ workspace: { complete: false, sources: [{ index: source }] } }),
     }),
-  ).toThrow(/Cannot establish reference visibility/);
+  ).toThrow(/Cannot establish reference visibility/u);
 });
 
 test("public projection uses original example and prose paths after privacy filtering", () => {

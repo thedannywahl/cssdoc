@@ -125,15 +125,13 @@ export function scanInlineTags(
       } else if (char === FORWARD_SLASH_CHAR && text[end + 1] === ASTERISK_CHAR) {
         comment = true;
         end++;
-      } else {
-        if (definition.canonicalName === "link" && char === PIPE_CHAR && stack.length === 0) {
-          label = true;
-          separator = end;
-        } else if (char === PAREN_OPEN_CHAR || char === BRACKET_OPEN_CHAR) stack.push(char);
-        else if (char === PAREN_CLOSE_CHAR && stack.at(-1) === PAREN_OPEN_CHAR) stack.pop();
-        else if (char === BRACKET_CLOSE_CHAR && stack.at(-1) === BRACKET_OPEN_CHAR) stack.pop();
-        else if (char === BRACE_CLOSE_CHAR && stack.length === 0) break;
-      }
+      } else if (definition.canonicalName === "link" && char === PIPE_CHAR && stack.length === 0) {
+        label = true;
+        separator = end;
+      } else if (char === PAREN_OPEN_CHAR || char === BRACKET_OPEN_CHAR) stack.push(char);
+      else if (char === PAREN_CLOSE_CHAR && stack.at(-1) === PAREN_OPEN_CHAR) stack.pop();
+      else if (char === BRACKET_CLOSE_CHAR && stack.at(-1) === BRACKET_OPEN_CHAR) stack.pop();
+      else if (char === BRACE_CLOSE_CHAR && stack.length === 0) break;
     }
     const closed = end < text.length;
     result.push({

@@ -294,13 +294,13 @@ function renderTrees(
   };
 
   for (const group of groups) {
-    if (group.label !== undefined) {
+    if (group.label === undefined) {
+      for (const root of group.roots) walk(root, true);
+    } else {
       const id = `sg${counter++}`;
       nodes.push(`  subgraph ${id} ["${esc(group.label)}"]`);
       for (const root of group.roots) walk(root, true);
       nodes.push("  end");
-    } else {
-      for (const root of group.roots) walk(root, true);
     }
   }
 

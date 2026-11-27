@@ -77,6 +77,35 @@ test("JSDoc lint accepts cssdoc tags but still reports unknown tags", () => {
   }
 });
 
+test("unassigned CSS imports are allowed while other side-effect imports warn", () => {
+  const directory = mkdtempSync(join(tmpdir(), "cssdoc-imports-"));
+  try {
+    const file = join(directory, "imports.test.js");
+    writeFileSync(
+      file,
+      'import "normalize.css";\nimport "./custom.css";\nimport "./nested/site.css";\nimport "./setup.js";\n',
+    );
+    for (const workspace of ["../../../", "../../../servers/vscode/"]) {
+      const cwd = fileURLToPath(new URL(workspace, import.meta.url));
+      const lint = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(lint.status).toBe(0);
+      const result: {
+        diagnostics: { code: string; severity: string; labels: { span: { line: number } }[] }[];
+      } = JSON.parse(lint.stdout);
+      expect(
+        result.diagnostics
+          .filter((diagnostic) => diagnostic.code === "import(no-unassigned-import)")
+          .map((diagnostic) => [diagnostic.severity, diagnostic.labels[0].span.line]),
+      ).toEqual([["warning", 4]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("TSDoc definitions follow the cssdoc vocabulary", () => {
   const require = createRequire(import.meta.url);
   const pluginRequire = createRequire(require.resolve("eslint-plugin-tsdoc"));

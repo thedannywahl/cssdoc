@@ -199,7 +199,13 @@ export class CssDocConfiguration {
    */
   setProseSettings(settings: ProseSettings): void {
     const validMode = (mode: ProseMode | null | undefined): void => {
-      if (mode != null && mode !== "plain" && mode !== "markdown" && mode !== "auto") {
+      if (
+        mode !== null &&
+        mode !== undefined &&
+        mode !== "plain" &&
+        mode !== "markdown" &&
+        mode !== "auto"
+      ) {
         throw new Error(`Invalid prose mode: ${JSON.stringify(mode)}`);
       }
     };

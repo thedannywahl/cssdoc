@@ -21,16 +21,16 @@ test("the pattern reference preserves registry patterns and their test fixtures"
     expect(row.codeGroupHtml).toContain(`name="regex-${row.name}-group-`);
     expect(row.codeGroupHtml).toContain("language-ts");
     expect(row.codeGroupHtml).toContain("language-regex");
-    expect(row.codeGroupHtml.match(/class="shiki /g)).toHaveLength(2);
+    expect(row.codeGroupHtml.match(/class="shiki /gu)).toHaveLength(2);
   }
   const fileExtension = rows.find((row) => row.name === "FILE_EXTENSION")?.codeGroupHtml;
   expect(fileExtension).toContain("PatternResolver");
   expect(fileExtension).toContain("ALPHA_LOWER");
   expect(fileExtension).toContain("[a-z]");
   const commentStart = rows.find((row) => row.name === "COMMENT_START")?.codeGroupHtml;
-  const actual = commentStart?.match(/<code>([\s\S]*?)<\/code>/)?.[1]?.replace(/<[^>]+>/g, "");
+  const actual = commentStart?.match(/<code>([\s\S]*?)<\/code>/u)?.[1]?.replace(/<[^>]+>/gu, "");
   expect(actual).toContain('\n  const slash = resolve("FORWARD_SLASH");');
-  expect(actual).toMatch(/\n\}$/);
+  expect(actual).toMatch(/\n\}$/u);
   expect(
     groups.flatMap((group) =>
       group.patterns

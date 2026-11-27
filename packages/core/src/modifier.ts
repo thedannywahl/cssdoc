@@ -177,8 +177,8 @@ export function resolveModifierConvention(input?: ModifierConventionInput): Modi
   return {
     structure: base.structure,
     separator: base.separator,
-    ...(base.elementSeparator !== undefined ? { elementSeparator: base.elementSeparator } : {}),
-    ...(base.statePrefixes !== undefined ? { statePrefixes: base.statePrefixes } : {}),
+    ...(base.elementSeparator === undefined ? {} : { elementSeparator: base.elementSeparator }),
+    ...(base.statePrefixes === undefined ? {} : { statePrefixes: base.statePrefixes }),
     statePseudoClasses: base.statePseudoClasses ?? [...DEFAULT_STATE_PSEUDO_CLASSES],
     pseudoElements: base.pseudoElements ?? [...DEFAULT_PSEUDO_ELEMENTS],
     propValue: base.propValue ?? false,

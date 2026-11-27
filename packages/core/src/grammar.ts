@@ -66,6 +66,7 @@ import {
   AT_CHAR,
   DOT_SOURCE,
   RECORD_REFERENCE_NAME_SOURCE,
+  ALPHA_SOURCE,
   DIGIT_SOURCE,
   ALPHANUMERIC_EXTENDED_SOURCE,
   COLON_CHAR,
@@ -111,6 +112,22 @@ import type {
 } from "./model.ts";
 import { collectProse, type DocCommentProse } from "./prose-shared.ts";
 import { docProseStart } from "./structure-boundaries.ts";
+
+const ANNOTATION_ROW: Regex = arkRegex.as(
+  String.raw`^((?:${ALPHANUMERIC_EXTENDED_SOURCE}|${DOT_SOURCE})+)(?:\s*(?:-|—)\s*)?([\s\S]*)$`,
+  "u",
+);
+const NUMERIC_REF_ROW: Regex = arkRegex.as(
+  String.raw`^(${DIGIT_SOURCE}+)(?:\.|\s|$)([\s\S]*)$`,
+  "u",
+);
+const NAMED_REF_ROW: Regex = arkRegex.as(
+  String.raw`^(${ALPHA_SOURCE}(?:${ALPHANUMERIC_EXTENDED_SOURCE}|${DOT_SOURCE})*)(?:\s*(?:-|—)\s*)?([\s\S]*)$`,
+  "u",
+);
+const NUMERIC_REF_PREFIX: Regex = arkRegex.as(String.raw`^[.\s\-—]+`, "u");
+const NAMED_REF_PREFIX: Regex = arkRegex.as(String.raw`^[\s\-—]+`, "u");
+const NUMERIC_REF_ID: Regex = arkRegex.as(`^${DIGIT_SOURCE}+$`, "u");
 
 /** One parsed annotation legend row from an `@annotations` block. */
 export interface DocAnnotation {
@@ -927,7 +944,7 @@ function applyBlockTag(
     case "annotation": {
       const privateMarker = rest.includes("{@private}");
       const cleaned = rest.replace("{@private}", "").trim();
-      const match = cleaned.match(/^([A-Za-z0-9_.-]+)(?:\s*(?:-|—)\s*)?([\s\S]*)$/);
+      const match = cleaned.match(ANNOTATION_ROW);
       if (match) {
         const id = match[1];
         const text = match[2].trim();
@@ -939,32 +956,32 @@ function applyBlockTag(
     case "ref": {
       const privateMarker = rest.includes("{@private}");
       const cleaned = rest.replace("{@private}", "").trim();
-      const numeric = cleaned.match(/^(\d+)(?:\.|\s|$)([\s\S]*)$/);
+      const numeric = cleaned.match(NUMERIC_REF_ROW);
       if (numeric) {
         const ref = Number.parseInt(numeric[1], 10);
         if (privateMarker) doc.privateAnnotationIds.add(ref);
         doc.refs.push(ref);
-        const text = numeric[2].replace(/^[.\s-—]+/, "").trim();
+        const text = numeric[2].replace(NUMERIC_REF_PREFIX, "").trim();
         if (text) {
           if (!doc.annotations.has(ref)) doc.annotations.set(ref, text);
           if (privateMarker) doc.privateAnnotationIds.add(ref);
         }
         break;
       }
-      const named = cleaned.match(/^([A-Za-z][A-Za-z0-9_.-]*)(?:\s*(?:-|—)\s*)?([\s\S]*)$/);
+      const named = cleaned.match(NAMED_REF_ROW);
       if (named) {
         const id = named[1];
-        const text = named[2].replace(/^[\s-—]+/, "").trim() || undefined;
+        const text = named[2].replace(NAMED_REF_PREFIX, "").trim() || undefined;
         doc.namedRefs.push({
-          ref: /^\d+$/.test(id) ? Number.parseInt(id, 10) : id,
+          ref: NUMERIC_REF_ID.test(id) ? Number.parseInt(id, 10) : id,
           ...(text ? { text } : {}),
           ...(privateMarker ? { private: true } : {}),
           attachment: "record",
         });
         if (privateMarker)
-          doc.privateAnnotationIds.add(/^\d+$/.test(id) ? Number.parseInt(id, 10) : id);
+          doc.privateAnnotationIds.add(NUMERIC_REF_ID.test(id) ? Number.parseInt(id, 10) : id);
         if (text) {
-          const numericId = /^\d+$/.test(id) ? Number.parseInt(id, 10) : undefined;
+          const numericId = NUMERIC_REF_ID.test(id) ? Number.parseInt(id, 10) : undefined;
           if (numericId !== undefined && !doc.annotations.has(numericId))
             doc.annotations.set(numericId, text);
           if (numericId === undefined) {
@@ -1126,7 +1143,10 @@ function normalizeMultilineDescription(text: string): string {
         currentParagraph = "";
       }
       result.push(""); // Preserve blank line for Markdown structure.
-    } else if (MARKDOWN_STRUCTURE.exec(line) !== null) {
+    } else if (MARKDOWN_STRUCTURE.exec(line) === null) {
+      // Regular text — accumulate in the current paragraph.
+      currentParagraph = currentParagraph ? `${currentParagraph} ${line}` : line;
+    } else {
       // This line starts a Markdown list item, header, blockquote, code block, etc.
       // Flush the current paragraph and start a new one for the list item.
       if (currentParagraph) {
@@ -1134,9 +1154,6 @@ function normalizeMultilineDescription(text: string): string {
       }
       currentParagraph = "";
       result.push(line); // Each list item gets its own line.
-    } else {
-      // Regular text — accumulate in the current paragraph.
-      currentParagraph = currentParagraph ? `${currentParagraph} ${line}` : line;
     }
   }
 

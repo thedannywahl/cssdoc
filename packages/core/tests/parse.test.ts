@@ -2256,6 +2256,19 @@ test("@ref with inline prose stores the annotation without @annotations block", 
   ]);
 });
 
+test("annotation and ref parsing preserves punctuation and Unicode prose", () => {
+  const doc = parseDocComment(`/**
+ * @annotation badge.icon-1 - Accent 🎨
+ * @ref 3. — Focus 🧭
+ * @ref badge.icon-1 - Details 🎨
+ */`);
+  expect(doc.namedAnnotations.get("badge.icon-1")).toEqual({ text: "Details 🎨" });
+  expect(doc.annotations.get(3)).toBe("Focus 🧭");
+  expect(doc.namedRefs).toEqual([
+    { ref: "badge.icon-1", text: "Details 🎨", attachment: "record" },
+  ]);
+});
+
 test("@ref inline prose and @annotations block merge; block row wins on collision", () => {
   const [entry] = parseCssDocs(`/**
  * @component card

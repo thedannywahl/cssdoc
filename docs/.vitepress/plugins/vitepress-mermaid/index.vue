@@ -171,7 +171,7 @@ const renderDiagram = async (): Promise<void> => {
   }
 };
 
-const exportDiagramSvg = async (): Promise<void> => {
+const exportDiagramSvg = (): void => {
   const svg = diagramRef.value?.querySelector("svg");
   if (!svg) return;
 

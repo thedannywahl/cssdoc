@@ -11,7 +11,7 @@ export const baseConfig: UserConfig = defineConfig({
   lint: {
     categories: {
       correctness: "error",
-      pedantic: "off",
+      pedantic: "warn",
       perf: "off",
       style: "off",
       restriction: "off",
@@ -20,7 +20,28 @@ export const baseConfig: UserConfig = defineConfig({
     },
     options: { typeAware: true, typeCheck: true },
     plugins: ["import", "node", "promise", "vitest", "jsdoc"],
-    rules: { "jsdoc/check-tag-names": ["error", { definedTags: [...CSSDOC_TAG_NAMES] }] },
+    rules: {
+      /* allow CSS sideeffect imports in vitepress */
+      "import/no-unassigned-import": ["warn", { allow: ["**/*.css"] }],
+      /* ignore cssdoc tags in jsdoc checks */
+      "jsdoc/check-tag-names": ["error", { definedTags: [...CSSDOC_TAG_NAMES] }],
+      // TSDoc uses TypeScript types and asks for return descriptions when useful, not on every function.
+      "jsdoc/require-param": ["warn", { ignoreWhenAllParamsMissing: true }],
+      "jsdoc/require-param-type": "off",
+      "jsdoc/require-returns": "off",
+      "jsdoc/require-returns-type": "off",
+      "jsdoc/require-throws-type": "off",
+      // Fixture traversal and data-driven assertions legitimately use branches and loops.
+      "vitest/no-conditional-in-test": "off",
+      // Inline comments often explain individual fixture values or parser branches.
+      "eslint/no-inline-comments": "off",
+      // Catalogs, grammars, and parser control flow don't fit fixed size and nesting limits.
+      "eslint/max-classes-per-file": "off",
+      "eslint/max-depth": "off",
+      "eslint/max-lines": "off",
+      "eslint/max-lines-per-function": "off",
+      "import/max-dependencies": "off",
+    },
   },
   fmt: {
     sortImports: {

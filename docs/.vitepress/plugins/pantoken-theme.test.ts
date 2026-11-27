@@ -26,7 +26,7 @@ describe("Pantoken docs theme", () => {
 
   it("uses official Aurora colors in background-only light and dark SVGs", () => {
     const css = themeCss();
-    const images = [...css.matchAll(/data:image\/svg\+xml,([^"]+)/g)].map((match) =>
+    const images = [...css.matchAll(/data:image\/svg\+xml,([^"]+)/gu)].map((match) =>
       decodeURIComponent(match[1]),
     );
     expect(images).toHaveLength(2);
@@ -66,12 +66,12 @@ describe("Pantoken docs theme", () => {
     const styles = page.split("<style module>")[1].split("</style>")[0];
     const result = await pruneTheme(themeCss() + styles);
     const colors = byTheme("rebrand").filter(({ name }) =>
-      /--instui-color-(?:text|background-pastel)-(?:success|error)$/.test(name),
+      /--instui-color-(?:text|background-pastel)-(?:success|error)$/u.test(name),
     );
     expect(colors).toHaveLength(4);
     for (const { name, value } of colors) {
       expect(result).toContain(`${name}: ${value}`);
-      for (const [, dependency] of value.matchAll(/var\(([^)]+)\)/g)) {
+      for (const [, dependency] of value.matchAll(/var\(([^)]+)\)/gu)) {
         expect(result).toContain(`${dependency}: #`);
       }
     }
@@ -86,7 +86,7 @@ describe("Pantoken docs theme", () => {
       const token = tokens.find((entry) => entry.name === name);
       if (!token) throw new Error(`Missing Pantoken token ${name}`);
       expect(result).toContain(`${name}: ${token.value}`);
-      for (const [, dependency] of token.value.matchAll(/var\(([^)]+)\)/g)) {
+      for (const [, dependency] of token.value.matchAll(/var\(([^)]+)\)/gu)) {
         expect(result).toContain(`${dependency}: #`);
       }
     }
@@ -104,7 +104,7 @@ describe("Pantoken docs theme", () => {
     const source = readFileSync(new URL("../theme/custom.css", import.meta.url), "utf8");
     const expanded = await postcss([expandTheme()]).process(source, { from: undefined });
     const result = await pruneTheme(expanded.css);
-    const names = [...new Set(result.match(/--instui-primitive-color-aurora-aurora\d+/g))];
+    const names = [...new Set(result.match(/--instui-primitive-color-aurora-aurora\d+/gu))];
     expect(names.sort()).toEqual(
       [40, 50, 120, 130, 200].map((step) => `--instui-primitive-color-aurora-aurora${step}`).sort(),
     );

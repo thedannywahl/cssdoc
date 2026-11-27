@@ -4,16 +4,16 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const fields = [
-  ["servers/zed/extension.toml", /^(version = ")([^"]+)(")$/gm],
-  ["servers/zed/Cargo.toml", /^(\[package\]\nname = "cssdoc-zed"\nversion = ")([^"]+)(")$/gm],
-  ["servers/zed/Cargo.lock", /^(\[\[package\]\]\nname = "cssdoc-zed"\nversion = ")([^"]+)(")$/gm],
-  ["servers/zed/src/lib.rs", /^(const VERSION: &str = ")([^"]+)(";)$/gm],
+  ["servers/zed/extension.toml", /^(version = ")([^"]+)(")$/gmu],
+  ["servers/zed/Cargo.toml", /^(\[package\]\nname = "cssdoc-zed"\nversion = ")([^"]+)(")$/gmu],
+  ["servers/zed/Cargo.lock", /^(\[\[package\]\]\nname = "cssdoc-zed"\nversion = ")([^"]+)(")$/gmu],
+  ["servers/zed/src/lib.rs", /^(const VERSION: &str = ")([^"]+)(";)$/gmu],
 ];
 
 export function syncZedVersion(directory, write = false) {
   const packagePath = resolve(directory, "servers/language-server/package.json");
   const version = JSON.parse(readFileSync(packagePath, "utf8")).version;
-  if (typeof version !== "string" || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version)) {
+  if (typeof version !== "string" || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/u.test(version)) {
     throw new Error(`Invalid language-server version in ${packagePath}: ${version}`);
   }
 

@@ -308,7 +308,7 @@ test("plugin.rules has all expected rules", () => {
 test("plugin.rules exports have required meta structure", () => {
   for (const [_name, rule] of Object.entries(plugin.rules)) {
     expect(rule.meta).toBeDefined();
-    expect(rule.meta.type).toMatch(/^(problem|suggestion)$/);
+    expect(rule.meta.type).toMatch(/^(problem|suggestion)$/u);
     expect(rule.meta.docs).toBeDefined();
     expect(rule.meta.docs.description).toBeDefined();
     expect(rule.meta.schema).toBeDefined();

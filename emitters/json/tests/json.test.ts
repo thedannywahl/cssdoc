@@ -71,7 +71,7 @@ test("public JSON projects private links before aggregate, record, and index out
     expect(readFileSync(output.indexPath!, "utf8")).not.toContain("{@link secret");
   }
   expect(renderJson(index.entries, { includePrivate: true })).toContain("{@link secret");
-  expect(() => renderJson(index.entries)).toThrow(/Cannot establish reference visibility/);
+  expect(() => renderJson(index.entries)).toThrow(/Cannot establish reference visibility/u);
 });
 
 test("public JSON projects metadata-free legacy examples", () => {

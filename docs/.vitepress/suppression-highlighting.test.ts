@@ -17,7 +17,7 @@ test("highlights suppression directives and rules without highlighting reasons o
   ].join("\n");
   const html = await markdown.renderAsync(source);
   const color = (text: string) =>
-    html.match(new RegExp(`<span style="([^"]+)">${text}</span>`))?.[1];
+    html.match(new RegExp(`<span style="([^"]+)">${text}</span>`, "u"))?.[1];
 
   expect(color("cssdoc-disable-next-line")).toBeDefined();
   expect(color("cssdoc-enable")).toBe(color("cssdoc-disable-next-line"));

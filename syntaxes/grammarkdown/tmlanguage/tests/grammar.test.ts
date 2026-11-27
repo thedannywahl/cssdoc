@@ -1,3 +1,4 @@
+/* oxlint-disable eslint/require-unicode-regexp -- TextMate patterns use Oniguruma syntax. */
 import { expect, test } from "vite-plus/test";
 
 import grammar from "../grammarkdown.tmLanguage.json" with { type: "json" };

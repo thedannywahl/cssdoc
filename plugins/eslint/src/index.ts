@@ -389,7 +389,10 @@ const requireComponentDocs: RuleModule = {
   },
   create(context) {
     const options = (context.options[0] ?? {}) as { pattern?: string; skipUtilities?: boolean };
-    const pattern = options.pattern == null ? DEFAULT_COMPONENT_NAME : arkRegex.as(options.pattern);
+    const pattern =
+      options.pattern === null || options.pattern === undefined
+        ? DEFAULT_COMPONENT_NAME
+        : arkRegex.as(options.pattern);
     const skipUtilities = options.skipUtilities !== false;
 
     return {
