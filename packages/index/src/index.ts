@@ -54,6 +54,7 @@ export {
   resolveScopeMemberReference,
   resolveSelectorMemberReference,
 } from "./reference.ts";
+export { projectPrivateLinksInLookup, referenceVisibility } from "./projection.ts";
 export type {
   NamedMemberCandidate,
   NamedMemberOccurrence,

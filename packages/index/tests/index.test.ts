@@ -8,6 +8,8 @@ import {
   createIndex,
   indexFromEntries,
   memberKey,
+  projectPrivateLinksInLookup,
+  referenceVisibility,
   resolveNamedMemberReference,
   resolveRecordReference,
   resolveScopeMemberReference,
@@ -126,6 +128,78 @@ test("source-qualified resolution accounts for matching unkeyed inputs", () => {
       providers: new Map([["ui", { complete: true, sources: [{ index: unkeyed }] }]]),
     }),
   ).toMatchObject({ status: "unavailable", candidates: [{ providerId: "ui" }] });
+});
+
+test("private-link projection resolves visibility in the original lookup context", () => {
+  const privateIndex = createIndex(`/** @component secret {@private} */ .secret {}`);
+  const publicIndex = createIndex(`/** @component secret */ .secret {}`);
+  const lookup = {
+    workspace: {
+      complete: true,
+      sources: [
+        { index: privateIndex, sourceKey: "private.css" },
+        { index: publicIndex, sourceKey: "public.css" },
+      ],
+    },
+    providers: new Map([
+      ["failed", { complete: false, sources: [{ index: privateIndex, sourceKey: "private.css" }] }],
+    ]),
+  };
+  const resolve = (text: string) => {
+    const parsed = parseReference(text);
+    if (!parsed.ok) throw new Error(parsed.error);
+    return referenceVisibility(parsed.reference, lookup);
+  };
+  expect(resolve('source("private.css")::component:secret')).toBe("private");
+  expect(resolve('source("public.css")::component:secret')).toBe("public");
+  expect(resolve("secret")).toBe("unavailable");
+  expect(resolve("missing")).toBe("unavailable");
+  expect(resolve("provider(failed)::component:secret")).toBe("unavailable");
+  expect(resolve('source("private.css")::component:secret#slot()')).toBe("unavailable");
+
+  const text = [
+    '{@link source("private.css")::component:secret | *Label*}',
+    '{@link source("private.css")::component:secret}',
+    '{@link source("public.css")::component:secret}',
+    '`{@link source("private.css")::component:secret}`',
+  ].join(" ");
+  const projection = projectPrivateLinksInLookup(text, "markdown", lookup);
+  expect(projection.unavailable).toBe(false);
+  expect(projection.fragments.filter((fragment) => fragment.kind === "literal")).toEqual([
+    { kind: "literal", text: "*Label*" },
+    { kind: "literal", text: "reference" },
+  ]);
+  expect(
+    projection.fragments
+      .filter((fragment) => fragment.kind === "prose")
+      .map((f) => f.text)
+      .join(""),
+  ).toContain('{@link source("public.css")::component:secret}');
+  expect(projectPrivateLinksInLookup("{@link secret}", "markdown", lookup).unavailable).toBe(true);
+});
+
+test("member link visibility requires a complete and uniquely resolved member", () => {
+  const index = createIndex(`/** @component secret {@private} */
+@scope (.secret) { .secret {} }`);
+  const record = index.records[0];
+  const named: NamedMemberOccurrence[] = [{ kind: "slot", member: { name: "label" } }];
+  const selectors: SelectorMemberOccurrence[] = [{ kind: "part", selector: ".icon" }];
+  const source = {
+    index,
+    membersComplete: true,
+    namedMemberOccurrences: new Map([[record, named]]),
+    selectorMembersComplete: true,
+    selectorMemberOccurrences: new Map([[record, selectors]]),
+  };
+  const lookup = { workspace: { complete: true, sources: [source] } };
+  for (const text of ["secret#slot(label)", "secret#part(.icon)", "secret#scope((.secret))"]) {
+    const parsed = parseReference(text);
+    if (!parsed.ok) throw new Error(parsed.error);
+    expect(referenceVisibility(parsed.reference, lookup)).toBe("private");
+  }
+  const missing = parseReference("secret#slot(missing)");
+  if (!missing.ok) throw new Error(missing.error);
+  expect(referenceVisibility(missing.reference, lookup)).toBe("unavailable");
 });
 
 test("named member resolution uses CSS identifiers and preserves duplicates", () => {

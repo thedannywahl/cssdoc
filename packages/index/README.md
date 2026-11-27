@@ -48,6 +48,10 @@ members remain unsupported.
 including nested scopes and source spans. Model-only indexes and indexes built with a custom dialect
 parser return unavailable for scope members. Unsupported selector syntax also returns unavailable.
 
+`projectPrivateLinksInLookup` projects links using the prose's original reference lookup.
+It preserves labels as literal fragments and reports unavailable targets; callers must handle that
+result before publishing. Public emitters don't yet apply this projection automatically.
+
 ## License
 
 MIT
