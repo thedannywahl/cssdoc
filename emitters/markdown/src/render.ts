@@ -11,6 +11,7 @@ import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import {
   AT_SOURCE,
+  BACKTICK_CHAR,
   BRACE_OPEN_SOURCE,
   BRACE_CLOSE_SOURCE,
   CSS_CLASS_REFERENCE,
@@ -21,7 +22,6 @@ import {
   DOT_CHAR,
   LESS_THAN_CHAR,
   MARKDOWN_BACKTICK_FENCE_LINE_PREFIX,
-  MARKDOWN_BACKTICK_FENCE_TEXT,
   MARKDOWN_ORDERED_LIST_MARKER_SOURCE,
   MARKDOWN_UNORDERED_LIST_MARKER_SOURCE,
   PIPE_CHAR,
@@ -45,6 +45,17 @@ import {
 } from "./prose.ts";
 
 const WHITESPACE = toRegExp(WHITESPACE_RUN);
+
+function fencedBlock(language: string, text: string): string[] {
+  let longest = 2;
+  let run = 0;
+  for (const char of text) {
+    run = char === BACKTICK_CHAR ? run + 1 : 0;
+    longest = Math.max(longest, run);
+  }
+  const fence = BACKTICK_CHAR.repeat(longest + 1);
+  return [`${fence}${language}`, text, fence];
+}
 
 /**
  * Resolve a consumed custom property to its type/value for the "Tokens consumed" table. Supplied by the
@@ -604,15 +615,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   for (const key of DEFAULT_SECTION_ORDER) fragments[key] = [];
 
   const spec = options.resolveDemo ? options.resolveDemo(entry) : entry.demo;
-  if (spec)
-    fragments.demo.push(
-      "## Demo",
-      "",
-      `${MARKDOWN_BACKTICK_FENCE_TEXT}demo`,
-      spec,
-      MARKDOWN_BACKTICK_FENCE_TEXT,
-      "",
-    );
+  if (spec) fragments.demo.push("## Demo", "", ...fencedBlock("demo", spec), "");
 
   const examples = selectExampleIndices(entry, options.exampleFilter);
   if (examples.length) {
@@ -634,9 +637,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
         fragments.examples.push(safeMarkdownBlock(ex), "");
       else
         fragments.examples.push(
-          `${MARKDOWN_BACKTICK_FENCE_TEXT}${ex.includes(LESS_THAN_CHAR) ? "html" : "css"}`,
-          ex,
-          MARKDOWN_BACKTICK_FENCE_TEXT,
+          ...fencedBlock(ex.includes(LESS_THAN_CHAR) ? "html" : "css", ex),
           "",
         );
     }
@@ -647,13 +648,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
     fragments.usage.push("## Usage", "");
     if (entry.usage)
       fragments.usage.push(safeMarkdownBlock(normalizeProseMarkdown(entry.usage)), "");
-    if (importSnippet)
-      fragments.usage.push(
-        `${MARKDOWN_BACKTICK_FENCE_TEXT}css`,
-        importSnippet,
-        MARKDOWN_BACKTICK_FENCE_TEXT,
-        "",
-      );
+    if (importSnippet) fragments.usage.push(...fencedBlock("css", importSnippet), "");
   }
 
   if ((annotations.length || refs.length) && options.includeAnnotations) {
@@ -794,7 +789,8 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   const structuralSubs: { name: string; href: string }[] = [];
   if (entry.structure?.length || entry.structureVariants?.length) {
     fragments.structure.push("## Structure", "");
-    if (entry.structureDescription) fragments.structure.push(entry.structureDescription, "");
+    if (entry.structureDescription)
+      fragments.structure.push(safeMarkdownBlock(entry.structureDescription), "");
     // Both views classify each node (root / part / slot / sibling component): `self` keeps the record's
     // own class from reading as a sibling, and `resolveComponent` resolves siblings to component names.
     const self = entry.className.startsWith(DOT_CHAR) ? entry.className.slice(1) : entry.className;
@@ -811,9 +807,10 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
         fragments.structure.push(`### Variant: ${variant.name ?? `Variant ${i + 1}`}`, "");
         if (view !== "diagram") {
           fragments.structure.push(
-            `${MARKDOWN_BACKTICK_FENCE_TEXT}text`,
-            ...renderTree(variant.nodes, self, options.resolveComponent),
-            MARKDOWN_BACKTICK_FENCE_TEXT,
+            ...fencedBlock(
+              "text",
+              renderTree(variant.nodes, self, options.resolveComponent).join("\n"),
+            ),
             "",
           );
         }
@@ -822,13 +819,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
             self,
             resolveComponent: options.resolveComponent,
           });
-          if (mermaid)
-            fragments.structure.push(
-              `${MARKDOWN_BACKTICK_FENCE_TEXT}mermaid`,
-              mermaid,
-              MARKDOWN_BACKTICK_FENCE_TEXT,
-              "",
-            );
+          if (mermaid) fragments.structure.push(...fencedBlock("mermaid", mermaid), "");
         }
       });
     } else if (variants?.length) {
@@ -837,9 +828,10 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
         variants.forEach((variant, i) => {
           fragments.structure.push(`\`// Variant: ${variant.name ?? `Variant ${i + 1}`}\``, "");
           fragments.structure.push(
-            `${MARKDOWN_BACKTICK_FENCE_TEXT}text`,
-            ...renderTree(variant.nodes, self, options.resolveComponent),
-            MARKDOWN_BACKTICK_FENCE_TEXT,
+            ...fencedBlock(
+              "text",
+              renderTree(variant.nodes, self, options.resolveComponent).join("\n"),
+            ),
             "",
           );
         });
@@ -849,20 +841,15 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
           self,
           resolveComponent: options.resolveComponent,
         });
-        if (mermaid)
-          fragments.structure.push(
-            `${MARKDOWN_BACKTICK_FENCE_TEXT}mermaid`,
-            mermaid,
-            MARKDOWN_BACKTICK_FENCE_TEXT,
-            "",
-          );
+        if (mermaid) fragments.structure.push(...fencedBlock("mermaid", mermaid), "");
       }
     } else {
       if (view !== "diagram") {
         fragments.structure.push(
-          `${MARKDOWN_BACKTICK_FENCE_TEXT}text`,
-          ...renderTree(normalizedStructure, self, options.resolveComponent),
-          MARKDOWN_BACKTICK_FENCE_TEXT,
+          ...fencedBlock(
+            "text",
+            renderTree(normalizedStructure, self, options.resolveComponent).join("\n"),
+          ),
           "",
         );
       }
@@ -871,13 +858,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
           self,
           resolveComponent: options.resolveComponent,
         });
-        if (mermaid)
-          fragments.structure.push(
-            `${MARKDOWN_BACKTICK_FENCE_TEXT}mermaid`,
-            mermaid,
-            MARKDOWN_BACKTICK_FENCE_TEXT,
-            "",
-          );
+        if (mermaid) fragments.structure.push(...fencedBlock("mermaid", mermaid), "");
       }
     }
 

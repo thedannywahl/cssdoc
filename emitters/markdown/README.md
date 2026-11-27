@@ -33,6 +33,7 @@ Examples with an explicit prose divider aren't automatically fenced.
 Unclosed Markdown fences in standalone prose blocks are closed before subsequent generated sections.
 Blockquote markers remain intact, including around fenced code.
 Inline and indented code containing Vue interpolation uses `v-pre` to keep its contents literal.
+Generated code fences expand as needed to contain backticks in their content.
 
 ## The `resolveToken` hook
 

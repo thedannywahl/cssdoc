@@ -251,6 +251,38 @@ test("sanitizes unsafe generated links and table prose", async () => {
   expect(html).toContain("child");
 });
 
+test("structure descriptions are safe before their generated diagrams", async () => {
+  const [entry] = parseCssDocs(`/** @component button
+ * @structure
+ * .button { .label {} }
+ */
+.button {}`);
+  entry.structureDescription = "{{danger}} <img src=x onerror=alert(1)> [bad](javascript:alert)";
+  const markdown = renderEntry(entry);
+  const html = await (await createMarkdownRenderer(process.cwd())).renderAsync(markdown);
+  const compiled = compileTemplate({ source: html, filename: "entry.vue", id: "entry" });
+  expect(markdown).toContain("## Structure");
+  expect(html).not.toContain("<img");
+  expect(html).not.toContain("{{danger}}");
+  expect(html).not.toContain('href="javascript:');
+  expect(compiled.errors).toEqual([]);
+  expect(compiled.code).not.toContain("_ctx.danger");
+});
+
+test("generated fences keep backticks and Vue-sensitive snippet content inside code", async () => {
+  const [entry] = parseCssDocs(`/** @component button */
+.button {}`);
+  const snippet = "```\n<img src=x onerror=alert(1)> {{danger}}\n````";
+  const markdown = renderEntry(entry, { importSnippet: () => snippet });
+  const html = await (await createMarkdownRenderer(process.cwd())).renderAsync(markdown);
+  const compiled = compileTemplate({ source: html, filename: "entry.vue", id: "entry" });
+  expect(markdown).toContain(`\`\`\`\`\`css\n${snippet}\n\`\`\`\`\``);
+  expect(html).toContain('v-pre=""');
+  expect(html).not.toContain("<img");
+  expect(compiled.errors).toEqual([]);
+  expect(compiled.code).not.toContain("_ctx.danger");
+});
+
 test("renderEntry renders a title, summary, demo fence, and a modifiers table", () => {
   const [button] = parseCssDocs(CSS);
   const md = renderEntry(button!);
