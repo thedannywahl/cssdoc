@@ -24,6 +24,7 @@ export const baseConfig: UserConfig = defineConfig({
     rules: {
       "typescript/no-floating-promises": "error",
       "typescript/no-misused-promises": "error",
+      "typescript/consistent-type-imports": "error",
       "typescript/switch-exhaustiveness-check": [
         "error",
         { considerDefaultExhaustiveForUnions: true },
@@ -50,7 +51,6 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/array-type": "off",
       "typescript/prefer-regexp-exec": "off",
       "typescript/no-explicit-any": "off",
-      "typescript/consistent-type-imports": "off",
       "typescript/ban-types": "off",
       "typescript/consistent-return": "off",
       "typescript/restrict-template-expressions": "off",

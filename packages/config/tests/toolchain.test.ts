@@ -417,6 +417,27 @@ test("type-aware lint detects unsafe boundaries", () => {
   }
 });
 
+test("type import lint requires type-only imports", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/type-aware-check-"));
+  try {
+    writeFileSync(join(directory, "dependency.ts"), "export interface Item { name: string; }\n");
+    const file = join(directory, "imports.ts");
+    writeFileSync(file, 'import { Item } from "./dependency.ts";\nexport type Example = Item;\n');
+    const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
+    const output: { diagnostics: { code: string; severity: string }[] } = JSON.parse(result.stdout);
+    expect(output.diagnostics).toContainEqual(
+      expect.objectContaining({ code: "typescript(consistent-type-imports)", severity: "error" }),
+    );
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("switch lint requires cases or an intentional fallback", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, "packages/config/tests/type-aware-check-"));

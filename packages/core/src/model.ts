@@ -12,6 +12,11 @@
  * @module
  */
 import type { CSSDOC_CARDINALITY_KEYWORDS } from "@cssdoc/regex";
+import type { Root } from "postcss";
+
+import type { CssDocConfiguration } from "./configuration.ts";
+import type { ModifierConventionInput } from "./modifier.ts";
+import type { DocCommentProse } from "./prose-shared.ts";
 
 /**
  * A modifier variation on a component's base class. How modifiers are spelled is configurable (see
@@ -388,7 +393,7 @@ export interface CssDocEntry {
   /** The canonical record name from a record-opening tag, e.g. `button`. */
   name: string;
   /** Source-preserving prose and its effective full-core interpretation. */
-  prose?: readonly import("./prose-shared.ts").DocCommentProse[];
+  prose?: readonly DocCommentProse[];
   /** Which kind of CSS surface this documents (defaults to `component`). */
   kind: CssRecordKind;
   /** The base CSS selector — a class (`.button`), attribute (`[data-layout="x"]`), ID (`#foo`),
@@ -508,7 +513,7 @@ export interface CssDocEntry {
 }
 
 /** A PostCSS parse function — turns a source string into a Root. Inject one to read a non-CSS dialect. */
-export type CssParse = (css: string) => import("postcss").Root;
+export type CssParse = (css: string) => Root;
 
 /** Options for {@link parseCssDocs}. */
 export interface ParseOptions {
@@ -523,13 +528,13 @@ export interface ParseOptions {
    * {@link CssDocConfiguration} with every standard tag enabled — i.e. the full built-in vocabulary.
    * Supply one (e.g. from `@cssdoc/config`) to register custom tags or disable standard ones.
    */
-  configuration?: import("./configuration.ts").CssDocConfiguration;
+  configuration?: CssDocConfiguration;
   /**
    * The modifier convention — how modifier classes are spelled (BEM `.button--primary` by default;
    * `rscss`, `bare`, or a custom `ModifierConvention` for SUIT/CUBE/etc.). Overrides the
    * `configuration`'s convention when both are given.
    */
-  modifierConvention?: import("./modifier.ts").ModifierConventionInput;
+  modifierConvention?: ModifierConventionInput;
   /**
    * The PostCSS parser to read `css` with. Defaults to `postcss.parse` (plain CSS). Inject a dialect
    * parser (e.g. `postcss-scss`/`postcss-less` via `@cssdoc/dialects`) to document `.scss`/`.less`.
