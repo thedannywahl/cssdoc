@@ -129,7 +129,10 @@ const CUSTOM_ELEMENT: Regex = arkRegex.as(`^${HTML_CUSTOM_ELEMENT_LIKE_NAME_SOUR
 
 /** A `*`-glob name (e.g. `-icon-*`) as a regex source over one class token (`*` → any `[\w-]` run). */
 const globSource = (name: string): string =>
-  name.split(ASTERISK_CHAR).map(escapeRegex).join(`${ALPHANUMERIC_EXTENDED_SOURCE}*`);
+  name
+    .split(ASTERISK_CHAR)
+    .map((part) => escapeRegex(part))
+    .join(`${ALPHANUMERIC_EXTENDED_SOURCE}*`);
 
 /** `class` attribute selectors, capturing the operator (`~`/`^`/`$`/`*`/`|`/none) and the value. */
 const CLASS_ATTR = toRegExp(CSS_CLASS_ATTRIBUTE_SELECTOR);
@@ -183,7 +186,10 @@ export const selectorDefines = (selectorText: string, selector: string): boolean
 const globMatch = (pattern: string, value: string): boolean => {
   if (!pattern.includes(ASTERISK_CHAR)) return pattern === value;
   const re: Regex = arkRegex.as(
-    `^${pattern.split(ASTERISK_CHAR).map(escapeRegex).join(".*")}$`,
+    `^${pattern
+      .split(ASTERISK_CHAR)
+      .map((part) => escapeRegex(part))
+      .join(".*")}$`,
     "u",
   );
   return re.test(value);
@@ -425,7 +431,7 @@ export const record = {
             warn({
               aspect: "record",
               rule: "readonly-redefinition",
-              message: `${AT_CHAR}${decoratorSet.has("frozen") ? "frozen" : "readonly"} record "${info.entry.name}" redefines "${property}" with multiple values (${[...values].map(codeSpan).join(", ")}).`,
+              message: `${AT_CHAR}${decoratorSet.has("frozen") ? "frozen" : "readonly"} record "${info.entry.name}" redefines "${property}" with multiple values (${[...values].map((value) => codeSpan(value)).join(", ")}).`,
               record: info.entry.name,
               span: info.span,
             }),

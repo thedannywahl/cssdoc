@@ -116,7 +116,7 @@ test("packed lite and its transitive module graph contain no Markdown engine", a
       bundleOutput.imports.filter((entry) => entry.external).map((entry) => entry.path),
     );
     expect(externals).toEqual([]);
-    const markdownPaths = paths.filter(isMarkdownEngine);
+    const markdownPaths = paths.filter((path) => isMarkdownEngine(path));
     expect(markdownPaths).toEqual([]);
   } finally {
     rmSync(outDir, { recursive: true, force: true });
@@ -180,5 +180,5 @@ test("the lite dependency audit recognizes a transitive Markdown engine", async 
     write: false,
     metafile: true,
   });
-  expect(Object.keys(graph.metafile.inputs).some(isMarkdownEngine)).toBe(true);
+  expect(Object.keys(graph.metafile.inputs).some((path) => isMarkdownEngine(path))).toBe(true);
 });

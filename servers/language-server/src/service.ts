@@ -755,7 +755,7 @@ export class CssDocLanguageService {
       return scopes
         .flatMap((s) => completeCustomProperties(s.index))
         .filter((c) => (seen.has(c.label) ? false : seen.add(c.label)))
-        .map(toCompletion);
+        .map((completion) => toCompletion(completion));
     }
     // Class completion — in a `class`/`className` attribute, or a usage helper (`clsx(…)`, Vue
     // `:class`, Svelte `class:name`). Offer the component's modifiers when a base is already present,
@@ -771,7 +771,7 @@ export class CssDocLanguageService {
         governing;
       const index = scope.siblingIndex ?? scope.index;
       const base = tokens.find((token) => index.componentForClass(token));
-      return completeClasses(base, index).map(toCompletion);
+      return completeClasses(base, index).map((completion) => toCompletion(completion));
     }
     return [];
   }

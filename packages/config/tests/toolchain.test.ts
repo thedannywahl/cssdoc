@@ -440,6 +440,37 @@ test("lint prefers replaceAll for global replacements", () => {
   }
 });
 
+test("lint flags callback references that receive extra iterator arguments", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".callback-check-"));
+  try {
+    const file = join(directory, "callbacks.mjs");
+    writeFileSync(
+      file,
+      [
+        "const input = ['10', '10'];",
+        "const unsafe = input.map(parseInt);",
+        "const safe = input.map((value) => parseInt(value, 10));",
+        "console.error(unsafe, safe);",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "unicorn(no-array-callback-reference)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["warning", 2]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));

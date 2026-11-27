@@ -562,7 +562,10 @@ export class ModifierMatcher {
     if (name === used) return true;
     if (!name.includes(ASTERISK_CHAR)) return false;
     const MODIFIER: Regex = arkRegex.as(
-      `^${name.split(ASTERISK_CHAR).map(escapeRegex).join(`${ALPHANUMERIC_EXTENDED_SOURCE}*`)}$`,
+      `^${name
+        .split(ASTERISK_CHAR)
+        .map((part) => escapeRegex(part))
+        .join(`${ALPHANUMERIC_EXTENDED_SOURCE}*`)}$`,
       "u",
     );
     return MODIFIER.test(used);
@@ -635,7 +638,7 @@ export class ModifierMatcher {
   /** Does an attribute-expression's name carry one of the convention's required prefixes? */
   private attributeMatches(name: string): boolean {
     const ATTRIBUTE_OPERATOR: Regex = arkRegex.as(
-      `(?:${[TILDE_CHAR, PIPE_CHAR, CARET_CHAR, DOLLAR_CHAR, ASTERISK_CHAR].map(escapeRegex).join("|")})$`,
+      `(?:${[TILDE_CHAR, PIPE_CHAR, CARET_CHAR, DOLLAR_CHAR, ASTERISK_CHAR].map((part) => escapeRegex(part)).join("|")})$`,
       "u",
     );
     const eq = name.indexOf(EQUALS_CHAR);

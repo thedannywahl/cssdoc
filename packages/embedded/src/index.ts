@@ -187,7 +187,7 @@ function scanJs(
   if (tags.length === 0) return { regions, masks, comments };
   // Matches a CSS tag expression immediately before a backtick: `css`, `styled.x`, `styled(x)`, chains.
   const tagRe = arkRegex.as(
-    `${JAVASCRIPT_TAGGED_TEMPLATE_BOUNDARY_SOURCE}(?:${tags.map(escapeRegex).join("|")})${JAVASCRIPT_TAGGED_TEMPLATE_CHAIN_SEGMENT_SOURCE}*\\s*$`,
+    `${JAVASCRIPT_TAGGED_TEMPLATE_BOUNDARY_SOURCE}(?:${tags.map((tag) => escapeRegex(tag)).join("|")})${JAVASCRIPT_TAGGED_TEMPLATE_CHAIN_SEGMENT_SOURCE}*\\s*$`,
     "u",
   );
   for (let i = 0; i < src.length; i++) {

@@ -106,6 +106,6 @@ export type {
  * @returns A JSON string.
  */
 export function toJson(model: CssDocEntry[], options: { includePrivate?: boolean } = {}): string {
-  const entries = options.includePrivate ? model : model.map(projectPublicEntry);
+  const entries = options.includePrivate ? model : model.map((entry) => projectPublicEntry(entry));
   return `${JSON.stringify(entries, null, 2)}\n`;
 }
