@@ -45,6 +45,7 @@ import { blockSourceRange, collectDocCommentBlocks, type DocCommentBlock } from 
 import { frameCommentLines } from "./framing.ts";
 import { docProseStart } from "./structure-boundaries.ts";
 import { collectProse, type DocCommentProse } from "./prose-shared.ts";
+import { scanInlineTags } from "./inline.ts";
 import {
   cardinalityFromMatch,
   splitTrailingCardinality,
@@ -566,6 +567,7 @@ export function parseDocComment(
   const PRIVATE: Regex = arkRegex.as(PRIVATE_SOURCE, "u");
   let remarksBody: DocCommentProse | undefined;
   let usageBody: DocCommentProse | undefined;
+  let privateRecord = false;
   for (const [blockIndex, block] of blocks.entries()) {
     const m = block.text.match(BLOCK_HEADER);
     if (!m) continue;
@@ -578,6 +580,19 @@ export function parseDocComment(
       const WHITESPACE: Regex = arkRegex.as(String.raw`\s`, "u");
       doc.component = rest.split(WHITESPACE)[0];
       doc.kind = definition.recordKind;
+      const FIRST_LINE_END: Regex = arkRegex.as(LINE_ENDING_SOURCE, "u");
+      const firstLineEnd = block.text.search(FIRST_LINE_END);
+      const firstLine = block.text.slice(0, firstLineEnd < 0 ? undefined : firstLineEnd);
+      const proseStart = docProseStart(firstLine);
+      const header = firstLine.slice(0, proseStart === undefined ? undefined : proseStart);
+      privateRecord ||= scanInlineTags(header).some(
+        (tag) =>
+          tag.tag === "private" &&
+          tag.closed &&
+          tag.nameEnd === tag.end - 1 &&
+          (header[tag.start - 1] === " " || header[tag.start - 1] === "\t") &&
+          (tag.end === header.length || header[tag.end] === " " || header[tag.end] === "\t"),
+      );
       continue;
     }
     if (definition.syntaxKind === "inline") continue; // inline tags live inside descriptions
@@ -681,6 +696,7 @@ export function parseDocComment(
   }
   if (remarksBody) remarksBody.field = "remarks";
   if (usageBody) usageBody.field = "usage";
+  if (privateRecord) doc.visibility = "internal";
   // A dotted component name (`menu.item`) implies membership in its immediate parent (`menu`), unless
   // an explicit @memberOf already said otherwise.
   if (!doc.memberOf && doc.component?.includes(".")) {

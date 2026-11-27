@@ -264,10 +264,14 @@ InheritDocTag :
 LabelTag :
     InlineOpen `label` WhiteSpace Identifier InlineClose
 
+PrivateTag :
+    InlineOpen `private` InlineClose
+
 InlineTag :
     LinkTag
     InheritDocTag
     LabelTag
+    PrivateTag
 
 DescriptionAtom :
     TextRun
@@ -286,6 +290,7 @@ RecordKeyword :
 
 RecordTag :
     RecordKeyword WhiteSpace RecordName
+    RecordKeyword WhiteSpace RecordName WhiteSpace PrivateTag
 
 // `@selector` explicitly declares the component's base CSS selector when it isn't a plain class —
 // accepts any simple selector: class (`.button`), attribute (`[data-layout="x"]`), ID (`#foo`),

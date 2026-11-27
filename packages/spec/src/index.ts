@@ -358,6 +358,7 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
   },
   // Inline tags.
   { name: "link", kind: "inline", description: "An inline link to another record or a URL." },
+  { name: "private", kind: "inline", description: "Marks the containing item as private." },
   { name: "inheritDoc", kind: "inline", description: "Inherits prose from another record." },
   {
     name: "label",

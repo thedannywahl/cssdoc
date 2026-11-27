@@ -219,6 +219,33 @@ test("public JSON omits legacy private remarks and to-dos without mutating the m
   }
 });
 
+test("record header privacy applies regardless of legacy visibility tags", () => {
+  const entries = parseCssDocs(`
+/** @component secret {@private} - Internal control.
+ * @visibility public
+ */
+.secret {}
+/** @component public - Mentions {@private} in prose. */
+.public {}
+/** @component literal {@link other | {@private} } */
+.literal {}
+/** @component escaped \\{@private} */
+.escaped {}
+`);
+  expect(entries.map((entry) => [entry.name, entry.visibility])).toEqual([
+    ["secret", "internal"],
+    ["public", undefined],
+    ["literal", undefined],
+    ["escaped", undefined],
+  ]);
+  expect(JSON.parse(renderJson(entries)).map((entry: { name: string }) => entry.name)).toEqual([
+    "public",
+    "literal",
+    "escaped",
+  ]);
+  expect(renderJson(entries, { includeInternal: true })).toContain('"name": "secret"');
+});
+
 test("structureVariants (from @variant blocks) round-trips through JSON and validates against the schema", () => {
   const VARIANT_CSS = `
 /**

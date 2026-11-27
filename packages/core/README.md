@@ -28,6 +28,9 @@ writeFileSync("css-docs.json", toJson(model));
 `{ includePrivate: true }` to retain them. It doesn't resolve inline references or redact their
 targets; check authored public prose before publishing it.
 
+Mark a record as internal with `@component name {@private}` in its opening tag. Emitters that
+filter internal records omit it unless `includeInternal` is enabled.
+
 Generate `@custom-media` declarations from `@structure` profile references:
 
 ```ts

@@ -43,7 +43,7 @@ test("every alias points at a real canonical tag of the same kind", () => {
 });
 
 test("exposes the groups grammars need", () => {
-  expect(cssdocTagNamesByKind("inline")).toEqual(["link", "inheritDoc", "label"]);
+  expect(cssdocTagNamesByKind("inline")).toEqual(["link", "private", "inheritDoc", "label"]);
   expect(cssdocTagNamesByArgument("modifier-name")).toEqual(["modifier"]);
   expect(cssdocTagNamesByArgument("part-name")).toEqual(["part", "csspart", "wrapper", "slot"]);
   expect(cssdocTagNamesByArgument("custom-property")).toEqual([
