@@ -116,6 +116,9 @@ partial integer parsing. Use `structuredClone` for copies; JSON Schema tests val
 serialized output rather than treating a JSON round-trip as a clone.
 Production helpers that don't capture local state live at module scope. Test-specific helpers may
 stay beside their fixtures.
+The strict void-return restriction stays off: TypeScript permits ignored callback results, and
+css-tree consumes traversal-control symbols from visitors typed as returning `void`. Promise
+misuse and confusing void expressions have separate checks.
 Untyped JavaScript is excluded from the unsafe-boundary and interpolation checks because it lacks
 reliable type information; the standalone VS Code Lit example is also excluded from the assignment,
 call, and member-access checks.

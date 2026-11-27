@@ -67,6 +67,7 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-unsafe-type-assertion": "off",
       // Falsy primitive defaults (including empty strings and zero) can be intentional.
       "typescript/prefer-nullish-coalescing": ["warn", { ignorePrimitives: true }],
+      // TypeScript permits ignored callback results; css-tree also consumes walk.skip from void-typed visitors.
       "typescript/strict-void-return": "off",
       "typescript/method-signature-style": "off",
       "typescript/no-confusing-void-expression": ["warn", { ignoreArrowShorthand: true }],
