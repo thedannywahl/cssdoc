@@ -544,7 +544,7 @@ test("TypeScript lint rejects the unsafe Function type", () => {
   }
 });
 
-test("type-aware lint rejects unsafe enum assignments", () => {
+test("type-aware lint rejects unsafe enum assignments and comparisons", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, "packages/config/tests/type-aware-check-"));
   try {
@@ -559,7 +559,10 @@ test("type-aware lint rejects unsafe enum assignments", () => {
         "enum Status { Ready, Done }",
         "function unsafe(value: number) { const status: Status = value; return status; }",
         "function safe() { const status: Status = Status.Ready; return status; }",
-        "console.error(unsafe(0), safe());",
+        'enum Mode { Ready = "ready", Done = "done" }',
+        "function unsafeComparison(mode: Mode, value: string) { return mode === value; }",
+        "function safeComparison(mode: Mode) { return mode === Mode.Ready; }",
+        'console.error(unsafe(0), safe(), unsafeComparison(Mode.Ready, "ready"), safeComparison(Mode.Ready));',
       ].join("\n"),
     );
     for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
@@ -573,6 +576,11 @@ test("type-aware lint rejects unsafe enum assignments", () => {
           .diagnostics.filter(({ code }) => code === "typescript(no-unsafe-enum-assignment)")
           .map(({ severity, labels }) => [severity, labels[0].span.line]),
       ).toEqual([["error", 2]]);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "typescript(no-unsafe-enum-comparison)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["error", 5]]);
     }
   } finally {
     rmSync(directory, { recursive: true, force: true });
