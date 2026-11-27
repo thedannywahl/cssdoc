@@ -74,7 +74,10 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/prefer-regexp-exec": "off",
       "typescript/no-explicit-any": "error",
       "typescript/consistent-return": "warn",
-      "typescript/restrict-template-expressions": "off",
+      "typescript/restrict-template-expressions": [
+        "warn",
+        { allowAny: false, allowNullish: false },
+      ],
       // LSP clients may still send rootUri; the VS Code client still forwards push settings.
       "typescript/no-deprecated": [
         "warn",
@@ -324,6 +327,7 @@ export const baseConfig: UserConfig = defineConfig({
           "typescript/no-unsafe-call": "off",
           "typescript/no-unsafe-member-access": "off",
           "typescript/no-unsafe-return": "off",
+          "typescript/restrict-template-expressions": "off",
         },
       },
       {

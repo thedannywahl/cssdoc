@@ -927,6 +927,52 @@ test("type-aware lint flags inconsistent return paths", () => {
   }
 });
 
+test("type-aware lint flags unsafe template interpolations", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/type-aware-check-"));
+  try {
+    writeFileSync(
+      join(directory, "tsconfig.json"),
+      JSON.stringify({ extends: join(root, "tsconfig.base.json"), include: ["*.ts"] }),
+    );
+    const file = join(directory, "templates.ts");
+    writeFileSync(
+      file,
+      [
+        "function render(value: Date, optional: string | undefined, count: number) {",
+        "  const unsafe = `${value} ${optional}`;",
+        "  console.error(unsafe);",
+        "  return `${value.toISOString()} ${optional ?? 'missing'} ${count}`;",
+        "}",
+        "console.error(render(new Date(), undefined, 1));",
+      ].join("\n"),
+    );
+    const javascript = join(directory, "templates.mjs");
+    writeFileSync(javascript, "const value = new Date();\nconsole.error(`${value}`);\n");
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync(
+        "vp",
+        ["lint", "--no-ignore", "--format", "json", file, javascript],
+        {
+          cwd,
+          encoding: "utf8",
+        },
+      );
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "typescript(restrict-template-expressions)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([
+        ["warning", 2],
+        ["warning", 2],
+      ]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("type import lint requires type-only imports", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, "packages/config/tests/type-aware-check-"));

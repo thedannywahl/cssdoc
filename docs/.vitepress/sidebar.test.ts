@@ -125,6 +125,7 @@ describe("createSidebars", () => {
 
     for (const group of reference.filter(({ text }) => text)) {
       for (const item of group.items ?? []) {
+        if (item.link === undefined) throw new Error("Reference item is missing its link");
         expect(sidebarFor(routes, `${item.link}.html`)).toBe(reference);
       }
     }

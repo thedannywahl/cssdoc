@@ -858,7 +858,12 @@ export const record = {
     const fragments = {} as Record<HoverSectionKey, string[]>;
     const prose = (key: HoverSectionKey, prefix: string, text?: string): void => {
       const w = want(key, Boolean(text?.trim()));
-      if (w !== "skip") fragments[key] = ["", `${prefix}${w === "content" ? text : emptySection}`];
+      if (w !== "skip") {
+        fragments[key] = [
+          "",
+          `${prefix}${w === "content" && text !== undefined ? text : emptySection}`,
+        ];
+      }
     };
     const list = (key: HoverSectionKey, iconName: string, label: string, rows: string[]): void => {
       const w = want(key, rows.length > 0);

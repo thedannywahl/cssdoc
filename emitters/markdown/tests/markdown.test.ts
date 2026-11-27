@@ -439,10 +439,13 @@ test("renders Usage (with importSnippet), Browser support, and Related sections"
 test("resolveSource adds a Source link to the meta line", () => {
   const [card] = parseCssDocs(RICH_CSS, { fileName: "cards.css" });
   const md = renderEntry(card!, {
-    resolveSource: (entry) => ({
-      href: `https://example.com/${entry.source?.file}#L${entry.source?.line}`,
-      label: `${entry.source?.file}:${entry.source?.line}`,
-    }),
+    resolveSource: (entry) =>
+      entry.source?.file !== undefined && entry.source.line !== undefined
+        ? {
+            href: `https://example.com/${entry.source.file}#L${entry.source.line}`,
+            label: `${entry.source.file}:${entry.source.line}`,
+          }
+        : undefined,
   });
   expect(md).toContain("**Source:** [cards.css:2](https://example.com/cards.css#L2)");
 });

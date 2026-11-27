@@ -355,7 +355,7 @@ test("name presets and syntax links retain their character boundaries", () => {
 
 test("lintModel reports author-side hygiene (chip missing summary, -size-sm undocumented)", () => {
   const diagnostics = lintModel(index, resolveRuleSeverities({ "missing-summary": "warn" }));
-  const rules = diagnostics.map((d) => `${d.record}:${d.rule}`);
+  const rules = diagnostics.map((d) => `${String(d.record)}:${d.rule}`);
   expect(rules).toContain("chip:missing-summary");
   expect(rules).toContain("button:undocumented-modifier"); // -size-sm
   expect(
@@ -384,7 +384,7 @@ test("a concrete instance of a documented `*` family is exempt from undocumented
 }
 `;
   const idx = createIndex(css, { modifierConvention: "rscss" });
-  const rules = lintModel(idx).map((d) => `${d.record}:${d.rule}:${d.message}`);
+  const rules = lintModel(idx).map((d) => `${String(d.record)}:${d.rule}:${d.message}`);
   expect(rules.some((r) => r.includes("undocumented-modifier"))).toBe(false);
 });
 

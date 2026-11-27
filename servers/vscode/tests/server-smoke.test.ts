@@ -41,7 +41,7 @@ test("the bundled server.cjs starts and answers LSP diagnostics", async () => {
     10_000,
   );
   server.on("error", reject);
-  server.on("exit", (code) => reject(new Error(`server exited early (code ${code})`)));
+  server.on("exit", (code) => reject(new Error(`server exited early (code ${String(code)})`)));
 
   let buf = Buffer.alloc(0);
   server.stdout.on("data", (chunk: Buffer) => {
