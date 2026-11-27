@@ -15,9 +15,9 @@ import { globSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 
-import { type CssDocEntry, cssDocSchema, parseCssDocs } from "@cssdoc/core";
+import { type CssDocEntry, parseCssDocs } from "@cssdoc/core";
+import { ArkErrors, validateCssDocModel } from "@cssdoc/core/schema";
 import { DOT_CHAR, FORWARD_SLASH_SOURCE, escapeRegex } from "@cssdoc/regex";
-import { Ajv } from "ajv";
 import { regex as arkRegex } from "arkregex";
 
 import { CssDocConfigFile, type ProviderRef } from "./CssDocConfigFile.ts";
@@ -40,7 +40,6 @@ export interface ResolveProvidersOptions {
 const stripDot = (name: string): string => (name.startsWith(DOT_CHAR) ? name.slice(1) : name);
 const GLOB_SPECIAL = arkRegex.as(String.raw`[*?[\]{}()!]`);
 const HREF_TRAILING_SLASH = arkRegex.as(`${FORWARD_SLASH_SOURCE}?$`, "u");
-const validateModel = new Ajv({ allErrors: true }).compile<CssDocEntry[]>(cssDocSchema);
 
 /** Type-safe error check for TypeScript 6 compatibility (Error.isError is ES2026). */
 const isErrorInstance = (error: unknown): error is Error => error instanceof Error;
@@ -65,13 +64,17 @@ function loadModel(file: string): CssDocEntry[] {
   } else {
     throw new TypeError("expected a CssDocEntry[] or a { entries } manifest");
   }
-  if (!validateModel(entries)) {
-    const errors = (validateModel.errors ?? []).map(
-      (error) => `${error.instancePath || "/"}: ${error.message ?? "invalid"}`,
-    );
+  const result = validateCssDocModel(entries);
+  if (result instanceof ArkErrors) {
+    const errors = result.map((error) => {
+      const path = error.path
+        .map((key) => String(key).replaceAll("~", "~0").replaceAll("/", "~1"))
+        .join("/");
+      return `${path ? `/${path}` : "/"}: ${error.problem}`;
+    });
     throw new TypeError(`Invalid provider model: ${errors.join("; ")}`);
   }
-  return entries;
+  return result;
 }
 
 /** Parse a provider source stylesheet with its own governing `cssdoc.json` convention. */

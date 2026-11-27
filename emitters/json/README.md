@@ -20,7 +20,8 @@ writeJson({
 ```
 
 `renderJson(entries)` returns the JSON string. `cssDocSchema` and `cssDocEntrySchema` re-export the
-draft-07 schemas owned by `@cssdoc/core`, also available from `@cssdoc/core/lite`.
+draft-07 schemas generated from `@cssdoc/core/schema`'s ArkType definitions. The static exports are
+also available from `@cssdoc/core/lite` and don't load the runtime validator.
 
 By default, JSON output omits private examples, prose, legacy private remarks, and to-dos.
 For inline links to structured references, provide a complete lookup for each prose field's

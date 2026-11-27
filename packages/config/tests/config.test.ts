@@ -397,6 +397,11 @@ test.each([
     }),
     path: "/1/structure/0/children/0/selector",
   },
+  {
+    title: "invalid custom block with escaped path characters",
+    corrupt: (entry: CssDocEntry) => ({ ...entry, customBlocks: { "a/b~": [1] } }),
+    path: "/1/customBlocks/a~1b~0/0",
+  },
 ])("resolveProviders rejects a $title without partially loading the model", ({ corrupt, path }) => {
   const dir = mkdtempSync(join(tmpdir(), "cssdoc-provider-invalid-"));
   try {

@@ -1,472 +1,269 @@
 /**
- * The JSON Schema (draft-07) describing the `@cssdoc/core` model — a `CssDocEntry[]`. Consumers of the
- * JSON output and provider loaders share it. Kept in step with `model.ts` by hand.
+ * Runtime definitions of the documentation model. JSON Schema exports are generated from these
+ * ArkType definitions; lightweight consumers use the static exports from `@cssdoc/core/lite`.
  *
  * @module
  */
 
-const named: {
-  readonly type: "object";
-  readonly required: ["name"];
-  readonly additionalProperties: false;
-  readonly properties: {
-    readonly name: { readonly type: "string" };
-    readonly description: { readonly type: "string" };
-  };
-} = {
-  type: "object",
-  required: ["name"],
-  additionalProperties: false,
-  properties: { name: { type: "string" }, description: { type: "string" } },
-} as const;
+import { CSSDOC_EXAMPLE_LABEL_SOURCE, DIGIT_SOURCE } from "@cssdoc/regex";
+import { regex as arkRegex } from "arkregex";
+import { ArkErrors, type JsonSchema, scope, type } from "arktype";
 
-const state: {
-  readonly type: "object";
-  readonly required: ["name", "kind"];
-  readonly additionalProperties: false;
-  readonly properties: {
-    readonly name: { readonly type: "string" };
-    readonly kind: { readonly enum: ["custom", "pseudo-class", "class", "attribute"] };
-    readonly description: { readonly type: "string" };
-    readonly selector: { readonly type: "string" };
-  };
-} = {
-  type: "object",
-  required: ["name", "kind"],
-  additionalProperties: false,
-  properties: {
-    name: { type: "string" },
-    kind: { enum: ["custom", "pseudo-class", "class", "attribute"] },
-    description: { type: "string" },
-    selector: { type: "string" },
-  },
-} as const;
+import type { CssDocEntry, StructureNode } from "./model.ts";
 
-const modifier: {
-  readonly type: "object";
-  readonly required: ["name", "prop"];
-  readonly additionalProperties: false;
-  readonly properties: {
-    readonly name: { readonly type: "string" };
-    readonly prop: { readonly type: "string" };
-    readonly value: { readonly type: "string" };
-    readonly pattern: { readonly type: "boolean" };
-    readonly description: { readonly type: "string" };
-    readonly selector: { readonly type: "string" };
-    readonly interaction: { readonly type: "boolean" };
-    readonly global: { readonly type: "boolean" };
-    readonly affects: {
-      readonly type: "array";
-      readonly items: {
-        readonly type: "object";
-        readonly required: ["component", "target"];
-        readonly additionalProperties: false;
-        readonly properties: {
-          readonly component: { readonly type: "string" };
-          readonly target: { readonly type: "string" };
-          readonly description: { readonly type: "string" };
-        };
-      };
-    };
-    readonly deprecated: {
-      readonly type: "object";
-      readonly additionalProperties: false;
-      readonly properties: {
-        readonly canonical: { readonly type: "string" };
-        readonly note: { readonly type: "string" };
-      };
-    };
-    readonly alias: {
-      readonly type: "object";
-      readonly additionalProperties: false;
-      readonly properties: {
-        readonly canonical: { readonly type: "string" };
-        readonly note: { readonly type: "string" };
-      };
-    };
-  };
-} = {
-  type: "object",
-  required: ["name", "prop"],
-  additionalProperties: false,
-  properties: {
-    name: { type: "string" },
-    prop: { type: "string" },
-    value: { type: "string" },
-    pattern: { type: "boolean" },
-    description: { type: "string" },
-    selector: { type: "string" },
-    interaction: { type: "boolean" },
-    global: { type: "boolean" },
-    affects: {
-      type: "array",
-      items: {
-        type: "object",
-        required: ["component", "target"],
-        additionalProperties: false,
-        properties: {
-          component: { type: "string" },
-          target: { type: "string" },
-          description: { type: "string" },
-        },
-      },
-    },
-    deprecated: {
-      type: "object",
-      additionalProperties: false,
-      properties: { canonical: { type: "string" }, note: { type: "string" } },
-    },
-    alias: {
-      type: "object",
-      additionalProperties: false,
-      properties: { canonical: { type: "string" }, note: { type: "string" } },
-    },
-  },
-} as const;
+export { ArkErrors } from "arktype";
 
-const part: {
-  readonly type: "object";
-  readonly required: ["name"];
-  readonly additionalProperties: false;
-  readonly properties: {
-    readonly name: { readonly type: "string" };
-    readonly description: { readonly type: "string" };
-    readonly selector: { readonly type: "string" };
-    readonly modifiers: { readonly type: "array"; readonly items: typeof modifier };
-  };
-} = {
-  type: "object",
-  required: ["name"],
-  additionalProperties: false,
-  properties: {
-    name: { type: "string" },
-    description: { type: "string" },
-    selector: { type: "string" },
-    modifiers: { type: "array", items: modifier },
-  },
-} as const;
+const EXAMPLE_INDEX = arkRegex.as(`^(?:0|[1-9]${DIGIT_SOURCE}*)$`);
+const EXAMPLE_LABEL = arkRegex.as(`^(?:${CSSDOC_EXAMPLE_LABEL_SOURCE})$`);
+const STORED_CARDINALITY = arkRegex.as(
+  `^(?:optional|many|one-or-more|max-${DIGIT_SOURCE}+|one-or-more-max-${DIGIT_SOURCE}+)$`,
+);
 
-const elementProfile: {
-  readonly type: "object";
-  readonly required: ["any", "allowed", "include", "exclude", "groups", "excludedGroups"];
-  readonly additionalProperties: false;
-  readonly properties: {
-    readonly any: { readonly type: "boolean" };
-    readonly allowed: { readonly type: "array"; readonly items: { readonly type: "string" } };
-    readonly include: { readonly type: "array"; readonly items: { readonly type: "string" } };
-    readonly exclude: { readonly type: "array"; readonly items: { readonly type: "string" } };
-    readonly groups: { readonly type: "array"; readonly items: { readonly type: "string" } };
-    readonly excludedGroups: {
-      readonly type: "array";
-      readonly items: { readonly type: "string" };
-    };
-  };
-} = {
-  type: "object",
-  required: ["any", "allowed", "include", "exclude", "groups", "excludedGroups"],
-  additionalProperties: false,
-  properties: {
-    any: { type: "boolean" },
-    allowed: { type: "array", items: { type: "string" } },
-    include: { type: "array", items: { type: "string" } },
-    exclude: { type: "array", items: { type: "string" } },
-    groups: { type: "array", items: { type: "string" } },
-    excludedGroups: { type: "array", items: { type: "string" } },
-  },
-} as const;
+function uniqueItems(items: readonly unknown[]): boolean {
+  return new Set(items).size === items.length;
+}
 
-/** JSON Schema for a single {@link https://cssdoc.dev/reference/@cssdoc/core/interfaces/CssDocEntry | CssDocEntry}. */
-export const cssDocEntrySchema: {
-  /** JSON Schema type for a record. */
-  readonly type: "object";
-  /** Required model field names. */
-  readonly required: readonly string[];
-  /** Whether fields not listed in the schema are allowed. */
-  readonly additionalProperties: false;
-  /** Schemas keyed by model field name. */
-  readonly properties: Record<string, any>;
-} = {
-  type: "object",
-  required: [
-    "name",
-    "kind",
-    "className",
-    "modifiers",
-    "parts",
-    "shadowParts",
-    "pseudoElements",
-    "states",
-    "slots",
-    "todos",
-    "cssPropertiesConsumed",
-    "cssPropertiesDeclared",
-    "functions",
-    "animations",
-    "layers",
-    "conditions",
-    "examples",
-    "see",
-    "annotations",
-    "refs",
-    "decorators",
-    "compat",
-    "related",
-  ],
-  additionalProperties: false,
-  properties: {
-    name: { type: "string" },
-    kind: { enum: ["component", "utility", "declaration"] },
-    className: { type: "string" },
-    summary: { type: "string" },
-    remarks: { type: "string" },
-    privateRemarks: { type: "string" },
-    releaseStage: { enum: ["alpha", "beta", "experimental", "stable"] },
-    visibility: { enum: ["public", "internal"] },
-    since: { type: "string" },
-    group: { type: "string" },
-    accessibility: { type: "string" },
-    global: { type: "boolean" },
-    modifiers: { type: "array", items: modifier },
-    parts: { type: "array", items: part },
-    shadowParts: { type: "array", items: part },
-    pseudoElements: { type: "array", items: named },
-    states: { type: "array", items: state },
-    slots: { type: "array", items: named },
-    todos: { type: "array", items: { type: "string" } },
-    cssPropertiesConsumed: { type: "array", items: named },
-    cssPropertiesDeclared: {
-      type: "array",
-      items: {
-        type: "object",
-        required: ["name"],
-        additionalProperties: false,
-        properties: {
-          name: { type: "string" },
-          syntax: { type: "string" },
-          inherits: { type: "boolean" },
-          defaultValue: { type: "string" },
-          description: { type: "string" },
-        },
-      },
-    },
-    functions: {
-      type: "array",
-      items: {
-        type: "object",
-        required: ["name", "parameters"],
-        additionalProperties: false,
-        properties: {
-          name: { type: "string" },
-          parameters: { type: "array", items: { type: "string" } },
-          result: { type: "string" },
-          description: { type: "string" },
-        },
-      },
-    },
-    animations: { type: "array", items: named },
-    layers: { type: "array", items: named },
-    conditions: {
-      type: "array",
-      items: {
-        type: "object",
-        required: ["type", "query"],
-        additionalProperties: false,
-        properties: {
-          type: { enum: ["container", "supports", "media"] },
-          query: { type: "string" },
-          containerName: { type: "string" },
-          description: { type: "string" },
-        },
-      },
-    },
-    examples: { type: "array", items: { type: "string" } },
-    prose: {
-      type: "array",
-      items: {
-        type: "object",
-        additionalProperties: false,
-        required: ["tag", "header", "text", "mode", "span"],
-        properties: {
-          tag: { type: "string" },
-          header: { type: "string" },
-          text: { type: "string" },
-          mode: { enum: ["plain", "markdown"] },
-          remarkKind: { type: "string" },
-          private: { type: "boolean" },
-          field: { enum: ["remarks", "usage"] },
-          exampleIndex: { type: "integer", minimum: 0 },
-          span: {
-            type: "object",
-            additionalProperties: false,
-            required: ["start", "end"],
-            properties: {
-              start: { type: "integer", minimum: 0 },
-              end: { type: "integer", minimum: 0 },
-            },
-          },
-        },
-      },
-    },
-    exampleLabels: {
-      type: "object",
-      propertyNames: { pattern: "^(0|[1-9][0-9]*)$" },
-      additionalProperties: {
-        type: "array",
-        minItems: 1,
-        uniqueItems: true,
-        items: { type: "string", pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
-      },
-    },
-    privateExamples: {
-      type: "array",
-      uniqueItems: true,
-      items: { type: "integer", minimum: 0 },
-    },
-    structure: { type: "array", items: { $ref: "#/$defs/StructureNode" } },
-    structureVariants: { type: "array", items: { $ref: "#/$defs/StructureVariant" } },
-    structureDescription: { type: "string" },
-    demo: { type: "string" },
-    deprecated: { type: "string" },
-    see: { type: "array", items: { type: "string" } },
-    usage: { type: "string" },
-    annotations: {
-      type: "array",
-      items: {
-        type: "object",
-        required: ["ref", "text"],
-        additionalProperties: false,
-        properties: {
-          ref: { oneOf: [{ type: "number" }, { type: "string" }] },
-          text: { type: "string" },
-          private: { type: "boolean" },
-        },
-      },
-    },
-    refs: {
-      type: "array",
-      items: {
-        oneOf: [
-          { type: "number" },
-          { type: "string" },
-          {
-            type: "object",
-            required: ["ref"],
-            additionalProperties: false,
-            properties: {
-              ref: { oneOf: [{ type: "number" }, { type: "string" }] },
-              text: { type: "string" },
-              private: { type: "boolean" },
-              attachment: { enum: ["record", "css"] },
-            },
-          },
-        ],
-      },
-    },
-    decorators: {
-      type: "array",
-      items: { enum: ["readonly", "preventExtensions", "sealed", "frozen"] },
-    },
-    compat: { type: "array", items: { type: "string" } },
-    related: { type: "array", items: named },
-    memberOf: {
-      type: "object",
-      required: ["component", "private"],
-      additionalProperties: false,
-      properties: {
-        component: { type: "string" },
-        private: { type: "boolean" },
-      },
-    },
-    members: { type: "array", items: { type: "string" } },
-    memberDeclarations: {
-      type: "array",
-      items: {
-        type: "object",
-        required: ["name", "private"],
-        additionalProperties: false,
-        properties: {
-          name: { type: "string" },
-          private: { type: "boolean" },
-        },
-      },
-    },
-    elements: {
-      type: "object",
-      required: ["default", "profiles"],
-      additionalProperties: false,
-      properties: {
-        default: elementProfile,
-        profiles: {
-          type: "object",
-          additionalProperties: elementProfile,
-        },
-      },
-    },
-    source: {
-      type: "object",
-      additionalProperties: false,
-      properties: {
-        file: { type: "string" },
-        line: { type: "number" },
-        column: { type: "number" },
-      },
-    },
-    customBlocks: {
-      type: "object",
-      additionalProperties: { type: "array", items: { type: "string" } },
-    },
-  },
-} as const;
+function isCardinality(value: string): value is NonNullable<StructureNode["cardinality"]> {
+  return STORED_CARDINALITY.test(value);
+}
 
-/** JSON Schema (draft-07) for the whole model: a `CssDocEntry[]`. */
-export const cssDocSchema: {
-  /** JSON Schema dialect URI. */
-  readonly $schema: string;
-  /** Canonical schema identifier. */
-  readonly $id: string;
-  /** Human-readable schema title. */
-  readonly title: string;
-  /** Human-readable description of the model. */
-  readonly description: string;
-  /** JSON Schema type for the model. */
-  readonly type: "array";
-  /** Schema for each model record. */
-  readonly items: typeof cssDocEntrySchema;
-  /** Reusable schema definitions. */
-  readonly $defs: Record<string, any>;
-} = {
-  $schema: "http://json-schema.org/draft-07/schema#",
-  $id: "https://cssdoc.dev/model.schema.json",
-  title: "cssdoc model",
-  description: "The @cssdoc/core documentation model: one entry per documented CSS record.",
-  type: "array",
-  items: cssDocEntrySchema,
-  $defs: {
+const model = scope(
+  {
+    FiniteNumber: type.number.narrow(Number.isFinite),
+    NonnegativeInteger: "number.integer >= 0",
+    ExampleIndex: type.string.matching(EXAMPLE_INDEX),
+    ExampleLabels: {
+      "+": "reject",
+      "[ExampleIndex]": type.string
+        .matching(EXAMPLE_LABEL)
+        .array()
+        .atLeastLength(1)
+        .narrow(uniqueItems),
+    },
+    PrivateExamples: type("number.integer >= 0").array().narrow(uniqueItems),
+    Cardinality: type.string.narrow(isCardinality),
+    Named: { "+": "reject", name: "string", "description?": "string" },
+    State: {
+      "...": "Named",
+      "+": "reject",
+      kind: "'custom' | 'pseudo-class' | 'class' | 'attribute'",
+      "selector?": "string",
+    },
+    ModifierLink: { "+": "reject", "canonical?": "string", "note?": "string" },
+    ModifierEffect: {
+      "+": "reject",
+      component: "string",
+      target: "string",
+      "description?": "string",
+    },
+    Modifier: {
+      "...": "Named",
+      "+": "reject",
+      prop: "string",
+      "value?": "string",
+      "pattern?": "boolean",
+      "selector?": "string",
+      "interaction?": "boolean",
+      "global?": "boolean",
+      "affects?": "ModifierEffect[]",
+      "deprecated?": "ModifierLink",
+      "alias?": "ModifierLink",
+    },
+    Part: { "...": "Named", "+": "reject", "selector?": "string", "modifiers?": "Modifier[]" },
+    Property: {
+      "...": "Named",
+      "+": "reject",
+      "syntax?": "string",
+      "inherits?": "boolean",
+      "defaultValue?": "string",
+    },
+    Function: { "...": "Named", "+": "reject", parameters: "string[]", "result?": "string" },
+    Condition: {
+      "+": "reject",
+      type: "'container' | 'supports' | 'media'",
+      query: "string",
+      "containerName?": "string",
+      "description?": "string",
+    },
+    ElementProfile: {
+      "+": "reject",
+      any: "boolean",
+      allowed: "string[]",
+      include: "string[]",
+      exclude: "string[]",
+      groups: "string[]",
+      excludedGroups: "string[]",
+    },
+    Elements: {
+      "+": "reject",
+      default: "ElementProfile",
+      profiles: { "[string]": "ElementProfile" },
+    },
     StructureNode: {
-      type: "object",
-      required: ["selector", "children"],
-      additionalProperties: false,
-      properties: {
-        selector: { type: "string" },
-        cardinality: {
-          type: "string",
-          pattern: String.raw`^(optional|many|one-or-more|max-\d+|one-or-more-max-\d+)$`,
-        },
-        scope: { type: "string" },
-        variants: { type: "array", items: { $ref: "#/$defs/StructureVariant" } },
-        colocated: { type: "string" },
-        description: { type: "string" },
-        children: { type: "array", items: { $ref: "#/$defs/StructureNode" } },
-      },
+      "+": "reject",
+      selector: "string",
+      children: "StructureNode[]",
+      "cardinality?": "Cardinality",
+      "scope?": "string",
+      "variants?": "StructureVariant[]",
+      "colocated?": "string",
+      "description?": "string",
     },
-    StructureVariant: {
-      type: "object",
-      required: ["nodes"],
-      additionalProperties: false,
-      properties: {
-        name: { type: "string" },
-        nodes: { type: "array", items: { $ref: "#/$defs/StructureNode" } },
+    StructureVariant: { "+": "reject", "name?": "string", nodes: "StructureNode[]" },
+    ProseSpan: { "+": "reject", start: "NonnegativeInteger", end: "NonnegativeInteger" },
+    Prose: {
+      "+": "reject",
+      tag: "string",
+      header: "string",
+      text: "string",
+      mode: "'plain' | 'markdown'",
+      span: "ProseSpan",
+      "remarkKind?": "string",
+      "private?": "boolean",
+      "field?": "'remarks' | 'usage'",
+      "exampleIndex?": "NonnegativeInteger",
+    },
+    Annotation: {
+      "+": "reject",
+      ref: "FiniteNumber | string",
+      text: "string",
+      "private?": "boolean",
+    },
+    AnnotationReference: {
+      "+": "reject",
+      ref: "FiniteNumber | string",
+      "text?": "string",
+      "private?": "boolean",
+      "attachment?": "'record' | 'css'",
+    },
+    MemberOf: { "+": "reject", component: "string", private: "boolean" },
+    MemberDeclaration: { "+": "reject", name: "string", private: "boolean" },
+    Source: {
+      "+": "reject",
+      "file?": "string",
+      "line?": "FiniteNumber",
+      "column?": "FiniteNumber",
+    },
+    CssDocEntry: {
+      "+": "reject",
+      name: "string",
+      kind: "'component' | 'utility' | 'declaration'",
+      className: "string",
+      modifiers: "Modifier[]",
+      parts: "Part[]",
+      shadowParts: "Part[]",
+      pseudoElements: "Named[]",
+      states: "State[]",
+      slots: "Named[]",
+      todos: "string[]",
+      cssPropertiesConsumed: "Named[]",
+      cssPropertiesDeclared: "Property[]",
+      functions: "Function[]",
+      animations: "Named[]",
+      layers: "Named[]",
+      conditions: "Condition[]",
+      examples: "string[]",
+      see: "string[]",
+      annotations: "Annotation[]",
+      refs: "(FiniteNumber | string | AnnotationReference)[]",
+      decorators: "('readonly' | 'preventExtensions' | 'sealed' | 'frozen')[]",
+      compat: "string[]",
+      related: "Named[]",
+      "summary?": "string",
+      "remarks?": "string",
+      "privateRemarks?": "string",
+      "releaseStage?": "'alpha' | 'beta' | 'experimental' | 'stable'",
+      "visibility?": "'public' | 'internal'",
+      "since?": "string",
+      "group?": "string",
+      "accessibility?": "string",
+      "global?": "boolean",
+      "prose?": "Prose[]",
+      "exampleLabels?": "ExampleLabels",
+      "privateExamples?": "PrivateExamples",
+      "structure?": "StructureNode[]",
+      "structureVariants?": "StructureVariant[]",
+      "structureDescription?": "string",
+      "demo?": "string",
+      "deprecated?": "string",
+      "usage?": "string",
+      "memberOf?": "MemberOf",
+      "members?": "string[]",
+      "memberDeclarations?": "MemberDeclaration[]",
+      "elements?": "Elements",
+      "source?": "Source",
+      "customBlocks?": { "[string]": "string[]" },
+    },
+    CssDocModel: "CssDocEntry[]",
+  },
+  {
+    exactOptionalPropertyTypes: false,
+    toJsonSchema: {
+      target: "draft-07",
+      fallback: {
+        unit: (context) => {
+          // undefined union branches accept no JSON values; optional omission remains valid.
+          if (context.unit === undefined) return { not: {} };
+          throw new TypeError("Cannot export a non-JSON model value");
+        },
+        predicate: (context) => {
+          const { predicate, base } = context;
+          if (predicate === uniqueItems && "type" in base && base.type === "array") {
+            return { ...base, uniqueItems: true };
+          }
+          if (predicate === isCardinality && "type" in base && base.type === "string") {
+            return { ...base, pattern: STORED_CARDINALITY.source };
+          }
+          // JSON numbers are finite; this predicate doesn't add a JSON Schema constraint.
+          if (predicate === Number.isFinite && "type" in base && base.type === "number") {
+            return base;
+          }
+          throw new TypeError("Cannot export an unrecognized model predicate to JSON Schema");
+        },
       },
     },
   },
-} as const;
+).export();
+
+type Mutable<T> = T extends readonly (infer Item)[]
+  ? Mutable<Item>[]
+  : T extends object
+    ? { -readonly [Key in keyof T as Key extends number ? string : Key]: Mutable<T[Key]> }
+    : T;
+type RuntimeEntry = typeof model.CssDocEntry.infer;
+type Equal<Left, Right> =
+  (<T>() => T extends Left ? 1 : 2) extends <T>() => T extends Right ? 1 : 2 ? true : false;
+type CheckedRuntimeEntry =
+  Equal<Mutable<CssDocEntry>, RuntimeEntry> extends true ? RuntimeEntry : never;
+const validateModel = model.CssDocModel;
+
+/**
+ * Validate a model without transforming it. Schema inference must stay compatible with the
+ * documented model interfaces in both directions, including their optional field names.
+ *
+ * @param value - An untrusted model snapshot.
+ * @returns Validated entries or errors with their model paths.
+ */
+export function validateCssDocModel(value: unknown): CssDocEntry[] | ArkErrors {
+  const result = validateModel(value);
+  if (result instanceof ArkErrors) return result;
+  const entries: CheckedRuntimeEntry[] = result;
+  return entries;
+}
+
+/**
+ * Generate the interchange schemas using this scope's draft-07 export policy.
+ *
+ * @returns Schemas for a single record and the whole model.
+ * @throws If an unsupported runtime constraint is added without a faithful JSON representation.
+ */
+export function createModelJsonSchemas(): { entry: JsonSchema; model: JsonSchema } {
+  return {
+    entry: model.CssDocEntry.toJsonSchema(),
+    model: {
+      ...model.CssDocModel.toJsonSchema(),
+      title: "cssdoc model",
+      description: "The @cssdoc/core documentation model: one entry per documented CSS record.",
+    },
+  };
+}

@@ -6,21 +6,14 @@ import { libraryConfig } from "../../vite.config.base.ts";
 const config: UserConfig = mergeConfig(
   libraryConfig,
   defineConfig({
-    lint: {
-      overrides: [
-        {
-          // Keep the published schema's permissive nested-property types.
-          files: ["src/schema.ts"],
-          rules: { "typescript/no-explicit-any": "off" },
-        },
-      ],
-    },
+    fmt: { ignorePatterns: ["src/generated/model-schema.ts"] },
     run: {
       tasks: {
-        build: "vp pack",
+        build: "vpx ../../scripts/sync-model-schema.ts && vp pack",
         dev: { command: "vp pack --watch", cache: false },
         test: "vp test",
-        check: "vp check",
+        check: "vpx ../../scripts/sync-model-schema.ts --check && vp check",
+        "sync:model-schema": "vpx ../../scripts/sync-model-schema.ts",
         "type-check": "tsc --noEmit",
         publint: "publint",
         attw: "node ../../scripts/check-package-types.mjs",
@@ -28,7 +21,7 @@ const config: UserConfig = mergeConfig(
     },
     pack: {
       // The prose subpath adds Markdown interpretation without loading postcss.
-      entry: ["src/index.ts", "src/lite.ts", "src/prose.ts"],
+      entry: ["src/index.ts", "src/lite.ts", "src/prose.ts", "src/schema.ts"],
     },
   }),
 );

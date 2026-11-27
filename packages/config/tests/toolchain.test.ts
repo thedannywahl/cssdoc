@@ -812,6 +812,46 @@ test("promise lint prefers withResolvers over executor constructors", () => {
   }
 });
 
+test("model schema inference rejects drift in optional nested model fields", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/model-shape-"));
+  try {
+    const file = join(directory, "model.ts");
+    const tsconfig = join(directory, "tsconfig.json");
+    writeFileSync(
+      tsconfig,
+      JSON.stringify({
+        extends: "../../../../tsconfig.base.json",
+        files: [file, join(root, "packages/core/src/schema.ts")],
+        include: [],
+      }),
+    );
+    const source = 'import type {} from "../../../core/src/model.ts";\n';
+    writeFileSync(file, source);
+    const compile = () =>
+      spawnSync(
+        "node",
+        [join(root, "node_modules/typescript/bin/tsc"), "--pretty", "false", "-p", tsconfig],
+        { cwd: root, encoding: "utf8" },
+      );
+    const baseline = compile();
+    expect(baseline.status, `${baseline.stdout}\n${baseline.stderr}`).toBe(0);
+    writeFileSync(
+      file,
+      `${source}declare module "../../../core/src/model.ts" {
+  interface CssModifier { unvalidatedOptionalField?: string; }
+}
+`,
+    );
+    const drift = compile();
+    expect(drift.status, `${drift.stdout}\n${drift.stderr}`).toBe(2);
+    expect(drift.stdout).toContain("packages/core/src/schema.ts");
+    expect(drift.stdout).toContain("is not assignable to type 'never[]'");
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("type-aware lint flags redundant assertions and distinguishes non-null from unknown narrowing", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, "packages/config/tests/assertions-"));

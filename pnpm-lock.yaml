@@ -931,6 +931,9 @@ importers:
       arkregex:
         specifier: 'catalog:'
         version: 0.0.15
+      arktype:
+        specifier: 'catalog:'
+        version: 2.2.10
       mdast-util-from-markdown:
         specifier: 'catalog:'
         version: 2.1.0(supports-color@10.2.2)

@@ -35,6 +35,19 @@ function isMarkdownEngine(path: string): boolean {
     );
 }
 
+function isModelValidator(path: string): boolean {
+  const normalized = path.replaceAll("\\", "/");
+  return (
+    normalized.includes("/@ark/schema/") ||
+    normalized
+      .split("/")
+      .some(
+        (part) =>
+          part === "arktype" || part.startsWith("arktype@") || part.startsWith("@ark+schema@"),
+      )
+  );
+}
+
 function sourceMapPaths(mapPath: string): string[] {
   const value: unknown = JSON.parse(readFileSync(mapPath, "utf8"));
   if (
@@ -52,7 +65,7 @@ function sourceMapPaths(mapPath: string): string[] {
   return value.sources.map((source: string) => resolve(dirname(mapPath), sourceRoot, source));
 }
 
-test("packed lite and its transitive module graph contain no Markdown engine", async () => {
+test("packed lite and its transitive module graph contain no Markdown engine or model validator", async () => {
   const outDir = mkdtempSync(join(tmpdir(), "cssdoc-lite-audit-"));
   try {
     execFileSync(
@@ -118,6 +131,7 @@ test("packed lite and its transitive module graph contain no Markdown engine", a
     expect(externals).toEqual([]);
     const markdownPaths = paths.filter((path) => isMarkdownEngine(path));
     expect(markdownPaths).toEqual([]);
+    expect(paths.filter((path) => isModelValidator(path))).toEqual([]);
   } finally {
     rmSync(outDir, { recursive: true, force: true });
   }
@@ -180,5 +194,22 @@ test("the lite dependency audit recognizes a transitive Markdown engine", async 
     write: false,
     metafile: true,
   });
+
   expect(Object.keys(graph.metafile.inputs).some((path) => isMarkdownEngine(path))).toBe(true);
+});
+
+test("the lite dependency audit recognizes the runtime model validator", async () => {
+  const graph = await build({
+    absWorkingDir: root,
+    stdin: {
+      contents: 'export { validateCssDocModel } from "@cssdoc/core/schema";',
+      resolveDir: resolve(root, "packages/core"),
+    },
+    bundle: true,
+    platform: "browser",
+    format: "esm",
+    write: false,
+    metafile: true,
+  });
+  expect(Object.keys(graph.metafile.inputs).some((path) => isModelValidator(path))).toBe(true);
 });

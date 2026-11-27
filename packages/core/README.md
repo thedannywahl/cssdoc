@@ -31,8 +31,18 @@ targets; check authored public prose before publishing it.
 
 `cssDocSchema` describes the whole model, and `cssDocEntrySchema` describes one record. Both are
 draft-07 JSON Schema objects, available from `@cssdoc/core` and the parse-free `@cssdoc/core/lite`
-entry. `@cssdoc/json` re-exports them, and `@cssdoc/config` uses the same schema to validate provider
-snapshots. Core doesn't depend on a schema validator.
+entry. `@cssdoc/json` re-exports them. These static exports don't load ArkType.
+
+The runtime definitions live in `@cssdoc/core/schema`. `validateCssDocModel(value)` returns unchanged
+entries or `ArkErrors`; `@cssdoc/config` uses it for provider snapshots. The inferred schema shape
+must match the documented model interfaces at compile time, accounting for readonly collections and
+JSON's string property keys.
+
+Edit `src/schema.ts`, then run `vp run @cssdoc/core#sync:model-schema` to regenerate the static
+schemas. The scope sets ArkType's JSON Schema target to draft-07. Recursive references, closed
+objects, numeric bounds, label patterns, and uniqueness constraints retain their validation
+semantics, including explicit `undefined` in declared optional fields. `vp run check` detects
+generated-schema drift, and the core build regenerates the file.
 
 Mark a record as internal with `@component name {@private}` in its opening tag. Emitters that
 filter internal records omit it unless `includeInternal` is enabled.

@@ -29,7 +29,7 @@ export { blockSourceRange, collectDocCommentBlocks, docCommentFenceRanges } from
 export type { DocCommentBlock, DocCommentSegment } from "./blocks.ts";
 export type { DocCommentHeaderAnalysis } from "./structure-boundaries.ts";
 export type { DocCommentProse } from "./prose-shared.ts";
-export { cssDocEntrySchema, cssDocSchema } from "./schema.ts";
+export { cssDocEntrySchema, cssDocSchema } from "./generated/model-schema.ts";
 export {
   fencedProseRanges,
   parseInlineLink,

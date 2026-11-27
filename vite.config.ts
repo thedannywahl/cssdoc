@@ -27,6 +27,7 @@ const config: UserConfig = mergeConfig(
       ignorePatterns: [
         "CHANGELOG.md",
         "**/cssdoc.schema.json",
+        "packages/core/src/generated/model-schema.ts",
         "plugins/stylelint/src/index.d.ts",
         "scripts/sync-schema.d.ts",
         ...WORKTREE_IGNORE,
@@ -99,7 +100,7 @@ const config: UserConfig = mergeConfig(
         check: {
           cache: false,
           command:
-            "vp check && vp run type-check && node scripts/sync-schema.ts --check && node scripts/sync-zed-version.mjs --check",
+            "vp check && vpx scripts/sync-model-schema.ts --check && vp run type-check && node scripts/sync-schema.ts --check && node scripts/sync-zed-version.mjs --check",
         },
         "type-check": { cache: false, command: "tsc --noEmit && vp run --no-cache -r type-check" },
         "sync:schema": { cache: false, command: "node scripts/sync-schema.ts" },

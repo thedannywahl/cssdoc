@@ -64,7 +64,7 @@ instead of throwing.
 
 `resolveProviders(configFile)` loads the providers declared in `cssdoc.json`. CSS providers use their
 own configuration; JSON providers accept a `CssDocEntry[]` or a `{ "entries": [...] }` manifest.
-The loader validates every entry against the model schema owned by `@cssdoc/core` before applying
+The loader validates every entry with the ArkType definitions in `@cssdoc/core/schema` before applying
 prefix rewrites or registering cross-links. Invalid models contribute no entries or links and
 produce a message with the provider path and schema error location. Other providers still load.
 

@@ -3,11 +3,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { type CssDocEntry, parseCssDocs, toJson } from "@cssdoc/core";
+import { ArkErrors, validateCssDocModel } from "@cssdoc/core/schema";
 import { createIndex } from "@cssdoc/index";
 import { Ajv } from "ajv";
 import { expect, test } from "vite-plus/test";
 
-import { cssDocSchema, renderJson, writeJson } from "../src/index.ts";
+import { cssDocEntrySchema, cssDocSchema, renderJson, writeJson } from "../src/index.ts";
 
 const CSS = `
 /**
@@ -154,6 +155,75 @@ test("the shipped JSON Schema validates the model output (schema stays in step w
   const ok = validate(parseModel(renderJson(entries)));
   if (!ok) console.error(validate.errors);
   expect(ok).toBe(true);
+});
+
+test("model validation preserves parsed models with explicit optional undefined values", () => {
+  const entries = parseCssDocs(CSS);
+  expect(validateCssDocModel(entries)).toBe(entries);
+  expect(validateModel(entries)).toBe(true);
+  const invalid = [{ ...entries[0], unrecognizedField: undefined }];
+  expect(validateCssDocModel(invalid)).toBeInstanceOf(ArkErrors);
+  expect(validateModel(invalid)).toBe(false);
+});
+
+test("both generated draft-07 schemas validate recursive records independently", () => {
+  const entry = {
+    ...parseModel(renderJson(parseCssDocs(CSS)))[0],
+    structure: [
+      {
+        selector: ".button",
+        children: [
+          {
+            selector: ".icon",
+            cardinality: "max-03",
+            children: [],
+            variants: [{ nodes: [{ selector: ".label", children: [] }] }],
+          },
+        ],
+      },
+    ],
+  };
+  const validateEntry = new Ajv({ allErrors: true }).compile(cssDocEntrySchema);
+  expect(cssDocSchema.$schema).toBe("http://json-schema.org/draft-07/schema#");
+  expect(cssDocEntrySchema.$schema).toBe("http://json-schema.org/draft-07/schema#");
+  expect(validateModel([entry])).toBe(true);
+  expect(validateEntry(entry)).toBe(true);
+  const input = [entry];
+  expect(validateCssDocModel(input)).toBe(input);
+  const invalid = {
+    ...entry,
+    structure: [{ selector: ".button", children: [{ selector: false, children: [] }] }],
+  };
+  expect(validateEntry(invalid)).toBe(false);
+  expect(validateModel([invalid])).toBe(false);
+  expect(validateCssDocModel([invalid])).toBeInstanceOf(ArkErrors);
+});
+
+test.each([
+  {
+    title: "valid labels",
+    patch: { exampleLabels: { "0": ["docs", "interactive-demo"] } },
+    valid: true,
+  },
+  { title: "duplicate labels", patch: { exampleLabels: { "0": ["docs", "docs"] } }, valid: false },
+  { title: "empty labels", patch: { exampleLabels: { "0": [] } }, valid: false },
+  { title: "invalid label", patch: { exampleLabels: { "0": ["Docs"] } }, valid: false },
+  { title: "noncanonical index", patch: { exampleLabels: { "01": ["docs"] } }, valid: false },
+  { title: "duplicate private indices", patch: { privateExamples: [0, 0] }, valid: false },
+  { title: "negative private index", patch: { privateExamples: [-1] }, valid: false },
+  { title: "fractional private index", patch: { privateExamples: [0.5] }, valid: false },
+  { title: "nonfinite number", patch: { source: { line: Infinity } }, valid: false },
+  {
+    title: "undeclared nested field",
+    patch: { parts: [{ name: "icon", extra: true }] },
+    valid: false,
+  },
+])("runtime and generated model schemas agree on $title", ({ patch, valid }) => {
+  const input = [{ ...parseModel(renderJson(parseCssDocs(CSS)))[0], ...patch }];
+  expect(validateModel(input)).toBe(valid);
+  const result = validateCssDocModel(input);
+  expect(result instanceof ArkErrors).toBe(!valid);
+  expect(result === input).toBe(valid);
 });
 
 test("effective prose associations survive public JSON projection and schema validation", () => {

@@ -372,11 +372,6 @@ export const baseConfig: UserConfig = defineConfig({
         },
       },
       {
-        // Preserve the published schema's permissive nested-property types.
-        files: ["**/packages/core/src/schema.ts"],
-        rules: { "typescript/no-explicit-any": "off" },
-      },
-      {
         // Node ESM scripts aren't type-checked; don't grant CommonJS-only globals.
         files: ["**/*.mjs"],
         env: { "shared-node-browser": true },
