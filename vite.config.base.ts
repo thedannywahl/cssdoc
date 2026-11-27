@@ -63,7 +63,7 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-import-type-side-effects": "error",
       "typescript/no-require-imports": "off",
       "typescript/no-var-requires": "off",
-      "typescript/ban-ts-comment": "off",
+      "typescript/ban-ts-comment": "error",
       "typescript/explicit-module-boundary-types": "off",
       "typescript/no-dynamic-delete": "off",
       "typescript/require-array-sort-compare": "off",
@@ -281,6 +281,7 @@ export const baseConfig: UserConfig = defineConfig({
           "typescript/no-unsafe-assignment": "off",
           "typescript/no-unsafe-call": "off",
           "typescript/no-unsafe-member-access": "off",
+          "typescript/ban-ts-comment": "off",
         },
       },
       {
