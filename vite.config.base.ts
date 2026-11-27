@@ -96,7 +96,6 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/no-array-callback-reference": "off",
       "unicorn/max-nested-calls": "off",
       "unicorn/prefer-number-coercion": "off",
-      "unicorn/no-array-for-each": "off",
       "unicorn/prefer-at": "off",
       "unicorn/prefer-type-error": "off",
       "unicorn/prefer-single-call": "off",
@@ -127,6 +126,8 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/no-useless-spread": "warn",
       // JSON, LSP, and DOM APIs use null as part of their contracts.
       "unicorn/no-null": "off",
+      // forEach is useful when the callback also needs an index.
+      "unicorn/no-array-for-each": "off",
       // Check regex correctness and risky performance without imposing stylistic rewrites.
       "regexp/no-contradiction-with-assertion": "error",
       "regexp/no-dupe-disjunctions": "warn",
