@@ -1,4 +1,4 @@
-import { BACKTICK_CHAR, GREATER_THAN_CHAR, TILDE_CHAR } from "@cssdoc/regex";
+import { BACKTICK_CHAR, CARRIAGE_RETURN_CHAR, GREATER_THAN_CHAR, TILDE_CHAR } from "@cssdoc/regex";
 
 type Container = { kind: "quote" } | { kind: "list"; indent: number };
 
@@ -18,7 +18,7 @@ type Cursor = { index: number; column: number; virtual: number };
 
 function isBlank(text: string): boolean {
   for (const char of text) {
-    if (char !== " " && char !== "\t" && char !== "\r") return false;
+    if (char !== " " && char !== "\t" && char !== CARRIAGE_RETURN_CHAR) return false;
   }
   return true;
 }
@@ -160,7 +160,7 @@ function isThematicBreak(line: string): boolean {
   let count = 0;
   for (const char of line) {
     if (char === marker) count++;
-    else if (char !== " " && char !== "\t" && char !== "\r") return false;
+    else if (char !== " " && char !== "\t" && char !== CARRIAGE_RETURN_CHAR) return false;
   }
   return count >= 3;
 }
@@ -171,7 +171,10 @@ function endsParagraph(line: string): boolean {
   if (
     index > 0 &&
     index <= 6 &&
-    (index === line.length || line[index] === " " || line[index] === "\t" || line[index] === "\r")
+    (index === line.length ||
+      line[index] === " " ||
+      line[index] === "\t" ||
+      line[index] === CARRIAGE_RETURN_CHAR)
   ) {
     return true;
   }
@@ -183,7 +186,7 @@ function endsParagraph(line: string): boolean {
   for (const char of line) {
     if (char === marker) {
       if (seenSpace) return false;
-    } else if (char === " " || char === "\t" || char === "\r") {
+    } else if (char === " " || char === "\t" || char === CARRIAGE_RETURN_CHAR) {
       seenSpace = true;
     } else {
       return false;

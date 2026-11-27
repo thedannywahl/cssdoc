@@ -23,6 +23,10 @@ import {
   HTML_COMMENT,
   HTML_QUOTED_ATTRIBUTE,
   HTML_QUOTED_ATTRIBUTE_VALUE,
+  CARRIAGE_RETURN_CHAR,
+  LINE_FEED_CHAR,
+  LINE_ENDING,
+  LINE_ENDING_SOURCE,
 } from "../src/index.ts";
 import { escapeRegex, escapeRegexChar, toRegExp } from "../src/lib.ts";
 
@@ -32,6 +36,10 @@ function requiredRegex(def: UnifiedPatternDef): Regex {
 }
 
 const SINGLE_VALUE_PATTERNS = new Set([
+  "CARRIAGE_RETURN_CHAR",
+  "LINE_FEED_CHAR",
+  "CARRIAGE_RETURN",
+  "LINE_FEED",
   "DASH",
   "DOUBLE_DASH",
   "UNDERSCORE_CHAR",
@@ -118,6 +126,17 @@ it("adds global matching and anchors while preserving existing regex flags", () 
   expect(pattern.flags).toBe("giu");
   expect([..."\nITEM\n".matchAll(pattern)]).toEqual([]);
   expect([..."ITEM".matchAll(pattern)].map((match) => match[0])).toEqual(["ITEM"]);
+});
+
+it("distinguishes literal line characters and splits CRLF as one line ending", () => {
+  expect(`${CARRIAGE_RETURN_CHAR}${LINE_FEED_CHAR}`).toBe("\r\n");
+  expect("one\r\ntwo\rthree\nfour".split(toRegExp(LINE_ENDING))).toEqual([
+    "one",
+    "two",
+    "three",
+    "four",
+  ]);
+  expect(arkRegex.as(`^${LINE_ENDING_SOURCE}$`, "u").test("\r\n")).toBe(true);
 });
 
 it("captures only a trailing lowercase ASCII filename extension", () => {

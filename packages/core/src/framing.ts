@@ -4,6 +4,8 @@ import {
   COMMENT_LINE_MARKER_SOURCE,
   COMMENT_START_SOURCE,
   SPACE_TAB_SOURCE,
+  CARRIAGE_RETURN_CHAR,
+  LINE_FEED_CHAR,
 } from "@cssdoc/regex";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
@@ -17,7 +19,7 @@ export interface FramedCommentLine {
   /** Exclusive UTF-16 offset of the line text in the original input. */
   end: number;
   /** The source character terminating the line, if any. */
-  ending: "\n" | "\r" | "";
+  ending: typeof LINE_FEED_CHAR | typeof CARRIAGE_RETURN_CHAR | "";
 }
 
 /**
@@ -41,9 +43,24 @@ export function frameCommentLines(raw: string, prefixes: "framed" | "none"): Fra
 
   for (let cursor = start; cursor <= end;) {
     let lineEnd = cursor;
-    while (lineEnd < end && raw[lineEnd] !== "\r" && raw[lineEnd] !== "\n") lineEnd++;
-    if (lineEnd < end && raw[lineEnd] === "\r" && raw[lineEnd + 1] === "\n") lineEnd++;
-    const ending = lineEnd < end ? (raw[lineEnd] === "\n" ? "\n" : "\r") : "";
+    while (
+      lineEnd < end &&
+      raw[lineEnd] !== CARRIAGE_RETURN_CHAR &&
+      raw[lineEnd] !== LINE_FEED_CHAR
+    )
+      lineEnd++;
+    if (
+      lineEnd < end &&
+      raw[lineEnd] === CARRIAGE_RETURN_CHAR &&
+      raw[lineEnd + 1] === LINE_FEED_CHAR
+    )
+      lineEnd++;
+    const ending =
+      lineEnd < end
+        ? raw[lineEnd] === LINE_FEED_CHAR
+          ? LINE_FEED_CHAR
+          : CARRIAGE_RETURN_CHAR
+        : "";
     const rawLine = raw.slice(cursor, lineEnd);
     const prefix =
       prefixes === "framed" ? rawLine.match(FRAMED_COMMENT_LINE_PREFIX)?.[0] : undefined;

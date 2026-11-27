@@ -81,6 +81,15 @@ import type { Regex } from "arkregex";
 // Export both the regex object and the source string for each pattern
 
 // Tier 0 - Character classes
+export { CARRIAGE_RETURN_CHAR, LINE_FEED_CHAR } from "./definitions/tier-0-primitives.ts";
+/** Compiled pattern: Carriage return character. */
+export const CARRIAGE_RETURN: Regex = compileRegex(PATTERN_DEFINITIONS.CARRIAGE_RETURN);
+/** Regex source for {@link CARRIAGE_RETURN}. */
+export const CARRIAGE_RETURN_SOURCE: string = PATTERN_DEFINITIONS.CARRIAGE_RETURN.source;
+/** Compiled pattern: Line feed character. */
+export const LINE_FEED: Regex = compileRegex(PATTERN_DEFINITIONS.LINE_FEED);
+/** Regex source for {@link LINE_FEED}. */
+export const LINE_FEED_SOURCE: string = PATTERN_DEFINITIONS.LINE_FEED.source;
 /** Compiled pattern: A character with special meaning in a regular expression. */
 export const REGEX_METACHARACTER: Regex = compileRegex(PATTERN_DEFINITIONS.REGEX_METACHARACTER);
 /** Regex source for {@link REGEX_METACHARACTER}. */
@@ -163,6 +172,10 @@ export const WORD_BOUNDARY: Regex = compileRegex(PATTERN_DEFINITIONS.WORD_BOUNDA
 export const WORD_BOUNDARY_SOURCE: string = PATTERN_DEFINITIONS.WORD_BOUNDARY.source;
 
 // Tier 1 - CSS spec patterns
+/** Compiled pattern: CRLF, CR, or LF line ending. */
+export const LINE_ENDING: Regex = compileRegex(PATTERN_DEFINITIONS.LINE_ENDING);
+/** Regex source for {@link LINE_ENDING}. */
+export const LINE_ENDING_SOURCE: string = PATTERN_DEFINITIONS.LINE_ENDING.source;
 /** Compiled pattern: Lowercase ASCII filename extension, capturing the extension without the dot. */
 export const FILE_EXTENSION: Regex = compileRegex(PATTERN_DEFINITIONS.FILE_EXTENSION);
 /** Regex source for {@link FILE_EXTENSION}. */

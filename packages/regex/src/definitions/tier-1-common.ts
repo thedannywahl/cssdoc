@@ -9,6 +9,22 @@ import { escapeChar } from "../lib.ts";
 
 /** Common punctuation and text pattern definitions. */
 export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
+  LINE_ENDING: {
+    name: "LINE_ENDING",
+    tier: 1,
+    pattern: (resolve: PatternResolver) =>
+      `(?:${resolve("CARRIAGE_RETURN")}${resolve("LINE_FEED")}|${resolve("CARRIAGE_RETURN")}|${resolve("LINE_FEED")})`,
+    flags: "u",
+    description: "A CRLF, CR, or LF line ending",
+    composedFrom: ["CARRIAGE_RETURN", "LINE_FEED"],
+    fixtures: {
+      passes: [{ input: "\r\n" }, { input: "\r" }, { input: "\n" }],
+      fails: [
+        { input: " ", reason: "space" },
+        { input: "\n\r", reason: "two line endings" },
+      ],
+    },
+  },
   FILE_EXTENSION: {
     name: "FILE_EXTENSION",
     tier: 1,

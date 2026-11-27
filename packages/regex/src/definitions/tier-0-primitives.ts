@@ -8,9 +8,65 @@ import type { RawPatternDef, PatternResolver } from "../types.ts";
 
 /** Regex source matching a character with special meaning in a regular expression. */
 export const REGEX_METACHARACTER_SOURCE: string = String.raw`[\\^$.|?*+()[\]{}]`;
+/** Literal carriage return character. */
+export const CARRIAGE_RETURN_CHAR = "\r";
+/** Literal line feed character. */
+export const LINE_FEED_CHAR = "\n";
 
 /** Primitive character and punctuation pattern definitions. */
 export const TIER_0_PRIMITIVES_PATTERNS: Record<string, RawPatternDef> = {
+  CARRIAGE_RETURN_CHAR: {
+    name: "CARRIAGE_RETURN_CHAR",
+    tier: 0,
+    source: CARRIAGE_RETURN_CHAR,
+    description: "Carriage return character (literal)",
+    fixtures: {
+      passes: [{ input: "\r" }],
+      fails: [
+        { input: "\n", reason: "line feed" },
+        { input: " ", reason: "space" },
+      ],
+    },
+  },
+  LINE_FEED_CHAR: {
+    name: "LINE_FEED_CHAR",
+    tier: 0,
+    source: LINE_FEED_CHAR,
+    description: "Line feed character (literal)",
+    fixtures: {
+      passes: [{ input: "\n" }],
+      fails: [
+        { input: "\r", reason: "carriage return" },
+        { input: " ", reason: "space" },
+      ],
+    },
+  },
+  CARRIAGE_RETURN: {
+    name: "CARRIAGE_RETURN",
+    tier: 0,
+    source: String.raw`\r`,
+    description: "Carriage return character (regex pattern)",
+    fixtures: {
+      passes: [{ input: "\r" }],
+      fails: [
+        { input: "\n", reason: "line feed" },
+        { input: " ", reason: "space" },
+      ],
+    },
+  },
+  LINE_FEED: {
+    name: "LINE_FEED",
+    tier: 0,
+    source: String.raw`\n`,
+    description: "Line feed character (regex pattern)",
+    fixtures: {
+      passes: [{ input: "\n" }],
+      fails: [
+        { input: "\r", reason: "carriage return" },
+        { input: " ", reason: "space" },
+      ],
+    },
+  },
   REGEX_METACHARACTER: {
     name: "REGEX_METACHARACTER",
     tier: 0,

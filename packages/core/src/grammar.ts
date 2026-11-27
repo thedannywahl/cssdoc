@@ -91,6 +91,9 @@ import {
   PAREN_CLOSE_CHAR,
   WORD_BOUNDARY_SOURCE,
   SPACE_TAB_SOURCE,
+  CARRIAGE_RETURN_SOURCE,
+  LINE_FEED_SOURCE,
+  LINE_ENDING_SOURCE,
 } from "@cssdoc/regex";
 import type {
   CssParse,
@@ -377,7 +380,10 @@ export function stripCommentFraming(raw: string): string {
 }
 
 function splitCommentLines(raw: string): string[] {
-  const LINE_ENDING: Regex = arkRegex.as(String.raw`\r(?!\n)|\n`, "u");
+  const LINE_ENDING: Regex = arkRegex.as(
+    `${CARRIAGE_RETURN_SOURCE}(?!${LINE_FEED_SOURCE})|${LINE_FEED_SOURCE}`,
+    "u",
+  );
   return raw.split(LINE_ENDING);
 }
 
@@ -563,7 +569,7 @@ export function parseDocComment(
 
     if (definition.canonicalName === "example") {
       const LABELS_HEADER: Regex = arkRegex.as(
-        String.raw`^labels=${BRACKET_OPEN_SOURCE}(${CSSDOC_EXAMPLE_LABEL_SOURCE}(?:${SPACE_TAB_SOURCE}*,${SPACE_TAB_SOURCE}*${CSSDOC_EXAMPLE_LABEL_SOURCE})*)${BRACKET_CLOSE_SOURCE}(?:\r\n|\r|\n|$)`,
+        String.raw`^labels=${BRACKET_OPEN_SOURCE}(${CSSDOC_EXAMPLE_LABEL_SOURCE}(?:${SPACE_TAB_SOURCE}*,${SPACE_TAB_SOURCE}*${CSSDOC_EXAMPLE_LABEL_SOURCE})*)${BRACKET_CLOSE_SOURCE}(?:${LINE_ENDING_SOURCE}|$)`,
         "u",
       );
       const header = LABELS_HEADER.exec(m[2]);

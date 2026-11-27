@@ -4,6 +4,8 @@ import {
   BRACE_OPEN_CHAR,
   COMMENT_START_SOURCE,
   CSSDOC_BLOCK_TAG_NAME_SOURCE,
+  CARRIAGE_RETURN_CHAR,
+  LINE_FEED_CHAR,
 } from "@cssdoc/regex";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
@@ -106,7 +108,7 @@ export function collectDocCommentBlocks(
   if (framed && raw.endsWith("*/") && lines.length > 1 && last.text.trim() === "") {
     const previous = lines[lines.length - 2];
     end -= last.text.length + previous.ending.length;
-    if (previous.ending === "\n" && previous.text.endsWith("\r")) end--;
+    if (previous.ending === LINE_FEED_CHAR && previous.text.endsWith(CARRIAGE_RETURN_CHAR)) end--;
   }
   let lineIndex = 0;
   let lineStart = 0;

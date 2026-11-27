@@ -24,6 +24,7 @@ import {
   BRACE_CLOSE_SOURCE,
   BRACE_OPEN_CHAR,
   BRACE_OPEN_SOURCE,
+  CARRIAGE_RETURN_CHAR,
   COLON_CHAR,
   COMMENT_END_SOURCE,
   COMMENT_START_SOURCE,
@@ -43,6 +44,8 @@ import {
   JAVASCRIPT_TAGGED_TEMPLATE_BOUNDARY_SOURCE,
   JAVASCRIPT_TAGGED_TEMPLATE_CHAIN_SEGMENT_SOURCE,
   LESS_THAN_CHAR,
+  LINE_FEED_CHAR,
+  LINE_FEED_SOURCE,
   QUOTE_DOUBLE_CHAR,
   QUOTE_SINGLE_CHAR,
   WORD_BOUNDARY_SOURCE,
@@ -187,7 +190,7 @@ function scanJs(
   for (let i = 0; i < src.length; i++) {
     const c = src[i];
     if (c === FORWARD_SLASH_CHAR && src[i + 1] === FORWARD_SLASH_CHAR) {
-      while (i < src.length && src[i] !== "\n" && src[i] !== "\r") i++;
+      while (i < src.length && src[i] !== LINE_FEED_CHAR && src[i] !== CARRIAGE_RETURN_CHAR) i++;
     } else if (c === FORWARD_SLASH_CHAR && src[i + 1] === ASTERISK_CHAR) {
       const start = i;
       const isDoc = src[i + 2] === ASTERISK_CHAR;
@@ -253,14 +256,14 @@ function scanHtml(src: string): { regions: Region[] } {
 function scanMarkdown(src: string): { regions: Region[] } {
   const regions: Region[] = [];
   const fence = arkRegex.as(
-    String.raw`(^|\n)${MARKDOWN_BACKTICK_FENCE_SOURCE}(${ALPHA_SOURCE}+)[^\n]*\n`,
+    String.raw`(^|${LINE_FEED_SOURCE})${MARKDOWN_BACKTICK_FENCE_SOURCE}(${ALPHA_SOURCE}+)[^${LINE_FEED_SOURCE}]*${LINE_FEED_SOURCE}`,
     "gu",
   );
   let m: RegExpExecArray | null = fence.exec(src);
   while (m) {
     const lang = m[2].toLowerCase();
     const contentStart = m.index + m[0].length;
-    const close = src.indexOf(`\n${MARKDOWN_BACKTICK_FENCE_TEXT}`, contentStart - 1);
+    const close = src.indexOf(`${LINE_FEED_CHAR}${MARKDOWN_BACKTICK_FENCE_TEXT}`, contentStart - 1);
     const end = close === -1 ? src.length : close + 1;
     if (["css", "scss", "sass", "less"].includes(lang)) {
       regions.push({ start: contentStart, end, host: "markdown", dialect: dialectFromLang(lang) });
@@ -313,13 +316,13 @@ export function projectCss(source: string, opts: EmbeddedOptions = {}): string {
   }
   const keep = [...regions.map((r) => ({ start: r.start, end: r.end })), ...commentSet];
   const out: string[] = Array.from({ length: source.length }, (_, i) =>
-    source[i] === "\n" || source[i] === "\r" ? source[i] : " ",
+    source[i] === LINE_FEED_CHAR || source[i] === CARRIAGE_RETURN_CHAR ? source[i] : " ",
   );
   for (const k of keep)
     for (let i = k.start; i < k.end && i < source.length; i++) out[i] = source[i];
   for (const m of masks)
     for (let i = m.start; i < m.end && i < source.length; i++)
-      out[i] = source[i] === "\n" || source[i] === "\r" ? source[i] : "a";
+      out[i] = source[i] === LINE_FEED_CHAR || source[i] === CARRIAGE_RETURN_CHAR ? source[i] : "a";
   return out.join("");
 }
 
@@ -336,11 +339,11 @@ export function extractCssBlocks(source: string, opts: EmbeddedOptions = {}): Cs
     let line = 1;
     let column = 0;
     for (let i = 0; i < r.start; i++) {
-      if (source[i] === "\r") {
-        if (source[i + 1] === "\n" && i + 1 < r.start) i++;
+      if (source[i] === CARRIAGE_RETURN_CHAR) {
+        if (source[i + 1] === LINE_FEED_CHAR && i + 1 < r.start) i++;
         line++;
         column = 0;
-      } else if (source[i] === "\n") {
+      } else if (source[i] === LINE_FEED_CHAR) {
         line++;
         column = 0;
       } else {
@@ -457,7 +460,7 @@ const COMMENT_RES = [
   toRegExp(HTML_COMMENT),
   arkRegex.as(`${COMMENT_START_SOURCE}[\\s\\S]*?${COMMENT_END_SOURCE}`, "gu"),
   arkRegex.as(
-    String.raw`(?<![${COLON_CHAR}${FORWARD_SLASH_CHAR}])${FORWARD_SLASH_CHAR}{2}[^\n]*`,
+    String.raw`(?<![${COLON_CHAR}${FORWARD_SLASH_CHAR}])${FORWARD_SLASH_CHAR}{2}[^${LINE_FEED_SOURCE}]*`,
     "gu",
   ),
 ];
@@ -484,7 +487,7 @@ function maskComments(source: string): string {
   if (ranges.length === 0) return source;
   const out = Array.from({ length: source.length }, (_, i) => source[i]);
   for (const [s, e] of ranges)
-    for (let i = s; i < e && i < source.length; i++) if (out[i] !== "\n") out[i] = " ";
+    for (let i = s; i < e && i < source.length; i++) if (out[i] !== LINE_FEED_CHAR) out[i] = " ";
   return out.join("");
 }
 

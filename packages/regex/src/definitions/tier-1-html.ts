@@ -67,15 +67,23 @@ export const TIER_1_HTML_PATTERNS: Record<string, RawPatternDef> = {
     name: "HTML_CUSTOM_ELEMENT_NAME",
     tier: 1,
     pattern: (resolve: PatternResolver) => {
-      const chars = String.raw`[^${resolve("ALPHA_UPPER", true)}\0\t\n\f\r ${resolve("FORWARD_SLASH_CHAR")}${resolve("GREATER_THAN_CHAR")}]`;
-      const beforeDash = String.raw`[^${resolve("ALPHA_UPPER", true)}\0\t\n\f\r ${resolve("FORWARD_SLASH_CHAR")}${resolve("GREATER_THAN_CHAR")}${resolve("DASH")}]`;
+      const chars = String.raw`[^${resolve("ALPHA_UPPER", true)}\0\t${resolve("LINE_FEED")}\f${resolve("CARRIAGE_RETURN")} ${resolve("FORWARD_SLASH_CHAR")}${resolve("GREATER_THAN_CHAR")}]`;
+      const beforeDash = String.raw`[^${resolve("ALPHA_UPPER", true)}\0\t${resolve("LINE_FEED")}\f${resolve("CARRIAGE_RETURN")} ${resolve("FORWARD_SLASH_CHAR")}${resolve("GREATER_THAN_CHAR")}${resolve("DASH")}]`;
       const reserved =
         "annotation-xml|color-profile|font-face|font-face-src|font-face-uri|font-face-format|font-face-name|missing-glyph";
       return `(?!(?:${reserved})(?!${chars}))${resolve("ALPHA_LOWER")}${beforeDash}*${resolve("DASH")}${chars}*`;
     },
     flags: "u",
     description: "Valid custom element name under the HTML and DOM standards",
-    composedFrom: ["ALPHA_LOWER", "ALPHA_UPPER", "DASH", "FORWARD_SLASH_CHAR", "GREATER_THAN_CHAR"],
+    composedFrom: [
+      "ALPHA_LOWER",
+      "ALPHA_UPPER",
+      "LINE_FEED",
+      "CARRIAGE_RETURN",
+      "DASH",
+      "FORWARD_SLASH_CHAR",
+      "GREATER_THAN_CHAR",
+    ],
     fixtures: {
       passes: [
         { input: "my-element" },

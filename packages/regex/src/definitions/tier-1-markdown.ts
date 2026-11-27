@@ -42,10 +42,10 @@ export const TIER_1_MARKDOWN_PATTERNS: Record<string, RawPatternDef> = {
     name: "MARKDOWN_BACKTICK_FENCE_LINE_PREFIX",
     tier: 1,
     pattern: (resolve: PatternResolver) =>
-      String.raw`(?:^|\n)\s*${resolve("MARKDOWN_BACKTICK_FENCE")}`,
+      String.raw`(?:^|${resolve("LINE_FEED")})\s*${resolve("MARKDOWN_BACKTICK_FENCE")}`,
     flags: "u",
     description: "Three backticks after the start of a line and optional whitespace",
-    composedFrom: ["MARKDOWN_BACKTICK_FENCE"],
+    composedFrom: ["LINE_FEED", "MARKDOWN_BACKTICK_FENCE"],
     fixtures: {
       passes: [{ input: "```" }, { input: "  ```" }, { input: "\n\t```" }],
       fails: [

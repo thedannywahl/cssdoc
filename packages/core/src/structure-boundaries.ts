@@ -13,6 +13,7 @@ import {
   QUOTE_DOUBLE_CHAR,
   QUOTE_SINGLE_CHAR,
   TOKENIZER_INLINE_TAG_SOURCE,
+  CARRIAGE_RETURN_CHAR,
 } from "@cssdoc/regex";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
@@ -109,7 +110,7 @@ function scanStructure(
   const SEPARATOR: Regex | undefined = findDivider
     ? arkRegex.as(`^(?!${DASH_SOURCE}{2})${CSSDOC_DESCRIPTION_SEPARATOR_SOURCE}(?=\\s|$)`, "u")
     : undefined;
-  if (line.endsWith("\r")) line = line.slice(0, -1);
+  if (line.endsWith(CARRIAGE_RETURN_CHAR)) line = line.slice(0, -1);
   let opened = false;
   let openAt: number | undefined;
   let divider = false;

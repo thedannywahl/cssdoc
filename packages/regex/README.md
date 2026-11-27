@@ -47,6 +47,8 @@ Definitions live in `tier-<number>-<domain>.ts` files. Tier 1 separates CSS and 
 `COMMENT_END_SOURCE` matches a block-comment closer; `COMMENT_END_TEXT` is its literal form.
 `LESS_THAN_CHAR` and `GREATER_THAN_CHAR` provide literal angle brackets.
 `BACKTICK_CHAR` and `BACKSLASH_CHAR` provide literal backtick and backslash characters.
+`CARRIAGE_RETURN_CHAR` and `LINE_FEED_CHAR` are literal characters; their corresponding `_SOURCE`
+exports are for regex composition. `LINE_ENDING` matches CRLF, CR, or LF, treating CRLF as one match.
 `HTML_STANDARD_ELEMENT_NAME` matches a lowercase ASCII built-in-style name, not a list of known elements.
 `HTML_CUSTOM_ELEMENT_NAME` follows the HTML and DOM rules for valid custom-element names.
 `HTML_ELEMENT_NAME` matches either. `HTML_CUSTOM_ELEMENT_LIKE_NAME` preserves the narrower ASCII

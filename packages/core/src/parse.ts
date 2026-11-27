@@ -41,6 +41,7 @@ import {
   DOT_SOURCE,
   EQUALS_CHAR,
   GREATER_THAN_CHAR,
+  LINE_FEED_SOURCE,
   TOKEN_CUSTOM_PROPERTY_SOURCE,
   PSEUDO_SELECTOR_FUNCTIONAL,
   PAREN_CLOSE_SOURCE,
@@ -294,7 +295,7 @@ function parseLegendRows(text: string): Map<number, string> {
 /** Parse inline refs from plain text, capturing optional prose (`@ref 1. Prevent…`). */
 function parseInlineRefs(text: string): { refs: number[]; annotations: Map<number, string> } {
   const INLINE_REF: Regex = arkRegex.as(
-    String.raw`${AT_SOURCE}ref\s+(${DIGIT_SOURCE}+)${DOT_SOURCE}?\s*([^\n]*)`,
+    String.raw`${AT_SOURCE}ref\s+(${DIGIT_SOURCE}+)${DOT_SOURCE}?\s*([^${LINE_FEED_SOURCE}]*)`,
     "gu",
   );
   const refs: number[] = [];
