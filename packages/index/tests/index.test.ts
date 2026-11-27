@@ -90,6 +90,38 @@ test("reference resolution doesn't overwrite duplicates within one index", () =>
   ).toMatchObject({ status: "ambiguous", candidates: [{}, {}] });
 });
 
+test("source-qualified resolution accounts for matching unkeyed inputs", () => {
+  const keyed = createIndex("/** @component button */ .button {}");
+  const unkeyed = createIndex("/** @component button */ .button {}");
+  const other = createIndex("/** @component other */ .other {}");
+  const reference = parseReference('source("a.css")::component:button');
+  if (!reference.ok) throw new Error(reference.error);
+  const resolve = (sources: { index: CssDocIndex; sourceKey?: string }[]) =>
+    resolveRecordReference(reference.reference, { workspace: { complete: true, sources } });
+
+  expect(resolve([{ index: unkeyed }])).toMatchObject({
+    status: "unavailable",
+    candidates: [{}],
+  });
+  expect(resolve([{ index: keyed, sourceKey: "a.css" }, { index: unkeyed }])).toMatchObject({
+    status: "unavailable",
+    candidates: [{ sourceKey: "a.css" }, {}],
+  });
+  expect(resolve([{ index: other }])).toEqual({ status: "missing" });
+  expect(resolve([{ index: keyed, sourceKey: "a.css" }, { index: other }])).toMatchObject({
+    status: "resolved",
+    candidate: { sourceKey: "a.css" },
+  });
+  const provider = parseReference('provider(ui, "a.css")::component:button');
+  if (!provider.ok) throw new Error(provider.error);
+  expect(
+    resolveRecordReference(provider.reference, {
+      workspace: { complete: true, sources: [] },
+      providers: new Map([["ui", { complete: true, sources: [{ index: unkeyed }] }]]),
+    }),
+  ).toMatchObject({ status: "unavailable", candidates: [{ providerId: "ui" }] });
+});
+
 test("createIndex parses the model and resolves class lookups", () => {
   index = createIndex(CSS, { file: "components.css", modifierConvention: "rscss" });
   expect(index.componentForClass(".button")?.name).toBe("button");

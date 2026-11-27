@@ -27,6 +27,7 @@ snapshot (`index.toManifest()`), without spans.
 provided workspace or provider indexes. Supply each source's portable key and scope completeness;
 the result distinguishes missing, ambiguous, and unavailable lookups without selecting the last
 duplicate. Member resolution is separate and isn't implemented by this function.
+Source-qualified lookups are unavailable if an otherwise matching input has no source key.
 
 ## License
 

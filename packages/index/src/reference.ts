@@ -47,6 +47,7 @@ export type RecordReferenceResolution =
  *
  * This resolves only the record portion; callers must separately resolve any typed member. An
  * incomplete or absent required scope is unavailable even when its known candidates appear unique.
+ * A source-qualified lookup is also unavailable when a matching record lacks a source key.
  *
  * @param reference - Parsed record reference.
  * @param lookup - Explicit source provenance and scope completeness.
@@ -61,11 +62,14 @@ export function resolveRecordReference(
   if (!scope) return { status: "unavailable", candidates: [] };
   const sourceKey = reference.scope.kind === "workspace" ? undefined : reference.scope.sourceKey;
   const candidates: ReferenceCandidate[] = [];
+  let unknownSource = false;
   for (const source of scope.sources) {
-    if (sourceKey !== undefined && source.sourceKey !== sourceKey) continue;
+    if (sourceKey !== undefined && source.sourceKey !== undefined && source.sourceKey !== sourceKey)
+      continue;
     for (const record of source.index.records) {
       if (record.entry.name !== reference.name) continue;
       if (reference.kind !== undefined && record.entry.kind !== reference.kind) continue;
+      if (sourceKey !== undefined && source.sourceKey === undefined) unknownSource = true;
       candidates.push({
         record,
         ...(source.sourceKey === undefined ? {} : { sourceKey: source.sourceKey }),
@@ -73,7 +77,7 @@ export function resolveRecordReference(
       });
     }
   }
-  if (!scope.complete) return { status: "unavailable", candidates };
+  if (!scope.complete || unknownSource) return { status: "unavailable", candidates };
   if (candidates.length === 0) return { status: "missing" };
   if (candidates.length > 1) return { status: "ambiguous", candidates };
   return { status: "resolved", candidate: candidates[0] };
