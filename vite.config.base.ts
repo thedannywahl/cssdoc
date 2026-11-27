@@ -56,7 +56,6 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/restrict-template-expressions": "off",
       "typescript/no-deprecated": "off",
       "typescript/no-empty-object-type": "off",
-      "typescript/no-unnecessary-boolean-literal-compare": "off",
       "typescript/no-misused-spread": "error",
       "typescript/triple-slash-reference": "warn",
       "typescript/prefer-for-of": "warn",
@@ -77,6 +76,8 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-var-requires": "off",
       // HTML sanitization removes a property selected from the node's tag.
       "typescript/no-dynamic-delete": "off",
+      // isTTY can be absent at runtime when standard streams are redirected.
+      "typescript/no-unnecessary-boolean-literal-compare": "off",
       "unicorn/prefer-node-protocol": "error",
       // Re-enable newly activated Unicorn rules individually after review.
       "unicorn/explicit-length-check": "off",
