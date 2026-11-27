@@ -110,6 +110,10 @@ accepting CommonJS-only globals. TypeScript checks undefined names separately.
 Type-aware linting rejects unsafe assignments, arguments, calls, member access, and returns in
 TypeScript. It also checks for redundant assertions, deprecated APIs, and potentially misleading template interpolations.
 Type-check failures throw `TypeError`; range failures use `RangeError`.
+End-relative array access uses `at`, and index searches compare against their `-1` sentinel.
+Numeric reference captures already contain only decimal digits, so they use `Number` rather than
+partial integer parsing. Use `structuredClone` for copies; JSON Schema tests validate the emitter's
+serialized output rather than treating a JSON round-trip as a clone.
 Untyped JavaScript is excluded from the unsafe-boundary and interpolation checks because it lacks
 reliable type information; the standalone VS Code Lit example is also excluded from the assignment,
 call, and member-access checks.

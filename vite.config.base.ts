@@ -60,9 +60,10 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-unsafe-enum-assignment": "error",
       "typescript/no-unsafe-enum-comparison": "error",
       "eslint/no-fallthrough": "error",
-      // Re-enable newly activated TypeScript rules individually after review.
+      // Evaluate declaration conventions separately from assertion safety.
       "typescript/no-unnecessary-type-assertion": "warn",
       "typescript/explicit-member-accessibility": "off",
+      // Pending: replace external-data and AST boundary assertions with verified guards or types.
       "typescript/no-unsafe-type-assertion": "off",
       // Falsy primitive defaults (including empty strings and zero) can be intentional.
       "typescript/prefer-nullish-coalescing": ["warn", { ignorePrimitives: true }],
@@ -103,6 +104,7 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/non-nullable-type-assertion-style": "warn",
       "typescript/unbound-method": "error",
       "typescript/no-unnecessary-template-expression": "warn",
+      // Protocol test helpers use caller-selected reply types in their inferred return signatures.
       "typescript/no-unnecessary-type-parameters": "off",
       // Explicit exported types satisfy isolatedDeclarations.
       "typescript/no-inferrable-types": "off",
@@ -127,12 +129,13 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/prefer-node-protocol": "error",
       "unicorn/no-accessor-recursion": "error",
       "unicorn/no-array-fill-with-reference-type": "error",
-      // Re-enable newly activated Unicorn rules individually after review.
+      // Review remaining syntax and scoping conventions individually, not as a blanket preset.
       "unicorn/explicit-length-check": "off",
       "unicorn/import-style": "off",
       "unicorn/prefer-string-raw": "off",
       "unicorn/no-nested-ternary": "off",
       "unicorn/no-await-expression-member": "off",
+      // Pending: distinguish reusable production helpers from deliberately local test setup.
       "unicorn/consistent-function-scoping": "off",
       "unicorn/consistent-existence-index-check": "warn",
       "unicorn/no-array-callback-reference": "warn",
