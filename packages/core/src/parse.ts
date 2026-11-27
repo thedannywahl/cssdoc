@@ -1018,7 +1018,7 @@ function buildEntry(
         ...(annotation.private || doc.privateAnnotationIds?.has(ref) ? { private: true } : {}),
       })),
     ],
-    refs: [...[...doc.refs, ...acc.refs], ...(doc.namedRefs ?? [])],
+    refs: [...doc.refs, ...acc.refs, ...(doc.namedRefs ?? [])],
     decorators,
     compat: doc.compat,
     related: doc.related,

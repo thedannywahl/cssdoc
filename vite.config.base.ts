@@ -117,7 +117,7 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/prefer-array-flat": "off",
       "unicorn/prefer-logical-operator-over-ternary": "off",
       "unicorn/prefer-module": "off",
-      "unicorn/no-useless-spread": "off",
+      "unicorn/no-useless-spread": "warn",
       // Check regex correctness and risky performance without imposing stylistic rewrites.
       "regexp/no-contradiction-with-assertion": "error",
       "regexp/no-dupe-disjunctions": "warn",
