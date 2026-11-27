@@ -567,6 +567,38 @@ test("promise lint prefers catch while allowing VS Code Thenable handlers", () =
   }
 });
 
+test("Vitest lint flags ambiguous truthiness assertions", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".boolean-matchers-check-"));
+  try {
+    const file = join(directory, "assertions.test.ts");
+    writeFileSync(
+      file,
+      [
+        'import { expect, test } from "vite-plus/test";',
+        'test("checks booleans", () => {',
+        "  expect(true).toBeTruthy();",
+        "  expect(false).toBe(false);",
+        "});",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "vitest(prefer-strict-boolean-matchers)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["warning", 3]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));

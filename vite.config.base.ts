@@ -247,7 +247,7 @@ export const baseConfig: UserConfig = defineConfig({
       "vitest/prefer-strict-equal": "off",
       "vitest/prefer-to-be-truthy": "off",
       "vitest/prefer-to-be-falsy": "off",
-      "vitest/prefer-strict-boolean-matchers": "off",
+      "vitest/prefer-strict-boolean-matchers": "warn",
       "vitest/prefer-comparison-matcher": "off",
       "vitest/prefer-expect-resolves": "off",
       "vitest/consistent-test-it": "off",

@@ -111,8 +111,8 @@ test("completions carry sortText so a @global modifier sorts after the component
   const completions = svc.completions(text, positionAt(text.indexOf('">')));
   const direct = completions.find((c) => c.label === "-size-sm");
   const global = completions.find((c) => c.label === "-density-compact");
-  expect(direct?.sortText).toBeTruthy();
-  expect(global?.sortText).toBeTruthy();
+  expect(typeof direct?.sortText === "string" && direct.sortText.length > 0).toBe(true);
+  expect(typeof global?.sortText === "string" && global.sortText.length > 0).toBe(true);
   expect(direct!.sortText! < global!.sortText!).toBe(true);
 });
 

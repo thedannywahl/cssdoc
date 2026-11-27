@@ -16,7 +16,7 @@ test("every tag has a name and a kind", () => {
 
 test("every tag has a one-line description for editor completions", () => {
   for (const tag of CSSDOC_TAGS) {
-    expect(tag.description, `${tag.name} has no description`).toBeTruthy();
+    expect(tag.description?.length ?? 0, `${tag.name} has no description`).toBeGreaterThan(0);
   }
 });
 
