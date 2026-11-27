@@ -54,7 +54,8 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-deprecated": "off",
       "typescript/no-empty-object-type": "off",
       "typescript/no-misused-spread": "error",
-      "typescript/triple-slash-reference": "warn",
+      // Ambient declarations must follow their sources into cross-package TypeScript projects.
+      "typescript/triple-slash-reference": ["warn", { path: "always" }],
       "typescript/prefer-for-of": "warn",
       "typescript/no-import-type-side-effects": "error",
       "typescript/no-require-imports": "error",

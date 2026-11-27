@@ -1,3 +1,5 @@
+/// <reference path="./postcss-less.d.ts" />
+
 /**
  * `@cssdoc/dialects` — resolve a PostCSS parser for a stylesheet dialect, so cssdoc can document
  * `.scss`/`.sass`/`.less` sources (and `<style lang="scss">` blocks) the same way it documents plain
