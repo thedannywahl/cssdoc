@@ -506,6 +506,31 @@ test("lint prefers Unicode code point APIs", () => {
   }
 });
 
+test("import lint flags anonymous default exports", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".default-export-check-"));
+  try {
+    const unsafe = join(directory, "unsafe.mjs");
+    const safe = join(directory, "safe.mjs");
+    writeFileSync(unsafe, "export default { name: 'card' };\n");
+    writeFileSync(safe, "const card = { name: 'card' };\nexport default card;\n");
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", unsafe, safe], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "import(no-anonymous-default-export)")
+          .map(({ severity, filename }) => [severity, filename.endsWith("unsafe.mjs")]),
+      ).toEqual([["warning", true]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));

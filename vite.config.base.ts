@@ -261,7 +261,7 @@ export const baseConfig: UserConfig = defineConfig({
       "import/exports-last": "off",
       "import/consistent-type-specifier-style": "off",
       "import/no-namespace": "off",
-      "import/no-anonymous-default-export": "off",
+      "import/no-anonymous-default-export": "warn",
       // Oxfmt owns import ordering; keep value and type imports separate when appropriate.
       "eslint/sort-imports": "off",
       "eslint/no-duplicate-imports": "off",
