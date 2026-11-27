@@ -29,6 +29,11 @@ the result distinguishes missing, ambiguous, and unavailable lookups without sel
 duplicate. Member resolution is separate and isn't implemented by this function.
 Source-qualified lookups are unavailable if an otherwise matching input has no source key.
 
+`resolveNamedMemberReference` additionally resolves `csspart`, `slot`, `property`, `token`,
+`function`, `keyframes`, and `layer` members using CSS-parsed identifiers. Set a source's
+`membersComplete` only if its model retains every member occurrence; otherwise member lookup is
+unavailable. Selector and at-rule-prelude members aren't supported by this function.
+
 ## License
 
 MIT

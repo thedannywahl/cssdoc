@@ -5,6 +5,7 @@ import {
   createIndex,
   indexFromEntries,
   memberKey,
+  resolveNamedMemberReference,
   resolveRecordReference,
 } from "../src/index.ts";
 
@@ -120,6 +121,55 @@ test("source-qualified resolution accounts for matching unkeyed inputs", () => {
       providers: new Map([["ui", { complete: true, sources: [{ index: unkeyed }] }]]),
     }),
   ).toMatchObject({ status: "unavailable", candidates: [{ providerId: "ui" }] });
+});
+
+test("named member resolution uses CSS identifiers and preserves duplicates", () => {
+  const base = createIndex("/** @component button */ .button {}").entries[0];
+  const record = {
+    ...base,
+    shadowParts: [{ name: "label" }],
+    slots: [{ name: "" }],
+    cssPropertiesDeclared: [{ name: "--accent" }],
+    cssPropertiesConsumed: [{ name: "--token" }],
+    functions: [{ name: "--scale", parameters: [] }],
+    animations: [{ name: "fade-in" }],
+    layers: [{ name: "components.forms" }],
+  };
+  const lookup = (complete = true) => ({
+    workspace: {
+      complete: true,
+      sources: [{ index: indexFromEntries([record]), membersComplete: complete }],
+    },
+  });
+  const resolve = (text: string, complete = true) => {
+    const parsed = parseReference(text);
+    if (!parsed.ok) throw new Error(parsed.error);
+    return resolveNamedMemberReference(parsed.reference, lookup(complete));
+  };
+  for (const reference of [
+    "button#csspart(lab\\65 l)",
+    "button#slot()",
+    "button#property(--accent)",
+    "button#token(--token)",
+    "button#function(--scale)",
+    "button#keyframes(fade-in)",
+    "button#layer(components.forms)",
+  ]) {
+    expect(resolve(reference)).toMatchObject({ status: "resolved" });
+  }
+  expect(resolve("button#property(accent)")).toEqual({ status: "invalid-subject" });
+  expect(resolve("button#slot(two words)")).toEqual({ status: "invalid-subject" });
+  expect(resolve("button#layer(components\\.forms)")).toEqual({ status: "missing" });
+  expect(resolve("button#csspart(label)", false)).toMatchObject({ status: "unavailable" });
+  expect(resolve("button#modifier(.button--quiet)")).toMatchObject({ status: "unavailable" });
+  const duplicate = indexFromEntries([{ ...record, slots: [{ name: "" }, { name: "" }] }]);
+  const parsed = parseReference("button#slot()");
+  if (!parsed.ok) throw new Error(parsed.error);
+  expect(
+    resolveNamedMemberReference(parsed.reference, {
+      workspace: { complete: true, sources: [{ index: duplicate, membersComplete: true }] },
+    }),
+  ).toMatchObject({ status: "ambiguous", candidates: [{}, {}] });
 });
 
 test("createIndex parses the model and resolves class lookups", () => {

@@ -34,10 +34,12 @@
     "@cssdoc/core": "workspace:*",
     "@cssdoc/regex": "workspace:*",
     "arkregex": "catalog:",
+    "css-tree": "catalog:",
     "postcss": "catalog:",
     "postcss-value-parser": "catalog:"
   },
   "devDependencies": {
+    "@types/css-tree": "catalog:",
     "@types/node": "catalog:",
     "publint": "catalog:",
     "typescript": "catalog:",

@@ -47,8 +47,10 @@ import {
   WORD_BOUNDARY_SOURCE,
   toRegExp,
 } from "@cssdoc/regex";
-export { resolveRecordReference } from "./reference.ts";
+export { resolveNamedMemberReference, resolveRecordReference } from "./reference.ts";
 export type {
+  NamedMemberCandidate,
+  NamedMemberResolution,
   RecordReferenceResolution,
   ReferenceCandidate,
   ReferenceLookup,
