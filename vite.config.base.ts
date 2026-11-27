@@ -23,6 +23,7 @@ export const baseConfig: UserConfig = defineConfig({
     jsPlugins: [{ name: "regexp", specifier: "eslint-plugin-regexp" }],
     rules: {
       "typescript/no-floating-promises": "error",
+      "typescript/no-misused-promises": "error",
       "typescript/no-unsafe-assignment": "off",
       "typescript/no-unsafe-argument": "off",
       "typescript/no-unsafe-call": "off",

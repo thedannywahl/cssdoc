@@ -329,7 +329,7 @@ test("selected nursery rules check control flow, imports, and Node ESM globals",
   }
 });
 
-test("type-aware lint rejects floating promises", () => {
+test("type-aware lint rejects floating and misused promises", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, "packages/config/tests/type-aware-check-"));
   try {
@@ -338,7 +338,16 @@ test("type-aware lint rejects floating promises", () => {
       JSON.stringify({ extends: join(root, "tsconfig.base.json"), include: ["*.ts"] }),
     );
     const file = join(directory, "promises.ts");
-    writeFileSync(file, "async function work() { return 1; }\nwork();\nvoid work();\n");
+    writeFileSync(
+      file,
+      [
+        "async function work() { return 1; }",
+        "work();",
+        "void work();",
+        "const handler: () => void = () => Promise.resolve(1);",
+        "handler();",
+      ].join("\n"),
+    );
     const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
       cwd: root,
       encoding: "utf8",
@@ -352,6 +361,11 @@ test("type-aware lint rejects floating promises", () => {
         .filter(({ code }) => code === "typescript(no-floating-promises)")
         .map(({ severity, labels }) => [severity, labels[0].span.line]),
     ).toEqual([["error", 2]]);
+    expect(
+      output.diagnostics
+        .filter(({ code }) => code === "typescript(no-misused-promises)")
+        .map(({ severity, labels }) => [severity, labels[0].span.line]),
+    ).toEqual([["error", 4]]);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
