@@ -12,6 +12,7 @@ import {
   renderIndex,
 } from "../src/index.ts";
 import { cell, escProse } from "../src/render.ts";
+import { plainProse } from "../src/prose.ts";
 
 const CSS = `
 /**
@@ -45,6 +46,10 @@ test("escapes repeated Vue and table delimiters while preserving code spans", ()
   const text = "<x> {{a}} | `<y> {{b}}` | <z>";
   expect(escProse(text)).toBe("&lt;x&gt; &#123;&#123;a}} | `<y> {{b}}` | &lt;z&gt;");
   expect(cell(text)).toBe("&lt;x&gt; &#123;&#123;a}} \\| `<y> {{b}}` \\| &lt;z&gt;");
+});
+
+test("plain prose preserves CRLF, CR, and LF as individual line breaks", () => {
+  expect(plainProse("one\r\ntwo\rthree\nfour")).toBe("one<br>\ntwo<br>\nthree<br>\nfour");
 });
 
 test("escapes prose around empty, multiline, and unmatched backtick spans", () => {

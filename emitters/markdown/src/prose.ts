@@ -1,4 +1,13 @@
 import { safeProseUrl } from "@cssdoc/core";
+import {
+  BRACE_OPEN_CHAR,
+  GREATER_THAN_CHAR,
+  LESS_THAN_CHAR,
+  LINE_ENDING_SOURCE,
+  LINE_FEED_CHAR,
+} from "@cssdoc/regex";
+import type { Regex } from "arkregex";
+import { regex as arkRegex } from "arkregex";
 import { fromMarkdown } from "mdast-util-from-markdown";
 
 type Node = {
@@ -34,11 +43,15 @@ function literal(text: string): string {
  * @returns Markdown-safe literal prose.
  */
 export function plainProse(text: string): string {
-  return literal(text).replaceAll("\r\n", "\n").replaceAll("\r", "\n").replaceAll("\n", "<br>\n");
+  const LINE_ENDING: Regex = arkRegex.as(LINE_ENDING_SOURCE, "gu");
+  return literal(text).replace(LINE_ENDING, `<br>${LINE_FEED_CHAR}`);
 }
 
 function escapeFree(text: string): string {
-  return text.replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("{{", "&#123;&#123;");
+  return text
+    .replaceAll(LESS_THAN_CHAR, "&lt;")
+    .replaceAll(GREATER_THAN_CHAR, "&gt;")
+    .replaceAll(BRACE_OPEN_CHAR.repeat(2), "&#123;&#123;");
 }
 
 /**

@@ -1,3 +1,5 @@
+import { BACKSLASH_CHAR, FORWARD_SLASH_CHAR } from "@cssdoc/regex";
+
 /**
  * Check whether a decoded Markdown destination is safe for public output.
  *
@@ -6,7 +8,12 @@
  * @returns Whether the destination is allowed.
  */
 export function safeProseUrl(value: string, image = false): boolean {
-  if (!value || value !== value.trim() || value.startsWith("//") || value.includes("\\")) {
+  if (
+    !value ||
+    value !== value.trim() ||
+    value.startsWith(FORWARD_SLASH_CHAR.repeat(2)) ||
+    value.includes(BACKSLASH_CHAR)
+  ) {
     return false;
   }
   for (let i = 0; i < value.length; i++) {
