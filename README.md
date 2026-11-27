@@ -90,6 +90,8 @@ Errors and warnings can be logged elsewhere.
 Explicit `undefined` arguments and returns remain valid for optional inputs, mocks, and parser
 continuation paths. The native undefined-removal rule can't exempt returns independently, so it stays
 off to preserve the return-consistency policy.
+CLI failure paths set `process.exitCode` and skip further work instead of forcing an immediate exit,
+so their output can drain.
 
 Promise linting prefers `await` with explicit error handling over chains, including for editor
 Thenables. Event-to-promise adapters use `Promise.withResolvers` to keep listener registration and

@@ -15,12 +15,12 @@ import { fileURLToPath } from "node:url";
 import { syncZedVersion } from "./sync-zed-version.mjs";
 
 const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
-if (!pkg.version) {
+if (pkg.version) {
+  syncZedVersion(fileURLToPath(new URL("..", import.meta.url)), true);
+
+  // `--output` (no filename) writes CHANGELOG.md; `-r` sets the release version for the heading.
+  execFileSync("changelogen", ["--output", "-r", pkg.version], { stdio: "inherit" });
+} else {
   console.error("release-changelog: could not read version from package.json");
-  process.exit(1);
+  process.exitCode = 1;
 }
-
-syncZedVersion(fileURLToPath(new URL("..", import.meta.url)), true);
-
-// `--output` (no filename) writes CHANGELOG.md; `-r` sets the release version for the heading.
-execFileSync("changelogen", ["--output", "-r", pkg.version], { stdio: "inherit" });

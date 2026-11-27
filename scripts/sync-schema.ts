@@ -60,9 +60,10 @@ if (import.meta.main) {
     if (drifted.length > 0) {
       console.error("cssdoc.schema.json is out of sync — run `vp run sync:schema`:");
       for (const rel of drifted) console.error(`  ✗ ${rel}`);
-      process.exit(1);
+      process.exitCode = 1;
+    } else {
+      console.log(`cssdoc.schema.json in sync across ${SCHEMA_TARGETS.length} locations`);
     }
-    console.log(`cssdoc.schema.json in sync across ${SCHEMA_TARGETS.length} locations`);
   } else {
     for (const rel of SCHEMA_TARGETS) writeFileSync(resolve(rel), SCHEMA_JSON);
     console.log(`Wrote cssdoc.schema.json to ${SCHEMA_TARGETS.length} locations`);
