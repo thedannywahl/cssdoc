@@ -262,6 +262,73 @@ test("restriction lint preserves repository conventions and checks unsafe forms"
   }
 });
 
+test("selected nursery rules check control flow, imports, and Node ESM globals", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".nursery-check-"));
+  try {
+    writeFileSync(join(directory, "exports.js"), "export const present = 1;\n");
+    const file = join(directory, "sample.mjs");
+    writeFileSync(
+      file,
+      [
+        'import { missing } from "./exports.js";',
+        "function deadStore() { let value = 1; value = 2; return value; }",
+        "function first(items) { for (const item of items) return item; }",
+        "console.error(process.version, missing, deadStore(), first([]), unknownName, require);",
+      ].join("\n"),
+    );
+    const valid = join(directory, "valid.mjs");
+    writeFileSync(
+      valid,
+      [
+        'import { present } from "./exports.js";',
+        "function sum(items) { let total = 0; for (const item of items) total += item; return total; }",
+        "console.error(process.version, present, sum([1]));",
+      ].join("\n"),
+    );
+    for (const workspace of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file, valid], {
+        cwd: workspace,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      const output: {
+        diagnostics: { code: string; severity: string; filename: string; message: string }[];
+      } = JSON.parse(result.stdout);
+      const sample = output.diagnostics.filter(({ filename }) => filename.endsWith("sample.mjs"));
+      for (const code of [
+        "eslint(no-unreachable-loop)",
+        "eslint(no-useless-assignment)",
+        "import(named)",
+      ]) {
+        expect(sample.filter((diagnostic) => diagnostic.code === code)).toMatchObject([
+          { severity: "warning" },
+        ]);
+      }
+      const undefinedNames = sample.filter(({ code }) => code === "eslint(no-undef)");
+      expect(undefinedNames.every(({ severity }) => severity === "warning")).toBe(true);
+      expect(undefinedNames.map(({ message }) => message).sort()).toEqual([
+        "'require' is not defined.",
+        "'unknownName' is not defined.",
+      ]);
+      expect(
+        output.diagnostics.filter(
+          ({ filename, code }) =>
+            filename.endsWith("valid.mjs") &&
+            [
+              "eslint(no-unreachable-loop)",
+              "eslint(no-useless-assignment)",
+              "import(named)",
+              "eslint(no-undef)",
+            ].includes(code),
+        ),
+      ).toEqual([]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("TSDoc definitions follow the cssdoc vocabulary", () => {
   const require = createRequire(import.meta.url);
   const pluginRequire = createRequire(require.resolve("eslint-plugin-tsdoc"));

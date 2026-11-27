@@ -25,7 +25,7 @@ const lexerCache = new Map<string, Lexer | null>();
 function lexerFor(syntax: string): Lexer | null {
   const cached = lexerCache.get(syntax);
   if (cached !== undefined) return cached;
-  let lexer: Lexer | null = null;
+  let lexer: Lexer | null;
   try {
     lexer = fork({ properties: { [PROBE]: syntax } }).lexer;
   } catch {

@@ -21,6 +21,10 @@ export const baseConfig: UserConfig = defineConfig({
     options: { typeAware: true, typeCheck: true },
     plugins: ["import", "node", "promise", "vitest", "jsdoc"],
     rules: {
+      // Select nursery checks individually; the category changes as rules mature.
+      "eslint/no-unreachable-loop": "warn",
+      "eslint/no-useless-assignment": "warn",
+      "import/named": "warn",
       // Vitest supplies a default timeout; individual tests can override it when needed.
       "vitest/require-test-timeout": "off",
       // Parsers and public APIs use undefined, increments, and bit flags intentionally.
@@ -121,6 +125,13 @@ export const baseConfig: UserConfig = defineConfig({
       "import/max-dependencies": "off",
     },
     overrides: [
+      {
+        // Node ESM scripts aren't type-checked; don't grant CommonJS-only globals.
+        files: ["**/*.mjs"],
+        env: { "shared-node-browser": true },
+        globals: { process: "readonly", Buffer: "readonly" },
+        rules: { "eslint/no-undef": "warn" },
+      },
       {
         // LSP smoke tests poll for state changes and send ordered document notifications.
         files: ["**/server-smoke.test.ts"],

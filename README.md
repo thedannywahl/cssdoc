@@ -84,6 +84,10 @@ default exports. It checks parameter reassignment and use before initialization,
 statements for intentionally unawaited work, and allows console output in tests and build scripts.
 Errors and warnings can be logged elsewhere.
 
+Nursery linting stays off as a category. Selected rules warn about unreachable loops, dead stores,
+and invalid named imports; Node ESM scripts also warn about undefined names without accepting
+CommonJS-only globals. TypeScript checks undefined names separately.
+
 The TypeScript catalog is pinned to the upstream revision targeted by Vite+'s tsrs checker; a test
 checks that they stay aligned. TypeDoc uses TypeScript 6 separately because of its peer dependency;
 the docs and TypeDoc plugin type-check tasks use the root TypeScript compiler instead.
