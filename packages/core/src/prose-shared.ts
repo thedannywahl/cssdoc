@@ -27,6 +27,8 @@ export interface DocCommentProse {
   remarkKind?: string;
   /** Whether the prose is private. */
   private?: boolean;
+  /** Model field populated by this occurrence, when it is the effective value. */
+  field?: "remarks" | "usage";
   /** Index into the record's examples, for example prose. */
   exampleIndex?: number;
   /** UTF-16 range relative to the original comment. */

@@ -72,6 +72,40 @@ test("auto ignores recognized inline metadata but detects real Markdown", () => 
   expect(parsed.prose.map((body) => body.mode)).toEqual(["plain", "plain", "markdown", "markdown"]);
 });
 
+test("usage and remarks identify the effective prose occurrence without matching text", () => {
+  const raw = `/** @component button
+ * @remarks usage - **same**
+ * @remarks note - **same**
+ * @remarks todo - Private.
+ * @usage - First.
+ * @usage - Second.
+ */`;
+  const config = new CssDocConfiguration();
+  config.setProseSettings({
+    mode: "plain",
+    remarkKinds: { usage: "markdown" },
+    tags: { usage: "markdown" },
+  });
+  const full = parseFullDocComment(raw, config);
+  const lite = parseLiteDocComment(raw, config);
+  expect(full.remarks).toBe("**same**");
+  expect(full.usage).toBe("Second.");
+  expect(full.prose.map((body) => body.field)).toEqual([
+    undefined,
+    "remarks",
+    undefined,
+    undefined,
+    "usage",
+  ]);
+  expect(full.prose.map((body) => body.field)).toEqual(lite.prose.map((body) => body.field));
+  expect(full.prose.find((body) => body.field === "remarks")?.mode).toBe("plain");
+  expect(full.prose.find((body) => body.field === "usage")?.mode).toBe("markdown");
+
+  const legacy = parseFullDocComment(`${raw.slice(0, -2)} * @usage Legacy.\n */`, config);
+  expect(legacy.usage).toBe("Legacy.");
+  expect(legacy.prose.some((body) => body.field === "usage")).toBe(false);
+});
+
 test("mode settings resolve aliases and clear inherited overrides", () => {
   const config = new CssDocConfiguration();
   config.addTagDefinition(

@@ -218,6 +218,7 @@ test("VitePress renders 1.0 examples and prose safely in their effective modes",
     `/** @component button
  * @remarks usage - **Bold** [unsafe](javascript:alert) <x-tag> {{danger}}
  * @example docs - **Literal** [bad](javascript:alert)
+ * @usage - **Usage** <usage-tag>
  */
 .button {}`,
     { configuration },
@@ -231,6 +232,9 @@ test("VitePress renders 1.0 examples and prose safely in their effective modes",
   expect(html).not.toContain("{{danger}}");
   expect(html).toContain("&#42;&#42;Literal&#42;&#42;");
   expect(html).not.toContain("<strong>Literal</strong>");
+  expect(html).toContain("&#42;&#42;Usage&#42;&#42;");
+  expect(html).not.toContain("<usage-tag>");
+  expect(markdown).not.toContain("- **Usage**");
   expect(markdown).not.toContain("```css");
 });
 

@@ -147,9 +147,7 @@ export function renderPage(
   if (entry.deprecated)
     parts.push(`<div class="warn"><strong>Deprecated</strong> — ${prose(entry.deprecated)}</div>`);
   if (entry.remarks) {
-    const mode = entry.prose?.findLast(
-      (body) => body.tag === "remarks" && !body.private && body.text === entry.remarks,
-    )?.mode;
+    const mode = entry.prose?.find((body) => body.field === "remarks")?.mode;
     parts.push(renderProse(entry.remarks, false, mode));
   }
 

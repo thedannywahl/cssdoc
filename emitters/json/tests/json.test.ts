@@ -90,6 +90,26 @@ test("the shipped JSON Schema validates the model output (schema stays in step w
   expect(ok).toBe(true);
 });
 
+test("effective prose associations survive public JSON projection and schema validation", () => {
+  const entries = parseCssDocs(`/** @component button
+ * @remarks - Public remarks.
+ * @remarks todo - Private remarks.
+ * @usage - Public usage.
+ * @example {@private} - Private example.
+ */
+.button {}`);
+  const model = JSON.parse(renderJson(entries));
+  const validate = new Ajv({ allErrors: true }).compile(cssDocSchema);
+  const valid = validate(model);
+  if (!valid) console.error(validate.errors);
+  expect(valid).toBe(true);
+  expect(model[0].prose.map((body: { field?: string }) => body.field)).toEqual([
+    "remarks",
+    "usage",
+  ]);
+  expect(JSON.stringify(model)).not.toContain("Private");
+});
+
 test("the model schema rejects the removed record kind", () => {
   const entries = parseCssDocs(CSS);
   const removedKind = JSON.parse(JSON.stringify(entries));

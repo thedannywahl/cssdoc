@@ -55,6 +55,24 @@ test("HTML respects prose modes for remarks and filtered examples", () => {
   expect(html).not.toContain("<script>");
 });
 
+test("repeated identical remarks use the selected occurrence's mode", () => {
+  const configuration = new CssDocConfiguration();
+  configuration.setProseSettings({ mode: "plain", remarkKinds: { usage: "markdown" } });
+  const [entry] = parseCssDocs(
+    `/** @component button
+ * @remarks usage - **Same**
+ * @remarks note - **Same**
+ * @remarks todo - Private
+ */
+.button {}`,
+    { configuration },
+  );
+  const html = renderPage(entry);
+  expect(html).toContain('class="prose-plain">**Same**');
+  expect(html).not.toContain("<strong>Same</strong>");
+  expect(html).not.toContain("Private");
+});
+
 test("buildHtml selects examples without filtering the returned model", () => {
   const outDir = mkdtempSync(join(tmpdir(), "cssdoc-html-examples-"));
   const css = `

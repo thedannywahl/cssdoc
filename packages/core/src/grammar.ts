@@ -564,6 +564,8 @@ export function parseDocComment(
   );
   const PRIVATE_SOURCE = `${BRACE_OPEN_SOURCE}${AT_SOURCE}private${BRACE_CLOSE_SOURCE}`;
   const PRIVATE: Regex = arkRegex.as(PRIVATE_SOURCE, "u");
+  let remarksBody: DocCommentProse | undefined;
+  let usageBody: DocCommentProse | undefined;
   for (const [blockIndex, block] of blocks.entries()) {
     const m = block.text.match(BLOCK_HEADER);
     if (!m) continue;
@@ -653,6 +655,7 @@ export function parseDocComment(
     );
     if (body?.private) {
       if (definition.canonicalName !== "remarks" && definition.canonicalName !== "privateRemarks") {
+        if (definition.canonicalName === "usage") usageBody = undefined;
         let safeRest = body.header
           .slice(tagName.length + 1)
           .replace(PRIVATE, "")
@@ -666,12 +669,18 @@ export function parseDocComment(
       }
       continue;
     }
-    if (definition.canonicalName === "remarks" && body) {
-      doc.remarks = body.text;
-      continue;
+    if (definition.canonicalName === "remarks" || definition.canonicalName === "usage") {
+      if (definition.canonicalName === "remarks") remarksBody = body;
+      else usageBody = body;
+      if (body) {
+        doc[definition.canonicalName] = body.text;
+        continue;
+      }
     }
     applyBlockTag(doc, definition.canonicalName, definition.tagNameWithoutAt, rest, parse);
   }
+  if (remarksBody) remarksBody.field = "remarks";
+  if (usageBody) usageBody.field = "usage";
   // A dotted component name (`menu.item`) implies membership in its immediate parent (`menu`), unless
   // an explicit @memberOf already said otherwise.
   if (!doc.memberOf && doc.component?.includes(".")) {

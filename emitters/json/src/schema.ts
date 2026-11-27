@@ -256,6 +256,7 @@ export const cssDocEntrySchema: {
           mode: { enum: ["plain", "markdown"] },
           remarkKind: { type: "string" },
           private: { type: "boolean" },
+          field: { enum: ["remarks", "usage"] },
           exampleIndex: { type: "integer", minimum: 0 },
           span: {
             type: "object",

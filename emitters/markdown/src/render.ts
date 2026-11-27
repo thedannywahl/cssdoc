@@ -590,9 +590,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
     lines.push("> [!NOTE]", `> Only used within ${parentLabel}.`, "");
   }
   if (entry.remarks) {
-    const prose = entry.prose?.findLast(
-      (body) => body.tag === "remarks" && !body.private && body.text === entry.remarks,
-    );
+    const prose = entry.prose?.find((body) => body.field === "remarks");
     lines.push(
       prose?.mode === "plain"
         ? plainProse(entry.remarks)
@@ -646,8 +644,15 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   const importSnippet = options.importSnippet?.(entry);
   if (entry.usage || importSnippet) {
     fragments.usage.push("## Usage", "");
-    if (entry.usage)
-      fragments.usage.push(safeMarkdownBlock(normalizeProseMarkdown(entry.usage)), "");
+    if (entry.usage) {
+      const prose = entry.prose?.find((body) => body.field === "usage");
+      fragments.usage.push(
+        prose?.mode === "plain"
+          ? plainProse(entry.usage)
+          : safeMarkdownBlock(prose ? entry.usage : normalizeProseMarkdown(entry.usage)),
+        "",
+      );
+    }
     if (importSnippet) fragments.usage.push(...fencedBlock("css", importSnippet), "");
   }
 
