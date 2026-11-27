@@ -67,7 +67,7 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/prefer-nullish-coalescing": "off",
       "typescript/strict-void-return": "off",
       "typescript/method-signature-style": "off",
-      "typescript/no-confusing-void-expression": "off",
+      "typescript/no-confusing-void-expression": ["warn", { ignoreArrowShorthand: true }],
       "typescript/consistent-type-definitions": "off",
       "typescript/promise-function-async": "off",
       "typescript/array-type": "off",

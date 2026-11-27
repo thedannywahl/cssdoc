@@ -857,6 +857,42 @@ test("type-aware lint flags deprecated APIs", () => {
   }
 });
 
+test("type-aware lint flags confusing void expressions but allows concise callbacks", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/type-aware-check-"));
+  try {
+    writeFileSync(
+      join(directory, "tsconfig.json"),
+      JSON.stringify({ extends: join(root, "tsconfig.base.json"), include: ["*.ts"] }),
+    );
+    const file = join(directory, "void.ts");
+    writeFileSync(
+      file,
+      [
+        "function work(): void {}",
+        "const result = work();",
+        "const callback = () => work();",
+        "work();",
+        "console.error(result, callback);",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "typescript(no-confusing-void-expression)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["warning", 2]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("type import lint requires type-only imports", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, "packages/config/tests/type-aware-check-"));
