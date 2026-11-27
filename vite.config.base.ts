@@ -117,7 +117,6 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/prefer-dom-node-dataset": "off",
       "unicorn/new-for-builtins": "warn",
       "unicorn/prefer-includes": "warn",
-      "unicorn/no-array-reverse": "off",
       "unicorn/prefer-array-flat": "off",
       "unicorn/prefer-logical-operator-over-ternary": "off",
       "unicorn/prefer-module": "off",
@@ -130,6 +129,8 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/switch-case-braces": "off",
       // Sorting an owned array in place can avoid an unnecessary copy.
       "unicorn/no-array-sort": "off",
+      // Reversing an owned array in place can likewise avoid a copy.
+      "unicorn/no-array-reverse": "off",
       // Check regex correctness and risky performance without imposing stylistic rewrites.
       "regexp/no-contradiction-with-assertion": "error",
       "regexp/no-dupe-disjunctions": "warn",
