@@ -32,6 +32,13 @@ export {
   scanInlineTagsOutsideCode,
 } from "./inline.ts";
 export type { InlineLinkResult, InlineTag } from "./inline.ts";
+export { parseReference } from "./reference.ts";
+export type {
+  CssDocReference,
+  ReferenceMemberKind,
+  ReferenceParseResult,
+  ReferenceScope,
+} from "./reference.ts";
 export { literalMarkdownText } from "./prose-text.ts";
 export { safeProseUrl } from "./prose-url.ts";
 export { CssDocConfiguration, CssDocTagDefinition } from "./configuration.ts";

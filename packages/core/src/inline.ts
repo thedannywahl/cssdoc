@@ -1,16 +1,19 @@
 import {
   AT_CHAR,
+  ASTERISK_CHAR,
   BACKSLASH_CHAR,
   BRACE_CLOSE_CHAR,
   BRACE_OPEN_CHAR,
   BRACKET_CLOSE_CHAR,
   BRACKET_OPEN_CHAR,
   CSSDOC_BLOCK_TAG_NAME_SOURCE,
+  FORWARD_SLASH_CHAR,
   LINE_ENDING_SOURCE,
   PAREN_CLOSE_CHAR,
   PAREN_OPEN_CHAR,
   PIPE_CHAR,
   QUOTE_DOUBLE_CHAR,
+  QUOTE_SINGLE_CHAR,
 } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
 import { CssDocConfiguration } from "./configuration.ts";
@@ -95,22 +98,33 @@ export function scanInlineTags(
 
     const nameEnd = start + 2 + name.length;
     const stack: string[] = [];
-    let quote = false;
+    let quote: string | undefined;
+    let comment = false;
     let escaped = false;
     let label = false;
     let separator: number | undefined;
     let end = nameEnd;
     for (; end < text.length; end++) {
       const char = text[end];
-      if (escaped) {
+      if (comment) {
+        if (char === ASTERISK_CHAR && text[end + 1] === FORWARD_SLASH_CHAR) {
+          comment = false;
+          end++;
+        }
+      } else if (escaped) {
         escaped = false;
       } else if (char === BACKSLASH_CHAR) {
         escaped = true;
       } else if (label) {
         if (char === BRACE_CLOSE_CHAR) break;
-      } else if (char === QUOTE_DOUBLE_CHAR) {
-        quote = !quote;
-      } else if (!quote) {
+      } else if (quote) {
+        if (char === quote) quote = undefined;
+      } else if (char === QUOTE_DOUBLE_CHAR || char === QUOTE_SINGLE_CHAR) {
+        quote = char;
+      } else if (char === FORWARD_SLASH_CHAR && text[end + 1] === ASTERISK_CHAR) {
+        comment = true;
+        end++;
+      } else {
         if (definition.canonicalName === "link" && char === PIPE_CHAR && stack.length === 0) {
           label = true;
           separator = end;

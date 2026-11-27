@@ -68,6 +68,8 @@ Markdown parser.
 `scanInlineTags` finds enabled inline tags with offsets in the original text. For a scanned
 `{@link ...}`, `parseInlineLink` decodes its plain-text label and validates external URLs. Reference
 targets remain authored strings; this helper doesn't resolve them or determine their visibility.
+`parseReference` validates record-reference framing, provider IDs, and decoded source keys, and
+retains member subjects for CSS-aware matching. It doesn't resolve records or validate member CSS.
 
 ## The doc-comment grammar
 

@@ -7,6 +7,7 @@ import {
   parseCssDocs,
   parseDocComment as parseFullDocComment,
   parseInlineLink,
+  parseReference,
   scanInlineTags,
   scanInlineTagsOutsideCode,
   selectExamples,
@@ -122,6 +123,75 @@ test("inline links decode labels and JSON-quoted external URLs", () => {
     target: { kind: "url", value: "https://example.test/a?x=1" },
     label: "Website",
   });
+});
+
+test("inline links keep delimiters inside single-quoted CSS selector strings", () => {
+  const text = "{@link component:card#part(:has(') | }')) | Label} {@link next}";
+  const [first, second] = scanInlineTags(text);
+  expect(parseInlineLink(text, first)).toEqual({
+    ok: true,
+    target: { kind: "reference", value: "component:card#part(:has(') | }'))" },
+    label: "Label",
+  });
+  expect(text.slice(second.start, second.end)).toBe("{@link next}");
+});
+
+test("inline target comments can't terminate nested reference syntax", () => {
+  const text = "{@link component:card#part(:is(.x /* ) | } */)) | Label}";
+  const [tag] = scanInlineTags(text);
+  expect(parseInlineLink(text, tag)).toMatchObject({
+    ok: true,
+    target: { value: "component:card#part(:is(.x /* ) | } */))" },
+    label: "Label",
+  });
+});
+
+test("reference grammar retains scoped identities and nested member subjects", () => {
+  expect(parseReference("button")).toEqual({
+    ok: true,
+    reference: { scope: { kind: "workspace" }, name: "button" },
+  });
+  expect(parseReference('source("src/forms \\"legacy\\".css")::component:button')).toEqual({
+    ok: true,
+    reference: {
+      scope: { kind: "source", sourceKey: 'src/forms "legacy".css' },
+      kind: "component",
+      name: "button",
+    },
+  });
+  expect(
+    parseReference(
+      `provider(ui, "src/forms.css")::component:button#part(:is([data-x=')'], .icon))`,
+    ),
+  ).toEqual({
+    ok: true,
+    reference: {
+      scope: { kind: "provider", providerId: "ui", sourceKey: "src/forms.css" },
+      kind: "component",
+      name: "button",
+      member: { kind: "part", subject: ":is([data-x=')'], .icon)" },
+    },
+  });
+  expect(parseReference("component:button#slot()")).toMatchObject({
+    ok: true,
+    reference: { member: { kind: "slot", subject: "" } },
+  });
+});
+
+test.each([
+  ['source("/etc/passwd")::component:x', "invalid-source-key"],
+  ['source("C:/tmp/file.css")::component:x', "invalid-source-key"],
+  ['source("src/../file.css")::component:x', "invalid-source-key"],
+  ['source("src//file.css")::component:x', "invalid-source-key"],
+  ['source("src/\\\\\\\\file.css")::component:x', "invalid-source-key"],
+  ['source("src/\\u000a.css")::component:x', "invalid-source-key"],
+  ['provider(UI, "src/x.css")::component:x', "invalid-provider-id"],
+  ['provider(ui, "src/x.css")::x', "invalid-reference"],
+  ["component:button#part(:is(.x)", "invalid-reference"],
+  ["component:button#part()", "invalid-reference"],
+  ["component:button#unknown(x)", "invalid-reference"],
+] as const)("rejects invalid structured reference %s", (text, error) => {
+  expect(parseReference(text)).toEqual({ ok: false, error });
 });
 
 test("inline scanning respects protected ranges and maps label offsets", () => {
