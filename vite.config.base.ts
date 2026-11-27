@@ -578,7 +578,7 @@ export const baseConfig: UserConfig = defineConfig({
         files: ["**/*.mjs"],
         env: { "shared-node-browser": true },
         globals: { process: "readonly", Buffer: "readonly" },
-        rules: { "eslint/no-undef": "warn" },
+        rules: { "eslint/no-undef": "error" },
       },
       {
         // LSP smoke tests poll for state changes and send ordered document notifications.

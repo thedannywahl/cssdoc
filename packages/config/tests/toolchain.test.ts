@@ -1649,7 +1649,7 @@ test("selected nursery rules check control flow, imports, and Node ESM globals",
         { severity: "warning" },
       ]);
       const undefinedNames = sample.filter(({ code }) => code === "eslint(no-undef)");
-      expect(undefinedNames.every(({ severity }) => severity === "warning")).toBe(true);
+      expect(undefinedNames.every(({ severity }) => severity === "error")).toBe(true);
       expect(undefinedNames.map(({ message }) => message).sort()).toEqual([
         "'require' is not defined.",
         "'unknownName' is not defined.",

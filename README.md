@@ -171,7 +171,7 @@ redundant blocks for statements that don't need case-local scope.
 Nursery linting stays off as a category. Selected rules reject unreachable loops and dead stores
 and warn about invalid named imports and redundant iterator materialization. Explicitly named
 snapshots remain valid: eager consumption can matter before an early-exit iterator operation.
-Node ESM scripts also warn about undefined names without accepting CommonJS-only globals.
+Node ESM scripts also reject undefined names without accepting CommonJS-only globals.
 TypeScript checks undefined names separately. The remaining nursery decisions are explicit:
 
 | Rule                                  | Why it stays off                                                                                                                                                                     |
