@@ -350,8 +350,7 @@ export function cell(text: string | undefined): string {
 export function normalizeProseMarkdown(text: string): string {
   const lines = text.split("\n");
   const out: string[] = [];
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]!;
+  for (const line of lines) {
     if (LIST_ITEM_PREFIX.exec(line) !== null && out.length > 0) {
       const prev = out.at(-1)!;
       // Only insert a blank line when the previous non-empty line is not itself a list item.
