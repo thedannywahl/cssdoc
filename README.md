@@ -130,8 +130,8 @@ The [eslint-plugin-jsdoc TSDoc preset](https://github.com/gajus/eslint-plugin-js
 is a guide, not an Oxlint preset: Oxlint implements a subset of its rules. TSDoc syntax validation and
 TypeDoc's public API coverage check complement the native rules.
 
-For JavaScript, documented `@param` tags also require JSDoc types because there is no TypeScript
-signature to supply them.
+For JavaScript, documented `@param` and `@returns` tags also require JSDoc types because there is no
+TypeScript signature to supply them.
 
 ## License
 

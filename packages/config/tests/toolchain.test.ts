@@ -599,7 +599,7 @@ test("Vitest lint flags ambiguous truthiness assertions", () => {
   }
 });
 
-test("JSDoc lint requires parameter types in JavaScript but not TypeScript", () => {
+test("JSDoc lint requires parameter and return types in JavaScript but not TypeScript", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".jsdoc-types-check-"));
   try {
@@ -608,16 +608,16 @@ test("JSDoc lint requires parameter types in JavaScript but not TypeScript", () 
     writeFileSync(
       javascript,
       [
-        "/** @param value - Input. */",
+        "/** @param value - Input.\n * @returns Output. */",
         "function unsafe(value) { return value; }",
-        "/** @param {string} value - Input. */",
+        "/** @param {string} value - Input.\n * @returns {string} Output. */",
         "function safe(value) { return value; }",
         "console.error(unsafe('a'), safe('b'));",
       ].join("\n"),
     );
     writeFileSync(
       typescript,
-      "/** @param value - Input. */\nfunction typed(value: string) { return value; }\nconsole.error(typed('a'));\n",
+      "/** @param value - Input.\n * @returns Output. */\nfunction typed(value: string) { return value; }\nconsole.error(typed('a'));\n",
     );
     for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
       const result = spawnSync(
@@ -635,6 +635,15 @@ test("JSDoc lint requires parameter types in JavaScript but not TypeScript", () 
             labels[0].span.line,
           ]),
       ).toEqual([["warning", true, 1]]);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "jsdoc(require-returns-type)")
+          .map(({ severity, filename, labels }) => [
+            severity,
+            filename.endsWith("example.mjs"),
+            labels[0].span.line,
+          ]),
+      ).toEqual([["warning", true, 2]]);
     }
   } finally {
     rmSync(directory, { recursive: true, force: true });
