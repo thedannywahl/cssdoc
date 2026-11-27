@@ -1,4 +1,4 @@
-import { literalMarkdownText } from "@cssdoc/core";
+import { literalMarkdownText } from "@cssdoc/core/lite";
 import { sanitizeMarkdownLinks as sanitizeLinks, unescapeInlineOpeners } from "@cssdoc/core/prose";
 import {
   BACKTICK_CHAR,

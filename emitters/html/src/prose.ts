@@ -2,7 +2,7 @@ import { fromMarkdown } from "mdast-util-from-markdown";
 import { toHast } from "mdast-util-to-hast";
 import { toHtml } from "hast-util-to-html";
 import { sanitize } from "hast-util-sanitize";
-import { safeProseUrl } from "@cssdoc/core";
+import { safeProseUrl } from "@cssdoc/core/lite";
 import { unescapeInlineOpeners } from "@cssdoc/core/prose";
 
 type MarkdownNode = {
