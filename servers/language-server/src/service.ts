@@ -301,7 +301,7 @@ function refHoverAt(
       if (!trimmed) continue;
       const marker = trimmed.match(ANNOTATION_MARKER);
       if (marker) {
-        current = Number.parseInt(marker[1], 10);
+        current = Number(marker[1]);
         out.set(current, marker[2].trim());
         continue;
       }
@@ -325,7 +325,7 @@ function refHoverAt(
       const refStart = ref.index ?? 0;
       const refEnd = refStart + ref[0].length;
       if (local < refStart || local > refEnd) continue;
-      const value = Number.parseInt(ref[1], 10);
+      const value = Number(ref[1]);
       const annotation = annotations.get(value);
       if (!annotation) return undefined;
       return {

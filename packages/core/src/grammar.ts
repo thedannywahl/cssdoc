@@ -965,7 +965,7 @@ function applyBlockTag(
       const cleaned = rest.replace("{@private}", "").trim();
       const numeric = cleaned.match(NUMERIC_REF_ROW);
       if (numeric) {
-        const ref = Number.parseInt(numeric[1], 10);
+        const ref = Number(numeric[1]);
         if (privateMarker) doc.privateAnnotationIds.add(ref);
         doc.refs.push(ref);
         const text = numeric[2].replace(NUMERIC_REF_PREFIX, "").trim();
@@ -980,16 +980,16 @@ function applyBlockTag(
         const id = named[1];
         const text = named[2].replace(NAMED_REF_PREFIX, "").trim() || undefined;
         doc.namedRefs.push({
-          ref: NUMERIC_REF_ID.test(id) ? Number.parseInt(id, 10) : id,
+          ref: NUMERIC_REF_ID.test(id) ? Number(id) : id,
           ...(text ? { text } : {}),
           ...(privateMarker ? { private: true } : {}),
           attachment: "record",
         });
         if (privateMarker) {
-          doc.privateAnnotationIds.add(NUMERIC_REF_ID.test(id) ? Number.parseInt(id, 10) : id);
+          doc.privateAnnotationIds.add(NUMERIC_REF_ID.test(id) ? Number(id) : id);
         }
         if (text) {
-          const numericId = NUMERIC_REF_ID.test(id) ? Number.parseInt(id, 10) : undefined;
+          const numericId = NUMERIC_REF_ID.test(id) ? Number(id) : undefined;
           if (numericId !== undefined && !doc.annotations.has(numericId)) {
             doc.annotations.set(numericId, text);
           }
@@ -1291,7 +1291,7 @@ function parseAnnotationsBody(raw: string): DocAnnotation[] {
     const marker = trimmed.match(MARKER);
     if (marker) {
       if (current) rows.push(current);
-      current = { ref: Number.parseInt(marker[1], 10), text: marker[2].trim() };
+      current = { ref: Number(marker[1]), text: marker[2].trim() };
       continue;
     }
     if (current) current.text = current.text ? `${current.text}\n${trimmed}` : trimmed;

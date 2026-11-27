@@ -957,6 +957,36 @@ test("lint prefers structuredClone for copying but permits JSON serialization", 
   }
 });
 
+test("lint prefers Number for decimal coercion but permits explicit nondecimal parsing", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".number-coercion-check-"));
+  try {
+    const file = join(directory, "numbers.mjs");
+    writeFileSync(
+      file,
+      [
+        'console.error(Number.parseInt("42", 10));',
+        'console.error(Number("42"));',
+        'console.error(Number.parseInt("ff", 16));',
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "unicorn(prefer-number-coercion)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["warning", 1]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));

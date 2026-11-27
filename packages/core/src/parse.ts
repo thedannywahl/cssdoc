@@ -285,7 +285,7 @@ function parseLegendRows(text: string): Map<number, string> {
     if (TAG_START.exec(trimmed) !== null) break;
     const marker = trimmed.match(LEGEND_ROW);
     if (marker) {
-      current = Number.parseInt(marker[1], 10);
+      current = Number(marker[1]);
       out.set(current, marker[2].trim());
       continue;
     }
@@ -303,7 +303,7 @@ function parseInlineRefs(text: string): { refs: number[]; annotations: Map<numbe
   const refs: number[] = [];
   const annotations = new Map<number, string>();
   for (const m of text.matchAll(INLINE_REF)) {
-    const n = Number.parseInt(m[1], 10);
+    const n = Number(m[1]);
     refs.push(n);
     const prose = m[2].trim();
     if (prose) annotations.set(n, prose);
