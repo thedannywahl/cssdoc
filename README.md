@@ -85,6 +85,9 @@ Restriction linting permits parser increments and bit flags, explicit `undefined
 default exports. It checks parameter reassignment and use before initialization, permits `void`
 statements for intentionally unawaited work, and allows console output in tests and build scripts.
 Errors and warnings can be logged elsewhere.
+Explicit `undefined` arguments and returns remain valid for optional inputs, mocks, and parser
+continuation paths. The native undefined-removal rule can't exempt returns independently, so it stays
+off to preserve the return-consistency policy.
 
 Promise linting prefers `await` with explicit error handling over chains, including for editor
 Thenables. Event-to-promise adapters use `Promise.withResolvers` to keep listener registration and

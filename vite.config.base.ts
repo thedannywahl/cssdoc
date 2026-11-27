@@ -152,6 +152,7 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/prefer-single-call": "warn",
       "unicorn/number-literal-case": "off",
       "unicorn/filename-case": "off",
+      // Native options can't exempt explicit returns required by the return-consistency policy.
       "unicorn/no-useless-undefined": "off",
       "unicorn/no-lonely-if": "warn",
       "unicorn/prefer-string-replace-all": "warn",
