@@ -1,34 +1,7 @@
 import { fromMarkdown } from "mdast-util-from-markdown";
 import { toHast } from "mdast-util-to-hast";
 import { toHtml } from "hast-util-to-html";
-
-/**
- * Check whether a URL is permitted in public HTML.
- *
- * @param value - The decoded URL.
- * @param image - Restrict image URLs to relative or HTTP(S) destinations.
- * @returns Whether the destination is safe to emit.
- */
-export function safeLinkUrl(value: string, image = false): boolean {
-  if (!value || value !== value.trim() || value.startsWith("//") || value.includes("\\")) {
-    return false;
-  }
-  for (let i = 0; i < value.length; i++) {
-    const char = value.charCodeAt(i);
-    if (char <= 0x1f || (char >= 0x7f && char <= 0x9f)) return false;
-  }
-  try {
-    const url = new URL(value, "https://cssdoc.invalid/");
-    return (
-      url.protocol === "https:" ||
-      url.protocol === "http:" ||
-      (!image && url.protocol === "mailto:")
-    );
-  } catch (error) {
-    if (error instanceof TypeError) return false;
-    throw error;
-  }
-}
+import { safeProseUrl } from "@cssdoc/core";
 
 type MarkdownNode = {
   type: string;
@@ -40,7 +13,7 @@ function sanitizeMarkdown(node: MarkdownNode): void {
   if (
     (node.type === "link" || node.type === "image" || node.type === "definition") &&
     node.url !== undefined &&
-    !safeLinkUrl(node.url, node.type === "image")
+    !safeProseUrl(node.url, node.type === "image")
   ) {
     node.url = "";
   }
@@ -54,7 +27,7 @@ function sanitizeHtml(node: HtmlNode): void {
     const property = node.tagName === "a" ? "href" : node.tagName === "img" ? "src" : undefined;
     if (property) {
       const value = node.properties[property];
-      if (typeof value !== "string" || !safeLinkUrl(value, property === "src")) {
+      if (typeof value !== "string" || !safeProseUrl(value, property === "src")) {
         delete node.properties[property];
       }
     }

@@ -26,6 +26,11 @@ buildCssApi({
 Writes one page per record, an `index.md`, and a `css-sidebar.json`. For string output without the
 filesystem, use `renderEntry(entry)` and `renderIndex(entries)`.
 
+The renderer escapes Vue-sensitive prose and removes unsafe Markdown destinations. Links accept
+relative, HTTP(S), and `mailto:` destinations; images accept relative and HTTP(S) destinations.
+For 1.0 examples and remarks, the recorded prose mode controls whether Markdown is interpreted.
+Examples with an explicit prose divider aren't automatically fenced.
+
 ## The `resolveToken` hook
 
 `@cssdoc/markdown` never hard-codes any project's tokens. To show a Type/Value for each consumed custom

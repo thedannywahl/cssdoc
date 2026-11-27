@@ -11,7 +11,6 @@ import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import {
   AT_SOURCE,
-  BRACE_OPEN_CHAR,
   BRACE_OPEN_SOURCE,
   BRACE_CLOSE_SOURCE,
   CSS_CLASS_REFERENCE,
@@ -20,12 +19,10 @@ import {
   CSSDOC_STRUCTURE_SLOT_SOURCE,
   CSSDOC_TYPED_STRUCTURE_REFERENCE_SOURCE,
   DOT_CHAR,
-  GREATER_THAN_CHAR,
   LESS_THAN_CHAR,
   MARKDOWN_BACKTICK_FENCE_LINE_PREFIX,
   MARKDOWN_BACKTICK_FENCE_TEXT,
   MARKDOWN_ORDERED_LIST_MARKER_SOURCE,
-  MARKDOWN_SINGLE_BACKTICK_CODE_SPAN,
   MARKDOWN_UNORDERED_LIST_MARKER_SOURCE,
   PIPE_CHAR,
   STRUCTURE_RECORD_KIND_SOURCE,
@@ -36,10 +33,11 @@ import {
 import {
   type ExampleFilter,
   cardinalityToken,
-  selectExamples,
+  selectExampleIndices,
   toMermaid,
   toMermaidVariants,
 } from "@cssdoc/core";
+import { plainProse, safeMarkdownProse, sanitizeMarkdownLinks } from "./prose.ts";
 
 const WHITESPACE = toRegExp(WHITESPACE_RUN);
 
@@ -289,7 +287,6 @@ export function groupEntries(
     .map((label) => ({ label, entries: byLabel.get(label)! }));
 }
 
-const CODE_SPAN = toRegExp(MARKDOWN_SINGLE_BACKTICK_CODE_SPAN);
 const LIST_ITEM_PREFIX: Regex = arkRegex.as(
   `^(?:${MARKDOWN_UNORDERED_LIST_MARKER_SOURCE}|${MARKDOWN_ORDERED_LIST_MARKER_SOURCE}) `,
   "u",
@@ -301,17 +298,7 @@ const LIST_ITEM_PREFIX: Regex = arkRegex.as(
  * only free prose is escaped.
  */
 export function escProse(text: string): string {
-  return text
-    .split(CODE_SPAN)
-    .map((seg, i) =>
-      i % 2 === 1
-        ? seg
-        : seg
-            .replaceAll(LESS_THAN_CHAR, "&lt;")
-            .replaceAll(GREATER_THAN_CHAR, "&gt;")
-            .replaceAll(BRACE_OPEN_CHAR.repeat(2), "&#123;&#123;"),
-    )
-    .join("");
+  return safeMarkdownProse(text);
 }
 
 /** A GFM table-cell-safe rendering of prose (escape pipes + Vue-unsafe chars; empty → em dash). */
@@ -587,7 +574,17 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
       : `\`${entry.memberOf.component}\``;
     lines.push("> [!NOTE]", `> Only used within ${parentLabel}.`, "");
   }
-  if (entry.remarks) lines.push(escProse(normalizeProseMarkdown(entry.remarks)), "");
+  if (entry.remarks) {
+    const prose = entry.prose?.findLast(
+      (body) => body.tag === "remarks" && !body.private && body.text === entry.remarks,
+    );
+    lines.push(
+      prose?.mode === "plain"
+        ? plainProse(entry.remarks)
+        : escProse(prose ? entry.remarks : normalizeProseMarkdown(entry.remarks)),
+      "",
+    );
+  }
 
   const meta: string[] = [];
   if (entry.since) meta.push(`**Since:** ${escProse(entry.since)}`);
@@ -613,14 +610,21 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
       "",
     );
 
-  const examples = selectExamples(entry, options.exampleFilter);
+  const examples = selectExampleIndices(entry, options.exampleFilter);
   if (examples.length) {
     fragments.examples.push("## Examples", "");
-    for (const raw of examples) {
+    for (const index of examples) {
+      const raw = entry.examples[index];
+      const prose = entry.prose?.find((body) => body.exampleIndex === index);
+      if (prose) {
+        fragments.examples.push(prose.mode === "plain" ? plainProse(raw) : escProse(raw), "");
+        continue;
+      }
       const ex = raw.trim();
       // An example that already carries a fenced block is Markdown (prose + code) — emit it verbatim.
       // Only bare, fence-less code gets auto-fenced (sniffing markup vs CSS).
-      if (MARKDOWN_BACKTICK_FENCE_LINE_PREFIX.exec(ex) !== null) fragments.examples.push(ex, "");
+      if (MARKDOWN_BACKTICK_FENCE_LINE_PREFIX.exec(ex) !== null)
+        fragments.examples.push(escProse(ex), "");
       else
         fragments.examples.push(
           `${MARKDOWN_BACKTICK_FENCE_TEXT}${ex.includes(LESS_THAN_CHAR) ? "html" : "css"}`,
@@ -1028,7 +1032,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   const order = options.sectionOrder ?? DEFAULT_SECTION_ORDER;
   for (const key of order) lines.push(...(fragments[key] ?? []));
 
-  return `${lines.join("\n")}\n`;
+  return sanitizeMarkdownLinks(`${lines.join("\n")}\n`);
 }
 
 /**
@@ -1059,5 +1063,5 @@ export function renderIndex(
       ),
     );
   }
-  return `${lines.join("\n")}\n`;
+  return sanitizeMarkdownLinks(`${lines.join("\n")}\n`);
 }

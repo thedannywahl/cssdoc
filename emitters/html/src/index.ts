@@ -12,6 +12,7 @@ import {
   type ExampleFilter,
   type StructureNode,
   parseCssDocs,
+  safeProseUrl,
   selectExampleIndices,
 } from "@cssdoc/core";
 import { type CssDialect, resolveParser } from "@cssdoc/dialects";
@@ -22,7 +23,7 @@ import {
   LESS_THAN_CHAR,
   QUOTE_DOUBLE_CHAR,
 } from "@cssdoc/regex";
-import { renderProse, safeLinkUrl } from "./prose.ts";
+import { renderProse } from "./prose.ts";
 
 /** Either a CSS source or an already-parsed model. */
 export interface ModelInput {
@@ -132,7 +133,7 @@ export function renderPage(
   const refs = entry.refs ?? [];
   const parts: string[] = [];
   if (options.indexHref) {
-    const link = safeLinkUrl(options.indexHref)
+    const link = safeProseUrl(options.indexHref)
       ? `<a href="${esc(options.indexHref)}">← Index</a>`
       : "← Index";
     parts.push(`<p>${link}</p>`);
@@ -350,7 +351,7 @@ export function renderIndex(
   const rows = visibleEntries.map((e) => {
     const href = `${e.name}.html`;
     return [
-      safeLinkUrl(href) ? `<a href="${esc(href)}">${esc(e.name)}</a>` : esc(e.name),
+      safeProseUrl(href) ? `<a href="${esc(href)}">${esc(e.name)}</a>` : esc(e.name),
       code(e.className),
       prose(e.summary) || "—",
     ];

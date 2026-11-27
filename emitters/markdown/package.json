@@ -36,13 +36,15 @@
     "@cssdoc/dialects": "workspace:*",
     "@cssdoc/embedded": "workspace:*",
     "@cssdoc/regex": "workspace:*",
-    "arkregex": "catalog:"
+    "arkregex": "catalog:",
+    "mdast-util-from-markdown": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "publint": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vite-plus": "catalog:"
+    "vite-plus": "catalog:",
+    "vitepress": "catalog:"
   }
 }

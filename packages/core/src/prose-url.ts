@@ -1,0 +1,27 @@
+/**
+ * Check whether a decoded Markdown destination is safe for public output.
+ *
+ * @param value - The decoded destination.
+ * @param image - Restrict images to relative or HTTP(S) destinations.
+ * @returns Whether the destination is allowed.
+ */
+export function safeProseUrl(value: string, image = false): boolean {
+  if (!value || value !== value.trim() || value.startsWith("//") || value.includes("\\")) {
+    return false;
+  }
+  for (let i = 0; i < value.length; i++) {
+    const char = value.charCodeAt(i);
+    if (char <= 0x1f || (char >= 0x7f && char <= 0x9f)) return false;
+  }
+  try {
+    const url = new URL(value, "https://cssdoc.invalid/");
+    return (
+      url.protocol === "https:" ||
+      url.protocol === "http:" ||
+      (!image && url.protocol === "mailto:")
+    );
+  } catch (error) {
+    if (error instanceof TypeError) return false;
+    throw error;
+  }
+}

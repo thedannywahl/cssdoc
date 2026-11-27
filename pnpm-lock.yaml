@@ -467,7 +467,7 @@ importers:
         version: '@voidzero-dev/vite-plus-core@8.3.8001(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1)'
       vite-plus:
         specifier: 'catalog:'
-        version: 1.8.0(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(@vitest/ui@5.1.1)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1)
+        version: 1.8.0(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1(@vitest/browser@5.1.1(@voidzero-dev/vite-plus-core@8.3.8001(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1))(vitest@5.1.1))(vitest@5.1.1))(@vitest/ui@5.1.1(vitest@5.1.1))(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1)
       vitepress-plugin-mermaid:
         specifier: 'catalog:'
         version: 2.0.17(mermaid@11.17.2)(vitepress@1.6.4(@algolia/client-search@5.65.0)(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(postcss@8.5.33)(publint@0.3.25)(search-insights@2.17.3)(typescript@7.1.0-beta)(yaml@2.9.1))
@@ -619,7 +619,7 @@ importers:
         version: '@voidzero-dev/vite-plus-core@8.3.8001(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1)'
       vite-plus:
         specifier: 'catalog:'
-        version: 1.8.0(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1(@vitest/browser@5.1.1(@voidzero-dev/vite-plus-core@8.3.8001(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1))(vitest@5.1.1))(vitest@5.1.1))(@vitest/ui@5.1.1(vitest@5.1.1))(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1)
+        version: 1.8.0(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(@vitest/ui@5.1.1)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1)
 
   emitters/json:
     dependencies:
@@ -703,6 +703,9 @@ importers:
       arkregex:
         specifier: 'catalog:'
         version: 0.0.15
+      mdast-util-from-markdown:
+        specifier: 'catalog:'
+        version: 2.1.0(supports-color@10.2.2)
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -719,6 +722,9 @@ importers:
       vite-plus:
         specifier: 'catalog:'
         version: 1.8.0(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(@vitest/ui@5.1.1)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1)
+      vitepress:
+        specifier: 'catalog:'
+        version: 2.0.0-alpha.21(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(postcss@8.5.33)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1)
 
   generators/cem:
     dependencies:
@@ -8430,6 +8436,12 @@ snapshots:
       vite: '@voidzero-dev/vite-plus-core@8.3.8001(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@6.0.3)(yaml@2.9.1)'
       vue: 3.5.43(typescript@6.0.3)
 
+  '@vitejs/plugin-vue@6.0.9(@voidzero-dev/vite-plus-core@8.3.8001(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1))(vue@3.5.43(typescript@7.1.0-beta))':
+    dependencies:
+      '@rolldown/pluginutils': 1.0.1
+      vite: '@voidzero-dev/vite-plus-core@8.3.8001(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1)'
+      vue: 3.5.43(typescript@7.1.0-beta)
+
   '@vitest/browser-preview@5.1.1(@voidzero-dev/vite-plus-core@8.3.8001(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@6.0.3)(yaml@2.9.1))(vitest@5.1.1)':
     dependencies:
       '@testing-library/dom': 10.4.2
@@ -8871,6 +8883,13 @@ snapshots:
       '@vueuse/shared': 15.0.0(vue@3.5.43(typescript@6.0.3))
       vue: 3.5.43(typescript@6.0.3)
 
+  '@vueuse/core@15.0.0(vue@3.5.43(typescript@7.1.0-beta))':
+    dependencies:
+      '@types/web-bluetooth': 0.0.21
+      '@vueuse/metadata': 15.0.0
+      '@vueuse/shared': 15.0.0(vue@3.5.43(typescript@7.1.0-beta))
+      vue: 3.5.43(typescript@7.1.0-beta)
+
   '@vueuse/integrations@12.8.2(focus-trap@7.8.0)(typescript@7.1.0-beta)':
     dependencies:
       '@vueuse/core': 12.8.2(typescript@7.1.0-beta)
@@ -8889,6 +8908,14 @@ snapshots:
     optionalDependencies:
       focus-trap: 8.2.3
 
+  '@vueuse/integrations@15.0.0(focus-trap@8.2.3)(vue@3.5.43(typescript@7.1.0-beta))':
+    dependencies:
+      '@vueuse/core': 15.0.0(vue@3.5.43(typescript@7.1.0-beta))
+      '@vueuse/shared': 15.0.0(vue@3.5.43(typescript@7.1.0-beta))
+      vue: 3.5.43(typescript@7.1.0-beta)
+    optionalDependencies:
+      focus-trap: 8.2.3
+
   '@vueuse/metadata@12.8.2': {}
 
   '@vueuse/metadata@15.0.0': {}
@@ -8902,6 +8929,10 @@ snapshots:
   '@vueuse/shared@15.0.0(vue@3.5.43(typescript@6.0.3))':
     dependencies:
       vue: 3.5.43(typescript@6.0.3)
+
+  '@vueuse/shared@15.0.0(vue@3.5.43(typescript@7.1.0-beta))':
+    dependencies:
+      vue: 3.5.43(typescript@7.1.0-beta)
 
   '@yuku-core/binding-android-arm64@0.19.0':
     optional: true
@@ -11895,6 +11926,61 @@ snapshots:
       - vue-tsc
       - yaml
 
+  vitepress@2.0.0-alpha.21(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(postcss@8.5.33)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1):
+    dependencies:
+      '@docsearch/css': 4.7.1
+      '@docsearch/js': 4.7.1
+      '@docsearch/sidepanel-js': 4.7.1
+      '@iconify-json/simple-icons': 1.2.99
+      '@shikijs/transformers': 4.5.0
+      '@types/markdown-it': 14.2.0
+      '@vitejs/plugin-vue': 6.0.9(@voidzero-dev/vite-plus-core@8.3.8001(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1))(vue@3.5.43(typescript@7.1.0-beta))
+      '@vue/devtools-api': 8.2.1
+      '@vue/shared': 3.5.43
+      '@vueuse/core': 15.0.0(vue@3.5.43(typescript@7.1.0-beta))
+      '@vueuse/integrations': 15.0.0(focus-trap@8.2.3)(vue@3.5.43(typescript@7.1.0-beta))
+      focus-trap: 8.2.3
+      mark.js: 8.11.1
+      minisearch: 7.2.0
+      shiki: 4.5.0
+      vite: '@voidzero-dev/vite-plus-core@8.3.8001(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1)'
+      vue: 3.5.43(typescript@7.1.0-beta)
+    optionalDependencies:
+      postcss: 8.5.33
+    transitivePeerDependencies:
+      - '@arethetypeswrong/core'
+      - '@types/node'
+      - '@typescript/native-preview'
+      - '@vitejs/devtools'
+      - '@volar/typescript'
+      - '@vue/language-core'
+      - async-validator
+      - axios
+      - change-case
+      - drauu
+      - esbuild
+      - fuse.js
+      - idb-keyval
+      - jiti
+      - jwt-decode
+      - less
+      - nprogress
+      - publint
+      - qrcode
+      - sass
+      - sass-embedded
+      - sortablejs
+      - stylus
+      - sugarss
+      - terser
+      - tsx
+      - typescript
+      - universal-cookie
+      - unplugin-unused
+      - unrun
+      - vue-tsc
+      - yaml
+
   vitest@5.1.1(@types/node@26.6.6)(@vitest/browser-preview@5.1.1)(@vitest/coverage-v8@5.1.1(@vitest/browser@5.1.1(@voidzero-dev/vite-plus-core@8.3.8001(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1))(vitest@5.1.1))(vitest@5.1.1))(@vitest/ui@5.1.1(vitest@5.1.1))(@voidzero-dev/vite-plus-core@8.3.8001(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1)):
     dependencies:
       '@types/chai': 5.2.3
@@ -11998,6 +12084,16 @@ snapshots:
       '@vue/shared': 3.5.43
     optionalDependencies:
       typescript: 6.0.3
+
+  vue@3.5.43(typescript@7.1.0-beta):
+    dependencies:
+      '@vue/compiler-dom': 3.5.43
+      '@vue/compiler-sfc': 3.5.43
+      '@vue/runtime-dom': 3.5.43
+      '@vue/server-renderer': 3.5.43
+      '@vue/shared': 3.5.43
+    optionalDependencies:
+      typescript: 7.1.0-beta
 
   vue@3.5.45(typescript@6.0.3):
     dependencies:

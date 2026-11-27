@@ -1,8 +1,9 @@
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { parseCssDocs } from "@cssdoc/core";
+import { CssDocConfiguration, parseCssDocs } from "@cssdoc/core";
 import { expect, test } from "vite-plus/test";
+import { createMarkdownRenderer } from "vitepress";
 import {
   buildCssApi,
   buildSidebar,
@@ -50,6 +51,70 @@ test("escapes prose around empty, multiline, and unmatched backtick spans", () =
   expect(escProse("<a> `` `<b>\n{{c}}` <d> `unclosed")).toBe(
     "&lt;a&gt; `` `<b>\n{{c}}` &lt;d&gt; `unclosed",
   );
+});
+
+test("sanitizes decoded unsafe URLs while preserving code and safe links", () => {
+  const prose = [
+    "[safe](https://example.com) [bad](jav&#x61;script:alert) ![image](mailto:x@example.com)",
+    "[reference][danger] ![image-ref][mail] [mail][mail]",
+    "",
+    "[danger]: javascript:alert",
+    "[mail]: mailto:x@example.com",
+    "",
+    "`` code `<tag>` {{value}} ``",
+    "",
+    "```html",
+    "<tag>{{value}}</tag>",
+    "```",
+  ].join("\n");
+  const result = escProse(prose);
+  expect(result).toContain("[safe](https://example.com)");
+  expect(result).not.toContain("javascript:alert");
+  expect(result).not.toContain("jav&#x61;script");
+  expect(result).toContain("bad image");
+  expect(result).toContain("reference image&#45;ref [mail][mail]");
+  expect(result).toContain("`` code `<tag>` {{value}} ``");
+  expect(result).toContain("```html\n<tag>{{value}}</tag>\n```");
+});
+
+test("VitePress renders 1.0 examples and prose safely in their effective modes", async () => {
+  const configuration = new CssDocConfiguration();
+  configuration.setProseSettings({ mode: "plain", remarkKinds: { usage: "markdown" } });
+  const [entry] = parseCssDocs(
+    `/** @component button
+ * @remarks usage - **Bold** [unsafe](javascript:alert) <x-tag> {{danger}}
+ * @example docs - **Literal** [bad](javascript:alert)
+ */
+.button {}`,
+    { configuration },
+  );
+  const markdown = renderEntry(entry);
+  const renderer = await createMarkdownRenderer(process.cwd());
+  const html = renderer.render(markdown);
+  expect(html).toContain("<strong>Bold</strong>");
+  expect(html).not.toContain('href="javascript:');
+  expect(html).not.toContain("<x-tag>");
+  expect(html).not.toContain("{{danger}}");
+  expect(html).toContain("&#42;&#42;Literal&#42;&#42;");
+  expect(html).not.toContain("<strong>Literal</strong>");
+  expect(markdown).not.toContain("```css");
+});
+
+test("sanitizes unsafe generated links and table prose", async () => {
+  const [entry] = parseCssDocs(`/** @component button
+ * @part .icon — [bad](javascript:alert) | {{danger}}
+ */
+.button { & .icon {} }`);
+  const markdown = renderEntry(entry, {
+    resolveSource: () => ({ href: "javascript:alert", label: "source" }),
+    members: [{ name: "child", href: "javascript:alert" }],
+  });
+  const html = (await createMarkdownRenderer(process.cwd())).render(markdown);
+  expect(markdown).not.toContain("javascript:alert");
+  expect(html).not.toContain("{{danger}}");
+  expect(html).not.toContain('href="javascript:');
+  expect(html).toContain("source");
+  expect(html).toContain("child");
 });
 
 test("renderEntry renders a title, summary, demo fence, and a modifiers table", () => {
