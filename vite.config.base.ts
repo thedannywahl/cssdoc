@@ -85,7 +85,6 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/prefer-node-protocol": "error",
       // Re-enable newly activated Unicorn rules individually after review.
       "unicorn/explicit-length-check": "off",
-      "unicorn/no-null": "off",
       "unicorn/switch-case-braces": "off",
       "unicorn/import-style": "off",
       "unicorn/prefer-string-raw": "off",
@@ -126,6 +125,8 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/prefer-logical-operator-over-ternary": "off",
       "unicorn/prefer-module": "off",
       "unicorn/no-useless-spread": "warn",
+      // JSON, LSP, and DOM APIs use null as part of their contracts.
+      "unicorn/no-null": "off",
       // Check regex correctness and risky performance without imposing stylistic rewrites.
       "regexp/no-contradiction-with-assertion": "error",
       "regexp/no-dupe-disjunctions": "warn",
