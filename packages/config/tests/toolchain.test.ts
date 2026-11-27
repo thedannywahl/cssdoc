@@ -812,7 +812,7 @@ test("promise lint prefers withResolvers over executor constructors", () => {
   }
 });
 
-test("type-aware lint flags redundant assertions but preserves narrowing at unknown boundaries", () => {
+test("type-aware lint flags redundant assertions and distinguishes non-null from unknown narrowing", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, "packages/config/tests/assertions-"));
   try {
@@ -830,6 +830,8 @@ test("type-aware lint flags redundant assertions but preserves narrowing at unkn
         '  if (value === undefined) throw new Error("Missing value");',
         "  return value!;",
         "}",
+        "export function explicit(value: string | undefined): string { return value as string; }",
+        "export function nonNull(value: string | undefined): string { return value!; }",
       ].join("\n"),
     );
     for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
@@ -846,6 +848,13 @@ test("type-aware lint flags redundant assertions but preserves narrowing at unkn
         ["warning", 1],
         ["warning", 5],
       ]);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(
+            ({ code }) => code === "typescript(non-nullable-type-assertion-style)",
+          )
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["warning", 7]]);
     }
   } finally {
     rmSync(directory, { recursive: true, force: true });

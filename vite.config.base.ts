@@ -100,7 +100,7 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/require-array-sort-compare": "warn",
       "typescript/prefer-includes": "warn",
       "typescript/no-base-to-string": "error",
-      "typescript/non-nullable-type-assertion-style": "off",
+      "typescript/non-nullable-type-assertion-style": "warn",
       "typescript/unbound-method": "error",
       "typescript/no-unnecessary-template-expression": "warn",
       "typescript/no-unnecessary-type-parameters": "off",

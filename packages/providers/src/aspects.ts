@@ -888,9 +888,7 @@ export const record = {
       if (w !== "skip") {
         fragments.deprecated = [
           "",
-          w === "content"
-            ? (deprecatedLine as string)
-            : `${icon("warning")}${warnHtml("Deprecated")}`,
+          w === "content" ? deprecatedLine! : `${icon("warning")}${warnHtml("Deprecated")}`,
         ];
       }
     }
