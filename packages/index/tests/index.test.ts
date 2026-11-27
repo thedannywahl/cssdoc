@@ -1,5 +1,5 @@
 import { CssDocConfiguration, parseReference } from "@cssdoc/core";
-import postcss from "postcss";
+import { parse as parsePostcss } from "postcss";
 import { expect, test } from "vite-plus/test";
 
 import {
@@ -37,7 +37,7 @@ const CSS = `
 .progress { --value: 0; }
 `;
 
-let index: CssDocIndex;
+let sharedIndex: CssDocIndex;
 
 test("public model projection removes private targets from mirrored prose without mutation", () => {
   const configuration = new CssDocConfiguration();
@@ -536,11 +536,9 @@ test("scope member resolution retains nested CSS occurrences and source spans", 
   expect(resolve("card#scope((.inner))", indexFromEntries(index.entries))).toMatchObject({
     status: "unavailable",
   });
-  expect(resolve("card#scope((.inner))", createIndex(css, { parse: postcss.parse }))).toMatchObject(
-    {
-      status: "unavailable",
-    },
-  );
+  expect(resolve("card#scope((.inner))", createIndex(css, { parse: parsePostcss }))).toMatchObject({
+    status: "unavailable",
+  });
   expect(resolve("other#scope((.other))")).toMatchObject({ status: "resolved" });
   const invalidSource = createIndex("/** @component card */ @scope (??) { .card {} }");
   expect(resolve("card#scope((.card))", invalidSource)).toMatchObject({ status: "unavailable" });
@@ -635,7 +633,7 @@ test("media members use owned source occurrences and parsed query identity", () 
   expect(resolve("card#media((color))", indexFromEntries(index.entries))).toMatchObject({
     status: "unavailable",
   });
-  expect(resolve("card#media((color))", createIndex(css, { parse: postcss.parse }))).toMatchObject({
+  expect(resolve("card#media((color))", createIndex(css, { parse: parsePostcss }))).toMatchObject({
     status: "unavailable",
   });
   expect(resolve("other#media((color))")).toMatchObject({ status: "resolved" });
@@ -703,7 +701,7 @@ test("container members preserve occurrences, names, and complete lookup semanti
     status: "unavailable",
   });
   expect(
-    resolve("card#container((width: .5px))", createIndex(css, { parse: postcss.parse })),
+    resolve("card#container((width: .5px))", createIndex(css, { parse: parsePostcss })),
   ).toMatchObject({
     status: "unavailable",
   });
@@ -878,7 +876,7 @@ test("supports members preserve occurrences without guessing value case sensitiv
     status: "unavailable",
   });
   expect(
-    resolve("card#supports((display: grid))", createIndex(css, { parse: postcss.parse })),
+    resolve("card#supports((display: grid))", createIndex(css, { parse: parsePostcss })),
   ).toMatchObject({ status: "unavailable" });
   expect(resolve("other#supports((display: flex))")).toMatchObject({ status: "resolved" });
   const numeric = createIndex("/** @component card */ @supports (z-index: 1) { .card {} }");
@@ -940,11 +938,11 @@ test("supports selector functions use selector identity and preserve duplicates"
 });
 
 test("createIndex parses the model and resolves class lookups", () => {
-  index = createIndex(CSS, { file: "components.css", modifierConvention: "rscss" });
-  expect(index.componentForClass(".button")?.name).toBe("button");
-  expect(index.componentForClass("button")?.name).toBe("button"); // dot optional
-  expect(index.isModifier(".button", "-color-secondary")).toBe(true);
-  expect(index.isModifier(".button", "-nope")).toBe(false);
+  sharedIndex = createIndex(CSS, { file: "components.css", modifierConvention: "rscss" });
+  expect(sharedIndex.componentForClass(".button")?.name).toBe("button");
+  expect(sharedIndex.componentForClass("button")?.name).toBe("button"); // dot optional
+  expect(sharedIndex.isModifier(".button", "-color-secondary")).toBe(true);
+  expect(sharedIndex.isModifier(".button", "-nope")).toBe(false);
 });
 
 test("record spans ignore record-shaped prose and nested structure references", () => {
@@ -970,24 +968,24 @@ test("record spans ignore record-shaped prose and nested structure references", 
 });
 
 test("member and record spans are captured from the CSS", () => {
-  const modSpan = index
+  const modSpan = sharedIndex
     .recordInfo("button")
     ?.memberSpans.get(memberKey("modifier", "-color-secondary"));
   expect(modSpan?.start.line).toBe(8); // the .button.-color-secondary rule
 
-  const loc = index.location("progress", memberKey("property", "--value"));
+  const loc = sharedIndex.location("progress", memberKey("property", "--value"));
   expect(loc?.file).toBe("components.css");
   expect(loc?.span.start.line).toBe(13); // the @property rule
 });
 
 test("authored names are tracked for drift detection", () => {
-  const info = index.recordInfo("button")!;
+  const info = sharedIndex.recordInfo("button")!;
   expect([...info.authoredModifiers]).toEqual(["-color-secondary"]);
   expect(info.selectorText).toContain(".button.-color-secondary");
 });
 
 test("authored modifier/part tag lines point at their own doc-comment line, not the whole block", () => {
-  const info = index.recordInfo("button")!;
+  const info = sharedIndex.recordInfo("button")!;
   const line = info.authoredModifierLines.get("-color-secondary");
   expect(line?.start.line).toBe(5); // the `@modifier -color-secondary` line itself
   expect(line?.end.line).toBe(5);
@@ -1004,7 +1002,7 @@ test("authored modifier/part tag lines point at their own doc-comment line, not 
 });
 
 test("allCustomProperties pairs each property with its record", () => {
-  const all = index.allCustomProperties();
+  const all = sharedIndex.allCustomProperties();
   expect(all).toContainEqual({
     property: { name: "--value", syntax: "<number>", inherits: true, defaultValue: "0" },
     record: "progress",

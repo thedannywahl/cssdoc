@@ -55,7 +55,7 @@ import {
 import { HTML_ELEMENT_GROUPS, HTML_ELEMENT_NAMES } from "@cssdoc/spec";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
-import postcss, { type ChildNode } from "postcss";
+import { parse as parsePostcss, type ChildNode } from "postcss";
 
 import { CssDocConfiguration, type InlineCommentMode } from "./configuration.ts";
 import { parseDocComment } from "./full-grammar.ts";
@@ -904,8 +904,8 @@ function buildEntry(
 
   // Attach `@wrapper` prose to the matching `@structure` node(s) by derived selector name or aliased selector.
   if (doc.wrappers.size && structure?.length) {
-    const applyWrappers = (nodes: StructureNode[]): void => {
-      for (const node of nodes) {
+    const applyWrappers = (wrapperNodes: StructureNode[]): void => {
+      for (const node of wrapperNodes) {
         const derivedName = deriveSelectorName(node.selector);
         // Try direct lookup by derived name; fall back to alias-based lookup via wrapperSelectors.
         const description =
@@ -938,8 +938,9 @@ function buildEntry(
   const elements = resolveElementConstraints(doc.elements);
 
   const memberDeclsByName = new Map<string, { name: string; private: boolean }>();
-  for (const name of doc.members ?? []) {
-    if (!memberDeclsByName.has(name)) memberDeclsByName.set(name, { name, private: false });
+  for (const memberName of doc.members ?? []) {
+    if (!memberDeclsByName.has(memberName))
+      memberDeclsByName.set(memberName, { name: memberName, private: false });
   }
   for (const member of doc.memberEntries) {
     const existing = memberDeclsByName.get(member.name);
@@ -1064,7 +1065,7 @@ export function parseCssDocs(css: string, options: ParseOptions = {}): CssDocEnt
   const matcher = new ModifierMatcher(
     resolveModifierConvention(options.modifierConvention ?? configuration.modifierConvention),
   );
-  const parse = options.parse ?? postcss.parse;
+  const parse = options.parse ?? parsePostcss;
   const root = parse(css);
   type Record_ = { name: string; doc: ParsedDoc; nodes: ChildNode[]; source?: CssSource };
   const records: Record_[] = [];

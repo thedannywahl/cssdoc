@@ -112,8 +112,8 @@ test("packed lite and its transitive module graph contain no Markdown engine", a
         }
       }
     }
-    const externals = Object.values(packedGraph.metafile.outputs).flatMap((output) =>
-      output.imports.filter((entry) => entry.external).map((entry) => entry.path),
+    const externals = Object.values(packedGraph.metafile.outputs).flatMap((bundleOutput) =>
+      bundleOutput.imports.filter((entry) => entry.external).map((entry) => entry.path),
     );
     expect(externals).toEqual([]);
     const markdownPaths = paths.filter(isMarkdownEngine);

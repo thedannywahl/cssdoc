@@ -328,10 +328,11 @@ export function startLanguageServer(): void {
       .then((registration) => {
         if (generation !== watcherGeneration) {
           registration.dispose();
-          return;
+          return registration;
         }
         watcher?.dispose();
         watcher = registration;
+        return registration;
       })
       .catch((error: unknown) =>
         connection.console.warn(`Cannot register file watchers: ${String(error)}`),
@@ -348,7 +349,7 @@ export function startLanguageServer(): void {
     void connection.workspace
       .getConfiguration(items)
       .then((values: unknown[]) => {
-        if (generation !== configurationGeneration) return;
+        if (generation !== configurationGeneration) return values;
         if (roots.length) {
           folderSettings = new Map(
             roots.map((root, index) => [root, parseClientSettings(values[index])]),
@@ -360,6 +361,7 @@ export function startLanguageServer(): void {
         }
         registerWatchers();
         scheduleRefresh();
+        return values;
       })
       .catch((error: unknown) =>
         connection.console.warn(`Cannot load cssdoc client settings: ${String(error)}`),

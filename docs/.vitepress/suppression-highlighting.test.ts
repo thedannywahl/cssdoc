@@ -1,10 +1,10 @@
 import { expect, test } from "vite-plus/test";
 import { createMarkdownRenderer } from "vitepress";
 
-import cssdoc from "../../syntaxes/cssdoc/tmlanguage/src/index.ts";
+import cssdocGrammar from "../../syntaxes/cssdoc/tmlanguage/src/index.ts";
 
 test("highlights suppression directives and rules without highlighting reasons or prose", async () => {
-  const markdown = await createMarkdownRenderer(process.cwd(), { languages: [cssdoc] });
+  const markdown = await createMarkdownRenderer(process.cwd(), { languages: [cssdocGrammar] });
   const source = [
     "```css",
     "/* cssdoc-disable-next-line undocumented-modifier - documented upstream */",

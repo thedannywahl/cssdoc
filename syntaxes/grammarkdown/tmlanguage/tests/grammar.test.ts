@@ -1,12 +1,12 @@
 import { expect, test } from "vite-plus/test";
 
 import grammar from "../grammarkdown.tmLanguage.json" with { type: "json" };
-import grammarkdown, { buildGrammar, grammarkdown as namedGrammar } from "../src/index.ts";
+import grammarkdownGrammar, { buildGrammar, grammarkdown as namedGrammar } from "../src/index.ts";
 
 test("the committed JSON and exports match the grammar builder", () => {
   expect(grammar).toEqual(buildGrammar());
-  expect(grammarkdown).toEqual(grammar);
-  expect(namedGrammar).toBe(grammarkdown);
+  expect(grammarkdownGrammar).toEqual(grammar);
+  expect(namedGrammar).toBe(grammarkdownGrammar);
 });
 
 test("is a well-formed TextMate grammar", () => {

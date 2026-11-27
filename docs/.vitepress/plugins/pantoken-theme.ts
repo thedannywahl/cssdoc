@@ -4,7 +4,12 @@ import { pruneCustomProps } from "@pantoken/plugin-prune-custom-props";
 import { byTheme, type Token } from "@pantoken/tokens";
 import { VITEPRESS_TO_INSTUI } from "@pantoken/vitepress";
 import { regex as arkRegex } from "arkregex";
-import postcss, { type Plugin as PostcssPlugin } from "postcss";
+import postcss, {
+  decl as createDeclaration,
+  parse as parsePostcss,
+  rule as createRule,
+  type Plugin as PostcssPlugin,
+} from "postcss";
 import type { Plugin } from "vite-plus";
 
 const auroraPrefix = "--instui-primitive-color-aurora-aurora";
@@ -20,10 +25,10 @@ const HEX_COLOR = arkRegex.as(`^#${HEX_DIGIT_SOURCE}{6}$`, "i");
 
 /** Render Pantoken theme colors, VitePress brand bridges, and home-page backgrounds as CSS. */
 export function themeCss(tokens: readonly Token[] = byTheme("rebrand")): string {
-  const bridge = postcss.rule({ selector: ":root" });
+  const bridge = createRule({ selector: ":root" });
   for (const [property, token] of Object.entries(VITEPRESS_TO_INSTUI)) {
     if (property.startsWith("--vp-c-brand-")) {
-      bridge.append(postcss.decl({ prop: property, value: `var(${token})` }));
+      bridge.append(createDeclaration({ prop: property, value: `var(${token})` }));
     }
   }
   const aurora = tokens.filter((token) => token.name.startsWith(auroraPrefix));
@@ -60,7 +65,7 @@ export function expandTheme(): PostcssPlugin {
     AtRule: {
       "cssdoc-theme": (rule) => {
         rule.replaceWith(
-          postcss.parse(themeCss(), { from: rule.source?.input.file ?? "pantoken-theme.css" }),
+          parsePostcss(themeCss(), { from: rule.source?.input.file ?? "pantoken-theme.css" }),
         );
       },
     },
@@ -69,16 +74,16 @@ export function expandTheme(): PostcssPlugin {
 
 /** Remove unused Pantoken custom properties while preserving other custom properties. */
 export async function pruneTheme(source: string): Promise<string> {
-  const root = postcss.parse(source);
+  const root = parsePostcss(source);
   const preserved = new Set<string>();
   root.walkDecls((declaration) => {
     if (declaration.prop.startsWith("--") && !declaration.prop.startsWith("--instui-")) {
       preserved.add(declaration.prop);
     }
   });
-  const consumers = postcss.rule({ selector: ":root" });
+  const consumers = createRule({ selector: ":root" });
   for (const name of preserved) {
-    consumers.append(postcss.decl({ prop: "color", value: `var(${name})` }));
+    consumers.append(createDeclaration({ prop: "color", value: `var(${name})` }));
   }
   root.append(consumers);
   await postcss([pruneCustomProps()]).process(root, { from: undefined });

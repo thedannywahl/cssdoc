@@ -377,7 +377,7 @@ export class CssDocConfigFile {
    * @returns The loaded config file.
    */
   static loadFile(filePath: string): CssDocConfigFile {
-    return CssDocConfigFile._loadFile(resolve(filePath), new Set());
+    return CssDocConfigFile.loadFileRecursive(resolve(filePath), new Set());
   }
 
   /**
@@ -392,7 +392,7 @@ export class CssDocConfigFile {
     for (;;) {
       for (const name of CSSDOC_CONFIG_FILENAMES) {
         const candidate = resolve(current, name);
-        if (existsSync(candidate)) return CssDocConfigFile._loadFile(candidate, new Set());
+        if (existsSync(candidate)) return CssDocConfigFile.loadFileRecursive(candidate, new Set());
       }
       if (current === root) break;
       current = dirname(current);
@@ -415,7 +415,7 @@ export class CssDocConfigFile {
     });
   }
 
-  private static _loadFile(filePath: string, visited: Set<string>): CssDocConfigFile {
+  private static loadFileRecursive(filePath: string, visited: Set<string>): CssDocConfigFile {
     const messages: string[] = [];
     const empty = (fileNotFound: boolean): CssDocConfigFile =>
       new CssDocConfigFile({
@@ -476,13 +476,13 @@ export class CssDocConfigFile {
         messages.push(`Cannot resolve extends "${ref}": ${message}`);
         continue;
       }
-      extendsFiles.push(CssDocConfigFile._loadFile(resolved, visited));
+      extendsFiles.push(CssDocConfigFile.loadFileRecursive(resolved, visited));
     }
 
     const tagDefinitions: CssDocTagDefinition[] = [];
-    for (const raw_ of raw.tagDefinitions ?? []) {
+    for (const rawDefinition of raw.tagDefinitions ?? []) {
       try {
-        tagDefinitions.push(new CssDocTagDefinition(raw_));
+        tagDefinitions.push(new CssDocTagDefinition(rawDefinition));
       } catch (error) {
         const message = isErrorInstance(error) ? error.message : String(error);
         messages.push(message);

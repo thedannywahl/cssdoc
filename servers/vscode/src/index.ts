@@ -72,11 +72,14 @@ export async function activate(context: ExtensionContext): Promise<void> {
           { undoStopBefore: false, undoStopAfter: false },
         )
         .then(
-          () => {
+          (applied) => {
             applyingCommentEdits = false;
+            return applied;
           },
-          () => {
+          (error: unknown) => {
             applyingCommentEdits = false;
+            console.error("Could not format CSS doc comments:", error);
+            return false;
           },
         );
     }),

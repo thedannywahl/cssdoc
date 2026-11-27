@@ -6,6 +6,7 @@ import { libraryConfig } from "../../vite.config.base.ts";
 const config: UserConfig = mergeConfig(
   libraryConfig,
   defineConfig({
+    lint: { ignorePatterns: ["src/index.d.ts"] },
     run: {
       tasks: {
         build: "vp pack",

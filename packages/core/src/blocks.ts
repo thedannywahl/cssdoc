@@ -168,8 +168,11 @@ export function collectDocCommentBlocks(
   let codeState: CodeBoundaryState = { containers: [], indented: false, paragraph: false };
   let leadingTrim = start - lineStart;
   for (; lineIndex < lines.length && lineStart < end; lineIndex++) {
-    const framed = lines[lineIndex];
-    const line = framed.text.slice(leadingTrim, Math.min(framed.text.length, end - lineStart));
+    const framedLine = lines[lineIndex];
+    const line = framedLine.text.slice(
+      leadingTrim,
+      Math.min(framedLine.text.length, end - lineStart),
+    );
     const sourceStart = lines[lineIndex].start + leadingTrim;
     const inCode =
       blocks.length > 0 &&
@@ -204,13 +207,13 @@ export function collectDocCommentBlocks(
     const lastNonWhitespace = line.trimEnd().length;
     if (startsBlock && tagMatch) {
       const tagStart = line.indexOf(AT_CHAR);
-      const text = line.slice(tagStart);
+      const blockText = line.slice(tagStart);
       blocks.push({
-        text,
+        text: blockText,
         start: sourceStart + tagStart,
         end: sourceStart + lastNonWhitespace,
-        segments: [{ textStart: 0, sourceStart: sourceStart + tagStart, length: text.length }],
-        header: analyzeDocCommentHeader(text, tagMatch[1].length + 1),
+        segments: [{ textStart: 0, sourceStart: sourceStart + tagStart, length: blockText.length }],
+        header: analyzeDocCommentHeader(blockText, tagMatch[1].length + 1),
       });
       inStructureBlock = tagMatch[1] === "structure";
       structureHasBody = false;
@@ -248,7 +251,7 @@ export function collectDocCommentBlocks(
         scanStructureLine(line, structureState);
       }
     }
-    lineStart += framed.text.length + framed.ending.length;
+    lineStart += framedLine.text.length + framedLine.ending.length;
     leadingTrim = 0;
   }
   if (blocks.length && lineStart === end && lineIndex > 0) {

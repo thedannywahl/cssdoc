@@ -18,13 +18,13 @@ const CSS = `
 @property --button-radius { syntax: "<length>"; inherits: false; initial-value: 4px; }
 `;
 
-const service = new CssDocLanguageService(
+const sharedService = new CssDocLanguageService(
   createIndex(CSS, { file: "components.css", modifierConvention: "rscss" }),
 );
 const summaryWarnSeverities = resolveRuleSeverities({ "missing-summary": "warn" });
 
 // Single-line helper: cursor at `character` on line 0.
-const at = (character: number) => ({ line: 0, character });
+const positionAt = (character: number) => ({ line: 0, character });
 
 test("CSS diagnostics honor the configured unused-expectation severity", () => {
   const index = createIndex("");
@@ -76,13 +76,15 @@ test("consumer diagnostics apply file-specific severities from the relevant scop
 
 test("completions in a class attribute suggest the component's modifiers", () => {
   const text = `<button class="button ">x</button>`;
-  const labels = service.completions(text, at(text.indexOf('">'))).map((c) => c.label);
+  const labels = sharedService
+    .completions(text, positionAt(text.indexOf('">')))
+    .map((c) => c.label);
   expect(labels).toEqual(expect.arrayContaining(["-color-secondary", "-variant-old"]));
 });
 
 test("completions retain quote and offset handling for JSX className values", () => {
   const text = `<Button className={'button '} />`;
-  const labels = service.completions(text, at(text.indexOf("'}")));
+  const labels = sharedService.completions(text, positionAt(text.indexOf("'}")));
   expect(labels.map((c) => c.label)).toContain("-color-secondary");
 });
 
@@ -106,7 +108,7 @@ test("completions carry sortText so a @global modifier sorts after the component
 `;
   const svc = new CssDocLanguageService(createIndex(css, { modifierConvention: "rscss" }));
   const text = `<button class="button ">x</button>`;
-  const completions = svc.completions(text, at(text.indexOf('">')));
+  const completions = svc.completions(text, positionAt(text.indexOf('">')));
   const direct = completions.find((c) => c.label === "-size-sm");
   const global = completions.find((c) => c.label === "-density-compact");
   expect(direct?.sortText).toBeTruthy();
@@ -116,7 +118,7 @@ test("completions carry sortText so a @global modifier sorts after the component
 
 test("completions after var(--…) suggest declared custom properties", () => {
   const text = `.x { color: var(--i`;
-  const labels = service.completions(text, at(text.length)).map((c) => c.label);
+  const labels = sharedService.completions(text, positionAt(text.length)).map((c) => c.label);
   expect(labels).toContain("--button-radius");
 });
 
@@ -137,19 +139,19 @@ test("class completions include a governing scope's provider records and modifie
   ]);
   const emptyClass = '<div class="">';
   expect(
-    svc.completions(emptyClass, at(12), "/app/page.html", "html").map((c) => c.label),
+    svc.completions(emptyClass, positionAt(12), "/app/page.html", "html").map((c) => c.label),
   ).toContain("widget");
   const withBase = '<div class="widget ">';
   expect(
     svc
-      .completions(withBase, at(withBase.indexOf('">')), "/app/page.html", "html")
+      .completions(withBase, positionAt(withBase.indexOf('">')), "/app/page.html", "html")
       .map((c) => c.label),
   ).toContain("widget--quiet");
 });
 
 test("hover on a modifier token shows its documentation", () => {
   const text = `<button class="button -color-secondary">x</button>`;
-  const hover = service.hover(text, at(text.indexOf("-color-secondary") + 2));
+  const hover = sharedService.hover(text, positionAt(text.indexOf("-color-secondary") + 2));
   expect(hover?.contents).toContain("A lower-emphasis action.");
 });
 
@@ -178,7 +180,7 @@ test("hover filters examples from providers without changing the existing sectio
     },
   ]);
   const markup = `<div class="widget">`;
-  const pos = at(markup.indexOf("widget"));
+  const pos = positionAt(markup.indexOf("widget"));
   const filter = { labels: ["docs"], includeUnlabeled: false };
   const card = svc.hover(markup, pos, "/app/page.html", "html", filter)?.contents;
   expect(card).toContain("**$(book) Example**");
@@ -186,8 +188,10 @@ test("hover filters examples from providers without changing the existing sectio
   expect(card).not.toMatch(/Interactive|Audit fixture|Unlabeled|labels=\[/u);
 
   const css = ".widget {}";
-  expect(svc.hover(css, at(2), "/app/page.css", "css", filter)?.contents).toContain("Shared");
-  expect(svc.hover(css, at(2), "/app/page.css", "css", filter)?.contents).not.toContain(
+  expect(svc.hover(css, positionAt(2), "/app/page.css", "css", filter)?.contents).toContain(
+    "Shared",
+  );
+  expect(svc.hover(css, positionAt(2), "/app/page.css", "css", filter)?.contents).not.toContain(
     "Interactive",
   );
   expect(
@@ -228,18 +232,18 @@ test("hover on @ref shows its local @annotations legend text", () => {
 
 test("definition on a modifier token points at its rule in the CSS file", () => {
   const text = `<button class="button -color-secondary">x</button>`;
-  const def = service.definition(text, at(text.indexOf("-color-secondary") + 2));
+  const def = sharedService.definition(text, positionAt(text.indexOf("-color-secondary") + 2));
   expect(def?.uri).toBe("components.css");
   expect(def?.range.start.line).toBe(8); // 0-based; the rule is on line 9
 });
 
 test("diagnostics flag unknown and deprecated modifiers, with a quick-fix for the deprecation", () => {
   const text = `<button class="button -bogus -variant-old">x</button>`;
-  const diags = service.diagnostics(text);
+  const diags = sharedService.diagnostics(text);
   expect(diags.map((d) => d.code)).toEqual(
     expect.arrayContaining(["unknown-modifier", "deprecated-modifier"]),
   );
-  const actions = service.codeActions(diags);
+  const actions = sharedService.codeActions(diags);
   expect(actions[0].title).toBe("Replace with .-color-secondary");
   expect(actions[0].edit.newText).toBe("-color-secondary");
 });

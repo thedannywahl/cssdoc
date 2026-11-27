@@ -1,7 +1,7 @@
 import { TOKEN_CUSTOM_PROPERTY_SOURCE, SPACE_TAB_SOURCE } from "@cssdoc/regex";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
-import postcss from "postcss";
+import { parse as parsePostcss } from "postcss";
 
 import { buildCustomMediaDeclarations } from "./customMedia.ts";
 import type { BuildCustomMediaOptions } from "./customMedia.ts";
@@ -17,7 +17,7 @@ function inlineCustomMediaMap(
   css: string,
   parse?: ParseOptions["parse"],
 ): Map<string, string | boolean> {
-  const root = (parse ?? postcss.parse)(css);
+  const root = (parse ?? parsePostcss)(css);
   const out = new Map<string, string | boolean>();
   root.walkAtRules("custom-media", (rule) => {
     const match = rule.params.trim().match(INLINE_CUSTOM_MEDIA_PARAMS);

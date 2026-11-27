@@ -15,7 +15,7 @@ export const baseConfig: UserConfig = defineConfig({
       perf: "off",
       style: "off",
       restriction: "off",
-      suspicious: "off",
+      suspicious: "warn",
       nursery: "off",
     },
     options: { typeAware: true, typeCheck: true },

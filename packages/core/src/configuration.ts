@@ -144,15 +144,15 @@ export interface ProseSettings {
  * ```
  */
 export class CssDocConfiguration {
-  private readonly _tagDefinitions: CssDocTagDefinition[] = [];
-  private readonly _byName = new Map<string, CssDocTagDefinition>();
-  private readonly _supported = new Set<CssDocTagDefinition>();
-  private _modifierConvention: ModifierConvention = DEFAULT_MODIFIER_CONVENTION;
-  private _inlineComments: InlineCommentMode = "append";
-  private _globalPrecedence: "base" | "global" = "base";
-  private _proseMode?: ProseMode;
-  private readonly _proseTags = new Map<string, ProseMode>();
-  private readonly _proseRemarkKinds = new Map<string, ProseMode>();
+  private readonly registeredTags: CssDocTagDefinition[] = [];
+  private readonly tagsByName = new Map<string, CssDocTagDefinition>();
+  private readonly supportedTags = new Set<CssDocTagDefinition>();
+  private configuredModifierConvention: ModifierConvention = DEFAULT_MODIFIER_CONVENTION;
+  private configuredInlineComments: InlineCommentMode = "append";
+  private configuredGlobalPrecedence: "base" | "global" = "base";
+  private configuredProseMode?: ProseMode;
+  private readonly proseTagModes = new Map<string, ProseMode>();
+  private readonly proseRemarkModes = new Map<string, ProseMode>();
 
   constructor() {
     this.addTagDefinitions(CssDocConfiguration.standardTags(), true);
@@ -160,22 +160,22 @@ export class CssDocConfiguration {
 
   /** The resolved modifier convention this configuration parses with (defaults to BEM). */
   get modifierConvention(): ModifierConvention {
-    return this._modifierConvention;
+    return this.configuredModifierConvention;
   }
 
   /** Set the modifier convention from a preset name or a custom {@link ModifierConvention}. */
   setModifierConvention(input: ModifierConventionInput): void {
-    this._modifierConvention = resolveModifierConvention(input);
+    this.configuredModifierConvention = resolveModifierConvention(input);
   }
 
   /** How inline `/* … *\/` comments combine with tag prose (defaults to `append`). */
   get inlineComments(): InlineCommentMode {
-    return this._inlineComments;
+    return this.configuredInlineComments;
   }
 
   /** Set the inline-comment combine mode. */
   setInlineComments(mode: InlineCommentMode): void {
-    this._inlineComments = mode;
+    this.configuredInlineComments = mode;
   }
 
   /**
@@ -183,12 +183,12 @@ export class CssDocConfiguration {
    * `"base"` (explicit modifiers win; default) or `"global"` (the global one wins).
    */
   get globalPrecedence(): "base" | "global" {
-    return this._globalPrecedence;
+    return this.configuredGlobalPrecedence;
   }
 
   /** Set the global-modifier precedence (see {@link globalPrecedence}). */
   setGlobalPrecedence(mode: "base" | "global"): void {
-    this._globalPrecedence = mode;
+    this.configuredGlobalPrecedence = mode;
   }
 
   /**
@@ -222,16 +222,16 @@ export class CssDocConfiguration {
       validMode(mode);
       if (!KIND.test(kind)) throw new Error(`Invalid remark kind: ${JSON.stringify(kind)}`);
     }
-    if (settings.mode !== undefined) this._proseMode = settings.mode ?? undefined;
-    if (settings.tags === null) this._proseTags.clear();
+    if (settings.mode !== undefined) this.configuredProseMode = settings.mode ?? undefined;
+    if (settings.tags === null) this.proseTagModes.clear();
     for (const [tag, mode] of tags) {
-      if (mode === null) this._proseTags.delete(tag);
-      else this._proseTags.set(tag, mode);
+      if (mode === null) this.proseTagModes.delete(tag);
+      else this.proseTagModes.set(tag, mode);
     }
-    if (settings.remarkKinds === null) this._proseRemarkKinds.clear();
+    if (settings.remarkKinds === null) this.proseRemarkModes.clear();
     for (const [kind, mode] of Object.entries(settings.remarkKinds ?? {})) {
-      if (mode === null) this._proseRemarkKinds.delete(kind);
-      else this._proseRemarkKinds.set(kind, mode);
+      if (mode === null) this.proseRemarkModes.delete(kind);
+      else this.proseRemarkModes.set(kind, mode);
     }
   }
 
@@ -246,28 +246,28 @@ export class CssDocConfiguration {
   proseModeFor(tagName: string, remarkKind?: string): ProseMode {
     const definition =
       this.tryGetTagDefinition(tagName) ??
-      this._tagDefinitions.find((candidate) => candidate.canonicalName === tagName);
+      this.registeredTags.find((candidate) => candidate.canonicalName === tagName);
     if (!definition || definition.syntaxKind === "inline") {
       throw new Error(`Unknown prose block tag: ${JSON.stringify(tagName)}`);
     }
     return (
       (definition.canonicalName === "remarks" && remarkKind
-        ? this._proseRemarkKinds.get(remarkKind)
+        ? this.proseRemarkModes.get(remarkKind)
         : undefined) ??
-      this._proseTags.get(definition.canonicalName) ??
-      this._proseMode ??
+      this.proseTagModes.get(definition.canonicalName) ??
+      this.configuredProseMode ??
       "markdown"
     );
   }
 
   /** Every registered tag definition, in registration order. */
   get tagDefinitions(): readonly CssDocTagDefinition[] {
-    return this._tagDefinitions;
+    return this.registeredTags;
   }
 
   /** Only the tag definitions that are currently supported. */
   get supportedTagDefinitions(): readonly CssDocTagDefinition[] {
-    return this._tagDefinitions.filter((d) => this._supported.has(d));
+    return this.registeredTags.filter((d) => this.supportedTags.has(d));
   }
 
   /**
@@ -277,14 +277,14 @@ export class CssDocConfiguration {
    * @param supported - Whether it is supported (defaults to `true`).
    */
   addTagDefinition(definition: CssDocTagDefinition, supported = true): void {
-    const existing = this._byName.get(definition.tagNameWithoutAt);
+    const existing = this.tagsByName.get(definition.tagNameWithoutAt);
     if (existing) {
-      this._tagDefinitions.splice(this._tagDefinitions.indexOf(existing), 1);
-      this._supported.delete(existing);
+      this.registeredTags.splice(this.registeredTags.indexOf(existing), 1);
+      this.supportedTags.delete(existing);
     }
-    this._tagDefinitions.push(definition);
-    this._byName.set(definition.tagNameWithoutAt, definition);
-    if (supported) this._supported.add(definition);
+    this.registeredTags.push(definition);
+    this.tagsByName.set(definition.tagNameWithoutAt, definition);
+    if (supported) this.supportedTags.add(definition);
   }
 
   /**
@@ -304,7 +304,7 @@ export class CssDocConfiguration {
    * @returns The registered definition, or `undefined` if none exists.
    */
   tryGetTagDefinition(tagName: string): CssDocTagDefinition | undefined {
-    return this._byName.get(tagName.replace(LEADING_AT, ""));
+    return this.tagsByName.get(tagName.replace(LEADING_AT, ""));
   }
 
   /**
@@ -314,7 +314,7 @@ export class CssDocConfiguration {
    * @returns Whether the definition is in the supported set.
    */
   isTagSupported(definition: CssDocTagDefinition): boolean {
-    return this._supported.has(definition);
+    return this.supportedTags.has(definition);
   }
 
   /**
@@ -324,8 +324,8 @@ export class CssDocConfiguration {
    * @param supported - Whether to enable the definition.
    */
   setSupportForTag(definition: CssDocTagDefinition, supported: boolean): void {
-    if (supported) this._supported.add(definition);
-    else this._supported.delete(definition);
+    if (supported) this.supportedTags.add(definition);
+    else this.supportedTags.delete(definition);
   }
 
   /**
@@ -341,7 +341,7 @@ export class CssDocConfiguration {
   /** Disable support for every standard tag (custom tags added later remain supported). */
   setNoStandardTags(): void {
     this.setSupportForTags(
-      CssDocConfiguration.standardTagNames.map((n) => this._byName.get(n)!),
+      CssDocConfiguration.standardTagNames.map((n) => this.tagsByName.get(n)!),
       false,
     );
   }

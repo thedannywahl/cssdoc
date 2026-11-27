@@ -101,9 +101,9 @@ test("block highlighting follows scanner ownership and configuration", () => {
     ["@example", "example"],
     ["@custom", "custom"],
   ]);
-  expect(tokens.every((token, index) => index === 0 || tokens[index - 1].end <= token.start)).toBe(
-    true,
-  );
+  expect(
+    tokens.every((token, position) => position === 0 || tokens[position - 1].end <= token.start),
+  ).toBe(true);
 });
 
 test("block highlighting retains incomplete fences and nested CSS scope ownership", () => {

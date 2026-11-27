@@ -33,7 +33,8 @@ const config: UserConfig = mergeConfig(
       ],
     },
     lint: {
-      ignorePatterns: [...WORKTREE_IGNORE],
+      // This declaration is generated and formatter-ignored; lint its TypeScript source instead.
+      ignorePatterns: ["plugins/stylelint/src/index.d.ts", ...WORKTREE_IGNORE],
       jsPlugins: [
         { name: "vite-plus", specifier: "vite-plus/oxlint-plugin" },
         { name: "tsdoc", specifier: "eslint-plugin-tsdoc" },

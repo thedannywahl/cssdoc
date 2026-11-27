@@ -235,19 +235,19 @@ function scanJs(
  */
 function scanHtml(src: string): { regions: Region[] } {
   const regions: Region[] = [];
-  const scan = maskComments(src);
+  const maskedSource = maskComments(src);
   const open = arkRegex.as(HTML_LIKE_STYLE_OPEN_TAG_SOURCE, "giu");
   const closeTag = arkRegex.as(HTML_LIKE_STYLE_CLOSE_PREFIX_SOURCE, "giu");
-  let m: RegExpExecArray | null = open.exec(scan);
+  let m: RegExpExecArray | null = open.exec(maskedSource);
   while (m) {
     const contentStart = m.index + m[0].length;
     closeTag.lastIndex = contentStart;
-    const close = closeTag.exec(scan)?.index ?? -1;
-    const end = close === -1 ? scan.length : close;
+    const close = closeTag.exec(maskedSource)?.index ?? -1;
+    const end = close === -1 ? maskedSource.length : close;
     const lang = m[1].match(LANG_ATTRIBUTE)?.[1];
     regions.push({ start: contentStart, end, host: "html", dialect: dialectFromLang(lang) });
-    open.lastIndex = close === -1 ? scan.length : close;
-    m = open.exec(scan);
+    open.lastIndex = close === -1 ? maskedSource.length : close;
+    m = open.exec(maskedSource);
   }
   return { regions };
 }

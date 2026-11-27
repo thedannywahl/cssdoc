@@ -46,7 +46,7 @@ import {
   toRegExp,
 } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
-import postcss, { type ChildNode } from "postcss";
+import { parse as parsePostcss, type ChildNode } from "postcss";
 import valueParser from "postcss-value-parser";
 export {
   resolveContainerMemberReference,
@@ -794,7 +794,7 @@ export function createIndex(
     configuration?: CssDocConfiguration;
     modifierConvention?: ModifierConventionInput;
     /** The PostCSS parser (inject a dialect parser for `.scss`/`.less`; default `postcss.parse`). */
-    parse?: (css: string) => ReturnType<typeof postcss.parse>;
+    parse?: (css: string) => ReturnType<typeof parsePostcss>;
   } = {},
 ): CssDocIndex {
   const matcher = new ModifierMatcher(
@@ -816,7 +816,7 @@ export function createIndex(
   }
   const builds = new Map<CssDocEntry, Build>();
 
-  const root = (options.parse ?? postcss.parse)(css);
+  const root = (options.parse ?? parsePostcss)(css);
   let current: Build | undefined;
   for (const node of root.nodes) {
     if (node.type === "comment" && isCssDocComment(node, css)) {
@@ -907,11 +907,11 @@ export function createIndex(
  */
 export function cssValueSites(
   css: string,
-  options: { parse?: (css: string) => ReturnType<typeof postcss.parse> } = {},
+  options: { parse?: (css: string) => ReturnType<typeof parsePostcss> } = {},
 ): CssValueSites {
   const assignments: PropertyAssignment[] = [];
   const usages: PropertyUsage[] = [];
-  const root = (options.parse ?? postcss.parse)(css);
+  const root = (options.parse ?? parsePostcss)(css);
   root.walkDecls((decl) => {
     const loc = spanOf(decl);
     if (decl.prop.startsWith("--")) {

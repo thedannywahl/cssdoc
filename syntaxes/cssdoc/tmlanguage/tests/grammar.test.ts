@@ -4,14 +4,14 @@ import { expect, test } from "vite-plus/test";
 
 import atRuleGrammar from "../cssdoc.atrules.injection.tmLanguage.json" with { type: "json" };
 import grammar from "../cssdoc.injection.tmLanguage.json" with { type: "json" };
-import cssdoc, { buildAtRuleInjectionGrammar, buildInjectionGrammar } from "../src/index.ts";
+import cssdocGrammar, { buildAtRuleInjectionGrammar, buildInjectionGrammar } from "../src/index.ts";
 
 test.each([
   ["```", "````"],
   ["~~~~", "~~~~~"],
 ])("fenced code suppresses cssdoc tags until a matching %s fence closes", async (open, close) => {
   const highlighter = await createHighlighter({
-    langs: [cssdoc, "css"],
+    langs: [cssdocGrammar, "css"],
     themes: ["github-light"],
   });
   try {
@@ -52,7 +52,7 @@ test.each([" * ```", " * ``` */"])(
   "an unclosed fence stops at the comment boundary: %s",
   async (fence) => {
     const highlighter = await createHighlighter({
-      langs: [cssdoc, "css"],
+      langs: [cssdocGrammar, "css"],
       themes: ["github-light"],
     });
     try {

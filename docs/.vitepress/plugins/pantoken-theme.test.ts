@@ -2,14 +2,14 @@ import { readFileSync } from "node:fs";
 
 import { byTheme } from "@pantoken/tokens";
 import { VITEPRESS_TO_INSTUI } from "@pantoken/vitepress";
-import postcss from "postcss";
+import postcss, { parse as parsePostcss } from "postcss";
 import { describe, expect, it } from "vite-plus/test";
 
 import { expandTheme, pruneTheme, themeCss } from "./pantoken-theme.js";
 
 describe("Pantoken docs theme", () => {
   it("uses the official brand bridge without changing neutral surfaces or typography", () => {
-    const root = postcss.parse(themeCss());
+    const root = parsePostcss(themeCss());
     const declarations = new Map<string, string>();
     root.walkDecls((declaration) => {
       declarations.set(declaration.prop, declaration.value.trim());
@@ -90,13 +90,10 @@ describe("Pantoken docs theme", () => {
         expect(result).toContain(`${dependency}: #`);
       }
     }
-    const badge = postcss
-      .parse(result)
-      .nodes.find(
-        (node) =>
-          node.type === "rule" &&
-          node.selector === ".editor-download-cta__button .VPBadge.top-right",
-      );
+    const badge = parsePostcss(result).nodes.find(
+      (node) =>
+        node.type === "rule" && node.selector === ".editor-download-cta__button .VPBadge.top-right",
+    );
     expect(badge?.toString()).toContain("color: var(--instui-color-text-info)");
     expect(badge?.toString()).toContain(
       "background-color: var(--instui-color-background-pastel-info)",

@@ -1,4 +1,4 @@
-import postcss from "postcss";
+import { parse as parsePostcss } from "postcss";
 import { expect, test } from "vite-plus/test";
 
 import { blockSourceRange, collectDocCommentBlocks } from "../src/blocks.ts";
@@ -384,8 +384,8 @@ test.each(["plain", "markdown", "auto"] as const)(
     ].join("\r\n");
     const configuration = new CssDocConfiguration();
     configuration.setProseSettings({ mode });
-    const full = parseFullDocComment(raw, configuration, postcss.parse);
-    const lite = parseLiteDocComment(raw, configuration, postcss.parse);
+    const full = parseFullDocComment(raw, configuration, parsePostcss);
+    const lite = parseLiteDocComment(raw, configuration, parsePostcss);
     expect(full.blocks.map((block) => raw.slice(block.start, block.end))).toEqual([
       "@component card",
       "@structure - Overview.\r\n * @scope (.card) {\r\n *   .card { .label {} }\r\n * }",
@@ -678,7 +678,7 @@ test("nested structure at-rules remain inside the structure regardless of indent
   expect(raw.slice(blocks[1]!.start, blocks[1]!.end)).toBe(
     "@structure\n * .card[data-text='}'] {\n * @component child {}\n * }",
   );
-  expect(parseDocComment(raw, undefined, postcss.parse).component).toBe("card");
+  expect(parseDocComment(raw, undefined, parsePostcss).component).toBe("card");
 });
 
 test("unfinished punctuation in a structure description does not hide the next tag", () => {
@@ -2294,7 +2294,7 @@ test("an unknown record tag does not split a documented record", () => {
 test("@structure keeps record references authored as CSS at-rules", () => {
   const tree = parseStructure(
     ".wrapper {\n  @nav:primary {}\n  @nav (--nav) {}\n  @component top-navigation:primary {}\n  @component top-navigation (--top-nav) {}\n}",
-    postcss.parse,
+    parsePostcss,
   );
   expect(tree).toEqual([
     {
@@ -2663,10 +2663,7 @@ test("compileCustomMediaDeclarations: resolver overrides absorbed inline declara
 });
 
 test("@structure parses nested CSS into a tree, and toMermaid renders it", () => {
-  const tree = parseStructure(
-    ".tabs {\n  .list {\n    .tab {}\n  }\n  .panel {}\n}",
-    postcss.parse,
-  );
+  const tree = parseStructure(".tabs {\n  .list {\n    .tab {}\n  }\n  .panel {}\n}", parsePostcss);
   expect(tree).toEqual([
     {
       selector: ".tabs",
@@ -2687,7 +2684,7 @@ test("@structure parses nested CSS into a tree, and toMermaid renders it", () =>
 test("toMermaid shapes/classes each node by kind, with cardinality on the edge", () => {
   const tree = parseStructure(
     '.alert {\n  slot {}\n  slot[name="icon"] {}\n  .body {}\n  .tag:many {}\n  .item:more {}\n  .close-button:optional {}\n}',
-    postcss.parse,
+    parsePostcss,
   );
   // A `resolveComponent` marks `.close-button` as a sibling component (linked); `.body`/`.tag` are parts.
   const mermaid = toMermaid(tree, {
@@ -2720,7 +2717,7 @@ test.each([
 });
 
 test("toMermaid renders a co-located node as a component node with a compound label", () => {
-  const tree = parseStructure(".shell {\n  .tabs-list:is(.pfx-card):optional {}\n}", postcss.parse);
+  const tree = parseStructure(".shell {\n  .tabs-list:is(.pfx-card):optional {}\n}", parsePostcss);
   const mermaid = toMermaid(tree, {
     self: "shell",
     resolveComponent: (c) =>
@@ -2732,7 +2729,7 @@ test("toMermaid renders a co-located node as a component node with a compound la
 });
 
 test("toMermaid renders @component refs as component nodes with cardinality", () => {
-  const tree = parseStructure(".tray {\n  @component close-button:optional {}\n}", postcss.parse);
+  const tree = parseStructure(".tray {\n  @component close-button:optional {}\n}", parsePostcss);
   const mermaid = toMermaid(tree, {
     self: "tray",
     resolveComponent: (c) =>
@@ -2746,7 +2743,7 @@ test("toMermaid renders @component refs as component nodes with cardinality", ()
 test("toMermaid renders a comma-separated alternation slot as every resolved sibling, joined, without a click link", () => {
   const tree = parseStructure(
     ".header-row {\n  .col-header, .row-header:one-or-more {}\n}",
-    postcss.parse,
+    parsePostcss,
   );
   const mermaid = toMermaid(tree, {
     self: "header-row",
@@ -2767,7 +2764,7 @@ test("toMermaid renders a comma-separated alternation slot as every resolved sib
 test("@structure cardinality pseudos (full + `:opt`/`:more` shorthands) parse and strip", () => {
   const tree = parseStructure(
     ".alert {\n  slot {}\n  .close-button:optional {}\n  .icon:opt {}\n  .item:one-or-more {}\n  .tag:more {}\n  .badge:many {}\n  .body {}\n}",
-    postcss.parse,
+    parsePostcss,
   );
   const [alert] = tree;
   const card = Object.fromEntries(alert.children.map((c) => [c.selector, c.cardinality]));
@@ -2785,7 +2782,7 @@ test("@structure cardinality pseudos (full + `:opt`/`:more` shorthands) parse an
 test("@structure bounded `:max-<n>` and chained `:one-or-more:max-<n>` cardinalities parse and strip", () => {
   const tree = parseStructure(
     ".button-group {\n  button:max-2 {}\n  .item:one-or-more:max-3 {}\n  .tag:more:max-4 {}\n}",
-    postcss.parse,
+    parsePostcss,
   );
   const [group] = tree;
   const card = Object.fromEntries(group.children.map((c) => [c.selector, c.cardinality]));
@@ -2829,7 +2826,7 @@ test.each([
   ["more:max-4", "one-or-more-max-4"],
 ])("explicit structure parses :%s", (suffix, cardinality) => {
   const css = `.root { .item:${suffix} {} @component button:${suffix} {} }`;
-  const explicit = parseStructure(css, postcss.parse);
+  const explicit = parseStructure(css, parsePostcss);
   const expected = [
     {
       selector: ".root",
@@ -2844,7 +2841,7 @@ test.each([
 
 test("@structure preserves private member flags after cardinality", () => {
   expect(
-    parseStructure(".root { @member button:more:max-4 private {} }", postcss.parse, "root"),
+    parseStructure(".root { @member button:more:max-4 private {} }", parsePostcss, "root"),
   ).toEqual([
     {
       selector: ".root",
@@ -2956,7 +2953,7 @@ test.each([".tabs", "#tabs", ":host", "[data-tabs]", "*", "&", "> .tabs", "+ .ta
     const doc = parseDocComment(
       `/**\n * @structure ${selector}\n * {}\n */`,
       new CssDocConfiguration(),
-      postcss.parse,
+      parsePostcss,
     );
     expect(doc.structureDescription).toBeUndefined();
     expect(doc.structure).toEqual([{ selector, children: [] }]);
@@ -2965,7 +2962,7 @@ test.each([".tabs", "#tabs", ":host", "[data-tabs]", "*", "&", "> .tabs", "+ .ta
 
 test("@structure keeps compound selectors verbatim and never throws on a malformed body", () => {
   // A compound node — `:has()`/`:is()`/`:not()` express relationships between parts.
-  const compound = parseStructure(".tabs {\n  .list:has(.tab) {}\n}", postcss.parse);
+  const compound = parseStructure(".tabs {\n  .list:has(.tab) {}\n}", parsePostcss);
   expect(compound).toEqual([
     {
       selector: ".tabs",
@@ -2973,47 +2970,47 @@ test("@structure keeps compound selectors verbatim and never throws on a malform
     },
   ]);
   // A malformed (unclosed) body parses to an empty tree rather than throwing.
-  expect(parseStructure(".tabs {\n  .list {", postcss.parse)).toEqual([]);
+  expect(parseStructure(".tabs {\n  .list {", parsePostcss)).toEqual([]);
   // With no parser injected, the tree is empty (the grammar module carries no CSS-parser dependency).
   expect(parseStructure(".tabs {\n  .panel {}\n}")).toEqual([]);
 });
 
 test("@structure :is(.<class>) extracts a co-located component class from the selector", () => {
-  const basic = parseStructure(".tabs-list:is(.pfx-card) {}", postcss.parse);
+  const basic = parseStructure(".tabs-list:is(.pfx-card) {}", parsePostcss);
   expect(basic).toEqual([{ selector: ".tabs-list", colocated: ".pfx-card", children: [] }]);
 
   // Both orderings of cardinality + co-location produce the same result.
-  const cardFirst = parseStructure(".tabs-list:optional:is(.pfx-card) {}", postcss.parse);
+  const cardFirst = parseStructure(".tabs-list:optional:is(.pfx-card) {}", parsePostcss);
   expect(cardFirst).toEqual([
     { selector: ".tabs-list", cardinality: "optional", colocated: ".pfx-card", children: [] },
   ]);
-  const colocFirst = parseStructure(".tabs-list:is(.pfx-card):optional {}", postcss.parse);
+  const colocFirst = parseStructure(".tabs-list:is(.pfx-card):optional {}", parsePostcss);
   expect(colocFirst).toEqual([
     { selector: ".tabs-list", cardinality: "optional", colocated: ".pfx-card", children: [] },
   ]);
 
   // Element selector.
-  const elem = parseStructure("button:one-or-more:is(.pfx-button) {}", postcss.parse);
+  const elem = parseStructure("button:one-or-more:is(.pfx-button) {}", parsePostcss);
   expect(elem).toEqual([
     { selector: "button", cardinality: "one-or-more", colocated: ".pfx-button", children: [] },
   ]);
 
   // Bare element type in :is() (co-locating an element-typed component).
-  const elemType = parseStructure(".wrapper:is(nav) {}", postcss.parse);
+  const elemType = parseStructure(".wrapper:is(nav) {}", parsePostcss);
   expect(elemType).toEqual([{ selector: ".wrapper", colocated: "nav", children: [] }]);
 
   // ID selector in :is().
-  const id = parseStructure(".wrapper:is(#dialog) {}", postcss.parse);
+  const id = parseStructure(".wrapper:is(#dialog) {}", parsePostcss);
   expect(id).toEqual([{ selector: ".wrapper", colocated: "#dialog", children: [] }]);
 
   // Attribute selector in :is().
-  const attr = parseStructure('.wrapper:is([data-role="card"]) {}', postcss.parse);
+  const attr = parseStructure('.wrapper:is([data-role="card"]) {}', parsePostcss);
   expect(attr).toEqual([{ selector: ".wrapper", colocated: '[data-role="card"]', children: [] }]);
 
   // Complex compound: attribute + class + co-location + cardinality.
   const complex = parseStructure(
     'slot[name="trailing"].trailing-content:is(.pfx-card):optional {}',
-    postcss.parse,
+    parsePostcss,
   );
   expect(complex).toEqual([
     {
@@ -3025,7 +3022,7 @@ test("@structure :is(.<class>) extracts a co-located component class from the se
   ]);
 
   // Multi-selector :is() is NOT treated as co-location — stays verbatim, no colocated set.
-  const multi = parseStructure(".foo:is(.a, .b) {}", postcss.parse);
+  const multi = parseStructure(".foo:is(.a, .b) {}", parsePostcss);
   expect(multi[0].selector).toBe(".foo:is(.a, .b)");
   expect(multi[0].colocated).toBeUndefined();
 });

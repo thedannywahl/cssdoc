@@ -4,6 +4,7 @@ import DefaultTheme from "vitepress/theme";
 
 import VitePressMermaid from "../plugins/vitepress-mermaid/index.vue";
 
+// oxlint-disable-next-line import/no-unassigned-import -- VitePress loads the site's global styles.
 import "./custom.css";
 
 /** Site theme with Mermaid rendering and a client-only playground. */

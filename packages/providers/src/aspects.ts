@@ -859,12 +859,12 @@ export const record = {
       const w = want(key, Boolean(text?.trim()));
       if (w !== "skip") fragments[key] = ["", `${prefix}${w === "content" ? text : emptySection}`];
     };
-    const list = (key: HoverSectionKey, icon: string, label: string, rows: string[]): void => {
+    const list = (key: HoverSectionKey, iconName: string, label: string, rows: string[]): void => {
       const w = want(key, rows.length > 0);
       if (w !== "skip")
         fragments[key] = [
           "",
-          bold(`${presentation === "vscode" ? `${codicon(icon)} ` : ""}${label}`),
+          bold(`${presentation === "vscode" ? `${codicon(iconName)} ` : ""}${label}`),
           ...(w === "content" ? rows : [emptySection]),
         ];
     };
@@ -1034,17 +1034,17 @@ export const record = {
       if (w !== "skip") {
         const frag = ["", bold(`${icon("book")}Example${examples.length > 1 ? "s" : ""}`)];
         if (w === "content")
-          for (const index of examples) {
-            const text = entry.examples[index];
-            const prose = entry.prose?.find((body) => body.exampleIndex === index);
+          for (const exampleIndex of examples) {
+            const text = entry.examples[exampleIndex];
+            const exampleProse = entry.prose?.find((body) => body.exampleIndex === exampleIndex);
             const ex = text.trim();
             // An example that already carries a fenced block is Markdown (prose + code) — emit it
             // verbatim. Only bare, fence-less code gets auto-fenced (sniffing markup vs CSS).
             frag.push(
               "",
-              prose?.mode === "plain"
+              exampleProse?.mode === "plain"
                 ? plainHoverProse(text)
-                : prose?.mode === "markdown"
+                : exampleProse?.mode === "markdown"
                   ? unescapeInlineOpeners(text, "markdown")
                   : MARKDOWN_BACKTICK_FENCE_LINE_PREFIX.exec(ex) !== null
                     ? ex
@@ -1238,9 +1238,9 @@ export const modifier = {
     // Modifiers from records marked `@global` apply everywhere; resolve name collisions the same
     // way lookups do (index.globalPrecedence), then list direct modifiers before global ones.
     const globalByName = new Map<string, (typeof entry.modifiers)[number]>();
-    for (const record of index.records) {
-      if (!record.entry.global || record.entry === entry) continue;
-      for (const m of record.entry.modifiers) {
+    for (const globalRecord of index.records) {
+      if (!globalRecord.entry.global || globalRecord.entry === entry) continue;
+      for (const m of globalRecord.entry.modifiers) {
         const key = index.matcher.normalizeMember(m.name);
         if (!globalByName.has(key)) globalByName.set(key, m);
       }
@@ -1492,7 +1492,7 @@ export const customProperty = {
   /** Author-side: a registered property's default (`initial-value`/`@defaultValue`) must match its syntax. */
   model(index: CssDocIndex): Diagnostic[] {
     const out: Diagnostic[] = [];
-    for (const { property, record } of index.allCustomProperties()) {
+    for (const { property, record: propertyRecord } of index.allCustomProperties()) {
       if (!property.syntax || property.defaultValue === undefined) continue;
       const m = matchesSyntax(property.syntax, property.defaultValue);
       if (m.skipped || m.ok) continue;
@@ -1501,8 +1501,8 @@ export const customProperty = {
           aspect: "custom-property",
           rule: "invalid-default-value",
           message: `Default ${codeSpan(property.defaultValue)} of ${codeSpan(property.name)} doesn't match its syntax ${codeSpan(property.syntax)}.`,
-          record,
-          span: index.location(record, memberKey("property", property.name))?.span,
+          record: propertyRecord,
+          span: index.location(propertyRecord, memberKey("property", property.name))?.span,
         }),
       );
     }

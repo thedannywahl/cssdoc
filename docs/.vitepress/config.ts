@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-import grammarkdown from "@cssdoc/grammarkdown-tmlanguage";
-import cssdoc, { cssdocAtRules } from "@cssdoc/tmlanguage";
+import grammarkdownGrammar from "@cssdoc/grammarkdown-tmlanguage";
+import cssdocGrammar, { cssdocAtRules } from "@cssdoc/tmlanguage";
 import { regex as arkRegex } from "arkregex";
 import type { DefaultTheme, UserConfig } from "vitepress";
 import { defineConfig } from "vitepress";
@@ -66,10 +66,11 @@ const config: UserConfig = defineConfig({
   // Register the grammarkdown grammar (for the Grammar page) and the cssdoc injection grammars (doc
   // comments + typed record-reference at-rules in CSS examples).
   markdown: {
-    languages: [grammarkdown, cssdoc, cssdocAtRules],
+    languages: [grammarkdownGrammar, cssdocGrammar, cssdocAtRules],
     codeTransformers: [
       {
         preprocess(code, options) {
+          // oxlint-disable-next-line eslint/no-underscore-dangle -- Shiki exposes this metadata key.
           const diagnostic = EXAMPLE_DIAGNOSTIC.exec(options.meta?.__raw ?? "");
           if (!diagnostic) return;
           const [, level, target] = diagnostic;
@@ -204,7 +205,7 @@ const config: UserConfig = defineConfig({
       pageData.frontmatter.layout === "home"
         ? "cssdoc — TSDoc, for CSS"
         : pageData.frontmatter.title || pageData.title || siteData.title;
-    const description =
+    const pageDescription =
       pageData.frontmatter.description || pageData.description || siteData.description;
     // relativePath is like "guide/introduction.md" or "index.md"; cleanUrls drops the extension and
     // index files map to their directory root.
@@ -214,10 +215,10 @@ const config: UserConfig = defineConfig({
     return [
       ["link", { rel: "canonical", href: url }],
       ["meta", { property: "og:title", content: title }],
-      ["meta", { property: "og:description", content: description }],
+      ["meta", { property: "og:description", content: pageDescription }],
       ["meta", { property: "og:url", content: url }],
       ["meta", { name: "twitter:title", content: title }],
-      ["meta", { name: "twitter:description", content: description }],
+      ["meta", { name: "twitter:description", content: pageDescription }],
     ];
   },
   themeConfig: {

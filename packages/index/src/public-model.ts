@@ -128,19 +128,25 @@ export function projectPublicModel(
         ...described(item, path),
         ...(item.modifiers
           ? {
-              modifiers: item.modifiers.map((item, i) => modifier(item, `${path}.modifiers[${i}]`)),
+              modifiers: item.modifiers.map((childModifier, i) =>
+                modifier(childModifier, `${path}.modifiers[${i}]`),
+              ),
             }
           : {}),
       });
       const variant = (item: StructureVariant, path: string): StructureVariant => ({
         ...item,
-        nodes: item.nodes.map((item, i) => structure(item, `${path}.nodes[${i}]`)),
+        nodes: item.nodes.map((node, i) => structure(node, `${path}.nodes[${i}]`)),
       });
       const structure = (item: StructureNode, path: string): StructureNode => ({
         ...described(item, path),
-        children: item.children.map((item, i) => structure(item, `${path}.children[${i}]`)),
+        children: item.children.map((child, i) => structure(child, `${path}.children[${i}]`)),
         ...(item.variants
-          ? { variants: item.variants.map((item, i) => variant(item, `${path}.variants[${i}]`)) }
+          ? {
+              variants: item.variants.map((childVariant, i) =>
+                variant(childVariant, `${path}.variants[${i}]`),
+              ),
+            }
           : {}),
       });
       const privateAnnotationIds = new Set(
@@ -192,7 +198,9 @@ export function projectPublicModel(
         compat: entry.compat.map((text, i) => project(text, `compat[${i}]`)!),
         examples: entry.examples.map((text, i) => {
           const originalIndex = exampleIndices[i];
-          const body = original.prose?.find((body) => body.exampleIndex === originalIndex);
+          const body = original.prose?.find(
+            (candidate) => candidate.exampleIndex === originalIndex,
+          );
           return body
             ? project(text, `examples[${i}]`, body.mode, `examples[${originalIndex}]`)!
             : project(text, `examples[${i}]`, "markdown", `examples[${originalIndex}]`)!;

@@ -964,10 +964,10 @@ function applyBlockTag(
         if (privateMarker)
           doc.privateAnnotationIds.add(/^\d+$/.test(id) ? Number.parseInt(id, 10) : id);
         if (text) {
-          const numeric = /^\d+$/.test(id) ? Number.parseInt(id, 10) : undefined;
-          if (numeric !== undefined && !doc.annotations.has(numeric))
-            doc.annotations.set(numeric, text);
-          if (numeric === undefined) {
+          const numericId = /^\d+$/.test(id) ? Number.parseInt(id, 10) : undefined;
+          if (numericId !== undefined && !doc.annotations.has(numericId))
+            doc.annotations.set(numericId, text);
+          if (numericId === undefined) {
             const existing = doc.namedAnnotations.get(id);
             doc.namedAnnotations.set(id, {
               text,

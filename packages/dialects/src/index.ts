@@ -20,11 +20,11 @@
  */
 
 import { FILE_EXTENSION } from "@cssdoc/regex";
-import postcss, { type Root } from "postcss";
-// postcss-less ships no type declarations; its default export is a PostCSS Syntax with `.parse`.
+import { parse as parseCss, type Root } from "postcss";
+// postcss-less ships no type declarations.
 // @ts-expect-error -- no bundled types
-import less from "postcss-less";
-import scss from "postcss-scss";
+import { parse as parseLess } from "postcss-less";
+import { parse as parseScss } from "postcss-scss";
 
 /** A stylesheet dialect cssdoc can parse. */
 export type CssDialect = "css" | "scss" | "less";
@@ -34,9 +34,9 @@ export type CssParse = (css: string) => Root;
 
 /** The parser for a dialect. `"scss"` also covers `.sass` sources written in the SCSS syntax. */
 export function resolveParser(dialect: CssDialect): CssParse {
-  if (dialect === "scss") return (css) => scss.parse(css);
-  if (dialect === "less") return (css) => less.parse(css);
-  return (css) => postcss.parse(css);
+  if (dialect === "scss") return (css) => parseScss(css);
+  if (dialect === "less") return (css) => parseLess(css);
+  return (css) => parseCss(css);
 }
 
 /** The dialect implied by a filename's extension (`.scss`/`.sass` → scss, `.less` → less, else css). */
