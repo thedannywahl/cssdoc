@@ -2,6 +2,7 @@ import { literalMarkdownText } from "@cssdoc/core";
 import { sanitizeMarkdownLinks as sanitizeLinks, unescapeInlineOpeners } from "@cssdoc/core/prose";
 import {
   BACKTICK_CHAR,
+  AT_CHAR,
   BRACE_OPEN_CHAR,
   LESS_THAN_CHAR,
   LINE_ENDING_SOURCE,
@@ -56,7 +57,8 @@ export function plainProse(text: string): string {
 function escapeFree(text: string): string {
   return text
     .replaceAll(LESS_THAN_CHAR, "&lt;")
-    .replaceAll(BRACE_OPEN_CHAR.repeat(2), "&#123;&#123;");
+    .replaceAll(BRACE_OPEN_CHAR.repeat(2), "&#123;&#123;")
+    .replaceAll(`${BRACE_OPEN_CHAR}${AT_CHAR}`, "&#123;@");
 }
 
 /**

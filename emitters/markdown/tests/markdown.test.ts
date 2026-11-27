@@ -112,6 +112,16 @@ test("escaped inline openers render literally while code keeps its source", asyn
   expect(plain).toContain("&#92;&#123;&#64;link fenced&#125;");
 });
 
+test("inline-shaped prose can't become VitePress attributes or Vue directives", async () => {
+  const markdown = safeMarkdownBlock("Literal {@click=alert(1)}");
+  const html = await (await createMarkdownRenderer(process.cwd())).renderAsync(markdown);
+  const compiled = compileTemplate({ source: html, filename: "entry.vue", id: "entry" });
+  expect(html).toContain("&#123;@click=alert(1)}");
+  expect(html).not.toContain("<p @click");
+  expect(compiled.errors).toEqual([]);
+  expect(compiled.code).not.toContain("onClick");
+});
+
 test("escapes prose around empty, multiline, and unmatched backtick spans", () => {
   expect(escProse("<a> `` `<b>\n{{c}}` <d> `unclosed")).toBe(
     '&lt;a> `` <code v-pre="">&#x3C;b> {{c}}</code> &lt;d> `unclosed',
