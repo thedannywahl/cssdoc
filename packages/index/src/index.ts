@@ -341,7 +341,7 @@ function resolveValue(
     if (!ref?.startsWith("--")) return false;
     const comma = node.nodes.findIndex((n) => n.type === "div" && n.value === ",");
     const fallback =
-      comma >= 0 ? valueParser.stringify(node.nodes.slice(comma + 1)).trim() : undefined;
+      comma === -1 ? undefined : valueParser.stringify(node.nodes.slice(comma + 1)).trim();
     const declared = seen.has(ref) ? undefined : values.get(ref);
     const replacement =
       declared === undefined
@@ -925,7 +925,7 @@ export function cssValueSites(
         if (!name?.startsWith("--")) return;
         const comma = node.nodes.findIndex((n) => n.type === "div" && n.value === ",");
         const fallback =
-          comma >= 0 ? valueParser.stringify(node.nodes.slice(comma + 1)).trim() : undefined;
+          comma === -1 ? undefined : valueParser.stringify(node.nodes.slice(comma + 1)).trim();
         usages.push({ name, fallback: fallback || undefined, loc });
       });
     }

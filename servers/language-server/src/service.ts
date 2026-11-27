@@ -293,7 +293,7 @@ function refHoverAt(
       .split("\n")
       .map((line) => line.replace(COMMENT_LINE_PREFIX, ""));
     const at = body.findIndex((line) => ANNOTATIONS_TAG.test(line));
-    if (at < 0) return out;
+    if (at === -1) return out;
     let current: number | undefined;
     for (const line of body.slice(at + 1)) {
       if (COMMENT_TAG.exec(line) !== null) break;
@@ -359,7 +359,7 @@ function unmask(
 ): string {
   if (!maskedName || source === projected) return message;
   const at = projected.indexOf(maskedName);
-  if (at < 0) return message;
+  if (at === -1) return message;
   const original = source.slice(at, at + maskedName.length);
   return original === maskedName ? message : message.split(maskedName).join(original);
 }

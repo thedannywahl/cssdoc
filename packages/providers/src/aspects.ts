@@ -1495,7 +1495,7 @@ function findProperty(
 ): { record: RecordInfo; index: number } | undefined {
   for (const rec of index.records) {
     const i = rec.entry.cssPropertiesDeclared.findIndex((p) => p.name === name);
-    if (i >= 0) return { record: rec, index: i };
+    if (i !== -1) return { record: rec, index: i };
   }
   return undefined;
 }

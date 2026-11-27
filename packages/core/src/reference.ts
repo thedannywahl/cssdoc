@@ -201,9 +201,9 @@ export function parseReference(input: string): ReferenceParseResult {
     const argument = text.slice(prefix.length, close).trim();
     if (provider) {
       const comma = argument.indexOf(",");
-      const id = (comma < 0 ? argument : argument.slice(0, comma)).trim();
+      const id = (comma === -1 ? argument : argument.slice(0, comma)).trim();
       if (!PROVIDER_ID.test(id)) return { ok: false, error: "invalid-provider-id" };
-      if (comma < 0) scope = { kind: "provider", providerId: id };
+      if (comma === -1) scope = { kind: "provider", providerId: id };
       else {
         const key = sourceKey(argument.slice(comma + 1).trim());
         if (key === undefined) return { ok: false, error: "invalid-source-key" };
@@ -217,10 +217,10 @@ export function parseReference(input: string): ReferenceParseResult {
     text = text.slice(close + 3);
   }
   const hash = text.indexOf(POUND_CHAR);
-  const record = hash < 0 ? text : text.slice(0, hash);
+  const record = hash === -1 ? text : text.slice(0, hash);
   const colon = record.indexOf(COLON_CHAR);
-  const name = colon < 0 ? record : record.slice(colon + 1);
-  const rawKind = colon < 0 ? undefined : record.slice(0, colon);
+  const name = colon === -1 ? record : record.slice(colon + 1);
+  const rawKind = colon === -1 ? undefined : record.slice(0, colon);
   if (
     !RECORD_NAME.test(name) ||
     (rawKind !== undefined &&
@@ -231,8 +231,8 @@ export function parseReference(input: string): ReferenceParseResult {
   ) {
     return { ok: false, error: "invalid-reference" };
   }
-  const member = hash < 0 ? undefined : memberReference(text.slice(hash + 1));
-  if (hash >= 0 && !member) return { ok: false, error: "invalid-reference" };
+  const member = hash === -1 ? undefined : memberReference(text.slice(hash + 1));
+  if (hash !== -1 && !member) return { ok: false, error: "invalid-reference" };
   return {
     ok: true,
     reference: {

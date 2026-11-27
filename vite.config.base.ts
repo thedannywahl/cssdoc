@@ -134,7 +134,7 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/no-nested-ternary": "off",
       "unicorn/no-await-expression-member": "off",
       "unicorn/consistent-function-scoping": "off",
-      "unicorn/consistent-existence-index-check": "off",
+      "unicorn/consistent-existence-index-check": "warn",
       "unicorn/no-array-callback-reference": "warn",
       "unicorn/max-nested-calls": "off",
       "unicorn/prefer-number-coercion": "warn",

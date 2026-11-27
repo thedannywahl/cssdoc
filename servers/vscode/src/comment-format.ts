@@ -21,12 +21,12 @@ const RECORD_TAG = arkRegex.as(
 
 const lineStart = (text: string, offset: number): number => {
   const newline = text.lastIndexOf("\n", offset - 1);
-  return newline < 0 ? 0 : newline + 1;
+  return newline === -1 ? 0 : newline + 1;
 };
 
 const lineEnd = (text: string, start: number): number => {
   const newline = text.indexOf("\n", start);
-  return newline < 0 ? text.length : newline;
+  return newline === -1 ? text.length : newline;
 };
 
 const lineIndent = (text: string, offset: number): string => {
@@ -49,7 +49,7 @@ export function cssDocEdits(text: string, formatBlankLines: boolean): CssDocEdit
   while ((match = opener.exec(text))) {
     const openerStart = match.index;
     const bodyStart = text.indexOf("\n", openerStart + 3);
-    if (bodyStart < 0) continue;
+    if (bodyStart === -1) continue;
 
     const recordStart = bodyStart + 1;
     const recordEnd = lineEnd(text, recordStart);
@@ -59,7 +59,7 @@ export function cssDocEdits(text: string, formatBlankLines: boolean): CssDocEdit
     const indent = lineIndent(text, openerStart);
     const newline = text.includes("\r\n") ? "\r\n" : "\n";
 
-    if (closeStart < 0) {
+    if (closeStart === -1) {
       // Close after the last continuation line of the doc comment (blank lines and lines starting
       // with `*`), not right after the record tag — a `@summary`/etc. line below it is still part of
       // the same block, while the CSS the block documents must stay outside the comment.

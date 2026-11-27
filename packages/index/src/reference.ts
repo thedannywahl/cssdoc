@@ -645,12 +645,12 @@ function canonicalCssNumber(text: string): string | undefined {
   const negative = text.startsWith("-");
   const unsigned = text.startsWith("-") || text.startsWith("+") ? text.slice(1) : text;
   const exponentAt = unsigned.toLowerCase().indexOf("e");
-  const mantissa = exponentAt < 0 ? unsigned : unsigned.slice(0, exponentAt);
-  const rawExponent = exponentAt < 0 ? "0" : unsigned.slice(exponentAt + 1);
+  const mantissa = exponentAt === -1 ? unsigned : unsigned.slice(0, exponentAt);
+  const rawExponent = exponentAt === -1 ? "0" : unsigned.slice(exponentAt + 1);
   if (rawExponent.length > 1000) return undefined;
   const dot = mantissa.indexOf(".");
-  const fractionLength = dot < 0 ? 0 : mantissa.length - dot - 1;
-  const digits = dot < 0 ? mantissa : mantissa.slice(0, dot) + mantissa.slice(dot + 1);
+  const fractionLength = dot === -1 ? 0 : mantissa.length - dot - 1;
+  const digits = dot === -1 ? mantissa : mantissa.slice(0, dot) + mantissa.slice(dot + 1);
   let start = 0;
   while (start < digits.length && digits[start] === "0") start++;
   if (start === digits.length) return "0";
