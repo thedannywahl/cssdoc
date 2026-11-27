@@ -220,7 +220,7 @@ test("the bundled server applies file overrides and reloads them for open docume
 
     const srcDiagnostics = nextDiagnostics(srcUri);
     open(srcUri, "css", source);
-    expect(await srcDiagnostics).toEqual(
+    await expect(srcDiagnostics).resolves.toEqual(
       expect.arrayContaining([
         expect.objectContaining({ code: "missing-summary", severity: 1 }),
         expect.objectContaining({ code: "cssdoc-directive", severity: 1 }),
@@ -413,8 +413,8 @@ test("the server applies per-folder client settings and reloads them on change",
     while (!(await hover(first))?.includes("Scoped settings") && Date.now() < deadline) {
       await delay(50);
     }
-    expect(await hover(first)).toContain("Scoped settings");
-    expect(await hover(second)).toBeUndefined();
+    await expect(hover(first)).resolves.toContain("Scoped settings");
+    await expect(hover(second)).resolves.toBeUndefined();
     enabled.delete(pathToFileURL(first).href);
     enabled.add(pathToFileURL(second).href);
     server.send({
@@ -426,8 +426,8 @@ test("the server applies per-folder client settings and reloads them on change",
     while (!(await hover(second))?.includes("Scoped settings") && Date.now() < changedDeadline) {
       await delay(50);
     }
-    expect(await hover(first)).toBeUndefined();
-    expect(await hover(second)).toContain("Scoped settings");
+    await expect(hover(first)).resolves.toBeUndefined();
+    await expect(hover(second)).resolves.toContain("Scoped settings");
   } finally {
     server.kill();
     rmSync(fixture, { recursive: true, force: true });
@@ -509,7 +509,7 @@ test("the server refreshes discovered files and unsaved stylesheet changes", asy
       if ((await hover()) === expected) return;
       await delay(50);
     }
-    expect(await hover()).toBe(expected);
+    await expect(hover()).resolves.toBe(expected);
   };
   try {
     await request("initialize", {
@@ -530,7 +530,7 @@ test("the server refreshes discovered files and unsaved stylesheet changes", asy
         },
       },
     });
-    expect(await hover()).toBeUndefined();
+    await expect(hover()).resolves.toBeUndefined();
     writeFileSync(css, text("Disk"));
     server.send({
       jsonrpc: "2.0",
@@ -541,7 +541,7 @@ test("the server refreshes discovered files and unsaved stylesheet changes", asy
     while (!(await hover())?.includes("Disk") && Date.now() < deadline) {
       await delay(50);
     }
-    expect(await hover()).toContain("Disk");
+    await expect(hover()).resolves.toContain("Disk");
     server.send({
       jsonrpc: "2.0",
       method: "textDocument/didOpen",
@@ -553,7 +553,7 @@ test("the server refreshes discovered files and unsaved stylesheet changes", asy
     while (!(await hover())?.includes("Unsaved") && Date.now() < unsavedDeadline) {
       await delay(50);
     }
-    expect(await hover()).toContain("Unsaved");
+    await expect(hover()).resolves.toContain("Unsaved");
     server.send({
       jsonrpc: "2.0",
       method: "textDocument/didClose",
@@ -576,7 +576,7 @@ test("the server refreshes discovered files and unsaved stylesheet changes", asy
     while (!(await hover())?.includes("Pushed settings") && Date.now() < configDeadline) {
       await delay(50);
     }
-    expect(await hover()).toContain("Pushed settings");
+    await expect(hover()).resolves.toContain("Pushed settings");
   } finally {
     server.kill();
     rmSync(fixture, { recursive: true, force: true });
@@ -622,7 +622,7 @@ test("the server indexes workspace folders added after initialization", async ()
         textDocument: { uri, languageId: "html", version: 1, text: '<div class="widget"></div>' },
       },
     });
-    expect(await hover()).toBeUndefined();
+    await expect(hover()).resolves.toBeUndefined();
     server.send({
       jsonrpc: "2.0",
       method: "workspace/didChangeWorkspaceFolders",
@@ -634,7 +634,7 @@ test("the server indexes workspace folders added after initialization", async ()
     while (!(await hover())?.includes("Added workspace") && Date.now() < deadline) {
       await delay(50);
     }
-    expect(await hover()).toContain("Added workspace");
+    await expect(hover()).resolves.toContain("Added workspace");
     server.send({
       jsonrpc: "2.0",
       method: "workspace/didChangeWorkspaceFolders",
@@ -646,7 +646,7 @@ test("the server indexes workspace folders added after initialization", async ()
     while ((await hover()) !== undefined && Date.now() < removedDeadline) {
       await delay(50);
     }
-    expect(await hover()).toBeUndefined();
+    await expect(hover()).resolves.toBeUndefined();
   } finally {
     server.kill();
     rmSync(fixture, { recursive: true, force: true });
@@ -692,7 +692,7 @@ test("the server discovers nested provider configs without a local stylesheet", 
         textDocument: { uri, languageId: "html", version: 1, text: '<div class="widget"></div>' },
       },
     });
-    expect(await hover()).toBeUndefined();
+    await expect(hover()).resolves.toBeUndefined();
     server.send({
       jsonrpc: "2.0",
       method: "workspace/didChangeConfiguration",
@@ -702,7 +702,7 @@ test("the server discovers nested provider configs without a local stylesheet", 
     while (!(await hover())?.includes("Provider widget") && Date.now() < deadline) {
       await delay(50);
     }
-    expect(await hover()).toContain("Provider widget");
+    await expect(hover()).resolves.toContain("Provider widget");
   } finally {
     server.kill();
     rmSync(fixture, { recursive: true, force: true });

@@ -659,6 +659,38 @@ test("JSDoc lint requires documented types in JavaScript but not TypeScript", ()
   }
 });
 
+test("Vitest lint prefers resolves for asynchronous assertions", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".expect-resolves-check-"));
+  try {
+    const file = join(directory, "async.test.ts");
+    writeFileSync(
+      file,
+      [
+        'import { expect, test } from "vite-plus/test";',
+        'test("checks resolutions", async () => {',
+        "  expect(await Promise.resolve(1)).toBe(1);",
+        "  await expect(Promise.resolve(1)).resolves.toBe(1);",
+        "});",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "vitest(prefer-expect-resolves)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["warning", 3]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));

@@ -249,7 +249,7 @@ export const baseConfig: UserConfig = defineConfig({
       "vitest/prefer-to-be-falsy": "off",
       "vitest/prefer-strict-boolean-matchers": "warn",
       "vitest/prefer-comparison-matcher": "off",
-      "vitest/prefer-expect-resolves": "off",
+      "vitest/prefer-expect-resolves": "warn",
       "vitest/consistent-test-it": "off",
       "vitest/prefer-lowercase-title": "off",
       "vitest/prefer-describe-function-title": "off",

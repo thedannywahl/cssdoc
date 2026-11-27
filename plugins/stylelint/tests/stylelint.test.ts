@@ -130,7 +130,7 @@ test("a fully documented stylesheet produces no warnings", async () => {
 .chip { color: red; }
 .chip.-color-info { color: blue; }
 `;
-  expect(await lint(clean)).toEqual([]);
+  await expect(lint(clean)).resolves.toEqual([]);
 });
 
 test("undocumented-modifier points at the offending CSS rule, not the whole file", async () => {
