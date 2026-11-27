@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { gzipSync } from "node:zlib";
 import { build } from "esbuild";
 import { expect, test } from "vite-plus/test";
 
@@ -120,6 +121,47 @@ test("packed lite and its transitive module graph contain no Markdown engine", a
     rmSync(outDir, { recursive: true, force: true });
   }
 }, 20_000);
+
+test("phase two bundle gate reports lite, full core, and highlighter sizes", async () => {
+  const metrics = [] as { name: string; bytes: number; gzip: number }[];
+  for (const [name, entry] of [
+    ["lite", "packages/core/src/lite.ts"],
+    ["full-core", "packages/core/src/index.ts"],
+    ["highlighter", "packages/providers/src/highlighting.ts"],
+  ] as const) {
+    const result = await build({
+      absWorkingDir: root,
+      entryPoints: [entry],
+      bundle: true,
+      platform: "browser",
+      format: "esm",
+      minify: true,
+      sourcemap: true,
+      write: false,
+    });
+    const output = result.outputFiles.find(
+      (file) => !file.path.endsWith(".map") && file.contents.byteLength > 0,
+    );
+    if (!output) throw new Error(`No JavaScript output for ${name}`);
+    metrics.push({
+      name,
+      bytes: output.contents.byteLength,
+      gzip: gzipSync(output.contents).byteLength,
+    });
+  }
+  for (const metric of metrics) expect(metric.bytes).toBeGreaterThan(0);
+  expect(metrics.find((metric) => metric.name === "full-core")!.bytes).toBeGreaterThan(
+    metrics.find((metric) => metric.name === "lite")!.bytes,
+  );
+  expect(metrics.find((metric) => metric.name === "highlighter")!.bytes).toBeGreaterThan(
+    metrics.find((metric) => metric.name === "lite")!.bytes,
+  );
+  console.log(
+    `phase2-bundle-gate ${metrics
+      .map((metric) => `${metric.name}=${metric.bytes}/${metric.gzip}`)
+      .join(" ")}`,
+  );
+});
 
 test("the lite dependency audit recognizes a transitive Markdown engine", async () => {
   const graph = await build({
