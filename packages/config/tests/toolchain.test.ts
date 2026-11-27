@@ -385,14 +385,13 @@ test("selected nursery rules check control flow, imports, and Node ESM globals",
         cwd: workspace,
         encoding: "utf8",
       });
-      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
       const output = parseLintOutput(result.stdout);
       const sample = output.diagnostics.filter(({ filename }) => filename.endsWith("sample.mjs"));
-      for (const code of [
-        "eslint(no-unreachable-loop)",
-        "eslint(no-useless-assignment)",
-        "import(named)",
-      ]) {
+      expect(sample.filter(({ code }) => code === "eslint(no-unreachable-loop)")).toMatchObject([
+        { severity: "error" },
+      ]);
+      for (const code of ["eslint(no-useless-assignment)", "import(named)"]) {
         expect(sample.filter((diagnostic) => diagnostic.code === code)).toMatchObject([
           { severity: "warning" },
         ]);

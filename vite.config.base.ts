@@ -198,7 +198,7 @@ export const baseConfig: UserConfig = defineConfig({
       "regexp/optimal-quantifier-concatenation": "warn",
       "regexp/simplify-set-operations": "warn",
       // Select nursery checks individually; the category changes as rules mature.
-      "eslint/no-unreachable-loop": "warn",
+      "eslint/no-unreachable-loop": "error",
       "eslint/no-useless-assignment": "warn",
       "import/named": "warn",
       // Vitest supplies a default timeout; individual tests can override it when needed.
