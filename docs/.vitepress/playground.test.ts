@@ -9,7 +9,11 @@ test("parses playground HTML with embedded CSS and JavaScript", () => {
     extensions: [html()],
   });
   const nodes: string[] = [];
-  syntaxTree(state).iterate({ enter: (node) => void nodes.push(node.name) });
+  syntaxTree(state).iterate({
+    enter: (node) => {
+      nodes.push(node.name);
+    },
+  });
 
   expect(nodes).toContain("StyleSheet");
   expect(nodes).toContain("Script");

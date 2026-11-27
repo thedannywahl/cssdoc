@@ -14,13 +14,31 @@ export const baseConfig: UserConfig = defineConfig({
       pedantic: "warn",
       perf: "warn",
       style: "warn",
-      restriction: "off",
+      restriction: "warn",
       suspicious: "warn",
       nursery: "off",
     },
     options: { typeAware: true, typeCheck: true },
     plugins: ["import", "node", "promise", "vitest", "jsdoc"],
     rules: {
+      // Vitest supplies a default timeout; individual tests can override it when needed.
+      "vitest/require-test-timeout": "off",
+      // Parsers and public APIs use undefined, increments, and bit flags intentionally.
+      "eslint/no-undefined": "off",
+      "eslint/no-plusplus": "off",
+      "eslint/no-bitwise": "off",
+      // Relative imports within packages and default exports for framework entry points are intentional.
+      "import/no-relative-parent-imports": "off",
+      "import/no-default-export": "off",
+      // Function declarations are hoisted; still check variables and classes before initialization.
+      "eslint/no-use-before-define": ["warn", { functions: false }],
+      // Mark intentionally unawaited operations without allowing void as a general expression.
+      "eslint/no-void": ["warn", { allowAsStatement: true }],
+      // Error and warning output must remain visible to users.
+      "eslint/no-console": ["warn", { allow: ["warn", "error"] }],
+      // Parser branches and instance-oriented APIs don't fit arbitrary complexity or static-method rules.
+      "eslint/complexity": "off",
+      "eslint/class-methods-use-this": "off",
       // These rules conflict with explicit test imports, precise assertions, and shared setup.
       "vitest/no-importing-vitest-globals": "off",
       "vitest/no-hooks": "off",
@@ -123,12 +141,29 @@ export const baseConfig: UserConfig = defineConfig({
           "eslint/no-template-curly-in-string": "off",
           "eslint/no-script-url": "off",
           "eslint/prefer-template": "off",
+          "eslint/no-console": "off",
+          "node/no-process-env": "off",
         },
       },
       {
         // The extension's bundled CommonJS shim must load this dependency with require.
         files: ["**/shims/css-tree.ts"],
-        rules: { "node/global-require": "off" },
+        rules: { "node/global-require": "off", "import/no-commonjs": "off" },
+      },
+      {
+        // Build and CLI entry points use stdout and top-level await.
+        files: ["**/scripts/**", "**/bin/**"],
+        rules: { "eslint/no-console": "off", "node/no-top-level-await": "off" },
+      },
+      {
+        // The docs configuration reads its optional deployment base from the environment.
+        files: ["**/.vitepress/config.ts"],
+        rules: { "node/no-process-env": "off" },
+      },
+      {
+        // Ambient declarations intentionally augment globals and declare external modules.
+        files: ["**/*.d.ts"],
+        rules: { "import/unambiguous": "off" },
       },
     ],
   },

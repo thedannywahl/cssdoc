@@ -134,10 +134,10 @@ export const detectEmbeddedHost = (filename?: string): EmbeddedHost | undefined 
   return undefined;
 };
 
-/** Skip a JS `${ … }` interpolation starting at `i` (the `$`). Returns the index just past the `}`. */
-function skipInterpolation(src: string, i: number): number {
+/** Skip a JS `${ … }` interpolation starting at `start` (the `$`). Returns the index just past the `}`. */
+function skipInterpolation(src: string, start: number): number {
   let depth = 0;
-  i += 1; // past '$'
+  let i = start + 1; // past '$'
   for (; i < src.length; i++) {
     const c = src[i];
     if (c === BRACE_OPEN_CHAR) depth++;
@@ -153,18 +153,20 @@ function skipInterpolation(src: string, i: number): number {
   return i;
 }
 
-/** Skip a quoted string starting at `i` (the quote). Returns the index of the closing quote. */
-function skipString(src: string, i: number, quote: string): number {
-  for (i += 1; i < src.length; i++) {
+/** Skip a quoted string starting at `start` (the quote). Returns the index of the closing quote. */
+function skipString(src: string, start: number, quote: string): number {
+  let i = start + 1;
+  for (; i < src.length; i++) {
     if (src[i] === BACKSLASH_CHAR) i++;
     else if (src[i] === quote) return i;
   }
   return i;
 }
 
-/** Skip a (non-CSS) template literal starting at `i` (the backtick). Returns the closing backtick index. */
-function skipTemplate(src: string, i: number): number {
-  for (i += 1; i < src.length; i++) {
+/** Skip a (non-CSS) template literal starting at `start` (the backtick). Returns the closing backtick index. */
+function skipTemplate(src: string, start: number): number {
+  let i = start + 1;
+  for (; i < src.length; i++) {
     if (src[i] === BACKSLASH_CHAR) i++;
     else if (src[i] === BACKTICK_CHAR) return i;
     else if (src[i] === DOLLAR_CHAR && src[i + 1] === BRACE_OPEN_CHAR) {

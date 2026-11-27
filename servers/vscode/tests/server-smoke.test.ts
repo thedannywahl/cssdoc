@@ -31,7 +31,9 @@ test("the bundled server.cjs starts and answers LSP diagnostics", async () => {
   execFileSync("node", ["scripts/build.mjs"], { cwd: root });
 
   const server: ChildProcessWithoutNullStreams = spawn("node", [serverBundle, "--stdio"]);
-  const send = (msg: unknown): void => void server.stdin.write(frame(msg));
+  const send = (msg: unknown): void => {
+    server.stdin.write(frame(msg));
+  };
 
   const { resolve, reject, promise } = Promise.withResolvers<string[]>();
   const timer = setTimeout(
@@ -157,7 +159,7 @@ test("the bundled server applies file overrides and reloads them for open docume
         server.off("message", onMessage);
         reject(new Error(`No diagnostics for ${uri}`));
       }, 10_000);
-      const onMessage = (message: unknown): void => {
+      function onMessage(message: unknown): void {
         if (!message || typeof message !== "object" || !("method" in message)) return;
         if (message.method !== "textDocument/publishDiagnostics" || !("params" in message)) return;
         const params = message.params as { uri: string; diagnostics: Diagnostic[] };
@@ -165,7 +167,7 @@ test("the bundled server applies file overrides and reloads them for open docume
         clearTimeout(timer);
         server.off("message", onMessage);
         resolve(params.diagnostics);
-      };
+      }
       server.on("message", onMessage);
     });
   const source =

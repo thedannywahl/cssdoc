@@ -130,13 +130,13 @@ function structureList(nodes: StructureNode[]): string {
 /**
  * Render one record to a standalone HTML page with inline styles.
  *
- * @param entry - The record to render, including internal records if passed directly.
+ * @param sourceEntry - The record to render, including internal records if passed directly.
  * @param options - Optional index link and example-label filter. Unsafe index URLs are shown as
  * unlinked text.
  * @returns A complete HTML document.
  */
 export function renderPage(
-  entry: CssDocEntry,
+  sourceEntry: CssDocEntry,
   options: {
     indexHref?: string;
     exampleFilter?: ExampleFilter | null;
@@ -144,6 +144,7 @@ export function renderPage(
     lookupFor?: (context: PublicProseContext) => ReferenceLookup;
   } = {},
 ): string {
+  let entry = sourceEntry;
   if (!options.includePrivate) {
     const index = indexFromEntries([entry]);
     const [publicEntry] = projectPublicModel([entry], {

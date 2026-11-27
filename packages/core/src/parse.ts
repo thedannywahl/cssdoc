@@ -86,6 +86,10 @@ import type {
 import { ModifierMatcher, resolveModifierConvention } from "./modifier.ts";
 
 const WHITESPACE = toRegExp(WHITESPACE_RUN);
+const SELECTOR_COMBINATOR: Regex = arkRegex.as(
+  String.raw`[\s${GREATER_THAN_CHAR}+${TILDE_CHAR}]`,
+  "u",
+);
 
 /**
  * Reduce an `@scope` at-rule's `params` (e.g. `(.pfx-alert)`) to a bare class name, or `undefined` for
@@ -151,10 +155,6 @@ function neutralizeAmp(selector: string): string {
  */
 /** A selector that is exactly one class — the base-class inference candidate filter. */
 const SINGLE_CLASS: Regex = arkRegex.as(`^${DOT_SOURCE}${CSSDOC_BASE_CLASS_NAME_SOURCE}$`, "u");
-const SELECTOR_COMBINATOR: Regex = arkRegex.as(
-  String.raw`[\s${GREATER_THAN_CHAR}+${TILDE_CHAR}]`,
-  "u",
-);
 // A curated allow-list of ARIA/data-* attributes that reflect element *state* (not identity or
 // labeling) — avoids false positives on incidental attribute selectors like `[data-testid]`.
 const ATTRIBUTE_STATE_SOURCE = String.raw`${BRACKET_OPEN_SOURCE}\s*(aria-${ALPHANUMERIC_EXTENDED_SOURCE}+|data-state)\s*${EQUALS_CHAR}\s*(${QUOTE_DOUBLE_CHAR}(?:[^${QUOTE_DOUBLE_CHAR}\\]|\\.)*${QUOTE_DOUBLE_CHAR}|${QUOTE_SINGLE_CHAR}(?:[^${QUOTE_SINGLE_CHAR}\\]|\\.)*${QUOTE_SINGLE_CHAR}|${ALPHANUMERIC_EXTENDED_SOURCE}+)\s*${BRACKET_CLOSE_SOURCE}`;

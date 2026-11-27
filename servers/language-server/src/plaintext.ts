@@ -27,6 +27,8 @@ const inlineText = (tokens: readonly Token[]): string => {
         if (href) text += ` (${href})`;
         break;
       }
+      default:
+        break;
     }
   }
   return text;
@@ -61,6 +63,8 @@ export function hoverPlaintext(source: string): string {
         break;
       case "hr":
         result += "\n";
+        break;
+      default:
         break;
     }
   }

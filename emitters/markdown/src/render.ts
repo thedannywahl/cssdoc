@@ -581,7 +581,8 @@ function subcomponentsOf(
 }
 
 /** Render one record to a markdown page. */
-export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}): string {
+export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOptions = {}): string {
+  let entry = sourceEntry;
   if (!options.includePrivate) {
     const index = indexFromEntries([entry]);
     const [publicEntry] = projectPublicModel([entry], {

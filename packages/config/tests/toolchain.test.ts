@@ -10,7 +10,7 @@ import {
 } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { afterAll, expect, test, vi } from "vite-plus/test";
@@ -179,6 +179,84 @@ test("style lint allows literal security fixtures but checks production strings"
       expect(fixture).not.toContain(rule);
       expect(production).toContain(rule);
     }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("restriction lint preserves repository conventions and checks unsafe forms", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".restriction-check-"));
+  try {
+    const diagnostics = (name: string, source: string) => {
+      const file = join(directory, name);
+      mkdirSync(dirname(file), { recursive: true });
+      writeFileSync(file, source);
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd: root,
+        encoding: "utf8",
+      });
+      const output: { diagnostics: { code: string }[] } = JSON.parse(result.stdout);
+      return output.diagnostics.map(({ code }) => code);
+    };
+    const production = diagnostics(
+      "sample.js",
+      [
+        "function reassign(value) { value = 1; return value; }",
+        "function caller() { return hoisted(); }",
+        "function hoisted() { return 1; }",
+        "const earlier = later;",
+        "const later = 2;",
+        "const discarded = void 0;",
+        "console.log(reassign(earlier), discarded, process.env.CSSDOC_TEST);",
+        "export default reassign;",
+      ].join("\n"),
+    );
+    for (const rule of [
+      "eslint(no-param-reassign)",
+      "eslint(no-use-before-define)",
+      "eslint(no-void)",
+      "eslint(no-console)",
+      "node(no-process-env)",
+    ]) {
+      expect(production).toContain(rule);
+    }
+    expect(production.filter((rule) => rule === "eslint(no-use-before-define)")).toHaveLength(1);
+    expect(production).not.toContain("import(no-default-export)");
+    const allowed = diagnostics("allowed.js", 'console.error("error");\nvoid Promise.resolve();\n');
+    expect(allowed).not.toContain("eslint(no-console)");
+    expect(allowed).not.toContain("eslint(no-void)");
+    const fixture = diagnostics(
+      "example.test.js",
+      [
+        'import { expect, test } from "vite-plus/test";',
+        'test("uses supported patterns", () => {',
+        "  let count = 0;",
+        "  count++;",
+        "  expect(undefined).toBeUndefined();",
+        "  expect(count).toBe(1);",
+        "  console.log(process.env.CSSDOC_TEST);",
+        "});",
+      ].join("\n"),
+    );
+    for (const rule of [
+      "eslint(no-undefined)",
+      "eslint(no-plusplus)",
+      "eslint(no-console)",
+      "node(no-process-env)",
+      "vitest(require-test-timeout)",
+    ]) {
+      expect(fixture).not.toContain(rule);
+    }
+    const script = diagnostics(
+      "scripts/build.mjs",
+      'await Promise.resolve();\nconsole.log("done");',
+    );
+    expect(script).not.toContain("node(no-top-level-await)");
+    expect(script).not.toContain("eslint(no-console)");
+    expect(diagnostics("ambient.d.ts", 'declare module "example" {}')).not.toContain(
+      "import(unambiguous)",
+    );
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

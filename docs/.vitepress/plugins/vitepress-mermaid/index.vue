@@ -206,7 +206,13 @@ const copyDiagramSvg = async (): Promise<void> => {
   }
 };
 
-watch([() => props.graph, () => isDark.value], () => void renderDiagram(), { immediate: true });
+watch(
+  [() => props.graph, () => isDark.value],
+  () => {
+    void renderDiagram();
+  },
+  { immediate: true },
+);
 </script>
 
 <style scoped>

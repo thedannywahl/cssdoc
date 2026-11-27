@@ -79,6 +79,11 @@ schemas, and fixtures. It permits concise single-line guards but requires braces
 control flow. Tests import Vitest explicitly and use strict boolean assertions where intended;
 fixtures may include literal template placeholders and unsafe URLs.
 
+Restriction linting permits parser increments and bit flags, explicit `undefined`, and framework
+default exports. It checks parameter reassignment and use before initialization, permits `void`
+statements for intentionally unawaited work, and allows console output in tests and build scripts.
+Errors and warnings can be logged elsewhere.
+
 The TypeScript catalog is pinned to the upstream revision targeted by Vite+'s tsrs checker; a test
 checks that they stay aligned. TypeDoc uses TypeScript 6 separately because of its peer dependency;
 the docs and TypeDoc plugin type-check tasks use the root TypeScript compiler instead.

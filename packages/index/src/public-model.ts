@@ -136,21 +136,25 @@ export function projectPublicModel(
             }
           : {}),
       });
-      const variant = (item: StructureVariant, path: string): StructureVariant => ({
-        ...item,
-        nodes: item.nodes.map((node, i) => structure(node, `${path}.nodes[${i}]`)),
-      });
-      const structure = (item: StructureNode, path: string): StructureNode => ({
-        ...described(item, path),
-        children: item.children.map((child, i) => structure(child, `${path}.children[${i}]`)),
-        ...(item.variants
-          ? {
-              variants: item.variants.map((childVariant, i) =>
-                variant(childVariant, `${path}.variants[${i}]`),
-              ),
-            }
-          : {}),
-      });
+      function variant(item: StructureVariant, path: string): StructureVariant {
+        return {
+          ...item,
+          nodes: item.nodes.map((node, i) => structure(node, `${path}.nodes[${i}]`)),
+        };
+      }
+      function structure(item: StructureNode, path: string): StructureNode {
+        return {
+          ...described(item, path),
+          children: item.children.map((child, i) => structure(child, `${path}.children[${i}]`)),
+          ...(item.variants
+            ? {
+                variants: item.variants.map((childVariant, i) =>
+                  variant(childVariant, `${path}.variants[${i}]`),
+                ),
+              }
+            : {}),
+        };
+      }
       const privateAnnotationIds = new Set(
         entry.annotations
           .filter((annotation) => annotation.private)

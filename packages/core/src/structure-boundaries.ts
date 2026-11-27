@@ -60,14 +60,12 @@ export function analyzeDocCommentHeader(
   const result = scanStructure(line, { stack: [], comment: false, escaped: false }, true);
   if (result.dividerAt === undefined || result.dividerLength === undefined) return undefined;
   const dividerEnd = result.dividerAt + result.dividerLength;
-  while (
-    argumentStart < line.length &&
-    (line[argumentStart] === " " || line[argumentStart] === "\t")
-  ) {
-    argumentStart++;
+  let start = argumentStart;
+  while (start < line.length && (line[start] === " " || line[start] === "\t")) {
+    start++;
   }
   return {
-    argumentStart,
+    argumentStart: start,
     argumentEnd: result.dividerAt,
     dividerStart: result.dividerAt,
     dividerEnd,
@@ -139,7 +137,7 @@ export function opensStructureAtRule(
 }
 
 function scanStructure(
-  line: string,
+  input: string,
   state: StructureBoundaryState,
   findDivider: boolean,
 ): {
@@ -152,7 +150,7 @@ function scanStructure(
   const SEPARATOR: Regex | undefined = findDivider
     ? arkRegex.as(`^(?!${DASH_SOURCE}{2})${CSSDOC_DESCRIPTION_SEPARATOR_SOURCE}(?=\\s|$)`, "u")
     : undefined;
-  if (line.endsWith(CARRIAGE_RETURN_CHAR)) line = line.slice(0, -1);
+  const line = input.endsWith(CARRIAGE_RETURN_CHAR) ? input.slice(0, -1) : input;
   let opened = false;
   let openAt: number | undefined;
   let divider = false;
