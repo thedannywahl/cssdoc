@@ -176,6 +176,15 @@ test("private-link projection resolves visibility in the original lookup context
       .join(""),
   ).toContain('{@link source("public.css")::component:secret}');
   expect(projectPrivateLinksInLookup("{@link secret}", "markdown", lookup).unavailable).toBe(true);
+  const incomplete = projectPrivateLinksInLookup(
+    '{@link source("private.css")::component:secret | Hidden}',
+    "plain",
+    { workspace: { ...lookup.workspace, complete: false } },
+  );
+  expect(incomplete.unavailable).toBe(true);
+  expect(incomplete.fragments).toEqual([
+    { kind: "prose", text: '{@link source("private.css")::component:secret | Hidden}' },
+  ]);
 });
 
 test("member link visibility requires a complete and uniquely resolved member", () => {
