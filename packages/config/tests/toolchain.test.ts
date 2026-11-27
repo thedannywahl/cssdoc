@@ -2382,30 +2382,34 @@ test("TSDoc definitions follow the cssdoc vocabulary", () => {
 
 test("TSDoc lint recognizes cssdoc tags without accepting unknown tags", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
-  const directory = mkdtempSync(join(root, ".tsdoc-check-"));
+  const directory = mkdtempSync(join(root, "packages/core/src/.tsdoc-check-"));
   try {
     const file = join(directory, "tags.ts");
-    const tags = [...CSSDOC_TAG_NAMES, "unknownCssdocTag"]
+    const tags = ["module", ...CSSDOC_TAG_NAMES, "unknownCssdocTag"]
       .map((tag) => ` * @${tag} example`)
       .join("\n");
     writeFileSync(file, `/**\n${tags}\n */\nexport const example = 1;\n`);
-    const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
-      cwd: root,
-      encoding: "utf8",
-    });
-    expect(result.status).toBe(1);
-    const output = parseLintOutput(result.stdout);
-    expect(
-      output.diagnostics
-        .filter(
-          (diagnostic) =>
-            diagnostic.code === "tsdoc(syntax)" &&
-            diagnostic.message.startsWith("tsdoc-undefined-tag:"),
-        )
-        .map((diagnostic) => diagnostic.message),
-    ).toEqual([
-      'tsdoc-undefined-tag: The TSDoc tag "@unknownCssdocTag" is not defined in this configuration',
-    ]);
+    for (const cwd of [root, join(root, "packages/core")]) {
+      const result = spawnSync(
+        "vp",
+        ["lint", "--config", join(root, "vite.config.ts"), "--no-ignore", "--format", "json", file],
+        { cwd, encoding: "utf8" },
+      );
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
+      const output = parseLintOutput(result.stdout);
+      expect(
+        output.diagnostics
+          .filter(
+            (diagnostic) =>
+              diagnostic.code === "tsdoc(syntax)" &&
+              diagnostic.message.startsWith("tsdoc-undefined-tag:"),
+          )
+          .map((diagnostic) => diagnostic.message),
+        `${cwd}\n${result.stdout}\n${result.stderr}`,
+      ).toEqual([
+        'tsdoc-undefined-tag: The TSDoc tag "@unknownCssdocTag" is not defined in this configuration',
+      ]);
+    }
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

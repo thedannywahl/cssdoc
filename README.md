@@ -164,6 +164,9 @@ the docs and TypeDoc plugin type-check tasks use the root TypeScript compiler in
 
 The root `tsdoc.json` defines cssdoc tags for TSDoc linting. Its definitions are checked against the
 canonical vocabulary in `@cssdoc/spec`.
+Core's package-local `tsdoc.json` extends this shared file because the TSDoc lint plugin resolves
+configuration from the invoking directory, not by searching parent folders. Keep tag definitions in
+the root file rather than duplicating them in package configs.
 
 ### Documenting TypeScript APIs
 
