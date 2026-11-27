@@ -4,7 +4,7 @@ import { byTheme } from "@pantoken/tokens";
 import { VITEPRESS_TO_INSTUI } from "@pantoken/vitepress";
 import { regex as arkRegex } from "arkregex";
 import postcss, { parse as parsePostcss } from "postcss";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, test } from "vite-plus/test";
 
 import { expandTheme, pruneTheme, themeCss } from "./pantoken-theme.js";
 
@@ -12,7 +12,7 @@ const SVG_DATA = arkRegex.as(String.raw`data:image/svg\+xml,(?<data>[^"]+)`, "gu
 const CUSTOM_PROPERTY_REFERENCE = arkRegex.as(String.raw`var\((?<dependency>[^)]+)\)`, "gu");
 
 describe("Pantoken docs theme", () => {
-  it("uses the official brand bridge without changing neutral surfaces or typography", () => {
+  test("uses the official brand bridge without changing neutral surfaces or typography", () => {
     const root = parsePostcss(themeCss());
     const declarations = new Map<string, string>();
     root.walkDecls((declaration) => {
@@ -28,7 +28,7 @@ describe("Pantoken docs theme", () => {
     expect(declarations.has("--vp-font-family-base")).toBe(false);
   });
 
-  it("uses official Aurora colors in background-only light and dark SVGs", () => {
+  test("uses official Aurora colors in background-only light and dark SVGs", () => {
     const css = themeCss();
     const images = [...css.matchAll(SVG_DATA)].map((match) =>
       decodeURIComponent(match.groups!.data),
@@ -51,7 +51,7 @@ describe("Pantoken docs theme", () => {
     expect(css).not.toContain("--instui-component-");
   });
 
-  it("fails rather than substituting a missing Aurora color", () => {
+  test("fails rather than substituting a missing Aurora color", () => {
     expect(() => themeCss([])).toThrow("Missing literal Pantoken Aurora");
     const tokens = byTheme("rebrand").map((token) =>
       token.name.endsWith("aurora120") ? { ...token, value: "var(--other)" } : token,
@@ -59,13 +59,13 @@ describe("Pantoken docs theme", () => {
     expect(() => themeCss(tokens)).toThrow("Missing literal Pantoken Aurora 120");
   });
 
-  it("expands tokens in the stylesheet at build time", async () => {
+  test("expands tokens in the stylesheet at build time", async () => {
     const result = await postcss([expandTheme()]).process("@cssdoc-theme;", { from: undefined });
     expect(result.css).not.toContain("@cssdoc-theme");
     expect(result.css).toContain("--instui-primitive-color-aurora-aurora120");
   });
 
-  it("keeps both themes' Pantoken colors for passing and failing fixtures", async () => {
+  test("keeps both themes' Pantoken colors for passing and failing fixtures", async () => {
     const page = readFileSync(new URL("../../guide/patterns.md", import.meta.url), "utf8");
     const styles = page.split("<style module>")[1].split("</style>")[0];
     const result = await pruneTheme(themeCss() + styles);
@@ -81,7 +81,7 @@ describe("Pantoken docs theme", () => {
     }
   });
 
-  it("keeps the info badge's themed colors and their dependencies after pruning", async () => {
+  test("keeps the info badge's themed colors and their dependencies after pruning", async () => {
     const styles = readFileSync(new URL("../theme/custom.css", import.meta.url), "utf8");
     const expanded = await postcss([expandTheme()]).process(styles, { from: undefined });
     const result = await pruneTheme(expanded.css);
@@ -104,7 +104,7 @@ describe("Pantoken docs theme", () => {
     );
   });
 
-  it("retains only the Aurora stops referenced by the actual docs theme", async () => {
+  test("retains only the Aurora stops referenced by the actual docs theme", async () => {
     const source = readFileSync(new URL("../theme/custom.css", import.meta.url), "utf8");
     const expanded = await postcss([expandTheme()]).process(source, { from: undefined });
     const result = await pruneTheme(expanded.css);
@@ -128,7 +128,7 @@ describe("Pantoken docs theme", () => {
     expect(result).not.toContain("#1dc4b6");
   });
 
-  it("prunes unused tokens and registrations while preserving runtime and chained references", async () => {
+  test("prunes unused tokens and registrations while preserving runtime and chained references", async () => {
     const css = `
       @property --instui-unused { syntax: "<color>"; inherits: true; initial-value: red; }
       :root {

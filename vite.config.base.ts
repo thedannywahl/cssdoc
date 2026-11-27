@@ -250,7 +250,7 @@ export const baseConfig: UserConfig = defineConfig({
       "vitest/prefer-strict-boolean-matchers": "warn",
       "vitest/prefer-comparison-matcher": "off",
       "vitest/prefer-expect-resolves": "warn",
-      "vitest/consistent-test-it": "off",
+      "vitest/consistent-test-it": ["warn", { fn: "test", withinDescribe: "test" }],
       "vitest/prefer-lowercase-title": "off",
       "vitest/prefer-describe-function-title": "off",
       // Named exports, grouped public APIs, Node entry points, and mixed type imports are intentional.

@@ -9,7 +9,7 @@
 
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
-import { describe, it, expect } from "vite-plus/test";
+import { describe, test, expect } from "vite-plus/test";
 
 import { PATTERN_DEFINITIONS, type UnifiedPatternDef } from "../src/definitions.js";
 import {
@@ -106,7 +106,7 @@ function matchesFixture(name: string, def: UnifiedPatternDef, input: string): bo
   return new RegExp(`^(?:${def.source})$`, def.flags).test(input);
 }
 
-it("escapes regex metacharacters without changing ordinary characters", () => {
+test("escapes regex metacharacters without changing ordinary characters", () => {
   for (const char of ".*+?^${}()|[]\\") {
     expect(escapeRegexChar(char)).toBe(`\\${char}`);
   }
@@ -114,7 +114,7 @@ it("escapes regex metacharacters without changing ordinary characters", () => {
   expect(escapeRegexChar("é")).toBe("é");
 });
 
-it("escapes each metacharacter in a string while preserving literal text", () => {
+test("escapes each metacharacter in a string while preserving literal text", () => {
   const text = "é.a+[x]\\z";
   const escaped = escapeRegex(text);
   expect(escaped).toBe("é\\.a\\+\\[x\\]\\\\z");
@@ -122,14 +122,14 @@ it("escapes each metacharacter in a string while preserving literal text", () =>
   expect(escapeRegex("")).toBe("");
 });
 
-it("adds global matching and anchors while preserving existing regex flags", () => {
+test("adds global matching and anchors while preserving existing regex flags", () => {
   const pattern = toRegExp(arkRegex.as("item", "iu"), "start-end");
   expect(pattern.flags).toBe("giu");
   expect([..."\nITEM\n".matchAll(pattern)]).toEqual([]);
   expect([..."ITEM".matchAll(pattern)].map((match) => match[0])).toEqual(["ITEM"]);
 });
 
-it("distinguishes literal line characters and splits CRLF as one line ending", () => {
+test("distinguishes literal line characters and splits CRLF as one line ending", () => {
   expect(`${CARRIAGE_RETURN_CHAR}${LINE_FEED_CHAR}`).toBe("\r\n");
   expect("one\r\ntwo\rthree\nfour".split(toRegExp(LINE_ENDING))).toEqual([
     "one",
@@ -140,30 +140,30 @@ it("distinguishes literal line characters and splits CRLF as one line ending", (
   expect(arkRegex.as(`^${LINE_ENDING_SOURCE}$`, "u").test("\r\n")).toBe(true);
 });
 
-it("captures only a trailing lowercase ASCII filename extension", () => {
+test("captures only a trailing lowercase ASCII filename extension", () => {
   const pattern = requiredRegex(PATTERN_DEFINITIONS.FILE_EXTENSION);
   expect("dir/file.scss".match(pattern)?.[1]).toBe("scss");
   expect("file.scss1".match(pattern)).toBeNull();
   expect("file.".match(pattern)).toBeNull();
 });
 
-it("matches the same doc-comment opener as the literal form without consuming extra stars", () => {
+test("matches the same doc-comment opener as the literal form without consuming extra stars", () => {
   expect(DOC_COMMENT_START.exec("/*** text")?.[0]).toBe(DOC_COMMENT_START_TEXT);
   expect(DOC_COMMENT_START.exec("/* text")).toBeNull();
 });
 
-it("matches the literal comment closer without consuming extra stars", () => {
+test("matches the literal comment closer without consuming extra stars", () => {
   expect(COMMENT_END.exec("**/")?.[0]).toBe(COMMENT_END_TEXT);
   expect(COMMENT_END.exec("/*")).toBeNull();
 });
 
-it("keeps the literal fence distinct from its regex source and detects indented line prefixes", () => {
+test("keeps the literal fence distinct from its regex source and detects indented line prefixes", () => {
   expect(MARKDOWN_BACKTICK_FENCE.exec("````")?.[0]).toBe(MARKDOWN_BACKTICK_FENCE_TEXT);
   expect(MARKDOWN_BACKTICK_FENCE_LINE_PREFIX.exec("text\n \t```css")?.[0]).toBe("\n \t```");
   expect(MARKDOWN_BACKTICK_FENCE_LINE_PREFIX.exec("text ```css")).toBeNull();
 });
 
-it("captures simple code spans when splitting Markdown prose", () => {
+test("captures simple code spans when splitting Markdown prose", () => {
   const pattern = toRegExp(MARKDOWN_SINGLE_BACKTICK_CODE_SPAN);
   expect("a `x` b `` c `y\nz`".split(pattern)).toEqual([
     "a ",
@@ -176,7 +176,7 @@ it("captures simple code spans when splitting Markdown prose", () => {
   ]);
 });
 
-it("preserves HTML attribute value captures for either quote style", () => {
+test("preserves HTML attribute value captures for either quote style", () => {
   expect(HTML_QUOTED_ATTRIBUTE_VALUE.exec('"double"')?.slice(1)).toEqual(["double", undefined]);
   expect(HTML_QUOTED_ATTRIBUTE_VALUE.exec("'single'")?.slice(1)).toEqual([undefined, "single"]);
   expect(HTML_QUOTED_ATTRIBUTE.exec('data-state = "open"')?.slice(1)).toEqual([
@@ -186,7 +186,7 @@ it("preserves HTML attribute value captures for either quote style", () => {
   ]);
 });
 
-it("matches HTML comments separately, including multiline comments", () => {
+test("matches HTML comments separately, including multiline comments", () => {
   const comments = toRegExp(HTML_COMMENT);
   expect([..."<!-- a\nb --> text <!-- c -->".matchAll(comments)].map((match) => match[0])).toEqual([
     "<!-- a\nb -->",
@@ -194,7 +194,7 @@ it("matches HTML comments separately, including multiline comments", () => {
   ]);
 });
 
-it.each([
+test.each([
   ['[class*="-icon-"]', ["*", "-icon-", undefined, undefined]],
   ["[ class ~= 'active' ]", ["~", undefined, "active", undefined]],
   ["[class=active]", ["", undefined, undefined, "active"]],
@@ -204,26 +204,26 @@ it.each([
   expect(selector.match(pattern)?.slice(1)).toEqual(captures);
 });
 
-it.each(["div", "<div>", "< div", "div >"])("captures the element name from %s", (token) => {
+test.each(["div", "<div>", "< div", "div >"])("captures the element name from %s", (token) => {
   const pattern = new RegExp(`^${PATTERN_DEFINITIONS.CSSDOC_ELEMENT_TAG.source}$`, "u");
   expect(token.match(pattern)?.[1]).toBe("div");
 });
 
-it("captures base-class references without admitting modifier or digit prefixes", () => {
+test("captures base-class references without admitting modifier or digit prefixes", () => {
   const pattern = new RegExp(PATTERN_DEFINITIONS.CSSDOC_BASE_CLASS_REFERENCE.source, "gu");
   expect(
     [...".Card ._part-1 .-modifier .1part".matchAll(pattern)].map((match) => match[1]),
   ).toEqual(["Card", "_part-1"]);
 });
 
-it("captures permissive class references, including modifiers and digit prefixes", () => {
+test("captures permissive class references, including modifiers and digit prefixes", () => {
   const pattern = toRegExp(requiredRegex(PATTERN_DEFINITIONS.CSS_CLASS_REFERENCE));
   expect(
     [...".Card ._part-1 .-modifier .1part".matchAll(pattern)].map((match) => match[1]),
   ).toEqual(["Card", "_part-1", "-modifier", "1part"]);
 });
 
-it("preserves selector scanning captures and strips functional pseudo selectors", () => {
+test("preserves selector scanning captures and strips functional pseudo selectors", () => {
   const state = toRegExp(requiredRegex(PATTERN_DEFINITIONS.CSSDOC_CUSTOM_STATE_SELECTOR));
   const part = toRegExp(requiredRegex(PATTERN_DEFINITIONS.CSSDOC_SHADOW_PART_SELECTOR));
   const pseudo = toRegExp(requiredRegex(PATTERN_DEFINITIONS.CSSDOC_SCANNED_PSEUDO_SELECTOR));
@@ -233,7 +233,7 @@ it("preserves selector scanning captures and strips functional pseudo selectors"
   expect(selector.replace(pseudo, "")).toBe(".card");
 });
 
-it("preserves typed and shorthand structure reference captures", () => {
+test("preserves typed and shorthand structure reference captures", () => {
   const typed = new RegExp(`^${PATTERN_DEFINITIONS.CSSDOC_TYPED_STRUCTURE_REFERENCE.source}$`, "u");
   const shorthand = new RegExp(
     `^${PATTERN_DEFINITIONS.CSSDOC_SHORTHAND_STRUCTURE_REFERENCE.source}$`,
@@ -253,31 +253,31 @@ it("preserves typed and shorthand structure reference captures", () => {
 });
 
 describe("Pattern Definitions", () => {
-  it("exports at least 40 patterns", () => {
+  test("exports at least 40 patterns", () => {
     expect(Object.keys(PATTERN_DEFINITIONS).length).toBeGreaterThanOrEqual(40);
   });
 
   Object.entries(PATTERN_DEFINITIONS).forEach(([name, def]) => {
     describe(`${name} (Tier ${def.tier})`, () => {
-      it("has a source string", () => {
+      test("has a source string", () => {
         expect(def.source).toBeDefined();
         expect(def.source).toBeTypeOf("string");
         expect(def.source.length).toBeGreaterThan(0);
       });
 
-      it("has a compiled ArkRegex or is Tier 0", () => {
+      test("has a compiled ArkRegex or is Tier 0", () => {
         expect(def.regex === undefined).toBe(def.tier === 0);
         const source = def.tier === 0 ? def.source : requiredRegex(def).source;
         expect(source).toBeTypeOf("string");
         expect(source.length).toBeGreaterThan(0);
       });
 
-      it("has a description", () => {
+      test("has a description", () => {
         expect(def.description).toBeDefined();
         expect(def.description.length).toBeGreaterThan(0);
       });
 
-      it("has the required distinct passing and nonempty failing examples", () => {
+      test("has the required distinct passing and nonempty failing examples", () => {
         const passes = new Set(def.fixtures.passes.map(({ input }) => input));
         const fails = new Set(def.fixtures.fails.map(({ input }) => input).filter(Boolean));
         const minimumPasses = SINGLE_VALUE_PATTERNS.has(name)
@@ -292,13 +292,13 @@ describe("Pattern Definitions", () => {
       def.fixtures.passes.forEach((testCase) => {
         const note = testCase.note ? ` (${testCase.note})` : "";
 
-        it(`matches "${testCase.input}"${note}`, () => {
+        test(`matches "${testCase.input}"${note}`, () => {
           expect(matchesFixture(name, def, testCase.input)).toBe(true);
         });
       });
 
       def.fixtures.fails.forEach((testCase) => {
-        it(`rejects "${testCase.input}" - ${testCase.reason}`, () => {
+        test(`rejects "${testCase.input}" - ${testCase.reason}`, () => {
           expect(matchesFixture(name, def, testCase.input)).toBe(false);
         });
       });

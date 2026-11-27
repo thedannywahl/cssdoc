@@ -691,6 +691,43 @@ test("Vitest lint prefers resolves for asynchronous assertions", () => {
   }
 });
 
+test("Vitest lint consistently uses test inside and outside describe", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".test-name-check-"));
+  try {
+    const file = join(directory, "names.test.ts");
+    writeFileSync(
+      file,
+      [
+        'import { describe, expect, it, test } from "vite-plus/test";',
+        'it("legacy", () => { expect(true).toBe(true); });',
+        'test("modern", () => { expect(true).toBe(true); });',
+        'describe("nested", () => {',
+        '  it("legacy", () => { expect(true).toBe(true); });',
+        '  test("modern", () => { expect(true).toBe(true); });',
+        "});",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "vitest(consistent-test-it)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([
+        ["warning", 2],
+        ["warning", 5],
+      ]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));
