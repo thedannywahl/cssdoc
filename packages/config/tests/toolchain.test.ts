@@ -541,6 +541,25 @@ test("switch lint requires cases or an intentional fallback", () => {
   }
 });
 
+test("TypeScript imports reject require calls", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/type-aware-check-"));
+  try {
+    const file = join(directory, "imports.ts");
+    writeFileSync(file, 'const fs = require("node:fs");\nconsole.error(fs);\n');
+    const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
+    expect(parseLintOutput(result.stdout).diagnostics).toContainEqual(
+      expect.objectContaining({ code: "typescript(no-require-imports)", severity: "error" }),
+    );
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("TypeScript suppression comments require safe alternatives", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, "packages/config/tests/type-aware-check-"));

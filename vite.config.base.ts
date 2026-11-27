@@ -61,7 +61,7 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/triple-slash-reference": "warn",
       "typescript/prefer-for-of": "warn",
       "typescript/no-import-type-side-effects": "error",
-      "typescript/no-require-imports": "off",
+      "typescript/no-require-imports": "error",
       "typescript/no-var-requires": "off",
       "typescript/ban-ts-comment": "error",
       "typescript/explicit-module-boundary-types": "off",
@@ -283,6 +283,11 @@ export const baseConfig: UserConfig = defineConfig({
           "typescript/no-unsafe-member-access": "off",
           "typescript/ban-ts-comment": "off",
         },
+      },
+      {
+        // Esbuild resolves this shim's CommonJS require to css-tree's CJS implementation.
+        files: ["**/servers/vscode/src/shims/css-tree.ts", "src/shims/css-tree.ts"],
+        rules: { "typescript/no-require-imports": "off" },
       },
       {
         // Node ESM scripts aren't type-checked; don't grant CommonJS-only globals.
