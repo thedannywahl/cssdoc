@@ -292,7 +292,7 @@ export const baseConfig: UserConfig = defineConfig({
       // Promise chains and callbacks also bridge event-based and Thenable APIs.
       "promise/prefer-await-to-then": "off",
       "promise/prefer-await-to-callbacks": "off",
-      "promise/prefer-catch": "off",
+      "promise/prefer-catch": "warn",
       "promise/avoid-new": "off",
       // As with the other size limits, these don't fit parsers, generators, and tests.
       "eslint/max-statements": "off",
@@ -319,6 +319,11 @@ export const baseConfig: UserConfig = defineConfig({
       "import/max-dependencies": "off",
     },
     overrides: [
+      {
+        // VS Code editor APIs return PromiseLike values without a catch method.
+        files: ["**/servers/vscode/src/index.ts"],
+        rules: { "promise/prefer-catch": "off" },
+      },
       {
         // Untyped JavaScript files don't provide reliable type information for these checks.
         files: ["**/*.{js,jsx,mjs,cjs}"],

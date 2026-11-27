@@ -84,6 +84,9 @@ default exports. It checks parameter reassignment and use before initialization,
 statements for intentionally unawaited work, and allows console output in tests and build scripts.
 Errors and warnings can be logged elsewhere.
 
+Promise linting prefers `catch` for rejection handlers. The VS Code extension entry point retains
+two-argument `then` for editor APIs that return `PromiseLike` values without `catch`.
+
 Nursery linting stays off as a category. Selected rules reject unreachable loops and dead stores
 and warn about invalid named imports. Node ESM scripts also warn about undefined names without
 accepting CommonJS-only globals. TypeScript checks undefined names separately.

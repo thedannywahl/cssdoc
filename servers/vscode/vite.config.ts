@@ -9,6 +9,15 @@ import { baseConfig } from "../../vite.config.base.ts";
 const config: UserConfig = mergeConfig(
   baseConfig,
   defineConfig({
+    lint: {
+      overrides: [
+        {
+          // Editor APIs return PromiseLike values without a catch method.
+          files: ["src/index.ts"],
+          rules: { "promise/prefer-catch": "off" },
+        },
+      ],
+    },
     // `vp run` sandboxes env vars by default (see viteplus.dev/guide/cache#environment-variables), so
     // these publish tasks must opt in to receive their PAT via `untrackedEnv` — the token isn't part
     // of the cache fingerprint. Without this, `vsce`/`ovsx` silently get no token in CI: `vsce` falls

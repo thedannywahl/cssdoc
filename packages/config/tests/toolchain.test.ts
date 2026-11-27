@@ -531,6 +531,42 @@ test("import lint flags anonymous default exports", () => {
   }
 });
 
+test("promise lint prefers catch while allowing VS Code Thenable handlers", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const vscode = fileURLToPath(new URL("../../../servers/vscode/", import.meta.url));
+  const directory = mkdtempSync(join(root, ".promise-catch-check-"));
+  try {
+    const file = join(directory, "promises.mjs");
+    const extension = join(vscode, "src/index.ts");
+    writeFileSync(
+      file,
+      [
+        "const work = Promise.resolve(1);",
+        "void work.then((value) => value, (error) => console.error(error));",
+        "void work.catch((error) => console.error(error));",
+      ].join("\n"),
+    );
+    for (const cwd of [root, vscode]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file, extension], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "promise(prefer-catch)")
+          .map(({ severity, filename, labels }) => [
+            severity,
+            filename.endsWith("promises.mjs"),
+            labels[0].span.line,
+          ]),
+      ).toEqual([["warning", true, 2]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));
