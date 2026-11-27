@@ -21,8 +21,6 @@
 
 import { FILE_EXTENSION } from "@cssdoc/regex";
 import { parse as parseCss, type Root } from "postcss";
-// postcss-less ships no type declarations.
-// @ts-expect-error -- no bundled types
 import { parse as parseLess } from "postcss-less";
 import { parse as parseScss } from "postcss-scss";
 

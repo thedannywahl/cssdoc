@@ -468,7 +468,7 @@ test("type-aware lint detects unsafe boundaries", () => {
         encoding: "utf8",
       });
       expect(configured.status, `${configured.stdout}\n${configured.stderr}`).toBe(1);
-      for (const rule of ["no-unsafe-assignment", "no-unsafe-argument"]) {
+      for (const rule of ["no-unsafe-assignment", "no-unsafe-argument", "no-unsafe-call"]) {
         const diagnostics = parseLintOutput(configured.stdout).diagnostics.filter(
           ({ code }) => code === `typescript(${rule})`,
         );

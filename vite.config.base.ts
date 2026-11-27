@@ -31,7 +31,7 @@ export const baseConfig: UserConfig = defineConfig({
       ],
       "typescript/no-unsafe-assignment": "error",
       "typescript/no-unsafe-argument": "error",
-      "typescript/no-unsafe-call": "off",
+      "typescript/no-unsafe-call": "error",
       "typescript/no-unsafe-member-access": "off",
       "typescript/no-unsafe-return": "off",
       // Re-enable newly activated TypeScript rules individually after review.
@@ -224,12 +224,13 @@ export const baseConfig: UserConfig = defineConfig({
         rules: {
           "typescript/no-unsafe-assignment": "off",
           "typescript/no-unsafe-argument": "off",
+          "typescript/no-unsafe-call": "off",
         },
       },
       {
         // This demo intentionally imports Lit without installing it in the extension workspace.
         files: ["**/servers/vscode/examples/switch.ts", "examples/switch.ts"],
-        rules: { "typescript/no-unsafe-assignment": "off" },
+        rules: { "typescript/no-unsafe-assignment": "off", "typescript/no-unsafe-call": "off" },
       },
       {
         // Node ESM scripts aren't type-checked; don't grant CommonJS-only globals.
