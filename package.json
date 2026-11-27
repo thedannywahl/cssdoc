@@ -26,6 +26,7 @@
     "arkregex": "catalog:",
     "bumpp": "catalog:",
     "changelogen": "catalog:",
+    "eslint-plugin-regexp": "catalog:",
     "eslint-plugin-tsdoc": "catalog:",
     "eslint-plugin-tsdoc-require-2": "catalog:",
     "publint": "catalog:",

@@ -88,6 +88,11 @@ Nursery linting stays off as a category. Selected rules warn about unreachable l
 and invalid named imports; Node ESM scripts also warn about undefined names without accepting
 CommonJS-only globals. TypeScript checks undefined names separately.
 
+Selected `eslint-plugin-regexp` rules check native regex literals and `RegExp` constructors for
+mistakes and inefficient matching. The plugin doesn't analyze `arkRegex.as` calls or the composed
+strings in `@cssdoc/regex`; review and test those patterns separately. Its analysis doesn't prove
+that a pattern is safe.
+
 The TypeScript catalog is pinned to the upstream revision targeted by Vite+'s tsrs checker; a test
 checks that they stay aligned. TypeDoc uses TypeScript 6 separately because of its peer dependency;
 the docs and TypeDoc plugin type-check tasks use the root TypeScript compiler instead.

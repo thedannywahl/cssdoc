@@ -329,6 +329,66 @@ test("selected nursery rules check control flow, imports, and Node ESM globals",
   }
 });
 
+test("regexp lint detects dangerous native patterns in root and package runs", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".regexp-check-"));
+  try {
+    const file = join(directory, "patterns.mjs");
+    writeFileSync(
+      file,
+      [
+        "export const literal = /(a+)+$/u;",
+        'export const constructor = new RegExp("(a+)+$", "u");',
+        "export const moving = /a+$/u;",
+        "export const duplicate = /(?:cat|cat)/u;",
+        "export const safe = /^a+$/u;",
+      ].join("\n"),
+    );
+    for (const workspace of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd: workspace,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
+      const output: {
+        diagnostics: { code: string; severity: string; labels: { span: { line: number } }[] }[];
+      } = JSON.parse(result.stdout);
+      const backtracking = output.diagnostics.filter(
+        ({ code }) => code === "regexp(no-super-linear-backtracking)",
+      );
+      expect(
+        backtracking.map(({ labels, severity }) => [labels[0].span.line, severity]).sort(),
+      ).toEqual([
+        [1, "error"],
+        [2, "error"],
+      ]);
+      expect(
+        output.diagnostics.some(
+          ({ code, severity, labels }) =>
+            code === "regexp(no-super-linear-move)" &&
+            severity === "warning" &&
+            labels[0].span.line === 3,
+        ),
+      ).toBe(true);
+      expect(
+        output.diagnostics.some(
+          ({ code, severity, labels }) =>
+            code === "regexp(no-dupe-disjunctions)" &&
+            severity === "warning" &&
+            labels[0].span.line === 4,
+        ),
+      ).toBe(true);
+      expect(
+        output.diagnostics.filter(
+          ({ code, labels }) => code.startsWith("regexp(") && labels[0].span.line === 5,
+        ),
+      ).toEqual([]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("TSDoc definitions follow the cssdoc vocabulary", () => {
   const require = createRequire(import.meta.url);
   const pluginRequire = createRequire(require.resolve("eslint-plugin-tsdoc"));

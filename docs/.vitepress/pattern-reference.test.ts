@@ -7,6 +7,11 @@ import loader from "./pattern-reference.data.ts";
 const CODE_CONTENT = arkRegex.as(String.raw`<code>(?<content>[\s\S]*?)</code>`, "u");
 const TAB_IDS = arkRegex.as(String.raw`<input [^>]*id="(?<id>[^"]+)"`, "gu");
 const LABEL_TARGETS = arkRegex.as(String.raw`<label [^>]*for="(?<target>[^"]+)"`, "gu");
+const HTML_TAG = arkRegex.as(String.raw`(?<!<)<[^>]+>`, "gu");
+
+test("stripping tags preserves incomplete and empty tags", () => {
+  expect("a<<b>c<>d<".replace(HTML_TAG, "")).toBe("ac<>d<");
+});
 
 test("the pattern reference preserves registry patterns and their test fixtures", async () => {
   const groups = await loader.load();
@@ -41,7 +46,7 @@ test("the pattern reference preserves registry patterns and their test fixtures"
   expect(fileExtension).toContain("ALPHA_LOWER");
   expect(fileExtension).toContain("[a-z]");
   const commentStart = rows.find((row) => row.name === "COMMENT_START")?.codeGroupHtml;
-  const actual = commentStart?.match(CODE_CONTENT)?.groups?.content?.replace(/<[^>]+>/gu, "");
+  const actual = commentStart?.match(CODE_CONTENT)?.groups?.content?.replace(HTML_TAG, "");
   expect(actual).toContain('\n  const slash = resolve("FORWARD_SLASH");');
   expect(actual).toMatch(/\n\}$/u);
   expect(

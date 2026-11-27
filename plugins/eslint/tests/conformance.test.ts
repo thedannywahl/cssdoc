@@ -296,12 +296,23 @@ interface Diagnostic {
 function normalize(raw: string, line: number, severity: "error" | "warning"): Diagnostic {
   const m = raw.match(DIAGNOSTIC_MESSAGE);
   const rule = m?.[1] ?? "";
-  const message = (m?.[2] ?? raw)
-    .trim()
-    .replace(/\s*\(cssdoc\/valid-doc-comments\)$/u, "") // stylelint's auto-appended rule-name suffix
-    .replace(/\.$/u, "");
-  return { rule, line, message, severity };
+  const decorated = (m?.[2] ?? raw).trim();
+  const suffix = "(cssdoc/valid-doc-comments)";
+  const message = decorated.endsWith(suffix)
+    ? decorated.slice(0, -suffix.length).trimEnd()
+    : decorated;
+  return { rule, line, message: message.replace(/\.$/u, ""), severity };
 }
+
+test("normalization strips stylelint's rule suffix and surrounding whitespace", () => {
+  expect(normalize("[example] A message.  (cssdoc/valid-doc-comments)", 1, "warning")).toEqual({
+    rule: "example",
+    line: 1,
+    message: "A message",
+    severity: "warning",
+  });
+  expect(normalize("[example] A message.", 1, "error").message).toBe("A message");
+});
 
 function runEslint(fixture: Fixture): Diagnostic[] {
   const filename = fixture.filename ?? resolve(FIXTURES_DIR, "unscoped.css");
