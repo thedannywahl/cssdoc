@@ -11,7 +11,7 @@ import {
 import { regex as arkRegex } from "arkregex";
 
 import { blockSourceRange, type DocCommentBlock } from "./blocks.ts";
-import { type CssDocConfiguration } from "./configuration.ts";
+import type { CssDocConfiguration } from "./configuration.ts";
 import { docProseStart } from "./structure-boundaries.ts";
 
 /** Source-preserving prose extracted from a doc-comment block. */

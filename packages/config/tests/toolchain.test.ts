@@ -478,7 +478,15 @@ test("type import lint requires type-only imports", () => {
   try {
     writeFileSync(join(directory, "dependency.ts"), "export interface Item { name: string; }\n");
     const file = join(directory, "imports.ts");
-    writeFileSync(file, 'import { Item } from "./dependency.ts";\nexport type Example = Item;\n');
+    writeFileSync(
+      file,
+      [
+        'import { Item } from "./dependency.ts";',
+        'import { type Item as InlineItem } from "./dependency.ts";',
+        'import type { Item as TypeItem } from "./dependency.ts";',
+        "export type Example = Item | InlineItem | TypeItem;",
+      ].join("\n"),
+    );
     const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
       cwd: root,
       encoding: "utf8",
@@ -488,6 +496,11 @@ test("type import lint requires type-only imports", () => {
     expect(output.diagnostics).toContainEqual(
       expect.objectContaining({ code: "typescript(consistent-type-imports)", severity: "error" }),
     );
+    expect(
+      output.diagnostics
+        .filter(({ code }) => code === "typescript(no-import-type-side-effects)")
+        .map(({ severity, labels }) => [severity, labels[0].span.line]),
+    ).toEqual([["error", 2]]);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

@@ -61,7 +61,7 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/triple-slash-reference": "off",
       "typescript/no-inferrable-types": "off",
       "typescript/prefer-for-of": "off",
-      "typescript/no-import-type-side-effects": "off",
+      "typescript/no-import-type-side-effects": "error",
       "typescript/no-require-imports": "off",
       "typescript/no-var-requires": "off",
       "typescript/ban-ts-comment": "off",
