@@ -110,6 +110,7 @@ Disabled rules remain deliberate, not a waiver for existing diagnostics:
 | ESLint duplicate-import and import-order rules                                                                  | `import/no-duplicates` and Oxfmt own these checks.                                                                                                           |
 | ESLint name, comment, key, variable, declaration, control-flow, and size restrictions; import dependency limits | Alphabetical ordering, fixed limits, and mandatory syntax forms don't establish correctness. Preserve catalog order and choose readable parser control flow. |
 | Promise callback-to-await preference                                                                            | A callback-shaped API doesn't necessarily offer a promise equivalent. Await is preferred where a promise or Thenable exists.                                 |
+| Unicorn awaited-result member and relative-URL style preferences                                                | Direct property access on an awaited result and explicit `./` URL prefixes are valid, useful syntax choices.                                                 |
 | JSDoc mandatory returns and TypeScript type tags                                                                | Document useful return behavior; TypeScript signatures already supply types. JavaScript's documented tags require types.                                     |
 
 Nursery linting stays off as a category. Selected rules reject unreachable loops and dead stores

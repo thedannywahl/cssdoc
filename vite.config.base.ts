@@ -141,6 +141,7 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/import-style": "off",
       "unicorn/prefer-string-raw": "warn",
       "unicorn/no-nested-ternary": "off",
+      // Awaited-result property access is valid and keeps request envelopes together in assertions.
       "unicorn/no-await-expression-member": "off",
       "unicorn/consistent-function-scoping": "warn",
       "unicorn/consistent-existence-index-check": "warn",
@@ -162,6 +163,7 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/catch-error-name": "off",
       "unicorn/escape-case": "off",
       "unicorn/prefer-spread": "warn",
+      // An explicit ./ prefix communicates that a URL is relative without changing its resolution.
       "unicorn/relative-url-style": "off",
       "unicorn/prefer-import-meta-properties": "warn",
       "unicorn/no-process-exit": "warn",
