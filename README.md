@@ -114,6 +114,8 @@ End-relative array access uses `at`, and index searches compare against their `-
 Numeric reference captures already contain only decimal digits, so they use `Number` rather than
 partial integer parsing. Use `structuredClone` for copies; JSON Schema tests validate the emitter's
 serialized output rather than treating a JSON round-trip as a clone.
+Production helpers that don't capture local state live at module scope. Test-specific helpers may
+stay beside their fixtures.
 Untyped JavaScript is excluded from the unsafe-boundary and interpolation checks because it lacks
 reliable type information; the standalone VS Code Lit example is also excluded from the assignment,
 call, and member-access checks.

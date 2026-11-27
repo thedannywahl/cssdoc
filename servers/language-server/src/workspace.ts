@@ -36,6 +36,13 @@ export interface ClientSettings extends WorkspaceDiscoveryOptions {
   hoverPresentation?: "vscode" | "markdown";
 }
 
+function strings(input: unknown, name: string): string[] {
+  if (!Array.isArray(input) || !input.every((item) => typeof item === "string")) {
+    throw new TypeError(`cssdoc.${name} must be an array of strings`);
+  }
+  return input;
+}
+
 /**
  * Translate a client's `cssdoc` configuration section into server options.
  *
@@ -50,12 +57,6 @@ export function parseClientSettings(value: unknown): ClientSettings {
   }
   const config = value as Record<string, unknown>;
   const settings: ClientSettings = {};
-  const strings = (input: unknown, name: string): string[] => {
-    if (!Array.isArray(input) || !input.every((item) => typeof item === "string")) {
-      throw new TypeError(`cssdoc.${name} must be an array of strings`);
-    }
-    return input;
-  };
   if ("css" in config) {
     const paths = strings(config.css, "css");
     settings.css = paths.length ? paths : undefined;

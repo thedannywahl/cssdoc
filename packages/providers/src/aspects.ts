@@ -106,6 +106,7 @@ const bold = (text: string): string =>
   `${ASTERISK_CHAR.repeat(2)}${text}${ASTERISK_CHAR.repeat(2)}`;
 const codicon = (name: string): string =>
   `${DOLLAR_CHAR}${PAREN_OPEN_CHAR}${name}${PAREN_CLOSE_CHAR}`;
+const dash = (d?: string): string => (d ? ` — ${d}` : "");
 const emptySection = `${UNDERSCORE_CHAR}—${UNDERSCORE_CHAR}`;
 const SELECTOR_PREFIX: Regex = arkRegex.as(`^[${DOT_CHAR}${POUND_CHAR}]`, "u");
 const stripDot = (name: string): string => (name.startsWith(DOT_CHAR) ? name.slice(1) : name);
@@ -822,7 +823,6 @@ export const record = {
       presentation === "vscode"
         ? `${LESS_THAN_CHAR}code style="color:var(--vscode-symbolIcon-${kind}Foreground);"${GREATER_THAN_CHAR}${text}${LESS_THAN_CHAR}${FORWARD_SLASH_CHAR}code${GREATER_THAN_CHAR}`
         : codeSpan(text);
-    const dash = (d?: string): string => (d ? ` — ${d}` : "");
 
     const head = [`${icon("symbol-class")}${styled(entry.className, "class")}`, entry.kind];
     if (entry.releaseStage) head.push(entry.releaseStage);

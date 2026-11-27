@@ -135,8 +135,7 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/prefer-string-raw": "off",
       "unicorn/no-nested-ternary": "off",
       "unicorn/no-await-expression-member": "off",
-      // Pending: distinguish reusable production helpers from deliberately local test setup.
-      "unicorn/consistent-function-scoping": "off",
+      "unicorn/consistent-function-scoping": "warn",
       "unicorn/consistent-existence-index-check": "warn",
       "unicorn/no-array-callback-reference": "warn",
       "unicorn/max-nested-calls": "off",
@@ -388,6 +387,8 @@ export const baseConfig: UserConfig = defineConfig({
           "**/*.spec.{ts,tsx,mts,cts,js,jsx,mjs,cjs}",
         ],
         rules: {
+          // Keep test-specific pure helpers near their fixtures rather than spreading setup across a file.
+          "unicorn/consistent-function-scoping": "off",
           "eslint/no-template-curly-in-string": "off",
           "eslint/no-script-url": "off",
           "eslint/prefer-template": "off",

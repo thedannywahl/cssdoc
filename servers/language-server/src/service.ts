@@ -278,6 +278,31 @@ function spanFromOffsets(text: string, start: number, end: number): SourceSpan {
   };
 }
 
+function fallbackLegend(raw: string): Map<number, string> {
+  const out = new Map<number, string>();
+  const body = raw
+    .replace(COMMENT_OPENING, "")
+    .replace(COMMENT_CLOSING, "")
+    .split("\n")
+    .map((line) => line.replace(COMMENT_LINE_PREFIX, ""));
+  const at = body.findIndex((line) => ANNOTATIONS_TAG.test(line));
+  if (at === -1) return out;
+  let current: number | undefined;
+  for (const line of body.slice(at + 1)) {
+    if (COMMENT_TAG.exec(line) !== null) break;
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    const marker = trimmed.match(ANNOTATION_MARKER);
+    if (marker) {
+      current = Number(marker[1]);
+      out.set(current, marker[2].trim());
+      continue;
+    }
+    if (current !== undefined) out.set(current, `${out.get(current) ?? ""}\n${trimmed}`.trim());
+  }
+  return out;
+}
+
 /** Hover for `@ref` inside a doc comment, resolved against local `@annotations`. */
 function refHoverAt(
   text: string,
@@ -285,31 +310,6 @@ function refHoverAt(
   configuration?: CssDocConfiguration,
   presentation: HoverPresentation = "vscode",
 ): LspHover | undefined {
-  const fallbackLegend = (raw: string): Map<number, string> => {
-    const out = new Map<number, string>();
-    const body = raw
-      .replace(COMMENT_OPENING, "")
-      .replace(COMMENT_CLOSING, "")
-      .split("\n")
-      .map((line) => line.replace(COMMENT_LINE_PREFIX, ""));
-    const at = body.findIndex((line) => ANNOTATIONS_TAG.test(line));
-    if (at === -1) return out;
-    let current: number | undefined;
-    for (const line of body.slice(at + 1)) {
-      if (COMMENT_TAG.exec(line) !== null) break;
-      const trimmed = line.trim();
-      if (!trimmed) continue;
-      const marker = trimmed.match(ANNOTATION_MARKER);
-      if (marker) {
-        current = Number(marker[1]);
-        out.set(current, marker[2].trim());
-        continue;
-      }
-      if (current !== undefined) out.set(current, `${out.get(current) ?? ""}\n${trimmed}`.trim());
-    }
-    return out;
-  };
-
   const comments = text.matchAll(DOC_COMMENT);
   for (const block of comments) {
     const start = block.index ?? 0;

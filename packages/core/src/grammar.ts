@@ -433,49 +433,46 @@ function splitCommentLines(raw: string): string[] {
   return raw.split(LINE_ENDING);
 }
 
-/** Parse the inner body of a `@modifier` line's argument into a {@link DocModifier}. */
-function parseModifierBody(description: string | undefined): DocModifier {
-  const normalizeCanonical = (value: string | undefined): string | undefined => {
-    const LEADING_DOT: Regex = arkRegex.as(`^${DOT_SOURCE}`, "u");
-    const LEADING_BRACKET: Regex = arkRegex.as(`^${BRACKET_OPEN_SOURCE}`, "u");
-    const TRAILING_BRACKET: Regex = arkRegex.as(`${BRACKET_CLOSE_SOURCE}$`, "u");
-    return value
-      ?.replace(LEADING_DOT, "")
-      .replace(LEADING_BRACKET, "")
-      .replace(TRAILING_BRACKET, "");
-  };
+function normalizeCanonical(value: string | undefined): string | undefined {
+  const LEADING_DOT: Regex = arkRegex.as(`^${DOT_SOURCE}`, "u");
+  const LEADING_BRACKET: Regex = arkRegex.as(`^${BRACKET_OPEN_SOURCE}`, "u");
+  const TRAILING_BRACKET: Regex = arkRegex.as(`${BRACKET_CLOSE_SOURCE}$`, "u");
+  return value?.replace(LEADING_DOT, "").replace(LEADING_BRACKET, "").replace(TRAILING_BRACKET, "");
+}
 
-  const parseCanonicalAndNote = (
-    raw: string,
-    allowBareCanonical: boolean,
-  ): { canonical?: string; note?: string } => {
-    const trimmed = raw.trim();
-    const LINK: Regex = arkRegex.as(
-      String.raw`${BRACE_OPEN_SOURCE}${AT_SOURCE}link\s+(${CSSDOC_MODIFIER_REFERENCE_SOURCE})\s*${BRACE_CLOSE_SOURCE}`,
+function parseCanonicalAndNote(
+  raw: string,
+  allowBareCanonical: boolean,
+): { canonical?: string; note?: string } {
+  const trimmed = raw.trim();
+  const LINK: Regex = arkRegex.as(
+    String.raw`${BRACE_OPEN_SOURCE}${AT_SOURCE}link\s+(${CSSDOC_MODIFIER_REFERENCE_SOURCE})\s*${BRACE_CLOSE_SOURCE}`,
+    "u",
+  );
+  const link = trimmed.match(LINK);
+  if (link) {
+    const canonical = normalizeCanonical(link[1]);
+    const LINK_TEXT: Regex = arkRegex.as(
+      String.raw`${BRACE_OPEN_SOURCE}${AT_SOURCE}link\s+[^${BRACE_CLOSE_CHAR}]*${BRACE_CLOSE_SOURCE}`,
       "u",
     );
-    const link = trimmed.match(LINK);
-    if (link) {
-      const canonical = normalizeCanonical(link[1]);
-      const LINK_TEXT: Regex = arkRegex.as(
-        String.raw`${BRACE_OPEN_SOURCE}${AT_SOURCE}link\s+[^${BRACE_CLOSE_CHAR}]*${BRACE_CLOSE_SOURCE}`,
-        "u",
-      );
-      const note = trimmed.replace(LINK_TEXT, "").trim() || undefined;
+    const note = trimmed.replace(LINK_TEXT, "").trim() || undefined;
+    return { canonical, note };
+  }
+  if (allowBareCanonical) {
+    const BARE: Regex = arkRegex.as(`^(${CSSDOC_MODIFIER_REFERENCE_SOURCE})(.*)$`, "u");
+    const bare = trimmed.match(BARE);
+    if (bare) {
+      const canonical = normalizeCanonical(bare[1]);
+      const note = bare[2].trim() || undefined;
       return { canonical, note };
     }
-    if (allowBareCanonical) {
-      const BARE: Regex = arkRegex.as(`^(${CSSDOC_MODIFIER_REFERENCE_SOURCE})(.*)$`, "u");
-      const bare = trimmed.match(BARE);
-      if (bare) {
-        const canonical = normalizeCanonical(bare[1]);
-        const note = bare[2].trim() || undefined;
-        return { canonical, note };
-      }
-    }
-    return { note: trimmed || undefined };
-  };
+  }
+  return { note: trimmed || undefined };
+}
 
+/** Parse the inner body of a `@modifier` line's argument into a {@link DocModifier}. */
+function parseModifierBody(description: string | undefined): DocModifier {
   // A description beginning `@deprecated …` marks the modifier deprecated. A `{@link -canonical}` in the
   // remainder names the modifier to use instead; any other text is the free-text note.
   const DEPRECATED: Regex = arkRegex.as(

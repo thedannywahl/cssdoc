@@ -220,6 +220,9 @@ function attributeChain(baseEsc: string): Regex {
   );
 }
 
+const longestFirst = (value: string | string[]): string[] =>
+  (Array.isArray(value) ? value : [value]).toSorted((a: string, b: string) => b.length - a.length);
+
 /**
  * The single owner of modifier recognition for one convention: finds modifiers on selectors, derives
  * `prop`/`value`, renders a modifier name back to a selector fragment, and answers "does this host-doc
@@ -245,10 +248,6 @@ export class ModifierMatcher {
 
   constructor(convention: ModifierConvention) {
     this.convention = convention;
-    const longestFirst = (value: string | string[]): string[] =>
-      (Array.isArray(value) ? value : [value]).toSorted(
-        (a: string, b: string) => b.length - a.length,
-      );
     this.separators = longestFirst(convention.separator);
     this.sepAlt = `(?:${this.separators.map(escapeRegex).join("|")})`;
     this.elementSeparators = convention.elementSeparator

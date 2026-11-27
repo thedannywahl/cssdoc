@@ -1017,6 +1017,43 @@ test("lint checks search results against the documented minus-one sentinel", () 
   }
 });
 
+test("lint hoists independent production functions but preserves closures and test-local helpers", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".function-scope-check-"));
+  try {
+    const file = join(directory, "scope.mjs");
+    const fixture = join(directory, "scope.test.mjs");
+    const source = [
+      "function factory(prefix) {",
+      "  const independent = (value) => String(value);",
+      "  const captured = (value) => `${prefix}${value}`;",
+      "  return { independent, captured };",
+      "}",
+      'console.error(factory("prefix"));',
+    ].join("\n");
+    writeFileSync(file, source);
+    writeFileSync(fixture, source);
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file, fixture], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "unicorn(consistent-function-scoping)")
+          .map(({ severity, filename, labels }) => [
+            severity,
+            filename.endsWith("scope.mjs"),
+            labels[0].span.line,
+          ]),
+      ).toEqual([["warning", true, 1]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));
