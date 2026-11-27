@@ -100,7 +100,7 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/prefer-string-replace-all": "off",
       "unicorn/prefer-structured-clone": "off",
       "unicorn/prefer-code-point": "off",
-      "unicorn/no-useless-collection-argument": "off",
+      "unicorn/no-useless-collection-argument": "warn",
       "unicorn/catch-error-name": "off",
       "unicorn/escape-case": "off",
       "unicorn/prefer-spread": "off",

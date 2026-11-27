@@ -395,7 +395,7 @@ export const record = {
         );
       }
 
-      const decoratorSet = new Set(info.entry.decorators ?? []);
+      const decoratorSet = new Set(info.entry.decorators);
       const readonlyLike = decoratorSet.has("readonly") || decoratorSet.has("frozen");
       const sealedLike = decoratorSet.has("sealed") || decoratorSet.has("frozen");
 

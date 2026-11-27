@@ -260,8 +260,8 @@ export class ModifierMatcher {
     this.statePrefixes = (convention.statePrefixes ?? []).toSorted(
       (a: string, b: string) => b.length - a.length,
     );
-    this.statePseudoClasses = new Set(convention.statePseudoClasses ?? []);
-    this.pseudoElements = new Set(convention.pseudoElements ?? []);
+    this.statePseudoClasses = new Set(convention.statePseudoClasses);
+    this.pseudoElements = new Set(convention.pseudoElements);
   }
 
   /** Does a class name (no leading dot) start with one of the convention's state prefixes? */
