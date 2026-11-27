@@ -16,6 +16,7 @@ import {
   resolveRecordReference,
   resolveScopeMemberReference,
   resolveSelectorMemberReference,
+  resolveSupportsMemberReference,
 } from "../src/index.ts";
 
 const CSS = `
@@ -613,6 +614,102 @@ test("container members preserve occurrences, names, and complete lookup semanti
     status: "unavailable",
   });
   const parsed = parseReference("card#container(layout (width > 30px))");
+  if (!parsed.ok) throw new Error(parsed.error);
+  expect(
+    referenceVisibility(parsed.reference, {
+      workspace: { complete: true, sources: [{ index, sourceKey: "cards.css" }] },
+    }),
+  ).toBe("private");
+});
+
+test("supports members preserve occurrences without guessing value case sensitivity", () => {
+  const css = `/** @component card {@private} */
+@supports (display: grid) {
+  .card {}
+  @supports (width: 1.0PX) { .card {} }
+}
+@supports (DISPLAY:grid) { .card {} }
+.card { @supports (font-family: MyFont) { color: red } }
+@supports (color: red) { @keyframes fade { from { opacity: 0 } } }
+/** @component other */
+@supports (display: flex) { .other {} }`;
+  const index = createIndex(css, { file: "cards.css" });
+  const resolve = (text: string, scopeIndex = index, complete = true) => {
+    const parsed = parseReference(text);
+    if (!parsed.ok) throw new Error(parsed.error);
+    return resolveSupportsMemberReference(parsed.reference, {
+      workspace: { complete, sources: [{ index: scopeIndex, sourceKey: "cards.css" }] },
+    });
+  };
+  expect(index.records[0].supportsOccurrences?.map((item) => item.prelude)).toEqual([
+    "(display: grid)",
+    "(width: 1.0PX)",
+    "(DISPLAY:grid)",
+    "(font-family: MyFont)",
+  ]);
+  expect(resolve(String.raw`card#supports((d\69 splay: grid))`)).toMatchObject({
+    status: "ambiguous",
+    stage: "member",
+    candidates: [
+      { occurrence: { span: { start: { line: 2 } } }, record: { sourceKey: "cards.css" } },
+      { occurrence: { span: { start: { line: 6 } } } },
+    ],
+  });
+  expect(resolve("card#supports((width: 1px))")).toMatchObject({
+    status: "resolved",
+    candidate: { occurrence: { span: { start: { line: 4 } } } },
+  });
+  expect(resolve("card#supports((font-family: MyFont))")).toMatchObject({ status: "resolved" });
+  expect(resolve("card#supports((font-family: myfont))")).toMatchObject({ status: "unavailable" });
+  expect(resolve("card#supports((display: GRID))")).toMatchObject({ status: "unavailable" });
+  expect(resolve("card#supports((color: red))")).toEqual({ status: "missing" });
+  expect(resolve("card#supports((??))")).toEqual({ status: "invalid-subject" });
+  expect(resolve("card#supports((display: grid) foo (color: red))")).toEqual({
+    status: "invalid-subject",
+  });
+  expect(resolve("card#supports(selector(:has(.card)))")).toMatchObject({ status: "unavailable" });
+  expect(resolve("card#supports(font-tech(color-COLRv1))")).toMatchObject({
+    status: "unavailable",
+  });
+  expect(resolve("card#supports((unknown future syntax))")).toMatchObject({
+    status: "unavailable",
+  });
+  expect(resolve("card#supports(not ((display:grid) and (color:red)))")).toMatchObject({
+    status: "unavailable",
+  });
+  expect(resolve("card#supports((display: grid))", index, false)).toMatchObject({
+    status: "unavailable",
+  });
+  expect(resolve("card#supports((display: grid))", indexFromEntries(index.entries))).toMatchObject({
+    status: "unavailable",
+  });
+  expect(
+    resolve("card#supports((display: grid))", createIndex(css, { parse: postcss.parse })),
+  ).toMatchObject({ status: "unavailable" });
+  expect(resolve("other#supports((display: flex))")).toMatchObject({ status: "resolved" });
+  const numeric = createIndex("/** @component card */ @supports (z-index: 1) { .card {} }");
+  expect(resolve("card#supports((z-index: 1.0))", numeric)).toMatchObject({
+    status: "unavailable",
+  });
+  const stringValue = createIndex(
+    '/** @component card */ @supports (font-family: "MyFont") { .card {} }',
+  );
+  expect(resolve('card#supports((font-family: "myfont"))', stringValue)).toMatchObject({
+    status: "unavailable",
+  });
+  const condition = createIndex(
+    "/** @component card */ @supports (display:grid) and (width:1px) { .card {} }",
+  );
+  expect(resolve("card#supports((display:grid) AND (width:1.0PX))", condition)).toMatchObject({
+    status: "resolved",
+  });
+  const unsupported = createIndex(
+    "/** @component card */ @supports selector(:has(.card)) { .card {} }",
+  );
+  expect(resolve("card#supports((display: grid))", unsupported)).toMatchObject({
+    status: "unavailable",
+  });
+  const parsed = parseReference("card#supports((font-family: MyFont))");
   if (!parsed.ok) throw new Error(parsed.error);
   expect(
     referenceVisibility(parsed.reference, {

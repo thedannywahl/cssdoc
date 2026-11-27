@@ -11,7 +11,17 @@ import type {
 } from "@cssdoc/core";
 import { ALPHA_UPPER_SOURCE } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
-import { generate, ident, parse, tokenTypes, tokenize, walk, type Condition } from "css-tree";
+import {
+  generate,
+  ident,
+  parse,
+  tokenTypes,
+  tokenize,
+  walk,
+  type Condition,
+  type Identifier,
+  type StringNode,
+} from "css-tree";
 import type {
   ContainerOccurrence,
   CssDocIndex,
@@ -19,6 +29,7 @@ import type {
   RecordInfo,
   ScopeOccurrence,
   SourceSpan,
+  SupportsOccurrence,
 } from "./index.ts";
 
 type NamedMemberByKind = {
@@ -591,6 +602,23 @@ export type ContainerMemberResolution =
   | { status: "unavailable"; candidates: readonly ReferenceCandidate[] }
   | { status: "invalid-subject" };
 
+/** One CSS `@supports` occurrence and its owning record. */
+export interface SupportsMemberCandidate {
+  /** Owning record and its source provenance. */
+  record: ReferenceCandidate;
+  /** Source occurrence of the CSS supports rule. */
+  occurrence: SupportsOccurrence;
+}
+
+/** Resolution of a CSS supports member reference. */
+export type SupportsMemberResolution =
+  | { status: "resolved"; candidate: SupportsMemberCandidate }
+  | { status: "missing" }
+  | { status: "ambiguous"; stage: "record"; candidates: readonly ReferenceCandidate[] }
+  | { status: "ambiguous"; stage: "member"; candidates: readonly SupportsMemberCandidate[] }
+  | { status: "unavailable"; candidates: readonly ReferenceCandidate[] }
+  | { status: "invalid-subject" };
+
 function canonicalCssNumber(text: string): string | undefined {
   const negative = text.startsWith("-");
   const unsigned = text.startsWith("-") || text.startsWith("+") ? text.slice(1) : text;
@@ -644,6 +672,106 @@ function hasNestedQuery(input: string): boolean {
     }
   });
   return nested;
+}
+
+function mayBeGeneralEnclosed(input: string): boolean {
+  let afterOpening = false;
+  let possible = false;
+  tokenize(input, (type) => {
+    if (type === tokenTypes.Comment || type === tokenTypes.WhiteSpace) return;
+    if (type === tokenTypes.Function || (afterOpening && type === tokenTypes.Ident)) {
+      possible = true;
+    }
+    afterOpening = type === tokenTypes.LeftParenthesis;
+  });
+  return possible;
+}
+
+type SupportsKey =
+  | { status: "valid"; key: string; caseFoldedKey: string }
+  | { status: "invalid" }
+  | { status: "unsupported" };
+
+function supportsKey(input: string): SupportsKey {
+  try {
+    const ast = parse(input, {
+      context: "atrulePrelude",
+      atrule: "supports",
+      onParseError(error) {
+        throw error;
+      },
+    });
+    if (ast.type !== "AtrulePrelude" || ast.children.size !== 1) return { status: "invalid" };
+    const condition = ast.children.first;
+    if (condition?.type !== "Condition") return { status: "unsupported" };
+
+    let invalid = false;
+    let unsupported = false;
+    const valueIdentifiers: Identifier[] = [];
+    const valueStrings: StringNode[] = [];
+    const numberTypes: string[] = [];
+    const operators = new Set<Identifier>();
+    walk(ast, (node) => {
+      switch (node.type) {
+        case "Condition":
+          if (!validQueryCondition(node)) invalid = true;
+          for (const child of node.children) {
+            if (child.type === "Identifier") operators.add(child);
+          }
+          break;
+        case "Declaration": {
+          const property = ident.decode(node.property);
+          if (property.startsWith("--")) unsupported = true;
+          node.property = ident.encode(asciiLower(property));
+          break;
+        }
+        case "Identifier":
+          node.name = ident.encode(ident.decode(node.name));
+          if (operators.has(node)) node.name = ident.encode(asciiLower(ident.decode(node.name)));
+          else valueIdentifiers.push(node);
+          break;
+        case "String":
+          valueStrings.push(node);
+          break;
+        case "Dimension":
+        case "Number":
+        case "Percentage": {
+          if (node.type === "Dimension")
+            node.unit = ident.encode(asciiLower(ident.decode(node.unit)));
+          if (node.type === "Number")
+            numberTypes.push(
+              node.value.includes(".") || node.value.toLowerCase().includes("e")
+                ? "number"
+                : "integer",
+            );
+          const value = canonicalCssNumber(node.value);
+          if (value === undefined) unsupported = true;
+          else node.value = value;
+          break;
+        }
+        case "AtrulePrelude":
+        case "SupportsDeclaration":
+        case "Value":
+        case "Operator":
+          break;
+        default:
+          unsupported = true;
+      }
+    });
+    if (invalid) return { status: "invalid" };
+    if (unsupported) return { status: "unsupported" };
+    const key = JSON.stringify([generate(ast), numberTypes]);
+    for (const node of valueIdentifiers)
+      node.name = ident.encode(asciiLower(ident.decode(node.name)));
+    for (const node of valueStrings) node.value = asciiLower(node.value);
+    return { status: "valid", key, caseFoldedKey: generate(ast) };
+  } catch (error) {
+    if (error instanceof SyntaxError)
+      return {
+        status: hasNestedQuery(input) || mayBeGeneralEnclosed(input) ? "unsupported" : "invalid",
+      };
+    throw error;
+  }
 }
 
 function queryKey(input: string, kind: "media" | "container"): SelectorKey {
@@ -814,6 +942,45 @@ export function resolveContainerMemberReference(
     const candidateKey = queryKey(occurrence.prelude, "container");
     if (candidateKey.status !== "valid") return { status: "unavailable", candidates: [record] };
     if (candidateKey.key === key.key) candidates.push({ record, occurrence });
+  }
+  if (candidates.length === 0) return { status: "missing" };
+  if (candidates.length > 1) return { status: "ambiguous", stage: "member", candidates };
+  return { status: "resolved", candidate: candidates[0] };
+}
+
+/**
+ * Resolve a CSS supports query from source-preserved occurrences.
+ *
+ * Values whose case sensitivity can't be established don't produce a definite match or absence.
+ * Unsupported query forms make the lookup unavailable.
+ *
+ * @param reference - A parsed reference with a `supports(...)` member.
+ * @param lookup - Explicit source provenance and lookup completeness.
+ * @returns A resolved supports rule, missing or ambiguous candidates, an invalid subject, or unavailable.
+ */
+export function resolveSupportsMemberReference(
+  reference: CssDocReference,
+  lookup: ReferenceLookup,
+): SupportsMemberResolution {
+  if (reference.member?.kind !== "supports") return { status: "unavailable", candidates: [] };
+  const key = supportsKey(reference.member.subject);
+  if (key.status === "invalid") return { status: "invalid-subject" };
+  if (key.status === "unsupported") return { status: "unavailable", candidates: [] };
+  const resolution = resolveRecordReference(reference, lookup);
+  if (resolution.status === "missing") return { status: "missing" };
+  if (resolution.status === "ambiguous")
+    return { status: "ambiguous", stage: "record", candidates: resolution.candidates };
+  if (resolution.status === "unavailable") return resolution;
+  const record = resolution.candidate;
+  const occurrences = record.record.supportsOccurrences;
+  if (!occurrences) return { status: "unavailable", candidates: [record] };
+  const candidates: SupportsMemberCandidate[] = [];
+  for (const occurrence of occurrences) {
+    const candidateKey = supportsKey(occurrence.prelude);
+    if (candidateKey.status !== "valid") return { status: "unavailable", candidates: [record] };
+    if (candidateKey.key === key.key) candidates.push({ record, occurrence });
+    else if (candidateKey.caseFoldedKey === key.caseFoldedKey)
+      return { status: "unavailable", candidates: [record] };
   }
   if (candidates.length === 0) return { status: "missing" };
   if (candidates.length > 1) return { status: "ambiguous", stage: "member", candidates };

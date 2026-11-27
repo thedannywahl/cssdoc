@@ -7,6 +7,7 @@ import {
   resolveRecordReference,
   resolveScopeMemberReference,
   resolveSelectorMemberReference,
+  resolveSupportsMemberReference,
   type ReferenceLookup,
 } from "./reference.ts";
 
@@ -36,13 +37,15 @@ export function referenceVisibility(
         ? resolveMediaMemberReference(reference, lookup)
         : member.kind === "container"
           ? resolveContainerMemberReference(reference, lookup)
-          : member.kind === "modifier" ||
-              member.kind === "part" ||
-              member.kind === "wrapper" ||
-              member.kind === "state" ||
-              member.kind === "pseudo-element"
-            ? resolveSelectorMemberReference(reference, lookup)
-            : resolveNamedMemberReference(reference, lookup);
+          : member.kind === "supports"
+            ? resolveSupportsMemberReference(reference, lookup)
+            : member.kind === "modifier" ||
+                member.kind === "part" ||
+                member.kind === "wrapper" ||
+                member.kind === "state" ||
+                member.kind === "pseudo-element"
+              ? resolveSelectorMemberReference(reference, lookup)
+              : resolveNamedMemberReference(reference, lookup);
   if (result.status !== "resolved") return "unavailable";
   return result.candidate.record.record.entry.visibility === "internal" ? "private" : "public";
 }
