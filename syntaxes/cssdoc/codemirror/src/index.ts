@@ -202,10 +202,10 @@ export const tokenizeComment = (
       groups.reftag ??
       groups.membertag ??
       groups.btag;
-    if (blockTag && !allowedTags.has(blockTag[0])) continue;
+    if (blockTag !== undefined && !allowedTags.has(blockTag[0])) continue;
     for (const key of Object.keys(groups)) {
       const gi = groups[key];
-      if (gi && gi[0] !== gi[1] && GROUP_TYPE[key]) {
+      if (gi !== undefined && gi[0] !== gi[1] && GROUP_TYPE[key]) {
         out.push({ from: gi[0], to: gi[1], type: GROUP_TYPE[key] });
       }
     }

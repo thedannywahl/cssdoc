@@ -492,7 +492,7 @@ function resolveCssClass(
     .toSorted(
       (a, b) => stripLeadingDot(b.className).length - stripLeadingDot(a.className).length,
     )[0];
-  return owner ? { base: stripLeadingDot(owner.className), token } : undefined;
+  return owner === undefined ? undefined : { base: stripLeadingDot(owner.className), token };
 }
 
 const CLASS_ATTR_SELECTOR = toRegExp(CSS_CLASS_ATTRIBUTE_SELECTOR);
@@ -738,7 +738,11 @@ export class CssDocLanguageService {
         const tagEnd = offset + (COMPLETION_TAG_SUFFIX.exec(text.slice(offset))?.[0].length ?? 0);
         const range = rangeOf(text, tagStart, tagEnd);
         return config.supportedTagDefinitions
-          .filter((t) => (seen.has(t.tagName) ? false : seen.add(t.tagName)))
+          .filter((t) => {
+            if (seen.has(t.tagName)) return false;
+            seen.add(t.tagName);
+            return true;
+          })
           .map((t) => ({
             label: t.tagName,
             kind: 14 as const,
@@ -754,7 +758,11 @@ export class CssDocLanguageService {
       const seen = new Set<string>();
       return scopes
         .flatMap((s) => completeCustomProperties(s.index))
-        .filter((c) => (seen.has(c.label) ? false : seen.add(c.label)))
+        .filter((c) => {
+          if (seen.has(c.label)) return false;
+          seen.add(c.label);
+          return true;
+        })
         .map((completion) => toCompletion(completion));
     }
     // Class completion — in a `class`/`className` attribute, or a usage helper (`clsx(…)`, Vue

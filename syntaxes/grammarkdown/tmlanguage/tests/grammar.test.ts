@@ -45,7 +45,7 @@ test("every #include resolves to a repository rule", () => {
       for (const child of node) walk(child);
       return;
     }
-    if (node && typeof node === "object") {
+    if (typeof node === "object" && node !== null) {
       for (const [key, value] of Object.entries(node)) {
         if (key === "include" && typeof value === "string" && value.startsWith("#")) {
           refs.add(value.slice(1));

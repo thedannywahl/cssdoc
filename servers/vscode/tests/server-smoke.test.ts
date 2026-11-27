@@ -212,7 +212,7 @@ test("the bundled server applies file overrides and reloads them for open docume
       reject(new Error(`No diagnostics for ${uri}`));
     }, 10_000);
     function onMessage(message: unknown): void {
-      if (!message || typeof message !== "object" || !("method" in message)) return;
+      if (typeof message !== "object" || message === null || !("method" in message)) return;
       if (message.method !== "textDocument/publishDiagnostics" || !("params" in message)) return;
       const { params } = message;
       if (!isRecord(params)) {

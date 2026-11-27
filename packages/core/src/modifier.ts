@@ -173,7 +173,9 @@ export function resolveModifierConvention(input?: ModifierConventionInput): Modi
   if (input === undefined) base = DEFAULT_MODIFIER_CONVENTION;
   else if (typeof input === "string") base = MODIFIER_PRESETS[input];
   else base = input;
-  if (!base) throw new Error(`Unknown modifier convention preset: ${JSON.stringify(input)}`);
+  if (base === undefined) {
+    throw new Error(`Unknown modifier convention preset: ${JSON.stringify(input)}`);
+  }
   return {
     structure: base.structure,
     separator: base.separator,
@@ -250,9 +252,10 @@ export class ModifierMatcher {
     this.convention = convention;
     this.separators = longestFirst(convention.separator);
     this.sepAlt = `(?:${this.separators.map(escapeRegex).join("|")})`;
-    this.elementSeparators = convention.elementSeparator
-      ? longestFirst(convention.elementSeparator).filter((s) => s !== "")
-      : [];
+    this.elementSeparators =
+      convention.elementSeparator === undefined
+        ? []
+        : longestFirst(convention.elementSeparator).filter((s) => s !== "");
     this.elementSepAlt =
       this.elementSeparators.length > 0
         ? `(?:${this.elementSeparators.map(escapeRegex).join("|")})`

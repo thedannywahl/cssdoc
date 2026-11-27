@@ -436,8 +436,8 @@ const requireComponentDocs: RuleModule = {
       Rule(node: JSSyntaxElement): void {
         const selectorNode = "selector" in node ? node.selector : undefined;
         const selector =
-          selectorNode &&
           typeof selectorNode === "object" &&
+          selectorNode !== null &&
           "value" in selectorNode &&
           typeof selectorNode.value === "string"
             ? selectorNode.value
@@ -450,7 +450,10 @@ const requireComponentDocs: RuleModule = {
         // Check if this rule or its peers have docs
         const raws = "raws" in node ? node.raws : undefined;
         const docComment =
-          raws && typeof raws === "object" && "between" in raws && typeof raws.between === "string"
+          typeof raws === "object" &&
+          raws !== null &&
+          "between" in raws &&
+          typeof raws.between === "string"
             ? raws.between
             : "";
         const hasDoc = DOC_COMMENT.exec(docComment) !== null;

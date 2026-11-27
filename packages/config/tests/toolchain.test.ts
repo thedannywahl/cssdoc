@@ -2388,6 +2388,190 @@ test("TSDoc definitions follow the cssdoc vocabulary", () => {
   ]);
 });
 
+test("lint narrows unknown conditions while preserving known truthiness and return values", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/.condition-check-"));
+  try {
+    writeFileSync(
+      join(directory, "tsconfig.json"),
+      JSON.stringify({ extends: "../../../../tsconfig.base.json", include: ["*.ts"] }),
+    );
+    const file = join(directory, "conditions.test.ts");
+    writeFileSync(
+      file,
+      [
+        'export function untrusted(value: unknown): string { return value ? "yes" : "no"; }',
+        'export function text(value: string | undefined): string { return value ? "yes" : "no"; }',
+        'export function number(value: number | undefined): string { return value ? "yes" : "no"; }',
+        'export function flag(value: boolean | undefined): string { return value ? "yes" : "no"; }',
+        "export function optional(value: { name: string } | undefined): string | undefined { return value && value.name; }",
+        "export function nullable(value: { name: string } | null): string | null { return value && value.name; }",
+        "export function falsy(value: string | undefined): string | undefined { return value && value.toUpperCase(); }",
+        "export function explicit(value: unknown): boolean { return typeof value === 'string' && value.length > 0; }",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../core/", import.meta.url))]) {
+      const result = spawnSync(
+        "vp",
+        ["lint", "--config", join(root, "vite.config.ts"), "--no-ignore", "--format", "json", file],
+        { cwd, encoding: "utf8" },
+      );
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      const { diagnostics } = parseLintOutput(result.stdout);
+      expect(
+        diagnostics
+          .filter(({ code }) => code === "typescript(strict-boolean-expressions)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["warning", 1]]);
+      expect(
+        diagnostics
+          .filter(({ code }) => code === "typescript(prefer-optional-chain)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("lint distinguishes redundant iterator arrays from explicit snapshots", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/.iterator-check-"));
+  try {
+    const file = join(directory, "iterators.mjs");
+    writeFileSync(
+      file,
+      [
+        "const values = [1, 2];",
+        "const redundant = new Set(values.values().toArray());",
+        "const direct = new Set(values.values());",
+        "const snapshot = values.values().toArray();",
+        "console.error(redundant, direct, snapshot.some((value) => value === 1));",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../core/", import.meta.url))]) {
+      const result = spawnSync(
+        "vp",
+        ["lint", "--config", join(root, "vite.config.ts"), "--no-ignore", "--format", "json", file],
+        { cwd, encoding: "utf8" },
+      );
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "unicorn(no-useless-iterator-to-array)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["warning", 2]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("lint validates statically resolved regex constructor patterns", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/.regexp-constructor-check-"));
+  try {
+    const file = join(directory, "constructors.mjs");
+    writeFileSync(
+      file,
+      [
+        'const invalid = "(";',
+        'console.error(new RegExp(invalid, "u"));',
+        'const empty = "[]";',
+        'console.error(new RegExp(empty, "u"));',
+        'const misleading = "[á]";',
+        'console.error(new RegExp(misleading, "u"));',
+        'console.error(new RegExp("[a-z]+", "u"));',
+        "console.error(/[]/u);",
+        "console.error(/[a\u0301]/u);",
+        'console.error(new RegExp("(", "u"));',
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../core/", import.meta.url))]) {
+      const result = spawnSync(
+        "vp",
+        ["lint", "--config", join(root, "vite.config.ts"), "--no-ignore", "--format", "json", file],
+        { cwd, encoding: "utf8" },
+      );
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
+      const { diagnostics } = parseLintOutput(result.stdout);
+      expect(
+        diagnostics
+          .filter(({ code }) =>
+            [
+              "regexp(no-invalid-regexp)",
+              "regexp(no-empty-character-class)",
+              "regexp(no-misleading-unicode-character)",
+            ].includes(code),
+          )
+          .map(({ code, severity, labels }) => [code, severity, labels[0].span.line])
+          .toSorted((a, b) => String(a[0]).localeCompare(String(b[0]))),
+      ).toEqual([
+        ["regexp(no-empty-character-class)", "error", 3],
+        ["regexp(no-empty-character-class)", "error", 8],
+        ["regexp(no-invalid-regexp)", "error", 1],
+        ["regexp(no-invalid-regexp)", "error", 10],
+        ["regexp(no-misleading-unicode-character)", "error", 5],
+        ["regexp(no-misleading-unicode-character)", "error", 9],
+      ]);
+      expect(
+        diagnostics.filter(({ code }) =>
+          [
+            "eslint(no-empty-character-class)",
+            "eslint(no-invalid-regexp)",
+            "eslint(no-misleading-character-class)",
+          ].includes(code),
+        ),
+      ).toEqual([]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("lint normalizes literal spelling, catch names, and DOM data attributes", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/.literal-style-check-"));
+  try {
+    const file = join(directory, "spelling.mjs");
+    writeFileSync(
+      file,
+      [
+        String.raw`try { console.error(0x1f, "\u00af"); } catch (failure) { console.error(failure); }`,
+        String.raw`try { console.error(0x1F, "\u00AF"); } catch (error) { console.error(error); }`,
+        'export function legacy(node) { node.removeAttribute("data-ready"); }',
+        "export function modern(node) { delete node.dataset.ready; }",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../core/", import.meta.url))]) {
+      const result = spawnSync(
+        "vp",
+        ["lint", "--config", join(root, "vite.config.ts"), "--no-ignore", "--format", "json", file],
+        { cwd, encoding: "utf8" },
+      );
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) =>
+            [
+              "unicorn(escape-case)",
+              "unicorn(catch-error-name)",
+              "unicorn(prefer-dom-node-dataset)",
+            ].includes(code),
+          )
+          .map(({ code, severity, labels }) => [code, severity, labels[0].span.line])
+          .toSorted((a, b) => String(a[0]).localeCompare(String(b[0]))),
+      ).toEqual([
+        ["unicorn(catch-error-name)", "warning", 1],
+        ["unicorn(escape-case)", "warning", 1],
+        ["unicorn(prefer-dom-node-dataset)", "warning", 3],
+      ]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint uses suffixes for simple array types and generics for complex array types", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, "packages/config/tests/.array-type-check-"));

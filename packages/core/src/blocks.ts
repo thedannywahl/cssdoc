@@ -214,7 +214,7 @@ export function collectDocCommentBlocks(
             )
           : !inStructureBlock));
     const lastNonWhitespace = line.trimEnd().length;
-    if (startsBlock && tagMatch) {
+    if (startsBlock) {
       const tagStart = line.indexOf(AT_CHAR);
       const blockText = line.slice(tagStart);
       blocks.push({

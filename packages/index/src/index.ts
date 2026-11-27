@@ -750,7 +750,7 @@ function scanNodes(
           build.resetValueUsages.push({ property, value, span: spanOf(child) });
         }
       }
-      if (node.nodes) scanNodes(node.nodes, build, base, matcher, true);
+      if (node.nodes !== undefined) scanNodes(node.nodes, build, base, matcher, true);
     } else if (node.type === "atrule") {
       const name = node.name.toLowerCase();
       if (

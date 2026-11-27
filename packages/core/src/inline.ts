@@ -104,7 +104,8 @@ export function scanInlineTags(
     for (let i = start - 1; i >= 0 && text[i] === BACKSLASH_CHAR; i--) slashes++;
     if (slashes % 2 !== 0) continue;
     const name = NAME.exec(text.slice(start + 2))?.[1];
-    const definition = name && configuration.tryGetTagDefinition(name);
+    if (!name) continue;
+    const definition = configuration.tryGetTagDefinition(name);
     if (
       !definition ||
       definition.syntaxKind !== "inline" ||

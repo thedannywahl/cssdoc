@@ -120,7 +120,7 @@ function addMarkdownHighlights(
     const scope = markdown
       .filter((range) => start >= range.start && end <= range.end)
       .toSorted((a, b) => b.depth - a.depth)[0];
-    if (!scope) continue;
+    if (scope === undefined) continue;
     for (const source of map(start, end)) {
       result.push({ ...source, role: "markdown", tag, markdownKind: scope.kind });
     }

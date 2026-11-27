@@ -116,8 +116,16 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-inferrable-types": "off",
       // Parsers and framework callbacks deliberately accept and mutate shared objects.
       "typescript/prefer-readonly-parameter-types": "off",
-      // Truthiness checks for optional values are an established workspace convention.
-      "typescript/strict-boolean-expressions": "off",
+      // Known primitive and optional values can use truthiness; unknown inputs must be narrowed.
+      "typescript/strict-boolean-expressions": [
+        "warn",
+        {
+          allowNullableBoolean: true,
+          allowNullableNumber: true,
+          allowNullableObject: true,
+          allowNullableString: true,
+        },
+      ],
       // Non-null assertions express parser and test invariants where checks already establish them.
       "typescript/no-non-null-assertion": "off",
       // no-require-imports covers this deprecated, narrower rule.
@@ -128,7 +136,7 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-unnecessary-boolean-literal-compare": "warn",
       // Public boundaries have explicit types; local helpers can use inference.
       "typescript/explicit-function-return-type": "off",
-      // Vue's component declaration and autocomplete-friendly string unions use empty object types.
+      // Targeted unsafe-function, wrapper-object, and empty-object rules replace this deprecated rule.
       "typescript/ban-types": "off",
       "typescript/no-empty-object-type": "error",
       "unicorn/prefer-node-protocol": "error",
@@ -136,20 +144,25 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/no-array-fill-with-reference-type": "error",
       // Review remaining syntax and scoping conventions individually, not as a blanket preset.
       "unicorn/explicit-length-check": "warn",
+      // Node supports both named imports and namespaces; the choice depends on the API being grouped.
       "unicorn/import-style": "off",
       "unicorn/prefer-string-raw": "warn",
+      // Formatter-grouped classifiers can be clearer than several intermediate assignments.
       "unicorn/no-nested-ternary": "off",
       // Awaited-result property access is valid and keeps request envelopes together in assertions.
       "unicorn/no-await-expression-member": "off",
       "unicorn/consistent-function-scoping": "warn",
       "unicorn/consistent-existence-index-check": "warn",
       "unicorn/no-array-callback-reference": "warn",
+      // Composition depth isn't a correctness or performance bound.
       "unicorn/max-nested-calls": "off",
       "unicorn/prefer-number-coercion": "warn",
       "unicorn/prefer-at": "warn",
       "unicorn/prefer-type-error": "warn",
       "unicorn/prefer-single-call": "warn",
+      // Oxfmt writes lowercase hexadecimal digits; this rule demands uppercase.
       "unicorn/number-literal-case": "off",
+      // Class files, Vue components, and package entry points don't share one filename casing.
       "unicorn/filename-case": "off",
       // Native options can't exempt explicit returns required by the return-consistency policy.
       "unicorn/no-useless-undefined": "off",
@@ -158,17 +171,18 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/prefer-structured-clone": "warn",
       "unicorn/prefer-code-point": "warn",
       "unicorn/no-useless-collection-argument": "warn",
-      "unicorn/catch-error-name": "off",
-      "unicorn/escape-case": "off",
+      "unicorn/catch-error-name": "warn",
+      "unicorn/escape-case": "warn",
       "unicorn/prefer-spread": "warn",
       // An explicit ./ prefix communicates that a URL is relative without changing its resolution.
       "unicorn/relative-url-style": "off",
       "unicorn/prefer-import-meta-properties": "warn",
       "unicorn/no-process-exit": "warn",
       "unicorn/prefer-set-has": "warn",
+      // Choose conditional forms for readability; break placement doesn't change switch semantics.
       "unicorn/prefer-ternary": "off",
       "unicorn/switch-case-break-position": "off",
-      "unicorn/prefer-dom-node-dataset": "off",
+      "unicorn/prefer-dom-node-dataset": "warn",
       "unicorn/new-for-builtins": "warn",
       "unicorn/prefer-includes": "warn",
       "unicorn/prefer-array-flat": "warn",
@@ -185,7 +199,7 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/no-array-sort": "off",
       // Reversing an owned array in place can likewise avoid a copy.
       "unicorn/no-array-reverse": "off",
-      // Check regex correctness and risky performance without imposing stylistic rewrites.
+      // Check regex correctness, risky performance, and language-preserving simplifications.
       "regexp/no-contradiction-with-assertion": "error",
       "regexp/no-dupe-disjunctions": "warn",
       "regexp/no-empty-alternative": "warn",
@@ -225,10 +239,77 @@ export const baseConfig: UserConfig = defineConfig({
       "regexp/optimal-lookaround-quantifier": "warn",
       "regexp/optimal-quantifier-concatenation": "warn",
       "regexp/simplify-set-operations": "warn",
+      // Cover statically resolved constructor patterns as well as native regex literals.
+      "regexp/no-empty-character-class": "error",
+      "regexp/no-invalid-regexp": "error",
+      "regexp/no-misleading-unicode-character": "error",
+      // The JS plugin covers literals plus resolved constructor strings; avoid duplicate diagnostics.
+      "eslint/no-empty-character-class": "off",
+      "eslint/no-invalid-regexp": "off",
+      "eslint/no-misleading-character-class": "off",
+      "regexp/no-octal": "warn",
+      "regexp/no-standalone-backslash": "warn",
+      "regexp/control-character-escape": "warn",
+      "regexp/match-any": "warn",
+      "regexp/negation": "warn",
+      "regexp/no-useless-backreference": "warn",
+      "regexp/no-useless-character-class": "warn",
+      // Native no-useless-escape also covers ordinary JS strings; strict covers constructor identities.
+      "regexp/no-useless-escape": "off",
+      "regexp/no-useless-non-capturing-group": "warn",
+      "regexp/prefer-character-class": "warn",
+      "regexp/prefer-d": "warn",
+      "regexp/prefer-plus-quantifier": "warn",
+      "regexp/prefer-predefined-assertion": "warn",
+      "regexp/prefer-question-quantifier": "warn",
+      "regexp/prefer-range": "warn",
+      "regexp/prefer-star-quantifier": "warn",
+      "regexp/prefer-unicode-codepoint-escapes": "warn",
+      "regexp/prefer-w": "warn",
+      "regexp/sort-flags": "warn",
+      "regexp/use-ignore-case": "warn",
+      // UTF-16 matching and interoperable JSON Schema patterns can't universally require u or v.
+      "regexp/require-unicode-regexp": "off",
+      "regexp/require-unicode-sets-regexp": "off",
+      "regexp/prefer-set-operation": "off",
+      // Positional captures and replacement boundaries are part of the parser's public contracts.
+      "regexp/prefer-named-backreference": "off",
+      "regexp/prefer-named-capture-group": "off",
+      "regexp/prefer-named-replacement": "off",
+      "regexp/prefer-result-array-groups": "off",
+      "regexp/prefer-lookaround": "off",
+      // Typed exec and Boolean-expression checks already distinguish capture extraction from testing.
+      "regexp/prefer-regexp-exec": "off",
+      "regexp/prefer-regexp-test": "off",
+      // Control characters, multi-code-point literals, and literal dollar replacements can be intentional.
+      "regexp/no-control-character": "off",
+      "regexp/grapheme-string-literal": "off",
+      "regexp/prefer-escape-replacement-dollar-char": "off",
+      // Preserve authored pattern spelling and tier grouping rather than imposing cosmetic rewrites.
+      "regexp/hexadecimal-escape": "off",
+      "regexp/letter-case": "off",
+      "regexp/prefer-quantifier": "off",
+      "regexp/sort-alternatives": "off",
+      "regexp/sort-character-class-elements": "off",
+      "regexp/unicode-escape": "off",
+      "regexp/unicode-property": "off",
       // Select nursery checks individually; the category changes as rules mature.
       "eslint/no-unreachable-loop": "error",
       "eslint/no-useless-assignment": "error",
       "import/named": "warn",
+      // Explicit exports legally shadow star exports; this rule misreports core's full/lite barrel.
+      "import/export": "off",
+      // Export-name bans require a package-specific API policy.
+      "eslint/no-restricted-exports": "off",
+      // Returning a promise from finally awaits cleanup and propagates its rejection.
+      "promise/no-return-in-finally": "off",
+      // TypeScript resolves TS names; the ESM JavaScript override enables this syntax-only check.
+      "eslint/no-undef": "off",
+      // Indexed access and external APIs can be absent even when ambient types claim otherwise.
+      "typescript/no-unnecessary-condition": "off",
+      "unicorn/no-useless-iterator-to-array": "warn",
+      // This implementation still reports null-preserving and falsy-string returns with safe options.
+      "typescript/prefer-optional-chain": "off",
       // Vitest supplies a default timeout; individual tests can override it when needed.
       "vitest/require-test-timeout": "off",
       // Parsers and public APIs use undefined, increments, and bit flags intentionally.
@@ -256,6 +337,7 @@ export const baseConfig: UserConfig = defineConfig({
       "vitest/max-expects": "off",
       // Structural equality and strict equality test different contracts; choose per assertion.
       "vitest/prefer-strict-equal": "off",
+      // Truthiness matchers would weaken exact Boolean assertions.
       "vitest/prefer-to-be-truthy": "off",
       "vitest/prefer-to-be-falsy": "off",
       "vitest/prefer-strict-boolean-matchers": "warn",
@@ -263,6 +345,7 @@ export const baseConfig: UserConfig = defineConfig({
       "vitest/prefer-comparison-matcher": "off",
       "vitest/prefer-expect-resolves": "warn",
       "vitest/consistent-test-it": ["warn", { fn: "test", withinDescribe: "test" }],
+      // Feature and grammar titles needn't mirror a function name or use one capitalization.
       "vitest/prefer-lowercase-title": "off",
       "vitest/prefer-describe-function-title": "off",
       // Named exports, grouped public APIs, Node entry points, and mixed type imports are intentional.
@@ -348,17 +431,7 @@ export const baseConfig: UserConfig = defineConfig({
           "typescript/no-unsafe-member-access": "off",
           "typescript/no-unsafe-return": "off",
           "typescript/restrict-template-expressions": "off",
-        },
-      },
-      {
-        // This demo intentionally imports Lit without installing it in the extension workspace.
-        files: ["**/servers/vscode/examples/switch.ts", "examples/switch.ts"],
-        rules: {
-          "typescript/no-unsafe-assignment": "off",
-          "typescript/no-unsafe-call": "off",
-          "typescript/no-unsafe-member-access": "off",
-          "typescript/ban-ts-comment": "off",
-          "typescript/explicit-module-boundary-types": "off",
+          "typescript/strict-boolean-expressions": "off",
         },
       },
       {

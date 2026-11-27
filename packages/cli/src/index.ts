@@ -90,7 +90,7 @@ function readIgnorePatterns(root: string): IgnorePattern[] {
   return readFileSync(file, "utf8")
     .split("\n")
     .map((line) => line.trim())
-    .filter((line) => line && !line.startsWith("#"))
+    .filter((line) => line.length > 0 && !line.startsWith("#"))
     .map((line) => {
       const negated = line.startsWith("!");
       return { pattern: negated ? line.slice(1) : line, negated };

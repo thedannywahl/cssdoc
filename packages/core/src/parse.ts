@@ -180,7 +180,7 @@ function parseElementToken(
   if (!trimmed) return undefined;
   if (trimmed === ASTERISK_CHAR || trimmed === "any") return { kind: "any" };
   const group = HTML_ELEMENT_GROUPS[trimmed];
-  if (group) return { kind: "group", alias: trimmed, members: group };
+  if (group !== undefined) return { kind: "group", alias: trimmed, members: group };
   const ELEMENT_TAG: Regex = arkRegex.as(`^${CSSDOC_ELEMENT_TAG_SOURCE}$`, "u");
   const m = trimmed.match(ELEMENT_TAG);
   if (m) return { kind: "tag", name: m[1] };
@@ -581,7 +581,7 @@ function collect(
           for (const m of child.value.matchAll(VAR)) acc.consumed.add(m[1]);
         }
       }
-      if (node.nodes) {
+      if (node.nodes !== undefined) {
         // `&`/`:scope` keep meaning this same scope root one level deeper only while every comma branch
         // of this rule's own selector is still just the root with no combinator (see ampStaysAtScope);
         // once a combinator introduces a new compound (`& > .part`), a nested rule's `&` refers to THAT

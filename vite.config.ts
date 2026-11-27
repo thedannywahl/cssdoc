@@ -39,6 +39,7 @@ const config: UserConfig = mergeConfig(
       jsPlugins: [
         { name: "vite-plus", specifier: "vite-plus/oxlint-plugin" },
         { name: "tsdoc", specifier: "eslint-plugin-tsdoc" },
+        // Per-tag mandates aren't applicability-aware; tsdoc.json owns the allowed tag vocabulary.
         { name: "tsdoc-require-2", specifier: "eslint-plugin-tsdoc-require-2" },
       ],
       rules: { "vite-plus/prefer-vite-plus-imports": "error" },
@@ -81,6 +82,7 @@ const config: UserConfig = mergeConfig(
             "jsdoc/require-property": "error",
             "jsdoc/require-property-description": "error",
             "jsdoc/require-property-name": "error",
+            // TypeScript supplies property types just as it supplies parameter and return types.
             "jsdoc/require-property-type": "off",
             "jsdoc/require-returns-description": "error",
             "jsdoc/require-yields": "error",

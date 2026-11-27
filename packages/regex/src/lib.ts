@@ -119,7 +119,7 @@ export function createResolver(rawDefs: Record<string, RawPatternDef>): PatternR
 
   return (name: string, unwrap?: boolean) => {
     const def = rawDefs[name];
-    if (!def) throw new Error(`Pattern not found: ${name}`);
+    if (def === undefined) throw new Error(`Pattern not found: ${name}`);
 
     if (def.source) {
       return unwrap && def.source.startsWith(bracketOpen) && def.source.endsWith(bracketClose)

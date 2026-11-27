@@ -103,7 +103,9 @@ export function projectPublicExamples(entry: CssDocEntry): CssDocEntry {
 export function projectPublicEntry(entry: CssDocEntry): CssDocEntry {
   const projected = projectPublicExamples(entry);
   const privateFields = new Set(
-    entry.prose?.filter((body) => body.private && body.field).map((body) => body.field),
+    entry.prose
+      ?.filter((body) => body.private === true && body.field !== undefined)
+      .map((body) => body.field),
   );
   if (
     projected.privateRemarks === undefined &&

@@ -324,7 +324,7 @@ export interface ResolvedNaming {
 
 /** Compile one {@link NameCase} to a regex: a preset, else the string as a custom pattern. */
 function compileNameCase(spec: NameCase | undefined): RegExp | undefined {
-  if (!spec) return undefined;
+  if (spec === undefined || spec === "") return undefined;
   if (spec in NAME_CASE_PRESETS) return NAME_CASE_PRESETS[spec];
   try {
     // Custom user pattern. Tested only against short class names; still the user's own config.
