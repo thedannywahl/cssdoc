@@ -3,11 +3,13 @@ import { expect, test } from "vite-plus/test";
 import {
   type CssDocIndex,
   type NamedMemberOccurrence,
+  type SelectorMemberOccurrence,
   createIndex,
   indexFromEntries,
   memberKey,
   resolveNamedMemberReference,
   resolveRecordReference,
+  resolveSelectorMemberReference,
 } from "../src/index.ts";
 
 const CSS = `
@@ -214,6 +216,82 @@ test("named member resolution uses pre-deduplication occurrences and their spans
   expect(resolve("button#slot(label)", new Map())).toMatchObject({ status: "unavailable" });
   expect(resolve("button#slot(label)", new Map([[record, []]]))).toEqual({ status: "missing" });
   expect(record.entry.slots).toEqual([]);
+});
+
+test("selector members match CSS identities against complete original occurrences", () => {
+  const index = createIndex("/** @component button */ .button {}");
+  const record = index.records[0];
+  const span = { start: { line: 2, column: 1 }, end: { line: 2, column: 10 } };
+  const occurrences: SelectorMemberOccurrence[] = [
+    { kind: "modifier", selector: ".button--busy", span },
+    { kind: "part", selector: '[data-slot="action"]', span },
+    { kind: "part", selector: '[data-kind="Action" i]' },
+    { kind: "part", selector: ":is(.icon, [data-slot='action,close'])" },
+    { kind: "part", selector: ".shell > .icon" },
+    { kind: "wrapper", selector: ".shell" },
+    { kind: "state", selector: ":state(open)" },
+    { kind: "pseudo-element", selector: "::before" },
+    { kind: "pseudo-element", selector: "::É" },
+    { kind: "part", selector: ".duplicate", span },
+    { kind: "part", selector: ".duplicate" },
+  ];
+  const resolve = (
+    text: string,
+    selectorMemberOccurrences: ReadonlyMap<
+      typeof record,
+      readonly SelectorMemberOccurrence[]
+    > = new Map([[record, occurrences]]),
+    selectorMembersComplete = true,
+  ) => {
+    const parsed = parseReference(text);
+    if (!parsed.ok) throw new Error(parsed.error);
+    return resolveSelectorMemberReference(parsed.reference, {
+      workspace: {
+        complete: true,
+        sources: [
+          { index, sourceKey: "buttons.css", selectorMembersComplete, selectorMemberOccurrences },
+        ],
+      },
+    });
+  };
+  for (const reference of [
+    String.raw`button#modifier(.button--b\75 sy)`,
+    "button#part([data-slot=action])",
+    "button#part([data-kind=ACTION I])",
+    `button#part(:is(.icon,[data-slot="action,close"]))`,
+    "button#part(.shell/* gap */ > .icon)",
+    "button#wrapper(.shell)",
+    String.raw`button#state(:state(\6f pen))`,
+    "button#pseudo-element(::BEFORE)",
+  ]) {
+    expect(resolve(reference)).toMatchObject({ status: "resolved" });
+  }
+  expect(resolve("button#modifier(.button--busy)")).toMatchObject({
+    candidate: { occurrence: { span }, record: { sourceKey: "buttons.css" } },
+  });
+  expect(resolve("button#part(.duplicate)")).toMatchObject({
+    status: "ambiguous",
+    stage: "member",
+    candidates: [{ occurrence: { span } }, {}],
+  });
+  expect(resolve("button#part(.missing)")).toEqual({ status: "missing" });
+  expect(resolve("button#pseudo-element(::é)")).toEqual({ status: "missing" });
+  expect(resolve("button#part(.shell .icon)")).toEqual({ status: "missing" });
+  expect(resolve("button#part(.icon, .other)")).toEqual({ status: "invalid-subject" });
+  expect(resolve("button#state(:state(open hidden))")).toEqual({ status: "invalid-subject" });
+  expect(resolve("button#pseudo-element(.icon)")).toEqual({ status: "invalid-subject" });
+  expect(resolve("button#part(.icon)", new Map())).toMatchObject({ status: "unavailable" });
+  expect(resolve("button#part(.icon)", new Map([[record, occurrences]]), false)).toMatchObject({
+    status: "unavailable",
+  });
+  expect(resolve("button#part(.missing)", new Map([[record, []]]))).toEqual({ status: "missing" });
+  expect(resolve("button#part(svg|button)")).toMatchObject({ status: "unavailable" });
+  expect(
+    resolve(
+      "button#part(.missing)",
+      new Map([[record, [{ kind: "part", selector: ":foo(bar)" }]]]),
+    ),
+  ).toMatchObject({ status: "unavailable" });
 });
 
 test("createIndex parses the model and resolves class lookups", () => {

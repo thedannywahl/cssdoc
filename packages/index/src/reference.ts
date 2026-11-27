@@ -9,7 +9,9 @@ import type {
   CssTokenConsumed,
   ReferenceMemberKind,
 } from "@cssdoc/core";
-import { ident, parse, tokenTypes, tokenize } from "css-tree";
+import { ALPHA_UPPER_SOURCE } from "@cssdoc/regex";
+import { regex as arkRegex } from "arkregex";
+import { generate, ident, parse, tokenTypes, tokenize, walk } from "css-tree";
 import type { CssDocIndex, RecordInfo, SourceSpan } from "./index.ts";
 
 type NamedMemberByKind = {
@@ -34,19 +36,36 @@ export type NamedMemberOccurrence = {
   };
 }[keyof NamedMemberByKind];
 
+/** A selector-backed surface before model deduplication or documentation aliasing. */
+export interface SelectorMemberOccurrence {
+  /** Typed surface represented by this occurrence. */
+  kind: "modifier" | "part" | "wrapper" | "state" | "pseudo-element";
+  /** Original CSS selector identifying the surface. */
+  selector: string;
+  /** Source range of the occurrence, when available. */
+  span?: SourceSpan;
+}
+
 /** One indexed source and its explicitly assigned portable source key, when available. */
 export interface ReferenceSource {
   /** Index whose records are candidates in this source. */
   index: CssDocIndex;
   /** Project-relative or explicitly assigned virtual key; never inferred from an absolute path. */
   sourceKey?: string;
-  /** Whether member occurrences are complete, either in the model or the occurrence map. */
+  /** Whether named member occurrences are complete, either in the model or the occurrence map. */
   membersComplete?: boolean;
   /**
    * Occurrences for records whose model has collapsed duplicates. When provided, a record missing
    * from this map has unavailable members; use an empty list if it has no named surfaces.
    */
   namedMemberOccurrences?: ReadonlyMap<RecordInfo, readonly NamedMemberOccurrence[]>;
+  /**
+   * Selector occurrences, keyed by the source index's records. An absent record is unavailable,
+   * not empty; provide an empty list for a complete record with no selector-backed surfaces.
+   */
+  selectorMemberOccurrences?: ReadonlyMap<RecordInfo, readonly SelectorMemberOccurrence[]>;
+  /** Whether the selector occurrence map contains every relevant occurrence. Defaults to false. */
+  selectorMembersComplete?: boolean;
 }
 
 /** A lookup scope and whether its candidate set is complete. */
@@ -73,10 +92,16 @@ export interface ReferenceCandidate {
   sourceKey?: string;
   /** Provider ID for a provider-scoped lookup. */
   providerId?: string;
-  /** Whether this source retains all member occurrences. */
+  /** Whether this source retains all named member occurrences. */
   membersComplete?: boolean;
   /** Named occurrences supplied for this particular record, before deduplication. */
   namedMemberOccurrences?: readonly NamedMemberOccurrence[];
+  /** Whether a supplied named-occurrence map contains this record. */
+  namedMembersAvailable?: boolean;
+  /** Selector occurrences supplied for this particular record. */
+  selectorMemberOccurrences?: readonly SelectorMemberOccurrence[];
+  /** Whether the selector occurrences are complete. */
+  selectorMembersComplete?: boolean;
 }
 
 /** Result of resolving the record portion of a reference. */
@@ -120,14 +145,19 @@ export function resolveRecordReference(
         ...(providerId === undefined ? {} : { providerId }),
         ...(source.membersComplete === undefined
           ? {}
-          : {
-              membersComplete:
-                source.membersComplete &&
-                (!source.namedMemberOccurrences || source.namedMemberOccurrences.has(record)),
-            }),
+          : { membersComplete: source.membersComplete }),
+        ...(source.namedMemberOccurrences
+          ? { namedMembersAvailable: source.namedMemberOccurrences.has(record) }
+          : {}),
         ...(source.namedMemberOccurrences?.has(record)
           ? { namedMemberOccurrences: source.namedMemberOccurrences.get(record)! }
           : {}),
+        ...(source.selectorMemberOccurrences?.has(record)
+          ? { selectorMemberOccurrences: source.selectorMemberOccurrences.get(record)! }
+          : {}),
+        ...(source.selectorMembersComplete === undefined
+          ? {}
+          : { selectorMembersComplete: source.selectorMembersComplete }),
       });
     }
   }
@@ -244,7 +274,7 @@ export function resolveNamedMemberReference(
   if (resolution.status === "ambiguous")
     return { status: "ambiguous", stage: "record", candidates: resolution.candidates };
   if (resolution.status === "unavailable") return resolution;
-  if (!resolution.candidate.membersComplete)
+  if (!resolution.candidate.membersComplete || resolution.candidate.namedMembersAvailable === false)
     return { status: "unavailable", candidates: [resolution.candidate] };
   const record = resolution.candidate;
   const entry = record.record.entry;
@@ -276,6 +306,156 @@ export function resolveNamedMemberReference(
         member: occurrence.member,
         ...(occurrence.span ? { span: occurrence.span } : {}),
       });
+  }
+  if (candidates.length === 0) return { status: "missing" };
+  if (candidates.length > 1) return { status: "ambiguous", stage: "member", candidates };
+  return { status: "resolved", candidate: candidates[0] };
+}
+
+/** One selector-backed occurrence and its owning record. */
+export interface SelectorMemberCandidate {
+  /** Owning record and its source provenance. */
+  record: ReferenceCandidate;
+  /** The original, occurrence-preserving selector surface. */
+  occurrence: SelectorMemberOccurrence;
+}
+
+/** Resolution of a selector-backed member reference. */
+export type SelectorMemberResolution =
+  | { status: "resolved"; candidate: SelectorMemberCandidate }
+  | { status: "missing" }
+  | { status: "ambiguous"; stage: "record"; candidates: readonly ReferenceCandidate[] }
+  | { status: "ambiguous"; stage: "member"; candidates: readonly SelectorMemberCandidate[] }
+  | { status: "unavailable"; candidates: readonly ReferenceCandidate[] }
+  | { status: "invalid-subject" };
+
+type SelectorKey =
+  | { status: "valid"; key: string }
+  | { status: "invalid" }
+  | { status: "unsupported" };
+
+const ASCII_UPPER = arkRegex.as(ALPHA_UPPER_SOURCE, "gu");
+const asciiLower = (text: string): string =>
+  text.replace(ASCII_UPPER, (char) => char.toLowerCase());
+
+function selectorKey(input: string, kind: SelectorMemberOccurrence["kind"]): SelectorKey {
+  try {
+    const ast = parse(input, {
+      context: "selector",
+      onParseError(error) {
+        throw error;
+      },
+    });
+    if (ast.type !== "Selector" || ast.children.size === 0) return { status: "invalid" };
+    const first = ast.children.first;
+    if (
+      kind === "pseudo-element" &&
+      (ast.children.size !== 1 || first?.type !== "PseudoElementSelector" || first.children)
+    )
+      return { status: "invalid" };
+    if (
+      kind === "state" &&
+      (ast.children.size !== 1 ||
+        (first?.type !== "ClassSelector" &&
+          first?.type !== "AttributeSelector" &&
+          first?.type !== "PseudoClassSelector"))
+    )
+      return { status: "invalid" };
+
+    let unsupported = false;
+    let invalid = false;
+    const normalizedRaw = new Set<object>();
+    walk(ast, (node) => {
+      if (node.type === "PseudoClassSelector" && asciiLower(ident.decode(node.name)) === "state") {
+        const raw = node.children?.first;
+        if (node.children?.size !== 1 || raw?.type !== "Raw") {
+          invalid = true;
+        } else {
+          const value = identifierKey(raw.value, false, false);
+          if (!value) invalid = true;
+          else {
+            raw.value = ident.encode(value[0]);
+            normalizedRaw.add(raw);
+          }
+        }
+      }
+      if (
+        node.type === "ClassSelector" ||
+        node.type === "IdSelector" ||
+        node.type === "PseudoClassSelector" ||
+        node.type === "PseudoElementSelector"
+      ) {
+        const name = ident.decode(node.name);
+        node.name = ident.encode(
+          node.type === "PseudoClassSelector" || node.type === "PseudoElementSelector"
+            ? asciiLower(name)
+            : name,
+        );
+      } else if (node.type === "Identifier") {
+        if (node.name.includes("|")) unsupported = true;
+        else node.name = ident.encode(ident.decode(node.name));
+      } else if (node.type === "TypeSelector") {
+        if (node.name.includes("\\") || node.name.includes("|")) unsupported = true;
+      } else if (node.type === "AttributeSelector") {
+        if (node.value?.type === "Identifier")
+          node.value = { type: "String", value: ident.decode(node.value.name) };
+        if (node.flags) node.flags = asciiLower(node.flags);
+        if (node.flags === "i" && node.value?.type === "String")
+          node.value.value = asciiLower(node.value.value);
+      } else if (node.type === "Raw" && !normalizedRaw.has(node)) {
+        unsupported = true;
+      }
+    });
+    if (invalid) return { status: "invalid" };
+    if (unsupported) return { status: "unsupported" };
+    return { status: "valid", key: generate(ast) };
+  } catch (error) {
+    if (error instanceof SyntaxError) return { status: "invalid" };
+    throw error;
+  }
+}
+
+/**
+ * Resolve a selector surface from explicit, complete occurrences rather than derived model names.
+ *
+ * Unsupported CSS parser forms and unavailable occurrences produce an unavailable result rather
+ * than guessing whether a selector is absent or unique.
+ *
+ * @param reference - A parsed reference with a selector-backed typed member.
+ * @param lookup - Explicit source provenance, completeness, and occurrence lists.
+ * @returns A resolved surface, missing or ambiguous candidates, an invalid subject, or unavailable.
+ */
+export function resolveSelectorMemberReference(
+  reference: CssDocReference,
+  lookup: ReferenceLookup,
+): SelectorMemberResolution {
+  const member = reference.member;
+  if (
+    !member ||
+    (member.kind !== "modifier" &&
+      member.kind !== "part" &&
+      member.kind !== "wrapper" &&
+      member.kind !== "state" &&
+      member.kind !== "pseudo-element")
+  )
+    return { status: "unavailable", candidates: [] };
+  const key = selectorKey(member.subject, member.kind);
+  if (key.status === "invalid") return { status: "invalid-subject" };
+  if (key.status === "unsupported") return { status: "unavailable", candidates: [] };
+  const resolution = resolveRecordReference(reference, lookup);
+  if (resolution.status === "missing") return { status: "missing" };
+  if (resolution.status === "ambiguous")
+    return { status: "ambiguous", stage: "record", candidates: resolution.candidates };
+  if (resolution.status === "unavailable") return resolution;
+  const record = resolution.candidate;
+  if (!record.selectorMembersComplete || !record.selectorMemberOccurrences)
+    return { status: "unavailable", candidates: [record] };
+  const candidates: SelectorMemberCandidate[] = [];
+  for (const occurrence of record.selectorMemberOccurrences) {
+    if (occurrence.kind !== member.kind) continue;
+    const candidateKey = selectorKey(occurrence.selector, occurrence.kind);
+    if (candidateKey.status !== "valid") return { status: "unavailable", candidates: [record] };
+    if (candidateKey.key === key.key) candidates.push({ record, occurrence });
   }
   if (candidates.length === 0) return { status: "missing" };
   if (candidates.length > 1) return { status: "ambiguous", stage: "member", candidates };

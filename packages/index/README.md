@@ -34,9 +34,13 @@ Source-qualified lookups are unavailable if an otherwise matching input has no s
 `membersComplete` only when every occurrence is available. If the model collapses duplicates,
 provide a `namedMemberOccurrences` map keyed by the source index's `RecordInfo` objects; include an
 empty list for records with no named surfaces. Each occurrence may carry its source span. A missing
-map entry or an incomplete source produces an unavailable result. The index doesn't yet collect
-these occurrences automatically. Selector and at-rule-prelude members aren't supported by this
-function.
+map entry or an incomplete source produces an unavailable result.
+
+`resolveSelectorMemberReference` resolves `modifier`, `part`, `wrapper`, `state`, and
+`pseudo-element` subjects against explicit `selectorMemberOccurrences`. Set
+`selectorMembersComplete` only when that map preserves every selector occurrence for the source.
+Namespaced type selectors and unsupported CSS parser forms produce an unavailable result. Neither
+resolver collects occurrences automatically, and at-rule-prelude members remain unsupported.
 
 ## License
 
