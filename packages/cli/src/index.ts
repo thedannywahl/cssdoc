@@ -181,7 +181,7 @@ export function lintFiles(
     const configFile = loadConfig(dirname(file));
     const lintOptions: LintOptions = {
       configuration: configFile.toConfiguration(),
-      rules: configFile.ruleSeveritiesForFile(file) as LintOptions["rules"],
+      rules: configFile.ruleSeveritiesForFile(file),
       ruleOptions: configFile.ruleOptions,
       modifierConvention: configFile.modifierConvention,
       naming: configFile.naming,

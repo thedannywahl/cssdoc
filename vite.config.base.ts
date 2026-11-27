@@ -61,7 +61,7 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-unsafe-enum-comparison": "error",
       "eslint/no-fallthrough": "error",
       // Re-enable newly activated TypeScript rules individually after review.
-      "typescript/no-unnecessary-type-assertion": "off",
+      "typescript/no-unnecessary-type-assertion": "warn",
       "typescript/explicit-member-accessibility": "off",
       "typescript/no-unsafe-type-assertion": "off",
       // Falsy primitive defaults (including empty strings and zero) can be intentional.

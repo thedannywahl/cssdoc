@@ -51,7 +51,7 @@ export function compileCustomMediaDeclarations(
   options: CompileCustomMediaOptions = {},
 ): string {
   const { resolveValue, sort, ...parseOptions } = options;
-  const entries = parseCssDocs(css, parseOptions as ParseOptions);
+  const entries = parseCssDocs(css, parseOptions);
   const inlineValues = inlineCustomMediaMap(css, parseOptions.parse);
   return buildCustomMediaDeclarations(entries, {
     sort,

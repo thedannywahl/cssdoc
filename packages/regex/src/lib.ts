@@ -81,7 +81,7 @@ export const toRegExp = (pattern: Regex, anchors: AnchorMode = "none"): RegExp =
  */
 export function compileRegex(def: UnifiedPatternDef): Regex {
   if (def.regex) return def.regex;
-  return arkRegex.as(def.source, (def.flags || "") as "u" | "v" | "") as Regex;
+  return arkRegex.as(def.source, def.flags || "");
 }
 
 /**

@@ -415,7 +415,7 @@ test("comment framing preserves source ranges through CRLF and non-BMP text", ()
   for (const line of lines) {
     expect(raw.slice(line.start, line.end)).toBe(line.text);
   }
-  const remark = lines[1]!;
+  const remark = lines[1];
   expect(remark.start).toBe(raw.indexOf("@remarks"));
   expect(
     raw.slice(
@@ -489,7 +489,7 @@ test("CR-only comment lines retain tag boundaries and exact UTF-16 source mappin
     "@example -\r * ```css\r * 😀 @component hidden\r * ```",
     "@component actual",
   ]);
-  expect(blocks[0]!.text).toBe("@example -\r```css\r😀 @component hidden\r```");
+  expect(blocks[0].text).toBe("@example -\r```css\r😀 @component hidden\r```");
   for (const block of blocks) {
     for (const segment of block.segments) {
       expect(raw.slice(segment.sourceStart, segment.sourceStart + segment.length)).toBe(
@@ -497,11 +497,11 @@ test("CR-only comment lines retain tag boundaries and exact UTF-16 source mappin
       );
     }
   }
-  const start = blocks[0]!.text.indexOf("😀");
-  const end = blocks[0]!.text.indexOf("@component") + "@component".length;
-  const range = blockSourceRange(blocks[0]!, start, end);
+  const start = blocks[0].text.indexOf("😀");
+  const end = blocks[0].text.indexOf("@component") + "@component".length;
+  const range = blockSourceRange(blocks[0], start, end);
   expect(raw.slice(range.start, range.end)).toBe("😀 @component");
-  const acrossLines = blockSourceRange(blocks[0]!, start, blocks[0]!.text.length);
+  const acrossLines = blockSourceRange(blocks[0], start, blocks[0].text.length);
   expect(raw.slice(acrossLines.start, acrossLines.end)).toBe("😀 @component hidden\r * ```");
   expect(recordNameOf(raw)).toBe("actual");
 });
@@ -542,7 +542,7 @@ test("full and lite expose the same authored blocks and UTF-16 ranges", () => {
     "@example docs, demo {@private} -\r\n * ```css\r\n * 😀 @component example\r\n * @remarks - code\r\n * ```",
     "@unknown - preserved",
   ]);
-  const example = lite[1]!;
+  const example = lite[1];
   const start = example.text.indexOf("😀");
   const end = example.text.indexOf("@remarks") + "@remarks".length;
   const span = blockSourceRange(example, start, end);
@@ -567,7 +567,7 @@ test("1.0 example bodies, labels, privacy, and spans are shared by lite and full
   expect(full.examples).toEqual(lite.examples);
   expect(full.exampleSpans).toEqual(lite.exampleSpans);
   expect(full.privateExamples).toEqual(lite.privateExamples);
-  const span = lite.exampleSpans![0]!;
+  const span = lite.exampleSpans![0];
   expect(raw.slice(span.start, span.end)).toBe("😀 first  \r\n *   second\r\n");
 });
 
@@ -593,7 +593,7 @@ test.each(["\n", "\r\n", "\r"])(
     const doc = parseLiteDocComment(raw);
     expect(doc.examples).toEqual(["", "inline  "]);
     for (const [index, body] of doc.examples.entries()) {
-      const span = doc.exampleSpans![index]!;
+      const span = doc.exampleSpans![index];
       expect(raw.slice(span.start, span.end)).toBe(body);
     }
   },
@@ -681,7 +681,7 @@ test("nested structure at-rules remain inside the structure regardless of indent
     "@structure\n.card[data-text='}'] {\n@component child {}\n}",
     "@summary Card.",
   ]);
-  expect(raw.slice(blocks[1]!.start, blocks[1]!.end)).toBe(
+  expect(raw.slice(blocks[1].start, blocks[1].end)).toBe(
     "@structure\n * .card[data-text='}'] {\n * @component child {}\n * }",
   );
   expect(parseDocComment(raw, undefined, parsePostcss).component).toBe("card");
@@ -811,8 +811,8 @@ test("fences protect tag boundaries and record discovery until a matching closer
   ].join("\r\n");
   const blocks = collectDocCommentBlocks(raw, new CssDocConfiguration());
   expect(blocks).toHaveLength(2);
-  expect(raw.slice(blocks[0]!.start, blocks[0]!.end)).toContain("@remarks - Still code.");
-  expect(raw.slice(blocks[1]!.start, blocks[1]!.end)).toBe("@component real-record");
+  expect(raw.slice(blocks[0].start, blocks[0].end)).toContain("@remarks - Still code.");
+  expect(raw.slice(blocks[1].start, blocks[1].end)).toBe("@component real-record");
   expect(recordNameOf(raw)).toBe("real-record");
 });
 
@@ -956,7 +956,7 @@ test("a partially consumed tab can close a fence in a list", () => {
   ].join("\n");
   const blocks = collectDocCommentBlocks(raw, new CssDocConfiguration());
   expect(blocks).toHaveLength(2);
-  expect(raw.slice(blocks[1]!.start, blocks[1]!.end)).toBe("@component actual");
+  expect(raw.slice(blocks[1].start, blocks[1].end)).toBe("@component actual");
   expect(recordNameOf(raw)).toBe("actual");
 });
 
@@ -1747,7 +1747,7 @@ test("inlineComments mode controls how an inline comment combines with @modifier
     const cfg = new CssDocConfiguration();
     cfg.setModifierConvention("rscss");
     cfg.setInlineComments(mode);
-    return parseCssDocs(css, { configuration: cfg })[0]!.modifiers.find((m) => m.name === "-x")
+    return parseCssDocs(css, { configuration: cfg })[0].modifiers.find((m) => m.name === "-x")
       ?.description;
   };
   expect(desc("append")).toBe("Tag prose.\n\nInline note.");
@@ -1829,13 +1829,13 @@ test("@structure optional-ancestor wrapper: root cardinality + @wrapper prose, i
     ].join("\n"),
     { modifierConvention: "rscss" },
   );
-  const [root] = badge!.structure!;
+  const [root] = badge.structure!;
   expect(root.selector).toBe(".badge-wrapper");
   expect(root.cardinality).toBe("optional");
   expect(root.description).toBe("Optional; anchors the badge over a target."); // @wrapper prose
   // Mermaid: a root has no incoming edge, so its cardinality rides the label, and the @wrapper prose
   // trails it (matching the text tree).
-  expect(toMermaid(badge!.structure!, { self: "badge" })).toContain(
+  expect(toMermaid(badge.structure!, { self: "badge" })).toContain(
     ".badge-wrapper (0..1) — Optional; anchors the badge over a target.",
   );
 });
@@ -3215,7 +3215,7 @@ test("@tokens annotates an AST-discovered token and unions a token not found via
     ".card { background: var(--color-bg); color: var(--color-fg); }",
   ].join("\n");
   const [card] = parseCssDocs(css);
-  const consumed = card!.cssPropertiesConsumed;
+  const consumed = card.cssPropertiesConsumed;
   const byName = new Map(consumed.map((t) => [t.name, t.description]));
   // AST-discovered var() tokens are present; the authored one carries its description.
   expect(byName.get("--color-bg")).toBe("The surface background.");
@@ -3239,9 +3239,9 @@ test("@usage, @compat, and @related populate their fields", () => {
     ".card { color: red; }",
   ].join("\n");
   const [card] = parseCssDocs(css);
-  expect(card!.usage).toBe("Include the sheet, then apply the class.");
-  expect(card!.compat).toEqual(["Uses @scope.", "Anchor positioning enhanced."]);
-  expect(card!.related).toEqual([
+  expect(card.usage).toBe("Include the sheet, then apply the class.");
+  expect(card.compat).toEqual(["Uses @scope.", "Anchor positioning enhanced."]);
+  expect(card.related).toEqual([
     { name: "button", description: "The action inside a card." },
     { name: "dialog", description: undefined },
   ]);
@@ -3251,33 +3251,33 @@ test("@memberOf parses the bare and private forms", () => {
   const [cell] = parseCssDocs(
     `/**\n * @component table-cell\n * @memberOf table\n */\n.table-cell {}`,
   );
-  expect(cell!.memberOf).toEqual({ component: "table", private: false });
+  expect(cell.memberOf).toEqual({ component: "table", private: false });
 
   const [item] = parseCssDocs(
     `/**\n * @component side-nav-bar-item\n * @memberOf side-nav-bar private\n */\n.side-nav-bar-item {}`,
   );
-  expect(item!.memberOf).toEqual({ component: "side-nav-bar", private: true });
+  expect(item.memberOf).toEqual({ component: "side-nav-bar", private: true });
 
   const [plain] = parseCssDocs(`/**\n * @component alert\n */\n.alert {}`);
-  expect(plain!.memberOf).toBeUndefined();
+  expect(plain.memberOf).toBeUndefined();
 });
 
 test("@members declares a parent's members directly, comma-separated", () => {
   const [tabs] = parseCssDocs(
     `/**\n * @component tabs\n * @members tab, panel, item\n */\n.tabs {}`,
   );
-  expect(tabs!.members).toEqual(["tab", "panel", "item"]);
+  expect(tabs.members).toEqual(["tab", "panel", "item"]);
 
   const [plain] = parseCssDocs(`/**\n * @component alert\n */\n.alert {}`);
-  expect(plain!.members).toBeUndefined();
+  expect(plain.members).toBeUndefined();
 });
 
 test("@member appends repeatable parent-side member declarations", () => {
   const [tabs] = parseCssDocs(
     `/**\n * @component tabs\n * @member tab\n * @member panel private\n */\n.tabs {}`,
   );
-  expect(tabs!.members).toEqual(["tab", "panel"]);
-  expect(tabs!.memberDeclarations).toEqual([
+  expect(tabs.members).toEqual(["tab", "panel"]);
+  expect(tabs.memberDeclarations).toEqual([
     { name: "tab", private: false },
     { name: "panel", private: true },
   ]);
@@ -3287,8 +3287,8 @@ test("@members and @member merge in stable order with de-duplication", () => {
   const [tabs] = parseCssDocs(
     `/**\n * @component tabs\n * @members tab, panel\n * @member panel private\n * @member item\n */\n.tabs {}`,
   );
-  expect(tabs!.members).toEqual(["tab", "panel", "item"]);
-  expect(tabs!.memberDeclarations).toEqual([
+  expect(tabs.members).toEqual(["tab", "panel", "item"]);
+  expect(tabs.memberDeclarations).toEqual([
     { name: "tab", private: false },
     { name: "panel", private: true },
     { name: "item", private: false },
@@ -3297,16 +3297,16 @@ test("@members and @member merge in stable order with de-duplication", () => {
 
 test("a dotted @component name implies @memberOf its immediate parent", () => {
   const [item] = parseCssDocs(`/**\n * @component foo.bar\n */\n.bar {}`);
-  expect(item!.memberOf).toEqual({ component: "foo", private: false });
+  expect(item.memberOf).toEqual({ component: "foo", private: false });
 
   const [nested] = parseCssDocs(`/**\n * @component a.b.c\n */\n.c {}`);
-  expect(nested!.memberOf).toEqual({ component: "a.b", private: false });
+  expect(nested.memberOf).toEqual({ component: "a.b", private: false });
 
   // An explicit @memberOf still wins over the inference.
   const [explicit] = parseCssDocs(
     `/**\n * @component foo.bar\n * @memberOf other private\n */\n.bar {}`,
   );
-  expect(explicit!.memberOf).toEqual({ component: "other", private: true });
+  expect(explicit.memberOf).toEqual({ component: "other", private: true });
 });
 
 test("issue #30: a memberOf record scoped under its parent's @scope doesn't flag its own base class as an undocumented part", () => {
@@ -3324,17 +3324,17 @@ test("issue #30: a memberOf record scoped under its parent's @scope doesn't flag
     "}",
   ].join("\n");
   const [item] = parseCssDocs(css);
-  expect(item!.parts.map((p) => p.name)).not.toContain("item");
+  expect(item.parts.map((p) => p.name)).not.toContain("item");
 });
 
 test("entry.source records line/column, and file when fileName is supplied", () => {
   const css = ["", "/**", " * @component card", " */", ".card { color: red; }"].join("\n");
   const [withFile] = parseCssDocs(css, { fileName: "cards.css" });
-  expect(withFile!.source).toEqual({ file: "cards.css", line: 2, column: 1 });
+  expect(withFile.source).toEqual({ file: "cards.css", line: 2, column: 1 });
 
   const [withoutFile] = parseCssDocs(css);
-  expect(withoutFile!.source?.file).toBeUndefined();
-  expect(withoutFile!.source?.line).toBe(2);
+  expect(withoutFile.source?.file).toBeUndefined();
+  expect(withoutFile.source?.line).toBe(2);
 });
 
 test("multi-line tag descriptions: @modifier with wrapped description", () => {

@@ -348,7 +348,7 @@ test("generated fences keep backticks and Vue-sensitive snippet content inside c
 
 test("renderEntry renders a title, summary, demo fence, and a modifiers table", () => {
   const [button] = parseCssDocs(CSS);
-  const md = renderEntry(button!);
+  const md = renderEntry(button);
   expect(md).toContain("# button");
   expect(md).toContain("`.button`");
   expect(md).toContain("The primary action control.");
@@ -359,7 +359,7 @@ test("renderEntry renders a title, summary, demo fence, and a modifiers table", 
 
 test("renderEntry uses the resolveToken hook for the Tokens consumed table", () => {
   const [button] = parseCssDocs(CSS);
-  const md = renderEntry(button!, {
+  const md = renderEntry(button, {
     resolveToken: (name) =>
       name === "--color-bg" ? { syntax: "<color>", value: "#fff" } : undefined,
   });
@@ -389,7 +389,7 @@ const RICH_CSS = `
 
 test("renders an Annotations section with legend rows and refs", () => {
   const [card] = parseCssDocs(RICH_CSS);
-  const md = renderEntry(card!, { includeAnnotations: true });
+  const md = renderEntry(card, { includeAnnotations: true });
   expect(md).toContain("## Annotations");
   expect(md).toContain("| Ref | Annotation |");
   expect(md).toContain("`1`");
@@ -399,12 +399,12 @@ test("renders an Annotations section with legend rows and refs", () => {
 
 test("omits the Annotations section by default", () => {
   const [card] = parseCssDocs(RICH_CSS);
-  expect(renderEntry(card!)).not.toContain("## Annotations");
+  expect(renderEntry(card)).not.toContain("## Annotations");
 });
 
 test("Tokens consumed gains a Description column from @tokens, and unions non-var() tokens", () => {
   const [card] = parseCssDocs(RICH_CSS);
-  const md = renderEntry(card!, {
+  const md = renderEntry(card, {
     resolveToken: (name) =>
       name === "--color-bg" ? { syntax: "<color>", value: "#fff" } : undefined,
   });
@@ -417,13 +417,13 @@ test("Tokens consumed gains a Description column from @tokens, and unions non-va
 
 test("without resolveToken, consumed tokens render as bullets with their @tokens description", () => {
   const [card] = parseCssDocs(RICH_CSS);
-  const md = renderEntry(card!);
+  const md = renderEntry(card);
   expect(md).toContain("- `--color-bg` — The surface background.");
 });
 
 test("renders Usage (with importSnippet), Browser support, and Related sections", () => {
   const [card] = parseCssDocs(RICH_CSS);
-  const md = renderEntry(card!, {
+  const md = renderEntry(card, {
     importSnippet: () => `@import "cards.css";`,
     baseHref: "./",
   });
@@ -438,7 +438,7 @@ test("renders Usage (with importSnippet), Browser support, and Related sections"
 
 test("resolveSource adds a Source link to the meta line", () => {
   const [card] = parseCssDocs(RICH_CSS, { fileName: "cards.css" });
-  const md = renderEntry(card!, {
+  const md = renderEntry(card, {
     resolveSource: (entry) =>
       entry.source?.file !== undefined && entry.source.line !== undefined
         ? {
@@ -452,7 +452,7 @@ test("resolveSource adds a Source link to the meta line", () => {
 
 test("sectionOrder reorders the rendered sections", () => {
   const [card] = parseCssDocs(RICH_CSS);
-  const md = renderEntry(card!, { sectionOrder: ["related", "usage"] });
+  const md = renderEntry(card, { sectionOrder: ["related", "usage"] });
   // Only the listed sections render, in the given order.
   expect(md.indexOf("## Related")).toBeGreaterThan(-1);
   expect(md.indexOf("## Related")).toBeLessThan(md.indexOf("## Usage"));
@@ -477,7 +477,7 @@ test("@structure renders slot content, cardinality, and a linked Subcomponents s
     ].join("\n"),
     { modifierConvention: "rscss" },
   );
-  const md = renderEntry(alert!, {
+  const md = renderEntry(alert, {
     resolveComponent: (c) =>
       c === "close-button" ? { name: "close-button", href: "./close-button.md" } : undefined,
   });
@@ -513,7 +513,7 @@ test("@structure bounded `:max-<n>`/`:one-or-more:max-<n>` cardinality renders a
       ".button-group {}",
     ].join("\n"),
   );
-  const md = renderEntry(group!, {
+  const md = renderEntry(group, {
     resolveComponent: (c) => (c === "button" ? { name: "button", href: "./button.md" } : undefined),
   });
   expect(md).toContain("button (component, 1..2)");
@@ -542,7 +542,7 @@ test("@structure a nested @variant group renders as a grouped sub-list and still
       ".action-row {}",
     ].join("\n"),
   );
-  const md = renderEntry(row!, {
+  const md = renderEntry(row, {
     structureView: "text",
     resolveComponent: (c) => (c === "button" ? { name: "button", href: "./button.md" } : undefined),
   });
@@ -569,7 +569,7 @@ test("@structure @component refs carry cardinality and resolve links", () => {
       ".drawer-layout {}",
     ].join("\n"),
   );
-  const md = renderEntry(layout!, {
+  const md = renderEntry(layout, {
     resolveComponent: (c) =>
       c === "close-button" ? { name: "close-button", href: "./close-button.md" } : undefined,
   });
@@ -592,7 +592,7 @@ test("@structure @member refs carry cardinality and resolve links", () => {
       ".drawer-layout {}",
     ].join("\n"),
   );
-  const md = renderEntry(layout!, {
+  const md = renderEntry(layout, {
     resolveComponent: (c) =>
       c === "drawer-layout.tray"
         ? { name: "drawer-layout.tray", href: "./drawer-layout.tray.md" }
@@ -607,7 +607,7 @@ test("@memberOf feeds the parent's Subcomponents section even without @structure
   const [table] = parseCssDocs(
     `/**\n * @component table\n * @summary A data table.\n */\n.table {}`,
   );
-  const md = renderEntry(table!, {
+  const md = renderEntry(table, {
     members: [{ name: "table-cell", href: "./table-cell.md" }],
   });
   expect(md).toContain("## Subcomponents");
@@ -625,7 +625,7 @@ test("@memberOf private renders an 'only used within' note on the member's own p
       ".side-nav-bar-item {}",
     ].join("\n"),
   );
-  const md = renderEntry(item!, {
+  const md = renderEntry(item, {
     resolveComponent: (c) =>
       c === "side-nav-bar" ? { name: "side-nav-bar", href: "./side-nav-bar.md" } : undefined,
   });
@@ -647,7 +647,7 @@ test("@structure comma-separated selector list resolves every alternative in the
       ".table {}",
     ].join("\n"),
   );
-  const md = renderEntry(table!, {
+  const md = renderEntry(table, {
     resolveComponent: (c) =>
       c === "table-col-header"
         ? { name: "table-col-header", href: "./table-col-header.md" }
@@ -676,7 +676,7 @@ test(":is() co-location renders `+ componentName (component)` in text tree and a
       ".shell {}",
     ].join("\n"),
   );
-  const md = renderEntry(shell!, {
+  const md = renderEntry(shell, {
     structureView: "text",
     resolveComponent: (c) => (c === "pfx-card" ? { name: "card", href: "./card.md" } : undefined),
   });
@@ -700,7 +700,7 @@ test(":is() co-location with unresolved class renders bare class name in text tr
     ].join("\n"),
   );
   // Without a resolver, co-located selector appears verbatim.
-  const md = renderEntry(shell!, { structureView: "text" });
+  const md = renderEntry(shell, { structureView: "text" });
   expect(md).toContain(".tabs-list + .pfx-card");
 });
 
@@ -722,12 +722,12 @@ test("structureView selects which Structure representation(s) render (default bo
     text: md.includes("```text"),
     diagram: md.includes("```mermaid"),
   });
-  expect(has(renderEntry(alert!, {}))).toEqual({ text: true, diagram: true }); // default = both
-  expect(has(renderEntry(alert!, { structureView: "text" }))).toEqual({
+  expect(has(renderEntry(alert, {}))).toEqual({ text: true, diagram: true }); // default = both
+  expect(has(renderEntry(alert, { structureView: "text" }))).toEqual({
     text: true,
     diagram: false,
   });
-  expect(has(renderEntry(alert!, { structureView: "diagram" }))).toEqual({
+  expect(has(renderEntry(alert, { structureView: "diagram" }))).toEqual({
     text: false,
     diagram: true,
   });
@@ -751,7 +751,7 @@ test("@structure @variant blocks render one combined diagram with a labelled sub
       ".progress {}",
     ].join("\n"),
   );
-  const md = renderEntry(progress!, {});
+  const md = renderEntry(progress, {});
   expect(md).toContain("```mermaid");
   expect(md).toContain(`subgraph`);
   expect(md).toContain(`"wrapped"`);
@@ -777,7 +777,7 @@ test('structureVariantView: "sections" renders one labelled subsection per @vari
       ".progress {}",
     ].join("\n"),
   );
-  const md = renderEntry(progress!, { structureVariantView: "sections" });
+  const md = renderEntry(progress, { structureVariantView: "sections" });
   expect(md).toContain("### Variant: wrapped");
   expect(md).toContain("### Variant: labelled");
   // Each variant gets its own tree + diagram (default structureView is "both").
@@ -804,7 +804,7 @@ test("@structure @variant: Subcomponents scans across all variants", () => {
       ".shell {}",
     ].join("\n"),
   );
-  const md = renderEntry(shell!, {
+  const md = renderEntry(shell, {
     resolveComponent: (c) =>
       c === "pfx-card"
         ? { name: "card", href: "./card.md" }
@@ -831,7 +831,7 @@ test("@example: a fenced block renders as Markdown verbatim; bare code is auto-w
       " */",
       ".alert {}",
     ].join("\n"),
-  )[0]!;
+  )[0];
   const md = renderEntry(fenced);
   expect(md).toContain("## Examples");
   expect(md).toContain("Prose before."); // prose survives, outside any fence
@@ -848,7 +848,7 @@ test("@example: a fenced block renders as Markdown verbatim; bare code is auto-w
       " */",
       ".b {}",
     ].join("\n"),
-  )[0]!;
+  )[0];
   expect(renderEntry(bare)).toContain('```html\n<b class="b"></b>\n```'); // fence-less code gets wrapped
 });
 
@@ -866,7 +866,7 @@ test("renders a Pseudo-elements section from derived + @pseudo pseudo-elements",
     ].join("\n"),
     { modifierConvention: "rscss" },
   );
-  const md = renderEntry(alert!);
+  const md = renderEntry(alert);
   expect(md).toContain("## Pseudo-elements");
   expect(md).toContain("`::before`");
   expect(md).toContain("The status bar.");
@@ -891,7 +891,7 @@ test("@structure text tree shows an optional-ancestor wrapper's cardinality and 
     ].join("\n"),
     { modifierConvention: "rscss" },
   );
-  const md = renderEntry(badge!, { structureView: "text" });
+  const md = renderEntry(badge, { structureView: "text" });
   expect(md).toContain(".badge-wrapper (0..1) — Optional; anchors the badge over a target.");
 });
 
@@ -1095,7 +1095,7 @@ const STATUS_CSS = `
 
 test("classNames is opt-in: deprecation and stage markers stay pure markdown by default", () => {
   const [box] = parseCssDocs(STATUS_CSS);
-  const md = renderEntry(box!);
+  const md = renderEntry(box);
   expect(md).toContain("> [!WARNING]");
   expect(md).toContain("_Deprecated_");
   expect(md).toContain("`experimental`");
@@ -1104,7 +1104,7 @@ test("classNames is opt-in: deprecation and stage markers stay pure markdown by 
 
 test("classNames wraps just the marker word, leaving the prose outside the span", () => {
   const [box] = parseCssDocs(STATUS_CSS);
-  const md = renderEntry(box!, {
+  const md = renderEntry(box, {
     classNames: {
       deprecated: "-vendor-pill -color-warning",
       stage: { experimental: "-vendor-pill -color-alert" },
@@ -1122,7 +1122,7 @@ test("classNames wraps just the marker word, leaving the prose outside the span"
 test("classNames.stage only applies to the record's own stage", () => {
   const [box] = parseCssDocs(STATUS_CSS);
   // The record is @stage experimental; a class registered for a different stage is not applied.
-  const md = renderEntry(box!, { classNames: { stage: { beta: "-vendor-pill" } } });
+  const md = renderEntry(box, { classNames: { stage: { beta: "-vendor-pill" } } });
   expect(md).toContain(" · `experimental`");
   expect(md).not.toContain("<span class=");
 });
@@ -1134,14 +1134,14 @@ test("an @interaction-flagged modifier renders an Interaction marker in the Modi
       `.progress-circle {}`,
     { modifierConvention: "rscss" },
   );
-  const md = renderEntry(circle!);
+  const md = renderEntry(circle);
   expect(md).toContain("_Interaction_");
   expect(md).toContain("Toggled while the ring grows.");
 });
 
 test("an @alias-flagged modifier renders an Alias marker in the Modifiers table", () => {
   const [box] = parseCssDocs(STATUS_CSS, { modifierConvention: "rscss" });
-  const md = renderEntry(box!);
+  const md = renderEntry(box);
   expect(md).toContain("_Alias_");
   expect(md).toContain("maps to `.-size-sm`.");
 });
@@ -1153,7 +1153,7 @@ test("an @affects-flagged modifier renders an Affects marker with a resolved lin
       `.table {}\n.table.-layout-stacked {}`,
     { modifierConvention: "rscss" },
   );
-  const md = renderEntry(table!, {
+  const md = renderEntry(table, {
     resolveComponent: (c) =>
       c === "table-cell" ? { name: "table-cell", href: "./table-cell.md" } : undefined,
   });
@@ -1200,7 +1200,7 @@ test("multiline @remarks with bullet list renders list items as separate Markdow
       ".wrapper {}",
     ].join("\n"),
   );
-  const md = renderEntry(entry!);
+  const md = renderEntry(entry);
   // The blank line must precede each list block so CommonMark recognises the items as a list.
   expect(md).toContain("✅ Use when:\n\n- Building a full product page");
   expect(md).toContain("🚫 Don't use when:\n\n- Building a Modal");
@@ -1220,6 +1220,6 @@ test("multiline @accessibility with bullet list renders list items as separate M
       ".wrapper {}",
     ].join("\n"),
   );
-  const md = renderEntry(entry!);
+  const md = renderEntry(entry);
   expect(md).toContain("Guidance:\n\n- Map the main area to a landmark");
 });

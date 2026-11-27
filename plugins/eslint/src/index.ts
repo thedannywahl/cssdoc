@@ -160,10 +160,10 @@ const validDocComments: RuleModule = {
               ? configFile.ruleSeveritiesForFile(context.filename)
               : configFile.ruleSeverities),
             ...options.rules,
-          } as DocCommentsOptions["rules"],
+          },
           ruleOptions: configFile.ruleOptions,
           modifierConvention: options.modifierConvention ?? configFile.modifierConvention,
-          naming: { ...configFile.naming, ...options.naming } as NamingRules,
+          naming: { ...configFile.naming, ...options.naming },
           structureIgnore: options.structureIgnore ?? configFile.structureIgnore,
           providerEntries: resolveProviders(configFile).entries,
         });
@@ -297,18 +297,18 @@ const validClassUsage: RuleModule = {
       },
     ],
   },
-  create(context) {
+  create(context): Record<string, (node: never) => void> {
     const options = (context.options[0] ?? {}) as ClassUsageOptions;
-    if (!options.css?.length) return {} as Record<string, (node: never) => void>;
+    if (!options.css?.length) return {};
     const index = indexFor(options.css, context.cwd ?? process.cwd(), options.modifierConvention);
     const isAttribute = index.matcher.convention.structure === "attribute";
 
     // Attribute conventions (e.g. CUBE `data-variant="ghost"`): inspect JSX element attributes.
     if (isAttribute) {
       return {
-        JSXOpeningElement(node: never): void {
-          const attrs = (node as JsxOpeningElement).attributes ?? [];
-          const elementName = jsxTagName(node as JsxOpeningElement);
+        JSXOpeningElement(node: JsxOpeningElement): void {
+          const attrs = node.attributes ?? [];
+          const elementName = jsxTagName(node);
           const tokens = attrs
             .filter((a) => a.name?.name === "class" || a.name?.name === "className")
             .flatMap((a) => (jsxLiteral(a) ?? "").split(CLASS_WHITESPACE).filter(Boolean));

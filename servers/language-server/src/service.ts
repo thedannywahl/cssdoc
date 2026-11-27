@@ -1178,10 +1178,10 @@ export class CssDocLanguageService {
             tokens,
             token: base,
             elementName,
-            loc: spanFromOffsets(text, baseToken!.start, baseToken!.end),
+            loc: spanFromOffsets(text, baseToken.start, baseToken.end),
           },
-          start: baseToken!.start,
-          end: baseToken!.end,
+          start: baseToken.start,
+          end: baseToken.end,
         });
         for (const a of attrs) {
           if (a[1] === "class" || a[1] === "className") continue;
@@ -1217,10 +1217,10 @@ export class CssDocLanguageService {
           tokens,
           token: base,
           elementName: site.elementName,
-          loc: spanFromOffsets(text, baseToken!.start, baseToken!.end),
+          loc: spanFromOffsets(text, baseToken.start, baseToken.end),
         },
-        start: baseToken!.start,
-        end: baseToken!.end,
+        start: baseToken.start,
+        end: baseToken.end,
       });
       for (const member of site.tokens) {
         if (matcher.usageKind(member.token, base) === undefined) continue;

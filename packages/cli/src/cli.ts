@@ -8,7 +8,7 @@ import { DASH_SOURCE, DIGIT_SOURCE } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
 import type { Command as CommanderCommand } from "commander";
 
-import { runLint, type LintCliOptions, type LintCliResult, type OutputFormat } from "./index.ts";
+import { runLint, type LintCliOptions, type LintCliResult } from "./index.ts";
 
 const { version } = JSON.parse(
   readFileSync(new URL("../package.json", import.meta.url), "utf8"),
@@ -192,7 +192,7 @@ export function createCssDocProgram(runtime: CliRuntime = defaultRuntime): Comma
     .option("--fix", "apply safe deterministic fixes", false)
     .action((globs, options) => {
       runLintAction(runtime, globs, {
-        format: options.format as OutputFormat,
+        format: options.format,
         quiet: options.quiet,
         maxWarnings: options.maxWarnings,
         fix: options.fix,

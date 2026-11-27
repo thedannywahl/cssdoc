@@ -685,7 +685,7 @@ test("members-unknown-component flags a @members entry naming a record that isn'
   const diagnostics = lintModel(createIndex(css));
   const unknowns = diagnostics.filter((d) => d.rule === "members-unknown-component");
   expect(unknowns).toHaveLength(1);
-  expect(unknowns[0]!.message).toContain("ghost-panel");
+  expect(unknowns[0].message).toContain("ghost-panel");
 });
 
 test("members-unknown-component also validates repeatable @member declarations", () => {
@@ -706,7 +706,7 @@ test("members-unknown-component also validates repeatable @member declarations",
   const diagnostics = lintModel(createIndex(css));
   const unknowns = diagnostics.filter((d) => d.rule === "members-unknown-component");
   expect(unknowns).toHaveLength(1);
-  expect(unknowns[0]!.message).toContain("ghost-panel");
+  expect(unknowns[0].message).toContain("ghost-panel");
 });
 
 test("members-unknown-component doesn't fire when every declared member is documented", () => {

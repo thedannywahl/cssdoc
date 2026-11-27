@@ -257,7 +257,7 @@ test("public JSON removes private examples and reindexes public labels", () => {
   expect(publicModel[0].privateExamples).toBeUndefined();
   expect(new Ajv().compile(cssDocSchema)(publicModel)).toBe(true);
   const privateModel = parseModel(renderJson(entries, { includePrivate: true }));
-  expect(privateModel[0].examples![1]).toBe("Sensitive example.");
+  expect(privateModel[0].examples[1]).toBe("Sensitive example.");
   expect(privateModel[0].privateExamples).toEqual([1]);
   expect(JSON.stringify(privateModel)).toContain("Private work item");
   const outDir = mkdtempSync(join(tmpdir(), "cssdoc-json-private-"));
@@ -376,10 +376,10 @@ test("bounded max-N cardinality and a nested @variant group round-trip through J
   const entries = parseCssDocs(ACTION_ROW_CSS);
   const parsed = parseModel(renderJson(entries));
   const row = parsed.find((e) => e.name === "action-row")!;
-  const variantGroup = row.structure![0].children![1];
+  const variantGroup = row.structure![0].children[1];
   expect(variantGroup.selector).toBe("");
   expect(variantGroup.variants).toHaveLength(2);
-  expect(variantGroup.variants![1].nodes[0].children![0].cardinality).toBe("one-or-more-max-2");
+  expect(variantGroup.variants![1].nodes[0].children[0].cardinality).toBe("one-or-more-max-2");
 
   const ajv = new Ajv({ allErrors: true });
   const validate = ajv.compile(cssDocSchema);

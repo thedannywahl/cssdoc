@@ -197,7 +197,7 @@ test("escaped inline openers lose one backslash outside protected code", () => {
 
 test("renderPage produces a standalone, escaped HTML document", () => {
   const [button] = parseCssDocs(CSS);
-  const html = renderPage(button!);
+  const html = renderPage(button);
   expect(html.startsWith("<!doctype html>")).toBe(true);
   expect(html).toContain("<style>"); // self-contained styling
   expect(html).toContain('<link rel="icon" href="data:image/svg+xml;base64,'); // embedded favicon
@@ -227,7 +227,7 @@ test("renderPage renders each @variant block under its own labelled heading", ()
       ".progress {}",
     ].join("\n"),
   );
-  const html = renderPage(progress!);
+  const html = renderPage(progress);
   expect(html).toContain("<h4>Variant: wrapped</h4>");
   expect(html).toContain("<h4>Variant: labelled</h4>");
 });
@@ -251,7 +251,7 @@ test("renderPage lists a nested @variant group's alternatives under a '(choose o
       ".action-row {}",
     ].join("\n"),
   );
-  const html = renderPage(row!);
+  const html = renderPage(row);
   expect(html).toContain("(choose one)");
   expect(html).toContain(">single<");
   expect(html).toContain(">group<");
@@ -263,7 +263,7 @@ test("renderPage escapes HTML-unsafe prose", () => {
   const [entry] = parseCssDocs(
     `/**\n * @component x\n * @summary A <b> & "y" tag &amp; <i>"z"</i>.\n */\n.x { color: red; }`,
   );
-  const html = renderPage(entry!);
+  const html = renderPage(entry);
   expect(html).toContain('A &#x3C;b> &#x26; "y" tag &#x26; &#x3C;i>"z"&#x3C;/i>.');
   expect(html).not.toContain("A <b> &");
 });

@@ -43,7 +43,7 @@ test("keeps constraints across lines and doesn't highlight tokens inside comment
   expect(tokens).not.toContainEqual({ type: "nonterminal", text: "Other" });
 
   const spans = tokenizeGrammarkdown(src);
-  expect(spans.every((token, i) => i === 0 || spans[i - 1]!.to <= token.from)).toBe(true);
+  expect(spans.every((token, i) => i === 0 || spans[i - 1].to <= token.from)).toBe(true);
 });
 
 test("updates editor decorations when an edit changes multiline context", () => {

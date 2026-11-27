@@ -48,13 +48,13 @@ test("plugin.configs.recommended includes cssdoc plugin", () => {
 
 test("plugin.configs.recommended includes valid-doc-comments rule", () => {
   const config = plugin.configs.recommended[0] as Record<string, Record<string, unknown>>;
-  const rules = config.rules as Record<string, unknown>;
+  const { rules } = config;
   expect(rules["cssdoc/valid-doc-comments"]).toBe("warn");
 });
 
 test("plugin.configs.strict includes error-level doc-comment rule", () => {
   const config = plugin.configs.strict[0] as Record<string, Record<string, unknown>>;
-  const rules = config.rules as Record<string, unknown>;
+  const { rules } = config;
   expect(rules["cssdoc/valid-doc-comments"]).toBeDefined();
   const ruleConfig = Array.isArray(rules["cssdoc/valid-doc-comments"])
     ? (rules["cssdoc/valid-doc-comments"] as unknown[])[0]
@@ -64,7 +64,7 @@ test("plugin.configs.strict includes error-level doc-comment rule", () => {
 
 test("plugin.configs.strict includes error-level options with strict rule enforcement", () => {
   const config = plugin.configs.strict[0] as Record<string, Record<string, unknown>>;
-  const rules = config.rules as Record<string, unknown>;
+  const { rules } = config;
   const ruleConfig = Array.isArray(rules["cssdoc/valid-doc-comments"])
     ? (rules["cssdoc/valid-doc-comments"] as unknown[])[1]
     : null;
@@ -76,7 +76,7 @@ test("plugin.configs.strict includes error-level options with strict rule enforc
 
 test("plugin.configs.relaxed includes warn-level with relaxed options", () => {
   const config = plugin.configs.relaxed[0] as Record<string, Record<string, unknown>>;
-  const rules = config.rules as Record<string, unknown>;
+  const { rules } = config;
   expect(rules["cssdoc/valid-doc-comments"]).toBeDefined();
   const ruleConfig = Array.isArray(rules["cssdoc/valid-doc-comments"])
     ? (rules["cssdoc/valid-doc-comments"] as unknown[])[1]
@@ -89,16 +89,16 @@ test("plugin.configs.relaxed includes warn-level with relaxed options", () => {
 });
 
 test("plugin.configs.classUsage() returns config for JS and HTML files", () => {
-  const result = plugin.configs.classUsage() as unknown[];
+  const result = plugin.configs.classUsage();
   expect(result).toHaveLength(2);
   expect((result[0] as Record<string, unknown>).files).toContain("**/*.{js,jsx,ts,tsx}");
   expect((result[1] as Record<string, unknown>).files).toContain("**/*.html");
 });
 
 test("plugin.configs.classUsage() with options passes css option to rules", () => {
-  const result = plugin.configs.classUsage({ css: ["dist/components.css"] }) as unknown[];
+  const result = plugin.configs.classUsage({ css: ["dist/components.css"] });
   const jsConfig = result[0] as Record<string, Record<string, unknown>>;
-  const rules = jsConfig.rules as Record<string, unknown>;
+  const { rules } = jsConfig;
   const classUsageRule = rules["cssdoc/valid-class-usage"];
   expect(Array.isArray(classUsageRule)).toBe(true);
   const ruleConfig = (classUsageRule as unknown[])[1] as Record<string, unknown>;
@@ -106,13 +106,13 @@ test("plugin.configs.classUsage() with options passes css option to rules", () =
 });
 
 test("plugin.configs.full() combines recommended and classUsage", () => {
-  const result = plugin.configs.full({ css: ["dist/components.css"] }) as unknown[];
+  const result = plugin.configs.full({ css: ["dist/components.css"] });
   // Should have recommended config + classUsage configs (3 total: 1 from recommended + 2 from classUsage)
   expect(result).toHaveLength(3);
 });
 
 test("plugin.configs.full() without options returns recommended + classUsage", () => {
-  const result = plugin.configs.full() as unknown[];
+  const result = plugin.configs.full();
   expect(result).toHaveLength(3);
 });
 
@@ -199,7 +199,7 @@ test("valid-custom-properties has proper meta structure", () => {
 
 test("valid-custom-properties schema is properly defined", () => {
   const rule = plugin.rules["valid-custom-properties"];
-  const schema = rule.meta.schema as unknown[];
+  const { schema } = rule.meta;
   // Schema is defined but empty since this rule doesn't take options
   expect(Array.isArray(schema)).toBe(true);
 });

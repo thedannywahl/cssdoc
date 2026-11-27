@@ -49,13 +49,13 @@ export const PATTERN_DEFINITIONS: Record<string, UnifiedPatternDef> = (() => {
   const result: Record<string, UnifiedPatternDef> = {};
   for (const [name, def] of Object.entries(rawDefs)) {
     const source = resolver(name);
-    const flags = (def.flags || "") as "u" | "v" | "";
+    const flags = def.flags || "";
 
     result[name] = {
       ...def,
       name,
       source,
-      ...(def.tier === 0 ? {} : { regex: arkRegex.as(source, flags as "u" | "v") }),
+      ...(def.tier === 0 ? {} : { regex: arkRegex.as(source, flags) }),
     };
   }
 

@@ -876,7 +876,7 @@ export function createIndex(
       selectorText: build?.selectorText ?? "",
       propertyValues: build?.propertyValues ?? new Map<string, Set<string>>(),
       resetValueUsages: build?.resetValueUsages ?? [],
-    } as RecordInfo;
+    };
   });
 
   // The custom-property value graph, for dev-tools-style `var()` resolution: seed each `@property`'s

@@ -812,6 +812,46 @@ test("promise lint prefers withResolvers over executor constructors", () => {
   }
 });
 
+test("type-aware lint flags redundant assertions but preserves narrowing at unknown boundaries", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/assertions-"));
+  try {
+    writeFileSync(
+      join(directory, "tsconfig.json"),
+      JSON.stringify({ extends: "../../../../tsconfig.base.json", include: ["*.ts"] }),
+    );
+    const file = join(directory, "assertions.ts");
+    writeFileSync(
+      file,
+      [
+        "export function redundant(value: string): string { return value as string; }",
+        "export function narrow(value: unknown): string { return value as string; }",
+        "export function guarded(value: string | undefined): string {",
+        '  if (value === undefined) throw new Error("Missing value");',
+        "  return value!;",
+        "}",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "typescript(no-unnecessary-type-assertion)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([
+        ["warning", 1],
+        ["warning", 5],
+      ]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));

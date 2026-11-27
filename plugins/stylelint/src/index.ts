@@ -94,10 +94,10 @@ const rule: Rule<boolean, SecondaryOptions> = (primary, secondaryOptions) => (ro
     rules: {
       ...(file ? configFile.ruleSeveritiesForFile(file) : configFile.ruleSeverities),
       ...secondaryOptions?.rules,
-    } as SecondaryOptions["rules"],
+    },
     ruleOptions: configFile.ruleOptions,
     modifierConvention: secondaryOptions?.modifierConvention ?? configFile.modifierConvention,
-    naming: { ...configFile.naming, ...secondaryOptions?.naming } as NamingRules,
+    naming: { ...configFile.naming, ...secondaryOptions?.naming },
     structureIgnore: secondaryOptions?.structureIgnore ?? configFile.structureIgnore,
     providerEntries: resolveProviders(configFile).entries,
   });
@@ -141,4 +141,6 @@ export const configs: {
 };
 
 /** Stylelint plugin registration for the cssdoc rule. */
-export default createPlugin(ruleName, rule) as ReturnType<typeof createPlugin>;
+const plugin: ReturnType<typeof createPlugin> = createPlugin(ruleName, rule);
+
+export default plugin;
