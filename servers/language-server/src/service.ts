@@ -262,7 +262,7 @@ function offsetAt(text: string, position: LspPosition): number {
 function positionAt(text: string, offset: number): LspPosition {
   const LINE_ENDING: Regex = arkRegex.as(LINE_ENDING_SOURCE, "gu");
   const upto = text.slice(0, offset).split(LINE_ENDING);
-  return { line: upto.length - 1, character: upto[upto.length - 1].length };
+  return { line: upto.length - 1, character: upto.at(-1)!.length };
 }
 
 function rangeOf(text: string, start: number, end: number): LspRange {

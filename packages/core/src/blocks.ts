@@ -120,7 +120,7 @@ export function blockSourceRange(
         return segment.sourceStart + offset - segment.textStart;
       }
     }
-    const last = block.segments[block.segments.length - 1];
+    const last = block.segments.at(-1)!;
     return last.sourceStart + last.length;
   };
   const sourceStart = point(start, false);
@@ -149,9 +149,9 @@ export function collectDocCommentBlocks(
   const text = lines.map((line) => line.text + line.ending).join("");
   const start = text.length - text.trimStart().length;
   let end = text.length;
-  const last = lines[lines.length - 1];
+  const last = lines.at(-1)!;
   if (framed && raw.endsWith("*/") && lines.length > 1 && last.text.trim() === "") {
-    const previous = lines[lines.length - 2];
+    const previous = lines.at(-2)!;
     end -= last.text.length + previous.ending.length;
     if (previous.ending === LINE_FEED_CHAR && previous.text.endsWith(CARRIAGE_RETURN_CHAR)) end--;
   }
@@ -229,7 +229,7 @@ export function collectDocCommentBlocks(
         }
       }
     } else if (blocks.length) {
-      const block = blocks[blocks.length - 1];
+      const block = blocks.at(-1)!;
       const { ending } = lines[lineIndex - 1];
       block.segments.push({
         textStart: block.text.length,
@@ -259,7 +259,7 @@ export function collectDocCommentBlocks(
   if (blocks.length && lineStart === end && lineIndex > 0) {
     const previous = lines[lineIndex - 1];
     if (previous.ending) {
-      const block = blocks[blocks.length - 1];
+      const block = blocks.at(-1)!;
       block.segments.push({
         textStart: block.text.length,
         sourceStart: previous.end,

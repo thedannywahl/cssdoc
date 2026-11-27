@@ -881,7 +881,7 @@ function queryKey(input: string, kind: "media" | "container"): QueryKey {
           return { status: "invalid" };
         }
       } else if (children.length !== 1) return { status: "invalid" };
-      if (children[children.length - 1].type !== "Condition") return { status: "unsupported" };
+      if (children.at(-1)!.type !== "Condition") return { status: "unsupported" };
     }
 
     let unsupported = false;

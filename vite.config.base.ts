@@ -138,7 +138,7 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/no-array-callback-reference": "warn",
       "unicorn/max-nested-calls": "off",
       "unicorn/prefer-number-coercion": "off",
-      "unicorn/prefer-at": "off",
+      "unicorn/prefer-at": "warn",
       "unicorn/prefer-type-error": "warn",
       "unicorn/prefer-single-call": "off",
       "unicorn/number-literal-case": "off",
