@@ -356,6 +356,36 @@ test("lint rejects accidental switch fallthrough", () => {
   }
 });
 
+test("lint rejects recursive accessors", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".accessor-check-"));
+  try {
+    const file = join(directory, "accessors.mjs");
+    writeFileSync(
+      file,
+      [
+        "class Broken { get value() { return this.value; } }",
+        "class Safe { get value() { return this.backing; } }",
+        "console.error(new Broken(), new Safe());",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "unicorn(no-accessor-recursion)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["error", 1]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("selected nursery rules check control flow, imports, and Node ESM globals", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".nursery-check-"));
