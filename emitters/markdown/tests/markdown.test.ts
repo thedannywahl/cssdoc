@@ -991,7 +991,7 @@ test("buildCssApi writes per-record pages, an index, and a compatible sidebar", 
   expect(index).toContain("## Utilities");
 
   const sidebar: unknown = JSON.parse(readFileSync(result.sidebarPath, "utf8"));
-  if (!Array.isArray(sidebar)) throw new Error("Expected a sidebar array");
+  if (!Array.isArray(sidebar)) throw new TypeError("Expected a sidebar array");
   const items: unknown[] = sidebar;
   const [overview] = items;
   expect(overview).toEqual({ text: "Overview", link: "/api/css/" });

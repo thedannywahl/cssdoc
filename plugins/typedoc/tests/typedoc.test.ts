@@ -17,7 +17,7 @@ const CSS = `
 
 function cssSidebarItems(path: string): unknown[] {
   const sidebar: unknown = JSON.parse(readFileSync(path, "utf8"));
-  if (!Array.isArray(sidebar)) throw new Error("Expected a sidebar array");
+  if (!Array.isArray(sidebar)) throw new TypeError("Expected a sidebar array");
   const entries: unknown[] = sidebar;
   const css = entries.find(
     (entry): entry is { text: unknown } =>

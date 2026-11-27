@@ -252,7 +252,7 @@ function effectiveMode(
     if (signals.has(node.type)) markdown = true;
     if (node.type === "paragraph") paragraphs++;
     if ("children" in node) {
-      if (!Array.isArray(node.children)) throw new Error("Invalid Markdown AST children");
+      if (!Array.isArray(node.children)) throw new TypeError("Invalid Markdown AST children");
       for (const child of node.children) visit(child);
     }
   };

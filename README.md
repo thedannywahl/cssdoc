@@ -109,6 +109,7 @@ accepting CommonJS-only globals. TypeScript checks undefined names separately.
 
 Type-aware linting rejects unsafe assignments, arguments, calls, member access, and returns in
 TypeScript. It also checks for redundant assertions, deprecated APIs, and potentially misleading template interpolations.
+Type-check failures throw `TypeError`; range failures use `RangeError`.
 Untyped JavaScript is excluded from the unsafe-boundary and interpolation checks because it lacks
 reliable type information; the standalone VS Code Lit example is also excluded from the assignment,
 call, and member-access checks.

@@ -861,6 +861,40 @@ test("type-aware lint flags redundant assertions and distinguishes non-null from
   }
 });
 
+test("lint prefers TypeError for a failed type check without changing operational errors", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".error-type-check-"));
+  try {
+    const file = join(directory, "errors.mjs");
+    writeFileSync(
+      file,
+      [
+        "export function legacy(value) {",
+        '  if (typeof value !== "string") throw new Error("Expected text");',
+        "}",
+        "export function modern(value) {",
+        '  if (typeof value !== "string") throw new TypeError("Expected text");',
+        "}",
+        'export function operational() { throw new Error("Request failed"); }',
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "unicorn(prefer-type-error)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["warning", 2]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));
