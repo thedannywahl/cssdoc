@@ -259,7 +259,7 @@ export const baseConfig: UserConfig = defineConfig({
       "import/no-nodejs-modules": "off",
       "import/group-exports": "off",
       "import/exports-last": "off",
-      "import/consistent-type-specifier-style": "off",
+      "import/consistent-type-specifier-style": ["warn", "prefer-top-level-if-only-type-imports"],
       "import/no-namespace": "off",
       "import/no-anonymous-default-export": "warn",
       // Oxfmt owns import ordering; keep value and type imports separate when appropriate.

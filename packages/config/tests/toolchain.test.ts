@@ -728,6 +728,43 @@ test("Vitest lint consistently uses test inside and outside describe", () => {
   }
 });
 
+test("import lint uses top-level type imports only when every import is a type", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".type-specifier-check-"));
+  try {
+    writeFileSync(
+      join(directory, "dependency.ts"),
+      "export interface Item { name: string; }\nexport const value = 1;\n",
+    );
+    const file = join(directory, "imports.ts");
+    writeFileSync(
+      file,
+      [
+        'import { type Item } from "./dependency.ts";',
+        'import type { Item as TopLevel } from "./dependency.ts";',
+        'import { value, type Item as Mixed } from "./dependency.ts";',
+        "const items: [Item, TopLevel, Mixed] = [{ name: 'a' }, { name: 'b' }, { name: 'c' }];",
+        "console.error(items, value);",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      // The type-only inline import also violates no-import-type-side-effects.
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "import(consistent-type-specifier-style)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["warning", 1]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));
