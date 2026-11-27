@@ -49,8 +49,9 @@ parser return unavailable for scope members. Unsupported selector syntax also re
 `resolveMediaMemberReference` and `resolveContainerMemberReference` similarly use source-backed
 query occurrences and compare CSS numbers without losing decimal precision. Container names retain
 their case. They return unavailable when a numeric spelling changes the token's integer type.
-Unsupported query syntax, including style queries and nested conditions that the CSS parser can't
-represent, also returns unavailable.
+Container `style()` declarations support exact values; comparisons involving different opaque
+values return unavailable. Unsupported query syntax and nested conditions the CSS parser can't
+represent also return unavailable.
 `resolveSupportsMemberReference` uses source-backed supports occurrences for declaration conditions
 and supported `selector()` functions.
 It preserves value case and integer token types where CSS interpretation may differ, returning

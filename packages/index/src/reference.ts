@@ -796,7 +796,7 @@ function supportsKey(input: string): SupportsKey {
 }
 
 type QueryKey =
-  | { status: "valid"; key: string; numericKey: string }
+  | { status: "valid"; key: string; numericKey: string; opaque: boolean }
   | { status: "invalid" }
   | { status: "unsupported" };
 
@@ -841,6 +841,7 @@ function queryKey(input: string, kind: "media" | "container"): QueryKey {
 
     let unsupported = false;
     let invalid = false;
+    let opaque = false;
     const numberTypes: string[] = [];
     const keyword = (name: string): string => {
       const decoded = ident.decode(name);
@@ -849,6 +850,23 @@ function queryKey(input: string, kind: "media" | "container"): QueryKey {
     };
     walk(ast, (node) => {
       switch (node.type) {
+        case "FeatureFunction":
+          if (
+            kind !== "container" ||
+            asciiLower(ident.decode(node.feature)) !== "style" ||
+            node.value.type !== "Declaration"
+          ) {
+            unsupported = true;
+            return walk.skip;
+          }
+          node.feature = "style";
+          node.value.property = ident.encode(
+            ident.decode(node.value.property).startsWith("--")
+              ? ident.decode(node.value.property)
+              : asciiLower(ident.decode(node.value.property)),
+          );
+          opaque = true;
+          return walk.skip;
         case "MediaQuery":
           if (
             node.mediaType &&
@@ -895,11 +913,13 @@ function queryKey(input: string, kind: "media" | "container"): QueryKey {
     if (invalid) return { status: "invalid" };
     if (unsupported) return { status: "unsupported" };
     const numericKey = generate(ast);
-    return { status: "valid", key: JSON.stringify([numericKey, numberTypes]), numericKey };
+    return { status: "valid", key: JSON.stringify([numericKey, numberTypes]), numericKey, opaque };
   } catch (error) {
     // css-tree doesn't parse all valid nested query conditions.
     if (error instanceof SyntaxError)
-      return { status: hasNestedQuery(input) ? "unsupported" : "invalid" };
+      return {
+        status: hasNestedQuery(input) || mayBeGeneralEnclosed(input) ? "unsupported" : "invalid",
+      };
     throw error;
   }
 }
@@ -973,7 +993,7 @@ export function resolveContainerMemberReference(
     const candidateKey = queryKey(occurrence.prelude, "container");
     if (candidateKey.status !== "valid") return { status: "unavailable", candidates: [record] };
     if (candidateKey.key === key.key) candidates.push({ record, occurrence });
-    else if (candidateKey.numericKey === key.numericKey)
+    else if (candidateKey.opaque || key.opaque || candidateKey.numericKey === key.numericKey)
       return { status: "unavailable", candidates: [record] };
   }
   if (candidates.length === 0) return { status: "missing" };

@@ -610,7 +610,7 @@ test("container members preserve occurrences, names, and complete lookup semanti
   });
   expect(resolve("other#container((width > 10px))")).toMatchObject({ status: "resolved" });
   const unsupported = createIndex(
-    "/** @component card */ @container style(--theme: dark) { .card {} }",
+    "/** @component card */ @container scroll-state(stuck: top) { .card {} }",
   );
   expect(resolve("card#container((width > 1px))", unsupported)).toMatchObject({
     status: "unavailable",
@@ -626,6 +626,26 @@ test("container members preserve occurrences, names, and complete lookup semanti
       workspace: { complete: true, sources: [{ index, sourceKey: "cards.css" }] },
     }),
   ).toBe("private");
+});
+
+test("container style queries retain case-sensitive custom-property values", () => {
+  const index = createIndex(`/** @component card */
+@container style(--Theme: Dark) { .card {} }
+@container STYLE(--Theme: Dark) { .card {} }`);
+  const resolve = (text: string) => {
+    const parsed = parseReference(text);
+    if (!parsed.ok) throw new Error(parsed.error);
+    return resolveContainerMemberReference(parsed.reference, {
+      workspace: { complete: true, sources: [{ index }] },
+    });
+  };
+  expect(resolve("card#container(style(--Theme: Dark))")).toMatchObject({
+    status: "ambiguous",
+    stage: "member",
+  });
+  expect(resolve("card#container(style(--Theme: dark))")).toMatchObject({ status: "unavailable" });
+  expect(resolve("card#container(style(--theme: Dark))")).toMatchObject({ status: "unavailable" });
+  expect(resolve("card#container(style(--Theme))")).toMatchObject({ status: "unavailable" });
 });
 
 test("supports members preserve occurrences without guessing value case sensitivity", () => {
