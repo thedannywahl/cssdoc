@@ -470,7 +470,7 @@ importers:
         version: '@voidzero-dev/vite-plus-core@8.3.8001(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1)'
       vite-plus:
         specifier: 'catalog:'
-        version: 1.8.0(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(@vitest/ui@5.1.1)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1)
+        version: 1.8.0(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1(@vitest/browser@5.1.1(@voidzero-dev/vite-plus-core@8.3.8001(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1))(vitest@5.1.1))(vitest@5.1.1))(@vitest/ui@5.1.1(vitest@5.1.1))(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1)
       vitepress-plugin-mermaid:
         specifier: 'catalog:'
         version: 2.0.17(mermaid@11.17.2)(vitepress@1.6.4(@algolia/client-search@5.65.0)(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(postcss@8.5.33)(publint@0.3.25)(search-insights@2.17.3)(typescript@7.1.0-beta)(yaml@2.9.1))
@@ -625,7 +625,7 @@ importers:
         version: '@voidzero-dev/vite-plus-core@8.3.8001(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1)'
       vite-plus:
         specifier: 'catalog:'
-        version: 1.8.0(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1(@vitest/browser@5.1.1(@voidzero-dev/vite-plus-core@8.3.8001(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1))(vitest@5.1.1))(vitest@5.1.1))(@vitest/ui@5.1.1(vitest@5.1.1))(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1)
+        version: 1.8.0(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(@vitest/ui@5.1.1)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1)
 
   emitters/json:
     dependencies:
@@ -1409,6 +1409,12 @@ importers:
       '@codemirror/view':
         specifier: 'catalog:'
         version: 6.43.15
+      '@cssdoc/core':
+        specifier: workspace:*
+        version: link:../../../packages/core
+      '@cssdoc/providers':
+        specifier: workspace:*
+        version: link:../../../packages/providers
       '@cssdoc/regex':
         specifier: workspace:*
         version: link:../../../packages/regex

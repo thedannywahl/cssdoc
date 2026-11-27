@@ -6,6 +6,7 @@ import {
   CSSDOC_BLOCK_TAG_NAME_SOURCE,
   CARRIAGE_RETURN_CHAR,
   LINE_FEED_CHAR,
+  LINE_ENDING_SOURCE,
 } from "@cssdoc/regex";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
@@ -40,6 +41,39 @@ export interface DocCommentSegment {
   sourceStart: number;
   /** Length in UTF-16 code units. */
   length: number;
+}
+
+/**
+ * Find fenced code lines in collected doc blocks, independently of prose mode.
+ *
+ * @param blocks - Blocks produced by {@link collectDocCommentBlocks}.
+ * @returns Half-open UTF-16 ranges relative to the original comment.
+ */
+export function docCommentFenceRanges(
+  blocks: readonly DocCommentBlock[],
+): { start: number; end: number }[] {
+  const ENDING: Regex = arkRegex.as(LINE_ENDING_SOURCE, "gu");
+  const STRUCTURE: Regex = arkRegex.as(`^${AT_SOURCE}structure(?:\\s|$)`, "u");
+  const ranges: { start: number; end: number }[] = [];
+  for (const block of blocks) {
+    if (STRUCTURE.exec(block.text) !== null) continue;
+    const state: CodeBoundaryState = { containers: [], indented: false, paragraph: false };
+    let start = 0;
+    let first = true;
+    for (const ending of [...block.text.matchAll(ENDING), undefined]) {
+      const end = ending?.index ?? block.text.length;
+      const line = block.text.slice(start, end);
+      const proseStart = first ? docProseStart(line) : 0;
+      const before = !!state.fence;
+      if (proseStart !== undefined) scanCodeBoundaryLine(line.slice(proseStart), state);
+      if ((before || state.fence) && end > start) {
+        ranges.push(blockSourceRange(block, start + (first ? (proseStart ?? 0) : 0), end));
+      }
+      first = false;
+      start = end + (ending?.[0].length ?? 0);
+    }
+  }
+  return ranges;
 }
 
 /**

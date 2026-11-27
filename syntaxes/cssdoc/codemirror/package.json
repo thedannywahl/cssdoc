@@ -36,6 +36,8 @@
     "@codemirror/language": "catalog:",
     "@codemirror/state": "catalog:",
     "@codemirror/view": "catalog:",
+    "@cssdoc/core": "workspace:*",
+    "@cssdoc/providers": "workspace:*",
     "@cssdoc/regex": "workspace:*",
     "@cssdoc/spec": "workspace:*",
     "arkregex": "catalog:"

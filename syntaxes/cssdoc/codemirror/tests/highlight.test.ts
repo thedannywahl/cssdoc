@@ -1,4 +1,5 @@
 import { expect, test } from "vite-plus/test";
+import { CssDocConfiguration, CssDocTagDefinition } from "@cssdoc/core/lite";
 import { tokenizeComment } from "../src/index.ts";
 
 const label = (src: string) =>
@@ -40,6 +41,59 @@ test("categorizes cssdoc doc-comment tags", () => {
   expect(toks).toContainEqual({ type: "property", text: "--tabs-gap" });
   expect(toks).toContainEqual({ type: "modifier", text: "-x" });
   expect(toks).toContainEqual({ type: "tag", text: "@a11y" });
+});
+
+test("uses configured block boundaries and doesn't mark fenced tags as active", () => {
+  const config = new CssDocConfiguration();
+  config.addTagDefinition(new CssDocTagDefinition({ tagName: "custom", syntaxKind: "block" }));
+  config.setSupportForTag(config.tryGetTagDefinition("summary")!, false);
+  const src = [
+    "/**",
+    " * @custom - Text",
+    " * @summary - Disabled",
+    " * @example -",
+    " * ```css",
+    " * @component hidden",
+    " * {@link missing} --hidden-token",
+    " * ```",
+    " */",
+  ].join("\r\n");
+  const tags = tokenizeComment(src, config)
+    .filter((token) => token.type === "tag")
+    .map((token) => src.slice(token.from, token.to));
+  expect(tags).toEqual(["@custom", "@example"]);
+  expect(
+    tokenizeComment(src, config).some((token) =>
+      src.slice(token.from, token.to).includes("missing"),
+    ),
+  ).toBe(false);
+  expect(
+    tokenizeComment(src, config).some(
+      (token) => src.slice(token.from, token.to) === "--hidden-token",
+    ),
+  ).toBe(false);
+});
+
+test("fences on an example header leave the block tag visible and hide incomplete code", () => {
+  const src = "/** @example - ```css\n * {@link hidden}\n * @component hidden";
+  expect(label(src).filter((token) => token.type === "tag")).toEqual([
+    { type: "tag", text: "@example" },
+  ]);
+});
+
+test("keeps structure highlighting inside nested CSS at-rules", () => {
+  const src = [
+    "/**",
+    " * @structure",
+    " * @scope (.card) {",
+    " *   .card { .label {} }",
+    " * }",
+    " * @summary Card.",
+    " */",
+  ].join("\n");
+  const tokens = label(src);
+  expect(tokens).toContainEqual({ type: "part", text: ".label" });
+  expect(tokens).toContainEqual({ type: "tag", text: "@summary" });
 });
 
 test("highlights @selector but not the removed @class tag", () => {

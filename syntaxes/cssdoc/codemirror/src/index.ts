@@ -22,6 +22,12 @@
  */
 import { syntaxTree } from "@codemirror/language";
 import type { Extension, Range } from "@codemirror/state";
+import {
+  collectDocCommentBlocks,
+  docCommentFenceRanges,
+  type CssDocConfiguration,
+} from "@cssdoc/core/lite";
+import { highlightDocComment } from "@cssdoc/providers/highlighting";
 import { CSSDOC_TAGS, cssdocTagNamesByArgument, cssdocTagNamesByKind } from "@cssdoc/spec";
 import { regex as arkRegex } from "arkregex";
 import {
@@ -42,8 +48,6 @@ import {
   BRACE_CLOSE_SOURCE,
   BRACE_OPEN_CHAR,
   BRACE_CLOSE_CHAR,
-  CSSDOC_STRUCTURE_TAG_KEYWORD,
-  CSSDOC_ANY_TAG_KEYWORD,
   CSSDOC_DIRECTIVE_KIND_SOURCE,
   TOKEN_CUSTOM_PROPERTY_SOURCE,
   TOKENIZER_INLINE_TAG_SOURCE,
@@ -167,8 +171,17 @@ const DIRECTIVE: RegExp = arkRegex.as(
 const DIRECTIVE_REASON = arkRegex.as(String.raw`\s-\s`, "u");
 const DIRECTIVE_RULE = arkRegex.as(String.raw`[^\s,]+`, "gu");
 
-/** Tokenize one CSS comment's text into cssdoc doc-tag spans (offsets are relative to `text`). */
-export const tokenizeComment = (text: string): CssdocToken[] => {
+/**
+ * Tokenize one CSS comment into doc-tag spans.
+ *
+ * @param text - Comment or unframed doc text.
+ * @param configuration - Optional tag vocabulary.
+ * @returns Spans relative to the supplied text.
+ */
+export const tokenizeComment = (
+  text: string,
+  configuration?: CssDocConfiguration,
+): CssdocToken[] => {
   const out: CssdocToken[] = [];
   const directive = DIRECTIVE.exec(text);
   if (directive) {
@@ -187,9 +200,23 @@ export const tokenizeComment = (text: string): CssdocToken[] => {
     }
     return out;
   }
+  const blockTags = highlightDocComment(text, configuration);
+  const allowedTags = new Set(blockTags.map((tag) => tag.start));
+  const blocks = collectDocCommentBlocks(text, configuration);
+  const fences = docCommentFenceRanges(blocks);
   for (const m of text.matchAll(TOKEN)) {
     const groups = m.indices?.groups;
     if (!groups) continue;
+    if (fences.some((range) => m.index >= range.start && m.index < range.end)) continue;
+    const blockTag =
+      groups.rtag ??
+      groups.mtag ??
+      groups.ptag ??
+      groups.proptag ??
+      groups.reftag ??
+      groups.membertag ??
+      groups.btag;
+    if (blockTag && !allowedTags.has(blockTag[0])) continue;
     for (const key of Object.keys(groups)) {
       const gi = groups[key];
       if (gi && gi[0] !== gi[1]) {
@@ -210,12 +237,16 @@ export const tokenizeComment = (text: string): CssdocToken[] => {
       }
     }
   }
-  // Second pass: highlight meaningful elements within each `@structure` body (from the tag to the next tag or comment end).
-  for (const m of text.matchAll(toRegExp(CSSDOC_STRUCTURE_TAG_KEYWORD))) {
-    const start = (m.index ?? 0) + m[0].length;
-    const after = text.slice(start).search(toRegExp(CSSDOC_ANY_TAG_KEYWORD));
-    const end = after === -1 ? text.length : start + after;
-    const body = text.slice(start, end);
+  for (const tag of blockTags) {
+    if (!out.some((token) => token.type === "tag" && token.from === tag.start)) {
+      out.push({ from: tag.start, to: tag.end, type: "tag" });
+    }
+  }
+  for (const block of blocks) {
+    const tag = blockTags.find((tag) => tag.start === block.start && tag.tag === "structure");
+    if (!tag) continue;
+    const start = tag.end;
+    const body = text.slice(start, block.end);
 
     // Pattern to match class selectors with required dot to avoid matching bare identifiers
     const classPattern = toRegExp(TOKEN_CLASS_SELECTOR_REQUIRED_DOT);
@@ -231,66 +262,65 @@ export const tokenizeComment = (text: string): CssdocToken[] => {
       out.push({ from, to: from + m[0].length, type: "punct" });
     }
   }
-  return out;
+  return out.toSorted((a, b) => a.from - b.from);
 };
-
-/** Tokenize one CSS comment and add highlighting decorations. */
-const tokenizeAndDecorate = (commentText: string): CssdocToken[] => tokenizeComment(commentText);
 
 /**
  * CodeMirror extension plugin that walks the syntax tree and highlights cssdoc doc-comment tags.
  * Returns decorations for each highlighted tag.
  */
-const cssdocPlugin = ViewPlugin.fromClass(
-  class {
-    decorations: DecorationSet;
+const cssdocPlugin = (configuration?: CssDocConfiguration) =>
+  ViewPlugin.fromClass(
+    class {
+      decorations: DecorationSet;
 
-    constructor(view: EditorView) {
-      this.decorations = this.generateDecorations(view);
-    }
-
-    update(update: ViewUpdate) {
-      if (
-        update.docChanged ||
-        update.viewportChanged ||
-        syntaxTree(update.startState) !== syntaxTree(update.state)
-      ) {
-        this.decorations = this.generateDecorations(update.view);
+      constructor(view: EditorView) {
+        this.decorations = this.generateDecorations(view);
       }
-    }
 
-    private generateDecorations(view: EditorView): DecorationSet {
-      const decorations: Range<Decoration>[] = [];
-      const seen = new Set<number>();
-      for (const { from, to } of view.visibleRanges) {
-        syntaxTree(view.state).iterate({
-          from,
-          to,
-          enter(node) {
-            if (node.name !== "Comment" || seen.has(node.from)) return;
-            seen.add(node.from);
-            const text = view.state.doc.sliceString(node.from, node.to);
-            for (const token of tokenizeAndDecorate(text)) {
-              const decoration = Decoration.mark({ class: `cm-cssdoc-${token.type}` });
-              decorations.push(decoration.range(node.from + token.from, node.from + token.to));
-            }
-          },
-        });
+      update(update: ViewUpdate) {
+        if (
+          update.docChanged ||
+          update.viewportChanged ||
+          syntaxTree(update.startState) !== syntaxTree(update.state)
+        ) {
+          this.decorations = this.generateDecorations(update.view);
+        }
       }
-      return Decoration.set(decorations, true);
-    }
-  },
-  {
-    decorations: (v) => v.decorations,
-  },
-);
+
+      private generateDecorations(view: EditorView): DecorationSet {
+        const decorations: Range<Decoration>[] = [];
+        const seen = new Set<number>();
+        for (const { from, to } of view.visibleRanges) {
+          syntaxTree(view.state).iterate({
+            from,
+            to,
+            enter(node) {
+              if (node.name !== "Comment" || seen.has(node.from)) return;
+              seen.add(node.from);
+              const text = view.state.doc.sliceString(node.from, node.to);
+              for (const token of tokenizeComment(text, configuration)) {
+                const decoration = Decoration.mark({ class: `cm-cssdoc-${token.type}` });
+                decorations.push(decoration.range(node.from + token.from, node.from + token.to));
+              }
+            },
+          });
+        }
+        return Decoration.set(decorations, true);
+      }
+    },
+    {
+      decorations: (v) => v.decorations,
+    },
+  );
 
 /**
  * CodeMirror extension that highlights cssdoc doc-comment tags and provides a base theme.
- * @returns A CodeMirror extension combining the highlighting plugin and theme
+ * @param configuration - Optional tag vocabulary.
+ * @returns A CodeMirror extension combining the highlighting plugin and theme.
  */
-export const cssdocHighlight = (): Extension => [
-  cssdocPlugin,
+export const cssdocHighlight = (configuration?: CssDocConfiguration): Extension => [
+  cssdocPlugin(configuration),
   EditorView.baseTheme({
     ".cm-cssdoc-tag": { color: "#d73a49" },
     ".cm-cssdoc-modifier": { color: "#6f42c1" },

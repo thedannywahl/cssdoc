@@ -6,6 +6,7 @@ import { libraryConfig } from "../../vite.config.base.ts";
 const config: UserConfig = mergeConfig(
   libraryConfig,
   defineConfig({
+    pack: { entry: ["src/index.ts", "src/highlighting.ts"], exports: false },
     run: {
       tasks: {
         build: "vp pack",

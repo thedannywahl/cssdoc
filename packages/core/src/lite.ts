@@ -22,7 +22,7 @@ export {
   stripCommentFraming,
 } from "./grammar.ts";
 export type { ParsedDoc, DocCssProperty, DocModifier, DocCondition } from "./grammar.ts";
-export { blockSourceRange, collectDocCommentBlocks } from "./blocks.ts";
+export { blockSourceRange, collectDocCommentBlocks, docCommentFenceRanges } from "./blocks.ts";
 export type { DocCommentBlock, DocCommentSegment } from "./blocks.ts";
 export type { DocCommentProse } from "./prose-shared.ts";
 export { safeProseUrl } from "./prose-url.ts";

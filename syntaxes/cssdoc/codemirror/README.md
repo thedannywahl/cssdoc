@@ -26,6 +26,10 @@ new EditorView({
 });
 ```
 
+Pass a `CssDocConfiguration` to `cssdocHighlight(configuration)` to enable custom block tags and
+respect disabled tags. Block boundaries and fenced code use the shared scanner. Inline-code and
+indented-code highlighting still use the lexical fallback.
+
 Colours ship as a base theme that follows the editor's light/dark theme, so it works out of the box.
 Override any token by styling its class: `.cm-cssdoc-tag`, `.cm-cssdoc-modifier`, `.cm-cssdoc-part`,
 `.cm-cssdoc-property`, `.cm-cssdoc-link`, `.cm-cssdoc-punct`, `.cm-cssdoc-record`,

@@ -1,4 +1,4 @@
-import { CssDocConfiguration, collectDocCommentBlocks } from "@cssdoc/core";
+import { CssDocConfiguration, collectDocCommentBlocks } from "@cssdoc/core/lite";
 import { AT_SOURCE, CSSDOC_BLOCK_TAG_NAME_SOURCE } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
 
