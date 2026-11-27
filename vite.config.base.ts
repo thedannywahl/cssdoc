@@ -129,8 +129,7 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/explicit-function-return-type": "off",
       // Vue's component declaration and autocomplete-friendly string unions use empty object types.
       "typescript/ban-types": "off",
-      // Vue's ambient component declaration needs empty generic placeholders.
-      "typescript/no-empty-object-type": "off",
+      "typescript/no-empty-object-type": "error",
       "unicorn/prefer-node-protocol": "error",
       "unicorn/no-accessor-recursion": "error",
       "unicorn/no-array-fill-with-reference-type": "error",

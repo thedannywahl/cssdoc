@@ -2388,6 +2388,46 @@ test("TSDoc definitions follow the cssdoc vocabulary", () => {
   ]);
 });
 
+test("lint rejects broad empty-object types but permits objects, unknown, and non-null intersections", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/.empty-object-check-"));
+  try {
+    writeFileSync(
+      join(directory, "tsconfig.json"),
+      JSON.stringify({ extends: "../../../../tsconfig.base.json", include: ["*.ts"] }),
+    );
+    const file = join(directory, "types.ts");
+    writeFileSync(
+      file,
+      [
+        "export type Broad = {};",
+        "export interface Empty {}",
+        "export type ObjectValue = object;",
+        "export type UnknownValue = unknown;",
+        "export type Defined<T> = T & {};",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../../docs/", import.meta.url))]) {
+      const result = spawnSync(
+        "vp",
+        ["lint", "--config", join(root, "vite.config.ts"), "--no-ignore", "--format", "json", file],
+        { cwd, encoding: "utf8" },
+      );
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "typescript(no-empty-object-type)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([
+        ["error", 1],
+        ["error", 2],
+      ]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects unrelated generic parameters but preserves input-output relationships", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, "packages/config/tests/.generic-parameter-check-"));

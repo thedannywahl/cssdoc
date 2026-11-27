@@ -132,6 +132,8 @@ produce resolution messages and don't contribute entries or cross-links.
 Generic parameters must express a type relationship, not just replace a concrete parameter type.
 The model's exact-type equality check needs fresh generic signatures to detect optional-field drift,
 so only that check is exempt.
+Use `object` for object values and `unknown` for untrusted values, not the broad `{}` type. Empty
+interfaces are rejected too; non-null intersections such as `T & {}` remain valid.
 Type-check failures throw `TypeError`; range failures use `RangeError`.
 End-relative array access uses `at`, and index searches compare against their `-1` sentinel.
 Collection conditions compare `length` or `size` explicitly against zero or the required threshold.
