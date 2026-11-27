@@ -228,7 +228,7 @@ export function collectDocCommentBlocks(
           scanCodeBoundaryLine(normalizedCodeBoundaryText(line.slice(proseStart)), codeState);
         }
       }
-    } else if (blocks.length) {
+    } else if (blocks.length > 0) {
       const block = blocks.at(-1)!;
       const { ending } = lines[lineIndex - 1];
       block.segments.push({
@@ -236,7 +236,7 @@ export function collectDocCommentBlocks(
         sourceStart: lines[lineIndex - 1].end,
         length: ending.length,
       });
-      if (line.length) {
+      if (line.length > 0) {
         block.segments.push({
           textStart: block.text.length + ending.length,
           sourceStart,
@@ -256,7 +256,7 @@ export function collectDocCommentBlocks(
     lineStart += framedLine.text.length + framedLine.ending.length;
     leadingTrim = 0;
   }
-  if (blocks.length && lineStart === end && lineIndex > 0) {
+  if (blocks.length > 0 && lineStart === end && lineIndex > 0) {
     const previous = lines[lineIndex - 1];
     if (previous.ending) {
       const block = blocks.at(-1)!;

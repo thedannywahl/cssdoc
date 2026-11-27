@@ -166,7 +166,7 @@ function memberReference(text: string): CssDocReference["member"] | undefined {
             ? BRACKET_OPEN_CHAR
             : BRACE_OPEN_CHAR;
       if (stack.pop() !== expected) return undefined;
-      if (!stack.length) {
+      if (stack.length === 0) {
         const subject = text.slice(open + 1, i);
         if (i !== text.length - 1 || (!subject.trim() && kind !== "slot" && kind !== "scope")) {
           return undefined;

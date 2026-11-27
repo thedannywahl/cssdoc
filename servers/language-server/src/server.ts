@@ -174,14 +174,15 @@ export function startLanguageServer(): void {
         providers = { entries: [], messages: [], href: () => undefined };
       }
       for (const message of providers.messages) connection.console.warn(message);
-      const siblingIndex = providers.entries.length
-        ? indexFromEntries(
-            [...index.entries, ...providers.entries],
-            undefined,
-            undefined,
-            index.matcher,
-          )
-        : index;
+      const siblingIndex =
+        providers.entries.length > 0
+          ? indexFromEntries(
+              [...index.entries, ...providers.entries],
+              undefined,
+              undefined,
+              index.matcher,
+            )
+          : index;
       // Keep the combined index for cross-file value resolution, but resolve definitions against
       // individual source files: concatenation loses file URIs and shifts every later file's spans.
       const definitionCache = new Map<string, ReturnType<typeof createIndex>>();
@@ -227,13 +228,14 @@ export function startLanguageServer(): void {
 
   const discover = (): void => {
     try {
-      cssPaths = workspaceRoots.length
-        ? [
-            ...new Set(
-              workspaceRoots.flatMap((root) => discoverStylesheets([root], optionsFor(root))),
-            ),
-          ].toSorted()
-        : discoverStylesheets([], optionsFor());
+      cssPaths =
+        workspaceRoots.length > 0
+          ? [
+              ...new Set(
+                workspaceRoots.flatMap((root) => discoverStylesheets([root], optionsFor(root))),
+              ),
+            ].toSorted()
+          : discoverStylesheets([], optionsFor());
     } catch (error) {
       connection.console.error(`Cannot discover workspace stylesheets: ${String(error)}`);
     }
@@ -346,13 +348,14 @@ export function startLanguageServer(): void {
     if (!supportsConfiguration) return;
     const generation = ++configurationGeneration;
     const roots = [...workspaceRoots];
-    const items = roots.length
-      ? roots.map((root) => ({ scopeUri: pathToFileURL(root).href, section: "cssdoc" }))
-      : [{ section: "cssdoc" }];
+    const items =
+      roots.length > 0
+        ? roots.map((root) => ({ scopeUri: pathToFileURL(root).href, section: "cssdoc" }))
+        : [{ section: "cssdoc" }];
     try {
       const values: unknown[] = await connection.workspace.getConfiguration(items);
       if (generation !== configurationGeneration) return;
-      if (roots.length) {
+      if (roots.length > 0) {
         folderSettings = new Map(
           roots.map((root, index) => [root, parseClientSettings(values[index])]),
         );

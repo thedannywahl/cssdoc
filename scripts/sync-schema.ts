@@ -57,7 +57,7 @@ export function findSchemaDrift(): string[] {
 if (import.meta.main) {
   if (process.argv.includes("--check")) {
     const drifted = findSchemaDrift();
-    if (drifted.length) {
+    if (drifted.length > 0) {
       console.error("cssdoc.schema.json is out of sync — run `vp run sync:schema`:");
       for (const rel of drifted) console.error(`  ✗ ${rel}`);
       process.exit(1);

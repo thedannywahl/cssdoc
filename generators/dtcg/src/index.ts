@@ -51,7 +51,7 @@ export type DtcgDocument = Record<string, Record<string, DtcgToken>>;
 export function toDtcg(index: CssDocIndex): DtcgDocument {
   const root: DtcgDocument = {};
   for (const entry of index.entries) {
-    if (!entry.cssPropertiesDeclared.length) continue;
+    if (entry.cssPropertiesDeclared.length === 0) continue;
     const group: Record<string, DtcgToken> = {};
     for (const property of entry.cssPropertiesDeclared) {
       const type = dtcgType(property.syntax);

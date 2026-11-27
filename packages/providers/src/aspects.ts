@@ -300,7 +300,7 @@ const renderStructureTree = (nodes: StructureNode[], depth = 0): string[] =>
       ? `${COLON_CHAR}is${PAREN_OPEN_CHAR}${n.colocated}${PAREN_CLOSE_CHAR}`
       : "";
     const label = `${n.selector}${colocSuffix}`;
-    return n.children.length
+    return n.children.length > 0
       ? [
           `${pad}${label} ${BRACE_OPEN_CHAR}${note}`,
           ...renderStructureTree(n.children, depth + 1),
@@ -408,7 +408,7 @@ export const record = {
 
       const refs = info.entry.refs ?? [];
       const annotationRows = info.entry.annotations ?? [];
-      if (refs.length) {
+      if (refs.length > 0) {
         const annotations = new Set(annotationRows.map((a) => a.ref));
         for (const ref of refs) {
           const refId = typeof ref === "object" ? ref.ref : ref;
@@ -836,17 +836,17 @@ export const record = {
       if (entry.summary) lines.push("", entry.summary);
       if (deprecatedLine) lines.push("", deprecatedLine);
       const facets = [
-        entry.modifiers.length && `${entry.modifiers.length} modifiers`,
-        entry.parts.length && `${entry.parts.length} parts`,
-        entry.shadowParts.length && `${entry.shadowParts.length} shadow parts`,
-        entry.pseudoElements.length && `${entry.pseudoElements.length} pseudo-elements`,
-        entry.states.length && `${entry.states.length} states`,
-        entry.cssPropertiesDeclared.length &&
+        entry.modifiers.length > 0 && `${entry.modifiers.length} modifiers`,
+        entry.parts.length > 0 && `${entry.parts.length} parts`,
+        entry.shadowParts.length > 0 && `${entry.shadowParts.length} shadow parts`,
+        entry.pseudoElements.length > 0 && `${entry.pseudoElements.length} pseudo-elements`,
+        entry.states.length > 0 && `${entry.states.length} states`,
+        entry.cssPropertiesDeclared.length > 0 &&
           `${entry.cssPropertiesDeclared.length} custom properties`,
-        entry.functions.length && `${entry.functions.length} functions`,
-        entry.conditions.length && `${entry.conditions.length} conditions`,
+        entry.functions.length > 0 && `${entry.functions.length} functions`,
+        entry.conditions.length > 0 && `${entry.conditions.length} conditions`,
       ].filter(Boolean);
-      if (facets.length) lines.push("", facets.join(" · "));
+      if (facets.length > 0) lines.push("", facets.join(" · "));
       return { contents: sanitizeMarkdownLinks(lines.join("\n")) };
     }
 

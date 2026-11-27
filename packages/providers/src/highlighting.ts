@@ -192,7 +192,7 @@ export function highlightDocComment(
   const TAG = arkRegex.as(`^${AT_SOURCE}(${CSSDOC_BLOCK_TAG_NAME_SOURCE})`, "u");
   const result: DocHighlight[] = [];
   const doc = parseDocComment(text, configuration);
-  if (!doc.blocks.length) {
+  if (doc.blocks.length === 0) {
     const mode = configuration.proseModeFor("remarks");
     addInlineHighlights(
       result,

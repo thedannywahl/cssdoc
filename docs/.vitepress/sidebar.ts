@@ -161,7 +161,7 @@ const groupedPackages = (packages: SidebarItem[], activePackage?: string): Sideb
     ),
   }));
   const other = packages.filter((item) => !item.text || !known.has(item.text));
-  if (other.length) {
+  if (other.length > 0) {
     groups.push({
       text: "Other",
       collapsed: true,

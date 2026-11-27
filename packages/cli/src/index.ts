@@ -147,7 +147,7 @@ function offsetAt(source: string, position: SourceSpan["start"]): number {
 
 function applyFixes(source: string, violations: readonly Violation[]): string {
   const edits = violations.flatMap((violation) => violation.fix?.edits ?? []);
-  if (!edits.length) return source;
+  if (edits.length === 0) return source;
   const ordered = edits
     .map((edit, index) => ({
       edit,
@@ -207,7 +207,7 @@ function formatPretty(results: FileResult[]): string {
   let errors = 0;
   let warnings = 0;
   for (const { file, violations } of results) {
-    if (!violations.length) continue;
+    if (violations.length === 0) continue;
     lines.push(file);
     for (const v of violations) {
       if (v.severity === "error") errors++;

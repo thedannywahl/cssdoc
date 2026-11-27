@@ -502,7 +502,7 @@ function structureLabel(
         .filter((c) => c !== self)
         .map((c) => resolveComponent?.(c))
         .filter((c): c is NonNullable<typeof c> => Boolean(c));
-      if (resolved.length) {
+      if (resolved.length > 0) {
         base = resolved.map((c) => c.name).join(" | ");
         kind = "component";
       }
@@ -517,7 +517,7 @@ function structureLabel(
   const tags = [kind, node.cardinality ? cardinalityToken(node.cardinality) : undefined].filter(
     Boolean,
   );
-  const label = tags.length ? `${base} (${tags.join(", ")})` : base;
+  const label = tags.length > 0 ? `${base} (${tags.join(", ")})` : base;
   return node.description ? `${label} — ${node.description}` : label;
 }
 
@@ -641,7 +641,7 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
   }
   const src = options.resolveSource?.(entry);
   if (src) meta.push(`**Source:** [${escProse(src.label ?? "source")}](${src.href})`);
-  if (meta.length) lines.push(meta.join(" · "), "");
+  if (meta.length > 0) lines.push(meta.join(" · "), "");
 
   // Each reorderable section builds its own fragment; they're emitted in `sectionOrder` below.
   const fragments = {} as Record<SectionKey, string[]>;
@@ -651,7 +651,7 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
   if (spec) fragments.demo.push("## Demo", "", ...fencedBlock("demo", spec), "");
 
   const examples = selectExampleIndices(entry, options.exampleFilter);
-  if (examples.length) {
+  if (examples.length > 0) {
     fragments.examples.push("## Examples", "");
     for (const index of examples) {
       const raw = entry.examples[index];
@@ -692,9 +692,9 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
     if (importSnippet) fragments.usage.push(...fencedBlock("css", importSnippet), "");
   }
 
-  if ((annotations.length || refs.length) && options.includeAnnotations) {
+  if ((annotations.length > 0 || refs.length > 0) && options.includeAnnotations) {
     fragments.annotations.push("## Annotations", "");
-    if (annotations.length) {
+    if (annotations.length > 0) {
       fragments.annotations.push(
         ...table(
           ["Ref", "Annotation"],
@@ -702,7 +702,7 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
         ),
       );
     }
-    if (refs.length) {
+    if (refs.length > 0) {
       fragments.annotations.push(
         `**Refs:** ${refs.map((r) => `\`${typeof r === "object" ? r.ref : r}\``).join(", ")}`,
         "",
@@ -710,7 +710,7 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
     }
   }
 
-  if (entry.modifiers.length) {
+  if (entry.modifiers.length > 0) {
     const rows = entry.modifiers.map((m) => {
       const aliasFromDescription: { canonical?: string; note?: string } | undefined =
         !m.alias && m.description?.match(ALIAS_PREFIX)
@@ -764,7 +764,7 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
     fragments.modifiers.push("## Modifiers", "", ...table(["Modifier", "Description"], rows));
   }
 
-  if (entry.parts.length) {
+  if (entry.parts.length > 0) {
     fragments.parts.push(
       "## Parts",
       "",
@@ -775,7 +775,7 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
     );
   }
 
-  if (entry.shadowParts.length) {
+  if (entry.shadowParts.length > 0) {
     fragments.shadowParts.push(
       "## Shadow parts",
       "",
@@ -786,7 +786,7 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
     );
   }
 
-  if (entry.pseudoElements.length) {
+  if (entry.pseudoElements.length > 0) {
     fragments.pseudoElements.push(
       "## Pseudo-elements",
       "",
@@ -797,7 +797,7 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
     );
   }
 
-  if (entry.states.length) {
+  if (entry.states.length > 0) {
     fragments.states.push(
       "## States",
       "",
@@ -819,7 +819,7 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
     );
   }
 
-  if (entry.slots.length) {
+  if (entry.slots.length > 0) {
     fragments.slots.push(
       "## Slots",
       "",
@@ -919,7 +919,7 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
   // parent (below) — a member doesn't need to be nested in this record's own `@structure` tree.
   const membersByName = new Map(structuralSubs.map((s) => [s.name, s]));
   for (const m of options.members ?? []) membersByName.set(m.name, m);
-  if (membersByName.size) {
+  if (membersByName.size > 0) {
     fragments.subcomponents.push("## Subcomponents", "");
     for (const s of [...membersByName.values()].toSorted((a, b) => a.name.localeCompare(b.name))) {
       fragments.subcomponents.push(`- [${escProse(s.name)}](${s.href})`);
@@ -927,7 +927,7 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
     fragments.subcomponents.push("");
   }
 
-  if (entry.cssPropertiesDeclared.length) {
+  if (entry.cssPropertiesDeclared.length > 0) {
     fragments.cssProperties.push(
       "## Custom properties",
       "",
@@ -943,7 +943,7 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
     );
   }
 
-  if (entry.functions.length) {
+  if (entry.functions.length > 0) {
     fragments.functions.push(
       "## Functions",
       "",
@@ -951,7 +951,7 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
         ["Function", "Parameters", "Returns", "Description"],
         entry.functions.map((f) => [
           `\`${f.name}\``,
-          f.parameters.length ? f.parameters.map((p) => `\`${p}\``).join(", ") : "—",
+          f.parameters.length > 0 ? f.parameters.map((p) => `\`${p}\``).join(", ") : "—",
           code(f.result),
           cell(f.description),
         ]),
@@ -959,7 +959,7 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
     );
   }
 
-  if (entry.animations.length) {
+  if (entry.animations.length > 0) {
     fragments.animations.push(
       "## Animations",
       "",
@@ -970,7 +970,7 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
     );
   }
 
-  if (entry.layers.length) {
+  if (entry.layers.length > 0) {
     fragments.layers.push(
       "## Cascade layers",
       "",
@@ -981,7 +981,7 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
     );
   }
 
-  if (entry.conditions.length) {
+  if (entry.conditions.length > 0) {
     fragments.conditions.push(
       "## Conditions",
       "",
@@ -999,7 +999,7 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
   // A `@cssproperty`-declared property is the component's own knob — keep it out of "Tokens consumed".
   const declaredNames = new Set(entry.cssPropertiesDeclared.map((p) => p.name));
   const consumed = entry.cssPropertiesConsumed.filter((t) => !declaredNames.has(t.name));
-  if (consumed.length) {
+  if (consumed.length > 0) {
     fragments.tokensConsumed.push("## Tokens consumed", "");
     const hasDescriptions = consumed.some((t) => t.description);
     if (options.resolveToken) {
@@ -1028,7 +1028,7 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
     }
   }
 
-  if (entry.compat.length) {
+  if (entry.compat.length > 0) {
     fragments.compat.push("## Browser support", "");
     for (const note of entry.compat) fragments.compat.push(`- ${escProse(note)}`);
     fragments.compat.push("");
@@ -1043,7 +1043,7 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
     );
   }
 
-  if (entry.related.length) {
+  if (entry.related.length > 0) {
     const baseHref = options.baseHref ?? "./";
     fragments.related.push("## Related", "");
     for (const rel of entry.related) {
@@ -1057,7 +1057,7 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
     fragments.related.push("");
   }
 
-  if (entry.see.length) {
+  if (entry.see.length > 0) {
     fragments.see.push("## See also", "");
     for (const ref of entry.see) fragments.see.push(`- ${escProse(ref)}`);
     fragments.see.push("");

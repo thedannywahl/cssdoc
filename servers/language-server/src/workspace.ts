@@ -59,7 +59,7 @@ export function parseClientSettings(value: unknown): ClientSettings {
   const settings: ClientSettings = {};
   if ("css" in config) {
     const paths = strings(config.css, "css");
-    settings.css = paths.length ? paths : undefined;
+    settings.css = paths.length > 0 ? paths : undefined;
   }
   if ("include" in config) settings.include = strings(config.include, "include");
   if ("exclude" in config) settings.exclude = strings(config.exclude, "exclude");
@@ -185,7 +185,7 @@ export function discoverConfigDirectories(root: string, depth: number): string[]
   const found = new Set<string>();
   const pending = [{ dir: root, level: 0 }];
   const excluded = new Set(["node_modules", "dist", "build"]);
-  while (pending.length) {
+  while (pending.length > 0) {
     const { dir, level } = pending.pop()!;
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       if (entry.name === "cssdoc.json" || entry.name === "cssdoc.jsonc") found.add(dir);
@@ -213,7 +213,7 @@ export function discoverStylesheets(
   roots: readonly string[],
   options: WorkspaceDiscoveryOptions = {},
 ): string[] {
-  const bases = roots.length ? roots : [process.cwd()];
+  const bases = roots.length > 0 ? roots : [process.cwd()];
   const explicit = options.css;
   if (explicit !== undefined) {
     return [...new Set(bases.flatMap((root) => explicit.map((p) => resolve(root, p))))].toSorted();

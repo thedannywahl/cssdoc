@@ -639,7 +639,7 @@ export class CssDocLanguageService {
 
   /** Replace all config scopes (multi-config path; one per governing `cssdoc.json`). */
   setScopes(scopes: ConfigScope[]): void {
-    if (scopes.length) this.scopes = scopes;
+    if (scopes.length > 0) this.scopes = scopes;
   }
 
   private workspaceScopes(path?: string): ConfigScope[] {
@@ -650,14 +650,14 @@ export class CssDocLanguageService {
         (root): root is string => root !== undefined && root !== "" && containsPath(root, path),
       )
       .toSorted((a, b) => b.length - a.length);
-    if (roots.length) {
+    if (roots.length > 0) {
       return this.scopes.filter(
         (scope) => !scope.workspaceRoot || scope.workspaceRoot === roots[0],
       );
     }
     if (!this.scopes.some((scope) => scope.workspaceRoot)) return this.scopes;
     const shared = this.scopes.filter((scope) => !scope.workspaceRoot);
-    return shared.length ? shared : [this.outsideWorkspace];
+    return shared.length > 0 ? shared : [this.outsideWorkspace];
   }
 
   /** The scope governing `path` — the deepest `cssdoc.json` dir containing it, else the default. */
@@ -780,7 +780,7 @@ export class CssDocLanguageService {
    *  `class:name`, where the cursor sits in a string that isn't a `class="…"` attribute. */
   private usageSiteAt(text: string, offset: number): string[] | undefined {
     for (const site of scanClassUsages(text)) {
-      if (!site.tokens.length) continue;
+      if (site.tokens.length === 0) continue;
       const min = Math.min(...site.tokens.map((t) => t.start));
       const max = Math.max(...site.tokens.map((t) => t.end));
       if (offset >= min && offset <= max) return site.tokens.map((t) => t.token);

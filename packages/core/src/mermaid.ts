@@ -168,13 +168,13 @@ function classify(node: StructureNode, isRoot: boolean, options: MermaidOptions)
     return { klass: "cssdoc-component", label, href: component?.href };
   }
   const primary = allClasses(node.selector).filter((c) => c !== options.self);
-  if (primary.length) {
+  if (primary.length > 0) {
     const resolved = primary
       .map((c) => options.resolveComponent?.(c))
       .filter((c): c is NonNullable<typeof c> => Boolean(c));
     // A comma-separated alternation list (`.a, .b`) joins every resolved sibling with ` | `; the click
     // link only makes sense when exactly one component resolved (an ambiguous target links to none).
-    if (resolved.length) {
+    if (resolved.length > 0) {
       return {
         klass: "cssdoc-component",
         label: resolved.map((c) => c.name).join(" | "),
@@ -208,7 +208,7 @@ function classify(node: StructureNode, isRoot: boolean, options: MermaidOptions)
  * ```
  */
 export function toMermaid(roots: StructureNode[], options: MermaidOptions = {}): string {
-  if (!roots.length) return "";
+  if (roots.length === 0) return "";
   const { nodes, edges, links } = renderTrees([{ roots }], options);
   return [
     `flowchart ${options.direction ?? "TD"}`,
@@ -236,7 +236,7 @@ export function toMermaidVariants(
   const groups = variants
     .filter((v) => v.nodes.length)
     .map((v, i) => ({ roots: v.nodes, label: v.name ?? `Variant ${i + 1}` }));
-  if (!groups.length) return "";
+  if (groups.length === 0) return "";
   const { nodes, edges, links } = renderTrees(groups, options);
   return [
     `flowchart ${options.direction ?? "TD"}`,

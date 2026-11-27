@@ -912,7 +912,7 @@ function buildEntry(
   const { structure } = doc;
 
   // Attach `@wrapper` prose to the matching `@structure` node(s) by derived selector name or aliased selector.
-  if (doc.wrappers.size && structure?.length) {
+  if (doc.wrappers.size > 0 && structure?.length) {
     const applyWrappers = (wrapperNodes: StructureNode[]): void => {
       for (const node of wrapperNodes) {
         const derivedName = deriveSelectorName(node.selector);
@@ -997,7 +997,7 @@ function buildEntry(
     layers: [...acc.layers.values()].toSorted(byName),
     conditions: acc.conditions,
     examples: doc.examples,
-    ...(doc.prose.length ? { prose: doc.prose } : {}),
+    ...(doc.prose.length > 0 ? { prose: doc.prose } : {}),
     ...(doc.exampleLabels ? { exampleLabels: doc.exampleLabels } : {}),
     ...(doc.privateExamples ? { privateExamples: doc.privateExamples } : {}),
     structure,
@@ -1024,8 +1024,8 @@ function buildEntry(
     compat: doc.compat,
     related: doc.related,
     ...(doc.memberOf ? { memberOf: doc.memberOf } : {}),
-    ...(members.length ? { members } : {}),
-    ...(memberDeclarations.length ? { memberDeclarations } : {}),
+    ...(members.length > 0 ? { members } : {}),
+    ...(memberDeclarations.length > 0 ? { memberDeclarations } : {}),
     elements,
     global: doc.global,
     ...(source ? { source } : {}),

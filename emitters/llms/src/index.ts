@@ -129,7 +129,7 @@ export function renderLlms(
     if (e.deprecated) lines.push(`Deprecated: ${clean(e.deprecated)}`);
 
     const facet = (label: string, items: string[]): void => {
-      if (items.length) lines.push(`- ${label}: ${items.join(", ")}`);
+      if (items.length > 0) lines.push(`- ${label}: ${items.join(", ")}`);
     };
     facet("Modifiers", e.modifiers.map(modifier));
     facet(

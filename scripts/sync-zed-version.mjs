@@ -51,7 +51,7 @@ export function syncZedVersion(directory, write = false) {
   });
 
   const mismatches = changes.filter(({ current }) => current !== version);
-  if (!write && mismatches.length) {
+  if (!write && mismatches.length > 0) {
     throw new Error(
       `Zed versions differ from ${version}: ${mismatches.map(({ path, current }) => `${path} (${current})`).join(", ")}`,
     );

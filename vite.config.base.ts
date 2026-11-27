@@ -137,7 +137,7 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/no-accessor-recursion": "error",
       "unicorn/no-array-fill-with-reference-type": "error",
       // Review remaining syntax and scoping conventions individually, not as a blanket preset.
-      "unicorn/explicit-length-check": "off",
+      "unicorn/explicit-length-check": "warn",
       "unicorn/import-style": "off",
       "unicorn/prefer-string-raw": "warn",
       "unicorn/no-nested-ternary": "off",

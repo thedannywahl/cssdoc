@@ -119,7 +119,7 @@ const injectTags = (pattern: string, tags: readonly string[]): string =>
 const TOKEN = arkRegex.as(
   [
     injectTags(TOKENIZER_RECORD_TAG_SOURCE, RECORD_TAGS),
-    ...(MODIFIER_TAGS.length ? [injectTags(TOKENIZER_MODIFIER_TAG_SOURCE, MODIFIER_TAGS)] : []),
+    ...(MODIFIER_TAGS.length > 0 ? [injectTags(TOKENIZER_MODIFIER_TAG_SOURCE, MODIFIER_TAGS)] : []),
     injectTags(TOKENIZER_PART_TAG_SOURCE, PART_TAGS),
     injectTags(TOKENIZER_PROPERTY_TAG_SOURCE, PROPERTY_TAGS),
     injectTags(TOKENIZER_REF_TAG_SOURCE, ["ref"]),
@@ -163,7 +163,7 @@ export const tokenizeComment = (
 ): CssdocToken[] => {
   const out: CssdocToken[] = [];
   const directives = highlightDirectives(text);
-  if (directives.length) {
+  if (directives.length > 0) {
     return directives.map((range) => ({
       from: range.start,
       to: range.end,

@@ -89,7 +89,7 @@ export function projectPublicExamples(entry: CssDocEntry): CssDocEntry {
   return {
     ...rest,
     examples,
-    ...(Object.keys(labels).length ? { exampleLabels: labels } : {}),
+    ...(Object.keys(labels).length > 0 ? { exampleLabels: labels } : {}),
     ...(prose?.length ? { prose } : {}),
   };
 }

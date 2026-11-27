@@ -104,14 +104,14 @@ ${body}
 }
 
 function table(headers: string[], rows: string[][]): string {
-  if (!rows.length) return "";
+  if (rows.length === 0) return "";
   const head = `<tr>${headers.map((h) => `<th>${esc(h)}</th>`).join("")}</tr>`;
   const body = rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("\n");
   return `<table>${head}\n${body}</table>`;
 }
 
 function structureList(nodes: StructureNode[]): string {
-  if (!nodes.length) return "";
+  if (nodes.length === 0) return "";
   const items = nodes
     .map((n) => {
       if (n.variants !== undefined) {
@@ -182,7 +182,7 @@ export function renderPage(
     entry.since && `<strong>Since:</strong> ${esc(entry.since)}`,
     entry.group && `<strong>Group:</strong> ${esc(entry.group)}`,
   ].filter(Boolean);
-  if (meta.length) parts.push(`<p>${meta.join(" · ")}</p>`);
+  if (meta.length > 0) parts.push(`<p>${meta.join(" · ")}</p>`);
 
   const section = (title: string, html: string): void => {
     if (html) parts.push(`<h2>${title}</h2>`, html);
@@ -190,13 +190,13 @@ export function renderPage(
 
   section(
     "Annotations",
-    (annotations.length
+    (annotations.length > 0
       ? table(
           ["Ref", "Annotation"],
           annotations.map((a) => [code(String(a.ref)), prose(a.text)]),
         )
       : "") +
-      (refs.length
+      (refs.length > 0
         ? `<p><strong>Refs:</strong> ${refs
             .map((r) => code(String(typeof r === "object" ? r.ref : r)))
             .join(", ")}</p>`
@@ -343,7 +343,7 @@ export function renderPage(
     );
   }
   const examples = selectExampleIndices(entry, options.exampleFilter);
-  if (examples.length) {
+  if (examples.length > 0) {
     section(
       "Examples",
       examples
@@ -355,7 +355,7 @@ export function renderPage(
     );
   }
   if (entry.accessibility) section("Accessibility", renderProse(entry.accessibility));
-  if (entry.see.length) {
+  if (entry.see.length > 0) {
     section("See also", `<ul>${entry.see.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>`);
   }
 

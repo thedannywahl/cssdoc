@@ -98,7 +98,7 @@ export function structureCustomMediaRefs(
           profile: parsed.profile,
         });
       }
-      if (node.children.length) visit(source, node.children);
+      if (node.children.length > 0) visit(source, node.children);
       for (const variant of node.variants ?? []) visit(source, variant.nodes);
     }
   };
@@ -151,5 +151,5 @@ export function buildCustomMediaDeclarations(
       lines.push(`@custom-media ${profile} ${value ? "true" : "false"};`);
     }
   }
-  return lines.length ? `${lines.join("\n")}\n` : "";
+  return lines.length > 0 ? `${lines.join("\n")}\n` : "";
 }

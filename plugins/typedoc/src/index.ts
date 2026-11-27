@@ -73,7 +73,7 @@ export function load(app: Application): void {
 
   app.renderer.on(RendererEvent.END, (event: RendererEvent) => {
     const css = app.options.getValue("cssdocCss") as string[];
-    if (!css.length) return;
+    if (css.length === 0) return;
     const baseHref = app.options.getValue("cssdocBaseHref") as string;
     const configPath = app.options.getValue("cssdocConfig") as string;
     const configFile = configPath ? CssDocConfigFile.loadFile(configPath) : undefined;

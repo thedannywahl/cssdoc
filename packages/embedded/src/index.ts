@@ -553,7 +553,7 @@ export function scanClassUsages(source: string): ClassUsageSite[] {
       const start = base + (a.index ?? 0) + a[0].length - a[1].length;
       tokens.push({ token: a[1], start, end: start + a[1].length });
     }
-    if (tokens.length) sites.push({ tokens, ...(elementName ? { elementName } : {}) });
+    if (tokens.length > 0) sites.push({ tokens, ...(elementName ? { elementName } : {}) });
   }
   return sites;
 }

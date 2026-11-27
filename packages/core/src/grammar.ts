@@ -1544,7 +1544,7 @@ export function parseStructureVariants(
   const variants: StructureVariant[] = [];
   let bareRun: ChildNode[] = [];
   const flushBareRun = (): void => {
-    if (bareRun.length) variants.push({ nodes: buildStructureNodes(bareRun, ownerRecordName) });
+    if (bareRun.length > 0) variants.push({ nodes: buildStructureNodes(bareRun, ownerRecordName) });
     bareRun = [];
   };
   for (const node of topNodes) {

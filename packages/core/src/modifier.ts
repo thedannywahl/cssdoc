@@ -253,9 +253,10 @@ export class ModifierMatcher {
     this.elementSeparators = convention.elementSeparator
       ? longestFirst(convention.elementSeparator).filter((s) => s !== "")
       : [];
-    this.elementSepAlt = this.elementSeparators.length
-      ? `(?:${this.elementSeparators.map(escapeRegex).join("|")})`
-      : "";
+    this.elementSepAlt =
+      this.elementSeparators.length > 0
+        ? `(?:${this.elementSeparators.map(escapeRegex).join("|")})`
+        : "";
     this.statePrefixes = (convention.statePrefixes ?? []).toSorted(
       (a: string, b: string) => b.length - a.length,
     );
