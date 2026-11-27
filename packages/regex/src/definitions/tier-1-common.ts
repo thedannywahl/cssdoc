@@ -161,7 +161,7 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
     flags: "u",
     description: "One or more JavaScript whitespace characters",
     fixtures: {
-      passes: [{ input: " " }, { input: "\t\n" }, { input: "\u00a0" }],
+      passes: [{ input: " " }, { input: "\t\n" }, { input: "\u00A0" }],
       fails: [
         { input: "", reason: "requires at least one whitespace character" },
         { input: "x", reason: "letter" },

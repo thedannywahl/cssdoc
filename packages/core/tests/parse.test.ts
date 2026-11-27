@@ -36,8 +36,8 @@ import { scanStructureLine, type StructureBoundaryState } from "../src/structure
 
 test("URL safety handles supplementary characters and rejects control characters", () => {
   expect(safeProseUrl("https://example.com/😀")).toBe(true);
-  expect(safeProseUrl("https://example.com/😀\u007f")).toBe(false);
-  expect(safeProseUrl("https://example.com/😀\u009f")).toBe(false);
+  expect(safeProseUrl("https://example.com/😀\u007F")).toBe(false);
+  expect(safeProseUrl("https://example.com/😀\u009F")).toBe(false);
 });
 
 test("private-link projection preserves literal labels and protected code", () => {

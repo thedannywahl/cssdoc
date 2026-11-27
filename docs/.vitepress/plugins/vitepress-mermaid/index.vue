@@ -161,7 +161,7 @@ const renderDiagram = async (): Promise<void> => {
     },
   });
 
-  el.removeAttribute("data-processed");
+  delete el.dataset.processed;
   el.textContent = graphText.value;
 
   try {
@@ -201,8 +201,8 @@ const copyDiagramSvg = async (): Promise<void> => {
         button.textContent = originalText;
       }, 2000);
     }
-  } catch (err) {
-    console.error("Failed to copy diagram:", err);
+  } catch (error) {
+    console.error("Failed to copy diagram:", error);
   }
 };
 

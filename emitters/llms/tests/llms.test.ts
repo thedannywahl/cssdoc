@@ -42,7 +42,7 @@ test("renders a compact per-component digest with a title and blockquote", () =>
 
 test("collapses Unicode whitespace in summaries without changing literal modifier prefixes", () => {
   const entries = parseCssDocs(CSS);
-  entries[0].summary = "First\u00a0 \nsecond";
+  entries[0].summary = "First\u00A0 \nsecond";
   expect(renderLlms(entries)).toContain("First second");
   expect(renderLlms(entries)).toContain("`-color-secondary`");
 });

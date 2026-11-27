@@ -110,8 +110,8 @@ const model = computed(() => {
       ],
       error: undefined as string | undefined,
     };
-  } catch (e) {
-    return { entries: [], diagnostics: [], error: (e as Error).message };
+  } catch (error) {
+    return { entries: [], diagnostics: [], error: (error as Error).message };
   }
 });
 
