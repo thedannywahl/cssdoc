@@ -62,7 +62,6 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/prefer-for-of": "warn",
       "typescript/no-import-type-side-effects": "error",
       "typescript/no-require-imports": "error",
-      "typescript/no-var-requires": "off",
       "typescript/ban-ts-comment": "error",
       "typescript/explicit-module-boundary-types": "off",
       "typescript/no-dynamic-delete": "off",
@@ -75,6 +74,8 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-unnecessary-type-parameters": "off",
       // Explicit exported types satisfy isolatedDeclarations.
       "typescript/no-inferrable-types": "off",
+      // no-require-imports covers this deprecated, narrower rule.
+      "typescript/no-var-requires": "off",
       "unicorn/prefer-node-protocol": "error",
       // Re-enable newly activated Unicorn rules individually after review.
       "unicorn/explicit-length-check": "off",
