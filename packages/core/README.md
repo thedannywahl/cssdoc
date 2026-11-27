@@ -77,6 +77,9 @@ Markdown parser.
 targets remain authored strings; this helper doesn't resolve them or determine their visibility.
 `parseReference` validates record-reference framing, provider IDs, and decoded source keys, and
 retains member subjects for CSS-aware matching. It doesn't resolve records or validate member CSS.
+`projectPrivateLinks` from `@cssdoc/core/prose` produces literal-label fragments for references
+that a caller resolves as private, while preserving code and reporting unavailable lookups. Emitters
+don't use it yet.
 
 ## The doc-comment grammar
 

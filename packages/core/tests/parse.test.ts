@@ -28,7 +28,44 @@ import {
   stripCommentFraming,
 } from "../src/grammar.ts";
 import { ModifierMatcher } from "../src/modifier.ts";
+import { projectPrivateLinks } from "../src/prose.ts";
 import { scanStructureLine, type StructureBoundaryState } from "../src/structure-boundaries.ts";
+
+test("private-link projection preserves literal labels and protected code", () => {
+  const text = [
+    "😀 {@link private-record | *Label*\\|safe\\}} and {@link private-record}",
+    '{@link public-record} {@link unknown} {@link url("https://example.com") | External}',
+    "`{@link private-record}`",
+    "```css",
+    "{@link private-record}",
+    "```",
+  ].join("\n\n");
+  const projection = projectPrivateLinks(text, "markdown", (reference) =>
+    reference.name === "private-record"
+      ? "private"
+      : reference.name === "public-record"
+        ? "public"
+        : "unavailable",
+  );
+  expect(projection.unavailable).toBe(true);
+  expect(projection.fragments.filter((fragment) => fragment.kind === "literal")).toEqual([
+    { kind: "literal", text: "*Label*|safe}" },
+    { kind: "literal", text: "reference" },
+  ]);
+  expect(
+    projection.fragments
+      .filter((fragment) => fragment.kind === "prose")
+      .map((f) => f.text)
+      .join(""),
+  ).toContain("`{@link private-record}`");
+  expect(
+    projection.fragments
+      .filter((fragment) => fragment.kind === "prose")
+      .map((f) => f.text)
+      .join(""),
+  ).toContain("```css\n\n{@link private-record}\n\n```");
+  expect(text).toContain("{@link private-record |");
+});
 
 test("full and lite share prose spans while respecting mode precedence", () => {
   const raw = [
