@@ -24,6 +24,7 @@ checkClassUsage([{ base: "btn", tokens: ["btn", "-x"], token: "-x" }], index);
 ```
 
 Adding an aspect is one module in `aspects.ts` plus a line in the aggregate — no adapter changes.
+Hover cards render 1.0 plain-mode remarks and examples as literal text, preserving line breaks.
 
 ## License
 

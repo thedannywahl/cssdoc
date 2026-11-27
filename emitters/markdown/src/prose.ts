@@ -1,4 +1,4 @@
-import { safeProseUrl } from "@cssdoc/core";
+import { literalMarkdownText, safeProseUrl } from "@cssdoc/core";
 import {
   BACKTICK_CHAR,
   BRACE_OPEN_CHAR,
@@ -41,21 +41,6 @@ function vueSafeCode(value: string, inline: boolean): string {
   return html.replaceAll(PIPE_CHAR, "&#124;").replaceAll(LINE_FEED_CHAR, "&#10;");
 }
 
-function literal(text: string): string {
-  let result = "";
-  for (const char of text) {
-    const code = char.codePointAt(0)!;
-    result +=
-      (code >= 33 && code <= 47) ||
-      (code >= 58 && code <= 64) ||
-      (code >= 91 && code <= 96) ||
-      (code >= 123 && code <= 126)
-        ? `&#${code};`
-        : char;
-  }
-  return result;
-}
-
 /**
  * Render plain prose as literal text in Markdown, preserving line breaks.
  *
@@ -64,7 +49,7 @@ function literal(text: string): string {
  */
 export function plainProse(text: string): string {
   const LINE_ENDING: Regex = arkRegex.as(LINE_ENDING_SOURCE, "gu");
-  return literal(text).replace(LINE_ENDING, `<br>${LINE_FEED_CHAR}`);
+  return literalMarkdownText(text).replace(LINE_ENDING, `<br>${LINE_FEED_CHAR}`);
 }
 
 function escapeFree(text: string): string {
@@ -166,7 +151,7 @@ function sanitize(text: string, escape: boolean): string {
         const last = node.children?.at(-1)?.position?.end.offset;
         const label =
           image || first === undefined || last === undefined
-            ? literal(node.alt ?? "")
+            ? literalMarkdownText(node.alt ?? "")
             : sanitize(text.slice(first, last), escape);
         edits.push({ start, end, text: label });
         return;

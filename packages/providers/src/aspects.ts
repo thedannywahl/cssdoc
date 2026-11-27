@@ -6,7 +6,12 @@
  *
  * @module
  */
-import { type ExampleFilter, type StructureNode, selectExamples } from "@cssdoc/core";
+import {
+  type ExampleFilter,
+  type StructureNode,
+  literalMarkdownText,
+  selectExampleIndices,
+} from "@cssdoc/core";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import {
@@ -34,6 +39,8 @@ import {
   GREATER_THAN_CHAR,
   HTML_CUSTOM_ELEMENT_LIKE_NAME_SOURCE,
   LESS_THAN_CHAR,
+  LINE_ENDING_SOURCE,
+  LINE_FEED_CHAR,
   MARKDOWN_BACKTICK_FENCE_LINE_PREFIX,
   MARKDOWN_BACKTICK_FENCE_TEXT,
   PAREN_CLOSE_CHAR,
@@ -87,6 +94,9 @@ const linkedSyntax = (syntax: string): string => {
 };
 
 const codeSpan = (text: string): string => `${BACKTICK_CHAR}${text}${BACKTICK_CHAR}`;
+const LINE_ENDING: Regex = arkRegex.as(LINE_ENDING_SOURCE, "gu");
+const plainHoverProse = (text: string): string =>
+  literalMarkdownText(text).replace(LINE_ENDING, `  ${LINE_FEED_CHAR}`);
 const bold = (text: string): string =>
   `${ASTERISK_CHAR.repeat(2)}${text}${ASTERISK_CHAR.repeat(2)}`;
 const codicon = (name: string): string =>
@@ -852,7 +862,12 @@ export const record = {
             : `${icon("warning")}${warnHtml("Deprecated")}`,
         ];
     }
-    prose("remarks", "", entry.remarks);
+    const remarksMode = entry.prose?.find((body) => body.field === "remarks")?.mode;
+    prose(
+      "remarks",
+      "",
+      entry.remarks && remarksMode === "plain" ? plainHoverProse(entry.remarks) : entry.remarks,
+    );
     prose("accessibility", icon("accessibility"), entry.accessibility);
 
     list(
@@ -992,20 +1007,24 @@ export const record = {
       }
     }
     {
-      const examples = selectExamples(entry, exampleFilter);
+      const examples = selectExampleIndices(entry, exampleFilter);
       const w = want("examples", examples.length > 0);
       if (w !== "skip") {
         const frag = ["", bold(`${icon("book")}Example${examples.length > 1 ? "s" : ""}`)];
         if (w === "content")
-          for (const e of examples) {
-            const ex = e.trim();
+          for (const index of examples) {
+            const text = entry.examples[index];
+            const prose = entry.prose?.find((body) => body.exampleIndex === index);
+            const ex = text.trim();
             // An example that already carries a fenced block is Markdown (prose + code) — emit it
             // verbatim. Only bare, fence-less code gets auto-fenced (sniffing markup vs CSS).
             frag.push(
               "",
-              MARKDOWN_BACKTICK_FENCE_LINE_PREFIX.exec(ex) !== null
-                ? ex
-                : `${MARKDOWN_BACKTICK_FENCE_TEXT}${ex.includes(LESS_THAN_CHAR) ? "html" : "css"}\n${ex}\n${MARKDOWN_BACKTICK_FENCE_TEXT}`,
+              prose?.mode === "plain"
+                ? plainHoverProse(text)
+                : MARKDOWN_BACKTICK_FENCE_LINE_PREFIX.exec(ex) !== null
+                  ? ex
+                  : `${MARKDOWN_BACKTICK_FENCE_TEXT}${ex.includes(LESS_THAN_CHAR) ? "html" : "css"}\n${ex}\n${MARKDOWN_BACKTICK_FENCE_TEXT}`,
             );
           }
         else frag.push("", emptySection);

@@ -92,6 +92,51 @@ test("private examples don't appear in hover cards", () => {
   expect(hover).not.toContain("Private example.");
 });
 
+test("hover renders selected plain remarks literally, including their line breaks", () => {
+  const configuration = new CssDocConfiguration();
+  configuration.setProseSettings({ mode: "plain", remarkKinds: { usage: "markdown" } });
+  const idx = createIndex(
+    `/** @component button
+ * @remarks usage - **Same**
+ * @remarks note - **Same**
+ * [unsafe](javascript:alert)
+ * @remarks todo - Private
+ */
+.button {}`,
+    { configuration },
+  );
+  const hover = hoverForClass("button", "button", idx, "full")?.contents ?? "";
+  expect(hover).toContain(
+    "&#42;&#42;Same&#42;&#42;  \n&#91;unsafe&#93;&#40;javascript&#58;alert&#41;",
+  );
+  expect(hover).not.toContain("Private");
+});
+
+test("filtered plain examples stay literal in hover after private examples", () => {
+  const configuration = new CssDocConfiguration();
+  configuration.setProseSettings({ mode: "plain" });
+  const idx = createIndex(
+    `/** @component button
+ * @example docs {@private} - Secret.
+ * @example docs - **Literal** [bad](javascript:alert)
+ * @example demo - Hidden by filter.
+ */
+.button {}`,
+    { configuration },
+  );
+  const hover =
+    hoverForClass("button", "button", idx, "full", undefined, undefined, {
+      labels: ["docs"],
+      includeUnlabeled: false,
+    })?.contents ?? "";
+  expect(hover).toContain(
+    "&#42;&#42;Literal&#42;&#42; &#91;bad&#93;&#40;javascript&#58;alert&#41;",
+  );
+  expect(hover).not.toContain("Secret");
+  expect(hover).not.toContain("Hidden by filter");
+  expect(hover).not.toContain("```");
+});
+
 test("directive separators retain whitespace and comma handling", () => {
   expect(parseDirectives("/* cssdoc-disable alpha,\tbeta \t-\t reason - details */")).toMatchObject(
     [{ rules: ["alpha", "beta"], reason: "reason - details" }],
