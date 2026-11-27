@@ -89,6 +89,20 @@ Thenables. Event-to-promise adapters use `Promise.withResolvers` to keep listene
 cleanup outside promise executors. Type-only imports use top-level `import type`; mixed imports
 can retain inline `type` specifiers.
 
+Disabled rules remain deliberate, not a waiver for existing diagnostics:
+
+| Rules                                                                                                           | Why they stay off                                                                                                                                            |
+| --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Vitest hook, suite, title, and assertion-count restrictions                                                     | Shared setup, top-level tests, descriptive titles, and data-driven assertions are valid test structures.                                                     |
+| Vitest conditional test-body restriction                                                                        | Fixture traversal needs branches; conditional tests and conditional expectations are checked separately.                                                     |
+| Vitest strict-equality and truthiness preferences                                                               | Matchers express different contracts. Use strict Boolean matchers for Boolean assertions, and choose structural or strict equality deliberately.             |
+| Vitest comparison-matcher preference                                                                            | Completion tests compare strings lexicographically; numeric matchers aren't equivalent.                                                                      |
+| Import export-form, export-position, namespace, and Node-module restrictions                                    | Public named APIs, framework default exports, grouped APIs, and Node entry points are intentional.                                                           |
+| ESLint duplicate-import and import-order rules                                                                  | `import/no-duplicates` and Oxfmt own these checks.                                                                                                           |
+| ESLint name, comment, key, variable, declaration, control-flow, and size restrictions; import dependency limits | Alphabetical ordering, fixed limits, and mandatory syntax forms don't establish correctness. Preserve catalog order and choose readable parser control flow. |
+| Promise callback-to-await preference                                                                            | A callback-shaped API doesn't necessarily offer a promise equivalent. Await is preferred where a promise or Thenable exists.                                 |
+| JSDoc mandatory returns and TypeScript type tags                                                                | Document useful return behavior; TypeScript signatures already supply types. JavaScript's documented tags require types.                                     |
+
 Nursery linting stays off as a category. Selected rules reject unreachable loops and dead stores
 and warn about invalid named imports. Node ESM scripts also warn about undefined names without
 accepting CommonJS-only globals. TypeScript checks undefined names separately.

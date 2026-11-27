@@ -244,10 +244,12 @@ export const baseConfig: UserConfig = defineConfig({
       "vitest/prefer-expect-assertions": "off",
       "vitest/require-top-level-describe": "off",
       "vitest/max-expects": "off",
+      // Structural equality and strict equality test different contracts; choose per assertion.
       "vitest/prefer-strict-equal": "off",
       "vitest/prefer-to-be-truthy": "off",
       "vitest/prefer-to-be-falsy": "off",
       "vitest/prefer-strict-boolean-matchers": "warn",
+      // Numeric comparison matchers can't replace lexicographic sortText comparisons.
       "vitest/prefer-comparison-matcher": "off",
       "vitest/prefer-expect-resolves": "warn",
       "vitest/consistent-test-it": ["warn", { fn: "test", withinDescribe: "test" }],
@@ -260,10 +262,12 @@ export const baseConfig: UserConfig = defineConfig({
       "import/group-exports": "off",
       "import/exports-last": "off",
       "import/consistent-type-specifier-style": ["warn", "prefer-top-level-if-only-type-imports"],
+      // Namespace imports can group statically referenced value APIs and their associated types.
       "import/no-namespace": "off",
       "import/no-anonymous-default-export": "warn",
       // Oxfmt owns import ordering; keep value and type imports separate when appropriate.
       "eslint/sort-imports": "off",
+      // import/no-duplicates already checks this and supports separate type imports.
       "eslint/no-duplicate-imports": "off",
       // Catalog and fixture ordering, short parser names, numeric examples, and concise guards carry meaning.
       "eslint/sort-keys": "off",
@@ -291,6 +295,7 @@ export const baseConfig: UserConfig = defineConfig({
       "node/no-sync": "off",
       // Await handles both native promises and editor Thenables; event callbacks remain valid.
       "promise/prefer-await-to-then": "warn",
+      // Error-first callback detection isn't proof that an API has a promise equivalent.
       "promise/prefer-await-to-callbacks": "off",
       "promise/prefer-catch": "warn",
       "promise/avoid-new": "warn",
