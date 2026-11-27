@@ -2430,6 +2430,67 @@ test("lint permits workspace filename conventions but rejects snake-case module 
   }
 });
 
+test("lint checks JSX semantics without imposing a framework or breaking focus contracts", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/.jsx-check-"));
+  try {
+    const file = join(directory, "semantics.test.jsx");
+    writeFileSync(
+      file,
+      [
+        'export const MissingAlt = () => <img src="example.png" />;',
+        'export const BadRole = () => <div role="bogus">Content</div>;',
+        'export const BadAria = () => <div aria-live="urgent">Content</div>;',
+        'export const Decorative = () => <img src="example.png" alt="" />;',
+        'export const Named = () => <button aria-label="Save" />;',
+        'export const Dialog = () => <dialog aria-label="Settings"><input aria-label="Name" autoFocus /></dialog>;',
+        'export const Scrollable = () => <div style={{ overflow: "auto" }} tabIndex={0}>Content</div>;',
+        'export const List = () => <ul role="list"><li role="listitem">Item</li></ul>;',
+        'const Widget = () => <input aria-label="Name" />;',
+        "export const Custom = () => <Widget autoFocus />;",
+      ].join("\n"),
+    );
+    const fixtureDirectory = join(directory, "tests/fixtures");
+    mkdirSync(fixtureDirectory, { recursive: true });
+    const fixture = join(fixtureDirectory, "consumer.jsx");
+    writeFileSync(fixture, 'export const Fixture = () => <img src="example.png" />;\n');
+    for (const cwd of [root, fileURLToPath(new URL("../../core/", import.meta.url))]) {
+      const result = spawnSync(
+        "vp",
+        [
+          "lint",
+          "--config",
+          join(root, "vite.config.ts"),
+          "--no-ignore",
+          "--format",
+          "json",
+          file,
+          fixture,
+        ],
+        { cwd, encoding: "utf8" },
+      );
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code.startsWith("jsx-a11y("))
+          .toSorted((a, b) => a.labels[0].span.line - b.labels[0].span.line)
+          .map(({ code, severity, labels, filename }) => [
+            code,
+            severity,
+            labels[0].span.line,
+            filename.endsWith("semantics.test.jsx"),
+          ]),
+      ).toEqual([
+        ["jsx-a11y(alt-text)", "error", 1, true],
+        ["jsx-a11y(aria-role)", "error", 2, true],
+        ["jsx-a11y(aria-proptypes)", "error", 3, true],
+      ]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint treats dynamic execution, lost exports, and invalid interpolation as errors", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, "packages/config/tests/.severity-check-"));

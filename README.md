@@ -182,11 +182,26 @@ TypeScript checks undefined names separately. The remaining nursery decisions ar
 | `typescript/no-unnecessary-condition` | Indexed values and external APIs can be absent despite non-nullable ambient types. Don't remove runtime-safe guards.                                                                 |
 | `typescript/prefer-optional-chain`    | Probes with `requireNullish` and primitive/unknown checks disabled still reported null-preserving and falsy-string returns. Keep those return values and evaluation behavior intact. |
 
-The audit covers installed rules from the configured native plugins, including Vue in docs, plus
-regexp, TSDoc, TSDoc-require, and Vite+'s JavaScript plugins. Native category policies enable the
-non-exempt rules; every installed regexp rule has an explicit disposition. Unselected framework
-plugins aren't part of that policy. Recheck the installed inventory and nursery implementations
+The audit covers installed rules from the configured native plugins, including scoped Vue and JSX
+checks, plus regexp, TSDoc, TSDoc-require, and Vite+'s JavaScript plugins. Native category policies
+enable the non-exempt base-plugin rules. Override-only plugins need explicit rule selections; adding
+a plugin to an override doesn't expand the base category policy. Every installed regexp and
+JSX-a11y rule has an explicit disposition. Recheck the installed inventory and nursery implementations
 when upgrading the toolchain rather than assuming new rules fit these decisions.
+
+JSX checks apply HTML and ARIA semantics without requiring React. They reject missing image text,
+invalid roles, invalid ARIA values, and keyboard-inaccessible interactions. Parser fixtures aren't
+rendered UI and are excluded from that scope. Autofocus advice ignores custom components and permits
+dialog focus; explicit list roles remain valid for browser compatibility. Focusable scroll containers
+don't need to be rewritten as interactive widgets. Access-key, media-caption, wording, and semantic-tag
+preferences remain advice, not universal correctness guarantees.
+
+| Native plugin        | Applicability                                                                                                                                                                              |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Jest                 | Off: tests use Vitest, whose own plugin already checks them.                                                                                                                               |
+| Next.js              | Off: no Next.js application, routes, or dependency exists here.                                                                                                                            |
+| React and React-perf | Off: JSX examples demonstrate CSS usage without choosing a React runtime. Don't impose React imports, prop validation, hook rules, or allocation heuristics on framework-neutral examples. |
+| JSX-a11y             | Scoped to JSX/TSX outside parser fixtures, with explicit rules and tested focus/role exceptions.                                                                                           |
 
 Scoped exceptions preserve actual host contracts: untyped JavaScript lacks reliable safety-check
 types but still gets syntax checks and documented type tags; the bundled css-tree shim is CommonJS;
