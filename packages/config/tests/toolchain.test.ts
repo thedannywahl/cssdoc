@@ -599,6 +599,48 @@ test("Vitest lint flags ambiguous truthiness assertions", () => {
   }
 });
 
+test("JSDoc lint requires parameter types in JavaScript but not TypeScript", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".jsdoc-types-check-"));
+  try {
+    const javascript = join(directory, "example.mjs");
+    const typescript = join(directory, "example.ts");
+    writeFileSync(
+      javascript,
+      [
+        "/** @param value - Input. */",
+        "function unsafe(value) { return value; }",
+        "/** @param {string} value - Input. */",
+        "function safe(value) { return value; }",
+        "console.error(unsafe('a'), safe('b'));",
+      ].join("\n"),
+    );
+    writeFileSync(
+      typescript,
+      "/** @param value - Input. */\nfunction typed(value: string) { return value; }\nconsole.error(typed('a'));\n",
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync(
+        "vp",
+        ["lint", "--no-ignore", "--format", "json", javascript, typescript],
+        { cwd, encoding: "utf8" },
+      );
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "jsdoc(require-param-type)")
+          .map(({ severity, filename, labels }) => [
+            severity,
+            filename.endsWith("example.mjs"),
+            labels[0].span.line,
+          ]),
+      ).toEqual([["warning", true, 1]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));
