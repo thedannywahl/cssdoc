@@ -9,6 +9,7 @@ import {
   LINE_ENDING_SOURCE,
   PAREN_CLOSE_CHAR,
   PAREN_OPEN_CHAR,
+  PIPE_CHAR,
   QUOTE_DOUBLE_CHAR,
 } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
@@ -81,6 +82,7 @@ export function scanInlineTags(
     const stack: string[] = [];
     let quote = false;
     let escaped = false;
+    let label = false;
     let end = nameEnd;
     for (; end < text.length; end++) {
       const char = text[end];
@@ -88,10 +90,14 @@ export function scanInlineTags(
         escaped = false;
       } else if (char === BACKSLASH_CHAR) {
         escaped = true;
+      } else if (label) {
+        if (char === BRACE_CLOSE_CHAR) break;
       } else if (char === QUOTE_DOUBLE_CHAR) {
         quote = !quote;
       } else if (!quote) {
-        if (char === PAREN_OPEN_CHAR || char === BRACKET_OPEN_CHAR) stack.push(char);
+        if (definition.canonicalName === "link" && char === PIPE_CHAR && stack.length === 0)
+          label = true;
+        else if (char === PAREN_OPEN_CHAR || char === BRACKET_OPEN_CHAR) stack.push(char);
         else if (char === PAREN_CLOSE_CHAR && stack.at(-1) === PAREN_OPEN_CHAR) stack.pop();
         else if (char === BRACKET_CLOSE_CHAR && stack.at(-1) === BRACKET_OPEN_CHAR) stack.pop();
         else if (char === BRACE_CLOSE_CHAR && stack.length === 0) break;

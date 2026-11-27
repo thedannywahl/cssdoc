@@ -96,6 +96,16 @@ test("inline scanner uses the active vocabulary and skips disabled tags", () => 
   ).toEqual([{ start: 17, end: 32, nameEnd: 25, tag: "link", closed: true }]);
 });
 
+test("inline link labels treat quotes and brackets as plain text", () => {
+  const text = '{@link source("a|b.css")::component:x | An "open [label} {@link next}';
+  const tags = scanInlineTags(text);
+  expect(tags.map((tag) => text.slice(tag.start, tag.end))).toEqual([
+    '{@link source("a|b.css")::component:x | An "open [label}',
+    "{@link next}",
+  ]);
+  expect(tags.every((tag) => tag.closed)).toBe(true);
+});
+
 test("usage and remarks identify the effective prose occurrence without matching text", () => {
   const raw = `/** @component button
  * @remarks usage - **same**
