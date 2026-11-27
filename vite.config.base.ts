@@ -139,7 +139,7 @@ export const baseConfig: UserConfig = defineConfig({
       // Review remaining syntax and scoping conventions individually, not as a blanket preset.
       "unicorn/explicit-length-check": "off",
       "unicorn/import-style": "off",
-      "unicorn/prefer-string-raw": "off",
+      "unicorn/prefer-string-raw": "warn",
       "unicorn/no-nested-ternary": "off",
       "unicorn/no-await-expression-member": "off",
       "unicorn/consistent-function-scoping": "warn",

@@ -413,7 +413,7 @@ export const cssDocSchema: {
         selector: { type: "string" },
         cardinality: {
           type: "string",
-          pattern: "^(optional|many|one-or-more|max-\\d+|one-or-more-max-\\d+)$",
+          pattern: String.raw`^(optional|many|one-or-more|max-\d+|one-or-more-max-\d+)$`,
         },
         scope: { type: "string" },
         variants: { type: "array", items: { $ref: "#/$defs/StructureVariant" } },

@@ -96,7 +96,7 @@ export function escapeRegexChar(char: string): string {
 /** Escape regex metacharacters in a string for use as literal pattern text. */
 export function escapeRegex(text: string): string {
   const METACHARACTER: Regex = arkRegex.as(REGEX_METACHARACTER_SOURCE, "gu");
-  return text.replace(METACHARACTER, "\\$&");
+  return text.replace(METACHARACTER, String.raw`\$&`);
 }
 
 /**

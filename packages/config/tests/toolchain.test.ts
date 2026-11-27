@@ -1201,6 +1201,36 @@ test("lint prefers exec for single regex matches but preserves global match arra
   }
 });
 
+test("lint prefers raw templates for literal backslashes but preserves character escapes", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".raw-string-check-"));
+  try {
+    const file = join(directory, "strings.mjs");
+    writeFileSync(
+      file,
+      [
+        String.raw`console.error("\\d+");`,
+        "console.error(String.raw`\\d+`);",
+        String.raw`console.error("line\nnext");`,
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "unicorn(prefer-string-raw)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["warning", 1]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));
@@ -1427,7 +1457,7 @@ test("type-aware lint detects unsafe boundaries", () => {
         "take(value);",
         "value.run();",
         "const member = value.name;",
-        'function returned(): string { return JSON.parse("\\"\\""); }',
+        String.raw`function returned(): string { return JSON.parse("\"\""); }`,
         "console.error(assigned, member, returned());",
       ].join("\n"),
     );

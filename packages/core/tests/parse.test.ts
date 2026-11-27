@@ -41,7 +41,7 @@ test("URL safety handles supplementary characters and rejects control characters
 
 test("private-link projection preserves literal labels and protected code", () => {
   const text = [
-    "😀 {@link private-record | *Label*\\|safe\\}} and {@link private-record}",
+    String.raw`😀 {@link private-record | *Label*\|safe\}} and {@link private-record}`,
     '{@link public-record} {@link unknown} {@link url("https://example.com") | External}',
     "`{@link private-record}`",
     "```css",
@@ -141,11 +141,10 @@ test("auto detects resolved reference and image-reference Markdown", () => {
 });
 
 test("inline scanner preserves UTF-16 ranges, escapes, nested targets, and incomplete tags", () => {
-  const text =
-    '😀 \\{@link escaped} \\\\{@link source("a|b.css")::component:x | one\\} two} {@link unfinished';
+  const text = String.raw`😀 \{@link escaped} \\{@link source("a|b.css")::component:x | one\} two} {@link unfinished`;
   const tags = scanInlineTags(text);
   expect(tags.map((tag) => text.slice(tag.start, tag.end))).toEqual([
-    '{@link source("a|b.css")::component:x | one\\} two}',
+    String.raw`{@link source("a|b.css")::component:x | one\} two}`,
     "{@link unfinished",
   ]);
   expect(tags.map((tag) => tag.closed)).toEqual([true, false]);
@@ -174,13 +173,12 @@ test("inline link labels treat quotes and brackets as plain text", () => {
 });
 
 test("inline links decode labels and JSON-quoted external URLs", () => {
-  const text =
-    '{@link source("a|b.css")::component:x | One\\|two\\} \\\\ three} {@link url("https://example.test/a?x=1") | Website}';
+  const text = String.raw`{@link source("a|b.css")::component:x | One\|two\} \\ three} {@link url("https://example.test/a?x=1") | Website}`;
   const [reference, url] = scanInlineTags(text);
   expect(parseInlineLink(text, reference)).toEqual({
     ok: true,
     target: { kind: "reference", value: 'source("a|b.css")::component:x' },
-    label: "One|two} \\ three",
+    label: String.raw`One|two} \ three`,
   });
   expect(parseInlineLink(text, url)).toEqual({
     ok: true,
@@ -215,7 +213,7 @@ test("reference grammar retains scoped identities and nested member subjects", (
     ok: true,
     reference: { scope: { kind: "workspace" }, name: "button" },
   });
-  expect(parseReference('source("src/forms \\"legacy\\".css")::component:button')).toEqual({
+  expect(parseReference(String.raw`source("src/forms \"legacy\".css")::component:button`)).toEqual({
     ok: true,
     reference: {
       scope: { kind: "source", sourceKey: 'src/forms "legacy".css' },
@@ -251,8 +249,8 @@ test.each([
   ['source("C:/tmp/file.css")::component:x', "invalid-source-key"],
   ['source("src/../file.css")::component:x', "invalid-source-key"],
   ['source("src//file.css")::component:x', "invalid-source-key"],
-  ['source("src/\\\\\\\\file.css")::component:x', "invalid-source-key"],
-  ['source("src/\\u000a.css")::component:x', "invalid-source-key"],
+  [String.raw`source("src/\\\\file.css")::component:x`, "invalid-source-key"],
+  [String.raw`source("src/\u000a.css")::component:x`, "invalid-source-key"],
   ['provider(UI, "src/x.css")::component:x', "invalid-provider-id"],
   ['provider(ui, "src/x.css")::x', "invalid-reference"],
   ["component:button#part(:is(.x)", "invalid-reference"],
@@ -280,11 +278,11 @@ test("inline scanning respects protected ranges and maps label offsets", () => {
 test.each([
   ["{@link}", "missing-target"],
   ["{@link button | }", "invalid-label"],
-  ["{@link button | bad\\n}", "invalid-label"],
+  [String.raw`{@link button | bad\n}`, "invalid-label"],
   ['{@link url("javascript:alert(1)")}', "invalid-url"],
   ['{@link url("/relative")}', "invalid-url"],
   ['{@link url("//example.test")}', "invalid-url"],
-  ['{@link url("https://example.test/\\u000a")}', "invalid-url"],
+  [String.raw`{@link url("https://example.test/\u000a")}`, "invalid-url"],
   ["{@link url(123)}", "invalid-url"],
   ["{@link unfinished", "incomplete"],
 ] as const)("inline links report invalid input: %s", (text, error) => {
@@ -648,7 +646,7 @@ test("structure lexical state ignores braces in selectors, strings, escapes, and
   const state: StructureBoundaryState = { stack: [], comment: false, escaped: false };
   expect(scanStructureLine('.card[data-x="}"] {', state)).toBe(true);
   expect(scanStructureLine('  content: "}"; /* { */', state)).toBe(false);
-  expect(scanStructureLine("  .escaped\\{name {", state)).toBe(false);
+  expect(scanStructureLine(String.raw`  .escaped\{name {`, state)).toBe(false);
   expect(state.stack).toEqual(["{", "{"]);
   scanStructureLine("  }", state);
   scanStructureLine("}", state);

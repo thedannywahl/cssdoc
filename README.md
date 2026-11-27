@@ -126,6 +126,8 @@ Class implementations keep method syntax.
 Promise-returning function declarations and methods are `async`; arrow forwarders and promise
 factories can return an existing promise directly without an extra async wrapper.
 Use `exec` for a single regex match; global `match` calls retain their all-matches behavior.
+Use `String.raw` for strings that need literal backslashes, including regex sources and Markdown
+escapes. Keep ordinary escapes when they represent characters such as newlines.
 Untyped JavaScript is excluded from the unsafe-boundary and interpolation checks because it lacks
 reliable type information; the standalone VS Code Lit example is also excluded from the assignment,
 call, and member-access checks.

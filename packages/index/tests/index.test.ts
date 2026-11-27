@@ -342,7 +342,7 @@ test("named member resolution uses CSS identifiers and preserves duplicates", ()
     return resolveNamedMemberReference(parsed.reference, lookup(complete));
   };
   for (const reference of [
-    "button#csspart(lab\\65 l)",
+    String.raw`button#csspart(lab\65 l)`,
     "button#slot()",
     "button#slot( /* default slot */ )",
     String.raw`button#slot(name\ )`,
@@ -356,7 +356,7 @@ test("named member resolution uses CSS identifiers and preserves duplicates", ()
   }
   expect(resolve("button#property(accent)")).toEqual({ status: "invalid-subject" });
   expect(resolve("button#slot(two words)")).toEqual({ status: "invalid-subject" });
-  expect(resolve("button#layer(components\\.forms)")).toEqual({ status: "missing" });
+  expect(resolve(String.raw`button#layer(components\.forms)`)).toEqual({ status: "missing" });
   expect(resolve("button#csspart(label)", false)).toMatchObject({ status: "unavailable" });
   expect(resolve("button#modifier(.button--quiet)")).toMatchObject({ status: "unavailable" });
   const duplicate = indexFromEntries([{ ...record, slots: [{ name: "" }, { name: "" }] }]);

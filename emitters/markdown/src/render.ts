@@ -339,7 +339,7 @@ export function escProse(text: string): string {
 
 /** A GFM table-cell-safe rendering of prose (escape pipes + Vue-unsafe chars; empty → em dash). */
 export function cell(text: string | undefined): string {
-  return text ? escProse(text).replaceAll(PIPE_CHAR, "\\|") : "—";
+  return text ? escProse(text).replaceAll(PIPE_CHAR, String.raw`\|`) : "—";
 }
 
 /**
@@ -375,7 +375,10 @@ function tag(cls: string | undefined, label: string, fallback: string = label): 
 /** A code-span cell: collapse whitespace and escape pipes so it survives a GFM table row. */
 function code(text: string | undefined): string {
   if (!text) return "—";
-  return `\`${text.replace(WHITESPACE, " ").trim().replaceAll(PIPE_CHAR, "\\|")}\``;
+  return `\`${text
+    .replace(WHITESPACE, " ")
+    .trim()
+    .replaceAll(PIPE_CHAR, String.raw`\|`)}\``;
 }
 
 /** Render a GFM table from a header row and body rows (already-formatted cells). */
@@ -737,12 +740,12 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
           notes.push(`${marker} — ${escProse(via)}`);
         }
         if (m.description && !aliasFromDescription) notes.push(escProse(m.description));
-        return [`\`.${m.name}\``, notes.join(" ").replaceAll(PIPE_CHAR, "\\|")];
+        return [`\`.${m.name}\``, notes.join(" ").replaceAll(PIPE_CHAR, String.raw`\|`)];
       }
       if (m.interaction) {
         const marker = tag(options.classNames?.interaction, "Interaction", "_Interaction_");
         const cellText = m.description ? `${marker} — ${escProse(m.description)}` : marker;
-        return [`\`.${m.name}\``, cellText.replaceAll(PIPE_CHAR, "\\|")];
+        return [`\`.${m.name}\``, cellText.replaceAll(PIPE_CHAR, String.raw`\|`)];
       }
       if (m.affects?.length) {
         const marker = tag(options.classNames?.affects, "Affects", "_Affects_");
@@ -754,7 +757,7 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
           return a.description ? `${target} — ${escProse(a.description)}` : target;
         });
         const cellText = `${marker}: ${notes.join("; ")}`;
-        return [`\`.${m.name}\``, cellText.replaceAll(PIPE_CHAR, "\\|")];
+        return [`\`.${m.name}\``, cellText.replaceAll(PIPE_CHAR, String.raw`\|`)];
       }
       return [`\`.${m.name}\``, cell(m.description)];
     });

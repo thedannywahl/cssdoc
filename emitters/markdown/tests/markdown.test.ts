@@ -77,7 +77,7 @@ test("escapes repeated Vue and table delimiters while preserving code spans", ()
     '&lt;x> &#123;&#123;a}} | <code v-pre="">&#x3C;y> {{b}}</code> | &lt;z>',
   );
   expect(cell(text)).toBe(
-    '&lt;x> &#123;&#123;a}} \\| <code v-pre="">&#x3C;y> {{b}}</code> \\| &lt;z>',
+    String.raw`&lt;x> &#123;&#123;a}} \| <code v-pre="">&#x3C;y> {{b}}</code> \| &lt;z>`,
   );
 });
 

@@ -115,9 +115,9 @@ test("escapes regex metacharacters without changing ordinary characters", () => 
 });
 
 test("escapes each metacharacter in a string while preserving literal text", () => {
-  const text = "é.a+[x]\\z";
+  const text = String.raw`é.a+[x]\z`;
   const escaped = escapeRegex(text);
-  expect(escaped).toBe("é\\.a\\+\\[x\\]\\\\z");
+  expect(escaped).toBe(String.raw`é\.a\+\[x\]\\z`);
   expect(new RegExp(`^${escaped}$`, "u").test(text)).toBe(true);
   expect(escapeRegex("")).toBe("");
 });

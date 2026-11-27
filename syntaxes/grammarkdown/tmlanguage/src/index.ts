@@ -83,7 +83,7 @@ export function buildGrammar(): GrammarkdownGrammar {
         name: "comment.line.double-slash.grammarkdown",
       },
       prose: {
-        match: "^\\s*>.*$",
+        match: String.raw`^\s*>.*$`,
         name: "string.unquoted.prose.grammarkdown",
       },
       directive: {
@@ -118,7 +118,7 @@ export function buildGrammar(): GrammarkdownGrammar {
         name: "constant.character.terminal.grammarkdown",
       },
       characterClass: {
-        match: "<[^>\\n]+>",
+        match: String.raw`<[^>\n]+>`,
         name: "constant.language.character-class.grammarkdown",
       },
       codepoint: {
@@ -130,7 +130,7 @@ export function buildGrammar(): GrammarkdownGrammar {
         name: "keyword.control.grammarkdown",
       },
       optional: {
-        match: "\\?",
+        match: String.raw`\?`,
         name: "keyword.operator.optional.grammarkdown",
       },
       nonterminal: {

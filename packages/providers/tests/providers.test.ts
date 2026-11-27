@@ -129,7 +129,7 @@ test("inline highlighting shares configured vocabulary and Markdown code boundar
   const text = [
     "/**",
     " * @remarks - 😀 {@link button | Action} `{@link hidden}`",
-    " * \\{@link escaped} and {@note hello}",
+    String.raw` * \{@link escaped} and {@note hello}`,
     " *",
     " *     {@link indented}",
     " *",

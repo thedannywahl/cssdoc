@@ -276,7 +276,7 @@ test("HTML navigation links reject unsafe destinations", () => {
     "ftp://example.test/",
     "//example.test/path",
     "java\nscript:alert(1)",
-    "\\\\example.test",
+    String.raw`\\example.test`,
   ]) {
     expect(renderPage(entry, { indexHref: href })).toContain("<p>← Index</p>");
   }

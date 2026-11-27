@@ -262,7 +262,7 @@ export function buildInjectionGrammar(): InjectionGrammar {
       "structure-tag": {
         begin: `(${AT_SOURCE}structure)${WORD_BOUNDARY_SOURCE}`,
         beginCaptures: { "1": { name: TAG_SCOPE } },
-        end: "(?=@)|(?=\\*/)",
+        end: String.raw`(?=@)|(?=\*/)`,
         patterns: [
           {
             match: `(${CSSDOC_STRUCTURE_TAG_SOURCE})${WORD_BOUNDARY_SOURCE}${SPACE_TAB_SOURCE}*(${CSSDOC_COMPONENT_REF_SOURCE})?`,
