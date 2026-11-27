@@ -765,6 +765,37 @@ test("import lint uses top-level type imports only when every import is a type",
   }
 });
 
+test("promise lint prefers withResolvers over executor constructors", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".promise-constructor-check-"));
+  try {
+    const file = join(directory, "promises.mjs");
+    writeFileSync(
+      file,
+      [
+        "const legacy = new Promise((resolve) => resolve(1));",
+        "const modern = Promise.withResolvers();",
+        "modern.resolve(1);",
+        "console.error(legacy, modern.promise);",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "promise(avoid-new)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["warning", 1]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));

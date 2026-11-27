@@ -293,7 +293,7 @@ export const baseConfig: UserConfig = defineConfig({
       "promise/prefer-await-to-then": "off",
       "promise/prefer-await-to-callbacks": "off",
       "promise/prefer-catch": "warn",
-      "promise/avoid-new": "off",
+      "promise/avoid-new": "warn",
       // As with the other size limits, these don't fit parsers, generators, and tests.
       "eslint/max-statements": "off",
       "eslint/max-params": "off",

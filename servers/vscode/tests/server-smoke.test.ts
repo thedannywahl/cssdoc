@@ -174,23 +174,24 @@ test("the bundled server applies file overrides and reloads them for open docume
   writeConfig("off");
   const { server, request } = ipcServer();
   type Diagnostic = { code: string; severity: number };
-  const nextDiagnostics = (uri: string): Promise<Diagnostic[]> =>
-    new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        server.off("message", onMessage);
-        reject(new Error(`No diagnostics for ${uri}`));
-      }, 10_000);
-      function onMessage(message: unknown): void {
-        if (!message || typeof message !== "object" || !("method" in message)) return;
-        if (message.method !== "textDocument/publishDiagnostics" || !("params" in message)) return;
-        const params = message.params as { uri: string; diagnostics: Diagnostic[] };
-        if (params.uri !== uri) return;
-        clearTimeout(timer);
-        server.off("message", onMessage);
-        resolve(params.diagnostics);
-      }
-      server.on("message", onMessage);
-    });
+  const nextDiagnostics = (uri: string): Promise<Diagnostic[]> => {
+    const { promise, resolve, reject } = Promise.withResolvers<Diagnostic[]>();
+    const timer = setTimeout(() => {
+      server.off("message", onMessage);
+      reject(new Error(`No diagnostics for ${uri}`));
+    }, 10_000);
+    function onMessage(message: unknown): void {
+      if (!message || typeof message !== "object" || !("method" in message)) return;
+      if (message.method !== "textDocument/publishDiagnostics" || !("params" in message)) return;
+      const params = message.params as { uri: string; diagnostics: Diagnostic[] };
+      if (params.uri !== uri) return;
+      clearTimeout(timer);
+      server.off("message", onMessage);
+      resolve(params.diagnostics);
+    }
+    server.on("message", onMessage);
+    return promise;
+  };
   const source =
     "/* cssdoc-expect-error unknown-annotation-ref */\n/**\n * @component widget\n */\n.widget {}";
   const open = (uri: string, languageId: string, text: string) =>
