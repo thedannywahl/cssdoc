@@ -58,7 +58,7 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-empty-object-type": "off",
       "typescript/no-unnecessary-boolean-literal-compare": "off",
       "typescript/no-misused-spread": "off",
-      "typescript/triple-slash-reference": "off",
+      "typescript/triple-slash-reference": "warn",
       "typescript/prefer-for-of": "warn",
       "typescript/no-import-type-side-effects": "error",
       "typescript/no-require-imports": "off",
