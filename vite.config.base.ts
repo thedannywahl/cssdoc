@@ -50,7 +50,6 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/consistent-return": "off",
       "typescript/restrict-template-expressions": "off",
       "typescript/no-deprecated": "off",
-      "typescript/no-empty-object-type": "off",
       "typescript/no-misused-spread": "error",
       // Ambient declarations must follow their sources into cross-package TypeScript projects.
       "typescript/triple-slash-reference": ["warn", { path: "always" }],
@@ -84,6 +83,8 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/explicit-function-return-type": "off",
       // Vue's component declaration and autocomplete-friendly string unions use empty object types.
       "typescript/ban-types": "off",
+      // Vue's ambient component declaration needs empty generic placeholders.
+      "typescript/no-empty-object-type": "off",
       "unicorn/prefer-node-protocol": "error",
       // Re-enable newly activated Unicorn rules individually after review.
       "unicorn/explicit-length-check": "off",
