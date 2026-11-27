@@ -50,6 +50,7 @@ import {
 export {
   resolveNamedMemberReference,
   resolveRecordReference,
+  resolveScopeMemberReference,
   resolveSelectorMemberReference,
 } from "./reference.ts";
 export type {
@@ -61,6 +62,8 @@ export type {
   ReferenceLookup,
   ReferenceLookupScope,
   ReferenceSource,
+  ScopeMemberCandidate,
+  ScopeMemberResolution,
   SelectorMemberCandidate,
   SelectorMemberOccurrence,
   SelectorMemberResolution,
@@ -101,6 +104,14 @@ export interface Location {
   file?: string;
   /** Range within the source. */
   span: SourceSpan;
+}
+
+/** A CSS `@scope` enclosing rules owned by one record. */
+export interface ScopeOccurrence {
+  /** Authored scope prelude, or an empty string when omitted. */
+  prelude: string;
+  /** Range of the CSS at-rule, when available. */
+  span?: SourceSpan;
 }
 
 /**
@@ -182,6 +193,8 @@ export interface RecordInfo {
   ruleSpan?: SourceSpan;
   /** Spans keyed by {@link memberKey}, e.g. `modifier:-color-secondary`, `property:--value`. */
   memberSpans: Map<string, SourceSpan>;
+  /** CSS scope occurrences; absent when the index was built without source CSS. */
+  scopeOccurrences?: readonly ScopeOccurrence[];
   /** Modifier names authored via `@modifier` (used for drift detection). */
   authoredModifiers: Set<string>;
   /**
@@ -596,6 +609,7 @@ interface Build {
   docCommentSpan?: SourceSpan;
   ruleSpan?: SourceSpan;
   memberSpans: Map<string, SourceSpan>;
+  scopeOccurrences: ScopeOccurrence[];
   authoredModifiers: Set<string>;
   authoredParts: Map<string, string>;
   authoredShadowParts: Set<string>;
@@ -606,8 +620,28 @@ interface Build {
   resetValueUsages: { property: string; value: string; span?: SourceSpan }[];
 }
 
+function containsStyleRule(nodes: readonly ChildNode[], inStyleRule: boolean): boolean {
+  return nodes.some((node) => {
+    if (node.type === "rule") return true;
+    if (node.type === "decl") return inStyleRule;
+    if (node.type !== "atrule" || !node.nodes) return false;
+    const name = node.name.toLowerCase();
+    return (
+      name !== "keyframes" &&
+      !name.endsWith("-keyframes") &&
+      containsStyleRule(node.nodes, inStyleRule)
+    );
+  });
+}
+
 /** Scan a record's nodes for member spans, recording each member's first occurrence. */
-function scanNodes(nodes: ChildNode[], build: Build, base: string, matcher: ModifierMatcher): void {
+function scanNodes(
+  nodes: ChildNode[],
+  build: Build,
+  base: string,
+  matcher: ModifierMatcher,
+  inStyleRule = false,
+): void {
   const customState = toRegExp(CSSDOC_CUSTOM_STATE_SELECTOR);
   const shadowPart = toRegExp(CSSDOC_SHADOW_PART_SELECTOR);
   const pseudo = toRegExp(CSSDOC_SCANNED_PSEUDO_SELECTOR);
@@ -666,8 +700,16 @@ function scanNodes(nodes: ChildNode[], build: Build, base: string, matcher: Modi
           build.resetValueUsages.push({ property, value, span: spanOf(child) });
         }
       }
-      if (node.nodes) scanNodes(node.nodes, build, base, matcher);
+      if (node.nodes) scanNodes(node.nodes, build, base, matcher, true);
     } else if (node.type === "atrule") {
+      if (
+        node.name.toLowerCase() === "scope" &&
+        node.nodes &&
+        containsStyleRule(node.nodes, inStyleRule)
+      ) {
+        const span = spanOf(node);
+        build.scopeOccurrences.push({ prelude: node.params, ...(span ? { span } : {}) });
+      }
       if (node.name === "property") set(memberKey("property", node.params.trim()), node);
       else if (node.name === "function") {
         const fn = node.params.trim().match(CUSTOM_FUNCTION);
@@ -681,7 +723,7 @@ function scanNodes(nodes: ChildNode[], build: Build, base: string, matcher: Modi
       } else if (node.name === "container" || node.name === "supports" || node.name === "media") {
         set(memberKey("condition", `${node.name}:${node.params.trim()}`), node);
       }
-      if (node.nodes) scanNodes(node.nodes, build, base, matcher);
+      if (node.nodes) scanNodes(node.nodes, build, base, matcher, inStyleRule);
     }
   }
 }
@@ -739,6 +781,7 @@ export function createIndex(
           span: docSpan,
           docCommentSpan: docSpan,
           memberSpans: new Map(),
+          scopeOccurrences: [],
           authoredModifiers: new Set(doc.modifiers.keys()),
           // name → selector: non-class parts use their explicit selector; class parts use ".${name}".
           authoredParts: new Map(
@@ -766,6 +809,7 @@ export function createIndex(
       docCommentSpan: build?.docCommentSpan,
       ruleSpan: build?.ruleSpan,
       memberSpans: build?.memberSpans ?? new Map(),
+      ...(build && !options.parse ? { scopeOccurrences: build.scopeOccurrences } : {}),
       authoredModifiers: build?.authoredModifiers ?? new Set(),
       authoredParts: build?.authoredParts ?? new Map(),
       authoredShadowParts: build?.authoredShadowParts ?? new Set(),

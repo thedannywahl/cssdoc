@@ -40,7 +40,12 @@ map entry or an incomplete source produces an unavailable result.
 `pseudo-element` subjects against explicit `selectorMemberOccurrences`. Set
 `selectorMembersComplete` only when that map preserves every selector occurrence for the source.
 Namespaced type selectors and unsupported CSS parser forms produce an unavailable result. Neither
-resolver collects occurrences automatically, and at-rule-prelude members remain unsupported.
+resolver collects those named or selector occurrences automatically. Media, supports, and container
+members remain unsupported.
+
+`resolveScopeMemberReference` uses CSS `@scope` occurrences collected from a record's owned rules,
+including nested scopes and source spans. Model-only indexes and indexes built with a custom dialect
+parser return unavailable for scope members. Unsupported selector syntax also returns unavailable.
 
 ## License
 

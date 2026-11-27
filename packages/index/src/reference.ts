@@ -12,7 +12,7 @@ import type {
 import { ALPHA_UPPER_SOURCE } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
 import { generate, ident, parse, tokenTypes, tokenize, walk } from "css-tree";
-import type { CssDocIndex, RecordInfo, SourceSpan } from "./index.ts";
+import type { CssDocIndex, RecordInfo, ScopeOccurrence, SourceSpan } from "./index.ts";
 
 type NamedMemberByKind = {
   csspart: CssPart;
@@ -454,6 +454,94 @@ export function resolveSelectorMemberReference(
   for (const occurrence of record.selectorMemberOccurrences) {
     if (occurrence.kind !== member.kind) continue;
     const candidateKey = selectorKey(occurrence.selector, occurrence.kind);
+    if (candidateKey.status !== "valid") return { status: "unavailable", candidates: [record] };
+    if (candidateKey.key === key.key) candidates.push({ record, occurrence });
+  }
+  if (candidates.length === 0) return { status: "missing" };
+  if (candidates.length > 1) return { status: "ambiguous", stage: "member", candidates };
+  return { status: "resolved", candidate: candidates[0] };
+}
+
+/** One CSS `@scope` occurrence and its owning record. */
+export interface ScopeMemberCandidate {
+  /** Owning record and its source provenance. */
+  record: ReferenceCandidate;
+  /** Source occurrence of the CSS scope. */
+  occurrence: ScopeOccurrence;
+}
+
+/** Resolution of a CSS scope member reference. */
+export type ScopeMemberResolution =
+  | { status: "resolved"; candidate: ScopeMemberCandidate }
+  | { status: "missing" }
+  | { status: "ambiguous"; stage: "record"; candidates: readonly ReferenceCandidate[] }
+  | { status: "ambiguous"; stage: "member"; candidates: readonly ScopeMemberCandidate[] }
+  | { status: "unavailable"; candidates: readonly ReferenceCandidate[] }
+  | { status: "invalid-subject" };
+
+function scopeKey(input: string): SelectorKey {
+  try {
+    const ast = parse(input, {
+      context: "atrulePrelude",
+      atrule: "scope",
+      onParseError(error) {
+        throw error;
+      },
+    });
+    if (ast.type !== "AtrulePrelude" || ast.children.size !== 1) return { status: "invalid" };
+    const scope = ast.children.first;
+    if (scope?.type !== "Scope") return { status: "unsupported" };
+    const components: (string[] | null)[] = [];
+    for (const list of [scope.root, scope.limit]) {
+      if (!list) {
+        components.push(null);
+        continue;
+      }
+      if (list.type !== "SelectorList") return { status: "unsupported" };
+      const selectors: string[] = [];
+      for (const selector of list.children) {
+        if (selector.type !== "Selector") return { status: "unsupported" };
+        const key = selectorKey(generate(selector), "part");
+        if (key.status !== "valid") return key;
+        selectors.push(key.key);
+      }
+      components.push(selectors);
+    }
+    return { status: "valid", key: JSON.stringify(components) };
+  } catch (error) {
+    if (error instanceof SyntaxError) return { status: "invalid" };
+    throw error;
+  }
+}
+
+/**
+ * Resolve a CSS scope using occurrences collected from the record's owned rules.
+ *
+ * A model-only index has no scope occurrence data and returns unavailable.
+ *
+ * @param reference - A parsed reference with a `scope(...)` member.
+ * @param lookup - Explicit source provenance and scope completeness.
+ * @returns A resolved scope, missing or ambiguous candidates, an invalid subject, or unavailable.
+ */
+export function resolveScopeMemberReference(
+  reference: CssDocReference,
+  lookup: ReferenceLookup,
+): ScopeMemberResolution {
+  if (reference.member?.kind !== "scope") return { status: "unavailable", candidates: [] };
+  const key = scopeKey(reference.member.subject);
+  if (key.status === "invalid") return { status: "invalid-subject" };
+  if (key.status === "unsupported") return { status: "unavailable", candidates: [] };
+  const resolution = resolveRecordReference(reference, lookup);
+  if (resolution.status === "missing") return { status: "missing" };
+  if (resolution.status === "ambiguous")
+    return { status: "ambiguous", stage: "record", candidates: resolution.candidates };
+  if (resolution.status === "unavailable") return resolution;
+  const record = resolution.candidate;
+  const occurrences = record.record.scopeOccurrences;
+  if (!occurrences) return { status: "unavailable", candidates: [record] };
+  const candidates: ScopeMemberCandidate[] = [];
+  for (const occurrence of occurrences) {
+    const candidateKey = scopeKey(occurrence.prelude);
     if (candidateKey.status !== "valid") return { status: "unavailable", candidates: [record] };
     if (candidateKey.key === key.key) candidates.push({ record, occurrence });
   }

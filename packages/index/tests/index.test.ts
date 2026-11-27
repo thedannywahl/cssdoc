@@ -1,4 +1,5 @@
 import { CssDocConfiguration, parseReference } from "@cssdoc/core";
+import postcss from "postcss";
 import { expect, test } from "vite-plus/test";
 import {
   type CssDocIndex,
@@ -9,6 +10,7 @@ import {
   memberKey,
   resolveNamedMemberReference,
   resolveRecordReference,
+  resolveScopeMemberReference,
   resolveSelectorMemberReference,
 } from "../src/index.ts";
 
@@ -292,6 +294,66 @@ test("selector members match CSS identities against complete original occurrence
       new Map([[record, [{ kind: "part", selector: ":foo(bar)" }]]]),
     ),
   ).toMatchObject({ status: "unavailable" });
+});
+
+test("scope member resolution retains nested CSS occurrences and source spans", () => {
+  const css = `/** @component card */
+@scope (.card) to (.end) {
+  .card {}
+  @scope (.inner) { .card {} }
+}
+@scope (.card) to (.end) { .card {} }
+@scope { .card {} }
+@scope (.empty) { @keyframes fade { from { opacity: 0 } } }
+.card { @scope (.nested) { color: red } }
+/** @component other */
+@scope (.other) { .other {} }
+`;
+  const index = createIndex(css, { file: "cards.css" });
+  const resolve = (text: string, scopeIndex = index, complete = true) => {
+    const parsed = parseReference(text);
+    if (!parsed.ok) throw new Error(parsed.error);
+    return resolveScopeMemberReference(parsed.reference, {
+      workspace: { complete, sources: [{ index: scopeIndex, sourceKey: "cards.css" }] },
+    });
+  };
+  expect(index.records[0].scopeOccurrences?.map((scope) => scope.prelude)).toEqual([
+    "(.card) to (.end)",
+    "(.inner)",
+    "(.card) to (.end)",
+    "",
+    "(.nested)",
+  ]);
+  expect(resolve(String.raw`card#scope((.c\61 rd) /* c */ to (.end))`)).toMatchObject({
+    status: "ambiguous",
+    stage: "member",
+    candidates: [
+      { occurrence: { span: { start: { line: 2 } } }, record: { sourceKey: "cards.css" } },
+      { occurrence: { span: { start: { line: 6 } } } },
+    ],
+  });
+  expect(resolve("card#scope((.inner))")).toMatchObject({
+    status: "resolved",
+    candidate: { occurrence: { span: { start: { line: 4 } } } },
+  });
+  expect(resolve("card#scope((.nested))")).toMatchObject({ status: "resolved" });
+  expect(resolve("card#scope(/* omitted */)")).toMatchObject({ status: "resolved" });
+  expect(resolve("card#scope((.card))")).toEqual({ status: "missing" });
+  expect(resolve("card#scope((.empty))")).toEqual({ status: "missing" });
+  expect(resolve("card#scope((??))")).toEqual({ status: "invalid-subject" });
+  expect(resolve("card#scope((:unknown(value)))")).toMatchObject({ status: "unavailable" });
+  expect(resolve("card#scope((.inner))", index, false)).toMatchObject({ status: "unavailable" });
+  expect(resolve("card#scope((.inner))", indexFromEntries(index.entries))).toMatchObject({
+    status: "unavailable",
+  });
+  expect(resolve("card#scope((.inner))", createIndex(css, { parse: postcss.parse }))).toMatchObject(
+    {
+      status: "unavailable",
+    },
+  );
+  expect(resolve("other#scope((.other))")).toMatchObject({ status: "resolved" });
+  const invalidSource = createIndex("/** @component card */ @scope (??) { .card {} }");
+  expect(resolve("card#scope((.card))", invalidSource)).toMatchObject({ status: "unavailable" });
 });
 
 test("createIndex parses the model and resolves class lookups", () => {
