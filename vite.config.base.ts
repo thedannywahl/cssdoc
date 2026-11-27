@@ -113,6 +113,7 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-empty-object-type": "off",
       "unicorn/prefer-node-protocol": "error",
       "unicorn/no-accessor-recursion": "error",
+      "unicorn/no-array-fill-with-reference-type": "error",
       // Re-enable newly activated Unicorn rules individually after review.
       "unicorn/explicit-length-check": "off",
       "unicorn/import-style": "off",
