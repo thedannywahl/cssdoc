@@ -604,6 +604,69 @@ test("TypeScript suppression comments require safe alternatives", () => {
   }
 });
 
+test("Vue lint runs only for the documentation site in root and package runs", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const site = join(root, "docs");
+  const siteDirectory = mkdtempSync(join(site, ".vue-lint-check-"));
+  const otherDirectory = mkdtempSync(join(root, "packages/config/tests/vue-lint-check-"));
+  try {
+    const source = [
+      '<script setup lang="ts">',
+      "const { label } = defineProps<{ label: string }>();",
+      "console.error(label);",
+      "</script>",
+    ].join("\n");
+    const siteFile = join(siteDirectory, "sample.vue");
+    const safeFile = join(siteDirectory, "safe.vue");
+    const otherFile = join(otherDirectory, "sample.vue");
+    writeFileSync(siteFile, source);
+    writeFileSync(
+      safeFile,
+      [
+        '<script setup lang="ts">',
+        "const props = defineProps<{ label: string; value: string }>();",
+        "console.error(props.label, props.value);",
+        "</script>",
+      ].join("\n"),
+    );
+    writeFileSync(otherFile, source);
+    for (const cwd of [root, site]) {
+      const result = spawnSync(
+        "vp",
+        ["lint", "--no-ignore", "--format", "json", siteFile, safeFile],
+        {
+          cwd,
+          encoding: "utf8",
+        },
+      );
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      const { diagnostics } = parseLintOutput(result.stdout);
+      expect(diagnostics).toContainEqual(
+        expect.objectContaining({
+          code: "vue(define-props-destructuring)",
+          severity: "warning",
+        }),
+      );
+      expect(
+        diagnostics.filter(
+          ({ code, filename }) => code.startsWith("vue(") && filename.endsWith("/safe.vue"),
+        ),
+      ).toEqual([]);
+    }
+    const other = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", otherFile], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    expect(other.status, `${other.stdout}\n${other.stderr}`).toBe(0);
+    expect(
+      parseLintOutput(other.stdout).diagnostics.filter(({ code }) => code.startsWith("vue(")),
+    ).toEqual([]);
+  } finally {
+    rmSync(siteDirectory, { recursive: true, force: true });
+    rmSync(otherDirectory, { recursive: true, force: true });
+  }
+});
+
 test("Node imports use the node: protocol in root and package lint runs", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".node-protocol-check-"));

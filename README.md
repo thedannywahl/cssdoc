@@ -93,6 +93,8 @@ TypeScript. Untyped JavaScript is excluded from those checks because it lacks re
 information; the standalone VS Code Lit example is also excluded from the assignment, call, and
 member-access checks.
 
+The VitePress site also uses Oxlint's Vue rules. Oxlint checks Vue script blocks, not templates.
+
 Selected `eslint-plugin-regexp` rules check native regex literals and `RegExp` constructors for
 mistakes and inefficient matching. The plugin doesn't analyze `arkRegex.as` calls or the composed
 strings in `@cssdoc/regex`; review and test those patterns separately. Its analysis doesn't prove

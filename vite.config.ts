@@ -1,7 +1,7 @@
 import { configDefaults, defineConfig, mergeConfig } from "vite-plus";
 import type { UserConfig } from "vite-plus";
 
-import { baseConfig } from "./vite.config.base.ts";
+import { baseConfig, docsLint } from "./vite.config.base.ts";
 
 // Coding agents create git worktrees here; each holds a full copy of the repo whose stale source would
 // otherwise be linted, formatted, and (via Vitest's file discovery) test-run. Ignore both the bare and
@@ -42,6 +42,10 @@ const config: UserConfig = mergeConfig(
       ],
       rules: { "vite-plus/prefer-vite-plus-imports": "error" },
       overrides: [
+        {
+          files: ["docs/**"],
+          ...docsLint,
+        },
         {
           // TSDoc enforcement on source TypeScript: every exported declaration needs a doc comment and
           // comments must be valid TSDoc (honouring tsdoc.json). Both rules are comment/syntax-only.

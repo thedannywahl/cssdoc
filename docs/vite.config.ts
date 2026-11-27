@@ -1,11 +1,12 @@
 import { defineConfig, mergeConfig } from "vite-plus";
 import type { UserConfig } from "vite-plus";
 
-import { baseConfig } from "../vite.config.base.ts";
+import { baseConfig, docsLint } from "../vite.config.base.ts";
 
 const config: UserConfig = mergeConfig(
   baseConfig,
   defineConfig({
+    lint: docsLint,
     run: {
       tasks: {
         "docs:api": { command: "typedoc", cache: false },

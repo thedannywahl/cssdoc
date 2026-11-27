@@ -5,6 +5,28 @@ import type { UserConfig } from "vite-plus";
 
 import { CSSDOC_TAG_NAMES } from "./packages/spec/src/index.ts";
 
+const lintPlugins: NonNullable<NonNullable<UserConfig["lint"]>["plugins"]> = [
+  "eslint",
+  "import",
+  "node",
+  "promise",
+  "vitest",
+  "jsdoc",
+  "typescript",
+  "unicorn",
+];
+
+/** Vue lint configuration for the VitePress site. */
+export const docsLint: Pick<NonNullable<UserConfig["lint"]>, "plugins" | "rules"> = {
+  plugins: [...lintPlugins, "vue"],
+  rules: {
+    // Keep prop access explicitly reactive; component prop counts and registration casing vary.
+    "vue/define-props-destructuring": ["warn", { destructure: "never" }],
+    "vue/max-props": "off",
+    "vue/component-definition-name-casing": "off",
+  },
+};
+
 export const baseConfig: UserConfig = defineConfig({
   // Root and package runs resolve Vite+ through different workspace dependencies.
   test: { fsModuleCachePath: resolve(process.cwd(), "node_modules/.vitest-cache") },
@@ -19,7 +41,7 @@ export const baseConfig: UserConfig = defineConfig({
       nursery: "off",
     },
     options: { typeAware: true, typeCheck: true },
-    plugins: ["import", "node", "promise", "vitest", "jsdoc", "typescript", "unicorn"],
+    plugins: lintPlugins,
     jsPlugins: [{ name: "regexp", specifier: "eslint-plugin-regexp" }],
     rules: {
       "typescript/no-floating-promises": "error",
