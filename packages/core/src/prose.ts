@@ -5,3 +5,4 @@ export {
   parseDocComment,
   unescapeInlineOpeners,
 } from "./full-grammar.ts";
+export { sanitizeMarkdownLinks } from "./markdown-links.ts";

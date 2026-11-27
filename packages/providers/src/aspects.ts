@@ -12,7 +12,7 @@ import {
   literalMarkdownText,
   selectExampleIndices,
 } from "@cssdoc/core";
-import { unescapeInlineOpeners } from "@cssdoc/core/prose";
+import { sanitizeMarkdownLinks, unescapeInlineOpeners } from "@cssdoc/core/prose";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import {
@@ -826,7 +826,7 @@ export const record = {
         entry.conditions.length && `${entry.conditions.length} conditions`,
       ].filter(Boolean);
       if (facets.length) lines.push("", facets.join(" · "));
-      return { contents: lines.join("\n") };
+      return { contents: sanitizeMarkdownLinks(lines.join("\n")) };
     }
 
     // full / custom: a section-driven Markdown card. Structure and prose stay Markdown (bold headers
@@ -1049,7 +1049,7 @@ export const record = {
       const frag = fragments[key];
       if (frag) lines.push(...frag);
     }
-    return { contents: lines.join("\n") };
+    return { contents: sanitizeMarkdownLinks(lines.join("\n")) };
   },
 
   /** Find the base record's source location, when indexed. */
@@ -1289,7 +1289,7 @@ export const modifier = {
         : (m.deprecated.note ?? "");
       lines.push("", `${bold("Deprecated")} — ${advice}`);
     }
-    return { contents: lines.join("\n") };
+    return { contents: sanitizeMarkdownLinks(lines.join("\n")) };
   },
 
   /** Find a modifier's source location, when indexed. */
@@ -1576,7 +1576,7 @@ export const customProperty = {
     // The value it computes to, following `var()` references through the sheet (dev-tools style).
     if (resolved) lines.push("", `Resolves to: ${codeSpan(resolved)}`);
     if (p?.description) lines.push("", p.description);
-    return { contents: lines.join("\n") };
+    return { contents: sanitizeMarkdownLinks(lines.join("\n")) };
   },
 
   /** Find a custom property's source location, when indexed. */
@@ -1608,7 +1608,9 @@ export const func = {
     if (!match) return undefined;
     const { fn } = match;
     const sig = `${codeSpan(`${fn.name}${PAREN_OPEN_CHAR}${fn.parameters.join(", ")}${PAREN_CLOSE_CHAR}`)}${fn.result ? ` → ${codeSpan(fn.result)}` : ""}`;
-    return { contents: fn.description ? `${sig}\n\n${fn.description}` : sig };
+    return {
+      contents: sanitizeMarkdownLinks(fn.description ? `${sig}\n\n${fn.description}` : sig),
+    };
   },
 
   /** Find the first matching custom function's source location, when indexed. */

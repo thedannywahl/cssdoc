@@ -1,5 +1,5 @@
-import { literalMarkdownText, safeProseUrl } from "@cssdoc/core";
-import { unescapeInlineOpeners } from "@cssdoc/core/prose";
+import { literalMarkdownText } from "@cssdoc/core";
+import { sanitizeMarkdownLinks as sanitizeLinks, unescapeInlineOpeners } from "@cssdoc/core/prose";
 import {
   BACKTICK_CHAR,
   BRACE_OPEN_CHAR,
@@ -18,9 +18,6 @@ type Node = {
   type: string;
   position?: { start: { offset?: number }; end: { offset?: number } };
   children?: readonly Node[];
-  url?: string;
-  identifier?: string;
-  alt?: string | null;
   value?: string;
 };
 
@@ -69,7 +66,7 @@ function escapeFree(text: string): string {
  * @returns Safe Markdown with code regions preserved.
  */
 export function safeMarkdownProse(text: string): string {
-  return sanitize(unescapeInlineOpeners(text, "markdown"), true);
+  return escapeMarkdown(sanitizeLinks(unescapeInlineOpeners(text, "markdown")));
 }
 
 /**
@@ -107,19 +104,11 @@ export function safeMarkdownBlock(text: string): string {
  * @returns Markdown with unsafe destinations removed.
  */
 export function sanitizeMarkdownLinks(text: string): string {
-  return sanitize(text, false);
+  return sanitizeLinks(text);
 }
 
-function sanitize(text: string, escape: boolean): string {
+function escapeMarkdown(text: string): string {
   const tree: Node = fromMarkdown(text);
-  const definitions = new Map<string, string>();
-  const collectDefinitions = (node: Node): void => {
-    if (node.type === "definition" && node.identifier !== undefined && node.url !== undefined) {
-      if (!definitions.has(node.identifier)) definitions.set(node.identifier, node.url);
-    }
-    for (const child of node.children ?? []) collectDefinitions(child);
-  };
-  collectDefinitions(tree);
   const edits: Edit[] = [];
   const visit = (node: Node): void => {
     const start = node.position?.start.offset;
@@ -129,7 +118,6 @@ function sanitize(text: string, escape: boolean): string {
         const source = text.slice(start, end);
         const fenced = source.startsWith(BACKTICK_CHAR) || source.startsWith(TILDE_CHAR);
         const protect =
-          escape &&
           (node.type === "inlineCode" || !fenced) &&
           node.value?.includes(BRACE_OPEN_CHAR.repeat(2));
         edits.push({
@@ -142,28 +130,6 @@ function sanitize(text: string, escape: boolean): string {
         });
         return;
       }
-      const image = node.type === "image" || node.type === "imageReference";
-      const reference = node.type === "linkReference" || node.type === "imageReference";
-      const destination = reference
-        ? node.identifier === undefined
-          ? undefined
-          : definitions.get(node.identifier)
-        : node.url;
-      const link = node.type === "link" || node.type === "image" || reference;
-      if (link && destination !== undefined && !safeProseUrl(destination, image)) {
-        const first = node.children?.[0]?.position?.start.offset;
-        const last = node.children?.at(-1)?.position?.end.offset;
-        const label =
-          image || first === undefined || last === undefined
-            ? literalMarkdownText(node.alt ?? "")
-            : sanitize(text.slice(first, last), escape);
-        edits.push({ start, end, text: label });
-        return;
-      }
-      if (node.type === "definition" && node.url !== undefined && !safeProseUrl(node.url)) {
-        edits.push({ start, end, text: "" });
-        return;
-      }
     }
     for (const child of node.children ?? []) visit(child);
   };
@@ -172,9 +138,9 @@ function sanitize(text: string, escape: boolean): string {
   let cursor = 0;
   for (const edit of edits.toSorted((a, b) => a.start - b.start)) {
     const before = text.slice(cursor, edit.start);
-    result += (escape ? escapeFree(before) : before) + edit.text;
+    result += escapeFree(before) + edit.text;
     cursor = edit.end;
   }
   const after = text.slice(cursor);
-  return result + (escape ? escapeFree(after) : after);
+  return result + escapeFree(after);
 }

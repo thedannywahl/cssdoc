@@ -219,6 +219,18 @@ test("hover respects Markdown example prose and escaped openers", () => {
   expect(hover).not.toContain("```css\n**Prose**");
 });
 
+test("hover removes unsafe Markdown destinations without altering code", () => {
+  const idx = createIndex(`/** @component button
+ * @remarks - [bad](javascript:alert) [good](https://example.test)
+ * @example docs - \`[code](javascript:alert)\`
+ */
+.button {}`);
+  const hover = hoverForClass("button", "button", idx, "full")?.contents ?? "";
+  expect(hover).toContain("bad [good](https://example.test)");
+  expect(hover).not.toContain("[bad](javascript:");
+  expect(hover).toContain("`[code](javascript:alert)`");
+});
+
 test("directive separators retain whitespace and comma handling", () => {
   expect(parseDirectives("/* cssdoc-disable alpha,\tbeta \t-\t reason - details */")).toMatchObject(
     [{ rules: ["alpha", "beta"], reason: "reason - details" }],
