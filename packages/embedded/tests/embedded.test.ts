@@ -1,6 +1,13 @@
 import { expect, test } from "vite-plus/test";
+import {
+  CssDocConfiguration as ProviderConfiguration,
+  CssDocTagDefinition as ProviderTagDefinition,
+} from "@cssdoc/core/lite";
 import { blockSourceRange, collectDocCommentBlocks } from "../../core/src/blocks.ts";
-import { CssDocConfiguration } from "../../core/src/configuration.ts";
+import { CssDocConfiguration, CssDocTagDefinition } from "../../core/src/configuration.ts";
+import { parseDocComment as parseFullDocComment } from "../../core/src/full-grammar.ts";
+import { parseDocComment as parseLiteDocComment } from "../../core/src/grammar.ts";
+import { highlightDocComment } from "../../providers/src/highlighting.ts";
 import {
   detectEmbeddedHost,
   extractCssBlocks,
@@ -100,6 +107,75 @@ test("framed block text ranges map back through an embedded CSS projection", () 
     "😀 first\r\n *   second",
   );
 });
+
+test.each(["plain", "markdown", "auto"] as const)(
+  "embedded source keeps lite/full boundaries and highlighted offsets in %s mode",
+  (mode) => {
+    const source = [
+      "<p>😀 outside</p>",
+      "<style>",
+      "/**",
+      " * @component card",
+      " * @structure - Overview.",
+      " * @scope (.card) {",
+      " *   .card { .label {} }",
+      " * }",
+      " * @scope (.card) - 😀 Documents scope.",
+      " * @example docs, demo {@private} -",
+      " * ```css",
+      " * @remarks - still example code",
+      " * {@link hidden}",
+      " */",
+      ".card {}",
+      "</style>",
+    ].join("\r\n");
+    const configuration = new CssDocConfiguration();
+    configuration.addTagDefinition(
+      new CssDocTagDefinition({ tagName: "scope", syntaxKind: "block" }),
+    );
+    configuration.setProseSettings({ mode });
+    const providerConfiguration = new ProviderConfiguration();
+    providerConfiguration.addTagDefinition(
+      new ProviderTagDefinition({ tagName: "scope", syntaxKind: "block" }),
+    );
+    providerConfiguration.setProseSettings({ mode });
+    const projection = projectCss(source, { host: "html" });
+    const start = projection.indexOf("/**");
+    const end = projection.indexOf("*/", start) + 2;
+    const comment = projection.slice(start, end);
+    const full = parseFullDocComment(comment, configuration);
+    const lite = parseLiteDocComment(comment, configuration);
+    expect(full.blocks).toEqual(lite.blocks);
+    expect(full.prose.map((body) => body.span)).toEqual(lite.prose.map((body) => body.span));
+    expect(lite.prose.every((body) => body.mode === "plain")).toBe(true);
+    expect(full.exampleSpans).toEqual(lite.exampleSpans);
+    expect(full.exampleLabels).toEqual({ 0: ["docs", "demo"] });
+    expect(full.privateExamples).toEqual([0]);
+    expect(full.examples).toEqual(["```css\r\n@remarks - still example code\r\n{@link hidden}"]);
+    expect(
+      full.blocks.map((block) => source.slice(start + block.start, start + block.end)),
+    ).toEqual([
+      "@component card",
+      "@structure - Overview.\r\n * @scope (.card) {\r\n *   .card { .label {} }\r\n * }",
+      "@scope (.card) - 😀 Documents scope.",
+      "@example docs, demo {@private} -\r\n * ```css\r\n * @remarks - still example code\r\n * {@link hidden}",
+    ]);
+    const tags = highlightDocComment(comment, providerConfiguration).filter(
+      (token) => token.role === "blockTag",
+    );
+    expect(tags.map((tag) => source.slice(start + tag.start, start + tag.end))).toEqual([
+      "@component",
+      "@structure",
+      "@scope",
+      "@example",
+    ]);
+    expect(
+      highlightDocComment(comment, providerConfiguration).some(
+        (token) => token.role === "inlineTag",
+      ),
+    ).toBe(false);
+  },
+);
 
 test("CR-only host lines retain embedded comment offsets and region positions", () => {
   const source = [
