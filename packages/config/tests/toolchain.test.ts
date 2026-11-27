@@ -2430,6 +2430,40 @@ test("lint permits workspace filename conventions but rejects snake-case module 
   }
 });
 
+test("root and docs lint enforce the same Vue correctness rules", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const docs = join(root, "docs");
+  const directory = mkdtempSync(join(docs, ".vue-check-"));
+  try {
+    const file = join(directory, "computed.vue");
+    writeFileSync(
+      file,
+      [
+        '<script setup lang="ts">',
+        'import { computed } from "vue";',
+        "const invalid = computed(async () => 1);",
+        "const valid = computed(() => 1);",
+        "</script>",
+        "<template><div>{{ invalid }} {{ valid }}</div></template>",
+      ].join("\n"),
+    );
+    for (const cwd of [root, docs]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code.startsWith("vue("))
+          .map(({ code, severity, labels }) => [code, severity, labels[0].span.line]),
+      ).toEqual([["vue(no-async-in-computed-properties)", "error", 3]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint checks JSX semantics without imposing a framework or breaking focus contracts", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, "packages/config/tests/.jsx-check-"));

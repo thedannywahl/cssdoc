@@ -185,8 +185,9 @@ TypeScript checks undefined names separately. The remaining nursery decisions ar
 The audit covers installed rules from the configured native plugins, including scoped Vue and JSX
 checks, plus regexp, TSDoc, TSDoc-require, and Vite+'s JavaScript plugins. Native category policies
 enable the non-exempt base-plugin rules. Override-only plugins need explicit rule selections; adding
-a plugin to an override doesn't expand the base category policy. Every installed regexp and
-JSX-a11y rule has an explicit disposition. Recheck the installed inventory and nursery implementations
+a plugin to an override doesn't expand the base category policy. Every installed regexp, Vue, and
+JSX-a11y rule has an explicit disposition. Root and docs-directory runs share the same Vue selections.
+Recheck the installed inventory and nursery implementations
 when upgrading the toolchain rather than assuming new rules fit these decisions.
 
 JSX checks apply HTML and ARIA semantics without requiring React. They reject missing image text,
