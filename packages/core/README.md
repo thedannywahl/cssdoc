@@ -61,6 +61,10 @@ the input comment. `blockSourceRange` maps a range in a block's framing-free tex
 The mappings retain LF, CRLF, and CR line endings, trailing spaces, and blank lines. These blocks
 contain authored text, including private content; filter it before publishing.
 
+For Markdown-aware prose modes without a CSS parser, use `parseDocComment` from
+`@cssdoc/core/prose`. The lite entry always interprets prose as plain text and doesn't load a
+Markdown parser.
+
 ## The doc-comment grammar
 
 A `/** … */` block above a component's rules. Records are delimited by `@component`/`@name`. The tag

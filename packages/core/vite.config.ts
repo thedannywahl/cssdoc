@@ -17,9 +17,8 @@ const config: UserConfig = mergeConfig(
       },
     },
     pack: {
-      // Two entries: the full barrel and the parse-free `./lite` subpath (no postcss). `exports: true`
-      // writes both into package.json `exports`.
-      entry: ["src/index.ts", "src/lite.ts"],
+      // The prose subpath adds Markdown interpretation without loading postcss.
+      entry: ["src/index.ts", "src/lite.ts", "src/prose.ts"],
     },
   }),
 );

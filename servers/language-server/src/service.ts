@@ -1354,7 +1354,27 @@ export class CssDocLanguageService {
     for (const block of docComments) {
       const blockText = block[0];
       const blockStart = block.index ?? 0;
-      for (const highlight of highlightDocComment(blockText, configuration)) {
+      const highlights = highlightDocComment(blockText, configuration);
+      for (const highlight of highlights) {
+        if (highlight.role !== "blockTag") {
+          if (highlight.role === "code") continue;
+          const isTag = highlight.role === "inlineTag";
+          const start = blockStart + highlight.start + (isTag ? 1 : 0);
+          const position = positionAt(text, start);
+          tokens.push({
+            line: position.line,
+            startCharacter: position.character,
+            length: highlight.end - highlight.start - (isTag ? 1 : 0),
+            tokenType:
+              highlight.role === "inlineTag"
+                ? tokenTypes.decorator
+                : highlight.role === "inlineContent"
+                  ? tokenTypes.variable
+                  : tokenTypes.keyword,
+            tokenModifiers: 0,
+          });
+          continue;
+        }
         const LINE_ENDING: Regex = arkRegex.as(LINE_ENDING_SOURCE, "u");
         const line = blockText.slice(highlight.start).split(LINE_ENDING, 1)[0];
         const tagMatches = line.matchAll(SEMANTIC_TAG);
@@ -1382,16 +1402,26 @@ export class CssDocLanguageService {
 
           // Emit value token if present
           if (tagValue) {
-            const valueStart =
-              blockStart + highlight.start + match[0].indexOf(tagValue, tagName.length + 1);
-            const valuePosition = positionAt(text, valueStart);
-            tokens.push({
-              line: valuePosition.line,
-              startCharacter: valuePosition.character,
-              length: Math.min(tagValue.length, 50),
-              tokenType: tokenTypes.variable,
-              tokenModifiers: modifierFlags,
-            });
+            const valueStart = highlight.start + match[0].indexOf(tagValue, tagName.length + 1);
+            const valueEnd = valueStart + Math.min(tagValue.length, 50);
+            let cursor = valueStart;
+            const blockers = highlights.filter(
+              (item) => item.role !== "blockTag" && item.start < valueEnd && item.end > valueStart,
+            );
+            for (const blocker of [...blockers, { start: valueEnd, end: valueEnd }]) {
+              const end = Math.min(valueEnd, blocker.start);
+              if (end > cursor) {
+                const valuePosition = positionAt(text, blockStart + cursor);
+                tokens.push({
+                  line: valuePosition.line,
+                  startCharacter: valuePosition.character,
+                  length: end - cursor,
+                  tokenType: tokenTypes.variable,
+                  tokenModifiers: modifierFlags,
+                });
+              }
+              cursor = Math.max(cursor, blocker.end);
+            }
           }
         }
       }

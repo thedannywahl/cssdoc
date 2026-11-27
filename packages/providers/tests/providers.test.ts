@@ -54,7 +54,11 @@ test("block highlighting follows scanner ownership and configuration", () => {
   config.addTagDefinition(new CssDocTagDefinition({ tagName: "custom", syntaxKind: "block" }));
   config.setSupportForTag(config.tryGetTagDefinition("summary")!, false);
   const tokens = highlightDocComment(text, config);
-  expect(tokens.map((token) => [text.slice(token.start, token.end), token.tag])).toEqual([
+  expect(
+    tokens
+      .filter((token) => token.role === "blockTag")
+      .map((token) => [text.slice(token.start, token.end), token.tag]),
+  ).toEqual([
     ["@name", "component"],
     ["@example", "example"],
     ["@custom", "custom"],
@@ -77,8 +81,59 @@ test("block highlighting retains incomplete fences and nested CSS scope ownershi
   const config = new CssDocConfiguration();
   config.addTagDefinition(new CssDocTagDefinition({ tagName: "scope", syntaxKind: "block" }));
   expect(
-    highlightDocComment(text, config).map((token) => text.slice(token.start, token.end)),
+    highlightDocComment(text, config)
+      .filter((token) => token.role === "blockTag")
+      .map((token) => text.slice(token.start, token.end)),
   ).toEqual(["@structure", "@scope", "@example"]);
+});
+
+test("inline highlighting shares configured vocabulary and Markdown code boundaries", () => {
+  const text = [
+    "/**",
+    " * @remarks - 😀 {@link button | Action} `{@link hidden}`",
+    " * \\{@link escaped} and {@note hello}",
+    " *",
+    " *     {@link indented}",
+    " *",
+    " * ```css",
+    " * {@link fenced}",
+    " * ```",
+    " * {@link unfinished",
+    " */",
+  ].join("\r\n");
+  const config = new CssDocConfiguration();
+  config.addTagDefinition(new CssDocTagDefinition({ tagName: "note", syntaxKind: "inline" }));
+  const tokens = highlightDocComment(text, config);
+  expect(
+    tokens
+      .filter((token) => token.role === "inlineTag")
+      .map((token) => text.slice(token.start, token.end)),
+  ).toEqual(["@link", "@note", "@link"]);
+  expect(
+    tokens.some(
+      (token) =>
+        token.role === "inlineContent" && text.slice(token.start, token.end) === "button | Action",
+    ),
+  ).toBe(true);
+  expect(tokens.every((token, i) => i === 0 || tokens[i - 1].end <= token.start)).toBe(true);
+  expect(tokens.every((token) => !text.slice(token.start, token.end).includes("\n"))).toBe(true);
+  config.setSupportForTag(config.tryGetTagDefinition("link")!, false);
+  expect(
+    highlightDocComment(text, config)
+      .filter((token) => token.role === "inlineTag")
+      .map((token) => token.tag),
+  ).toEqual(["note"]);
+});
+
+test("plain prose highlights inline tags in backticks but not fences", () => {
+  const text = "/** @remarks - `{@link live}`\n * ```\n * {@link hidden}\n * ```\n */";
+  const config = new CssDocConfiguration();
+  config.setProseSettings({ mode: "plain" });
+  expect(
+    highlightDocComment(text, config)
+      .filter((token) => token.role === "inlineTag")
+      .map((token) => text.slice(token.start, token.end)),
+  ).toEqual(["@link"]);
 });
 
 test("private examples don't appear in hover cards", () => {

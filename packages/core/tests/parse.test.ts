@@ -6,6 +6,7 @@ import {
   CssDocTagDefinition,
   parseCssDocs,
   parseDocComment as parseFullDocComment,
+  scanInlineTags,
   selectExamples,
   structureCustomMediaRefs,
   toJson,
@@ -70,6 +71,29 @@ test("auto ignores recognized inline metadata but detects real Markdown", () => 
     config,
   );
   expect(parsed.prose.map((body) => body.mode)).toEqual(["plain", "plain", "markdown", "markdown"]);
+});
+
+test("inline scanner preserves UTF-16 ranges, escapes, nested targets, and incomplete tags", () => {
+  const text =
+    '😀 \\{@link escaped} \\\\{@link source("a|b.css")::component:x | one\\} two} {@link unfinished';
+  const tags = scanInlineTags(text);
+  expect(tags.map((tag) => text.slice(tag.start, tag.end))).toEqual([
+    '{@link source("a|b.css")::component:x | one\\} two}',
+    "{@link unfinished",
+  ]);
+  expect(tags.map((tag) => tag.closed)).toEqual([true, false]);
+  expect(tags.map((tag) => text.slice(tag.start + 1, tag.nameEnd))).toEqual(["@link", "@link"]);
+});
+
+test("inline scanner uses the active vocabulary and skips disabled tags", () => {
+  const configuration = new CssDocConfiguration();
+  configuration.addTagDefinition(
+    new CssDocTagDefinition({ tagName: "custom", syntaxKind: "inline", aliasFor: "link" }),
+  );
+  configuration.setSupportForTag(configuration.tryGetTagDefinition("link")!, false);
+  expect(
+    scanInlineTags("{@link disabled} {@custom value} {@unknown value}", configuration),
+  ).toEqual([{ start: 17, end: 32, nameEnd: 25, tag: "link", closed: true }]);
 });
 
 test("usage and remarks identify the effective prose occurrence without matching text", () => {

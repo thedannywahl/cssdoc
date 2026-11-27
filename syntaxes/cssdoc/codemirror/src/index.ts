@@ -46,11 +46,8 @@ import {
   COMMENT_START_SOURCE,
   BRACE_OPEN_SOURCE,
   BRACE_CLOSE_SOURCE,
-  BRACE_OPEN_CHAR,
-  BRACE_CLOSE_CHAR,
   CSSDOC_DIRECTIVE_KIND_SOURCE,
   TOKEN_CUSTOM_PROPERTY_SOURCE,
-  TOKENIZER_INLINE_TAG_SOURCE,
   TOKENIZER_RECORD_TAG_SOURCE,
   TOKENIZER_MODIFIER_TAG_SOURCE,
   TOKENIZER_PART_TAG_SOURCE,
@@ -83,7 +80,6 @@ export interface CssdocToken {
 
 // The tag groups the matcher needs, all derived from the canonical vocabulary in @cssdoc/spec.
 const alt = (names: readonly string[]): string => names.join("|");
-const INLINE_TAGS = cssdocTagNamesByKind("inline");
 const RECORD_TAGS = cssdocTagNamesByKind("record");
 const MODIFIER_TAGS = cssdocTagNamesByArgument("modifier-name");
 const PART_TAGS = [...cssdocTagNamesByArgument("part-name"), "selector", "pseudo"];
@@ -123,7 +119,6 @@ const injectTags = (pattern: string, tags: readonly string[]): string =>
 // Token patterns follow structures defined in @cssdoc/regex/TOKENIZER_* patterns.
 const TOKEN = arkRegex.as(
   [
-    injectTags(TOKENIZER_INLINE_TAG_SOURCE, INLINE_TAGS),
     injectTags(TOKENIZER_RECORD_TAG_SOURCE, RECORD_TAGS),
     ...(MODIFIER_TAGS.length ? [injectTags(TOKENIZER_MODIFIER_TAG_SOURCE, MODIFIER_TAGS)] : []),
     injectTags(TOKENIZER_PART_TAG_SOURCE, PART_TAGS),
@@ -139,9 +134,6 @@ const TOKEN = arkRegex.as(
 );
 
 const GROUP_TYPE: Record<string, CssdocTokenType> = {
-  inline: "tag",
-  itag: "tag",
-  itext: "link",
   record: "record",
   rtag: "tag",
   rname: "record",
@@ -200,14 +192,24 @@ export const tokenizeComment = (
     }
     return out;
   }
-  const blockTags = highlightDocComment(text, configuration);
+  const highlights = highlightDocComment(text, configuration);
+  const blockTags = highlights.filter((highlight) => highlight.role === "blockTag");
   const allowedTags = new Set(blockTags.map((tag) => tag.start));
   const blocks = collectDocCommentBlocks(text, configuration);
-  const fences = docCommentFenceRanges(blocks);
+  const fences = [
+    ...docCommentFenceRanges(blocks),
+    ...highlights.filter((highlight) => highlight.role === "code"),
+  ];
   for (const m of text.matchAll(TOKEN)) {
     const groups = m.indices?.groups;
     if (!groups) continue;
     if (fences.some((range) => m.index >= range.start && m.index < range.end)) continue;
+    if (
+      highlights.some(
+        (range) => range.role.startsWith("inline") && m.index >= range.start && m.index < range.end,
+      )
+    )
+      continue;
     const blockTag =
       groups.rtag ??
       groups.mtag ??
@@ -220,19 +222,6 @@ export const tokenizeComment = (
     for (const key of Object.keys(groups)) {
       const gi = groups[key];
       if (gi && gi[0] !== gi[1]) {
-        // Special handling for inline tags: highlight braces as punctuation
-        if (key === "inline") {
-          const text_at_range = text.slice(gi[0], gi[1]);
-          // Opening brace (see BRACE_OPEN in @cssdoc/regex)
-          if (text_at_range[0] === BRACE_OPEN_CHAR) {
-            out.push({ from: gi[0], to: gi[0] + 1, type: "punct" });
-          }
-          // Closing brace (if present) (see BRACE_CLOSE in @cssdoc/regex)
-          const closeIdx = text_at_range.lastIndexOf(BRACE_CLOSE_CHAR);
-          if (closeIdx !== -1) {
-            out.push({ from: gi[0] + closeIdx, to: gi[1], type: "punct" });
-          }
-        }
         out.push({ from: gi[0], to: gi[1], type: GROUP_TYPE[key] });
       }
     }
@@ -241,6 +230,17 @@ export const tokenizeComment = (
     if (!out.some((token) => token.type === "tag" && token.from === tag.start)) {
       out.push({ from: tag.start, to: tag.end, type: "tag" });
     }
+  }
+  for (const highlight of highlights) {
+    const type =
+      highlight.role === "inlineTag"
+        ? "tag"
+        : highlight.role === "inlinePunctuation"
+          ? "punct"
+          : highlight.role === "inlineContent"
+            ? "link"
+            : undefined;
+    if (type) out.push({ from: highlight.start, to: highlight.end, type });
   }
   for (const block of blocks) {
     const tag = blockTags.find((tag) => tag.start === block.start && tag.tag === "structure");

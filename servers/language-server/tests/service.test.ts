@@ -1035,6 +1035,41 @@ test("semantic tokens follow configured block ownership in embedded CSS and inco
   expect(svc.semanticTokens(incomplete).filter((token) => token.tokenType === 4)).toHaveLength(2);
 });
 
+test("semantic tokens highlight inline tags without overlaps or Markdown code", () => {
+  const text = [
+    "/**",
+    " * @remarks - 😀 {@link button | Action} `{@link hidden}` \\{@link escaped}",
+    " *",
+    " *     {@link indented}",
+    " */",
+  ].join("\r\n");
+  const lines = text.split("\r\n");
+  const svc = new CssDocLanguageService(createIndex(""));
+  const tokens = svc
+    .semanticTokens(text)
+    .toSorted((a, b) => a.line - b.line || a.startCharacter - b.startCharacter);
+  expect(
+    tokens
+      .filter((token) => token.tokenType === 4)
+      .map((token) =>
+        lines[token.line].slice(token.startCharacter, token.startCharacter + token.length),
+      ),
+  ).toEqual(["remarks", "link"]);
+  expect(
+    tokens.map((token) =>
+      lines[token.line].slice(token.startCharacter, token.startCharacter + token.length),
+    ),
+  ).toContain("button | Action");
+  expect(
+    tokens.every(
+      (token, i) =>
+        i === 0 ||
+        tokens[i - 1].line !== token.line ||
+        tokens[i - 1].startCharacter + tokens[i - 1].length <= token.startCharacter,
+    ),
+  ).toBe(true);
+});
+
 test("inlayHints: shows custom property metadata", () => {
   const docCss = `
 /**

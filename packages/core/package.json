@@ -26,6 +26,7 @@
   "exports": {
     ".": "./dist/index.mjs",
     "./lite": "./dist/lite.mjs",
+    "./prose": "./dist/prose.mjs",
     "./package.json": "./package.json"
   },
   "publishConfig": {

@@ -140,6 +140,17 @@ test("splits an inline {@link …} into punctuation, tag, and link text", () => 
   expect(toks).toContainEqual({ type: "punct", text: "}" });
 });
 
+test("uses prose-aware inline highlights instead of lexical matches inside Markdown code", () => {
+  const src =
+    "/** @remarks - 😀 {@link button} `{@link hidden}` \\{@link escaped}\n *\n *     {@link indented}\n */";
+  const tokens = label(src);
+  expect(tokens.filter((token) => token.type === "tag")).toEqual([
+    { type: "tag", text: "@remarks" },
+    { type: "tag", text: "@link" },
+  ]);
+  expect(tokens).toContainEqual({ type: "link", text: "button" });
+});
+
 test("lightly highlights an @structure body — class selectors and braces, nothing else", () => {
   const toks = label("@structure Caption.\n.tabs {\n  .list:has(.tab) {}\n}\n@a11y ok");
   // The parts (class selectors) light up, including one inside :has().

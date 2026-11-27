@@ -14,6 +14,7 @@
     "paths": {
       "@cssdoc/core": ["../packages/core/src/index.ts"],
       "@cssdoc/core/lite": ["../packages/core/src/lite.ts"],
+      "@cssdoc/core/prose": ["../packages/core/src/prose.ts"],
       "@cssdoc/config": ["../packages/config/src/index.ts"],
       "@cssdoc/index": ["../packages/index/src/index.ts"],
       "@cssdoc/lint-core": ["../packages/lint-core/src/index.ts"],
