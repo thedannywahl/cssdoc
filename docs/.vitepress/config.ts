@@ -202,12 +202,19 @@ const config: UserConfig = defineConfig({
   transformHead: ({ pageData, siteData }) => {
     // The home page has no title of its own (the hero renders it), so give it a fuller line than the
     // bare site name — home is the most-shared URL and unfurls better with the tagline attached.
+    const frontmatterTitle: unknown = pageData.frontmatter.title;
+    const frontmatterDescription: unknown = pageData.frontmatter.description;
+    if (frontmatterTitle !== undefined && typeof frontmatterTitle !== "string") {
+      throw new TypeError("Page frontmatter title must be a string");
+    }
+    if (frontmatterDescription !== undefined && typeof frontmatterDescription !== "string") {
+      throw new TypeError("Page frontmatter description must be a string");
+    }
     const title =
       pageData.frontmatter.layout === "home"
         ? "cssdoc — TSDoc, for CSS"
-        : pageData.frontmatter.title || pageData.title || siteData.title;
-    const pageDescription =
-      pageData.frontmatter.description || pageData.description || siteData.description;
+        : frontmatterTitle || pageData.title || siteData.title;
+    const pageDescription = frontmatterDescription || pageData.description || siteData.description;
     // relativePath is like "guide/introduction.md" or "index.md"; cleanUrls drops the extension and
     // index files map to their directory root.
     const url = `${hostname}/${pageData.relativePath}`

@@ -15,6 +15,20 @@ const CSS = `
 .button { color: red; }
 `;
 
+function cssSidebarItems(path: string): unknown[] {
+  const sidebar: unknown = JSON.parse(readFileSync(path, "utf8"));
+  if (!Array.isArray(sidebar)) throw new Error("Expected a sidebar array");
+  const entries: unknown[] = sidebar;
+  const css = entries.find(
+    (entry): entry is { text: unknown } =>
+      typeof entry === "object" && entry !== null && "text" in entry && entry.text === "CSS",
+  );
+  if (!css || !("items" in css) || !Array.isArray(css.items)) {
+    throw new Error("Expected CSS sidebar items");
+  }
+  return css.items;
+}
+
 test("emitCssApi forwards the configured Markdown example filter and honors an explicit override", () => {
   const out = mkdtempSync(join(tmpdir(), "cssdoc-typedoc-examples-"));
   const cssPath = join(out, "button.css");
@@ -89,10 +103,8 @@ test("emitCssApi renders CSS pages and merges them into an existing typedoc-side
   expect(existsSync(join(out, "css", "button.md"))).toBe(true);
   expect(existsSync(join(out, "css", "index.md"))).toBe(true);
 
-  const sidebar = JSON.parse(readFileSync(join(out, TYPEDOC_SIDEBAR_FILE), "utf8"));
-  const cssSection = sidebar.find((i: { text: string }) => i.text === "CSS");
-  expect(cssSection).toBeDefined();
-  expect(cssSection.items[0]).toEqual({ text: "Overview", link: "/api/css/" });
+  const cssItems = cssSidebarItems(join(out, TYPEDOC_SIDEBAR_FILE));
+  expect(cssItems[0]).toEqual({ text: "Overview", link: "/api/css/" });
 });
 
 test("emitCssApi still emits pages when no typedoc-sidebar.json is present", () => {
@@ -181,14 +193,16 @@ test("emitCssApi forwards groups so the CSS sidebar orders custom groups", () =>
 
   emitCssApi({ outputDirectory: out, css: [cssPath], baseHref: "/api/css/", groups: ["Plugins"] });
 
-  const sidebar = JSON.parse(readFileSync(join(out, TYPEDOC_SIDEBAR_FILE), "utf8"));
-  const cssSection = sidebar.find((i: { text: string }) => i.text === "CSS");
+  const cssItems = cssSidebarItems(join(out, TYPEDOC_SIDEBAR_FILE));
   // Without forwarding, `groups` would no-op and Plugins would sort after Components (default order).
-  expect(cssSection.items.map((i: { text: string }) => i.text)).toEqual([
-    "Overview",
-    "Plugins",
-    "Components",
-  ]);
+  expect(
+    cssItems.map((item) => {
+      if (typeof item !== "object" || item === null || !("text" in item)) {
+        throw new Error("Expected a labeled sidebar item");
+      }
+      return item.text;
+    }),
+  ).toEqual(["Overview", "Plugins", "Components"]);
 });
 
 const VARIANT_CSS = `

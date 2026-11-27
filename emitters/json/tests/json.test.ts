@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { parseCssDocs, toJson } from "@cssdoc/core";
+import { type CssDocEntry, parseCssDocs, toJson } from "@cssdoc/core";
 import { createIndex } from "@cssdoc/index";
 import { Ajv } from "ajv";
 import { expect, test } from "vite-plus/test";
@@ -31,6 +31,16 @@ const CSS = `
 @keyframes spin { to { rotate: 360deg; } }
 `;
 
+const validateModel = new Ajv({ allErrors: true }).compile<CssDocEntry[]>(cssDocSchema);
+
+function parseModel(json: string): CssDocEntry[] {
+  const value: unknown = JSON.parse(json);
+  if (!validateModel(value)) {
+    throw new Error(`Invalid model JSON: ${JSON.stringify(validateModel.errors)}`);
+  }
+  return value;
+}
+
 test("public JSON projects private links before aggregate, record, and index output", () => {
   const css = `/** @component visible
  * @summary Read {@link secret | **Authored**} and {@link secret}.
@@ -43,9 +53,9 @@ test("public JSON projects private links before aggregate, record, and index out
   const lookup = { workspace: { complete: true, sources: [{ index }] } };
   const options = { lookupFor: () => lookup };
   const original = JSON.stringify(index.entries);
-  const aggregate = JSON.parse(renderJson(index.entries, options));
+  const aggregate = parseModel(renderJson(index.entries, options));
   expect(aggregate).toHaveLength(2);
-  const visible = aggregate.find((entry: { name: string }) => entry.name === "visible");
+  const visible = aggregate.find((entry) => entry.name === "visible")!;
   expect(visible.summary).toBe("Read **Authored** and reference.");
   expect(visible.remarks).toBe("Read {@link other} as well.");
   expect(visible.examples).toEqual(["[literal](https://example.test)"]);
@@ -57,16 +67,16 @@ test("public JSON projects private links before aggregate, record, and index out
     const outDir = mkdtempSync(join(tmpdir(), "cssdoc-json-link-"));
     const output = writeJson({ ...input, ...options, outDir, perRecord: true });
     expect(JSON.parse(readFileSync(output.modelPath, "utf8"))).toEqual(
-      aggregate.toSorted((a: { name: string }, b: { name: string }) =>
-        a.name.localeCompare(b.name),
-      ),
+      aggregate.toSorted((a, b) => a.name.localeCompare(b.name)),
     );
-    const record = JSON.parse(readFileSync(join(outDir, "records", "visible.json"), "utf8"));
+    const record: unknown = JSON.parse(
+      readFileSync(join(outDir, "records", "visible.json"), "utf8"),
+    );
     expect(record).toEqual(visible);
     expect(output.entries.find((entry) => entry.name === "visible")).toMatchObject(visible);
-    const rows = JSON.parse(readFileSync(output.indexPath!, "utf8"));
-    expect(rows.find((row: { name: string }) => row.name === "visible").summary).toBe(
-      "Read **Authored** and reference.",
+    const rows: unknown = JSON.parse(readFileSync(output.indexPath!, "utf8"));
+    expect(rows).toContainEqual(
+      expect.objectContaining({ name: "visible", summary: "Read **Authored** and reference." }),
     );
     expect(readFileSync(output.indexPath!, "utf8")).not.toContain("{@link secret");
   }
@@ -82,16 +92,16 @@ test("public JSON projects metadata-free legacy examples", () => {
 /** @component card {@private} */ .card {}`;
   const index = createIndex(css);
   const lookup = { workspace: { complete: true, sources: [{ index }] } };
-  const projected = JSON.parse(renderJson(index.entries, { lookupFor: () => lookup }));
-  const visible = projected.find((entry: { name: string }) => entry.name === "visible");
+  const projected = parseModel(renderJson(index.entries, { lookupFor: () => lookup }));
+  const visible = projected.find((entry) => entry.name === "visible")!;
   expect(visible.examples).toEqual(["See reference.", "See reference."]);
   expect(JSON.stringify(visible)).not.toContain("component:card");
 });
 
 test("renderJson produces valid JSON of the model", () => {
   const entries = parseCssDocs(CSS);
-  const parsed = JSON.parse(renderJson(entries));
-  const button = parsed.find((e: { name: string }) => e.name === "button");
+  const parsed = parseModel(renderJson(entries));
+  const button = parsed.find((e) => e.name === "button")!;
   expect(button).toBeDefined();
   // cssPropertiesConsumed is now an array of { name, description? } objects.
   expect(button.cssPropertiesConsumed).toContainEqual({
@@ -116,13 +126,9 @@ test("JSON output omits internal records by default and includes them on request
  */
 .author-note {}
 `);
-  expect(JSON.parse(renderJson(entries)).map((entry: { name: string }) => entry.name)).toEqual([
-    "public-card",
-  ]);
+  expect(parseModel(renderJson(entries)).map((entry) => entry.name)).toEqual(["public-card"]);
   expect(
-    JSON.parse(renderJson(entries, { includeInternal: true })).map(
-      (entry: { name: string }) => entry.name,
-    ),
+    parseModel(renderJson(entries, { includeInternal: true })).map((entry) => entry.name),
   ).toEqual(["public-card", "author-note"]);
   expect(entries[1].visibility).toBe("internal");
 });
@@ -136,7 +142,7 @@ test('lang: "js" extracts and emits records from a tagged template', () => {
  */
 const Button = styled.button\`color: red;\`;`;
   const result = writeJson({ css: ts, lang: "js", outDir });
-  const model = JSON.parse(readFileSync(result.modelPath, "utf8"));
+  const model = parseModel(readFileSync(result.modelPath, "utf8"));
   expect(model).toHaveLength(1);
   expect(model[0]).toMatchObject({ name: "button", summary: "The primary action control." });
 });
@@ -158,15 +164,12 @@ test("effective prose associations survive public JSON projection and schema val
  * @example {@private} - Private example.
  */
 .button {}`);
-  const model = JSON.parse(renderJson(entries));
+  const model = parseModel(renderJson(entries));
   const validate = new Ajv({ allErrors: true }).compile(cssDocSchema);
   const valid = validate(model);
   if (!valid) console.error(validate.errors);
   expect(valid).toBe(true);
-  expect(model[0].prose.map((body: { field?: string }) => body.field)).toEqual([
-    "remarks",
-    "usage",
-  ]);
+  expect(model[0].prose!.map((body) => body.field)).toEqual(["remarks", "usage"]);
   expect(JSON.stringify(model)).not.toContain("Private");
 });
 
@@ -179,7 +182,7 @@ test("supplied private effective prose fields are removed from public JSON", () 
     ...entry,
     prose: entry.prose?.map((body) => ({ ...body, private: true })),
   };
-  const output = JSON.parse(renderJson([supplied]))[0];
+  const output = parseModel(renderJson([supplied]))[0];
   expect(output.remarks).toBeUndefined();
   expect(output.usage).toBeUndefined();
   expect(JSON.stringify(output)).not.toContain("Secret");
@@ -189,8 +192,7 @@ test("supplied private effective prose fields are removed from public JSON", () 
 
 test("the model schema rejects the removed record kind", () => {
   const entries = parseCssDocs(CSS);
-  const removedKind = JSON.parse(JSON.stringify(entries));
-  removedKind[0].kind = "layout";
+  const removedKind = entries.map((entry, i) => (i === 0 ? { ...entry, kind: "layout" } : entry));
   expect(new Ajv().compile(cssDocSchema)(removedKind)).toBe(false);
 });
 
@@ -204,7 +206,7 @@ test("@members round-trips through JSON and validates against the schema", () =>
 .tabs {}
 `;
   const entries = parseCssDocs(css);
-  const parsed = JSON.parse(renderJson(entries));
+  const parsed = parseModel(renderJson(entries));
   expect(parsed[0].members).toEqual(["tab", "panel"]);
 
   const ajv = new Ajv({ allErrors: true });
@@ -223,7 +225,7 @@ test("example labels round-trip without changing the examples string array", () 
  */
 .button {}
 `);
-  const model = JSON.parse(renderJson(entries));
+  const model = parseModel(renderJson(entries));
   expect(model[0]).toMatchObject({
     examples: ["Unlabeled.", "### Primary action"],
     exampleLabels: { 1: ["docs", "demo"] },
@@ -242,22 +244,20 @@ test("public JSON removes private examples and reindexes public labels", () => {
  */
 .button {}
 `);
-  const publicModel = JSON.parse(renderJson(entries));
+  const publicModel = parseModel(renderJson(entries));
   expect(publicModel[0].examples).toEqual(["First.", "Last."]);
   expect(publicModel[0].exampleLabels).toEqual({ 0: ["docs"], 1: ["demo"] });
   expect(JSON.stringify(publicModel)).not.toContain("Sensitive");
   expect(JSON.stringify(publicModel)).not.toContain("secret");
   expect(JSON.stringify(publicModel)).not.toContain("Private work item");
   expect(JSON.stringify(publicModel)).not.toContain("Private summary");
-  expect(publicModel[0].prose.map((body: { exampleIndex?: number }) => body.exampleIndex)).toEqual([
-    0, 1,
-  ]);
+  expect(publicModel[0].prose!.map((body) => body.exampleIndex)).toEqual([0, 1]);
   expect(toJson(entries)).not.toContain("Sensitive");
   expect(toJson(entries)).not.toContain("Private work item");
   expect(publicModel[0].privateExamples).toBeUndefined();
   expect(new Ajv().compile(cssDocSchema)(publicModel)).toBe(true);
-  const privateModel = JSON.parse(renderJson(entries, { includePrivate: true }));
-  expect(privateModel[0].examples[1]).toBe("Sensitive example.");
+  const privateModel = parseModel(renderJson(entries, { includePrivate: true }));
+  expect(privateModel[0].examples![1]).toBe("Sensitive example.");
   expect(privateModel[0].privateExamples).toEqual([1]);
   expect(JSON.stringify(privateModel)).toContain("Private work item");
   const outDir = mkdtempSync(join(tmpdir(), "cssdoc-json-private-"));
@@ -315,7 +315,7 @@ test("record header privacy applies regardless of legacy visibility tags", () =>
     ["literal", undefined],
     ["escaped", undefined],
   ]);
-  expect(JSON.parse(renderJson(entries)).map((entry: { name: string }) => entry.name)).toEqual([
+  expect(parseModel(renderJson(entries)).map((entry) => entry.name)).toEqual([
     "public",
     "literal",
     "escaped",
@@ -340,11 +340,11 @@ test("structureVariants (from @variant blocks) round-trips through JSON and vali
 .progress {}
 `;
   const entries = parseCssDocs(VARIANT_CSS);
-  const parsed = JSON.parse(renderJson(entries));
-  const progress = parsed.find((e: { name: string }) => e.name === "progress");
+  const parsed = parseModel(renderJson(entries));
+  const progress = parsed.find((e) => e.name === "progress")!;
   expect(progress.structureVariants).toHaveLength(2);
-  expect(progress.structureVariants[0].name).toBe("wrapped");
-  expect(progress.structureVariants[1].name).toBe("labelled");
+  expect(progress.structureVariants![0].name).toBe("wrapped");
+  expect(progress.structureVariants![1].name).toBe("labelled");
 
   const ajv = new Ajv({ allErrors: true });
   const validate = ajv.compile(cssDocSchema);
@@ -374,12 +374,12 @@ test("bounded max-N cardinality and a nested @variant group round-trip through J
 .action-row {}
 `;
   const entries = parseCssDocs(ACTION_ROW_CSS);
-  const parsed = JSON.parse(renderJson(entries));
-  const row = parsed.find((e: { name: string }) => e.name === "action-row");
-  const variantGroup = row.structure[0].children[1];
+  const parsed = parseModel(renderJson(entries));
+  const row = parsed.find((e) => e.name === "action-row")!;
+  const variantGroup = row.structure![0].children![1];
   expect(variantGroup.selector).toBe("");
   expect(variantGroup.variants).toHaveLength(2);
-  expect(variantGroup.variants[1].nodes[0].children[0].cardinality).toBe("one-or-more-max-2");
+  expect(variantGroup.variants![1].nodes[0].children![0].cardinality).toBe("one-or-more-max-2");
 
   const ajv = new Ajv({ allErrors: true });
   const validate = ajv.compile(cssDocSchema);
@@ -394,7 +394,8 @@ test("writeJson writes the model, per-record files, an index, and the schema", (
 
   expect(JSON.parse(readFileSync(result.modelPath, "utf8"))).toHaveLength(1);
   expect(result.recordPaths).toHaveLength(1);
-  const index = JSON.parse(readFileSync(result.indexPath!, "utf8"));
-  expect(index[0]).toMatchObject({ name: "button", kind: "component" });
-  expect(JSON.parse(readFileSync(result.schemaPath!, "utf8")).$id).toContain("model.schema.json");
+  const index: unknown = JSON.parse(readFileSync(result.indexPath!, "utf8"));
+  expect(index).toEqual([expect.objectContaining({ name: "button", kind: "component" })]);
+  const schema: unknown = JSON.parse(readFileSync(result.schemaPath!, "utf8"));
+  expect(schema).toHaveProperty("$id", "https://cssdoc.dev/model.schema.json");
 });

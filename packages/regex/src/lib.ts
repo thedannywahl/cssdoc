@@ -8,7 +8,7 @@ import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 
 import { REGEX_METACHARACTER_SOURCE } from "./definitions/tier-0-primitives.ts";
-import type { PatternResolver, UnifiedPatternDef } from "./types.ts";
+import type { PatternResolver, RawPatternDef, UnifiedPatternDef } from "./types.ts";
 
 /** Anchors to add when converting a pattern to a native regular expression. */
 export type AnchorMode = "none" | "start" | "end" | "start-end";
@@ -113,7 +113,7 @@ export function escapeChar(resolve: PatternResolver, charName: string): string {
  * Create a resolver function for pattern composition.
  * Resolves pattern sources from rawDefs, with optional unwrapping of character classes.
  */
-export function createResolver(rawDefs: Record<string, any>): PatternResolver {
+export function createResolver(rawDefs: Record<string, RawPatternDef>): PatternResolver {
   const bracketOpen = rawDefs.BRACKET_OPEN_CHAR?.source || "[";
   const bracketClose = rawDefs.BRACKET_CLOSE_CHAR?.source || "]";
 
@@ -136,7 +136,7 @@ export function createResolver(rawDefs: Record<string, any>): PatternResolver {
  * Resolve all pattern sources once at startup.
  * This handles lazy composition and prevents circular dependencies.
  */
-export function resolveAllPatterns(rawDefs: Record<string, any>): void {
+export function resolveAllPatterns(rawDefs: Record<string, RawPatternDef>): void {
   const resolver = createResolver(rawDefs);
   for (const def of Object.values(rawDefs)) {
     if (!def.source && def.pattern) {

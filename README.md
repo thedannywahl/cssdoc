@@ -88,6 +88,9 @@ Nursery linting stays off as a category. Selected rules warn about unreachable l
 and invalid named imports; Node ESM scripts also warn about undefined names without accepting
 CommonJS-only globals. TypeScript checks undefined names separately.
 
+Type-aware linting rejects unsafe assignments in TypeScript. Untyped JavaScript and the standalone
+VS Code Lit example are excluded from that check because they lack reliable type information.
+
 Selected `eslint-plugin-regexp` rules check native regex literals and `RegExp` constructors for
 mistakes and inefficient matching. The plugin doesn't analyze `arkRegex.as` calls or the composed
 strings in `@cssdoc/regex`; review and test those patterns separately. Its analysis doesn't prove

@@ -52,10 +52,14 @@ test("the bundled server.cjs starts and answers LSP diagnostics", async () => {
       const start = (header.index ?? 0) + header[0].length;
       const len = Number(header[1]);
       if (buf.length < start + len) break;
-      const msg = JSON.parse(buf.subarray(start, start + len).toString("utf8"));
+      const msg: unknown = JSON.parse(buf.subarray(start, start + len).toString("utf8"));
       buf = buf.subarray(start + len);
 
-      if (msg.id === 1) {
+      if (typeof msg !== "object" || msg === null) {
+        reject(new Error("Expected an LSP message object"));
+        return;
+      }
+      if ("id" in msg && msg.id === 1) {
         send({ jsonrpc: "2.0", method: "initialized", params: {} });
         send({
           jsonrpc: "2.0",
@@ -70,9 +74,26 @@ test("the bundled server.cjs starts and answers LSP diagnostics", async () => {
           },
         });
       }
-      if (msg.method === "textDocument/publishDiagnostics") {
+      if ("method" in msg && msg.method === "textDocument/publishDiagnostics") {
+        if (
+          !("params" in msg) ||
+          typeof msg.params !== "object" ||
+          msg.params === null ||
+          !("diagnostics" in msg.params) ||
+          !Array.isArray(msg.params.diagnostics) ||
+          !msg.params.diagnostics.every(
+            (diagnostic: unknown): diagnostic is { code: string } =>
+              typeof diagnostic === "object" &&
+              diagnostic !== null &&
+              "code" in diagnostic &&
+              typeof diagnostic.code === "string",
+          )
+        ) {
+          reject(new Error("Expected LSP diagnostics with string codes"));
+          return;
+        }
         clearTimeout(timer);
-        resolve(msg.params.diagnostics.map((d: { code: string }) => d.code));
+        resolve(msg.params.diagnostics.map((diagnostic) => diagnostic.code));
       }
     }
   });

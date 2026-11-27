@@ -81,7 +81,8 @@ export function parseClientSettings(value: unknown): ClientSettings {
         throw new TypeError("cssdoc.hover.sections must be an object");
       }
       const sections: Record<string, "on" | "off" | "auto"> = {};
-      for (const [key, mode] of Object.entries(hover.sections)) {
+      const sectionValues = hover.sections as Record<string, unknown>;
+      for (const [key, mode] of Object.entries(sectionValues)) {
         if (mode !== "on" && mode !== "off" && mode !== "auto") {
           throw new TypeError(`cssdoc.hover.sections.${key} must be on, off, or auto`);
         }

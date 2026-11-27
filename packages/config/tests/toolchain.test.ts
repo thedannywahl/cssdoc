@@ -26,12 +26,65 @@ vi.setConfig({ testTimeout: 30_000 });
 
 afterAll(() => vi.resetConfig());
 
+interface LintDiagnostic {
+  code: string;
+  severity: string;
+  filename: string;
+  message: string;
+  help?: string;
+  labels: { span: { line: number } }[];
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return (typeof value === "object" && value !== null) || typeof value === "function";
+}
+
+function isLintDiagnostic(diagnostic: unknown): diagnostic is LintDiagnostic {
+  if (
+    !isObject(diagnostic) ||
+    typeof diagnostic.code !== "string" ||
+    typeof diagnostic.severity !== "string" ||
+    typeof diagnostic.filename !== "string" ||
+    typeof diagnostic.message !== "string" ||
+    (diagnostic.help !== undefined && typeof diagnostic.help !== "string") ||
+    !Array.isArray(diagnostic.labels)
+  ) {
+    return false;
+  }
+  return diagnostic.labels.every(
+    (label: unknown) =>
+      isObject(label) && isObject(label.span) && typeof label.span.line === "number",
+  );
+}
+
+function parseLintOutput(json: string): { diagnostics: LintDiagnostic[] } {
+  const value: unknown = JSON.parse(json);
+  if (
+    !isObject(value) ||
+    !Array.isArray(value.diagnostics) ||
+    !value.diagnostics.every(isLintDiagnostic)
+  ) {
+    throw new Error("Unexpected lint JSON output");
+  }
+  return { diagnostics: value.diagnostics };
+}
+
 test("the TypeScript catalog matches the compiler revision targeted by Vite+'s tsrs", () => {
   const require = createRequire(import.meta.url);
   const viteRequire = createRequire(require.resolve("vite-plus/package.json"));
-  const typescript: { version: string; gitHead: string } = require("typescript/package.json");
-  const tsrs: { tsrs: { typescriptVersion: string; typescriptCommit: string } } =
-    viteRequire("tsrs/package.json");
+  const typescript: unknown = require("typescript/package.json");
+  const tsrs: unknown = viteRequire("tsrs/package.json");
+  if (
+    !isObject(typescript) ||
+    typeof typescript.version !== "string" ||
+    typeof typescript.gitHead !== "string" ||
+    !isObject(tsrs) ||
+    !isObject(tsrs.tsrs) ||
+    typeof tsrs.tsrs.typescriptVersion !== "string" ||
+    typeof tsrs.tsrs.typescriptCommit !== "string"
+  ) {
+    throw new Error("Unexpected TypeScript or tsrs package metadata");
+  }
 
   expect(typescript.version).toBe(tsrs.tsrs.typescriptVersion);
   expect(typescript.gitHead).toBe(tsrs.tsrs.typescriptCommit);
@@ -74,7 +127,7 @@ test("JSDoc lint accepts cssdoc tags but still reports unknown tags", () => {
       });
       expect([0, 1]).toContain(lint.status);
       const output = lint.stdout;
-      const result: { diagnostics: { code: string; help: string }[] } = JSON.parse(output);
+      const result = parseLintOutput(output);
       expect(
         result.diagnostics
           .filter((diagnostic) => diagnostic.code === "jsdoc(check-tag-names)")
@@ -101,9 +154,7 @@ test("unassigned CSS imports are allowed while other side-effect imports warn", 
         encoding: "utf8",
       });
       expect(lint.status).toBe(0);
-      const result: {
-        diagnostics: { code: string; severity: string; labels: { span: { line: number } }[] }[];
-      } = JSON.parse(lint.stdout);
+      const result = parseLintOutput(lint.stdout);
       expect(
         result.diagnostics
           .filter((diagnostic) => diagnostic.code === "import(no-unassigned-import)")
@@ -143,10 +194,10 @@ test("style fixes preserve explicit Vitest imports, strict assertions, and catal
       });
     const before = lint();
     expect(before.status, `${before.stdout}\n${before.stderr}`).toBe(0);
-    const diagnostics: { diagnostics: { code: string }[] } = JSON.parse(before.stdout);
+    const diagnostics = parseLintOutput(before.stdout);
     expect(diagnostics.diagnostics.map(({ code }) => code)).toContain("eslint(curly)");
     expect(lint("--fix").status).toBe(0);
-    const after: { diagnostics: { code: string }[] } = JSON.parse(lint().stdout);
+    const after = parseLintOutput(lint().stdout);
     expect(after.diagnostics.map(({ code }) => code)).not.toContain("eslint(curly)");
     const fixed = readFileSync(file, "utf8");
     expect(fixed).toContain('from "vite-plus/test"');
@@ -170,7 +221,7 @@ test("style lint allows literal security fixtures but checks production strings"
         cwd: root,
         encoding: "utf8",
       });
-      const output: { diagnostics: { code: string }[] } = JSON.parse(result.stdout);
+      const output = parseLintOutput(result.stdout);
       return output.diagnostics.map(({ code }) => code);
     };
     const fixture = diagnostics("literal.test.js");
@@ -196,7 +247,7 @@ test("restriction lint preserves repository conventions and checks unsafe forms"
         cwd: root,
         encoding: "utf8",
       });
-      const output: { diagnostics: { code: string }[] } = JSON.parse(result.stdout);
+      const output = parseLintOutput(result.stdout);
       return output.diagnostics.map(({ code }) => code);
     };
     const production = diagnostics(
@@ -292,9 +343,7 @@ test("selected nursery rules check control flow, imports, and Node ESM globals",
         encoding: "utf8",
       });
       expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
-      const output: {
-        diagnostics: { code: string; severity: string; filename: string; message: string }[];
-      } = JSON.parse(result.stdout);
+      const output = parseLintOutput(result.stdout);
       const sample = output.diagnostics.filter(({ filename }) => filename.endsWith("sample.mjs"));
       for (const code of [
         "eslint(no-unreachable-loop)",
@@ -353,9 +402,7 @@ test("type-aware lint rejects floating and misused promises", () => {
       encoding: "utf8",
     });
     expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
-    const output: {
-      diagnostics: { code: string; severity: string; labels: { span: { line: number } }[] }[];
-    } = JSON.parse(result.stdout);
+    const output = parseLintOutput(result.stdout);
     expect(
       output.diagnostics
         .filter(({ code }) => code === "typescript(no-floating-promises)")
@@ -406,11 +453,30 @@ test("type-aware lint detects unsafe boundaries", () => {
       encoding: "utf8",
     });
     expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
-    const output: { diagnostics: { code: string; severity: string }[] } = JSON.parse(result.stdout);
+    const output = parseLintOutput(result.stdout);
     for (const rule of rules) {
       expect(output.diagnostics).toContainEqual(
         expect.objectContaining({ code: `typescript(${rule})`, severity: "error" }),
       );
+    }
+
+    const safe = join(directory, "safe.ts");
+    writeFileSync(safe, 'const value: unknown = JSON.parse("{}");\nconsole.error(value);\n');
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const configured = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file, safe], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(configured.status, `${configured.stdout}\n${configured.stderr}`).toBe(1);
+      const diagnostics = parseLintOutput(configured.stdout).diagnostics.filter(
+        ({ code }) => code === "typescript(no-unsafe-assignment)",
+      );
+      expect(
+        diagnostics.some(
+          ({ severity, filename }) => severity === "error" && filename.endsWith("unsafe.ts"),
+        ),
+      ).toBe(true);
+      expect(diagnostics.some(({ filename }) => filename.endsWith("/safe.ts"))).toBe(false);
     }
   } finally {
     rmSync(directory, { recursive: true, force: true });
@@ -429,7 +495,7 @@ test("type import lint requires type-only imports", () => {
       encoding: "utf8",
     });
     expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
-    const output: { diagnostics: { code: string; severity: string }[] } = JSON.parse(result.stdout);
+    const output = parseLintOutput(result.stdout);
     expect(output.diagnostics).toContainEqual(
       expect.objectContaining({ code: "typescript(consistent-type-imports)", severity: "error" }),
     );
@@ -462,9 +528,7 @@ test("switch lint requires cases or an intentional fallback", () => {
       encoding: "utf8",
     });
     expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
-    const output: {
-      diagnostics: { code: string; severity: string; labels: { span: { line: number } }[] }[];
-    } = JSON.parse(result.stdout);
+    const output = parseLintOutput(result.stdout);
     expect(
       output.diagnostics
         .filter(({ code }) => code === "typescript(switch-exhaustiveness-check)")
@@ -496,9 +560,7 @@ test("regexp lint detects dangerous native patterns in root and package runs", (
         encoding: "utf8",
       });
       expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
-      const output: {
-        diagnostics: { code: string; severity: string; labels: { span: { line: number } }[] }[];
-      } = JSON.parse(result.stdout);
+      const output = parseLintOutput(result.stdout);
       const backtracking = output.diagnostics.filter(
         ({ code }) => code === "regexp(no-super-linear-backtracking)",
       );
@@ -538,8 +600,18 @@ test("regexp lint detects dangerous native patterns in root and package runs", (
 test("TSDoc definitions follow the cssdoc vocabulary", () => {
   const require = createRequire(import.meta.url);
   const pluginRequire = createRequire(require.resolve("eslint-plugin-tsdoc"));
-  const tsdoc: { StandardTags: { allDefinitions: { tagName: string }[] } } =
-    pluginRequire("@microsoft/tsdoc");
+  const tsdoc: unknown = pluginRequire("@microsoft/tsdoc");
+  if (
+    !isObject(tsdoc) ||
+    !isObject(tsdoc.StandardTags) ||
+    !Array.isArray(tsdoc.StandardTags.allDefinitions) ||
+    !tsdoc.StandardTags.allDefinitions.every(
+      (definition: unknown): definition is { tagName: string } =>
+        isObject(definition) && typeof definition.tagName === "string",
+    )
+  ) {
+    throw new Error("Unexpected TSDoc standard tag definitions");
+  }
   const standardTags = new Set(
     tsdoc.StandardTags.allDefinitions.map((definition) => definition.tagName.toLowerCase()),
   );
@@ -570,7 +642,7 @@ test("TSDoc lint recognizes cssdoc tags without accepting unknown tags", () => {
       encoding: "utf8",
     });
     expect(result.status).toBe(1);
-    const output: { diagnostics: { code: string; message: string }[] } = JSON.parse(result.stdout);
+    const output = parseLintOutput(result.stdout);
     expect(
       output.diagnostics
         .filter(
@@ -601,7 +673,7 @@ test("documentation lint accepts TSDoc return descriptions and rejects empty one
     writeFileSync(file, "/** Returns a value.\n * @returns\n */\nexport const value = () => 1;\n");
     const missing = lint();
     expect(missing.status).toBe(1);
-    const output: { diagnostics: { code: string }[] } = JSON.parse(missing.stdout);
+    const output = parseLintOutput(missing.stdout);
     expect(output.diagnostics.map((diagnostic) => diagnostic.code)).toContain(
       "jsdoc(require-returns-description)",
     );
@@ -627,7 +699,7 @@ test("documentation lint checks parameter tags without requiring them on every f
         cwd: root,
         encoding: "utf8",
       });
-      const output: { diagnostics: { code: string }[] } = JSON.parse(result.stdout);
+      const output = parseLintOutput(result.stdout);
       return output.diagnostics.map((diagnostic) => diagnostic.code);
     };
 

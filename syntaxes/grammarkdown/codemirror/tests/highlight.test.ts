@@ -57,7 +57,9 @@ test("updates editor decorations when an edit changes multiline context", () => 
     for (const set of sets) {
       if (typeof set === "function") throw new Error("Expected state-provided decorations");
       set.between(0, editor.doc.length, (from, to, decoration) => {
-        spans.push({ from, to, className: decoration.spec.class });
+        const className: unknown = decoration.spec.class;
+        if (typeof className !== "string") throw new Error("Expected a decoration class");
+        spans.push({ from, to, className });
       });
     }
     return spans.map((span) => ({

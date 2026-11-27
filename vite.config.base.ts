@@ -29,7 +29,7 @@ export const baseConfig: UserConfig = defineConfig({
         "error",
         { considerDefaultExhaustiveForUnions: true },
       ],
-      "typescript/no-unsafe-assignment": "off",
+      "typescript/no-unsafe-assignment": "error",
       "typescript/no-unsafe-argument": "off",
       "typescript/no-unsafe-call": "off",
       "typescript/no-unsafe-member-access": "off",
@@ -218,6 +218,16 @@ export const baseConfig: UserConfig = defineConfig({
       "import/max-dependencies": "off",
     },
     overrides: [
+      {
+        // Untyped JavaScript files don't provide reliable type information for this check.
+        files: ["**/*.{js,jsx,mjs,cjs}"],
+        rules: { "typescript/no-unsafe-assignment": "off" },
+      },
+      {
+        // This demo intentionally imports Lit without installing it in the extension workspace.
+        files: ["**/servers/vscode/examples/switch.ts", "examples/switch.ts"],
+        rules: { "typescript/no-unsafe-assignment": "off" },
+      },
       {
         // Node ESM scripts aren't type-checked; don't grant CommonJS-only globals.
         files: ["**/*.mjs"],
