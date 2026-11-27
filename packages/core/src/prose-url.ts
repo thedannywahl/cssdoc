@@ -16,9 +16,9 @@ export function safeProseUrl(value: string, image = false): boolean {
   ) {
     return false;
   }
-  for (let i = 0; i < value.length; i++) {
-    const char = value.charCodeAt(i);
-    if (char <= 0x1f || (char >= 0x7f && char <= 0x9f)) return false;
+  for (const char of value) {
+    const codePoint = char.codePointAt(0)!;
+    if (codePoint <= 0x1f || (codePoint >= 0x7f && codePoint <= 0x9f)) return false;
   }
   try {
     const url = new URL(value, "https://cssdoc.invalid/");

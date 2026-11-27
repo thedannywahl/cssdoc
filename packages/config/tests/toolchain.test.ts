@@ -471,6 +471,41 @@ test("lint flags callback references that receive extra iterator arguments", () 
   }
 });
 
+test("lint prefers Unicode code point APIs", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".code-point-check-"));
+  try {
+    const file = join(directory, "unicode.mjs");
+    writeFileSync(
+      file,
+      [
+        "const legacy = String.fromCharCode(65);",
+        "const modern = String.fromCodePoint(65);",
+        "const code = modern.charCodeAt(0);",
+        "const point = modern.codePointAt(0);",
+        "console.error(legacy, modern, code, point);",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "unicorn(prefer-code-point)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([
+        ["warning", 1],
+        ["warning", 3],
+      ]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));

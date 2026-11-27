@@ -29,8 +29,15 @@ import {
 } from "../src/index.ts";
 import { inlineCodeRanges, parseDocComment as parseLiteDocComment } from "../src/lite.ts";
 import { ModifierMatcher } from "../src/modifier.ts";
+import { safeProseUrl } from "../src/prose-url.ts";
 import { projectPrivateLinks } from "../src/prose.ts";
 import { scanStructureLine, type StructureBoundaryState } from "../src/structure-boundaries.ts";
+
+test("URL safety handles supplementary characters and rejects control characters", () => {
+  expect(safeProseUrl("https://example.com/😀")).toBe(true);
+  expect(safeProseUrl("https://example.com/😀\u007f")).toBe(false);
+  expect(safeProseUrl("https://example.com/😀\u009f")).toBe(false);
+});
 
 test("private-link projection preserves literal labels and protected code", () => {
   const text = [

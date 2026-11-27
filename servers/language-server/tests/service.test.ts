@@ -490,7 +490,7 @@ test("embedded hover restores ${…} and renders the full card even with an empt
 });
 
 test("embedded hover renders an escaped fenced @example: real fence, prose, unmasked ${…}", () => {
-  const bt = String.fromCharCode(96);
+  const bt = "`";
   const f = "\\" + bt + "\\" + bt + "\\" + bt; // an escaped ``` fence, as authored in a css template
   const ts = [
     "export const alert = css" + bt,
@@ -538,7 +538,7 @@ test("embedded hover: var() chain resolves, [class*] shows the family, a sibling
   const svc = new CssDocLanguageService(project);
   svc.setHoverDetail("full", {}, []);
 
-  const bt = String.fromCharCode(96);
+  const bt = "`";
   const ts = [
     "export const alert = css" + bt,
     "/**\n * @component alert\n * @summary An alert.\n * @modifier -icon-* — Swap the glyph.\n */",
