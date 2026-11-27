@@ -328,9 +328,10 @@ export const baseConfig: UserConfig = defineConfig({
         // Untyped JavaScript files don't provide reliable type information for these checks.
         files: ["**/*.{js,jsx,mjs,cjs}"],
         rules: {
-          // JavaScript has no TypeScript signature to supply documented parameter and return types.
+          // JavaScript has no TypeScript signature to supply documented types.
           "jsdoc/require-param-type": "warn",
           "jsdoc/require-returns-type": "warn",
+          "jsdoc/require-throws-type": "warn",
           "typescript/no-unsafe-assignment": "off",
           "typescript/no-unsafe-argument": "off",
           "typescript/no-unsafe-call": "off",
