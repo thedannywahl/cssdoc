@@ -39,6 +39,6 @@ test("htmlCustomData exposes component classes and modifiers as class values", (
 test("writeVscodeCustomData writes both files", () => {
   const outDir = mkdtempSync(join(tmpdir(), "cssdoc-vsc-"));
   const { cssPath, htmlPath } = writeVscodeCustomData({ index, outDir });
-  expect(JSON.parse(readFileSync(cssPath, "utf8")).properties.length).toBeGreaterThan(0);
-  expect(JSON.parse(readFileSync(htmlPath, "utf8")).globalAttributes[0].name).toBe("class");
+  expect(JSON.parse(readFileSync(cssPath, "utf8"))).toEqual(cssCustomData(index));
+  expect(JSON.parse(readFileSync(htmlPath, "utf8"))).toEqual(htmlCustomData(index));
 });
