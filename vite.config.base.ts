@@ -223,7 +223,7 @@ export const baseConfig: UserConfig = defineConfig({
       // forEach is useful when the callback also needs an index.
       "unicorn/no-array-for-each": "off",
       // Case clauses only need braces when they introduce block-scoped declarations.
-      "unicorn/switch-case-braces": "off",
+      "unicorn/switch-case-braces": ["warn", "avoid"],
       // Sorting an owned array in place can avoid an unnecessary copy.
       "unicorn/no-array-sort": "off",
       // Reversing an owned array in place can likewise avoid a copy.

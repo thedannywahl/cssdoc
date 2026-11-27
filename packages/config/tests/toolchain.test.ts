@@ -2430,6 +2430,47 @@ test("lint permits workspace filename conventions but rejects snake-case module 
   }
 });
 
+test("lint avoids redundant switch blocks while preserving lexical case scope", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/.switch-check-"));
+  try {
+    writeFileSync(
+      join(directory, "tsconfig.json"),
+      JSON.stringify({ extends: "../../../../tsconfig.base.json", include: ["*.ts"] }),
+    );
+    const file = join(directory, "scope.test.ts");
+    writeFileSync(
+      file,
+      [
+        "export function scoped(value: number): number {",
+        "  switch (value) {",
+        "    case 0: return 0;",
+        "    case 1: { const result = value + 1; return result; }",
+        "    default: { return 2; }",
+        "  }",
+        "}",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../core/", import.meta.url))]) {
+      const result = spawnSync(
+        "vp",
+        ["lint", "--config", join(root, "vite.config.ts"), "--no-ignore", "--format", "json", file],
+        { cwd, encoding: "utf8" },
+      );
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      const { diagnostics } = parseLintOutput(result.stdout);
+      expect(
+        diagnostics
+          .filter(({ code }) => code === "unicorn(switch-case-braces)")
+          .map(({ labels }) => labels[0].span.line),
+      ).toEqual([5]);
+      expect(diagnostics.filter(({ code }) => code === "eslint(no-case-declarations)")).toEqual([]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint checks Oxc correctness without rejecting valid numeric and ownership contracts", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, "packages/config/tests/.oxc-check-"));

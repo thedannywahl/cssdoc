@@ -778,10 +778,9 @@ function applyBlockTag(
       doc.fullSelector = rest.trim();
       break;
     }
-    case "summary": {
+    case "summary":
       doc.summary = rest.replace(toRegExp(WHITESPACE_RUN), " ").trim();
       break;
-    }
     case "stage":
       if (isReleaseStage(rest)) doc.releaseStage = rest;
       break;
@@ -962,10 +961,9 @@ function applyBlockTag(
     case "usage":
       doc.usage = rest.trim();
       break;
-    case "annotations": {
+    case "annotations":
       for (const row of parseAnnotationsBody(rest)) doc.annotations.set(row.ref, row.text);
       break;
-    }
     case "annotation": {
       const privateMarker = rest.includes("{@private}");
       const cleaned = rest.replace("{@private}", "").trim();
@@ -1046,13 +1044,12 @@ function applyBlockTag(
       doc.related.push({ name: head.replace(LEADING_DOT, ""), description });
       break;
     }
-    case "members": {
+    case "members":
       doc.members = rest
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean);
       break;
-    }
     case "memberOf":
     case "member": {
       const MEMBER: Regex = arkRegex.as(

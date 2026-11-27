@@ -122,7 +122,7 @@ Disabled rules remain deliberate, not a waiver for existing diagnostics:
 | TypeScript `no-non-null-assertion`, `no-dynamic-delete`                                                         | Checked parser invariants can need assertions that library types can't express; HTML sanitization removes a property selected by the node's tag.                                                                            |
 | TypeScript `no-var-requires`, `ban-types`                                                                       | The narrower require rule is deprecated and covered by `no-require-imports`; targeted function, wrapper-object, and empty-object checks replace `ban-types`.                                                                |
 | Unicorn import style, nested ternaries, nested-call limits, ternary preference, and switch break placement      | Named and namespace imports serve different APIs. Formatting and readable control flow matter more than mandatory forms or fixed nesting counts.                                                                            |
-| Unicorn `no-null`, `no-array-for-each`, `switch-case-braces`, `no-array-sort`, `no-array-reverse`               | Null belongs to JSON, LSP, and DOM contracts. Indexed callbacks and mutation of owned arrays are valid; lexical case declarations already require blocks.                                                                   |
+| Unicorn `no-null`, `no-array-for-each`, `no-array-sort`, `no-array-reverse`                                     | Null belongs to JSON, LSP, and DOM contracts. Indexed callbacks and mutation of owned arrays are valid.                                                                                                                     |
 | ESLint `class-methods-use-this`, Node `no-sync`                                                                 | Instance methods can implement contracts without reading instance state. Synchronous I/O is appropriate in one-shot tools and isolated tests.                                                                               |
 | Native regex invalid-pattern, empty-class, and misleading-character checks                                      | The regexp plugin covers literals and statically resolved constructor strings. Using both would duplicate literal diagnostics.                                                                                              |
 | Regexp Unicode-mode and set-operation mandates                                                                  | Deliberate UTF-16 matching and JSON Schema patterns can't universally require `u` or `v`.                                                                                                                                   |
@@ -156,6 +156,9 @@ consumers rather than a universal casing rule.
 Module filenames can use kebab-case, camelCase, or PascalCase; class and component files don't need
 to be renamed to match ordinary modules. Other combinations, such as snake_case, are flagged.
 The filename rule ignores multi-part extensions, so test and configuration suffixes stay valid.
+
+Switch-case braces use the rule's `avoid` mode: keep blocks for lexical declarations, and omit
+redundant blocks for statements that don't need case-local scope.
 
 Nursery linting stays off as a category. Selected rules reject unreachable loops and dead stores
 and warn about invalid named imports and redundant iterator materialization. Explicitly named
