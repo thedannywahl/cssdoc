@@ -1,8 +1,10 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vite-plus/test";
-import postcss from "postcss";
+
 import { byTheme } from "@pantoken/tokens";
 import { VITEPRESS_TO_INSTUI } from "@pantoken/vitepress";
+import postcss from "postcss";
+import { describe, expect, it } from "vite-plus/test";
+
 import { expandTheme, pruneTheme, themeCss } from "./pantoken-theme.js";
 
 describe("Pantoken docs theme", () => {

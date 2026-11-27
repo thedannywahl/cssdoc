@@ -7,8 +7,9 @@ an LLM's context window. One compact block per record; empty facets are omitted.
 ## Usage
 
 ```ts
-import { writeLlms } from "@cssdoc/llms";
 import { readFileSync } from "node:fs";
+
+import { writeLlms } from "@cssdoc/llms";
 
 writeLlms({
   css: readFileSync("dist/components.css", "utf8"),

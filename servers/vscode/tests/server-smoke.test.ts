@@ -1,9 +1,10 @@
 import { type ChildProcessWithoutNullStreams, execFileSync, fork, spawn } from "node:child_process";
-import { join } from "node:path";
 import { mkdirSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { fileURLToPath } from "node:url";
+
 import { DIGIT_SOURCE } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
 import { expect, test } from "vite-plus/test";

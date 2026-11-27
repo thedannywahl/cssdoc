@@ -4,14 +4,15 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+
 import { afterAll, expect, test, vi } from "vite-plus/test";
 
 import docsConfig from "../../../docs/vite.config.ts";
-import { CSSDOC_TAG_NAMES, CSSDOC_TAGS } from "../../spec/src/index.ts";
-import regexConfig from "../../regex/vite.config.ts";
-import cliConfig from "../../cli/vite.config.ts";
 import grammarConfig from "../../../syntaxes/cssdoc/tmlanguage/vite.config.ts";
 import tsdocConfig from "../../../tsdoc.json" with { type: "json" };
+import cliConfig from "../../cli/vite.config.ts";
+import regexConfig from "../../regex/vite.config.ts";
+import { CSSDOC_TAG_NAMES, CSSDOC_TAGS } from "../../spec/src/index.ts";
 
 vi.setConfig({ testTimeout: 30_000 });
 afterAll(() => vi.resetConfig());

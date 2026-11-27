@@ -1,5 +1,6 @@
 import { createIndex } from "@cssdoc/index";
 import { expect, test } from "vite-plus/test";
+
 import { toDtcg } from "../src/index.ts";
 
 const CSS = `

@@ -1,8 +1,8 @@
+import { HEX_DIGIT_SOURCE } from "@cssdoc/regex";
 import { toCss } from "@pantoken/css";
 import { pruneCustomProps } from "@pantoken/plugin-prune-custom-props";
 import { byTheme, type Token } from "@pantoken/tokens";
 import { VITEPRESS_TO_INSTUI } from "@pantoken/vitepress";
-import { HEX_DIGIT_SOURCE } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
 import postcss, { type Plugin as PostcssPlugin } from "postcss";
 import type { Plugin } from "vite-plus";

@@ -14,6 +14,7 @@ import type {
   PropertyAssignment,
   PropertyUsage,
 } from "@cssdoc/index";
+
 import {
   cssPart,
   customProperty,

@@ -12,8 +12,8 @@ import {
 } from "@cssdoc/regex";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
-import { fromMarkdown } from "mdast-util-from-markdown";
 import { toHtml } from "hast-util-to-html";
+import { fromMarkdown } from "mdast-util-from-markdown";
 
 type Node = {
   type: string;

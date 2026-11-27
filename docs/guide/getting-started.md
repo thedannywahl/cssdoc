@@ -36,6 +36,7 @@ Create `inspect.mjs` next to `button.css`:
 
 ```js
 import { readFileSync } from "node:fs";
+
 import { parseCssDocs } from "@cssdoc/cssdoc";
 
 const css = readFileSync(new URL("./button.css", import.meta.url), "utf8");

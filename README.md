@@ -67,6 +67,13 @@ Package commands remain in each package's `vite.config.ts` as Vite tasks. The re
 `package.json` scripts bridge the install-time `prepare` and publish-time `prepublishOnly` lifecycle
 hooks to those tasks.
 
+Import sorting groups Node built-ins, external packages (including `@cssdoc/*`), internal aliases and
+subpath imports, relative imports, styles, and unknown imports, in that order. Imports within each
+group are sorted together, including type imports. Side-effect imports retain their relative order,
+but other imports can move around them. Separate a file-level comment from imports with a blank line
+so sorting doesn't move it with an import. Generated files with byte-exact checks remain owned by
+their generators.
+
 The TypeScript catalog is pinned to the upstream revision targeted by Vite+'s tsrs checker; a test
 checks that they stay aligned. TypeDoc uses TypeScript 6 separately because of its peer dependency;
 the docs and TypeDoc plugin type-check tasks use the root TypeScript compiler instead.

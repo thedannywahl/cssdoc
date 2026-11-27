@@ -1,5 +1,6 @@
-import { createMarkdownRenderer } from "vitepress";
 import { expect, test } from "vite-plus/test";
+import { createMarkdownRenderer } from "vitepress";
+
 import cssdoc from "../../syntaxes/cssdoc/tmlanguage/src/index.ts";
 
 test("highlights suppression directives and rules without highlighting reasons or prose", async () => {

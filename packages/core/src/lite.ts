@@ -95,8 +95,8 @@ export type {
   StructureVariant,
 } from "./model.ts";
 
-import type { CssDocEntry } from "./model.ts";
 import { projectPublicEntry } from "./examples.ts";
+import type { CssDocEntry } from "./model.ts";
 
 /**
  * Serialize a documentation model to pretty JSON, omitting private examples by default.

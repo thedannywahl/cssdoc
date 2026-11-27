@@ -22,6 +22,7 @@ import {
   type Identifier,
   type StringNode,
 } from "css-tree";
+
 import type {
   ContainerOccurrence,
   CssDocIndex,

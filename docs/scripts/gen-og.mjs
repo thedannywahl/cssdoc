@@ -4,6 +4,7 @@
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+
 import { Resvg } from "@resvg/resvg-js";
 
 for (const name of ["og", "og-light"]) {

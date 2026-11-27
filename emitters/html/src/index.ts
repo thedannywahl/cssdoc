@@ -6,6 +6,7 @@
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+
 import {
   type CssDocConfiguration,
   type CssDocEntry,
@@ -29,6 +30,7 @@ import {
   LESS_THAN_CHAR,
   QUOTE_DOUBLE_CHAR,
 } from "@cssdoc/regex";
+
 import { renderProse } from "./prose.ts";
 
 /** Either a CSS source or an already-parsed model. */

@@ -28,6 +28,7 @@
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+
 import { cssDocSchema } from "../packages/config/src/schema.ts";
 
 /** Committed, repo-root-relative paths that must mirror {@link cssDocSchema}, byte-for-byte. */

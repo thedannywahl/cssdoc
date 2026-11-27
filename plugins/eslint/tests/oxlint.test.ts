@@ -13,8 +13,10 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, symlinkSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
+
 import { Linter } from "eslint";
 import { expect, test } from "vite-plus/test";
+
 import plugin from "../src/index.ts";
 
 const PLUGIN_ROOT = resolve(import.meta.dirname, "..");

@@ -22,7 +22,7 @@
  *
  * @module \@cssdoc/tmlanguage
  */
-import { CSSDOC_TAGS, cssdocTagNamesByArgument, cssdocTagNamesByKind } from "@cssdoc/spec";
+
 import {
   ALPHA_SOURCE,
   ALPHANUMERIC_EXTENDED_SOURCE,
@@ -50,6 +50,7 @@ import {
   COMMENT_END_SOURCE,
   TILDE_CHAR,
 } from "@cssdoc/regex";
+import { CSSDOC_TAGS, cssdocTagNamesByArgument, cssdocTagNamesByKind } from "@cssdoc/spec";
 
 /** A TextMate capture assignment (`{ "1": { name } }`). */
 type Captures = Record<string, { name: string }>;

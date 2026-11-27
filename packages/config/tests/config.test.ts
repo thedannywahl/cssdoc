@@ -2,8 +2,10 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+
 import { parseCssDocs, selectExamples } from "@cssdoc/core";
 import { expect, test } from "vite-plus/test";
+
 import { findSchemaDrift } from "../../../scripts/sync-schema.ts";
 import { CssDocConfigFile, resolveProviders } from "../src/index.ts";
 

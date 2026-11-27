@@ -1,6 +1,8 @@
 import { readdirSync, readFileSync } from "node:fs";
+
 import ts from "typescript";
 import { createMarkdownRenderer } from "vitepress";
+
 import { PATTERN_DEFINITIONS } from "../../packages/regex/src/definitions.ts";
 import type { UnifiedPatternDef } from "../../packages/regex/src/definitions.ts";
 

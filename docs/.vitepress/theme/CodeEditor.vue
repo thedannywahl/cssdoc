@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { useData } from "vitepress";
-import { onBeforeUnmount, onMounted, ref, watch } from "vue";
-import type { EditorView } from "codemirror";
 import type { Compartment, Extension } from "@codemirror/state";
 import { cssdocHighlight } from "@cssdoc/codemirror";
+import type { EditorView } from "codemirror";
+import { useData } from "vitepress";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const props = defineProps<{
   modelValue: string;

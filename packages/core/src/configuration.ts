@@ -12,10 +12,7 @@
  *
  * @module
  */
-import type { Regex } from "arkregex";
-import { regex as arkRegex } from "arkregex";
-import { CSSDOC_TAGS, CSSDOC_TAG_NAMES } from "@cssdoc/spec";
-import type { CssRecordKind } from "./model.ts";
+
 import {
   AT_SOURCE,
   AT_CHAR,
@@ -25,6 +22,11 @@ import {
   DASH_SOURCE,
   DIGIT_SOURCE,
 } from "@cssdoc/regex";
+import { CSSDOC_TAGS, CSSDOC_TAG_NAMES } from "@cssdoc/spec";
+import type { Regex } from "arkregex";
+import { regex as arkRegex } from "arkregex";
+
+import type { CssRecordKind } from "./model.ts";
 import {
   DEFAULT_MODIFIER_CONVENTION,
   resolveModifierConvention,

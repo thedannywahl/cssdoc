@@ -7,9 +7,50 @@
  * @module
  */
 import { isAbsolute, relative, sep } from "node:path";
+
 import { CssDocConfiguration, type ExampleFilter, parseDocComment } from "@cssdoc/core";
-import type { Regex } from "arkregex";
-import { regex as arkRegex } from "arkregex";
+import { type CssParse, dialectForFilename, resolveParser } from "@cssdoc/dialects";
+import {
+  type EmbeddedHost,
+  detectEmbeddedHost,
+  extractCssBlocks,
+  projectCss,
+  projectionDialect,
+  scanClassUsages,
+} from "@cssdoc/embedded";
+import {
+  type ClassUsage,
+  type CssDocIndex,
+  type SourceSpan,
+  createIndex,
+  cssValueSites,
+} from "@cssdoc/index";
+import {
+  DEFAULT_RULE_SEVERITIES,
+  type HoverDetail,
+  type HoverPresentation,
+  type HoverSectionOrder,
+  type HoverSections,
+  type NamingRules,
+  type ResolvedNaming,
+  type RuleOptions,
+  type RuleSeverities,
+  applyDirectives,
+  checkClassUsage,
+  checkPropertyAssignments,
+  checkPropertyUsage,
+  completeClasses,
+  completeCustomProperties,
+  definitionForClass,
+  definitionForCustomProperty,
+  hoverForClass,
+  hoverForCustomProperty,
+  highlightDirectives,
+  highlightDocComment,
+  lintModel,
+  resolveNaming,
+  selectorDefines,
+} from "@cssdoc/providers";
 import {
   ALPHA_SOURCE,
   ALPHANUMERIC_EXTENDED_SOURCE,
@@ -45,48 +86,8 @@ import {
   escapeRegex,
   toRegExp,
 } from "@cssdoc/regex";
-import {
-  type EmbeddedHost,
-  detectEmbeddedHost,
-  extractCssBlocks,
-  projectCss,
-  projectionDialect,
-  scanClassUsages,
-} from "@cssdoc/embedded";
-import { type CssParse, dialectForFilename, resolveParser } from "@cssdoc/dialects";
-import {
-  type ClassUsage,
-  type CssDocIndex,
-  type SourceSpan,
-  createIndex,
-  cssValueSites,
-} from "@cssdoc/index";
-import {
-  DEFAULT_RULE_SEVERITIES,
-  type HoverDetail,
-  type HoverPresentation,
-  type HoverSectionOrder,
-  type HoverSections,
-  type NamingRules,
-  type ResolvedNaming,
-  type RuleOptions,
-  type RuleSeverities,
-  applyDirectives,
-  checkClassUsage,
-  checkPropertyAssignments,
-  checkPropertyUsage,
-  completeClasses,
-  completeCustomProperties,
-  definitionForClass,
-  definitionForCustomProperty,
-  hoverForClass,
-  hoverForCustomProperty,
-  highlightDirectives,
-  highlightDocComment,
-  lintModel,
-  resolveNaming,
-  selectorDefines,
-} from "@cssdoc/providers";
+import type { Regex } from "arkregex";
+import { regex as arkRegex } from "arkregex";
 
 /** Language ids handled as CSS (the value/hygiene checks run on these). */
 const CSS_LANGUAGES = new Set(["css", "scss", "less", "postcss"]);

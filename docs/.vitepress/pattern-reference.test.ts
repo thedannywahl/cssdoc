@@ -1,4 +1,5 @@
 import { expect, test } from "vite-plus/test";
+
 import { PATTERN_DEFINITIONS } from "../../packages/regex/src/definitions.ts";
 import loader from "./pattern-reference.data.ts";
 

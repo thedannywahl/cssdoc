@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
 import type { DefaultTheme } from "vitepress";
+
 import { createSidebars } from "./sidebar.js";
 
 type Item = DefaultTheme.SidebarItem;

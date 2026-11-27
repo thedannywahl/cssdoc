@@ -10,8 +10,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, matchesGlob, parse as parsePath, relative, resolve, sep } from "node:path";
-import { Ajv } from "ajv";
-import { type ParseError, parse as parseJsonc, printParseErrorCode } from "jsonc-parser";
+
 import { CssDocConfiguration, CssDocTagDefinition } from "@cssdoc/core";
 import type {
   CssDocSyntaxKind,
@@ -21,6 +20,9 @@ import type {
   ModifierConventionInput,
   ProseSettings,
 } from "@cssdoc/core";
+import { Ajv } from "ajv";
+import { type ParseError, parse as parseJsonc, printParseErrorCode } from "jsonc-parser";
+
 import { cssDocSchema } from "./schema.ts";
 
 /** A per-rule severity override, as spelled in `cssdoc.json`. */

@@ -1,4 +1,5 @@
 import { fromMarkdown } from "mdast-util-from-markdown";
+
 import { literalMarkdownText } from "./prose-text.ts";
 import { safeProseUrl } from "./prose-url.ts";
 

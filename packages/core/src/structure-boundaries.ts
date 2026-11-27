@@ -17,6 +17,7 @@ import {
 } from "@cssdoc/regex";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
+
 import type { FramedCommentLine } from "./framing.ts";
 
 /** CSS lexical state carried between lines of a structure block. */

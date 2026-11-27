@@ -1,5 +1,6 @@
-import { expect, test } from "vite-plus/test";
 import { CssDocConfiguration, CssDocTagDefinition } from "@cssdoc/core/lite";
+import { expect, test } from "vite-plus/test";
+
 import { tokenizeComment } from "../src/index.ts";
 
 const label = (src: string) =>

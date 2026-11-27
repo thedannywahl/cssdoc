@@ -23,9 +23,9 @@
 </template>
 
 <script setup lang="ts">
+import mermaid from "mermaid";
 import { useData } from "vitepress";
 import { computed, nextTick, ref, watch } from "vue";
-import mermaid from "mermaid";
 
 const props = defineProps<{
   graph: string;

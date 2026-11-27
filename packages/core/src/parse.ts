@@ -9,10 +9,7 @@
  *
  * @module
  */
-import postcss, { type ChildNode } from "postcss";
-import type { Regex } from "arkregex";
-import { regex as arkRegex } from "arkregex";
-import { HTML_ELEMENT_GROUPS, HTML_ELEMENT_NAMES } from "@cssdoc/spec";
+
 import {
   ALPHA_SOURCE,
   ALPHANUMERIC_EXTENDED_SOURCE,
@@ -55,15 +52,19 @@ import {
   escapeRegex,
   toRegExp,
 } from "@cssdoc/regex";
+import { HTML_ELEMENT_GROUPS, HTML_ELEMENT_NAMES } from "@cssdoc/spec";
+import type { Regex } from "arkregex";
+import { regex as arkRegex } from "arkregex";
+import postcss, { type ChildNode } from "postcss";
+
 import { CssDocConfiguration, type InlineCommentMode } from "./configuration.ts";
+import { parseDocComment } from "./full-grammar.ts";
 import {
   deriveSelectorName,
   recordNameOf,
   stripCommentFraming,
   type ParsedDoc,
 } from "./grammar.ts";
-import { parseDocComment } from "./full-grammar.ts";
-import { ModifierMatcher, resolveModifierConvention } from "./modifier.ts";
 import type {
   CssAnimation,
   CssCondition,
@@ -82,6 +83,7 @@ import type {
   CssTokenConsumed,
   ParseOptions,
 } from "./model.ts";
+import { ModifierMatcher, resolveModifierConvention } from "./modifier.ts";
 
 const WHITESPACE = toRegExp(WHITESPACE_RUN);
 

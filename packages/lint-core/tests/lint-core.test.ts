@@ -1,5 +1,6 @@
 import { parseCssDocs } from "@cssdoc/core";
 import { expect, test } from "vite-plus/test";
+
 import { type LintOptions, type Violation, lintCssDocs as lintRaw } from "../src/index.ts";
 
 // The fixtures below use the rscss convention; the parser now defaults to BEM.

@@ -1,12 +1,13 @@
+import bareConfig from "../../examples/cssdoc.bare.jsonc?raw";
+import bemConfig from "../../examples/cssdoc.json?raw";
+import rscssConfig from "../../examples/cssdoc.rscss.json?raw";
+
+import bareCss from "../../examples/tabs.bare.css?raw";
 // The playground's convention presets. Each is a self-contained, valid bundle — component CSS, its
 // cssdoc.json, and sample consumer HTML — so switching preset swaps to an idiomatic example for that
 // convention. The BEM bundle reuses the authored example files under docs/examples (one source).
 import bemCss from "../../examples/tabs.css?raw";
-import bemConfig from "../../examples/cssdoc.json?raw";
-import bareCss from "../../examples/tabs.bare.css?raw";
-import bareConfig from "../../examples/cssdoc.bare.jsonc?raw";
 import rscssCss from "../../examples/tabs.rscss.css?raw";
-import rscssConfig from "../../examples/cssdoc.rscss.json?raw";
 
 /** Playground inputs for one CSS naming convention. */
 export interface Preset {

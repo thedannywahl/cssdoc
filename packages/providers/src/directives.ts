@@ -15,7 +15,7 @@
  *
  * @module
  */
-import { DEFAULT_RULE_SEVERITIES, type Diagnostic, type RuleSeverity } from "./types.ts";
+
 import {
   COMMENT_END_SOURCE,
   COMMENT_START_SOURCE,
@@ -23,7 +23,9 @@ import {
   DASH_SOURCE,
 } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
+
 import { tokenize, tokenTypes } from "./css-tokenizer.ts";
+import { DEFAULT_RULE_SEVERITIES, type Diagnostic, type RuleSeverity } from "./types.ts";
 
 type DirectiveKind = "disable" | "enable" | "disable-line" | "disable-next-line" | "expect-error";
 

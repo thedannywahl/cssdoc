@@ -1,6 +1,7 @@
 import { CssDocConfiguration, CssDocTagDefinition } from "@cssdoc/core";
 import { createIndex } from "@cssdoc/index";
 import { expect, test } from "vite-plus/test";
+
 import {
   applyDirectives,
   checkClassUsage,

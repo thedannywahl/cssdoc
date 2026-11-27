@@ -1,4 +1,5 @@
 import { expect, test } from "vite-plus/test";
+
 import { type Violation, lintCssDocs } from "../src/index.ts";
 
 const only = (css: string, rule: string): Violation[] =>

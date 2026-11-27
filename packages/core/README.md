@@ -17,8 +17,9 @@ npm i -D @cssdoc/core
 ## Usage
 
 ```ts
-import { parseCssDocs, toJson } from "@cssdoc/core";
 import { readFileSync } from "node:fs";
+
+import { parseCssDocs, toJson } from "@cssdoc/core";
 
 const model = parseCssDocs(readFileSync("dist/components.css", "utf8"));
 writeFileSync("css-docs.json", toJson(model));

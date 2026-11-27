@@ -4,14 +4,16 @@
  *
  * @module
  */
-import type { Regex } from "arkregex";
-import { regex as arkRegex } from "arkregex";
+
 import {
   COLON_SOURCE,
   CSSDOC_CARDINALITY_KEYWORDS,
   CSSDOC_CARDINALITY_SOURCE,
   DIGIT_SOURCE,
 } from "@cssdoc/regex";
+import type { Regex } from "arkregex";
+import { regex as arkRegex } from "arkregex";
+
 import type { StructureNode } from "./model.ts";
 
 type Cardinality = NonNullable<StructureNode["cardinality"]>;

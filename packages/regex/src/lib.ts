@@ -6,8 +6,9 @@
 
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
-import type { PatternResolver, UnifiedPatternDef } from "./types.ts";
+
 import { REGEX_METACHARACTER_SOURCE } from "./definitions/tier-0-primitives.ts";
+import type { PatternResolver, UnifiedPatternDef } from "./types.ts";
 
 /** Anchors to add when converting a pattern to a native regular expression. */
 export type AnchorMode = "none" | "start" | "end" | "start-end";

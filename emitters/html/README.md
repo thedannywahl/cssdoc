@@ -6,8 +6,9 @@ record plus an index, each with inline styles and no build step. The TypeDoc def
 ## Usage
 
 ```ts
-import { buildHtml } from "@cssdoc/html";
 import { readFileSync } from "node:fs";
+
+import { buildHtml } from "@cssdoc/html";
 
 buildHtml({
   css: readFileSync("dist/components.css", "utf8"),

@@ -1,5 +1,6 @@
 import type { CssDocConfiguration, CssDocReference } from "@cssdoc/core";
 import { projectPrivateLinks, type PublicProseProjection } from "@cssdoc/core/prose";
+
 import {
   resolveContainerMemberReference,
   resolveNamedMemberReference,

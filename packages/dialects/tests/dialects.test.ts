@@ -1,5 +1,6 @@
 import { parseCssDocs } from "@cssdoc/core";
 import { expect, test } from "vite-plus/test";
+
 import { dialectForFilename, resolveParser } from "../src/index.ts";
 
 const SCSS = `$brand: #06c;

@@ -7,6 +7,7 @@
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+
 import { type CssDocConfiguration, type CssDocEntry, parseCssDocs } from "@cssdoc/core";
 import { type CssDialect, resolveParser } from "@cssdoc/dialects";
 import { parseCssDocsFromSource } from "@cssdoc/embedded";
@@ -16,6 +17,7 @@ import {
   type PublicProseContext,
   type ReferenceLookup,
 } from "@cssdoc/index";
+
 import { cssDocSchema } from "./schema.ts";
 
 export { cssDocEntrySchema, cssDocSchema } from "./schema.ts";

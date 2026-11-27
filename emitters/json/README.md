@@ -7,8 +7,9 @@ whole-model `model.json`, optionally one file per record plus a lightweight `ind
 ## Usage
 
 ```ts
-import { writeJson, cssDocSchema } from "@cssdoc/json";
 import { readFileSync } from "node:fs";
+
+import { writeJson, cssDocSchema } from "@cssdoc/json";
 
 writeJson({
   css: readFileSync("dist/components.css", "utf8"),

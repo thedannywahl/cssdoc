@@ -15,6 +15,7 @@
  * @module \@cssdoc/stylelint-plugin
  */
 import { dirname } from "node:path";
+
 import { CssDocConfigFile, resolveProviders } from "@cssdoc/config";
 import type { ModifierConventionInput } from "@cssdoc/core";
 import { type NamingRules, type RuleName, type RuleSeverity, lintCssDocs } from "@cssdoc/lint-core";

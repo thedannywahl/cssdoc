@@ -33,6 +33,7 @@ Save this as `inspect-vue.mjs` beside the Vue file:
 
 ```js
 import { readFileSync } from "node:fs";
+
 import { parseCssDocsFromSource } from "@cssdoc/embedded";
 
 const source = readFileSync("Button.vue", "utf8");

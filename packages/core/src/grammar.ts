@@ -37,20 +37,7 @@
  *
  * @module
  */
-import type { ChildNode } from "postcss";
-import type { Regex } from "arkregex";
-import { regex as arkRegex } from "arkregex";
-import { CssDocConfiguration } from "./configuration.ts";
-import { blockSourceRange, collectDocCommentBlocks, type DocCommentBlock } from "./blocks.ts";
-import { frameCommentLines } from "./framing.ts";
-import { docProseStart } from "./structure-boundaries.ts";
-import { collectProse, type DocCommentProse } from "./prose-shared.ts";
-import { scanInlineTags } from "./inline.ts";
-import {
-  cardinalityFromMatch,
-  splitTrailingCardinality,
-  STRUCTURE_CARDINALITY,
-} from "./cardinality.ts";
+
 import {
   DOT_CHAR,
   POUND_CHAR,
@@ -100,6 +87,19 @@ import {
   LINE_FEED_SOURCE,
   LINE_ENDING_SOURCE,
 } from "@cssdoc/regex";
+import type { Regex } from "arkregex";
+import { regex as arkRegex } from "arkregex";
+import type { ChildNode } from "postcss";
+
+import { blockSourceRange, collectDocCommentBlocks, type DocCommentBlock } from "./blocks.ts";
+import {
+  cardinalityFromMatch,
+  splitTrailingCardinality,
+  STRUCTURE_CARDINALITY,
+} from "./cardinality.ts";
+import { CssDocConfiguration } from "./configuration.ts";
+import { frameCommentLines } from "./framing.ts";
+import { scanInlineTags } from "./inline.ts";
 import type {
   CssParse,
   CssRelated,
@@ -109,6 +109,8 @@ import type {
   StructureNode,
   StructureVariant,
 } from "./model.ts";
+import { collectProse, type DocCommentProse } from "./prose-shared.ts";
+import { docProseStart } from "./structure-boundaries.ts";
 
 /** One parsed annotation legend row from an `@annotations` block. */
 export interface DocAnnotation {

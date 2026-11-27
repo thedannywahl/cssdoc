@@ -1,4 +1,5 @@
 import { expect, test } from "vite-plus/test";
+
 import grammar from "../grammarkdown.tmLanguage.json" with { type: "json" };
 import grammarkdown, { buildGrammar, grammarkdown as namedGrammar } from "../src/index.ts";
 

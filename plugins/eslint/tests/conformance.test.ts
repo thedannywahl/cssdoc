@@ -5,6 +5,7 @@
  * and message decoration (ESLint's raw `[rule] message`; Stylelint's `[rule] (line N) message.`).
  */
 import { resolve } from "node:path";
+
 import {
   ALPHANUMERIC_EXTENDED_SOURCE,
   BRACKET_CLOSE_SOURCE,
@@ -17,6 +18,7 @@ import { regex as arkRegex } from "arkregex";
 import { Linter } from "eslint";
 import stylelint from "stylelint";
 import { expect, test } from "vite-plus/test";
+
 import stylelintPlugin, { ruleName } from "../../stylelint/src/index.ts";
 import eslintPlugin from "../src/index.ts";
 

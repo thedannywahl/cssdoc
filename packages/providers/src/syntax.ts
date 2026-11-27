@@ -6,10 +6,11 @@
  *
  * @module
  */
-import { type Lexer, fork } from "css-tree";
+
+import { CSS_KEYWORD_SOURCE, CSS_FUNCTION_SOURCE } from "@cssdoc/regex";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
-import { CSS_KEYWORD_SOURCE, CSS_FUNCTION_SOURCE } from "@cssdoc/regex";
+import { type Lexer, fork } from "css-tree";
 
 // css-tree matches values against *property* grammars, so we register the syntax under a throwaway
 // property name and match against that. Forked lexers are cached per syntax string.

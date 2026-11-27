@@ -2,6 +2,7 @@
 // vector paths (no fonts), so the output is deterministic. Run with `vp run icon` after editing an SVG.
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+
 import { Resvg } from "@resvg/resvg-js";
 
 const icons = [

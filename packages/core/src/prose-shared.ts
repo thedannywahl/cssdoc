@@ -9,6 +9,7 @@ import {
   SPACE_TAB_SOURCE,
 } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
+
 import { blockSourceRange, type DocCommentBlock } from "./blocks.ts";
 import { type CssDocConfiguration } from "./configuration.ts";
 import { docProseStart } from "./structure-boundaries.ts";

@@ -1,9 +1,10 @@
-import { expect, test } from "vite-plus/test";
 import { CSSDOC_TAG_NAMES } from "@cssdoc/spec";
 import { createHighlighter } from "shiki";
-import cssdoc, { buildAtRuleInjectionGrammar, buildInjectionGrammar } from "../src/index.ts";
-import grammar from "../cssdoc.injection.tmLanguage.json" with { type: "json" };
+import { expect, test } from "vite-plus/test";
+
 import atRuleGrammar from "../cssdoc.atrules.injection.tmLanguage.json" with { type: "json" };
+import grammar from "../cssdoc.injection.tmLanguage.json" with { type: "json" };
+import cssdoc, { buildAtRuleInjectionGrammar, buildInjectionGrammar } from "../src/index.ts";
 
 test.each([
   ["```", "````"],

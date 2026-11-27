@@ -1,4 +1,5 @@
 import { expect, test } from "vite-plus/test";
+
 import { createIndex, lintModel, parseCssDocs, toMermaid } from "../src/index.ts";
 
 test("re-exports the core + index + providers API from one entry", () => {

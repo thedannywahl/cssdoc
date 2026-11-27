@@ -1,4 +1,5 @@
 import { expect, test } from "vite-plus/test";
+
 import { DOCUMENT_SELECTOR } from "../src/config.ts";
 
 test("the document selector covers stylesheets, markup hosts, and JS/TS flavors", () => {

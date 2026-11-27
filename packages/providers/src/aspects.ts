@@ -13,8 +13,17 @@ import {
   selectExampleIndices,
 } from "@cssdoc/core";
 import { sanitizeMarkdownLinks, unescapeInlineOpeners } from "@cssdoc/core/prose";
-import type { Regex } from "arkregex";
-import { regex as arkRegex } from "arkregex";
+import {
+  type ClassUsage,
+  type CssDocIndex,
+  type Location,
+  type PropertyAssignment,
+  type PropertyUsage,
+  type RecordInfo,
+  type SourceSpan,
+  memberKey,
+  projectPublicModel,
+} from "@cssdoc/index";
 import {
   ALPHANUMERIC_EXTENDED_SOURCE,
   ASTERISK_CHAR,
@@ -56,17 +65,9 @@ import {
   escapeRegex,
   toRegExp,
 } from "@cssdoc/regex";
-import {
-  type ClassUsage,
-  type CssDocIndex,
-  type Location,
-  type PropertyAssignment,
-  type PropertyUsage,
-  type RecordInfo,
-  type SourceSpan,
-  memberKey,
-  projectPublicModel,
-} from "@cssdoc/index";
+import type { Regex } from "arkregex";
+import { regex as arkRegex } from "arkregex";
+
 import { linkSyntax } from "./mdn.ts";
 import { matchesSyntax } from "./syntax.ts";
 import { HOVER_SECTION_KEYS } from "./types.ts";

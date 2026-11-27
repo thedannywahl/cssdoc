@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+
 import { expect, test } from "vite-plus/test";
+
 import { createCssDocProgram, runCli, type CliRuntime } from "../src/cli.ts";
 import { runLint, type LintCliOptions, type LintCliResult } from "../src/index.ts";
 

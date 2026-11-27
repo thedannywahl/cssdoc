@@ -11,9 +11,10 @@ no extension required.
 ## Usage
 
 ```ts
+import { readFileSync } from "node:fs";
+
 import { createIndex } from "@cssdoc/index";
 import { writeVscodeCustomData } from "@cssdoc/vscode-custom-data";
-import { readFileSync } from "node:fs";
 
 const index = createIndex(readFileSync("dist/components.css", "utf8"));
 writeVscodeCustomData({ index, outDir: ".vscode" });

@@ -7,8 +7,20 @@
  * @module
  */
 import type { CssDocEntry, CssReleaseStage, CssRecordKind, StructureNode } from "@cssdoc/core";
-import type { Regex } from "arkregex";
-import { regex as arkRegex } from "arkregex";
+import {
+  type ExampleFilter,
+  cardinalityToken,
+  literalMarkdownText,
+  selectExampleIndices,
+  toMermaid,
+  toMermaidVariants,
+} from "@cssdoc/core";
+import {
+  indexFromEntries,
+  projectPublicModel,
+  type PublicProseContext,
+  type ReferenceLookup,
+} from "@cssdoc/index";
 import {
   AT_SOURCE,
   BACKTICK_CHAR,
@@ -30,26 +42,15 @@ import {
   WORD_BOUNDARY_SOURCE,
   toRegExp,
 } from "@cssdoc/regex";
-import {
-  type ExampleFilter,
-  cardinalityToken,
-  literalMarkdownText,
-  selectExampleIndices,
-  toMermaid,
-  toMermaidVariants,
-} from "@cssdoc/core";
+import type { Regex } from "arkregex";
+import { regex as arkRegex } from "arkregex";
+
 import {
   plainProse,
   safeMarkdownBlock,
   safeMarkdownProse,
   sanitizeMarkdownLinks,
 } from "./prose.ts";
-import {
-  indexFromEntries,
-  projectPublicModel,
-  type PublicProseContext,
-  type ReferenceLookup,
-} from "@cssdoc/index";
 
 const WHITESPACE = toRegExp(WHITESPACE_RUN);
 

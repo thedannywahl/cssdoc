@@ -1,4 +1,5 @@
 import { expect, test } from "vite-plus/test";
+
 import { matchesSyntax } from "../src/syntax.ts";
 
 test("matches basic data types", () => {

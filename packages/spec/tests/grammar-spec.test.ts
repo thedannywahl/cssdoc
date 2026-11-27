@@ -1,9 +1,11 @@
 import { fileURLToPath } from "node:url";
+
 import { Grammar, Nonterminal, Production, TerminalLiteral } from "grammarkdown";
 import type { Node } from "grammarkdown";
 import { expect, test } from "vite-plus/test";
-import { CSSDOC_TAGS } from "../src/index.ts";
+
 import { PATTERN_DEFINITIONS } from "../../regex/src/definitions.ts";
+import { CSSDOC_TAGS } from "../src/index.ts";
 
 // The grammar spec is the source of truth for the doc-comment shape (grammar/CssDoc.grammarkdown); the
 // runtime parser in grammar.ts conforms to it. This test keeps the spec honest: it must be valid

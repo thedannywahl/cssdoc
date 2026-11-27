@@ -1,5 +1,6 @@
 import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+
 import { buildGrammar } from "../dist/index.mjs";
 
 const out = fileURLToPath(new URL("../grammarkdown.tmLanguage.json", import.meta.url));

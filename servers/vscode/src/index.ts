@@ -12,8 +12,9 @@ import {
   type ServerOptions,
   TransportKind,
 } from "vscode-languageclient/node";
-import { DOCUMENT_SELECTOR } from "./config.ts";
+
 import { cssDocEdits } from "./comment-format.ts";
+import { DOCUMENT_SELECTOR } from "./config.ts";
 
 export { DOCUMENT_SELECTOR } from "./config.ts";
 

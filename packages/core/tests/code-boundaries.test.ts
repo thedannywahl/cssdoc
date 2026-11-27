@@ -1,5 +1,6 @@
 import { fromMarkdown } from "mdast-util-from-markdown";
 import { expect, test } from "vite-plus/test";
+
 import { scanCodeBoundaryLine, type CodeBoundaryState } from "../src/code-boundaries.ts";
 
 test.each([

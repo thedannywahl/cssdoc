@@ -1,4 +1,5 @@
 import { expect, test } from "vite-plus/test";
+
 import { cssDocEdits, type CssDocEdit } from "../src/comment-format.ts";
 
 const apply = (text: string, edits: CssDocEdit[]): string =>

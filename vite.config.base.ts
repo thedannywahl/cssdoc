@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+
 import { defineConfig, mergeConfig } from "vite-plus";
 import type { UserConfig } from "vite-plus";
 
@@ -21,7 +22,19 @@ export const baseConfig: UserConfig = defineConfig({
     plugins: ["import", "node", "promise", "vitest", "jsdoc"],
     rules: { "jsdoc/check-tag-names": ["error", { definedTags: [...CSSDOC_TAG_NAMES] }] },
   },
-  fmt: {},
+  fmt: {
+    sortImports: {
+      groups: [
+        "builtin",
+        "external",
+        ["internal", "subpath"],
+        ["parent", "sibling", "index"],
+        "style",
+        "unknown",
+      ],
+      sortSideEffects: false,
+    },
+  },
 });
 
 export const libraryConfig: UserConfig = mergeConfig(baseConfig, {

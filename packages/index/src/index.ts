@@ -33,9 +33,6 @@ import {
   splitModifierArg,
   splitPartArg,
 } from "@cssdoc/core";
-import postcss, { type ChildNode } from "postcss";
-import valueParser from "postcss-value-parser";
-import { regex as arkRegex } from "arkregex";
 import {
   AT_SOURCE,
   COMMENT_LINE_PREFIX,
@@ -48,6 +45,9 @@ import {
   WORD_BOUNDARY_SOURCE,
   toRegExp,
 } from "@cssdoc/regex";
+import { regex as arkRegex } from "arkregex";
+import postcss, { type ChildNode } from "postcss";
+import valueParser from "postcss-value-parser";
 export {
   resolveContainerMemberReference,
   resolveNamedMemberReference,

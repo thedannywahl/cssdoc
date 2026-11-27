@@ -1,6 +1,7 @@
 import { parseCssDocs } from "@cssdoc/core";
-import { expect, test } from "vite-plus/test";
 import { createIndex } from "@cssdoc/index";
+import { expect, test } from "vite-plus/test";
+
 import { renderLlms } from "../src/index.ts";
 
 const CSS = `

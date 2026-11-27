@@ -2,6 +2,7 @@ import { CssDocConfiguration, CssDocTagDefinition, parseCssDocs } from "@cssdoc/
 import { createIndex, indexFromEntries } from "@cssdoc/index";
 import { DEFAULT_RULE_SEVERITIES, resolveRuleSeverities } from "@cssdoc/providers";
 import { expect, test } from "vite-plus/test";
+
 import { CssDocLanguageService } from "../src/service.ts";
 
 const CSS = `

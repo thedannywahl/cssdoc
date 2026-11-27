@@ -5,6 +5,7 @@
  * - Configuration structure and plugin interface
  */
 import { expect, test } from "vite-plus/test";
+
 import plugin from "../src/index.ts";
 
 // ── Preset Configuration Tests ──────────────────────────────────────────────────────────────────

@@ -7,6 +7,7 @@
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
+
 import {
   type CssDocConfiguration,
   type CssDocEntry,

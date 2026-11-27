@@ -9,6 +9,7 @@ import {
   type StructureVariant,
 } from "@cssdoc/core";
 import { projectPrivateLinks } from "@cssdoc/core/prose";
+
 import { referenceVisibility } from "./projection.ts";
 import type { ReferenceLookup } from "./reference.ts";
 

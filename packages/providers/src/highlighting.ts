@@ -19,6 +19,7 @@ import {
   LINE_FEED_CHAR,
 } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
+
 import { tokenize, tokenTypes } from "./css-tokenizer.ts";
 export { highlightDirectives } from "./directives.ts";
 export type { DirectiveHighlight } from "./directives.ts";

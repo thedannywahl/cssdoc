@@ -4,8 +4,8 @@
  * @module
  */
 
-import type { RawPatternDef, PatternResolver } from "../types.ts";
 import { escapeChar } from "../lib.ts";
+import type { RawPatternDef, PatternResolver } from "../types.ts";
 
 /** Common punctuation and text pattern definitions. */
 export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {

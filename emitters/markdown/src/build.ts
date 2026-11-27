@@ -7,6 +7,7 @@
  */
 import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+
 import {
   literalMarkdownText,
   parseCssDocs,
@@ -22,6 +23,7 @@ import {
   type ReferenceLookup,
 } from "@cssdoc/index";
 import { DOT_CHAR } from "@cssdoc/regex";
+
 import {
   type RenderEntryOptions,
   type RenderIndexOptions,

@@ -2,8 +2,10 @@ import { readFileSync } from "node:fs";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
 import { createIndex } from "@cssdoc/index";
 import { expect, test } from "vite-plus/test";
+
 import { cssCustomData, htmlCustomData, writeVscodeCustomData } from "../src/index.ts";
 
 const CSS = `

@@ -16,8 +16,8 @@ npm add @cssdoc/codemirror @codemirror/lang-css
 ## Use
 
 ```ts
-import { cssdocHighlight } from "@cssdoc/codemirror";
 import { css } from "@codemirror/lang-css";
+import { cssdocHighlight } from "@cssdoc/codemirror";
 import { EditorView, basicSetup } from "codemirror";
 
 new EditorView({

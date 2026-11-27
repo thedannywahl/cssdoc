@@ -59,6 +59,7 @@ selects the SCSS parser. If you move the contents of that block to `card.scss`, 
 
 ```js [Vue file]
 import { readFileSync } from "node:fs";
+
 import { buildCssApi } from "@cssdoc/markdown";
 
 buildCssApi({
@@ -70,6 +71,7 @@ buildCssApi({
 
 ```js [Standalone SCSS]
 import { readFileSync } from "node:fs";
+
 import { buildCssApi } from "@cssdoc/markdown";
 
 buildCssApi({

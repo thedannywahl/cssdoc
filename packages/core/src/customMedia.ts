@@ -1,11 +1,12 @@
-import type { Regex } from "arkregex";
-import { regex as arkRegex } from "arkregex";
-import type { CssDocEntry, CssRecordKind, StructureNode } from "./model.ts";
 import {
   STRUCTURE_RECORD_KIND_SOURCE,
   TYPED_STRUCTURE_MEDIA_SOURCE,
   UNTYPED_STRUCTURE_MEDIA_SOURCE,
 } from "@cssdoc/regex";
+import type { Regex } from "arkregex";
+import { regex as arkRegex } from "arkregex";
+
+import type { CssDocEntry, CssRecordKind, StructureNode } from "./model.ts";
 
 const TYPED_STRUCTURE_MEDIA: Regex = arkRegex.as(`^${TYPED_STRUCTURE_MEDIA_SOURCE}$`, "u");
 const UNTYPED_STRUCTURE_MEDIA: Regex = arkRegex.as(`^${UNTYPED_STRUCTURE_MEDIA_SOURCE}$`, "u");

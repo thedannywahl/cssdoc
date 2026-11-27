@@ -1,8 +1,9 @@
-import { expect, test } from "vite-plus/test";
 import {
   CssDocConfiguration as ProviderConfiguration,
   CssDocTagDefinition as ProviderTagDefinition,
 } from "@cssdoc/core/lite";
+import { expect, test } from "vite-plus/test";
+
 import { blockSourceRange, collectDocCommentBlocks } from "../../core/src/blocks.ts";
 import { CssDocConfiguration, CssDocTagDefinition } from "../../core/src/configuration.ts";
 import { parseDocComment as parseFullDocComment } from "../../core/src/full-grammar.ts";

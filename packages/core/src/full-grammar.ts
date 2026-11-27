@@ -6,6 +6,7 @@ import {
   LINE_FEED_CHAR,
 } from "@cssdoc/regex";
 import { fromMarkdown } from "mdast-util-from-markdown";
+
 import { CssDocConfiguration, type ProseMode } from "./configuration.ts";
 import { parseDocComment as parsePlainDocComment, type ParsedDoc } from "./grammar.ts";
 import { fencedProseRanges, scanInlineTags, scanInlineTagsOutsideCode } from "./inline.ts";

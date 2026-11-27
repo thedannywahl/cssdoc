@@ -1,13 +1,15 @@
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+
 import grammarkdown from "@cssdoc/grammarkdown-tmlanguage";
 import cssdoc, { cssdocAtRules } from "@cssdoc/tmlanguage";
+import { regex as arkRegex } from "arkregex";
 import type { DefaultTheme, UserConfig } from "vitepress";
 import { defineConfig } from "vitepress";
-import { regex as arkRegex } from "arkregex";
 import llmstxt from "vitepress-plugin-llms";
-import { mermaidPlugin } from "./plugins/vitepress-mermaid/index.js";
+
 import { expandTheme, pruneThemeBundle } from "./plugins/pantoken-theme.js";
+import { mermaidPlugin } from "./plugins/vitepress-mermaid/index.js";
 import { createSidebars } from "./sidebar.js";
 
 // The site is served at its own apex domain (cssdoc.dev), so it lives at the root. DOCS_BASE can still

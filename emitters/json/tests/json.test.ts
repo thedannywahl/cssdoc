@@ -1,10 +1,12 @@
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
 import { parseCssDocs, toJson } from "@cssdoc/core";
 import { createIndex } from "@cssdoc/index";
 import { Ajv } from "ajv";
 import { expect, test } from "vite-plus/test";
+
 import { cssDocSchema, renderJson, writeJson } from "../src/index.ts";
 
 const CSS = `

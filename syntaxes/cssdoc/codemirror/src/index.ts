@@ -23,20 +23,18 @@
 import { syntaxTree } from "@codemirror/language";
 import type { Extension, Range } from "@codemirror/state";
 import {
-  collectDocCommentBlocks,
-  docCommentFenceRanges,
-  type CssDocConfiguration,
-} from "@cssdoc/core/lite";
-import { highlightDirectives, highlightDocComment } from "@cssdoc/providers/highlighting";
-import { CSSDOC_TAGS, cssdocTagNamesByArgument, cssdocTagNamesByKind } from "@cssdoc/spec";
-import { regex as arkRegex } from "arkregex";
-import {
   Decoration,
   type DecorationSet,
   EditorView,
   ViewPlugin,
   type ViewUpdate,
 } from "@codemirror/view";
+import {
+  collectDocCommentBlocks,
+  docCommentFenceRanges,
+  type CssDocConfiguration,
+} from "@cssdoc/core/lite";
+import { highlightDirectives, highlightDocComment } from "@cssdoc/providers/highlighting";
 import {
   ALPHANUMERIC_EXTENDED_SOURCE,
   SPACE_TAB_SOURCE,
@@ -48,6 +46,8 @@ import {
   TOKENIZER_PROPERTY_TAG_SOURCE,
   TOKENIZER_REF_TAG_SOURCE,
 } from "@cssdoc/regex";
+import { CSSDOC_TAGS, cssdocTagNamesByArgument, cssdocTagNamesByKind } from "@cssdoc/spec";
+import { regex as arkRegex } from "arkregex";
 
 /** Semantic token kind a doc-comment span maps to. Each becomes a `cm-cssdoc-<kind>` class. */
 export type CssdocTokenType =

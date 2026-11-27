@@ -1,8 +1,10 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
 import stylelint from "stylelint";
 import { expect, test } from "vite-plus/test";
+
 import plugin, { ruleName } from "../src/index.ts";
 
 const CSS = `

@@ -11,8 +11,7 @@
  *
  * @module
  */
-import type { Regex } from "arkregex";
-import { regex as arkRegex } from "arkregex";
+
 import {
   ALPHANUMERIC_EXTENDED_SOURCE,
   ASTERISK_CHAR,
@@ -37,6 +36,8 @@ import {
   UNDERSCORE_CHAR,
   escapeRegex,
 } from "@cssdoc/regex";
+import type { Regex } from "arkregex";
+import { regex as arkRegex } from "arkregex";
 
 /**
  * How a modifier attaches to a component's base class.

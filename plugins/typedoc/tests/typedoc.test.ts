@@ -1,8 +1,10 @@
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
 import { CssDocConfigFile } from "@cssdoc/config";
 import { expect, test } from "vite-plus/test";
+
 import { TYPEDOC_SIDEBAR_FILE, emitCssApi, mergeCssSidebar } from "../src/index.ts";
 
 const CSS = `

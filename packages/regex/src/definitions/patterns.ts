@@ -9,8 +9,9 @@
  */
 
 import { regex as arkRegex } from "arkregex";
-import type { UnifiedPatternDef, RawPatternDef } from "../types.ts";
+
 import { createResolver, resolveAllPatterns } from "../lib.ts";
+import type { UnifiedPatternDef, RawPatternDef } from "../types.ts";
 import { TIER_0_PRIMITIVES_PATTERNS } from "./tier-0-primitives.ts";
 import { TIER_1_COMMON_PATTERNS } from "./tier-1-common.ts";
 import { TIER_1_CSS_PATTERNS } from "./tier-1-css.ts";

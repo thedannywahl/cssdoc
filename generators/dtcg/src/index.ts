@@ -8,6 +8,7 @@
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
+
 import type { CssDocIndex } from "@cssdoc/index";
 
 /** Map a CSS `@property` syntax descriptor to a DTCG `$type`, when there's a clear correspondence. */

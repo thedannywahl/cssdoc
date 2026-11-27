@@ -13,8 +13,9 @@ npm i -D @cssdoc/markdown @cssdoc/core
 ## Usage
 
 ```ts
-import { buildCssApi } from "@cssdoc/markdown";
 import { readFileSync } from "node:fs";
+
+import { buildCssApi } from "@cssdoc/markdown";
 
 buildCssApi({
   css: readFileSync("dist/components.css", "utf8"),

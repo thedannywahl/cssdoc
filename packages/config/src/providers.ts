@@ -10,12 +10,15 @@
  *
  * @module
  */
-import { createRequire } from "node:module";
+
 import { globSync, readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
+
 import { type CssDocEntry, parseCssDocs } from "@cssdoc/core";
-import { regex as arkRegex } from "arkregex";
 import { DOT_CHAR, FORWARD_SLASH_SOURCE, escapeRegex } from "@cssdoc/regex";
+import { regex as arkRegex } from "arkregex";
+
 import { CssDocConfigFile, type ProviderRef } from "./CssDocConfigFile.ts";
 
 /** Options for provider resolution. */

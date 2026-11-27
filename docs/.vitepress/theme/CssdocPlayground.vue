@@ -13,10 +13,11 @@ import {
 import { type ParseError, parse as parseJsonc, printParseErrorCode } from "jsonc-parser";
 import { MarkdownExit } from "markdown-exit";
 import { computed, ref } from "vue";
-import CodeEditor from "./CodeEditor.vue";
-import { presets } from "./presets.ts";
+
 // The JSON schema that powers cssdoc.json completion/validation — shown read-only beside the config.
 import schemaJson from "../../../packages/config/cssdoc.schema.json?raw";
+import CodeEditor from "./CodeEditor.vue";
+import { presets } from "./presets.ts";
 
 // Render authored prose (a11y notes, summaries, descriptions) so inline `code`, *emphasis*, and links
 // come through as HTML rather than raw markdown text. markdown-exit provides better TypeScript support

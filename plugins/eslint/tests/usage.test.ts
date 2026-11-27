@@ -1,9 +1,11 @@
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
 import htmlParser from "@html-eslint/parser";
 import { Linter } from "eslint";
 import { expect, test } from "vite-plus/test";
+
 import plugin from "../src/index.ts";
 
 const CSS = `

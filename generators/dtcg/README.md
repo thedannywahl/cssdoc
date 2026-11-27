@@ -8,9 +8,10 @@ interchange with the token ecosystem.
 ## Usage
 
 ```ts
-import { createIndex } from "@cssdoc/index";
-import { writeDtcg } from "@cssdoc/dtcg";
 import { readFileSync } from "node:fs";
+
+import { writeDtcg } from "@cssdoc/dtcg";
+import { createIndex } from "@cssdoc/index";
 
 const index = createIndex(readFileSync("dist/components.css", "utf8"));
 writeDtcg({ index, outFile: "tokens.json" });

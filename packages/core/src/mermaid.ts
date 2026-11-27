@@ -26,8 +26,7 @@
  *
  * @module
  */
-import type { Regex } from "arkregex";
-import { regex as arkRegex } from "arkregex";
+
 import {
   ALPHANUMERIC_EXTENDED_SOURCE,
   AT_CHAR,
@@ -40,6 +39,9 @@ import {
   QUOTE_DOUBLE_CHAR,
   STRUCTURE_RECORD_KIND_SOURCE,
 } from "@cssdoc/regex";
+import type { Regex } from "arkregex";
+import { regex as arkRegex } from "arkregex";
+
 import { cardinalityIsDashed, cardinalityToken } from "./cardinality.ts";
 import type { StructureNode } from "./model.ts";
 

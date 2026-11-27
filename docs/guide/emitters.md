@@ -13,6 +13,7 @@ Save this as `build-css-docs.mjs` next to `button.css`:
 
 ```js
 import { readFileSync } from "node:fs";
+
 import { buildCssApi } from "@cssdoc/markdown";
 
 buildCssApi({

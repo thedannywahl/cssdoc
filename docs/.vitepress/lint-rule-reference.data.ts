@@ -1,4 +1,5 @@
 import { MarkdownExit } from "markdown-exit";
+
 import { DEFAULT_RULE_SEVERITIES } from "../../packages/providers/src/types.ts";
 import type { RuleId, RuleSeverities } from "../../packages/providers/src/types.ts";
 

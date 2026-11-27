@@ -1,6 +1,7 @@
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+
 import { afterEach, expect, test } from "vite-plus/test";
 
 import { syncZedVersion } from "./sync-zed-version.mjs";

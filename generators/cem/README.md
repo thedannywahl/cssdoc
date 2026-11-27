@@ -8,9 +8,10 @@ the CEM tooling ecosystem.
 ## Usage
 
 ```ts
-import { createIndex } from "@cssdoc/index";
-import { writeCem } from "@cssdoc/cem";
 import { readFileSync } from "node:fs";
+
+import { writeCem } from "@cssdoc/cem";
+import { createIndex } from "@cssdoc/index";
 
 const index = createIndex(readFileSync("dist/components.css", "utf8"), { file: "components.css" });
 writeCem({ index, outFile: "custom-elements.json" });

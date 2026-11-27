@@ -1,6 +1,7 @@
 import { EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { expect, test } from "vite-plus/test";
+
 import { grammarkdownHighlight, tokenizeGrammarkdown } from "../src/index.ts";
 
 const label = (src: string) =>

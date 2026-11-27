@@ -18,12 +18,13 @@
  *
  * @module \@cssdoc/dialects
  */
+
+import { FILE_EXTENSION } from "@cssdoc/regex";
 import postcss, { type Root } from "postcss";
 // postcss-less ships no type declarations; its default export is a PostCSS Syntax with `.parse`.
 // @ts-expect-error -- no bundled types
 import less from "postcss-less";
 import scss from "postcss-scss";
-import { FILE_EXTENSION } from "@cssdoc/regex";
 
 /** A stylesheet dialect cssdoc can parse. */
 export type CssDialect = "css" | "scss" | "less";

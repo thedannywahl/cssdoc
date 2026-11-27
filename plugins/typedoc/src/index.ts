@@ -24,6 +24,7 @@
  */
 import { CssDocConfigFile } from "@cssdoc/config";
 import { type Application, ParameterType, RendererEvent } from "typedoc";
+
 import { emitCssApi } from "./emit.ts";
 
 /**

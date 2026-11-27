@@ -1,11 +1,12 @@
-import type { ParseOptions } from "./model.ts";
-import { parseCssDocs } from "./parse.ts";
-import { buildCustomMediaDeclarations } from "./customMedia.ts";
-import type { BuildCustomMediaOptions } from "./customMedia.ts";
-import postcss from "postcss";
+import { TOKEN_CUSTOM_PROPERTY_SOURCE, SPACE_TAB_SOURCE } from "@cssdoc/regex";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
-import { TOKEN_CUSTOM_PROPERTY_SOURCE, SPACE_TAB_SOURCE } from "@cssdoc/regex";
+import postcss from "postcss";
+
+import { buildCustomMediaDeclarations } from "./customMedia.ts";
+import type { BuildCustomMediaOptions } from "./customMedia.ts";
+import type { ParseOptions } from "./model.ts";
+import { parseCssDocs } from "./parse.ts";
 
 const INLINE_CUSTOM_MEDIA_PARAMS: Regex = arkRegex.as(
   String.raw`^(${TOKEN_CUSTOM_PROPERTY_SOURCE})${SPACE_TAB_SOURCE}+(.+)$`,

@@ -1,4 +1,15 @@
+import postcss from "postcss";
 import { expect, test } from "vite-plus/test";
+
+import { blockSourceRange, collectDocCommentBlocks } from "../src/blocks.ts";
+import { frameCommentLines } from "../src/framing.ts";
+import {
+  parseDocComment,
+  parseStructure,
+  recordNameOf,
+  splitPartArg,
+  stripCommentFraming,
+} from "../src/grammar.ts";
 import {
   buildCustomMediaDeclarations,
   compileCustomMediaDeclarations,
@@ -17,16 +28,6 @@ import {
   toMermaidVariants,
 } from "../src/index.ts";
 import { parseDocComment as parseLiteDocComment } from "../src/lite.ts";
-import postcss from "postcss";
-import { blockSourceRange, collectDocCommentBlocks } from "../src/blocks.ts";
-import { frameCommentLines } from "../src/framing.ts";
-import {
-  parseDocComment,
-  parseStructure,
-  recordNameOf,
-  splitPartArg,
-  stripCommentFraming,
-} from "../src/grammar.ts";
 import { inlineCodeRanges } from "../src/lite.ts";
 import { ModifierMatcher } from "../src/modifier.ts";
 import { projectPrivateLinks } from "../src/prose.ts";

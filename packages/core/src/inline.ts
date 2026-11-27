@@ -16,8 +16,9 @@ import {
   QUOTE_SINGLE_CHAR,
 } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
-import { CssDocConfiguration } from "./configuration.ts";
+
 import { scanCodeBoundaryLine, type CodeBoundaryState } from "./code-boundaries.ts";
+import { CssDocConfiguration } from "./configuration.ts";
 import { safeProseUrl } from "./prose-url.ts";
 
 /** A recognized inline tag, with UTF-16 offsets relative to the scanned text. */

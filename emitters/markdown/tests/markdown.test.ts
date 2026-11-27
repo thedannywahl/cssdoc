@@ -1,11 +1,13 @@
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
 import { CssDocConfiguration, parseCssDocs } from "@cssdoc/core";
-import { expect, test } from "vite-plus/test";
 import { createIndex } from "@cssdoc/index";
+import { expect, test } from "vite-plus/test";
 import { createMarkdownRenderer } from "vitepress";
 import { compileTemplate } from "vue/compiler-sfc";
+
 import {
   buildCssApi,
   buildSidebar,
@@ -13,8 +15,8 @@ import {
   renderEntry,
   renderIndex,
 } from "../src/index.ts";
-import { cell, escProse } from "../src/render.ts";
 import { plainProse, safeMarkdownBlock } from "../src/prose.ts";
+import { cell, escProse } from "../src/render.ts";
 
 const CSS = `
 /**

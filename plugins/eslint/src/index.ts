@@ -36,12 +36,12 @@
  */
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { regex as arkRegex } from "arkregex";
+
 import { CssDocConfigFile, resolveProviders } from "@cssdoc/config";
 import type { ModifierConventionInput } from "@cssdoc/core";
 import { scanClassUsages } from "@cssdoc/embedded";
-import { type NamingRules, type RuleName, lintCssDocs } from "@cssdoc/lint-core";
 import { type CssDocIndex, createIndex } from "@cssdoc/index";
+import { type NamingRules, type RuleName, lintCssDocs } from "@cssdoc/lint-core";
 import { type RuleSeverity, checkClassUsage } from "@cssdoc/providers";
 import {
   ALPHA_UPPER_SOURCE,
@@ -57,6 +57,7 @@ import {
   QUOTE_DOUBLE_CHAR,
 } from "@cssdoc/regex";
 import css from "@eslint/css";
+import { regex as arkRegex } from "arkregex";
 
 type Position = { line: number; column: number };
 const DOC_COMMENT = arkRegex.as(`${DOC_COMMENT_START_SOURCE}[\\s\\S]*?${COMMENT_END_SOURCE}`);

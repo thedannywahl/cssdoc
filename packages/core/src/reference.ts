@@ -19,6 +19,7 @@ import {
   QUOTE_SINGLE_CHAR,
 } from "@cssdoc/regex";
 import { regex as arkRegex, type Regex } from "arkregex";
+
 import type { CssRecordKind } from "./model.ts";
 
 /** Source or provider lookup scope for a record reference. */

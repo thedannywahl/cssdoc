@@ -1,11 +1,13 @@
 import { readFileSync } from "node:fs";
 import process from "node:process";
+
 import tab from "@bomb.sh/tab/commander";
 import * as clack from "@clack/prompts";
 import { Command, CommanderError, InvalidArgumentError, Option } from "@commander-js/extra-typings";
 import { DASH_SOURCE, DIGIT_SOURCE } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
 import type { Command as CommanderCommand } from "commander";
+
 import { runLint, type LintCliOptions, type LintCliResult, type OutputFormat } from "./index.ts";
 
 const { version } = JSON.parse(

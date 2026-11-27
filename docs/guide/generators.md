@@ -36,8 +36,9 @@ Save this as `export-manifest.mjs` next to the stylesheet:
 
 ```js
 import { readFileSync } from "node:fs";
-import { createIndex } from "@cssdoc/cssdoc";
+
 import { writeCem } from "@cssdoc/cem";
+import { createIndex } from "@cssdoc/cssdoc";
 
 const index = createIndex(readFileSync("toggle.css", "utf8"));
 writeCem({ index });

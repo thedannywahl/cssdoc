@@ -8,6 +8,7 @@
  */
 import { existsSync, globSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, matchesGlob, parse as parsePath, relative, resolve, sep } from "node:path";
+
 import { CssDocConfigFile, resolveProviders } from "@cssdoc/config";
 import type { SourceSpan } from "@cssdoc/index";
 import { lintCssDocs, type LintOptions, type Violation } from "@cssdoc/lint-core";

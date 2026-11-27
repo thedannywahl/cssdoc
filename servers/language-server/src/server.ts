@@ -8,12 +8,14 @@
 import { readFileSync } from "node:fs";
 import { dirname, isAbsolute, relative, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+
 import { CssDocConfigFile, resolveProviders } from "@cssdoc/config";
 import type { ExampleFilter } from "@cssdoc/core";
 import { dialectForFilename, resolveParser } from "@cssdoc/dialects";
 import { detectEmbeddedHost, projectCss } from "@cssdoc/embedded";
 import { createIndex, indexFromEntries } from "@cssdoc/index";
 import { type HoverSectionOrder, resolveNaming, resolveRuleSeverities } from "@cssdoc/providers";
+import { TextDocument } from "vscode-languageserver-textdocument";
 import {
   CompletionItemTag,
   DiagnosticSeverity,
@@ -24,9 +26,9 @@ import {
   TextDocuments,
   createConnection,
 } from "vscode-languageserver/node";
-import { TextDocument } from "vscode-languageserver-textdocument";
-import { type ConfigScope, CssDocLanguageService, type LspDiagnostic } from "./service.ts";
+
 import { hoverPlaintext } from "./plaintext.ts";
+import { type ConfigScope, CssDocLanguageService, type LspDiagnostic } from "./service.ts";
 import {
   type ClientSettings,
   discoverConfigDirectories,

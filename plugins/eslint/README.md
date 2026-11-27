@@ -32,8 +32,8 @@ export default [
 Or wire it manually:
 
 ```js
-import css from "@eslint/css";
 import cssdoc from "@cssdoc/eslint-plugin";
+import css from "@eslint/css";
 
 export default [
   {

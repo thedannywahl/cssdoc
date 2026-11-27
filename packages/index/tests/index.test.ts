@@ -1,6 +1,7 @@
 import { CssDocConfiguration, parseReference } from "@cssdoc/core";
 import postcss from "postcss";
 import { expect, test } from "vite-plus/test";
+
 import {
   type CssDocIndex,
   type NamedMemberOccurrence,

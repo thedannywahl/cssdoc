@@ -7,9 +7,10 @@
  * @module
  */
 
-import { describe, it, expect } from "vite-plus/test";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
+import { describe, it, expect } from "vite-plus/test";
+
 import { PATTERN_DEFINITIONS, type UnifiedPatternDef } from "../src/definitions.js";
 import {
   COMMENT_END,
