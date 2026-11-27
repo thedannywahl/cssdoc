@@ -170,10 +170,10 @@ test.each(["plain", "markdown", "auto"] as const)(
       "@example",
     ]);
     expect(
-      highlightDocComment(comment, providerConfiguration).some(
-        (token) => token.role === "inlineTag",
-      ),
-    ).toBe(false);
+      highlightDocComment(comment, providerConfiguration)
+        .filter((token) => token.role === "inlineTag")
+        .map((token) => source.slice(start + token.start, start + token.end)),
+    ).toEqual(["@private"]);
   },
 );
 

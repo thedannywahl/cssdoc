@@ -81,7 +81,7 @@
     },
     "inline-tag": {
       "name": "meta.inline-tag.cssdoc",
-      "begin": "(\\{)(@(?:link|inheritDoc|label))\\b",
+      "begin": "(\\{)(@(?:link|private|inheritDoc|label))\\b",
       "beginCaptures": {
         "1": {
           "name": "punctuation.definition.tag.begin.cssdoc"

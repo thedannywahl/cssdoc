@@ -50,6 +50,7 @@
     { "tagName": "@related", "syntaxKind": "block", "allowMultiple": true },
     { "tagName": "@memberOf", "syntaxKind": "block" },
     { "tagName": "@members", "syntaxKind": "block" },
-    { "tagName": "@member", "syntaxKind": "block", "allowMultiple": true }
+    { "tagName": "@member", "syntaxKind": "block", "allowMultiple": true },
+    { "tagName": "@private", "syntaxKind": "inline" }
   ]
 }
