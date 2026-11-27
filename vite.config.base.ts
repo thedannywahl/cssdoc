@@ -162,8 +162,11 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/prefer-single-call": "warn",
       // Oxfmt writes lowercase hexadecimal digits; this rule demands uppercase.
       "unicorn/number-literal-case": "off",
-      // Class files, Vue components, and package entry points don't share one filename casing.
-      "unicorn/filename-case": "off",
+      // Keep class/component names and ordinary module names without permitting arbitrary casing.
+      "unicorn/filename-case": [
+        "warn",
+        { cases: { camelCase: true, kebabCase: true, pascalCase: true } },
+      ],
       // Native options can't exempt explicit returns required by the return-consistency policy.
       "unicorn/no-useless-undefined": "off",
       "unicorn/no-lonely-if": "warn",

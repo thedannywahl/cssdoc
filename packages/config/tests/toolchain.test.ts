@@ -2388,6 +2388,48 @@ test("TSDoc definitions follow the cssdoc vocabulary", () => {
   ]);
 });
 
+test("lint permits workspace filename conventions but rejects snake-case module names", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/.filename-check-"));
+  try {
+    writeFileSync(
+      join(directory, "tsconfig.json"),
+      JSON.stringify({ extends: "../../../../tsconfig.base.json", include: ["*.ts"] }),
+    );
+    const files = [
+      "kebab-case.test.ts",
+      "camelCase.test.ts",
+      "PascalCase.test.ts",
+      "snake_case.test.ts",
+      "index.ts",
+    ].map((name) => join(directory, name));
+    for (const file of files) writeFileSync(file, "export const value: number = 1;\n");
+    for (const cwd of [root, fileURLToPath(new URL("../../core/", import.meta.url))]) {
+      const result = spawnSync(
+        "vp",
+        [
+          "lint",
+          "--config",
+          join(root, "vite.config.ts"),
+          "--no-ignore",
+          "--format",
+          "json",
+          ...files,
+        ],
+        { cwd, encoding: "utf8" },
+      );
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "unicorn(filename-case)")
+          .map(({ severity, filename }) => [severity, filename.endsWith("snake_case.test.ts")]),
+      ).toEqual([["warning", true]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint narrows unknown conditions while preserving known truthiness and return values", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, "packages/config/tests/.condition-check-"));
