@@ -91,7 +91,6 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/no-await-expression-member": "off",
       "unicorn/consistent-function-scoping": "off",
       "unicorn/consistent-existence-index-check": "off",
-      "unicorn/no-array-sort": "off",
       "unicorn/no-array-callback-reference": "off",
       "unicorn/max-nested-calls": "off",
       "unicorn/prefer-number-coercion": "off",
@@ -129,6 +128,8 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/no-array-for-each": "off",
       // Case clauses only need braces when they introduce block-scoped declarations.
       "unicorn/switch-case-braces": "off",
+      // Sorting an owned array in place can avoid an unnecessary copy.
+      "unicorn/no-array-sort": "off",
       // Check regex correctness and risky performance without imposing stylistic rewrites.
       "regexp/no-contradiction-with-assertion": "error",
       "regexp/no-dupe-disjunctions": "warn",
