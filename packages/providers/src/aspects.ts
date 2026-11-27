@@ -410,7 +410,7 @@ export const record = {
             warn({
               aspect: "record",
               rule: "unknown-annotation-ref",
-              message: `${AT_CHAR}ref ${ref} has no matching annotation legend entry in "${info.entry.name}".`,
+              message: `${AT_CHAR}ref ${refId} has no matching annotation legend entry in "${info.entry.name}".`,
               record: info.entry.name,
               span: info.span,
             }),

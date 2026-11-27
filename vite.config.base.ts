@@ -69,7 +69,7 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-dynamic-delete": "off",
       "typescript/require-array-sort-compare": "off",
       "typescript/prefer-includes": "off",
-      "typescript/no-base-to-string": "off",
+      "typescript/no-base-to-string": "error",
       "typescript/non-nullable-type-assertion-style": "off",
       "typescript/unbound-method": "off",
       "typescript/no-unnecessary-template-expression": "off",

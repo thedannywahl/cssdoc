@@ -1707,8 +1707,13 @@ test("lintModel flags @ref values that have no matching annotation legend row", 
     " */",
     ".card {}",
   ].join("\n");
-  const rules = lintModel(createIndex(css)).map((d) => d.rule);
-  expect(rules).toContain("unknown-annotation-ref");
+  const cardIndex = createIndex(css);
+  cardIndex.entries[0].refs.push({ ref: "named" });
+  const diagnostics = lintModel(cardIndex).filter((d) => d.rule === "unknown-annotation-ref");
+  expect(diagnostics.map((d) => d.message)).toEqual([
+    '@ref 2 has no matching annotation legend entry in "card".',
+    '@ref named has no matching annotation legend entry in "card".',
+  ]);
 });
 
 test("readonly/frozen and sealed checks use declaration values and ruleOptions", () => {
