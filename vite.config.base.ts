@@ -84,7 +84,7 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-require-imports": "error",
       "typescript/ban-ts-comment": "error",
       "typescript/explicit-module-boundary-types": "error",
-      "typescript/require-array-sort-compare": "off",
+      "typescript/require-array-sort-compare": "warn",
       "typescript/prefer-includes": "warn",
       "typescript/no-base-to-string": "error",
       "typescript/non-nullable-type-assertion-style": "off",
