@@ -345,6 +345,38 @@ test("lint prefers native import.meta path properties", () => {
   }
 });
 
+test("lint prefers flat for flattening arrays", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".array-flat-check-"));
+  try {
+    const file = join(directory, "arrays.mjs");
+    writeFileSync(
+      file,
+      [
+        "const values = [[1], [2]];",
+        "const legacy = values.flatMap((value) => value);",
+        "const flat = values.flat();",
+        "const mapped = values.flatMap((value) => value.map((number) => number + 1));",
+        "console.error(legacy, flat, mapped);",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "unicorn(prefer-array-flat)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["warning", 2]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));

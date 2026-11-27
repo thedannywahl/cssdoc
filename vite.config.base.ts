@@ -148,7 +148,7 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/prefer-dom-node-dataset": "off",
       "unicorn/new-for-builtins": "warn",
       "unicorn/prefer-includes": "warn",
-      "unicorn/prefer-array-flat": "off",
+      "unicorn/prefer-array-flat": "warn",
       "unicorn/prefer-logical-operator-over-ternary": "off",
       "unicorn/prefer-module": "off",
       "unicorn/no-useless-spread": "warn",
