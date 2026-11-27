@@ -703,7 +703,7 @@ function scanNodes(
       build.selectorText += ` ${node.selector}`;
       if (`.${stripDot(node.selector.trim())}` === base) {
         // Store the rule span separately for definitions; don't overwrite span which holds docCommentSpan
-        if (!build.ruleSpan) build.ruleSpan = spanOf(node);
+        build.ruleSpan ??= spanOf(node);
       }
       for (const selector of node.selector.split(",")) {
         for (const s of selector.matchAll(customState)) {

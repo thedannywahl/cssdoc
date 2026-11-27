@@ -622,7 +622,7 @@ export function parseDocComment(
       const firstLineEnd = block.text.search(FIRST_LINE_END);
       const firstLine = block.text.slice(0, firstLineEnd < 0 ? undefined : firstLineEnd);
       const proseStart = block.header?.proseStart ?? docProseStart(firstLine);
-      const header = firstLine.slice(0, proseStart === undefined ? undefined : proseStart);
+      const header = firstLine.slice(0, proseStart);
       privateRecord ||= scanInlineTags(header).some(
         (tag) =>
           tag.tag === "private" &&

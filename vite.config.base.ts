@@ -64,7 +64,8 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-unnecessary-type-assertion": "off",
       "typescript/explicit-member-accessibility": "off",
       "typescript/no-unsafe-type-assertion": "off",
-      "typescript/prefer-nullish-coalescing": "off",
+      // Falsy primitive defaults (including empty strings and zero) can be intentional.
+      "typescript/prefer-nullish-coalescing": ["warn", { ignorePrimitives: true }],
       "typescript/strict-void-return": "off",
       "typescript/method-signature-style": "off",
       "typescript/no-confusing-void-expression": ["warn", { ignoreArrowShorthand: true }],

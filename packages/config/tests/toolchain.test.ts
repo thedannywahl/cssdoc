@@ -1039,6 +1039,44 @@ test("type-aware lint flags unsafe template interpolations", () => {
   }
 });
 
+test("type-aware lint prefers nullish defaults without changing falsy primitive defaults", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/type-aware-check-"));
+  try {
+    writeFileSync(
+      join(directory, "tsconfig.json"),
+      JSON.stringify({ extends: join(root, "tsconfig.base.json"), include: ["*.ts"] }),
+    );
+    const file = join(directory, "defaults.ts");
+    writeFileSync(
+      file,
+      [
+        "function render(value: { name: string } | undefined, label: string | undefined) {",
+        "  const legacy = value || { name: 'default' };",
+        "  const modern = value ?? { name: 'default' };",
+        "  const nonempty = label || 'default';",
+        "  return [legacy, modern, nonempty];",
+        "}",
+        "console.error(render(undefined, ''));",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "typescript(prefer-nullish-coalescing)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["warning", 2]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("type import lint requires type-only imports", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, "packages/config/tests/type-aware-check-"));

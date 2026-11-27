@@ -1178,7 +1178,7 @@ export const modifier = {
       // both are exempt from the "defined by a selector" check.
       const cssExempt = new Set(
         info.entry.modifiers
-          .filter((m) => m.deprecated || m.alias || m.interaction)
+          .filter((m) => m.deprecated ?? m.alias ?? m.interaction)
           .map((m) => m.name),
       );
       for (const authored of info.authoredModifiers) {
