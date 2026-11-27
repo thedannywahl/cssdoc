@@ -111,7 +111,7 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/prefer-ternary": "off",
       "unicorn/switch-case-break-position": "off",
       "unicorn/prefer-dom-node-dataset": "off",
-      "unicorn/new-for-builtins": "off",
+      "unicorn/new-for-builtins": "warn",
       "unicorn/prefer-includes": "warn",
       "unicorn/no-array-reverse": "off",
       "unicorn/prefer-array-flat": "off",

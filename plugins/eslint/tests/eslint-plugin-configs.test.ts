@@ -179,7 +179,7 @@ test("require-component-docs matches configured component names before selector 
     visitors.Rule({ selector: { value: selector } } as never);
   }
   expect(messages).toEqual(
-    Array(3).fill("Component `.Button` should have a @component doc comment."),
+    Array.from({ length: 3 }, () => "Component `.Button` should have a @component doc comment."),
   );
 });
 
