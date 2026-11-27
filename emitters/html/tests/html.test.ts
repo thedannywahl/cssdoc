@@ -110,6 +110,17 @@ test("sanitizes decoded control characters and image-reference URLs", () => {
   expect(html).toContain('<a href="mailto:a@example.com">mail</a>');
 });
 
+test("sanitizes HAST without turning authored HTML into active elements", () => {
+  const html = renderProse(
+    "<img src=x onerror=alert(1)> <svg onload=alert(1)>\n\n```css\n.card { color: red }\n```",
+  );
+  expect(html).not.toContain("<img");
+  expect(html).not.toContain("<svg");
+  expect(html).toContain("&#x3C;img");
+  expect(html).toContain('class="language-css"');
+  expect(html).toContain(".card { color: red }");
+});
+
 test("renderPage produces a standalone, escaped HTML document", () => {
   const [button] = parseCssDocs(CSS);
   const html = renderPage(button!);

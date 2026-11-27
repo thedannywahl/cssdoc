@@ -36,6 +36,7 @@
     "@cssdoc/dialects": "workspace:*",
     "@cssdoc/embedded": "workspace:*",
     "@cssdoc/regex": "workspace:*",
+    "hast-util-sanitize": "catalog:",
     "hast-util-to-html": "catalog:",
     "mdast-util-from-markdown": "catalog:",
     "mdast-util-to-hast": "catalog:"

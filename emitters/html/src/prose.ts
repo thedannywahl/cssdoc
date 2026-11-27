@@ -1,23 +1,17 @@
 import { fromMarkdown } from "mdast-util-from-markdown";
 import { toHast } from "mdast-util-to-hast";
 import { toHtml } from "hast-util-to-html";
+import { sanitize } from "hast-util-sanitize";
 import { safeProseUrl } from "@cssdoc/core";
 
 type MarkdownNode = {
   type: string;
-  url?: string;
   children?: MarkdownNode[];
 };
 
-function sanitizeMarkdown(node: MarkdownNode): void {
-  if (
-    (node.type === "link" || node.type === "image" || node.type === "definition") &&
-    node.url !== undefined &&
-    !safeProseUrl(node.url, node.type === "image")
-  ) {
-    node.url = "";
-  }
-  for (const child of node.children ?? []) sanitizeMarkdown(child);
+function escapeRawHtml(node: MarkdownNode): void {
+  if (node.type === "html") node.type = "text";
+  for (const child of node.children ?? []) escapeRawHtml(child);
 }
 
 type HtmlNode = ReturnType<typeof toHast>;
@@ -56,8 +50,9 @@ export function renderProse(
     return `<${tag} class="prose-plain">${escaped}</${tag}>`;
   }
   const tree = fromMarkdown(text);
-  sanitizeMarkdown(tree);
-  const html = toHast(tree, { allowDangerousHtml: true });
+  escapeRawHtml(tree);
+  const html = sanitize(toHast(tree));
+  if (html.type !== "root") throw new Error("Expected a sanitized HTML root");
   sanitizeHtml(html);
   if (inline && html.type === "root" && html.children.length === 1) {
     const child = html.children[0];

@@ -19,6 +19,7 @@ buildHtml({
 `renderPage(entry)` and `renderIndex(entries)` return HTML strings if you'd rather place the output
 yourself. All prose is HTML-escaped; each page is a complete document (dark-mode aware).
 Remarks and examples with recorded plain prose modes retain Markdown punctuation as literal text.
+CommonMark output passes through `hast-util-sanitize`; authored HTML remains escaped text.
 
 ## License
 
