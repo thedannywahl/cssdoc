@@ -17,33 +17,37 @@ const CSS = `
 `;
 
 // The fixtures use the rscss convention; pass it as a secondary option (the parser defaults to BEM).
-const lint = (code: string): Promise<{ text: string; rule: string | undefined }[]> =>
-  stylelint
-    .lint({
-      code,
-      config: {
-        plugins: [plugin],
-        rules: {
-          [ruleName]: [true, { modifierConvention: "rscss", rules: { "missing-summary": "warn" } }],
-        },
+const lint = async (code: string): Promise<{ text: string; rule: string | undefined }[]> => {
+  const result = await stylelint.lint({
+    code,
+    config: {
+      plugins: [plugin],
+      rules: {
+        [ruleName]: [true, { modifierConvention: "rscss", rules: { "missing-summary": "warn" } }],
       },
-    })
-    .then((r) => r.results[0].warnings.map((w) => ({ text: w.text, rule: w.rule })));
+    },
+  });
+  return result.results[0].warnings.map((w) => ({ text: w.text, rule: w.rule }));
+};
 
-const lintRanged = (code: string): Promise<{ text: string; line: number; endLine?: number }[]> =>
-  stylelint
-    .lint({
-      code,
-      config: {
-        plugins: [plugin],
-        rules: {
-          [ruleName]: [true, { modifierConvention: "rscss", rules: { "missing-summary": "warn" } }],
-        },
+const lintRanged = async (
+  code: string,
+): Promise<{ text: string; line: number; endLine?: number }[]> => {
+  const result = await stylelint.lint({
+    code,
+    config: {
+      plugins: [plugin],
+      rules: {
+        [ruleName]: [true, { modifierConvention: "rscss", rules: { "missing-summary": "warn" } }],
       },
-    })
-    .then((r) =>
-      r.results[0].warnings.map((w) => ({ text: w.text, line: w.line, endLine: w.endLine })),
-    );
+    },
+  });
+  return result.results[0].warnings.map((w) => ({
+    text: w.text,
+    line: w.line,
+    endLine: w.endLine,
+  }));
+};
 
 test("the rule reports doc-hygiene violations from lint-core", async () => {
   const warnings = await lint(CSS);
@@ -155,19 +159,19 @@ test("name-not-in-css points at the @modifier tag's own line, not the whole doc-
   expect(w?.endLine).toBe(5);
 });
 
-const lintWith = (code: string, customSyntax: string): Promise<string[]> =>
-  stylelint
-    .lint({
-      code,
-      customSyntax,
-      config: {
-        plugins: [plugin],
-        rules: {
-          [ruleName]: [true, { modifierConvention: "rscss", rules: { "missing-summary": "warn" } }],
-        },
+const lintWith = async (code: string, customSyntax: string): Promise<string[]> => {
+  const result = await stylelint.lint({
+    code,
+    customSyntax,
+    config: {
+      plugins: [plugin],
+      rules: {
+        [ruleName]: [true, { modifierConvention: "rscss", rules: { "missing-summary": "warn" } }],
       },
-    })
-    .then((r) => r.results[0].warnings.map((w) => w.text));
+    },
+  });
+  return result.results[0].warnings.map((w) => w.text);
+};
 
 test("lints a Vue <style> block through postcss-html (comment inside the block)", async () => {
   const vue = `<template><button class="btn" /></template>

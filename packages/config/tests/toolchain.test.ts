@@ -531,7 +531,7 @@ test("import lint flags anonymous default exports", () => {
   }
 });
 
-test("promise lint prefers catch while allowing VS Code Thenable handlers", () => {
+test("promise lint checks rejection handlers and prefers await, including for VS Code", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const vscode = fileURLToPath(new URL("../../../servers/vscode/", import.meta.url));
   const directory = mkdtempSync(join(root, ".promise-catch-check-"));
@@ -544,6 +544,10 @@ test("promise lint prefers catch while allowing VS Code Thenable handlers", () =
         "const work = Promise.resolve(1);",
         "void work.then((value) => value, (error) => console.error(error));",
         "void work.catch((error) => console.error(error));",
+        "async function read() {",
+        "  try { console.error(await work); } catch (error) { console.error(error); }",
+        "}",
+        "void read();",
       ].join("\n"),
     );
     for (const cwd of [root, vscode]) {
@@ -561,6 +565,18 @@ test("promise lint prefers catch while allowing VS Code Thenable handlers", () =
             labels[0].span.line,
           ]),
       ).toEqual([["warning", true, 2]]);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "promise(prefer-await-to-then)")
+          .map(({ severity, filename, labels }) => [
+            severity,
+            filename.endsWith("promises.mjs"),
+            labels[0].span.line,
+          ]),
+      ).toEqual([
+        ["warning", true, 2],
+        ["warning", true, 3],
+      ]);
     }
   } finally {
     rmSync(directory, { recursive: true, force: true });

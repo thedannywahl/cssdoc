@@ -289,8 +289,8 @@ export const baseConfig: UserConfig = defineConfig({
       "eslint/init-declarations": "off",
       // Synchronous I/O is appropriate in build tools and isolated tests.
       "node/no-sync": "off",
-      // Promise chains and callbacks also bridge event-based and Thenable APIs.
-      "promise/prefer-await-to-then": "off",
+      // Await handles both native promises and editor Thenables; event callbacks remain valid.
+      "promise/prefer-await-to-then": "warn",
       "promise/prefer-await-to-callbacks": "off",
       "promise/prefer-catch": "warn",
       "promise/avoid-new": "warn",
@@ -319,11 +319,6 @@ export const baseConfig: UserConfig = defineConfig({
       "import/max-dependencies": "off",
     },
     overrides: [
-      {
-        // VS Code editor APIs return PromiseLike values without a catch method.
-        files: ["**/servers/vscode/src/index.ts"],
-        rules: { "promise/prefer-catch": "off" },
-      },
       {
         // Untyped JavaScript files don't provide reliable type information for these checks.
         files: ["**/*.{js,jsx,mjs,cjs}"],

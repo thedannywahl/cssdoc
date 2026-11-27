@@ -60,32 +60,28 @@ export async function activate(context: ExtensionContext): Promise<void> {
       const edits = cssDocEdits(event.document.getText(), hasNewline);
       if (edits.length === 0) return;
       applyingCommentEdits = true;
-      void editor
-        .edit(
-          (builder) => {
-            for (const edit of [...edits].toSorted((a, b) => b.start - a.start)) {
-              builder.replace(
-                new Range(
-                  event.document.positionAt(edit.start),
-                  event.document.positionAt(edit.end),
-                ),
-                edit.newText,
-              );
-            }
-          },
-          { undoStopBefore: false, undoStopAfter: false },
-        )
-        .then(
-          (applied) => {
-            applyingCommentEdits = false;
-            return applied;
-          },
-          (error: unknown) => {
-            applyingCommentEdits = false;
-            console.error("Could not format CSS doc comments:", error);
-            return false;
-          },
-        );
+      void (async () => {
+        try {
+          await editor.edit(
+            (builder) => {
+              for (const edit of [...edits].toSorted((a, b) => b.start - a.start)) {
+                builder.replace(
+                  new Range(
+                    event.document.positionAt(edit.start),
+                    event.document.positionAt(edit.end),
+                  ),
+                  edit.newText,
+                );
+              }
+            },
+            { undoStopBefore: false, undoStopAfter: false },
+          );
+        } catch (error) {
+          console.error("Could not format CSS doc comments:", error);
+        } finally {
+          applyingCommentEdits = false;
+        }
+      })();
     }),
   );
 }

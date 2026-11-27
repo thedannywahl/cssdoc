@@ -76,7 +76,7 @@ their generators.
 
 Style linting follows the formatter's import order and preserves authored ordering in catalogs,
 schemas, and fixtures. It permits concise single-line guards but requires braces for multiline
-control flow. Tests import Vitest explicitly and use strict boolean assertions where intended;
+control flow. Tests import `test` from Vitest explicitly, including inside `describe`, and use strict boolean assertions where intended;
 fixtures may include literal template placeholders and unsafe URLs.
 
 Restriction linting permits parser increments and bit flags, explicit `undefined`, and framework
@@ -84,8 +84,10 @@ default exports. It checks parameter reassignment and use before initialization,
 statements for intentionally unawaited work, and allows console output in tests and build scripts.
 Errors and warnings can be logged elsewhere.
 
-Promise linting prefers `catch` for rejection handlers. The VS Code extension entry point retains
-two-argument `then` for editor APIs that return `PromiseLike` values without `catch`.
+Promise linting prefers `await` with explicit error handling over chains, including for editor
+Thenables. Event-to-promise adapters use `Promise.withResolvers` to keep listener registration and
+cleanup outside promise executors. Type-only imports use top-level `import type`; mixed imports
+can retain inline `type` specifiers.
 
 Nursery linting stays off as a category. Selected rules reject unreachable loops and dead stores
 and warn about invalid named imports. Node ESM scripts also warn about undefined names without

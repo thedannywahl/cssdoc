@@ -316,7 +316,7 @@ export function startLanguageServer(): void {
     }, 200);
   };
 
-  const registerWatchers = (): void => {
+  const registerWatchers = async (): Promise<void> => {
     if (!watchFiles) return;
     const generation = ++watcherGeneration;
     const patterns = new Set([
@@ -324,51 +324,48 @@ export function startLanguageServer(): void {
       ...(optionsFor().include ?? []),
       ...workspaceRoots.flatMap((root) => optionsFor(root).include ?? []),
     ]);
-    void connection.client
-      .register(DidChangeWatchedFilesNotification.type, {
-        watchers: [...patterns].map((globPattern) => ({ globPattern })),
-      })
-      .then((registration) => {
-        if (generation !== watcherGeneration) {
-          registration.dispose();
-          return registration;
-        }
-        watcher?.dispose();
-        watcher = registration;
-        return registration;
-      })
-      .catch((error: unknown) =>
-        connection.console.warn(`Cannot register file watchers: ${String(error)}`),
+    try {
+      const registration = await connection.client.register(
+        DidChangeWatchedFilesNotification.type,
+        {
+          watchers: [...patterns].map((globPattern) => ({ globPattern })),
+        },
       );
+      if (generation !== watcherGeneration) {
+        registration.dispose();
+        return;
+      }
+      watcher?.dispose();
+      watcher = registration;
+    } catch (error) {
+      connection.console.warn(`Cannot register file watchers: ${String(error)}`);
+    }
   };
 
-  const requestConfiguration = (): void => {
+  const requestConfiguration = async (): Promise<void> => {
     if (!supportsConfiguration) return;
     const generation = ++configurationGeneration;
     const roots = [...workspaceRoots];
     const items = roots.length
       ? roots.map((root) => ({ scopeUri: pathToFileURL(root).href, section: "cssdoc" }))
       : [{ section: "cssdoc" }];
-    void connection.workspace
-      .getConfiguration(items)
-      .then((values: unknown[]) => {
-        if (generation !== configurationGeneration) return values;
-        if (roots.length) {
-          folderSettings = new Map(
-            roots.map((root, index) => [root, parseClientSettings(values[index])]),
-          );
-          clientSettings = {};
-        } else {
-          clientSettings = parseClientSettings(values[0]);
-          folderSettings.clear();
-        }
-        registerWatchers();
-        scheduleRefresh();
-        return values;
-      })
-      .catch((error: unknown) =>
-        connection.console.warn(`Cannot load cssdoc client settings: ${String(error)}`),
-      );
+    try {
+      const values: unknown[] = await connection.workspace.getConfiguration(items);
+      if (generation !== configurationGeneration) return;
+      if (roots.length) {
+        folderSettings = new Map(
+          roots.map((root, index) => [root, parseClientSettings(values[index])]),
+        );
+        clientSettings = {};
+      } else {
+        clientSettings = parseClientSettings(values[0]);
+        folderSettings.clear();
+      }
+      void registerWatchers();
+      scheduleRefresh();
+    } catch (error) {
+      connection.console.warn(`Cannot load cssdoc client settings: ${String(error)}`);
+    }
   };
 
   connection.onInitialized(() => {
@@ -383,24 +380,24 @@ export function startLanguageServer(): void {
             connection.console.warn(`Cannot discover CSS in non-file workspace ${folder.uri}`);
           }
         }
-        requestConfiguration();
-        registerWatchers();
+        void requestConfiguration();
+        void registerWatchers();
         scheduleRefresh();
       });
     }
-    registerWatchers();
-    requestConfiguration();
+    void registerWatchers();
+    void requestConfiguration();
   });
 
   connection.onDidChangeConfiguration((params) => {
     if (supportsConfiguration) {
-      requestConfiguration();
+      void requestConfiguration();
       return;
     }
     try {
       const settings = params.settings as { cssdoc?: unknown } | null;
       clientSettings = parseClientSettings(settings?.cssdoc);
-      registerWatchers();
+      void registerWatchers();
       scheduleRefresh();
     } catch (error) {
       connection.console.warn(`Cannot load cssdoc client settings: ${String(error)}`);
