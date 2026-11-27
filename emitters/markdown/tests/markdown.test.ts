@@ -29,6 +29,17 @@ const CSS = `
 .m-sm { margin: var(--spacing-sm); }
 `;
 
+test("private examples never appear in Markdown output", () => {
+  const [entry] = parseCssDocs(`/** @component button
+ * @example docs - Visible example.
+ * @example docs {@private} - Private example.
+ */
+.button {}`);
+  const markdown = renderEntry(entry);
+  expect(markdown).toContain("Visible example.");
+  expect(markdown).not.toContain("Private example.");
+});
+
 test("escapes repeated Vue and table delimiters while preserving code spans", () => {
   const text = "<x> {{a}} | `<y> {{b}}` | <z>";
   expect(escProse(text)).toBe("&lt;x&gt; &#123;&#123;a}} | `<y> {{b}}` | &lt;z&gt;");

@@ -440,6 +440,8 @@ export interface CssDocEntry {
   examples: string[];
   /** Private `@example` labels, keyed by zero-based index into {@link examples}. */
   exampleLabels?: Record<number, readonly string[]>;
+  /** Indices of examples marked private; public renderers omit these examples. */
+  privateExamples?: number[];
   /**
    * The authored `@structure` element tree (top-level nodes), when present. When the `@structure` body
    * uses `@variant` blocks (see {@link structureVariants}), this holds the first variant's nodes only,

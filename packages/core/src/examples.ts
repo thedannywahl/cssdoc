@@ -12,22 +12,50 @@ export interface ExampleFilter {
  * Select example bodies without modifying the record or its label metadata.
  *
  * A labeled example matches when any of its labels is in the filter. Unlabeled examples are kept
- * unless `includeUnlabeled` is `false`. Without a filter, the original examples array is returned.
+ * unless `includeUnlabeled` is `false`. Private examples are always excluded.
  *
  * @param entry - A record's examples and optional labels keyed by example index.
  * @param filter - Labels to include and whether to retain unlabeled examples.
  * @returns The selected example bodies in their original order.
  */
 export function selectExamples(
-  entry: Pick<CssDocEntry, "examples" | "exampleLabels">,
+  entry: Pick<CssDocEntry, "examples" | "exampleLabels" | "privateExamples">,
   filter?: ExampleFilter | null,
 ): readonly string[] {
-  if (!filter) return entry.examples;
-  const allowed = new Set(filter.labels);
+  if (!filter && !entry.privateExamples?.length) return entry.examples;
+  const allowed = new Set(filter?.labels);
+  const privateExamples = new Set(entry.privateExamples);
   return entry.examples.filter((_, index) => {
+    if (privateExamples.has(index)) return false;
+    if (!filter) return true;
     const labels = entry.exampleLabels?.[index];
     return labels?.length
       ? labels.some((label) => allowed.has(label))
       : (filter.includeUnlabeled ?? true);
   });
+}
+
+/**
+ * Remove private examples and reindex the remaining labels for public serialization.
+ *
+ * @param entry - A parsed record, including any private examples.
+ * @returns A public projection without private example content or metadata.
+ */
+export function projectPublicExamples(entry: CssDocEntry): CssDocEntry {
+  if (!entry.privateExamples?.length) return entry;
+  const excluded = new Set(entry.privateExamples);
+  const examples: string[] = [];
+  const labels: Record<number, readonly string[]> = {};
+  for (const [index, example] of entry.examples.entries()) {
+    if (excluded.has(index)) continue;
+    const exampleLabels = entry.exampleLabels?.[index];
+    if (exampleLabels) labels[examples.length] = exampleLabels;
+    examples.push(example);
+  }
+  const { privateExamples: _privateExamples, exampleLabels: _exampleLabels, ...rest } = entry;
+  return {
+    ...rest,
+    examples,
+    ...(Object.keys(labels).length ? { exampleLabels: labels } : {}),
+  };
 }

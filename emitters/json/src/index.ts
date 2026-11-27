@@ -7,7 +7,12 @@
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { type CssDocConfiguration, type CssDocEntry, parseCssDocs } from "@cssdoc/core";
+import {
+  type CssDocConfiguration,
+  type CssDocEntry,
+  parseCssDocs,
+  projectPublicExamples,
+} from "@cssdoc/core";
 import { type CssDialect, resolveParser } from "@cssdoc/dialects";
 import { parseCssDocsFromSource } from "@cssdoc/embedded";
 import { cssDocSchema } from "./schema.ts";
@@ -38,20 +43,23 @@ function resolveEntries(input: ModelInput): CssDocEntry[] {
 }
 
 /**
- * Serialize the model to pretty JSON, preserving input order and omitting internal records by default.
+ * Serialize the model to pretty JSON, omitting internal records and private examples by default.
  *
  * @param entries - Records to serialize.
- * @param options - Whether to include internal records.
+ * @param options - Whether to include internal records or private examples.
  * @returns A JSON array followed by a newline.
  */
 export function renderJson(
   entries: readonly CssDocEntry[],
-  options: { includeInternal?: boolean } = {},
+  options: { includeInternal?: boolean; includePrivate?: boolean } = {},
 ): string {
   const visibleEntries = options.includeInternal
     ? entries
     : entries.filter((entry) => entry.visibility !== "internal");
-  return `${JSON.stringify(visibleEntries, null, 2)}\n`;
+  const projected = options.includePrivate
+    ? visibleEntries
+    : visibleEntries.map(projectPublicExamples);
+  return `${JSON.stringify(projected, null, 2)}\n`;
 }
 
 /** A lightweight index row (name, kind, class, summary) for `index.json`. */
@@ -76,6 +84,8 @@ export interface WriteJsonOptions extends ModelInput {
   schema?: boolean;
   /** Include records marked `@visibility internal`; defaults to false. */
   includeInternal?: boolean;
+  /** Include examples marked private; defaults to false. */
+  includePrivate?: boolean;
 }
 
 /** What {@link writeJson} produced. */
@@ -102,13 +112,14 @@ export interface WriteJsonResult {
  * records on failure.
  */
 export function writeJson(options: WriteJsonOptions): WriteJsonResult {
-  const entries = resolveEntries(options)
+  let entries = resolveEntries(options)
     .filter((entry) => options.includeInternal || entry.visibility !== "internal")
     .toSorted((a, b) => a.name.localeCompare(b.name));
+  if (!options.includePrivate) entries = entries.map(projectPublicExamples);
   mkdirSync(options.outDir, { recursive: true });
 
   const modelPath = join(options.outDir, "model.json");
-  writeFileSync(modelPath, renderJson(entries, { includeInternal: true }));
+  writeFileSync(modelPath, renderJson(entries, { includeInternal: true, includePrivate: true }));
 
   const result: WriteJsonResult = { entries, modelPath, recordPaths: [] };
 

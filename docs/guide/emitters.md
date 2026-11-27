@@ -42,7 +42,7 @@ unlinked text.
 
 ## Select examples for your docs
 
-If a stylesheet uses `@example labels=[docs]` to mark examples for publication, set
+If a stylesheet uses `@example docs -` to mark examples for publication, set
 `render.exampleFilters.markdown` to `{ "labels": ["docs"], "includeUnlabeled": false }` in
 `cssdoc.json` for TypeDoc. When calling `buildCssApi` directly, pass the same filter as
 `exampleFilter`. See [example filtering](/guide/config-reference#example-filtering) for the

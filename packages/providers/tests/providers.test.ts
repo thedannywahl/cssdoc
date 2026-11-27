@@ -36,6 +36,17 @@ const CSS = `
 
 const index = createIndex(CSS, { file: "components.css", modifierConvention: "rscss" });
 
+test("private examples don't appear in hover cards", () => {
+  const idx = createIndex(`/** @component button
+ * @example docs - Visible example.
+ * @example docs {@private} - Private example.
+ */
+.button {}`);
+  const hover = hoverForClass("button", "button", idx, "full")?.contents ?? "";
+  expect(hover).toContain("Visible example.");
+  expect(hover).not.toContain("Private example.");
+});
+
 test("directive separators retain whitespace and comma handling", () => {
   expect(parseDirectives("/* cssdoc-disable alpha,\tbeta \t-\t reason - details */")).toMatchObject(
     [{ rules: ["alpha", "beta"], reason: "reason - details" }],

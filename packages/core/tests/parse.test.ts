@@ -6,7 +6,9 @@ import {
   CssDocTagDefinition,
   parseCssDocs,
   parseDocComment as parseFullDocComment,
+  selectExamples,
   structureCustomMediaRefs,
+  toJson,
   toMermaid,
   toMermaidVariants,
 } from "../src/index.ts";
@@ -170,6 +172,56 @@ test("full and lite expose the same authored blocks and UTF-16 ranges", () => {
   const span = blockSourceRange(example, start, end);
   expect(raw.slice(span.start, span.end)).toBe("😀 @component example\r\n * @remarks");
 });
+
+test("1.0 example bodies, labels, privacy, and spans are shared by lite and full", () => {
+  const raw = [
+    "/**",
+    " * @example docs, demo {@private} -",
+    " * 😀 first  ",
+    " *   second",
+    " *",
+    " * @example - Public.",
+    " */",
+  ].join("\r\n");
+  const lite = parseLiteDocComment(raw);
+  const full = parseFullDocComment(raw);
+  expect(lite.examples).toEqual(["😀 first  \r\n  second\r\n", "Public."]);
+  expect(lite.exampleLabels).toEqual({ 0: ["docs", "demo"] });
+  expect(lite.privateExamples).toEqual([0]);
+  expect(full.examples).toEqual(lite.examples);
+  expect(full.exampleSpans).toEqual(lite.exampleSpans);
+  expect(full.privateExamples).toEqual(lite.privateExamples);
+  const span = lite.exampleSpans![0]!;
+  expect(raw.slice(span.start, span.end)).toBe("😀 first  \r\n *   second\r\n");
+});
+
+test("private example metadata is scoped to the header, including malformed headers", () => {
+  const [entry] = parseCssDocs(`/** @component card
+ * @example docs, {@private} - malformed but private
+ * @example - {@private} is prose here
+ * @example {@private} - hidden
+ */
+.card {}`);
+  expect(entry.privateExamples).toEqual([0, 2]);
+  expect(selectExamples(entry)).toEqual(["{@private} is prose here"]);
+  expect(selectExamples(entry, { labels: [] })).toEqual(["{@private} is prose here"]);
+  expect(toJson([entry])).not.toContain("malformed but private");
+  expect(toJson([entry])).not.toContain("hidden");
+  expect(toJson([entry], { includePrivate: true })).toContain("hidden");
+});
+
+test.each(["\n", "\r\n", "\r"])(
+  "empty and inline example bodies retain accurate ranges with %j endings",
+  (ending) => {
+    const raw = ["/**", " * @example -", " * @example demo - inline  ", " */"].join(ending);
+    const doc = parseLiteDocComment(raw);
+    expect(doc.examples).toEqual(["", "inline  "]);
+    for (const [index, body] of doc.examples.entries()) {
+      const span = doc.exampleSpans![index]!;
+      expect(raw.slice(span.start, span.end)).toBe(body);
+    }
+  },
+);
 
 test("block collection preserves header whitespace before a continuation", () => {
   const raw = "/**\r\n * @remarks - First  \r\n *   second\r\n */";

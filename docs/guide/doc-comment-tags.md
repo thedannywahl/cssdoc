@@ -19,7 +19,7 @@ template, a `<style>` block, or a Markdown fence. See [Embedded CSS](/guide/embe
 | [Record tags](#record-tags)                                   | `@component`, `@name`, `@utility`, `@declaration`                                  |
 | [Prose tags](#prose-tags)                                     | `@summary`, `@remarks`, `@example`, `@see`, and other record metadata              |
 | [CSS surface tags](#the-css-surface)                          | `@modifier`, `@part`, `@csspart`, `@cssstate`, `@cssproperty`, `@tokens`, and more |
-| [Example labels](#example-labels)                             | `@example labels=[docs, demo]`                                                     |
+| [Example labels](#example-labels)                             | `@example docs, demo - …`                                                          |
 | [Allowed HTML elements](#allowed-html-elements)               | `@element`                                                                         |
 | [Declaring individual members](#declaring-individual-members) | `@member`                                                                          |
 | [Modifier annotations](#modifier-annotations)                 | `@alias`, `@deprecated`, `@interaction`, `@global`, `@affects`                     |
@@ -103,11 +103,14 @@ property. Use `@structure` when the record describes an element composition.
 
 ### Example labels
 
-To label an example for different consumers, write `@example labels=[docs, demo]` on the tag line
-and start the Markdown body on the next line. Labels are lowercase letters and digits, with hyphens
+To label an example for different consumers, write `@example docs, demo -` on the tag line
+and start the body after the divider or on the next line. Labels are lowercase letters and digits, with hyphens
 between segments (for example, `a11y-fixture`). You can reuse a label on multiple examples. Labels
 don't change the example's heading and aren't rendered as part of the example, but they are visible
 in the JSON model.
+
+Add `{@private}` before the divider to omit an example and its labels from public output. JSON
+serialization can include private examples explicitly with `includePrivate`.
 
 See [example filtering](/guide/config-reference#example-filtering) to choose which labels appear
 in Markdown, HTML, or editor hovers.

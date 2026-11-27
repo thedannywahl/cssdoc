@@ -41,8 +41,9 @@ import type { ChildNode } from "postcss";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import { CssDocConfiguration } from "./configuration.ts";
-import { collectDocCommentBlocks, type DocCommentBlock } from "./blocks.ts";
+import { blockSourceRange, collectDocCommentBlocks, type DocCommentBlock } from "./blocks.ts";
 import { frameCommentLines } from "./framing.ts";
+import { docProseStart } from "./structure-boundaries.ts";
 import {
   cardinalityFromMatch,
   splitTrailingCardinality,
@@ -91,7 +92,9 @@ import {
   PAREN_CLOSE_CHAR,
   WORD_BOUNDARY_SOURCE,
   SPACE_TAB_SOURCE,
+  CARRIAGE_RETURN_CHAR,
   CARRIAGE_RETURN_SOURCE,
+  LINE_FEED_CHAR,
   LINE_FEED_SOURCE,
   LINE_ENDING_SOURCE,
 } from "@cssdoc/regex";
@@ -274,6 +277,10 @@ export interface ParsedDoc {
   examples: string[];
   /** Example labels keyed by zero-based index into {@link examples}. */
   exampleLabels?: Record<number, readonly string[]>;
+  /** Private examples, keyed by zero-based index into {@link examples}. */
+  privateExamples?: number[];
+  /** Source ranges of 1.0 example bodies, keyed by example index and relative to the input comment. */
+  exampleSpans?: Record<number, { start: number; end: number }>;
   /** `@structure` — the nested-CSS body, parsed into a selector tree by {@link parseStructure}. */
   structure?: StructureNode[];
   /** Alternative DOM shapes from top-level `@variant` blocks in `@structure`, when authored. */
@@ -568,20 +575,64 @@ export function parseDocComment(
     if (definition.syntaxKind === "inline") continue; // inline tags live inside descriptions
 
     if (definition.canonicalName === "example") {
+      const FIRST_LINE_END: Regex = arkRegex.as(LINE_ENDING_SOURCE, "u");
+      const firstLineEnd = block.text.search(FIRST_LINE_END);
+      const firstLine = block.text.slice(0, firstLineEnd < 0 ? undefined : firstLineEnd);
+      const proseStart = docProseStart(firstLine);
+      const dividerEnd =
+        proseStart === undefined
+          ? undefined
+          : proseStart - (firstLine[proseStart - 1] === " " ? 1 : 0);
+      const header = firstLine.slice(
+        tagName.length + 1,
+        dividerEnd === undefined ? undefined : dividerEnd - 1,
+      );
+      const PRIVATE_SOURCE = `${BRACE_OPEN_SOURCE}${AT_SOURCE}private${BRACE_CLOSE_SOURCE}`;
+      const PRIVATE: Regex = arkRegex.as(PRIVATE_SOURCE, "u");
+      const HEADER: Regex = arkRegex.as(
+        `^${SPACE_TAB_SOURCE}*(?:(${CSSDOC_EXAMPLE_LABEL_SOURCE}(?:${SPACE_TAB_SOURCE}*,${SPACE_TAB_SOURCE}*${CSSDOC_EXAMPLE_LABEL_SOURCE})*)(?:${SPACE_TAB_SOURCE}+(${PRIVATE_SOURCE}))?|(${PRIVATE_SOURCE}))?${SPACE_TAB_SOURCE}*$`,
+        "u",
+      );
+      const parsedHeader = HEADER.exec(header);
+      if (PRIVATE.test(header)) (doc.privateExamples ??= []).push(doc.examples.length);
+      if (proseStart !== undefined && parsedHeader) {
+        if (parsedHeader[1]) {
+          (doc.exampleLabels ??= {})[doc.examples.length] = [
+            ...new Set(parsedHeader[1].split(",").map((label) => label.trim())),
+          ];
+        }
+        let bodyEnd = block.text.length;
+        if (block.text.endsWith(CARRIAGE_RETURN_CHAR)) {
+          const last = blockSourceRange(block, bodyEnd - 1, bodyEnd);
+          if (raw[last.end] === LINE_FEED_CHAR) bodyEnd--;
+        }
+        let bodyStart = proseStart;
+        if (bodyStart === firstLine.length && firstLineEnd >= 0 && bodyStart < bodyEnd) {
+          const ending = FIRST_LINE_END.exec(block.text.slice(bodyStart));
+          if (ending?.index === 0) bodyStart += Math.min(ending[0].length, bodyEnd - bodyStart);
+        }
+        (doc.exampleSpans ??= {})[doc.examples.length] = blockSourceRange(
+          block,
+          bodyStart,
+          bodyEnd,
+        );
+        doc.examples.push(block.text.slice(bodyStart, bodyEnd));
+        continue;
+      }
       const LABELS_HEADER: Regex = arkRegex.as(
         String.raw`^labels=${BRACKET_OPEN_SOURCE}(${CSSDOC_EXAMPLE_LABEL_SOURCE}(?:${SPACE_TAB_SOURCE}*,${SPACE_TAB_SOURCE}*${CSSDOC_EXAMPLE_LABEL_SOURCE})*)${BRACKET_CLOSE_SOURCE}(?:${LINE_ENDING_SOURCE}|$)`,
         "u",
       );
-      const header = LABELS_HEADER.exec(m[2]);
-      if (header) {
+      const legacyHeader = LABELS_HEADER.exec(m[2]);
+      if (legacyHeader) {
         (doc.exampleLabels ??= {})[doc.examples.length] = [
-          ...new Set(header[1].split(",").map((label) => label.trim())),
+          ...new Set(legacyHeader[1].split(",").map((label) => label.trim())),
         ];
       }
       // Unescape Markdown fences authored inside a JS `css` template.
       const ESCAPED_BACKTICK: Regex = arkRegex.as(String.raw`\\${BACKTICK_CHAR}`, "gu");
       doc.examples.push(
-        (header ? m[2].slice(header[0].length).trim() : rest).replace(
+        (legacyHeader ? m[2].slice(legacyHeader[0].length).trim() : rest).replace(
           ESCAPED_BACKTICK,
           BACKTICK_CHAR,
         ),

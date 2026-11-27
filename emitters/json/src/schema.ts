@@ -253,6 +253,11 @@ export const cssDocEntrySchema: {
         items: { type: "string", pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
       },
     },
+    privateExamples: {
+      type: "array",
+      uniqueItems: true,
+      items: { type: "integer", minimum: 0 },
+    },
     structure: { type: "array", items: { $ref: "#/$defs/StructureNode" } },
     structureVariants: { type: "array", items: { $ref: "#/$defs/StructureVariant" } },
     structureDescription: { type: "string" },

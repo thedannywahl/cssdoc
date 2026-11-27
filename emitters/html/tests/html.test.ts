@@ -18,6 +18,17 @@ const CSS = `
 .button.-color-secondary { color: blue; }
 `;
 
+test("private examples never appear in HTML output", () => {
+  const [entry] = parseCssDocs(`/** @component button
+ * @example docs - Visible example.
+ * @example docs {@private} - Private example.
+ */
+.button {}`);
+  const html = renderPage(entry);
+  expect(html).toContain("Visible example.");
+  expect(html).not.toContain("Private example.");
+});
+
 test("buildHtml selects examples without filtering the returned model", () => {
   const outDir = mkdtempSync(join(tmpdir(), "cssdoc-html-examples-"));
   const css = `

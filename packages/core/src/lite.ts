@@ -44,7 +44,7 @@ export type { MermaidOptions } from "./mermaid.ts";
 export { cardinalityToken, cardinalityIsDashed } from "./cardinality.ts";
 export { buildCustomMediaDeclarations, structureCustomMediaRefs } from "./customMedia.ts";
 export type { BuildCustomMediaOptions, StructureCustomMediaRef } from "./customMedia.ts";
-export { selectExamples, type ExampleFilter } from "./examples.ts";
+export { projectPublicExamples, selectExamples, type ExampleFilter } from "./examples.ts";
 export type {
   CssAnimation,
   CssCondition,
@@ -69,14 +69,16 @@ export type {
 } from "./model.ts";
 
 import type { CssDocEntry } from "./model.ts";
+import { projectPublicExamples } from "./examples.ts";
 
 /**
- * Serialize a documentation model to pretty JSON (the raw, emitter-agnostic artifact — like TypeDoc's
- * `--json`).
+ * Serialize a documentation model to pretty JSON, omitting private examples by default.
  *
  * @param model - The entries from `parseCssDocs`.
+ * @param options - Set `includePrivate` to retain private examples.
  * @returns A JSON string.
  */
-export function toJson(model: CssDocEntry[]): string {
-  return `${JSON.stringify(model, null, 2)}\n`;
+export function toJson(model: CssDocEntry[], options: { includePrivate?: boolean } = {}): string {
+  const entries = options.includePrivate ? model : model.map(projectPublicExamples);
+  return `${JSON.stringify(entries, null, 2)}\n`;
 }

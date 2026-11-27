@@ -984,6 +984,7 @@ function buildEntry(
     conditions: acc.conditions,
     examples: doc.examples,
     ...(doc.exampleLabels ? { exampleLabels: doc.exampleLabels } : {}),
+    ...(doc.privateExamples ? { privateExamples: doc.privateExamples } : {}),
     structure,
     structureVariants: doc.structureVariants,
     structureDescription: doc.structureDescription,

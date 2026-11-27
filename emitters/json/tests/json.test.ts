@@ -134,6 +134,31 @@ test("example labels round-trip without changing the examples string array", () 
   expect(new Ajv().compile(cssDocSchema)(model)).toBe(true);
 });
 
+test("public JSON removes private examples and reindexes public labels", () => {
+  const entries = parseCssDocs(`
+/** @component button
+ * @example docs - First.
+ * @example secret {@private} - Sensitive example.
+ * @example demo - Last.
+ */
+.button {}
+`);
+  const publicModel = JSON.parse(renderJson(entries));
+  expect(publicModel[0].examples).toEqual(["First.", "Last."]);
+  expect(publicModel[0].exampleLabels).toEqual({ 0: ["docs"], 1: ["demo"] });
+  expect(JSON.stringify(publicModel)).not.toContain("Sensitive");
+  expect(JSON.stringify(publicModel)).not.toContain("secret");
+  expect(publicModel[0].privateExamples).toBeUndefined();
+  expect(new Ajv().compile(cssDocSchema)(publicModel)).toBe(true);
+  const privateModel = JSON.parse(renderJson(entries, { includePrivate: true }));
+  expect(privateModel[0].examples[1]).toBe("Sensitive example.");
+  expect(privateModel[0].privateExamples).toEqual([1]);
+  const outDir = mkdtempSync(join(tmpdir(), "cssdoc-json-private-"));
+  const output = writeJson({ entries, outDir, perRecord: true });
+  expect(readFileSync(output.modelPath, "utf8")).not.toContain("Sensitive");
+  expect(readFileSync(output.recordPaths[0], "utf8")).not.toContain("Sensitive");
+});
+
 test("structureVariants (from @variant blocks) round-trips through JSON and validates against the schema", () => {
   const VARIANT_CSS = `
 /**
