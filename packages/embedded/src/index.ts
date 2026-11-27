@@ -187,7 +187,7 @@ function scanJs(
   for (let i = 0; i < src.length; i++) {
     const c = src[i];
     if (c === FORWARD_SLASH_CHAR && src[i + 1] === FORWARD_SLASH_CHAR) {
-      while (i < src.length && src[i] !== "\n") i++;
+      while (i < src.length && src[i] !== "\n" && src[i] !== "\r") i++;
     } else if (c === FORWARD_SLASH_CHAR && src[i + 1] === ASTERISK_CHAR) {
       const start = i;
       const isDoc = src[i + 2] === ASTERISK_CHAR;
@@ -313,13 +313,13 @@ export function projectCss(source: string, opts: EmbeddedOptions = {}): string {
   }
   const keep = [...regions.map((r) => ({ start: r.start, end: r.end })), ...commentSet];
   const out: string[] = Array.from({ length: source.length }, (_, i) =>
-    source[i] === "\n" ? "\n" : " ",
+    source[i] === "\n" || source[i] === "\r" ? source[i] : " ",
   );
   for (const k of keep)
     for (let i = k.start; i < k.end && i < source.length; i++) out[i] = source[i];
   for (const m of masks)
     for (let i = m.start; i < m.end && i < source.length; i++)
-      out[i] = source[i] === "\n" ? "\n" : "a";
+      out[i] = source[i] === "\n" || source[i] === "\r" ? source[i] : "a";
   return out.join("");
 }
 
@@ -333,9 +333,20 @@ export function projectCss(source: string, opts: EmbeddedOptions = {}): string {
 export function extractCssBlocks(source: string, opts: EmbeddedOptions = {}): CssBlock[] {
   const projected = projectCss(source, opts);
   return scan(source, opts).regions.map((r) => {
-    const before = source.slice(0, r.start);
-    const line = before.split("\n").length;
-    const column = r.start - (before.lastIndexOf("\n") + 1);
+    let line = 1;
+    let column = 0;
+    for (let i = 0; i < r.start; i++) {
+      if (source[i] === "\r") {
+        if (source[i + 1] === "\n" && i + 1 < r.start) i++;
+        line++;
+        column = 0;
+      } else if (source[i] === "\n") {
+        line++;
+        column = 0;
+      } else {
+        column++;
+      }
+    }
     return {
       css: projected.slice(r.start, r.end),
       host: r.host,

@@ -58,7 +58,8 @@ delimit one component from the next.
 To inspect authored tag text without a CSS parser, use `parseDocComment` from `@cssdoc/core/lite`.
 Its `blocks` include unknown and disabled tags as well as examples, with UTF-16 offsets relative to
 the input comment. `blockSourceRange` maps a range in a block's framing-free text back to the input.
-These blocks contain authored text, including private content; filter it before publishing.
+The mappings retain LF, CRLF, and CR line endings, trailing spaces, and blank lines. These blocks
+contain authored text, including private content; filter it before publishing.
 
 ## The doc-comment grammar
 

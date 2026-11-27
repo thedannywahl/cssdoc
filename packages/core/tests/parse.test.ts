@@ -96,6 +96,49 @@ test("block text ranges map through CRLF framing and UTF-16 characters", () => {
   expect(() => blockSourceRange(block, 0, block.text.length + 1)).toThrow(RangeError);
 });
 
+test("CR-only comment lines retain tag boundaries and exact UTF-16 source mappings", () => {
+  const raw = [
+    "/**",
+    " * @example -",
+    " * ```css",
+    " * 😀 @component hidden",
+    " * ```",
+    " * @component actual",
+    " */",
+  ].join("\r");
+  const blocks = collectDocCommentBlocks(raw);
+  expect(blocks.map((block) => raw.slice(block.start, block.end))).toEqual([
+    "@example -\r * ```css\r * 😀 @component hidden\r * ```",
+    "@component actual",
+  ]);
+  expect(blocks[0]!.text).toBe("@example -\r```css\r😀 @component hidden\r```");
+  for (const block of blocks) {
+    for (const segment of block.segments) {
+      expect(raw.slice(segment.sourceStart, segment.sourceStart + segment.length)).toBe(
+        block.text.slice(segment.textStart, segment.textStart + segment.length),
+      );
+    }
+  }
+  const start = blocks[0]!.text.indexOf("😀");
+  const end = blocks[0]!.text.indexOf("@component") + "@component".length;
+  const range = blockSourceRange(blocks[0]!, start, end);
+  expect(raw.slice(range.start, range.end)).toBe("😀 @component");
+  const acrossLines = blockSourceRange(blocks[0]!, start, blocks[0]!.text.length);
+  expect(raw.slice(acrossLines.start, acrossLines.end)).toBe("😀 @component hidden\r * ```");
+  expect(recordNameOf(raw)).toBe("actual");
+});
+
+test("CR-only prose and labeled examples parse across lines", () => {
+  const raw = "/**\r * @remarks First\r *   second\r * @example labels=[docs]\r * Example\r */";
+  const parsed = parseDocComment(raw);
+  expect(stripCommentFraming(raw)).toBe(
+    "@remarks First\r  second\r@example labels=[docs]\rExample",
+  );
+  expect(parsed.remarks).toBe("First second");
+  expect(parsed.exampleLabels).toEqual({ 0: ["docs"] });
+  expect(parsed.examples).toEqual(["Example"]);
+});
+
 test("full and lite expose the same authored blocks and UTF-16 ranges", () => {
   const raw = [
     "/**",
@@ -136,6 +179,32 @@ test("block collection preserves header whitespace before a continuation", () =>
   const end = block.text.indexOf("second");
   const range = blockSourceRange(block, start, end);
   expect(raw.slice(range.start, range.end)).toBe("First  \r\n *   ");
+});
+
+test("block text preserves authored trailing whitespace and blank example lines", () => {
+  const raw = ["/**", " * @example -", " * ```", " * example  ", " * ```", " *", " *", " */"].join(
+    "\r\n",
+  );
+  const [block] = collectDocCommentBlocks(raw);
+  expect(block.text).toBe("@example -\r\n```\r\nexample  \r\n```\r\n\r\n");
+  const start = block.text.indexOf("example  ");
+  const range = blockSourceRange(block, start, block.text.length);
+  expect(raw.slice(range.start, range.end)).toBe("example  \r\n * ```\r\n *\r\n");
+});
+
+test("unframed and inline comments retain trailing spaces and line endings", () => {
+  const body = "@example - example  \r\n\r\n";
+  const [unframed] = collectDocCommentBlocks(body);
+  expect(unframed.text).toBe(body);
+  const range = blockSourceRange(unframed, 0, unframed.text.length);
+  expect(body.slice(range.start, range.end)).toBe(body);
+  expect(collectDocCommentBlocks("/** @example - example  */")[0]?.text).toBe(
+    "@example - example  ",
+  );
+  const incomplete = "/**\n * @example -\n * ```\n * @component hidden  \n *\n";
+  const [block] = collectDocCommentBlocks(incomplete);
+  expect(block.text).toBe("@example -\n```\n@component hidden  \n\n");
+  expect(recordNameOf(incomplete)).toBeUndefined();
 });
 
 test("structure lexical state ignores braces in selectors, strings, escapes, and comments", () => {
@@ -241,6 +310,55 @@ test("top-level CSS at-rules with doc-tag names remain part of the structure", (
   expect(blocks[0]?.text).toContain('@media (selector([data-text="{@private}"]))');
   expect(blocks[0]?.text).toContain("@component child {}");
   expect(blocks[1]?.text).toBe("@component next {@private}");
+});
+
+test("multiline top-level CSS at-rules stay inside structure before documentation tags", () => {
+  const raw = [
+    "/**",
+    " * @structure",
+    " * @media (",
+    " *   min-width: 20rem",
+    " * )",
+    " * {",
+    " *   .card { .label {} }",
+    " * }",
+    " * @media (min-width: 20rem) - Documents the condition.",
+    " * @component actual",
+    " */",
+  ].join("\r\n");
+  const blocks = collectDocCommentBlocks(raw);
+  expect(blocks.map((block) => raw.slice(block.start, block.end))).toEqual([
+    "@structure\r\n * @media (\r\n *   min-width: 20rem\r\n * )\r\n * {\r\n *   .card { .label {} }\r\n * }",
+    "@media (min-width: 20rem) - Documents the condition.",
+    "@component actual",
+  ]);
+  expect(recordNameOf(raw)).toBe("actual");
+});
+
+test("nested structure parentheses retain tag-shaped lines without swallowing later tags", () => {
+  const raw = [
+    "/**",
+    " * @structure",
+    " * @media (",
+    " * @component incomplete-css",
+    " * ) { .card {} }",
+    " * @component actual",
+    " */",
+  ].join("\n");
+  const blocks = collectDocCommentBlocks(raw);
+  expect(blocks).toHaveLength(2);
+  expect(blocks[0]?.text).toContain("@component incomplete-css");
+  expect(blocks[1]?.text).toBe("@component actual");
+  expect(recordNameOf(raw)).toBe("actual");
+});
+
+test("a documentation at-rule without a CSS block doesn't swallow the next tag", () => {
+  const raw = "/**\n * @structure\n * @media (min-width: 20rem)\n * @component actual\n */";
+  expect(collectDocCommentBlocks(raw).map((block) => block.text)).toEqual([
+    "@structure",
+    "@media (min-width: 20rem)",
+    "@component actual",
+  ]);
 });
 
 test("fences protect tag boundaries and record discovery until a matching closer", () => {

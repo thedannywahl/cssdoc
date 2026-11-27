@@ -10,12 +10,14 @@ import { regex as arkRegex } from "arkregex";
 
 /** One comment line after optional framing removal, with offsets into the original input. */
 export interface FramedCommentLine {
-  /** Line text, excluding the line feed but retaining a preceding carriage return. */
+  /** Line text, excluding the line break but retaining a carriage return preceding a line feed. */
   text: string;
   /** Inclusive UTF-16 offset of the line text in the original input. */
   start: number;
   /** Exclusive UTF-16 offset of the line text in the original input. */
   end: number;
+  /** The source character terminating the line, if any. */
+  ending: "\n" | "\r" | "";
 }
 
 /**
@@ -38,14 +40,16 @@ export function frameCommentLines(raw: string, prefixes: "framed" | "none"): Fra
   const lines: FramedCommentLine[] = [];
 
   for (let cursor = start; cursor <= end;) {
-    const newline = raw.indexOf("\n", cursor);
-    const lineEnd = newline < 0 || newline >= end ? end : newline;
+    let lineEnd = cursor;
+    while (lineEnd < end && raw[lineEnd] !== "\r" && raw[lineEnd] !== "\n") lineEnd++;
+    if (lineEnd < end && raw[lineEnd] === "\r" && raw[lineEnd + 1] === "\n") lineEnd++;
+    const ending = lineEnd < end ? (raw[lineEnd] === "\n" ? "\n" : "\r") : "";
     const rawLine = raw.slice(cursor, lineEnd);
     const prefix =
       prefixes === "framed" ? rawLine.match(FRAMED_COMMENT_LINE_PREFIX)?.[0] : undefined;
     const prefixLength = prefix?.length ?? 0;
     const lineStart = cursor + prefixLength;
-    lines.push({ text: raw.slice(lineStart, lineEnd), start: lineStart, end: lineEnd });
+    lines.push({ text: raw.slice(lineStart, lineEnd), start: lineStart, end: lineEnd, ending });
     if (lineEnd === end) break;
     cursor = lineEnd + 1;
   }

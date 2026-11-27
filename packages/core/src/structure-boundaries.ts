@@ -16,6 +16,7 @@ import {
 } from "@cssdoc/regex";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
+import type { FramedCommentLine } from "./framing.ts";
 
 /** CSS lexical state carried between lines of a structure block. */
 export interface StructureBoundaryState {
@@ -64,18 +65,34 @@ export function docProseStart(line: string): number | undefined {
 }
 
 /**
- * Check whether a top-level at-rule line opens a CSS block rather than header metadata.
+ * Check whether a top-level at-rule opens a CSS block rather than header metadata.
  *
  * @param line - The potential at-rule line.
+ * @param lines - The framed comment lines.
+ * @param lineIndex - The index of the potential at-rule line.
  * @returns Whether it opens a CSS block.
  */
-export function opensStructureAtRule(line: string): boolean {
-  const result = scanStructure(line, { stack: [], comment: false, escaped: false }, false);
-  if (result.openAt === undefined) return false;
+export function opensStructureAtRule(
+  line: string,
+  lines: readonly FramedCommentLine[],
+  lineIndex: number,
+): boolean {
   const INLINE_TAG: Regex = arkRegex.as(`^${TOKENIZER_INLINE_TAG_SOURCE}`, "u");
-  const tag = line.slice(result.openAt).match(INLINE_TAG)?.[0];
-  if (tag?.endsWith(BRACE_CLOSE_CHAR) && tag.indexOf(BRACE_OPEN_CHAR, 1) === -1) return false;
-  return true;
+  const state: StructureBoundaryState = { stack: [], comment: false, escaped: false };
+  for (let index = lineIndex; index < lines.length; index++) {
+    const text = index === lineIndex ? line : lines[index].text;
+    if (index > lineIndex && state.stack.length === 0 && !state.comment && !state.quote) {
+      const trimmed = text.trim();
+      if (!trimmed) continue;
+      if (!trimmed.startsWith(BRACE_OPEN_CHAR)) return false;
+    }
+    const result = scanStructure(text, state, false);
+    if (result.openAt !== undefined) {
+      const tag = text.slice(result.openAt).match(INLINE_TAG)?.[0];
+      return !(tag?.endsWith(BRACE_CLOSE_CHAR) && tag.indexOf(BRACE_OPEN_CHAR, 1) === -1);
+    }
+  }
+  return false;
 }
 
 function scanStructure(

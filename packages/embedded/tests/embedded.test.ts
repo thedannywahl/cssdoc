@@ -101,6 +101,54 @@ test("framed block text ranges map back through an embedded CSS projection", () 
   );
 });
 
+test("CR-only host lines retain embedded comment offsets and region positions", () => {
+  const source = [
+    "<p>😀</p>",
+    "<style>",
+    "/**",
+    " * @example -",
+    " * ```css",
+    " * @component hidden",
+    " * ```",
+    " * @component card",
+    " */",
+    ".card {}",
+    "</style>",
+  ].join("\r");
+  const projection = projectCss(source, { host: "html" });
+  expect([...projection].filter((char) => char === "\r")).toHaveLength(10);
+  const [region] = extractCssBlocks(source, { host: "html" });
+  expect(region.start).toEqual({ line: 2, column: 7, offset: source.indexOf("<style>") + 7 });
+
+  const commentStart = projection.indexOf("/**");
+  const commentEnd = projection.indexOf("*/", commentStart) + 2;
+  const comment = projection.slice(commentStart, commentEnd);
+  const blocks = collectDocCommentBlocks(comment, new CssDocConfiguration());
+  expect(blocks).toHaveLength(2);
+  const code = blocks[0];
+  const from = code.text.indexOf("@component hidden");
+  const to = code.text.length;
+  const span = blockSourceRange(code, from, to);
+  expect(source.slice(commentStart + span.start, commentStart + span.end)).toBe(
+    "@component hidden\r * ```",
+  );
+  expect(source.slice(commentStart + blocks[1].start, commentStart + blocks[1].end)).toBe(
+    "@component card",
+  );
+});
+
+test("CR-only line breaks survive masked JavaScript interpolations", () => {
+  const source = "// styles\rconst styles = css`\r.card { color: ${\r  value\r}; }\r`;";
+  const projection = projectCss(source, { host: "js" });
+  expect(projection.length).toBe(source.length);
+  expect([...projection].filter((char) => char === "\r")).toHaveLength(5);
+  expect(extractCssBlocks(source, { host: "js" })[0].start).toEqual({
+    line: 2,
+    column: 19,
+    offset: source.indexOf("`\r") + 1,
+  });
+});
+
 test("a tagged template is kept, the surrounding JS is blanked, and the doc comment above it survives", () => {
   const p = projectCss(JS, { host: "js" });
   expect(p).toContain("&.primary { font-weight: 600; }"); // block content kept

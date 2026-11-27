@@ -9,7 +9,7 @@ Read [cssdoc](https://cssdoc.dev)-annotated CSS out of the host files where it l
 ## How it works
 
 The core is a **projection**: `projectCss(source)` returns a character-for-character CSS mask of the
-source — same length and newlines, with the embedded-CSS regions and any `/** … */` doc comment kept
+source — same length and LF, CRLF, or CR line breaks, with the embedded-CSS regions and any `/** … */` doc comment kept
 verbatim, everything else blanked, and JS `${…}` interpolations masked. Because the projection shares
 every offset, line, and column with the source, the rest of cssdoc (parsing, linting, spans,
 diagnostics) works unchanged and points back at the right place in the original file.

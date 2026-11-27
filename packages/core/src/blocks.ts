@@ -97,29 +97,42 @@ export function collectDocCommentBlocks(
   );
   const INDENTED_AT_RULE: Regex = arkRegex.as(String.raw`^\s+${AT_SOURCE}`, "u");
   const COMMENT_OPENING: Regex = arkRegex.as(`^${COMMENT_START_SOURCE}`, "u");
-  const lines = frameCommentLines(raw, COMMENT_OPENING.test(raw) ? "framed" : "none");
-  const text = lines.map((line) => line.text).join("\n");
+  const framed = COMMENT_OPENING.test(raw);
+  const lines = frameCommentLines(raw, framed ? "framed" : "none");
+  const text = lines.map((line) => line.text + line.ending).join("");
   const start = text.length - text.trimStart().length;
-  const body = text.slice(start, text.trimEnd().length);
+  let end = text.length;
+  const last = lines[lines.length - 1];
+  if (framed && raw.endsWith("*/") && lines.length > 1 && last.text.trim() === "") {
+    const previous = lines[lines.length - 2];
+    end -= last.text.length + previous.ending.length;
+    if (previous.ending === "\n" && previous.text.endsWith("\r")) end--;
+  }
   let lineIndex = 0;
   let lineStart = 0;
   while (lineIndex < lines.length - 1 && lineStart + lines[lineIndex].text.length < start) {
-    lineStart += lines[lineIndex].text.length + 1;
+    lineStart += lines[lineIndex].text.length + lines[lineIndex].ending.length;
     lineIndex++;
   }
 
   const blocks: DocCommentBlock[] = [];
   let inStructureBlock = false;
+  let structureHasBody = false;
   let structureState: StructureBoundaryState = { stack: [], comment: false, escaped: false };
   let codeState: CodeBoundaryState = { containers: [], indented: false, paragraph: false };
   let leadingTrim = start - lineStart;
-  for (const line of body.split("\n")) {
+  for (; lineIndex < lines.length && lineStart < end; lineIndex++) {
+    const framed = lines[lineIndex];
+    const line = framed.text.slice(leadingTrim, Math.min(framed.text.length, end - lineStart));
     const sourceStart = lines[lineIndex].start + leadingTrim;
     const inCode = blocks.length > 0 && !inStructureBlock && scanCodeBoundaryLine(line, codeState);
     const tagMatch = line.match(TAG_LINE);
     const isKnownTag =
       tagMatch !== null && configuration.tryGetTagDefinition(tagMatch[1]) !== undefined;
-    const inNestedStructure = inStructureBlock && structureState.stack.includes(BRACE_OPEN_CHAR);
+    const inNestedStructure =
+      inStructureBlock &&
+      structureState.stack.length > 0 &&
+      (structureHasBody || structureState.stack.includes(BRACE_OPEN_CHAR));
     const hasDocDivider =
       tagMatch !== null && inStructureBlock && !inNestedStructure && hasStructureDocDivider(line);
     const opensCssBlock =
@@ -127,7 +140,7 @@ export function collectDocCommentBlocks(
       inStructureBlock &&
       !inNestedStructure &&
       !hasDocDivider &&
-      opensStructureAtRule(line);
+      opensStructureAtRule(line, lines, lineIndex);
     const startsBlock =
       tagMatch !== null &&
       !inCode &&
@@ -150,6 +163,7 @@ export function collectDocCommentBlocks(
         segments: [{ textStart: 0, sourceStart: sourceStart + tagStart, length: text.length }],
       });
       inStructureBlock = tagMatch[1] === "structure";
+      structureHasBody = false;
       codeState = { containers: [], indented: false, paragraph: false };
       if (inStructureBlock) {
         structureState = { stack: [], comment: false, escaped: false };
@@ -160,24 +174,43 @@ export function collectDocCommentBlocks(
       }
     } else if (blocks.length) {
       const block = blocks[blocks.length - 1];
+      const ending = lines[lineIndex - 1].ending;
       block.segments.push({
         textStart: block.text.length,
         sourceStart: lines[lineIndex - 1].end,
-        length: 1,
+        length: ending.length,
       });
       if (line.length) {
         block.segments.push({
-          textStart: block.text.length + 1,
+          textStart: block.text.length + ending.length,
           sourceStart,
           length: line.length,
         });
       }
-      block.text += `\n${line}`;
+      block.text += ending + line;
       if (lastNonWhitespace > 0) block.end = sourceStart + lastNonWhitespace;
-      if (inStructureBlock) scanStructureLine(line, structureState);
+      if (inStructureBlock) {
+        if (!structureHasBody && !structureState.stack.includes(BRACE_OPEN_CHAR)) {
+          structureState = { stack: [], comment: false, escaped: false };
+        }
+        structureHasBody = true;
+        scanStructureLine(line, structureState);
+      }
     }
-    lineIndex++;
+    lineStart += framed.text.length + framed.ending.length;
     leadingTrim = 0;
+  }
+  if (blocks.length && lineStart === end && lineIndex > 0) {
+    const previous = lines[lineIndex - 1];
+    if (previous.ending) {
+      const block = blocks[blocks.length - 1];
+      block.segments.push({
+        textStart: block.text.length,
+        sourceStart: previous.end,
+        length: previous.ending.length,
+      });
+      block.text += previous.ending;
+    }
   }
   return blocks;
 }

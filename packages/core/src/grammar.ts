@@ -371,9 +371,14 @@ function splitQuery(rest: string): { query: string; description?: string } {
 /** Strip the comment framing (`/**`, `*\/`, and leading ` * `) from a raw block-comment body. */
 export function stripCommentFraming(raw: string): string {
   return frameCommentLines(raw, "framed")
-    .map((line) => line.text)
-    .join("\n")
+    .map((line) => line.text + line.ending)
+    .join("")
     .trim();
+}
+
+function splitCommentLines(raw: string): string[] {
+  const LINE_ENDING: Regex = arkRegex.as(String.raw`\r(?!\n)|\n`, "u");
+  return raw.split(LINE_ENDING);
 }
 
 /** Parse the inner body of a `@modifier` line's argument into a {@link DocModifier}. */
@@ -558,7 +563,7 @@ export function parseDocComment(
 
     if (definition.canonicalName === "example") {
       const LABELS_HEADER: Regex = arkRegex.as(
-        String.raw`^labels=${BRACKET_OPEN_SOURCE}(${CSSDOC_EXAMPLE_LABEL_SOURCE}(?:${SPACE_TAB_SOURCE}*,${SPACE_TAB_SOURCE}*${CSSDOC_EXAMPLE_LABEL_SOURCE})*)${BRACKET_CLOSE_SOURCE}(?:\r?\n|$)`,
+        String.raw`^labels=${BRACKET_OPEN_SOURCE}(${CSSDOC_EXAMPLE_LABEL_SOURCE}(?:${SPACE_TAB_SOURCE}*,${SPACE_TAB_SOURCE}*${CSSDOC_EXAMPLE_LABEL_SOURCE})*)${BRACKET_CLOSE_SOURCE}(?:\r\n|\r|\n|$)`,
         "u",
       );
       const header = LABELS_HEADER.exec(m[2]);
@@ -926,7 +931,7 @@ export function recordNameOf(
  * @returns The normalized description with collapsed continuation-line spacing but preserved Markdown structure.
  */
 function normalizeMultilineDescription(text: string): string {
-  const lines = text.split("\n").map((l) => l.trim());
+  const lines = splitCommentLines(text).map((l) => l.trim());
   const MARKDOWN_STRUCTURE: Regex = arkRegex.as(
     String.raw`^(?:${GREATER_THAN_CHAR}|${MARKDOWN_UNORDERED_LIST_MARKER_SOURCE})\s|${MARKDOWN_ORDERED_LIST_MARKER_SOURCE}\s|^${MARKDOWN_ATX_HEADING_PREFIX_SOURCE}`,
   );
@@ -1064,7 +1069,7 @@ export function splitModifierArg(rest: string): {
 }
 
 function splitStructureBody(raw: string): { description?: string; css: string } {
-  const lines = raw.split("\n");
+  const lines = splitCommentLines(raw);
   const braceLine = lines.findIndex((l) => l.includes(BRACE_OPEN_CHAR));
   if (braceLine <= 0) return { css: raw }; // no rule, or the first line already opens one
   const lead = lines.slice(0, braceLine);
@@ -1083,7 +1088,7 @@ function parseAnnotationsBody(raw: string): DocAnnotation[] {
   const rows: DocAnnotation[] = [];
   const MARKER: Regex = arkRegex.as(String.raw`^(${DIGIT_SOURCE}+)${DOT_SOURCE}\s*([\s\S]*)$`, "u");
   let current: DocAnnotation | undefined;
-  for (const line of raw.split("\n")) {
+  for (const line of splitCommentLines(raw)) {
     const trimmed = line.trim();
     if (!trimmed) continue;
     const marker = trimmed.match(MARKER);
