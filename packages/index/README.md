@@ -47,8 +47,8 @@ members remain unsupported.
 `resolveScopeMemberReference` uses CSS `@scope` occurrences collected from a record's owned rules,
 including nested scopes and source spans. Model-only indexes and indexes built with a custom dialect
 parser return unavailable for scope members. Unsupported selector syntax also returns unavailable.
-`resolveMediaMemberReference` similarly uses source-backed media occurrences. It returns unavailable
-for unsupported query syntax or noncanonical numeric spellings rather than guessing at equivalence.
+`resolveMediaMemberReference` similarly uses source-backed media occurrences and compares CSS numbers
+without losing decimal precision. Unsupported query syntax returns unavailable.
 
 `projectPrivateLinksInLookup` projects links using the prose's original reference lookup.
 It preserves labels as literal fragments and reports unavailable targets; callers must handle that

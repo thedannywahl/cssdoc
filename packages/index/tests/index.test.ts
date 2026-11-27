@@ -471,6 +471,9 @@ test("media members use owned source occurrences and parsed query identity", () 
 .card { @media (width > 30px) { color: red } }
 @media (empty) { @keyframes fade { from { opacity: 0 } } }
 @media (color), (hover) { .card {} }
+@media (width: .50px) { .card {} }
+@media (width: 9007199254740992px) { .card {} }
+@media (width: 9007199254740993px) { .card {} }
 /** @component other */
 @media (color) { .other {} }`;
   const index = createIndex(css, { file: "cards.css" });
@@ -487,6 +490,9 @@ test("media members use owned source occurrences and parsed query identity", () 
     "SCREEN and (min-width:40REM)",
     "(width > 30px)",
     "(color), (hover)",
+    "(width: .50px)",
+    "(width: 9007199254740992px)",
+    "(width: 9007199254740993px)",
   ]);
   expect(resolve(String.raw`card#media(scr\65 en and (min-width: 40rem))`)).toMatchObject({
     status: "ambiguous",
@@ -503,7 +509,16 @@ test("media members use owned source occurrences and parsed query identity", () 
   expect(resolve("card#media((width>31px))")).toEqual({ status: "missing" });
   expect(resolve("card#media((empty))")).toEqual({ status: "missing" });
   expect(resolve("card#media((??))")).toEqual({ status: "invalid-subject" });
-  expect(resolve("card#media((width>.5px))")).toMatchObject({ status: "unavailable" });
+  expect(resolve("card#media((width>.5px))")).toEqual({ status: "missing" });
+  expect(resolve("card#media((width:5e-1px))")).toMatchObject({ status: "resolved" });
+  expect(resolve("card#media((width:9007199254740992px))")).toMatchObject({
+    status: "resolved",
+    candidate: { occurrence: { prelude: "(width: 9007199254740992px)" } },
+  });
+  expect(resolve("card#media((width:9007199254740993px))")).toMatchObject({
+    status: "resolved",
+    candidate: { occurrence: { prelude: "(width: 9007199254740993px)" } },
+  });
   expect(resolve("card#media((width:calc(30px + 1px)))")).toMatchObject({ status: "unavailable" });
   expect(resolve("card#media((color))", index, false)).toMatchObject({ status: "unavailable" });
   expect(resolve("card#media((color))", indexFromEntries(index.entries))).toMatchObject({
@@ -513,8 +528,8 @@ test("media members use owned source occurrences and parsed query identity", () 
     status: "unavailable",
   });
   expect(resolve("other#media((color))")).toMatchObject({ status: "resolved" });
-  const uncertain = createIndex("/** @component card */ @media (width: 1.0px) { .card {} }");
-  expect(resolve("card#media((width:1px))", uncertain)).toMatchObject({ status: "unavailable" });
+  const equivalent = createIndex("/** @component card */ @media (width: 1.0px) { .card {} }");
+  expect(resolve("card#media((width:1px))", equivalent)).toMatchObject({ status: "resolved" });
 });
 
 test("createIndex parses the model and resolves class lookups", () => {

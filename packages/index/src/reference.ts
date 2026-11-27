@@ -573,6 +573,25 @@ export type MediaMemberResolution =
   | { status: "unavailable"; candidates: readonly ReferenceCandidate[] }
   | { status: "invalid-subject" };
 
+function canonicalCssNumber(text: string): string | undefined {
+  const negative = text.startsWith("-");
+  const unsigned = text.startsWith("-") || text.startsWith("+") ? text.slice(1) : text;
+  const exponentAt = unsigned.toLowerCase().indexOf("e");
+  const mantissa = exponentAt < 0 ? unsigned : unsigned.slice(0, exponentAt);
+  const rawExponent = exponentAt < 0 ? "0" : unsigned.slice(exponentAt + 1);
+  if (rawExponent.length > 1000) return undefined;
+  const dot = mantissa.indexOf(".");
+  const fractionLength = dot < 0 ? 0 : mantissa.length - dot - 1;
+  const digits = dot < 0 ? mantissa : mantissa.slice(0, dot) + mantissa.slice(dot + 1);
+  let start = 0;
+  while (start < digits.length && digits[start] === "0") start++;
+  if (start === digits.length) return "0";
+  let end = digits.length;
+  while (digits[end - 1] === "0") end--;
+  const exponent = BigInt(rawExponent) - BigInt(fractionLength) + BigInt(digits.length - end);
+  return `${negative ? "-" : ""}${digits.slice(start, end)}e${exponent}`;
+}
+
 function mediaKey(input: string): SelectorKey {
   try {
     const ast = parse(input, {
@@ -592,14 +611,6 @@ function mediaKey(input: string): SelectorKey {
       if (decoded.startsWith("--")) unsupported = true;
       return ident.encode(asciiLower(decoded));
     };
-    const canonicalNumber = (text: string): boolean => {
-      const value = Number(text);
-      return (
-        Number.isFinite(value) &&
-        String(value) === text &&
-        (!Number.isInteger(value) || Number.isSafeInteger(value))
-      );
-    };
     walk(ast, (node) => {
       switch (node.type) {
         case "MediaQuery":
@@ -611,11 +622,13 @@ function mediaKey(input: string): SelectorKey {
           node.name = keyword(node.name);
           break;
         case "Dimension":
-          node.unit = keyword(node.unit);
-          if (!canonicalNumber(node.value)) unsupported = true;
-          break;
         case "Number":
-          if (!canonicalNumber(node.value)) unsupported = true;
+          {
+            if (node.type === "Dimension") node.unit = keyword(node.unit);
+            const value = canonicalCssNumber(node.value);
+            if (value === undefined) unsupported = true;
+            else node.value = value;
+          }
           break;
         case "AtrulePrelude":
         case "MediaQueryList":
@@ -638,8 +651,8 @@ function mediaKey(input: string): SelectorKey {
 /**
  * Resolve a CSS media query from source-preserved occurrences.
  *
- * Unsupported prelude forms and noncanonical numeric spellings return unavailable rather than a
- * potentially incorrect missing or unique result.
+ * Unsupported prelude forms return unavailable rather than a potentially incorrect missing or
+ * unique result. CSS numbers are compared without losing decimal precision.
  *
  * @param reference - A parsed reference with a `media(...)` member.
  * @param lookup - Explicit source provenance and scope completeness.
