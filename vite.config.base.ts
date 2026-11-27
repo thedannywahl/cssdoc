@@ -77,7 +77,8 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/method-signature-style": ["warn", "property"],
       "typescript/no-confusing-void-expression": ["warn", { ignoreArrowShorthand: true }],
       "typescript/consistent-type-definitions": "off",
-      "typescript/promise-function-async": "off",
+      // Promise-owning declarations are async; concise arrow forwarders needn't wrap an existing promise.
+      "typescript/promise-function-async": ["warn", { checkArrowFunctions: false }],
       "typescript/array-type": "off",
       "typescript/prefer-regexp-exec": "off",
       "typescript/no-explicit-any": "error",

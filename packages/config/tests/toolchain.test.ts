@@ -1133,6 +1133,40 @@ test("lint prefers function-property contracts and the compiler rejects narrower
   }
 });
 
+test("lint requires async promise declarations without wrapping arrow forwarders", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/async-declarations-"));
+  try {
+    writeFileSync(
+      join(directory, "tsconfig.json"),
+      JSON.stringify({ extends: "../../../../tsconfig.base.json", include: ["*.ts"] }),
+    );
+    const file = join(directory, "async.ts");
+    writeFileSync(
+      file,
+      [
+        "export function legacy(): Promise<number> { return Promise.resolve(1); }",
+        "export async function modern(): Promise<number> { return Promise.resolve(1); }",
+        "export const forward = (): Promise<number> => Promise.resolve(1);",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "typescript(promise-function-async)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["warning", 1]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));

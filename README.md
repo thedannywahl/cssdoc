@@ -123,6 +123,8 @@ Public class members omit redundant `public` modifiers. Constructor parameter pr
 because their modifiers can declare the properties themselves.
 Callback contracts use function-property signatures so TypeScript checks parameter variance.
 Class implementations keep method syntax.
+Promise-returning function declarations and methods are `async`; arrow forwarders and promise
+factories can return an existing promise directly without an extra async wrapper.
 Untyped JavaScript is excluded from the unsafe-boundary and interpolation checks because it lacks
 reliable type information; the standalone VS Code Lit example is also excluded from the assignment,
 call, and member-access checks.
