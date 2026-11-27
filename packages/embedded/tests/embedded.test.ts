@@ -227,7 +227,7 @@ test("CR-only host lines retain embedded comment offsets and region positions", 
     "</style>",
   ].join("\r");
   const projection = projectCss(source, { host: "html" });
-  expect([...projection].filter((char) => char === "\r")).toHaveLength(10);
+  expect(projection.split("\r").length - 1).toBe(10);
   const [region] = extractCssBlocks(source, { host: "html" });
   expect(region.start).toEqual({ line: 2, column: 7, offset: source.indexOf("<style>") + 7 });
 
@@ -252,7 +252,7 @@ test("CR-only line breaks survive masked JavaScript interpolations", () => {
   const source = "// styles\rconst styles = css`\r.card { color: ${\r  value\r}; }\r`;";
   const projection = projectCss(source, { host: "js" });
   expect(projection).toHaveLength(source.length);
-  expect([...projection].filter((char) => char === "\r")).toHaveLength(5);
+  expect(projection.split("\r").length - 1).toBe(5);
   expect(extractCssBlocks(source, { host: "js" })[0].start).toEqual({
     line: 2,
     column: 19,
