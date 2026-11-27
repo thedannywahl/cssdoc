@@ -35,7 +35,6 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-unsafe-member-access": "error",
       "typescript/no-unsafe-return": "error",
       // Re-enable newly activated TypeScript rules individually after review.
-      "typescript/strict-boolean-expressions": "off",
       "typescript/no-non-null-assertion": "off",
       "typescript/no-unnecessary-type-assertion": "off",
       "typescript/explicit-member-accessibility": "off",
@@ -73,6 +72,8 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-inferrable-types": "off",
       // Parsers and framework callbacks deliberately accept and mutate shared objects.
       "typescript/prefer-readonly-parameter-types": "off",
+      // Truthiness checks for optional values are an established workspace convention.
+      "typescript/strict-boolean-expressions": "off",
       // no-require-imports covers this deprecated, narrower rule.
       "typescript/no-var-requires": "off",
       // HTML sanitization removes a property selected from the node's tag.
