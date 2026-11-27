@@ -417,6 +417,43 @@ test("type-aware lint detects unsafe boundaries", () => {
   }
 });
 
+test("switch lint requires cases or an intentional fallback", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/type-aware-check-"));
+  try {
+    writeFileSync(
+      join(directory, "tsconfig.json"),
+      JSON.stringify({ extends: join(root, "tsconfig.base.json"), include: ["*.ts"] }),
+    );
+    const file = join(directory, "switches.ts");
+    writeFileSync(
+      file,
+      [
+        'type State = "open" | "closed";',
+        'function incomplete(state: State) { switch (state) { case "open": return 1; } }',
+        'function fallback(state: State) { switch (state) { case "open": return 1; default: return 0; } }',
+        'function complete(state: State) { switch (state) { case "open": return 1; case "closed": return 0; } }',
+        'console.error(incomplete("open"), fallback("open"), complete("open"));',
+      ].join("\n"),
+    );
+    const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
+    const output: {
+      diagnostics: { code: string; severity: string; labels: { span: { line: number } }[] }[];
+    } = JSON.parse(result.stdout);
+    expect(
+      output.diagnostics
+        .filter(({ code }) => code === "typescript(switch-exhaustiveness-check)")
+        .map(({ severity, labels }) => [severity, labels[0].span.line]),
+    ).toEqual([["error", 2]]);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("regexp lint detects dangerous native patterns in root and package runs", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".regexp-check-"));

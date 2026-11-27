@@ -24,6 +24,10 @@ export const baseConfig: UserConfig = defineConfig({
     rules: {
       "typescript/no-floating-promises": "error",
       "typescript/no-misused-promises": "error",
+      "typescript/switch-exhaustiveness-check": [
+        "error",
+        { considerDefaultExhaustiveForUnions: true },
+      ],
       "typescript/no-unsafe-assignment": "off",
       "typescript/no-unsafe-argument": "off",
       "typescript/no-unsafe-call": "off",
@@ -49,7 +53,6 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/consistent-type-imports": "off",
       "typescript/ban-types": "off",
       "typescript/consistent-return": "off",
-      "typescript/switch-exhaustiveness-check": "off",
       "typescript/restrict-template-expressions": "off",
       "typescript/no-deprecated": "off",
       "typescript/no-empty-object-type": "off",
