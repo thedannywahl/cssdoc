@@ -151,7 +151,7 @@ test("the shipped JSON Schema validates the model output (schema stays in step w
   const ajv = new Ajv({ allErrors: true });
   const validate = ajv.compile(cssDocSchema);
   const entries = parseCssDocs(CSS);
-  const ok = validate(JSON.parse(JSON.stringify(entries)));
+  const ok = validate(parseModel(renderJson(entries)));
   if (!ok) console.error(validate.errors);
   expect(ok).toBe(true);
 });
@@ -211,7 +211,7 @@ test("@members round-trips through JSON and validates against the schema", () =>
 
   const ajv = new Ajv({ allErrors: true });
   const validate = ajv.compile(cssDocSchema);
-  const ok = validate(JSON.parse(JSON.stringify(entries)));
+  const ok = validate(parseModel(renderJson(entries)));
   if (!ok) console.error(validate.errors);
   expect(ok).toBe(true);
 });
@@ -348,7 +348,7 @@ test("structureVariants (from @variant blocks) round-trips through JSON and vali
 
   const ajv = new Ajv({ allErrors: true });
   const validate = ajv.compile(cssDocSchema);
-  const ok = validate(JSON.parse(JSON.stringify(entries)));
+  const ok = validate(parseModel(renderJson(entries)));
   if (!ok) console.error(validate.errors);
   expect(ok).toBe(true);
 });
@@ -383,7 +383,7 @@ test("bounded max-N cardinality and a nested @variant group round-trip through J
 
   const ajv = new Ajv({ allErrors: true });
   const validate = ajv.compile(cssDocSchema);
-  const ok = validate(JSON.parse(JSON.stringify(entries)));
+  const ok = validate(parseModel(renderJson(entries)));
   if (!ok) console.error(validate.errors);
   expect(ok).toBe(true);
 });

@@ -925,6 +925,38 @@ test("lint prefers at for end-relative access but leaves ordinary indices alone"
   }
 });
 
+test("lint prefers structuredClone for copying but permits JSON serialization", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".clone-check-"));
+  try {
+    const file = join(directory, "clone.mjs");
+    writeFileSync(
+      file,
+      [
+        "const original = { value: 1 };",
+        "console.error(JSON.parse(JSON.stringify(original)));",
+        "console.error(structuredClone(original));",
+        "const serialized = JSON.stringify(original);",
+        "console.error(JSON.parse(serialized));",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "unicorn(prefer-structured-clone)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["warning", 2]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));
