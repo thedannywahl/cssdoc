@@ -8,6 +8,7 @@ import {
   parseDocComment as parseFullDocComment,
   parseInlineLink,
   scanInlineTags,
+  scanInlineTagsOutsideCode,
   selectExamples,
   structureCustomMediaRefs,
   toJson,
@@ -121,6 +122,21 @@ test("inline links decode labels and JSON-quoted external URLs", () => {
     target: { kind: "url", value: "https://example.test/a?x=1" },
     label: "Website",
   });
+});
+
+test("inline scanning respects protected ranges and maps label offsets", () => {
+  const text = "😀 `{@link hidden}` {@link visible | Label}";
+  const start = text.indexOf("`");
+  const end = text.indexOf("`", start + 1) + 1;
+  const [tag] = scanInlineTagsOutsideCode(text, [{ start, end }]);
+  expect(text.slice(tag.start, tag.end)).toBe("{@link visible | Label}");
+  expect(text[tag.separator!]).toBe("|");
+  expect(parseInlineLink(text, tag)).toEqual({
+    ok: true,
+    target: { kind: "reference", value: "visible" },
+    label: "Label",
+  });
+  expect(() => scanInlineTagsOutsideCode(text, [{ start: end, end: start }])).toThrow(RangeError);
 });
 
 test.each([

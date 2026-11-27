@@ -25,7 +25,12 @@ export type { ParsedDoc, DocCssProperty, DocModifier, DocCondition } from "./gra
 export { blockSourceRange, collectDocCommentBlocks, docCommentFenceRanges } from "./blocks.ts";
 export type { DocCommentBlock, DocCommentSegment } from "./blocks.ts";
 export type { DocCommentProse } from "./prose-shared.ts";
-export { fencedProseRanges, parseInlineLink, scanInlineTags } from "./inline.ts";
+export {
+  fencedProseRanges,
+  parseInlineLink,
+  scanInlineTags,
+  scanInlineTagsOutsideCode,
+} from "./inline.ts";
 export type { InlineLinkResult, InlineTag } from "./inline.ts";
 export { literalMarkdownText } from "./prose-text.ts";
 export { safeProseUrl } from "./prose-url.ts";

@@ -2,7 +2,7 @@ import {
   CssDocConfiguration,
   blockSourceRange,
   fencedProseRanges,
-  scanInlineTags,
+  scanInlineTagsOutsideCode,
   type DocCommentBlock,
 } from "@cssdoc/core/lite";
 import { markdownCodeRanges, parseDocComment } from "@cssdoc/core/prose";
@@ -59,29 +59,20 @@ function addInlineHighlights(
   configuration: CssDocConfiguration,
   tag: string,
 ): void {
-  const sections: { start: number; end: number }[] = [];
-  let cursor = 0;
   for (const range of code) {
-    if (cursor < range.start) sections.push({ start: cursor, end: range.start });
     for (const source of map(range.start, range.end)) result.push({ ...source, role: "code", tag });
-    cursor = range.end;
   }
-  if (cursor < text.length) sections.push({ start: cursor, end: text.length });
-  for (const section of sections) {
-    for (const inline of scanInlineTags(text.slice(section.start, section.end), configuration)) {
-      const append = (start: number, end: number, role: DocHighlight["role"]): void => {
-        for (const source of map(section.start + start, section.start + end))
-          result.push({ ...source, role, tag: inline.tag });
-      };
-      append(inline.start, inline.start + 1, "inlinePunctuation");
-      append(inline.start + 1, inline.nameEnd, "inlineTag");
-      let contentStart = inline.nameEnd;
-      const contentEnd = inline.closed ? inline.end - 1 : inline.end;
-      while (contentStart < contentEnd && text[section.start + contentStart].trim() === "")
-        contentStart++;
-      if (contentStart < contentEnd) append(contentStart, contentEnd, "inlineContent");
-      if (inline.closed) append(inline.end - 1, inline.end, "inlinePunctuation");
-    }
+  for (const inline of scanInlineTagsOutsideCode(text, code, configuration)) {
+    const append = (start: number, end: number, role: DocHighlight["role"]): void => {
+      for (const source of map(start, end)) result.push({ ...source, role, tag: inline.tag });
+    };
+    append(inline.start, inline.start + 1, "inlinePunctuation");
+    append(inline.start + 1, inline.nameEnd, "inlineTag");
+    let contentStart = inline.nameEnd;
+    const contentEnd = inline.closed ? inline.end - 1 : inline.end;
+    while (contentStart < contentEnd && text[contentStart].trim() === "") contentStart++;
+    if (contentStart < contentEnd) append(contentStart, contentEnd, "inlineContent");
+    if (inline.closed) append(inline.end - 1, inline.end, "inlinePunctuation");
   }
 }
 

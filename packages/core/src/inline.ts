@@ -135,6 +135,49 @@ export function scanInlineTags(
 }
 
 /**
+ * Scan inline tags between protected ranges such as Markdown code spans.
+ *
+ * @param text - Text to scan.
+ * @param protectedRanges - Ordered, non-overlapping UTF-16 ranges to exclude.
+ * @param configuration - Active tag vocabulary.
+ * @returns Source-relative inline tags in source order.
+ * @throws If a protected range is invalid or out of order.
+ */
+export function scanInlineTagsOutsideCode(
+  text: string,
+  protectedRanges: readonly { start: number; end: number }[],
+  configuration: CssDocConfiguration = new CssDocConfiguration(),
+): InlineTag[] {
+  const result: InlineTag[] = [];
+  let cursor = 0;
+  const append = (start: number, end: number): void => {
+    for (const tag of scanInlineTags(text.slice(start, end), configuration)) {
+      result.push({
+        ...tag,
+        start: tag.start + start,
+        end: tag.end + start,
+        nameEnd: tag.nameEnd + start,
+        ...(tag.separator === undefined ? {} : { separator: tag.separator + start }),
+      });
+    }
+  };
+  for (const range of protectedRanges) {
+    if (
+      !Number.isInteger(range.start) ||
+      !Number.isInteger(range.end) ||
+      range.start < cursor ||
+      range.end < range.start ||
+      range.end > text.length
+    )
+      throw new RangeError("Invalid protected code range");
+    append(cursor, range.start);
+    cursor = range.end;
+  }
+  append(cursor, text.length);
+  return result;
+}
+
+/**
  * Interpret a scanned link's target and plain-text label without resolving references.
  *
  * @param text - The source text supplied to {@link scanInlineTags}.
