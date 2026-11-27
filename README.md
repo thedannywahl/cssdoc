@@ -84,9 +84,9 @@ default exports. It checks parameter reassignment and use before initialization,
 statements for intentionally unawaited work, and allows console output in tests and build scripts.
 Errors and warnings can be logged elsewhere.
 
-Nursery linting stays off as a category. A selected rule rejects unreachable loops, while others
-warn about dead stores and invalid named imports. Node ESM scripts also warn about undefined names
-without accepting CommonJS-only globals. TypeScript checks undefined names separately.
+Nursery linting stays off as a category. Selected rules reject unreachable loops and dead stores
+and warn about invalid named imports. Node ESM scripts also warn about undefined names without
+accepting CommonJS-only globals. TypeScript checks undefined names separately.
 
 Type-aware linting rejects unsafe assignments, arguments, calls, member access, and returns in
 TypeScript. Untyped JavaScript is excluded from those checks because it lacks reliable type

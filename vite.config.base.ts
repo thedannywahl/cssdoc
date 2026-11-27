@@ -199,7 +199,7 @@ export const baseConfig: UserConfig = defineConfig({
       "regexp/simplify-set-operations": "warn",
       // Select nursery checks individually; the category changes as rules mature.
       "eslint/no-unreachable-loop": "error",
-      "eslint/no-useless-assignment": "warn",
+      "eslint/no-useless-assignment": "error",
       "import/named": "warn",
       // Vitest supplies a default timeout; individual tests can override it when needed.
       "vitest/require-test-timeout": "off",
