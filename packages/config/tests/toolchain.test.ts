@@ -1,4 +1,4 @@
-import { execFileSync, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
@@ -58,10 +58,12 @@ test("JSDoc lint accepts cssdoc tags but still reports unknown tags", () => {
 
     for (const workspace of ["../../../", "../../../servers/vscode/"]) {
       const cwd = fileURLToPath(new URL(workspace, import.meta.url));
-      const output = execFileSync("vp", ["lint", "--format", "json", file], {
+      const lint = spawnSync("vp", ["lint", "--format", "json", file], {
         cwd,
         encoding: "utf8",
       });
+      expect([0, 1]).toContain(lint.status);
+      const output = lint.stdout;
       const result: { diagnostics: { code: string; help: string }[] } = JSON.parse(output);
       expect(
         result.diagnostics

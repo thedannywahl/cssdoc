@@ -113,6 +113,25 @@ test("auto ignores recognized inline metadata but detects real Markdown", () => 
   expect(parsed.prose.map((body) => body.mode)).toEqual(["plain", "plain", "markdown", "markdown"]);
 });
 
+test("auto detects resolved reference and image-reference Markdown", () => {
+  const config = new CssDocConfiguration();
+  config.setProseSettings({ mode: "auto" });
+  const resolvedLink = parseFullDocComment(
+    "@remarks - [Guide][ref]\n\n[ref]: https://example.test/guide",
+    config,
+  );
+  const missingLink = parseFullDocComment("@remarks - [Guide][missing]", config);
+  const resolvedImage = parseFullDocComment(
+    "@remarks - ![Guide][image]\n\n[image]: https://example.test/image.png",
+    config,
+  );
+  const missingImage = parseFullDocComment("@remarks - ![Guide][missing]", config);
+  expect(resolvedLink.prose[0].mode).toBe("markdown");
+  expect(missingLink.prose[0].mode).toBe("plain");
+  expect(resolvedImage.prose[0].mode).toBe("markdown");
+  expect(missingImage.prose[0].mode).toBe("plain");
+});
+
 test("inline scanner preserves UTF-16 ranges, escapes, nested targets, and incomplete tags", () => {
   const text =
     '😀 \\{@link escaped} \\\\{@link source("a|b.css")::component:x | one\\} two} {@link unfinished';
@@ -846,6 +865,43 @@ test("headings and lazy blockquote continuations classify indented tag lines cor
 test("invalid backtick info strings do not open fenced code", () => {
   const raw = "/**\n * @example -\n * ```bad`info\n * @component real\n */";
   expect(recordNameOf(raw)).toBe("real");
+});
+
+test("escaped fenced examples keep later tags inside their block and lite/full agree", () => {
+  const raw = [
+    "/**",
+    " * @component card",
+    " * @example docs -",
+    " * \\`\\`\\`html",
+    " * @remarks - escaped fence content",
+    " * \\`\\`\\`",
+    " * @component phantom",
+    " */",
+  ].join("\n");
+  const configuration = new CssDocConfiguration();
+  const full = parseFullDocComment(raw, configuration);
+  const lite = parseLiteDocComment(raw, configuration);
+  expect(full.blocks.map((block) => block.text)).toEqual(lite.blocks.map((block) => block.text));
+  expect(full.examples[0]).toContain("@remarks - escaped fence content");
+  expect(full.examples[0]).not.toContain("@component phantom");
+  expect(recordNameOf(raw)).toBe("card");
+});
+
+test("closed inline backticks do not swallow later tag-shaped lines", () => {
+  const raw = [
+    "/**",
+    " * @component card",
+    " * @remarks - Use `@component phantom` literally.",
+    " * @summary Still outside code.",
+    " */",
+  ].join("\n");
+  const blocks = collectDocCommentBlocks(raw);
+  expect(blocks.map((block) => block.text)).toEqual([
+    "@component card",
+    "@remarks - Use `@component phantom` literally.",
+    "@summary Still outside code.",
+  ]);
+  expect(recordNameOf(raw)).toBe("card");
 });
 
 test("a partially consumed tab can close a fence in a list", () => {

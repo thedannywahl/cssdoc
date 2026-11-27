@@ -212,6 +212,20 @@ function effectiveMode(
     "break",
   ]);
   const tree = fromMarkdown(maskInlineTags(text, configuration));
+  const references = new Set<string>();
+  const collectReferences = (node: unknown): void => {
+    if (typeof node !== "object" || node === null) return;
+    if (
+      "type" in node &&
+      node.type === "definition" &&
+      "identifier" in node &&
+      typeof node.identifier === "string"
+    )
+      references.add(node.identifier);
+    if ("children" in node && Array.isArray(node.children))
+      for (const child of node.children) collectReferences(child);
+  };
+  collectReferences(tree);
   let markdown = false;
   let paragraphs = 0;
   const visit = (node: unknown): void => {
@@ -223,6 +237,13 @@ function effectiveMode(
     ) {
       throw new Error("Invalid Markdown AST node");
     }
+    if (
+      (node.type === "linkReference" || node.type === "imageReference") &&
+      "identifier" in node &&
+      typeof node.identifier === "string" &&
+      references.has(node.identifier)
+    )
+      markdown = true;
     if (signals.has(node.type)) markdown = true;
     if (node.type === "paragraph") paragraphs++;
     if ("children" in node) {

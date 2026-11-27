@@ -12,7 +12,11 @@ import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import { CssDocConfiguration } from "./configuration.ts";
 import { frameCommentLines } from "./framing.ts";
-import { scanCodeBoundaryLine, type CodeBoundaryState } from "./code-boundaries.ts";
+import {
+  normalizedCodeBoundaryText,
+  scanCodeBoundaryLine,
+  type CodeBoundaryState,
+} from "./code-boundaries.ts";
 import {
   docProseStart,
   hasStructureDocDivider,
@@ -65,7 +69,8 @@ export function docCommentFenceRanges(
       const line = block.text.slice(start, end);
       const proseStart = first ? docProseStart(line) : 0;
       const before = !!state.fence;
-      if (proseStart !== undefined) scanCodeBoundaryLine(line.slice(proseStart), state);
+      if (proseStart !== undefined)
+        scanCodeBoundaryLine(normalizedCodeBoundaryText(line.slice(proseStart)), state);
       if ((before || state.fence) && end > start) {
         ranges.push(blockSourceRange(block, start + (first ? (proseStart ?? 0) : 0), end));
       }
@@ -161,7 +166,10 @@ export function collectDocCommentBlocks(
     const framed = lines[lineIndex];
     const line = framed.text.slice(leadingTrim, Math.min(framed.text.length, end - lineStart));
     const sourceStart = lines[lineIndex].start + leadingTrim;
-    const inCode = blocks.length > 0 && !inStructureBlock && scanCodeBoundaryLine(line, codeState);
+    const inCode =
+      blocks.length > 0 &&
+      !inStructureBlock &&
+      scanCodeBoundaryLine(normalizedCodeBoundaryText(line), codeState);
     const tagMatch = line.match(TAG_LINE);
     const isKnownTag =
       tagMatch !== null && configuration.tryGetTagDefinition(tagMatch[1]) !== undefined;
@@ -206,7 +214,8 @@ export function collectDocCommentBlocks(
         scanStructureLine(line.slice(tagMatch[0].length), structureState);
       } else {
         const proseStart = docProseStart(line);
-        if (proseStart !== undefined) scanCodeBoundaryLine(line.slice(proseStart), codeState);
+        if (proseStart !== undefined)
+          scanCodeBoundaryLine(normalizedCodeBoundaryText(line.slice(proseStart)), codeState);
       }
     } else if (blocks.length) {
       const block = blocks[blocks.length - 1];

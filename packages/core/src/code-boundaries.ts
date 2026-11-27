@@ -14,6 +14,20 @@ export interface CodeBoundaryState {
   paragraph: boolean;
 }
 
+/** Normalize escaped backticks only for Markdown boundary analysis. */
+export function normalizedCodeBoundaryText(text: string): string {
+  let result = "";
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === "\\" && text[i + 1] === BACKTICK_CHAR) {
+      result += BACKTICK_CHAR;
+      i++;
+    } else {
+      result += text[i];
+    }
+  }
+  return result;
+}
+
 type Cursor = { index: number; column: number; virtual: number };
 
 function isBlank(text: string): boolean {

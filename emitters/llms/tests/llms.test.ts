@@ -1,5 +1,6 @@
 import { parseCssDocs } from "@cssdoc/core";
 import { expect, test } from "vite-plus/test";
+import { createIndex } from "@cssdoc/index";
 import { renderLlms } from "../src/index.ts";
 
 const CSS = `
@@ -56,6 +57,18 @@ test("summarizes each facet on one line and marks the utility kind", () => {
   expect(out).toContain("- States: `:state(loading)`");
   expect(out).toContain("- Custom properties: `--button-radius` <length>");
   expect(out).toContain("## spacing (utility) — `.m-sm`");
+});
+
+test("projects private links in llms output", () => {
+  const css = `/** @component visible
+ * @summary See {@link component:card}.
+ */ .visible {}
+/** @component card {@private} */ .card {}`;
+  const index = createIndex(css);
+  const lookup = { workspace: { complete: true, sources: [{ index }] } };
+  const digest = renderLlms(index.entries, { lookupFor: () => lookup });
+  expect(digest).toContain("See reference.");
+  expect(digest).not.toContain("component:card");
 });
 
 test("omits internal records by default and includes them on request", () => {

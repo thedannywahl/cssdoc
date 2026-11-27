@@ -190,10 +190,11 @@ export function projectPublicModel(
         see: entry.see.map((text, i) => project(text, `see[${i}]`)!),
         compat: entry.compat.map((text, i) => project(text, `compat[${i}]`)!),
         examples: entry.examples.map((text, i) => {
-          const body = entry.prose?.find((body) => body.exampleIndex === i);
+          const originalIndex = exampleIndices[i];
+          const body = original.prose?.find((body) => body.exampleIndex === originalIndex);
           return body
-            ? project(text, `examples[${i}]`, body.mode, `examples[${exampleIndices[i]}]`)!
-            : text;
+            ? project(text, `examples[${i}]`, body.mode, `examples[${originalIndex}]`)!
+            : project(text, `examples[${i}]`, "markdown", `examples[${originalIndex}]`)!;
         }),
         ...(entry.prose
           ? {

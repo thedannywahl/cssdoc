@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { CssDocConfiguration, parseCssDocs } from "@cssdoc/core";
 import { expect, test } from "vite-plus/test";
+import { createIndex } from "@cssdoc/index";
 import { createMarkdownRenderer } from "vitepress";
 import { compileTemplate } from "vue/compiler-sfc";
 import {
@@ -31,6 +32,18 @@ const CSS = `
  */
 .m-sm { margin: var(--spacing-sm); }
 `;
+
+test("private example links project to plain legacy-example text", () => {
+  const css = `/** @component visible
+ * @example See {@link component:card}.
+ */ .visible {}
+/** @component card {@private} */ .card {}`;
+  const index = createIndex(css);
+  const lookup = { workspace: { complete: true, sources: [{ index }] } };
+  const markdown = renderEntry(index.entries[0], { lookupFor: () => lookup });
+  expect(markdown).toContain("See reference.");
+  expect(markdown).not.toContain("component:card");
+});
 
 test("private examples never appear in Markdown output", () => {
   const [entry] = parseCssDocs(`/** @component button

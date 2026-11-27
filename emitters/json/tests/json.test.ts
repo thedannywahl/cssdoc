@@ -72,6 +72,20 @@ test("public JSON projects private links before aggregate, record, and index out
   expect(() => renderJson(index.entries)).toThrow(/Cannot establish reference visibility/);
 });
 
+test("public JSON projects metadata-free legacy examples", () => {
+  const css = `/** @component visible
+ * @example See {@link component:card}.
+ * @example docs - See {@link component:card}.
+ */ .visible {}
+/** @component card {@private} */ .card {}`;
+  const index = createIndex(css);
+  const lookup = { workspace: { complete: true, sources: [{ index }] } };
+  const projected = JSON.parse(renderJson(index.entries, { lookupFor: () => lookup }));
+  const visible = projected.find((entry: { name: string }) => entry.name === "visible");
+  expect(visible.examples).toEqual(["See reference.", "See reference."]);
+  expect(JSON.stringify(visible)).not.toContain("component:card");
+});
+
 test("renderJson produces valid JSON of the model", () => {
   const entries = parseCssDocs(CSS);
   const parsed = JSON.parse(renderJson(entries));

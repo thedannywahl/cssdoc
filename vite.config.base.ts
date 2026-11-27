@@ -8,9 +8,18 @@ export const baseConfig: UserConfig = defineConfig({
   // Root and package runs resolve Vite+ through different workspace dependencies.
   test: { fsModuleCachePath: resolve(process.cwd(), "node_modules/.vitest-cache") },
   lint: {
+    categories: {
+      correctness: "error",
+      pedantic: "off",
+      perf: "off",
+      style: "off",
+      restriction: "off",
+      suspicious: "off",
+      nursery: "off",
+    },
     options: { typeAware: true, typeCheck: true },
     plugins: ["import", "node", "promise", "vitest", "jsdoc"],
-    rules: { "jsdoc/check-tag-names": ["warn", { definedTags: [...CSSDOC_TAG_NAMES] }] },
+    rules: { "jsdoc/check-tag-names": ["error", { definedTags: [...CSSDOC_TAG_NAMES] }] },
   },
   fmt: {},
 });

@@ -2,6 +2,7 @@ import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { CssDocConfiguration, parseCssDocs } from "@cssdoc/core";
+import { createIndex } from "@cssdoc/index";
 import { expect, test } from "vite-plus/test";
 import { buildHtml, renderIndex, renderPage } from "../src/index.ts";
 import { renderProse } from "../src/prose.ts";
@@ -18,6 +19,18 @@ const CSS = `
 .button { color: red; }
 .button.-color-secondary { color: blue; }
 `;
+
+test("private example links project to plain legacy-example text", () => {
+  const css = `/** @component visible
+ * @example - See {@link component:card}.
+ */ .visible {}
+/** @component card {@private} */ .card {}`;
+  const index = createIndex(css);
+  const lookup = { workspace: { complete: true, sources: [{ index }] } };
+  const html = renderPage(index.entries[0], { lookupFor: () => lookup });
+  expect(html).toContain("See reference.");
+  expect(html).not.toContain("component:card");
+});
 
 test("private examples never appear in HTML output", () => {
   const [entry] = parseCssDocs(`/** @component button
