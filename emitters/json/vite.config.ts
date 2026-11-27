@@ -6,15 +6,6 @@ import { libraryConfig } from "../../vite.config.base.ts";
 const config: UserConfig = mergeConfig(
   libraryConfig,
   defineConfig({
-    lint: {
-      overrides: [
-        {
-          // Keep the published schema's permissive nested-property types.
-          files: ["src/schema.ts"],
-          rules: { "typescript/no-explicit-any": "off" },
-        },
-      ],
-    },
     run: {
       tasks: {
         build: "vp pack",

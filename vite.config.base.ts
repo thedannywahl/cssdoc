@@ -373,7 +373,7 @@ export const baseConfig: UserConfig = defineConfig({
       },
       {
         // Preserve the published schema's permissive nested-property types.
-        files: ["**/emitters/json/src/schema.ts"],
+        files: ["**/packages/core/src/schema.ts"],
         rules: { "typescript/no-explicit-any": "off" },
       },
       {

@@ -119,6 +119,9 @@ accepting CommonJS-only globals. TypeScript checks undefined names separately.
 
 Type-aware linting rejects unsafe assignments, arguments, calls, member access, and returns in
 TypeScript. It also checks for redundant assertions, deprecated APIs, and potentially misleading template interpolations.
+Config and provider JSON are narrowed by runtime schema validation, not type assertions. The model
+schema lives in `@cssdoc/core` and is re-exported by `@cssdoc/json`; malformed provider snapshots
+produce resolution messages and don't contribute entries or cross-links.
 Type-check failures throw `TypeError`; range failures use `RangeError`.
 End-relative array access uses `at`, and index searches compare against their `-1` sentinel.
 Collection conditions compare `length` or `size` explicitly against zero or the required threshold.

@@ -446,9 +446,9 @@ export class CssDocConfigFile {
     // Parse as JSON-with-comments (a superset of JSON), so both cssdoc.json and cssdoc.jsonc accept
     // comments and trailing commas. Syntax errors are collected, not thrown.
     const parseErrors: ParseError[] = [];
-    const raw = parseJsonc(readFileSync(filePath, "utf8"), parseErrors, {
+    const raw: unknown = parseJsonc(readFileSync(filePath, "utf8"), parseErrors, {
       allowTrailingComma: true,
-    }) as RawConfig | undefined;
+    });
     if (parseErrors.length > 0 || raw === undefined) {
       for (const err of parseErrors) {
         messages.push(`Invalid JSON at offset ${err.offset}: ${printParseErrorCode(err.error)}`);

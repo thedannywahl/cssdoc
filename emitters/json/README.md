@@ -19,8 +19,8 @@ writeJson({
 });
 ```
 
-`renderJson(entries)` returns the JSON string; `cssDocSchema` is the draft-07 schema object (kept in
-step with `@cssdoc/core`'s model — a test validates the model against it).
+`renderJson(entries)` returns the JSON string. `cssDocSchema` and `cssDocEntrySchema` re-export the
+draft-07 schemas owned by `@cssdoc/core`, also available from `@cssdoc/core/lite`.
 
 By default, JSON output omits private examples, prose, legacy private remarks, and to-dos.
 For inline links to structured references, provide a complete lookup for each prose field's

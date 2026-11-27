@@ -60,6 +60,14 @@ an inherited setting. Full core records the effective mode on extracted prose; l
 `fileNotFound` instance (not an error); a malformed one collects messages on `getErrorSummary()`
 instead of throwing.
 
+## Provider models
+
+`resolveProviders(configFile)` loads the providers declared in `cssdoc.json`. CSS providers use their
+own configuration; JSON providers accept a `CssDocEntry[]` or a `{ "entries": [...] }` manifest.
+The loader validates every entry against the model schema owned by `@cssdoc/core` before applying
+prefix rewrites or registering cross-links. Invalid models contribute no entries or links and
+produce a message with the provider path and schema error location. Other providers still load.
+
 ## License
 
 MIT

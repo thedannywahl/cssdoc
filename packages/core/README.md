@@ -29,6 +29,11 @@ writeFileSync("css-docs.json", toJson(model));
 `{ includePrivate: true }` to retain them. It doesn't resolve inline references or redact their
 targets; check authored public prose before publishing it.
 
+`cssDocSchema` describes the whole model, and `cssDocEntrySchema` describes one record. Both are
+draft-07 JSON Schema objects, available from `@cssdoc/core` and the parse-free `@cssdoc/core/lite`
+entry. `@cssdoc/json` re-exports them, and `@cssdoc/config` uses the same schema to validate provider
+snapshots. Core doesn't depend on a schema validator.
+
 Mark a record as internal with `@component name {@private}` in its opening tag. Emitters that
 filter internal records omit it unless `includeInternal` is enabled.
 

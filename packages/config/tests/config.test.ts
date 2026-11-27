@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { parseCssDocs, selectExamples } from "@cssdoc/core";
+import { type CssDocEntry, parseCssDocs, selectExamples } from "@cssdoc/core";
 import { expect, test } from "vite-plus/test";
 
 import { findSchemaDrift } from "../../../scripts/sync-schema.ts";
@@ -322,6 +322,133 @@ test("resolveProviders loads a .css provider (its own convention) and a .json mo
   expect(href("chip")).toBe("https://x.dev/api/chip.md");
   expect(href("nope")).toBeUndefined();
 });
+
+test.each([false, true])(
+  "resolveProviders validates complete models before prefix rewriting (manifest=%s)",
+  (manifest) => {
+    const dir = mkdtempSync(join(tmpdir(), "cssdoc-provider-model-"));
+    try {
+      const entry: CssDocEntry = {
+        ...parseCssDocs(
+          "/** @component widget\n * @summary - A provider widget.\n */ .widget {}",
+        )[0],
+        global: true,
+        modifiers: [
+          {
+            name: "-busy",
+            prop: "busy",
+            selector: "[data-busy]",
+            interaction: true,
+            global: true,
+            affects: [{ component: "child", target: "icon", description: "Changes the icon." }],
+          },
+        ],
+        parts: [{ name: "icon", selector: '[data-slot="icon"]' }],
+        shadowParts: [
+          {
+            name: "label",
+            selector: "::part(label)",
+            modifiers: [{ name: "-bold", prop: "bold" }],
+          },
+        ],
+        states: [{ name: "selected", kind: "attribute", selector: "[aria-selected]" }],
+      };
+      writeFileSync(
+        join(dir, "model.json"),
+        JSON.stringify(manifest ? { entries: [entry] } : [entry]),
+      );
+      const configPath = join(dir, "cssdoc.json");
+      writeFileSync(
+        configPath,
+        JSON.stringify({
+          providers: [
+            {
+              path: "./model.json",
+              prefix: { from: "widget", to: "vendor-widget" },
+              baseHref: "/vendor/",
+            },
+          ],
+        }),
+      );
+      const result = resolveProviders(CssDocConfigFile.loadFile(configPath));
+      expect(result.messages).toEqual([]);
+      expect(result.entries).toEqual([{ ...entry, className: ".vendor-widget" }]);
+      expect(result.href("vendor-widget")).toBe("/vendor/widget.md");
+      expect(result.href("widget")).toBeUndefined();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  },
+);
+
+test.each([
+  { title: "null entry", corrupt: () => null, path: "/1" },
+  { title: "missing fields", corrupt: () => ({}), path: "/1" },
+  {
+    title: "invalid nested modifier",
+    corrupt: (entry: CssDocEntry) => ({ ...entry, modifiers: [{ name: "-busy", prop: 1 }] }),
+    path: "/1/modifiers/0/prop",
+  },
+  {
+    title: "invalid recursive structure",
+    corrupt: (entry: CssDocEntry) => ({
+      ...entry,
+      structure: [{ selector: ".unsafe", children: [{ selector: false, children: [] }] }],
+    }),
+    path: "/1/structure/0/children/0/selector",
+  },
+])("resolveProviders rejects a $title without partially loading the model", ({ corrupt, path }) => {
+  const dir = mkdtempSync(join(tmpdir(), "cssdoc-provider-invalid-"));
+  try {
+    const unsafe = parseCssDocs("/** @component unsafe */ .unsafe {}");
+    const healthy = parseCssDocs("/** @component healthy */ .healthy {}");
+    writeFileSync(
+      join(dir, "invalid.json"),
+      JSON.stringify({ entries: [...unsafe, corrupt(unsafe[0])] }),
+    );
+    writeFileSync(join(dir, "healthy.json"), JSON.stringify(healthy));
+    const configPath = join(dir, "cssdoc.json");
+    writeFileSync(
+      configPath,
+      JSON.stringify({
+        providers: [
+          { path: "./invalid.json", baseHref: "/invalid/" },
+          { path: "./healthy.json", baseHref: "/healthy/" },
+        ],
+      }),
+    );
+    const result = resolveProviders(CssDocConfigFile.loadFile(configPath));
+    expect(result.entries).toEqual(healthy);
+    expect(result.messages).toHaveLength(1);
+    expect(result.messages[0]).toContain('Cannot load provider "');
+    expect(result.messages[0]).toContain("invalid.json");
+    expect(result.messages[0]).toContain("Invalid provider model:");
+    expect(result.messages[0]).toContain(path);
+    expect(result.href("unsafe")).toBeUndefined();
+    expect(result.href("healthy")).toBe("/healthy/healthy.md");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test.each([null, { entries: null }])(
+  "resolveProviders reports invalid top-level model data %j",
+  (data) => {
+    const dir = mkdtempSync(join(tmpdir(), "cssdoc-provider-shape-"));
+    try {
+      writeFileSync(join(dir, "model.json"), JSON.stringify(data));
+      const configPath = join(dir, "cssdoc.json");
+      writeFileSync(configPath, JSON.stringify({ providers: [{ path: "./model.json" }] }));
+      const result = resolveProviders(CssDocConfigFile.loadFile(configPath));
+      expect(result.entries).toEqual([]);
+      expect(result.messages).toHaveLength(1);
+      expect(result.messages[0]).toContain("Cannot load provider");
+      expect(result.messages[0]).toContain("model.json");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  },
+);
 
 test("resolveProviders reports an unresolvable provider without throwing", () => {
   const dir = mkdtempSync(join(tmpdir(), "cssdoc-prov-miss-"));

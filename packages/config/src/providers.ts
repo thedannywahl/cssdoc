@@ -15,8 +15,9 @@ import { globSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 
-import { type CssDocEntry, parseCssDocs } from "@cssdoc/core";
+import { type CssDocEntry, cssDocSchema, parseCssDocs } from "@cssdoc/core";
 import { DOT_CHAR, FORWARD_SLASH_SOURCE, escapeRegex } from "@cssdoc/regex";
+import { Ajv } from "ajv";
 import { regex as arkRegex } from "arkregex";
 
 import { CssDocConfigFile, type ProviderRef } from "./CssDocConfigFile.ts";
@@ -39,6 +40,7 @@ export interface ResolveProvidersOptions {
 const stripDot = (name: string): string => (name.startsWith(DOT_CHAR) ? name.slice(1) : name);
 const GLOB_SPECIAL = arkRegex.as(String.raw`[*?[\]{}()!]`);
 const HREF_TRAILING_SLASH = arkRegex.as(`${FORWARD_SLASH_SOURCE}?$`, "u");
+const validateModel = new Ajv({ allErrors: true }).compile<CssDocEntry[]>(cssDocSchema);
 
 /** Type-safe error check for TypeScript 6 compatibility (Error.isError is ES2026). */
 const isErrorInstance = (error: unknown): error is Error => error instanceof Error;
@@ -56,11 +58,20 @@ export interface ResolvedProviders {
 /** Read a provider's `model.json` — a `CssDocEntry[]` or a `{ entries }` manifest wrapper. */
 function loadModel(file: string): CssDocEntry[] {
   const data: unknown = JSON.parse(readFileSync(file, "utf8"));
-  if (Array.isArray(data)) return data as CssDocEntry[];
-  if (data && typeof data === "object" && Array.isArray((data as { entries?: unknown }).entries)) {
-    return (data as { entries: CssDocEntry[] }).entries;
+  let entries: unknown;
+  if (Array.isArray(data)) entries = data;
+  else if (data !== null && typeof data === "object" && "entries" in data) {
+    entries = data.entries;
+  } else {
+    throw new TypeError("expected a CssDocEntry[] or a { entries } manifest");
   }
-  throw new Error("expected a CssDocEntry[] or a { entries } manifest");
+  if (!validateModel(entries)) {
+    const errors = (validateModel.errors ?? []).map(
+      (error) => `${error.instancePath || "/"}: ${error.message ?? "invalid"}`,
+    );
+    throw new TypeError(`Invalid provider model: ${errors.join("; ")}`);
+  }
+  return entries;
 }
 
 /** Parse a provider source stylesheet with its own governing `cssdoc.json` convention. */
