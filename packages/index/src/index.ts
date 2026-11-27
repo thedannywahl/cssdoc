@@ -58,6 +58,8 @@ export {
   resolveSupportsMemberReference,
 } from "./reference.ts";
 export { projectPrivateLinksInLookup, referenceVisibility } from "./projection.ts";
+export { projectPublicModel } from "./public-model.ts";
+export type { PublicModelOptions, PublicProseContext } from "./public-model.ts";
 export type {
   ContainerMemberCandidate,
   ContainerMemberResolution,

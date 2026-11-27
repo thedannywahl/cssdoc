@@ -60,7 +60,10 @@ custom-property values also return unavailable.
 
 `projectPrivateLinksInLookup` projects links using the prose's original reference lookup.
 It preserves labels as literal fragments and reports unavailable targets; callers must handle that
-result before publishing. Public emitters don't yet apply this projection automatically.
+result before publishing. `projectPublicModel` applies the projection to model prose and fails when
+visibility can't be established. Its returned strings are plain model text, not Markdown-safe
+rendering: retain and escape literal fragments separately when rendering Markdown or HTML. JSON
+uses the model projection; the other public emitters don't yet apply it automatically.
 
 ## License
 

@@ -8,6 +8,7 @@ import {
   createIndex,
   indexFromEntries,
   memberKey,
+  projectPublicModel,
   projectPrivateLinksInLookup,
   referenceVisibility,
   resolveContainerMemberReference,
@@ -36,6 +37,103 @@ const CSS = `
 `;
 
 let index: CssDocIndex;
+
+test("public model projection removes private targets from mirrored prose without mutation", () => {
+  const configuration = new CssDocConfiguration();
+  configuration.setProseSettings({ mode: "markdown" });
+  const index = createIndex(
+    `/** @component public
+ * @summary See {@link secret | **private label**}.
+ * @remarks - Use {@link secret} and \`{@link secret}\`.
+ * @example docs - Example {@link secret | [link](https://example.test)}
+ * @example {@private} - Hidden.
+ */
+.public {}
+/** @component secret {@private} */
+.secret {}`,
+    { configuration },
+  );
+  const original = JSON.stringify(index.entries);
+  const lookup = { workspace: { complete: true, sources: [{ index }] } };
+  const projected = projectPublicModel(index.entries, { lookupFor: () => lookup });
+  expect(projected).toHaveLength(1);
+  expect(projected[0].summary).toBe("See **private label**.");
+  expect(projected[0].remarks).toBe("Use reference and `{@link secret}`.");
+  expect(projected[0].examples).toEqual(["Example [link](https://example.test)"]);
+  expect(projected[0].prose?.map((body) => body.text)).toEqual([
+    "Use reference and `{@link secret}`.",
+    "Example [link](https://example.test)",
+  ]);
+  expect(JSON.stringify(index.entries)).toBe(original);
+  expect(JSON.stringify(projected)).not.toContain("Hidden");
+  expect(JSON.stringify(projected)).not.toContain("{@link secret |");
+});
+
+test("public model projection uses the supplied context and rejects incomplete lookups", () => {
+  const source = createIndex(`/** @component public
+ * @remarks - {@link source("hidden.css")::component:secret | label}
+ */ .public {}`);
+  const secret = createIndex("/** @component secret {@private} */ .secret {}");
+  const complete = {
+    workspace: {
+      complete: true,
+      sources: [
+        { index: source, sourceKey: "public.css" },
+        { index: secret, sourceKey: "hidden.css" },
+      ],
+    },
+  };
+  const paths: string[] = [];
+  expect(
+    projectPublicModel(source.entries, {
+      lookupFor: ({ path }) => {
+        paths.push(path);
+        return complete;
+      },
+    })[0].remarks,
+  ).toBe("label");
+  expect(paths).toContain("remarks");
+  expect(() =>
+    projectPublicModel(source.entries, {
+      lookupFor: () => ({ workspace: { complete: false, sources: [{ index: source }] } }),
+    }),
+  ).toThrow(/Cannot establish reference visibility/);
+});
+
+test("public projection uses original example and prose paths after privacy filtering", () => {
+  const index = createIndex(`/** @component public
+ * @example {@private} - Hidden.
+ * @example - See {@link secret}.
+ */ .public {}
+/** @component secret {@private} */ .secret {}`);
+  const lookup = { workspace: { complete: true, sources: [{ index }] } };
+  const paths: string[] = [];
+  const [entry] = projectPublicModel(index.entries, {
+    lookupFor: ({ path }) => {
+      paths.push(path);
+      return lookup;
+    },
+  });
+  expect(entry.examples).toEqual(["See reference."]);
+  expect(paths).toContain("examples[1]");
+  expect(paths).toContain("prose[1].text");
+});
+
+test("public projection uses each prose field's original lookup", () => {
+  const receiver = createIndex(`/** @component receiver
+ * @remarks - See {@link secret}.
+ */ .receiver {}
+/** @component secret */ .secret {}`);
+  const origin = createIndex("/** @component secret {@private} */ .secret {}");
+  const receiverLookup = { workspace: { complete: true, sources: [{ index: receiver }] } };
+  const originLookup = { workspace: { complete: true, sources: [{ index: origin }] } };
+  const [entry] = projectPublicModel([receiver.entries[0]], {
+    lookupFor: ({ path }) =>
+      path === "remarks" || path === "prose[0].text" ? originLookup : receiverLookup,
+  });
+  expect(entry.remarks).toBe("See reference.");
+  expect(entry.prose?.[0].text).toBe("See reference.");
+});
 
 test("reference resolution retains duplicates and distinguishes unavailable scopes", () => {
   const first = createIndex("/** @component button */ .button {}", { file: "a.css" });

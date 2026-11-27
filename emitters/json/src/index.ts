@@ -7,14 +7,15 @@
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import {
-  type CssDocConfiguration,
-  type CssDocEntry,
-  parseCssDocs,
-  projectPublicEntry,
-} from "@cssdoc/core";
+import { type CssDocConfiguration, type CssDocEntry, parseCssDocs } from "@cssdoc/core";
 import { type CssDialect, resolveParser } from "@cssdoc/dialects";
 import { parseCssDocsFromSource } from "@cssdoc/embedded";
+import {
+  indexFromEntries,
+  projectPublicModel,
+  type PublicProseContext,
+  type ReferenceLookup,
+} from "@cssdoc/index";
 import { cssDocSchema } from "./schema.ts";
 
 export { cssDocEntrySchema, cssDocSchema } from "./schema.ts";
@@ -33,6 +34,37 @@ export interface ModelInput {
   dialect?: CssDialect;
 }
 
+/** Privacy options for JSON output. */
+export interface JsonProjectionOptions {
+  /** Include internal records. */
+  includeInternal?: boolean;
+  /** Include private authoring content without projecting links. */
+  includePrivate?: boolean;
+  /**
+   * Provide a complete lookup for each prose field's original source. Without one, links to
+   * structured references fail closed because a model snapshot doesn't establish workspace scope.
+   */
+  lookupFor?: (context: PublicProseContext) => ReferenceLookup;
+  /** Active inline-tag vocabulary. */
+  configuration?: CssDocConfiguration;
+}
+
+function projectEntries(
+  entries: readonly CssDocEntry[],
+  options: JsonProjectionOptions,
+): CssDocEntry[] {
+  if (options.includePrivate) {
+    return entries.filter((entry) => options.includeInternal || entry.visibility !== "internal");
+  }
+  const index = indexFromEntries([...entries]);
+  return projectPublicModel(entries, {
+    lookupFor:
+      options.lookupFor ?? (() => ({ workspace: { complete: false, sources: [{ index }] } })),
+    configuration: options.configuration,
+    includeInternal: options.includeInternal,
+  });
+}
+
 function resolveEntries(input: ModelInput): CssDocEntry[] {
   if (input.entries) return input.entries;
   const css = Array.isArray(input.css) ? input.css.join("\n") : (input.css ?? "");
@@ -48,18 +80,13 @@ function resolveEntries(input: ModelInput): CssDocEntry[] {
  * @param entries - Records to serialize.
  * @param options - Whether to include internal records or private content.
  * @returns A JSON array followed by a newline.
+ * @throws If a structured reference's visibility can't be established.
  */
 export function renderJson(
   entries: readonly CssDocEntry[],
-  options: { includeInternal?: boolean; includePrivate?: boolean } = {},
+  options: JsonProjectionOptions = {},
 ): string {
-  const visibleEntries = options.includeInternal
-    ? entries
-    : entries.filter((entry) => entry.visibility !== "internal");
-  const projected = options.includePrivate
-    ? visibleEntries
-    : visibleEntries.map(projectPublicEntry);
-  return `${JSON.stringify(projected, null, 2)}\n`;
+  return `${JSON.stringify(projectEntries(entries, options), null, 2)}\n`;
 }
 
 /** A lightweight index row (name, kind, class, summary) for `index.json`. */
@@ -75,17 +102,13 @@ export interface JsonIndexRow {
 }
 
 /** Options for {@link writeJson}. */
-export interface WriteJsonOptions extends ModelInput {
+export interface WriteJsonOptions extends ModelInput, JsonProjectionOptions {
   /** The output directory (created if missing). */
   outDir: string;
   /** Also write one file per record under `records/`, plus an `index.json` (default `false`). */
   perRecord?: boolean;
   /** Also write the model JSON Schema as `model.schema.json` (default `false`). */
   schema?: boolean;
-  /** Include records marked `@visibility internal`; defaults to false. */
-  includeInternal?: boolean;
-  /** Include private authoring content; defaults to false. */
-  includePrivate?: boolean;
 }
 
 /** What {@link writeJson} produced. */
@@ -108,14 +131,13 @@ export interface WriteJsonResult {
  *
  * @param options - Input, output directory, and optional output files.
  * @returns The selected records and paths written.
- * @throws If parsing plain CSS or a filesystem operation fails. Embedded-source parsing returns no
- * records on failure.
+ * @throws If a structured reference's visibility can't be established, parsing plain CSS fails,
+ * or a filesystem operation fails. Embedded-source parsing returns no records on failure.
  */
 export function writeJson(options: WriteJsonOptions): WriteJsonResult {
-  let entries = resolveEntries(options)
-    .filter((entry) => options.includeInternal || entry.visibility !== "internal")
-    .toSorted((a, b) => a.name.localeCompare(b.name));
-  if (!options.includePrivate) entries = entries.map(projectPublicEntry);
+  const entries = projectEntries(resolveEntries(options), options).toSorted((a, b) =>
+    a.name.localeCompare(b.name),
+  );
   mkdirSync(options.outDir, { recursive: true });
 
   const modelPath = join(options.outDir, "model.json");

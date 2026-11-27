@@ -21,9 +21,26 @@ writeJson({
 `renderJson(entries)` returns the JSON string; `cssDocSchema` is the draft-07 schema object (kept in
 step with `@cssdoc/core`'s model — a test validates the model against it).
 
-By default, JSON output omits private examples, prose, legacy private remarks, and to-dos. Set
-`includePrivate: true` to retain them. Inline references aren't resolved or redacted yet; check
-authored public prose before publishing it.
+By default, JSON output omits private examples, prose, legacy private remarks, and to-dos.
+For inline links to structured references, provide a complete lookup for each prose field's
+original source. A missing, incomplete, ambiguous, or unsupported lookup causes public projection
+to throw rather than publish an unverified target. For example, when a single CSS string is the
+complete workspace:
+
+```ts
+import { createIndex } from "@cssdoc/index";
+import { renderJson } from "@cssdoc/json";
+
+const index = createIndex(css);
+const lookup = { workspace: { complete: true, sources: [{ index }] } };
+const json = renderJson(index.entries, { lookupFor: () => lookup });
+```
+
+For multiple sources or providers, supply their portable source keys and complete scopes. If prose
+comes from another source, return the lookup for that original source. Links to private targets
+become the authored label or `reference`; the label is serialized as plain text. Set
+`includePrivate: true` to retain original authoring content without link projection. Annotation
+and reference privacy aren't yet represented in the model.
 
 ## License
 

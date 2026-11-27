@@ -2,6 +2,7 @@ import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseCssDocs, toJson } from "@cssdoc/core";
+import { createIndex } from "@cssdoc/index";
 import { Ajv } from "ajv";
 import { expect, test } from "vite-plus/test";
 import { cssDocSchema, renderJson, writeJson } from "../src/index.ts";
@@ -27,6 +28,49 @@ const CSS = `
 @property --button-radius { syntax: "<length>"; inherits: false; initial-value: 4px; }
 @keyframes spin { to { rotate: 360deg; } }
 `;
+
+test("public JSON projects private links before aggregate, record, and index output", () => {
+  const css = `/** @component visible
+ * @summary Read {@link secret | **Authored**} and {@link secret}.
+ * @remarks - Read {@link other} as well.
+ * @example docs - {@link secret | [literal](https://example.test)}
+ */ .visible {}
+/** @component other */ .other {}
+/** @component secret {@private} */ .secret {}`;
+  const index = createIndex(css);
+  const lookup = { workspace: { complete: true, sources: [{ index }] } };
+  const options = { lookupFor: () => lookup };
+  const original = JSON.stringify(index.entries);
+  const aggregate = JSON.parse(renderJson(index.entries, options));
+  expect(aggregate).toHaveLength(2);
+  const visible = aggregate.find((entry: { name: string }) => entry.name === "visible");
+  expect(visible.summary).toBe("Read **Authored** and reference.");
+  expect(visible.remarks).toBe("Read {@link other} as well.");
+  expect(visible.examples).toEqual(["[literal](https://example.test)"]);
+  expect(JSON.stringify(visible)).not.toContain("{@link secret");
+  expect(JSON.stringify(index.entries)).toBe(original);
+  expect(new Ajv().compile(cssDocSchema)(aggregate)).toBe(true);
+
+  for (const input of [{ entries: index.entries }, { css }]) {
+    const outDir = mkdtempSync(join(tmpdir(), "cssdoc-json-link-"));
+    const output = writeJson({ ...input, ...options, outDir, perRecord: true });
+    expect(JSON.parse(readFileSync(output.modelPath, "utf8"))).toEqual(
+      aggregate.toSorted((a: { name: string }, b: { name: string }) =>
+        a.name.localeCompare(b.name),
+      ),
+    );
+    const record = JSON.parse(readFileSync(join(outDir, "records", "visible.json"), "utf8"));
+    expect(record).toEqual(visible);
+    expect(output.entries.find((entry) => entry.name === "visible")).toMatchObject(visible);
+    const rows = JSON.parse(readFileSync(output.indexPath!, "utf8"));
+    expect(rows.find((row: { name: string }) => row.name === "visible").summary).toBe(
+      "Read **Authored** and reference.",
+    );
+    expect(readFileSync(output.indexPath!, "utf8")).not.toContain("{@link secret");
+  }
+  expect(renderJson(index.entries, { includePrivate: true })).toContain("{@link secret");
+  expect(() => renderJson(index.entries)).toThrow(/Cannot establish reference visibility/);
+});
 
 test("renderJson produces valid JSON of the model", () => {
   const entries = parseCssDocs(CSS);
@@ -108,6 +152,23 @@ test("effective prose associations survive public JSON projection and schema val
     "usage",
   ]);
   expect(JSON.stringify(model)).not.toContain("Private");
+});
+
+test("supplied private effective prose fields are removed from public JSON", () => {
+  const [entry] = parseCssDocs(`/** @component button
+ * @remarks - Secret remark.
+ * @usage - Secret usage.
+ */ .button {}`);
+  const supplied = {
+    ...entry,
+    prose: entry.prose?.map((body) => ({ ...body, private: true })),
+  };
+  const output = JSON.parse(renderJson([supplied]))[0];
+  expect(output.remarks).toBeUndefined();
+  expect(output.usage).toBeUndefined();
+  expect(JSON.stringify(output)).not.toContain("Secret");
+  expect(supplied.remarks).toBe("Secret remark.");
+  expect(new Ajv().compile(cssDocSchema)([output])).toBe(true);
 });
 
 test("the model schema rejects the removed record kind", () => {

@@ -102,7 +102,20 @@ export function projectPublicExamples(entry: CssDocEntry): CssDocEntry {
  */
 export function projectPublicEntry(entry: CssDocEntry): CssDocEntry {
   const projected = projectPublicExamples(entry);
-  if (projected.privateRemarks === undefined && projected.todos.length === 0) return projected;
+  const privateFields = new Set(
+    entry.prose?.filter((body) => body.private && body.field).map((body) => body.field),
+  );
+  if (
+    projected.privateRemarks === undefined &&
+    projected.todos.length === 0 &&
+    privateFields.size === 0
+  )
+    return projected;
   const { privateRemarks: _privateRemarks, ...rest } = projected;
-  return { ...rest, todos: [] };
+  return {
+    ...rest,
+    todos: [],
+    ...(privateFields.has("remarks") ? { remarks: undefined } : {}),
+    ...(privateFields.has("usage") ? { usage: undefined } : {}),
+  };
 }

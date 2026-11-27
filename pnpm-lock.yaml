@@ -641,6 +641,9 @@ importers:
       '@cssdoc/embedded':
         specifier: workspace:*
         version: link:../../packages/embedded
+      '@cssdoc/index':
+        specifier: workspace:*
+        version: link:../../packages/index
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
