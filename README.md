@@ -68,6 +68,9 @@ to the dependency's CommonJS implementation for the bundled server.
 Package commands remain in each package's `vite.config.ts` as Vite tasks. The remaining
 `package.json` scripts bridge the install-time `prepare` and publish-time `prepublishOnly` lifecycle
 hooks to those tasks.
+The extension's Lit example is type-checked, not exempted from safety rules. Browser examples use
+their own DOM-enabled TypeScript project; the extension's type-check task checks both that project
+and the Node project without adding browser globals to the latter.
 
 Import sorting groups Node built-ins, external packages (including `@cssdoc/*`), internal aliases and
 subpath imports, relative imports, styles, and unknown imports, in that order. Imports within each
@@ -100,23 +103,65 @@ can retain inline `type` specifiers.
 
 Disabled rules remain deliberate, not a waiver for existing diagnostics:
 
-| Rules                                                                                                           | Why they stay off                                                                                                                                            |
-| --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Vitest hook, suite, title, and assertion-count restrictions                                                     | Shared setup, top-level tests, descriptive titles, and data-driven assertions are valid test structures.                                                     |
-| Vitest conditional test-body restriction                                                                        | Fixture traversal needs branches; conditional tests and conditional expectations are checked separately.                                                     |
-| Vitest strict-equality and truthiness preferences                                                               | Matchers express different contracts. Use strict Boolean matchers for Boolean assertions, and choose structural or strict equality deliberately.             |
-| Vitest comparison-matcher preference                                                                            | Completion tests compare strings lexicographically; numeric matchers aren't equivalent.                                                                      |
-| Import export-form, export-position, namespace, and Node-module restrictions                                    | Public named APIs, framework default exports, grouped APIs, and Node entry points are intentional.                                                           |
-| ESLint duplicate-import and import-order rules                                                                  | `import/no-duplicates` and Oxfmt own these checks.                                                                                                           |
-| ESLint name, comment, key, variable, declaration, control-flow, and size restrictions; import dependency limits | Alphabetical ordering, fixed limits, and mandatory syntax forms don't establish correctness. Preserve catalog order and choose readable parser control flow. |
-| Promise callback-to-await preference                                                                            | A callback-shaped API doesn't necessarily offer a promise equivalent. Await is preferred where a promise or Thenable exists.                                 |
-| Unicorn awaited-result member and relative-URL style preferences                                                | Direct property access on an awaited result and explicit `./` URL prefixes are valid, useful syntax choices.                                                 |
-| JSDoc mandatory returns and TypeScript type tags                                                                | Document useful return behavior; TypeScript signatures already supply types. JavaScript's documented tags require types.                                     |
-| TypeScript interface/type uniformity                                                                            | Interfaces support declaration merging; object aliases can provide implicit index signatures. Choose the form that fits the contract.                        |
+| Rules                                                                                                                       | Why they stay off                                                                                                                                                                                                           |
+| --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Vitest hook, suite, title, and assertion-count restrictions                                                                 | Shared setup, top-level tests, descriptive titles, and data-driven assertions are valid test structures.                                                                                                                    |
+| Vitest conditional test-body restriction                                                                                    | Fixture traversal needs branches; conditional tests and conditional expectations are checked separately.                                                                                                                    |
+| Vitest strict-equality and truthiness preferences                                                                           | Matchers express different contracts. Use strict Boolean matchers for Boolean assertions, and choose structural or strict equality deliberately.                                                                            |
+| Vitest comparison-matcher preference                                                                                        | Completion tests compare strings lexicographically; numeric matchers aren't equivalent.                                                                                                                                     |
+| Import export-form, export-position, namespace, and Node-module restrictions                                                | Public named APIs, framework default exports, grouped APIs, and Node entry points are intentional.                                                                                                                          |
+| ESLint duplicate-import and import-order rules                                                                              | `import/no-duplicates` and Oxfmt own these checks.                                                                                                                                                                          |
+| ESLint name, comment, key, variable, declaration, control-flow, and size restrictions; import dependency limits             | Alphabetical ordering, fixed limits, and mandatory syntax forms don't establish correctness. Preserve catalog order and choose readable parser control flow.                                                                |
+| Promise callback-to-await preference                                                                                        | A callback-shaped API doesn't necessarily offer a promise equivalent. Await is preferred where a promise or Thenable exists.                                                                                                |
+| Unicorn awaited-result member and relative-URL style preferences                                                            | Direct property access on an awaited result and explicit `./` URL prefixes are valid, useful syntax choices.                                                                                                                |
+| JSDoc mandatory returns and TypeScript type tags                                                                            | Document useful return behavior; TypeScript signatures already supply types. JavaScript's documented tags require types.                                                                                                    |
+| TypeScript interface/type uniformity                                                                                        | Interfaces support declaration merging; object aliases can provide implicit index signatures. Choose the form that fits the contract.                                                                                       |
+| TypeScript `strict-void-return`                                                                                             | TypeScript permits ignored callback results; css-tree consumes `walk.skip` from visitors typed as returning `void`.                                                                                                         |
+| TypeScript `no-inferrable-types`, `explicit-function-return-type`                                                           | Public signatures satisfy `isolatedDeclarations`; local helpers can use inference without losing the exported contract.                                                                                                     |
+| TypeScript `prefer-readonly-parameter-types`                                                                                | Parsers, builders, and framework callbacks have explicitly mutable inputs. Deep-readonly requirements would change those ownership contracts.                                                                               |
+| TypeScript `no-non-null-assertion`, `no-dynamic-delete`                                                                     | Checked parser invariants can need assertions that library types can't express; HTML sanitization removes a property selected by the node's tag.                                                                            |
+| TypeScript `no-var-requires`, `ban-types`                                                                                   | The narrower require rule is deprecated and covered by `no-require-imports`; targeted function, wrapper-object, and empty-object checks replace `ban-types`.                                                                |
+| Unicorn import style, filename casing, nested ternaries, nested-call limits, ternary preference, and switch break placement | Named and namespace imports serve different APIs; class files and entry points use different casing. Formatting and readable control flow matter more than mandatory forms or fixed nesting counts.                         |
+| Unicorn `no-null`, `no-array-for-each`, `switch-case-braces`, `no-array-sort`, `no-array-reverse`                           | Null belongs to JSON, LSP, and DOM contracts. Indexed callbacks and mutation of owned arrays are valid; lexical case declarations already require blocks.                                                                   |
+| ESLint `class-methods-use-this`, Node `no-sync`                                                                             | Instance methods can implement contracts without reading instance state. Synchronous I/O is appropriate in one-shot tools and isolated tests.                                                                               |
+| Native regex invalid-pattern, empty-class, and misleading-character checks                                                  | The regexp plugin covers literals and statically resolved constructor strings. Using both would duplicate literal diagnostics.                                                                                              |
+| Regexp Unicode-mode and set-operation mandates                                                                              | Deliberate UTF-16 matching and JSON Schema patterns can't universally require `u` or `v`.                                                                                                                                   |
+| Regexp named-capture, named-replacement, result-group, and lookaround preferences                                           | Positional captures and replacement boundaries are parser contracts, not interchangeable spelling choices.                                                                                                                  |
+| Regexp execution and escape preferences                                                                                     | Typed execution checks distinguish captures from Boolean tests; native escaping checks cover ordinary JS strings too, and regexp strictness checks constructor identities.                                                  |
+| Regexp grapheme, control-character, replacement-dollar, spelling, ordering, and repetition preferences                      | Multi-character tokens, control-character validation, and literal dollars can be intentional. Preserve authored tier grouping and pattern spelling.                                                                         |
+| TSDoc per-tag mandates and `restrict-tags`                                                                                  | The 56 tag-mandate rules test presence, not applicability: parameterless functions don't need `@param`, and ordinary declarations mustn't all become `@deprecated`. TSDoc syntax and `tsdoc.json` already own allowed tags. |
+
+Numeric literal casing stays formatter-owned: Oxfmt writes lowercase hexadecimal digits, while
+`unicorn/number-literal-case` demands uppercase. Vue prop-count limits and component-name casing
+also stay off: component APIs need different prop counts, and registration names follow their
+consumers rather than a universal casing rule.
 
 Nursery linting stays off as a category. Selected rules reject unreachable loops and dead stores
-and warn about invalid named imports. Node ESM scripts also warn about undefined names without
-accepting CommonJS-only globals. TypeScript checks undefined names separately.
+and warn about invalid named imports and redundant iterator materialization. Explicitly named
+snapshots remain valid: eager consumption can matter before an early-exit iterator operation.
+Node ESM scripts also warn about undefined names without accepting CommonJS-only globals.
+TypeScript checks undefined names separately. The remaining nursery decisions are explicit:
+
+| Rule                                  | Why it stays off                                                                                                                                                                     |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `import/export`                       | This implementation misreports the legal explicit-over-star export in core's full/lite barrel and misses an ambiguous-star-export fixture.                                           |
+| `eslint/no-restricted-exports`        | Export-name restrictions need an actual package API policy.                                                                                                                          |
+| `promise/no-return-in-finally`        | Returning a cleanup promise awaits it and propagates rejection; the return isn't unused.                                                                                             |
+| `typescript/no-unnecessary-condition` | Indexed values and external APIs can be absent despite non-nullable ambient types. Don't remove runtime-safe guards.                                                                 |
+| `typescript/prefer-optional-chain`    | Probes with `requireNullish` and primitive/unknown checks disabled still reported null-preserving and falsy-string returns. Keep those return values and evaluation behavior intact. |
+
+The audit covers installed rules from the configured native plugins, including Vue in docs, plus
+regexp, TSDoc, TSDoc-require, and Vite+'s JavaScript plugins. Native category policies enable the
+non-exempt rules; every installed regexp rule has an explicit disposition. Unselected framework
+plugins aren't part of that policy. Recheck the installed inventory and nursery implementations
+when upgrading the toolchain rather than assuming new rules fit these decisions.
+
+Scoped exceptions preserve actual host contracts: untyped JavaScript lacks reliable safety-check
+types but still gets syntax checks and documented type tags; the bundled css-tree shim is CommonJS;
+LSP polling and stateful Markdown rendering need ordered awaits. Tests can contain hostile-input
+fixtures and use console/environment APIs, scripts can use stdout and top-level await, deployment
+configuration can read environment variables, and ambient declarations can augment globals.
+These aren't exceptions for production TypeScript safety.
 
 Type-aware linting rejects unsafe assignments, arguments, calls, member access, and returns in
 TypeScript. It also checks for redundant assertions, deprecated APIs, and potentially misleading
@@ -137,6 +182,11 @@ Use `object` for object values and `unknown` for untrusted values, not the broad
 interfaces are rejected too; non-null intersections such as `T & {}` remain valid.
 Strict Boolean values don't need literal comparisons; nullable and unknown values can still use
 explicit Boolean guards. The CLI normalizes Node's optional terminal flags to booleans.
+Conditions can use known nullable primitive or object values, but unknown inputs must be narrowed.
+Predicates return booleans instead of incidental strings or collection objects. Use explicit
+presence checks for indexed objects, whose types can omit runtime `undefined`.
+Escape values use uppercase letters, catch parameters use `error`, and DOM
+data attributes use `dataset`.
 Simple array types use `T[]` or `readonly T[]`; complex element types use `Array<T>` or
 `ReadonlyArray<T>` to avoid extra grouping parentheses.
 Type-check failures throw `TypeError`; range failures use `RangeError`.
