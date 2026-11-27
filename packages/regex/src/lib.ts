@@ -72,7 +72,7 @@ export const toRegExp = (pattern: Regex, anchors: AnchorMode = "none"): RegExp =
   }
 
   const flags = pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`;
-  return arkRegex.as(source, flags as Parameters<typeof arkRegex.as>[1]);
+  return new RegExp(source, flags);
 };
 
 /**

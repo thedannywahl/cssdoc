@@ -14,10 +14,11 @@ import {
   type BuildCssApiResult,
   type RenderEntryOptions,
   type RenderIndexOptions,
-  type SectionKey,
   type SidebarItem,
+  DEFAULT_SECTION_ORDER,
   buildCssApi,
   buildSidebar,
+  parseSidebar,
 } from "@cssdoc/markdown";
 
 /** The sidebar file `typedoc-plugin-markdown` / `typedoc-vitepress-theme` writes. */
@@ -94,7 +95,12 @@ export function emitCssApi(options: EmitCssApiOptions): BuildCssApiResult & {
   const baseHref = options.baseHref ?? render?.baseHref ?? `${outSubdir}/`;
   const configuration = options.configuration ?? options.configFile?.toConfiguration();
   const sectionOrder =
-    options.sectionOrder ?? (render?.sectionOrder as readonly SectionKey[] | undefined);
+    options.sectionOrder ??
+    render?.sectionOrder?.map((name) => {
+      const key = DEFAULT_SECTION_ORDER.find((section) => section === name);
+      if (key === undefined) throw new TypeError(`Unknown Markdown section: ${name}`);
+      return key;
+    });
   const headingPrefix = options.headingPrefix ?? render?.headingPrefix;
   const includeInternal =
     "includeInternal" in options ? options.includeInternal : render?.includeInternal;
@@ -129,7 +135,7 @@ export function emitCssApi(options: EmitCssApiOptions): BuildCssApiResult & {
   const sidebarPath = join(options.outputDirectory, TYPEDOC_SIDEBAR_FILE);
   let sidebarMerged = false;
   if (existsSync(sidebarPath)) {
-    const existing = JSON.parse(readFileSync(sidebarPath, "utf8")) as SidebarItem[];
+    const existing = parseSidebar(JSON.parse(readFileSync(sidebarPath, "utf8")));
     const merged = mergeCssSidebar(existing, label, buildSidebar(result.entries, baseHref, groups));
     writeFileSync(sidebarPath, `${JSON.stringify(merged, null, 2)}\n`);
     sidebarMerged = true;

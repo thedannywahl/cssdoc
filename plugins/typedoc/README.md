@@ -24,12 +24,13 @@ npm i -D @cssdoc/typedoc typedoc typedoc-plugin-markdown
 }
 ```
 
-| Option           | Meaning                                                        |
-| ---------------- | -------------------------------------------------------------- |
-| `cssdocCss`      | CSS source file paths whose doc comments become the reference. |
-| `cssdocOut`      | Output subdirectory for the CSS pages (default `css`).         |
-| `cssdocLabel`    | Sidebar section label (default `CSS`).                         |
-| `cssdocBaseHref` | Link prefix for the pages/sidebar (default `<cssdocOut>/`).    |
+| Option                   | Meaning                                                                       |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| `cssdocCss`              | CSS source file paths whose doc comments become the reference.                |
+| `cssdocOut`              | Output subdirectory for the CSS pages (default `css`).                        |
+| `cssdocLabel`            | Sidebar section label (default `CSS`).                                        |
+| `cssdocBaseHref`         | Link prefix for the pages/sidebar (default `<cssdocOut>/`).                   |
+| `cssdocGlobalPrecedence` | Modifier precedence: `base` (default) or `global`; other values are rejected. |
 
 ## Programmatic use
 
@@ -46,6 +47,9 @@ emitCssApi({
   resolveToken: (name) => myTokenIndex.get(name),
 });
 ```
+
+Existing sidebars are validated before merging. Malformed nodes cause a `TypeError`, leaving the
+sidebar file unchanged.
 
 The `@demo` block-tag rewriter is a separate, generic TypeDoc plugin — it has nothing to do with CSS
 and is not part of this package.

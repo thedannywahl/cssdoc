@@ -23,6 +23,7 @@
     "@cssdoc/core": "workspace:*",
     "@cssdoc/grammarkdown-tmlanguage": "workspace:*",
     "@cssdoc/index": "workspace:*",
+    "@cssdoc/markdown": "workspace:*",
     "@cssdoc/providers": "workspace:*",
     "@cssdoc/regex": "workspace:*",
     "@cssdoc/tmlanguage": "workspace:*",

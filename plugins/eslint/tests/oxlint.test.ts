@@ -58,9 +58,37 @@ function runOxlint(): OxlintDiagnostic[] {
       { cwd: FIXTURE_DIR, encoding: "utf8" },
     );
   } catch (error) {
-    output = (error as { stdout: string }).stdout;
+    if (
+      typeof error !== "object" ||
+      error === null ||
+      !("stdout" in error) ||
+      typeof error.stdout !== "string" ||
+      !("status" in error) ||
+      error.status !== 1
+    ) {
+      throw error;
+    }
+    output = error.stdout;
   }
-  return (JSON.parse(output) as { diagnostics: OxlintDiagnostic[] }).diagnostics;
+  const result: unknown = JSON.parse(output);
+  if (
+    typeof result !== "object" ||
+    result === null ||
+    !("diagnostics" in result) ||
+    !Array.isArray(result.diagnostics) ||
+    !result.diagnostics.every(
+      (item: unknown): item is OxlintDiagnostic =>
+        typeof item === "object" &&
+        item !== null &&
+        "message" in item &&
+        typeof item.message === "string" &&
+        "code" in item &&
+        typeof item.code === "string",
+    )
+  ) {
+    throw new TypeError("Expected Oxlint diagnostics with messages and codes");
+  }
+  return result.diagnostics;
 }
 
 function runEslint(): string[] {
@@ -85,7 +113,7 @@ function runEslint(): string[] {
             ],
           },
         },
-      ] as Parameters<Linter["verify"]>[1],
+      ],
       "test.jsx",
     )
     .map((m) => m.message);

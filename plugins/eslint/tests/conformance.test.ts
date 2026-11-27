@@ -316,8 +316,8 @@ test("normalization strips stylelint's rule suffix and surrounding whitespace", 
 
 function runEslint(fixture: Fixture): Diagnostic[] {
   const filename = fixture.filename ?? resolve(FIXTURES_DIR, "unscoped.css");
-  const recommended = eslintPlugin.configs.recommended[0] as { plugins: Record<string, unknown> };
-  const config = [
+  const recommended = eslintPlugin.configs.recommended[0];
+  const config: Linter.Config[] = [
     {
       files: ["**/*.css"],
       plugins: { ...recommended.plugins },
@@ -332,7 +332,7 @@ function runEslint(fixture: Fixture): Diagnostic[] {
   ];
   const linter = new Linter();
   return linter
-    .verify(fixture.css, config as Parameters<Linter["verify"]>[1], filename)
+    .verify(fixture.css, config, filename)
     .map((m) => normalize(m.message, m.line, m.severity === 2 ? "error" : "warning"));
 }
 

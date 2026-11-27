@@ -183,13 +183,17 @@ export function lintCssDocs(css: string, options: LintOptions = {}): Violation[]
     css, // honor `/* cssdoc-disable … */` and friends
     severities["cssdoc-directive"],
   );
-  return diagnostics.map((d) => ({
-    rule: d.rule as RuleName,
-    message: d.message,
-    record: d.record ?? "",
-    line: d.span?.start.line ?? 1,
-    span: d.span,
-    severity: d.severity,
-    fix: d.fix,
-  }));
+  return diagnostics.map((d) => {
+    const rule = RULE_NAMES.find((name) => name === d.rule);
+    if (rule === undefined) throw new Error(`Unexpected author-side rule: ${d.rule}`);
+    return {
+      rule,
+      message: d.message,
+      record: d.record ?? "",
+      line: d.span?.start.line ?? 1,
+      span: d.span,
+      severity: d.severity,
+      fix: d.fix,
+    };
+  });
 }

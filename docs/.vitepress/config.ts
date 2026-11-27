@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import grammarkdownGrammar from "@cssdoc/grammarkdown-tmlanguage";
+import { parseSidebar } from "@cssdoc/markdown";
 import cssdocGrammar, { cssdocAtRules } from "@cssdoc/tmlanguage";
 import { regex as arkRegex } from "arkregex";
 import type { DefaultTheme, UserConfig } from "vitepress";
@@ -33,7 +34,7 @@ const description =
 // typedoc first, so it's there for real builds.
 const apiSidebarPath = fileURLToPath(new URL("../reference/typedoc-sidebar.json", import.meta.url));
 const apiSidebar: DefaultTheme.SidebarItem[] = existsSync(apiSidebarPath)
-  ? (JSON.parse(readFileSync(apiSidebarPath, "utf8")) as DefaultTheme.SidebarItem[])
+  ? parseSidebar(JSON.parse(readFileSync(apiSidebarPath, "utf8")))
   : [];
 
 /** VitePress site configuration, including generated reference pages and theme plugins. */
@@ -51,16 +52,13 @@ const config: UserConfig = defineConfig({
   vite: {
     css: { postcss: { plugins: [expandTheme()] } },
     build: { cssCodeSplit: false },
-    // The repo aliases `vite` to vite-plus-core, but VitePress types this field against upstream Vite,
-    // and llmstxt() carries a third Vite's Plugin types — three incompatible `PluginOption`s. The plugin
-    // works at runtime; cast through the bottom type to bridge the type identities.
     plugins: [
-      pruneThemeBundle() as never,
+      pruneThemeBundle(),
       llmstxt({
         title: "cssdoc",
         description,
         ignoreFiles: ["internal/**"],
-      }) as never,
+      }),
     ],
   },
   // Register the grammarkdown grammar (for the Grammar page) and the cssdoc injection grammars (doc

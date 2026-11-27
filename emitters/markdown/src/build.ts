@@ -46,6 +46,38 @@ export interface SidebarItem {
   items?: SidebarItem[];
 }
 
+function isSidebarItem(value: unknown): value is SidebarItem {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  return (
+    "text" in value &&
+    typeof value.text === "string" &&
+    (!("link" in value) || value.link === undefined || typeof value.link === "string") &&
+    (!("collapsed" in value) ||
+      value.collapsed === undefined ||
+      typeof value.collapsed === "boolean") &&
+    (!("items" in value) ||
+      value.items === undefined ||
+      (Array.isArray(value.items) && value.items.every((item: unknown) => isSidebarItem(item))))
+  );
+}
+
+/**
+ * Validate a parsed sidebar, retaining extra theme-specific properties.
+ *
+ * @param value - The decoded sidebar JSON.
+ * @returns The validated sidebar nodes.
+ * @throws If a node or its nested children have an invalid shape.
+ */
+export function parseSidebar(value: unknown): SidebarItem[] {
+  if (
+    !Array.isArray(value) ||
+    !value.every((item: unknown): item is SidebarItem => isSidebarItem(item))
+  ) {
+    throw new TypeError("Invalid sidebar: expected nodes with text and valid links or children");
+  }
+  return value;
+}
+
 /** Options for {@link buildCssApi}. */
 export interface BuildCssApiOptions extends RenderEntryOptions, RenderIndexOptions {
   /** Resolve private-link visibility for prose in its original source. */

@@ -14,7 +14,7 @@ import type { ExampleFilter } from "@cssdoc/core";
 import { dialectForFilename, resolveParser } from "@cssdoc/dialects";
 import { detectEmbeddedHost, projectCss } from "@cssdoc/embedded";
 import { createIndex, indexFromEntries } from "@cssdoc/index";
-import { type HoverSectionOrder, resolveNaming, resolveRuleSeverities } from "@cssdoc/providers";
+import { resolveNaming, resolveRuleSeverities } from "@cssdoc/providers";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import {
   CompletionItemTag,
@@ -267,7 +267,7 @@ export function startLanguageServer(): void {
       service.setHoverDetail(
         options.hoverDetail,
         options.hoverSections ?? {},
-        options.hoverSectionOrder as HoverSectionOrder | undefined,
+        options.hoverSectionOrder,
       );
     }
     rebuild();
@@ -398,8 +398,17 @@ export function startLanguageServer(): void {
       return;
     }
     try {
-      const settings = params.settings as { cssdoc?: unknown } | null;
-      clientSettings = parseClientSettings(settings?.cssdoc);
+      const settings: unknown = params.settings;
+      if (
+        settings !== null &&
+        settings !== undefined &&
+        (typeof settings !== "object" || Array.isArray(settings))
+      ) {
+        throw new TypeError("Client settings must be an object");
+      }
+      clientSettings = parseClientSettings(
+        settings && "cssdoc" in settings ? settings.cssdoc : undefined,
+      );
       void registerWatchers();
       scheduleRefresh();
     } catch (error) {
@@ -459,7 +468,7 @@ export function startLanguageServer(): void {
     service.setHoverDetail(
       settings.hoverDetail ?? "full",
       settings.hoverSections ?? {},
-      settings.hoverSectionOrder as HoverSectionOrder | undefined,
+      settings.hoverSectionOrder,
     );
     const hover = service.hover(
       doc.getText(),
@@ -492,13 +501,23 @@ export function startLanguageServer(): void {
   });
 
   connection.onCodeAction((params) => {
-    const diagnostics: LspDiagnostic[] = params.context.diagnostics.map((d) => ({
-      range: d.range,
-      message: typeof d.message === "string" ? d.message : "",
-      severity: 2,
-      code: typeof d.code === "string" ? d.code : undefined,
-      data: d.data as LspDiagnostic["data"],
-    }));
+    const diagnostics: LspDiagnostic[] = params.context.diagnostics.map((d) => {
+      const data: unknown = d.data;
+      let replace: string | undefined;
+      if (typeof data === "object" && data !== null && "replace" in data) {
+        if (data.replace !== undefined && typeof data.replace !== "string") {
+          throw new TypeError("cssdoc diagnostic replacement must be a string");
+        }
+        replace = data.replace;
+      }
+      return {
+        range: d.range,
+        message: typeof d.message === "string" ? d.message : "",
+        severity: 2,
+        code: typeof d.code === "string" ? d.code : undefined,
+        data: replace === undefined ? undefined : { replace },
+      };
+    });
     return service.codeActions(diagnostics, fsPathOf(params.textDocument.uri)).map((a) => ({
       title: a.title,
       kind: "quickfix" as const,

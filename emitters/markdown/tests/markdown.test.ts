@@ -12,6 +12,7 @@ import {
   buildCssApi,
   buildSidebar,
   normalizeProseMarkdown,
+  parseSidebar,
   renderEntry,
   renderIndex,
 } from "../src/index.ts";
@@ -34,6 +35,28 @@ const CSS = `
  */
 .m-sm { margin: var(--spacing-sm); }
 `;
+
+test("parseSidebar preserves valid nested nodes and theme metadata", () => {
+  const sidebar = [
+    {
+      text: "API",
+      collapsed: false,
+      activeMatch: "/api/",
+      items: [{ text: "Button", link: "/api/button", badge: "New" }],
+    },
+  ];
+  expect(parseSidebar(sidebar)).toBe(sidebar);
+});
+
+test.each([
+  { text: "API" },
+  [{ text: "API", items: [{ text: 9 }] }],
+  [{ text: "API", link: 9 }],
+  [{ text: "API", collapsed: "false" }],
+  [{ text: "API", items: {} }],
+])("parseSidebar rejects malformed nodes: %j", (value) => {
+  expect(() => parseSidebar(value)).toThrow(TypeError);
+});
 
 test("private example links project to plain legacy-example text", () => {
   const css = `/** @component visible

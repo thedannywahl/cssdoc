@@ -6,6 +6,12 @@
 import { globSync, readdirSync, statSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 
+import { HOVER_SECTION_KEYS, type HoverSectionOrder } from "@cssdoc/providers";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 /** Options for discovering documented stylesheets. */
 export interface WorkspaceDiscoveryOptions {
   /** Explicit paths override discovery, including when the list is empty. */
@@ -23,7 +29,7 @@ export interface ClientSettings extends WorkspaceDiscoveryOptions {
   /** Per-section hover visibility. */
   hoverSections?: Record<string, "on" | "off" | "auto">;
   /** Order of hover sections. */
-  hoverSectionOrder?: string[];
+  hoverSectionOrder?: HoverSectionOrder;
   /** Whether to discover nested configuration files with providers. */
   providerDiscovery?: boolean;
   /** Maximum directory depth for configuration discovery. */
@@ -52,10 +58,10 @@ function strings(input: unknown, name: string): string[] {
  */
 export function parseClientSettings(value: unknown): ClientSettings {
   if (value === null || value === undefined) return {};
-  if (typeof value !== "object" || Array.isArray(value)) {
+  if (!isRecord(value)) {
     throw new TypeError("cssdoc settings must be an object");
   }
-  const config = value as Record<string, unknown>;
+  const config = value;
   const settings: ClientSettings = {};
   if ("css" in config) {
     const paths = strings(config.css, "css");
@@ -64,10 +70,10 @@ export function parseClientSettings(value: unknown): ClientSettings {
   if ("include" in config) settings.include = strings(config.include, "include");
   if ("exclude" in config) settings.exclude = strings(config.exclude, "exclude");
   if ("hover" in config) {
-    if (!config.hover || typeof config.hover !== "object" || Array.isArray(config.hover)) {
+    if (!isRecord(config.hover)) {
       throw new TypeError("cssdoc.hover must be an object");
     }
-    const hover = config.hover as Record<string, unknown>;
+    const { hover } = config;
     if ("detail" in hover) {
       if (hover.detail !== "compact" && hover.detail !== "full" && hover.detail !== "custom") {
         throw new TypeError("cssdoc.hover.detail must be compact, full, or custom");
@@ -75,14 +81,20 @@ export function parseClientSettings(value: unknown): ClientSettings {
       settings.hoverDetail = hover.detail;
     }
     if ("sectionOrder" in hover) {
-      settings.hoverSectionOrder = strings(hover.sectionOrder, "hover.sectionOrder");
+      settings.hoverSectionOrder = strings(hover.sectionOrder, "hover.sectionOrder").map((name) => {
+        const key = HOVER_SECTION_KEYS.find((section) => section === name);
+        if (key === undefined) {
+          throw new TypeError(`cssdoc.hover.sectionOrder has unknown section: ${name}`);
+        }
+        return key;
+      });
     }
     if ("sections" in hover) {
-      if (!hover.sections || typeof hover.sections !== "object" || Array.isArray(hover.sections)) {
+      if (!isRecord(hover.sections)) {
         throw new TypeError("cssdoc.hover.sections must be an object");
       }
       const sections: Record<string, "on" | "off" | "auto"> = {};
-      const sectionValues = hover.sections as Record<string, unknown>;
+      const sectionValues = hover.sections;
       for (const [key, mode] of Object.entries(sectionValues)) {
         if (mode !== "on" && mode !== "off" && mode !== "auto") {
           throw new TypeError(`cssdoc.hover.sections.${key} must be on, off, or auto`);
@@ -93,10 +105,10 @@ export function parseClientSettings(value: unknown): ClientSettings {
     }
   }
   if ("editor" in config) {
-    if (!config.editor || typeof config.editor !== "object" || Array.isArray(config.editor)) {
+    if (!isRecord(config.editor)) {
       throw new TypeError("cssdoc.editor must be an object");
     }
-    const editor = config.editor as Record<string, unknown>;
+    const { editor } = config;
     for (const key of ["providerDiscovery", "providerGlobs"] as const) {
       if (key in editor) {
         if (typeof editor[key] !== "boolean") {
@@ -138,10 +150,10 @@ export function parseClientSettings(value: unknown): ClientSettings {
  */
 export function parseInitializationOptions(value: unknown): ClientSettings {
   if (value === null || value === undefined) return {};
-  if (typeof value !== "object" || Array.isArray(value)) {
+  if (!isRecord(value)) {
     throw new TypeError("cssdoc initialization options must be an object");
   }
-  const options = value as Record<string, unknown>;
+  const options = value;
   if (
     "hoverPresentation" in options &&
     options.hoverPresentation !== "vscode" &&

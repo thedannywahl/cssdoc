@@ -67,8 +67,7 @@ export const baseConfig: UserConfig = defineConfig({
         "warn",
         { accessibility: "no-public", overrides: { parameterProperties: "off" } },
       ],
-      // Core, index, and providers enforce this below; remaining assertion boundaries are under review.
-      "typescript/no-unsafe-type-assertion": "off",
+      "typescript/no-unsafe-type-assertion": "error",
       // Falsy primitive defaults (including empty strings and zero) can be intentional.
       "typescript/prefer-nullish-coalescing": ["warn", { ignorePrimitives: true }],
       // TypeScript permits ignored callback results; css-tree also consumes walk.skip from void-typed visitors.
@@ -336,14 +335,6 @@ export const baseConfig: UserConfig = defineConfig({
       "import/max-dependencies": "off",
     },
     overrides: [
-      {
-        files: [
-          "**/packages/core/**/*.ts",
-          "**/packages/index/**/*.ts",
-          "**/packages/providers/**/*.ts",
-        ],
-        rules: { "typescript/no-unsafe-type-assertion": "error" },
-      },
       {
         // Untyped JavaScript files don't provide reliable type information for these checks.
         files: ["**/*.{js,jsx,mjs,cjs}"],

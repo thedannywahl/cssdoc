@@ -879,7 +879,15 @@ test("type-aware lint flags redundant assertions and distinguishes non-null from
         cwd,
         encoding: "utf8",
       });
-      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "typescript(no-unsafe-type-assertion)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([
+        ["error", 2],
+        ["error", 7],
+      ]);
       expect(
         parseLintOutput(result.stdout)
           .diagnostics.filter(({ code }) => code === "typescript(no-unnecessary-type-assertion)")
@@ -2380,9 +2388,9 @@ test("TSDoc definitions follow the cssdoc vocabulary", () => {
   ]);
 });
 
-test("model-layer lint rejects unsafe assertions but accepts guarded narrowing", () => {
+test("workspace lint rejects unsafe assertions but accepts guarded narrowing", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
-  for (const name of ["core", "index", "providers"]) {
+  for (const name of ["core", "index", "providers", "config"]) {
     const workspace = join(root, "packages", name);
     const directory = mkdtempSync(join(workspace, "tests/.unsafe-assertion-check-"));
     try {

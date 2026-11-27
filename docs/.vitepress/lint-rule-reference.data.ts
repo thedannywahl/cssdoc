@@ -182,18 +182,22 @@ const loader = {
   watch: "../packages/providers/src/types.ts",
   load(): LintRuleReferenceGroup[] {
     const markdown = new MarkdownExit({ html: false });
-    const rules = (Object.keys(DEFAULT_RULE_SEVERITIES) as RuleId[]).sort();
-    return (Object.keys(sections) as LintRuleGroupId[]).map((id) => ({
-      id,
-      ...sections[id],
-      rules: rules
-        .filter((name) => descriptions[name][0] === id)
-        .map((name) => ({
-          name,
-          severity: DEFAULT_RULE_SEVERITIES[name],
-          descriptionHtml: markdown.renderInline(descriptions[name][1]),
-        })),
-    }));
+    const rules = Object.keys(DEFAULT_RULE_SEVERITIES)
+      .filter((name): name is RuleId => Object.hasOwn(DEFAULT_RULE_SEVERITIES, name))
+      .sort();
+    return Object.keys(sections)
+      .filter((id): id is LintRuleGroupId => Object.hasOwn(sections, id))
+      .map((id) => ({
+        id,
+        ...sections[id],
+        rules: rules
+          .filter((name) => descriptions[name][0] === id)
+          .map((name) => ({
+            name,
+            severity: DEFAULT_RULE_SEVERITIES[name],
+            descriptionHtml: markdown.renderInline(descriptions[name][1]),
+          })),
+      }));
   },
 };
 

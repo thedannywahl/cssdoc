@@ -1,24 +1,36 @@
-const cssTree = require("css-tree-bundle") as {
+interface BundledCssTree {
   fork?: (...args: unknown[]) => unknown;
-  generate?: (...args: unknown[]) => unknown;
-  ident?: { decode: (input: string) => string; encode: (input: string) => string };
-  parse?: (...args: unknown[]) => unknown;
-  tokenTypes?: Readonly<Record<string, number>>;
-  tokenize?: (...args: unknown[]) => unknown;
-  walk?: (...args: unknown[]) => unknown;
-};
+  generate: (...args: unknown[]) => unknown;
+  ident: { decode: (input: string) => string; encode: (input: string) => string };
+  parse: (...args: unknown[]) => unknown;
+  tokenTypes: Readonly<Record<string, number>>;
+  tokenize: (...args: unknown[]) => unknown;
+  walk: (...args: unknown[]) => unknown;
+}
 
-if (
-  !cssTree.generate ||
-  !cssTree.ident ||
-  !cssTree.ident.encode ||
-  !cssTree.parse ||
-  !cssTree.tokenTypes ||
-  !cssTree.tokenize ||
-  !cssTree.walk
-) {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isBundledCssTree(value: unknown): value is BundledCssTree {
+  return (
+    isRecord(value) &&
+    ["generate", "parse", "tokenize", "walk"].every((name) => typeof value[name] === "function") &&
+    isRecord(value.ident) &&
+    typeof value.ident.decode === "function" &&
+    typeof value.ident.encode === "function" &&
+    isRecord(value.tokenTypes) &&
+    Object.values(value.tokenTypes).every((token) => typeof token === "number") &&
+    (value.fork === undefined || typeof value.fork === "function")
+  );
+}
+
+const loadedCssTree: unknown = require("css-tree-bundle");
+
+if (!isBundledCssTree(loadedCssTree)) {
   throw new Error("css-tree parser exports are unavailable in the bundled build");
 }
+const cssTree = loadedCssTree;
 
 /** CSS identifier helpers from the bundled parser. */
 export const ident: { decode: (input: string) => string; encode: (input: string) => string } =

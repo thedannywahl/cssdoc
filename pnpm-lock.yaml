@@ -520,6 +520,9 @@ importers:
       '@cssdoc/index':
         specifier: workspace:*
         version: link:../packages/index
+      '@cssdoc/markdown':
+        specifier: workspace:*
+        version: link:../emitters/markdown
       '@cssdoc/providers':
         specifier: workspace:*
         version: link:../packages/providers

@@ -26,7 +26,7 @@ writeFileSync(cssPath, CSS);
 
 const rules = {
   "cssdoc/valid-class-usage": ["warn", { css: [cssPath], modifierConvention: "rscss" }],
-} as const;
+} satisfies Linter.RulesRecord;
 
 const lintJsx = (code: string): string[] => {
   const linter = new Linter();
@@ -44,7 +44,7 @@ const lintJsx = (code: string): string[] => {
           plugins: { cssdoc: plugin },
           rules,
         },
-      ] as Parameters<Linter["verify"]>[1],
+      ],
       "test.jsx",
     )
     .map((m) => m.message);
@@ -62,7 +62,7 @@ const lintHtml = (code: string): string[] => {
           plugins: { cssdoc: plugin },
           rules,
         },
-      ] as Parameters<Linter["verify"]>[1],
+      ],
       "test.html",
     )
     .map((m) => m.message);
@@ -127,7 +127,7 @@ test("class usage: @element constraints flag disallowed host tags in JSX and HTM
   writeFileSync(constrainedCss, constrained);
   const constrainedRules = {
     "cssdoc/valid-class-usage": ["warn", { css: [constrainedCss], modifierConvention: "rscss" }],
-  } as const;
+  } satisfies Linter.RulesRecord;
 
   const linter = new Linter();
   const jsxMsgs = linter
@@ -144,7 +144,7 @@ test("class usage: @element constraints flag disallowed host tags in JSX and HTM
           plugins: { cssdoc: plugin },
           rules: constrainedRules,
         },
-      ] as Parameters<Linter["verify"]>[1],
+      ],
       "test.jsx",
     )
     .map((m) => m.message);
@@ -160,7 +160,7 @@ test("class usage: @element constraints flag disallowed host tags in JSX and HTM
           plugins: { cssdoc: plugin },
           rules: constrainedRules,
         },
-      ] as Parameters<Linter["verify"]>[1],
+      ],
       "test.html",
     )
     .map((m) => m.message);
@@ -186,7 +186,7 @@ const cubeRules = {
     "warn",
     { css: [cubeCssPath], modifierConvention: { structure: "attribute", separator: "data-" } },
   ],
-} as const;
+} satisfies Linter.RulesRecord;
 
 const lintJsxCube = (code: string): string[] => {
   const linter = new Linter();
@@ -204,7 +204,7 @@ const lintJsxCube = (code: string): string[] => {
           plugins: { cssdoc: plugin },
           rules: cubeRules,
         },
-      ] as Parameters<Linter["verify"]>[1],
+      ],
       "test.jsx",
     )
     .map((m) => m.message);

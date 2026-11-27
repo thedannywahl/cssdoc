@@ -116,27 +116,56 @@ test("the bundled server.cjs starts and answers LSP diagnostics", async () => {
   expect(codes).not.toContain("missing-summary");
 }, 20_000);
 
-function ipcServer<T>(
-  configuration?: (items: { scopeUri?: string; section: string }[]) => unknown[],
-) {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function hoverText(value: unknown): string | undefined {
+  if (value === null || value === undefined) return undefined;
+  if (!isRecord(value) || !isRecord(value.contents) || typeof value.contents.value !== "string") {
+    throw new TypeError("Expected an LSP hover result");
+  }
+  return value.contents.value;
+}
+
+function ipcServer(configuration?: (items: { scopeUri?: string; section: string }[]) => unknown[]) {
   const server = fork(serverBundle, ["--node-ipc"], { silent: true });
-  type Reply = { id: number; result?: T; method?: string; params?: unknown };
+  type Reply = { id: number; result?: unknown; method?: string; params?: unknown };
   const pending = new Map<number, (reply: Reply) => void>();
   let id = 0;
-  server.on("message", (message) => {
-    const reply = message as Reply;
-    if (reply.method === "workspace/configuration" && configuration) {
-      const params = reply.params as { items: { scopeUri?: string; section: string }[] };
-      server.send({ jsonrpc: "2.0", id: reply.id, result: configuration(params.items) });
+  server.on("message", (message: unknown) => {
+    if (!isRecord(message)) throw new TypeError("Expected an LSP message object");
+    if (message.method === "workspace/configuration" && configuration) {
+      const { params } = message;
+      if (
+        !isRecord(params) ||
+        !Array.isArray(params.items) ||
+        !params.items.every(
+          (item: unknown): item is { scopeUri?: string; section: string } =>
+            isRecord(item) &&
+            typeof item.section === "string" &&
+            (item.scopeUri === undefined || typeof item.scopeUri === "string"),
+        )
+      ) {
+        throw new TypeError("Expected workspace configuration request items");
+      }
+      server.send({ jsonrpc: "2.0", id: message.id, result: configuration(params.items) });
       return;
     }
     if (
-      reply.method === "client/registerCapability" ||
-      reply.method === "client/unregisterCapability"
+      message.method === "client/registerCapability" ||
+      message.method === "client/unregisterCapability"
     ) {
-      server.send({ jsonrpc: "2.0", id: reply.id, result: null });
+      server.send({ jsonrpc: "2.0", id: message.id, result: null });
       return;
     }
+    if (typeof message.id !== "number") return;
+    const reply: Reply = {
+      id: message.id,
+      result: message.result,
+      method: typeof message.method === "string" ? message.method : undefined,
+      params: message.params,
+    };
     pending.get(reply.id)?.(reply);
     pending.delete(reply.id);
   });
@@ -183,8 +212,24 @@ test("the bundled server applies file overrides and reloads them for open docume
     function onMessage(message: unknown): void {
       if (!message || typeof message !== "object" || !("method" in message)) return;
       if (message.method !== "textDocument/publishDiagnostics" || !("params" in message)) return;
-      const params = message.params as { uri: string; diagnostics: Diagnostic[] };
+      const { params } = message;
+      if (!isRecord(params)) {
+        reject(new TypeError("Expected diagnostic parameters"));
+        return;
+      }
       if (params.uri !== uri) return;
+      if (
+        !Array.isArray(params.diagnostics) ||
+        !params.diagnostics.every(
+          (diagnostic: unknown): diagnostic is Diagnostic =>
+            isRecord(diagnostic) &&
+            typeof diagnostic.code === "string" &&
+            typeof diagnostic.severity === "number",
+        )
+      ) {
+        reject(new TypeError("Expected diagnostics with codes and severities"));
+        return;
+      }
       clearTimeout(timer);
       server.off("message", onMessage);
       resolve(params.diagnostics);
@@ -256,8 +301,7 @@ test("the bundled server applies file overrides and reloads them for open docume
 
 test("the bundled server returns an explicit replacement for doc-tag completions", async () => {
   execFileSync("node", ["scripts/build.mjs"], { cwd: root });
-  const { server, request } =
-    ipcServer<{ label: string; kind?: number; textEdit?: { range: unknown; newText: string } }[]>();
+  const { server, request } = ipcServer();
   const uri = "file:///completion.css";
   try {
     await request("initialize", {
@@ -297,9 +341,12 @@ test("the bundled server returns an explicit replacement for doc-tag completions
       position: { line: 1, character: 6 },
       context: { triggerKind: 1 },
     });
-    const part = reply.result?.find((item) => item.label === "@part");
-    expect(part?.kind).toBe(14);
-    expect(part?.textEdit).toEqual({
+    if (!Array.isArray(reply.result)) throw new TypeError("Expected completion items");
+    const part: unknown = reply.result.find(
+      (item: unknown) => isRecord(item) && item.label === "@part",
+    );
+    expect(part).toHaveProperty("kind", 14);
+    expect(part).toHaveProperty("textEdit", {
       range: { start: { line: 1, character: 3 }, end: { line: 1, character: 6 } },
       newText: "@part",
     });
@@ -315,7 +362,7 @@ test("hover presentation follows client format and VS Code opt-in", async () => 
     ["markdown", "vscode"],
     ["plaintext", "vscode"],
   ] as const) {
-    const { server, request } = ipcServer<{ contents: { kind: string; value: string } }>();
+    const { server, request } = ipcServer();
     const uri = "file:///hover.css";
     try {
       await request("initialize", {
@@ -337,20 +384,20 @@ test("hover presentation follows client format and VS Code opt-in", async () => 
           },
         },
       });
-      const contents = (
-        await request("textDocument/hover", {
-          textDocument: { uri },
-          position: { line: 5, character: 2 },
-        })
-      ).result?.contents;
-      expect(contents?.kind).toBe(format);
-      expect(contents?.value).toContain("A widget.");
-      expect(contents?.value).toContain('<button class="widget">Save</button>');
-      expect(contents?.value.includes("$(symbol-class)")).toBe(
+      const reply = await request("textDocument/hover", {
+        textDocument: { uri },
+        position: { line: 5, character: 2 },
+      });
+      const { result } = reply;
+      const contents = hoverText(result);
+      expect(result).toHaveProperty("contents.kind", format);
+      expect(contents).toContain("A widget.");
+      expect(contents).toContain('<button class="widget">Save</button>');
+      expect(contents?.includes("$(symbol-class)")).toBe(
         format === "markdown" && presentation === "vscode",
       );
-      expect(contents?.value.includes("```")).toBe(format === "markdown");
-      expect(contents?.value.includes("**")).toBe(format === "markdown");
+      expect(contents?.includes("```")).toBe(format === "markdown");
+      expect(contents?.includes("**")).toBe(format === "markdown");
     } finally {
       server.kill();
     }
@@ -371,18 +418,20 @@ test("the server applies per-folder client settings and reloads them on change",
     );
   }
   const enabled = new Set([pathToFileURL(first).href]);
-  const { server, request } = ipcServer<{ contents: { value: string } } | null>((items) =>
+  const { server, request } = ipcServer((items) =>
     items.map((item) => ({
       include: enabled.has(item.scopeUri ?? "") ? ["**/*.scss"] : ["**/*.css"],
     })),
   );
   const hover = async (dir: string): Promise<string | undefined> =>
-    (
-      await request("textDocument/hover", {
-        textDocument: { uri: pathToFileURL(join(dir, "page.html")).href },
-        position: { line: 0, character: 13 },
-      })
-    ).result?.contents.value;
+    hoverText(
+      (
+        await request("textDocument/hover", {
+          textDocument: { uri: pathToFileURL(join(dir, "page.html")).href },
+          position: { line: 0, character: 13 },
+        })
+      ).result,
+    );
   try {
     await request("initialize", {
       processId: process.pid,
@@ -451,7 +500,7 @@ test("the server discovers CSS and keeps workspace folders independent", async (
       `/**\n * @component widget\n * @summary ${summary}\n */\n.widget {}\n`,
     );
   }
-  const { server, request } = ipcServer<{ contents: { value: string } }>();
+  const { server, request } = ipcServer();
   try {
     await request("initialize", {
       processId: process.pid,
@@ -479,8 +528,8 @@ test("the server discovers CSS and keeps workspace folders independent", async (
         textDocument: { uri },
         position: { line: 0, character: 13 },
       });
-      expect(reply.result?.contents.value).toContain(expected);
-      expect(reply.result?.contents.value).not.toContain(other);
+      expect(hoverText(reply.result)).toContain(expected);
+      expect(hoverText(reply.result)).not.toContain(other);
     }
   } finally {
     server.kill();
@@ -496,14 +545,16 @@ test("the server refreshes discovered files and unsaved stylesheet changes", asy
   const htmlUri = pathToFileURL(join(fixture, "page.html")).href;
   const text = (summary: string): string =>
     `/**\n * @component widget\n * @summary ${summary}\n */\n.widget {}\n`;
-  const { server, request } = ipcServer<{ contents: { value: string } } | null>();
+  const { server, request } = ipcServer();
   const hover = async (): Promise<string | undefined> =>
-    (
-      await request("textDocument/hover", {
-        textDocument: { uri: htmlUri },
-        position: { line: 0, character: 13 },
-      })
-    ).result?.contents.value;
+    hoverText(
+      (
+        await request("textDocument/hover", {
+          textDocument: { uri: htmlUri },
+          position: { line: 0, character: 13 },
+        })
+      ).result,
+    );
   const waitForHover = async (expected: string | undefined): Promise<void> => {
     const deadline = Date.now() + 5000;
     while (Date.now() < deadline) {
@@ -599,15 +650,17 @@ test("the server indexes workspace folders added after initialization", async ()
     join(other, "widget.css"),
     "/**\n * @component widget\n * @summary Other workspace\n */\n.widget {}\n",
   );
-  const { server, request } = ipcServer<{ contents: { value: string } } | null>();
+  const { server, request } = ipcServer();
   const uri = pathToFileURL(join(added, "page.html")).href;
   const hover = async (): Promise<string | undefined> =>
-    (
-      await request("textDocument/hover", {
-        textDocument: { uri },
-        position: { line: 0, character: 13 },
-      })
-    ).result?.contents.value;
+    hoverText(
+      (
+        await request("textDocument/hover", {
+          textDocument: { uri },
+          position: { line: 0, character: 13 },
+        })
+      ).result,
+    );
   try {
     await request("initialize", {
       processId: process.pid,
@@ -669,15 +722,17 @@ test("the server discovers nested provider configs without a local stylesheet", 
     join(consumer, "cssdoc.json"),
     JSON.stringify({ providers: [{ path: "../vendor/*.css" }] }),
   );
-  const { server, request } = ipcServer<{ contents: { value: string } } | null>();
+  const { server, request } = ipcServer();
   const uri = pathToFileURL(join(consumer, "page.html")).href;
   const hover = async (): Promise<string | undefined> =>
-    (
-      await request("textDocument/hover", {
-        textDocument: { uri },
-        position: { line: 0, character: 13 },
-      })
-    ).result?.contents.value;
+    hoverText(
+      (
+        await request("textDocument/hover", {
+          textDocument: { uri },
+          position: { line: 0, character: 13 },
+        })
+      ).result,
+    );
   try {
     await request("initialize", {
       processId: process.pid,
@@ -718,7 +773,7 @@ test("inlay hint requests return only hints within the requested range", async (
     "/**\n * @component button\n * @cssproperty --button-color Button color.\n */\n.button { color: var(--button-color); }\n",
   );
   const uri = pathToFileURL(join(fixture, "page.html")).href;
-  const { server, request } = ipcServer<{ position: { line: number } }[]>();
+  const { server, request } = ipcServer();
   try {
     await request("initialize", {
       processId: process.pid,
@@ -742,7 +797,7 @@ test("inlay hint requests return only hints within the requested range", async (
       textDocument: { uri },
       range: { start: { line: 1, character: 0 }, end: { line: 2, character: 0 } },
     });
-    expect(reply.result?.map((hint) => hint.position.line)).toEqual([1]);
+    expect(reply.result).toMatchObject([{ position: { line: 1 } }]);
   } finally {
     server.kill();
     rmSync(fixture, { recursive: true, force: true });
@@ -762,7 +817,7 @@ test("definitions from a multi-file index retain their source URI and local line
     beta,
     "/**\n * @component beta\n * @summary Second component.\n */\n.beta { color: blue; }\n",
   );
-  const { server, request } = ipcServer<{ uri: string; range: { start: { line: number } } }>();
+  const { server, request } = ipcServer();
   try {
     await request("initialize", {
       processId: process.pid,
@@ -792,8 +847,10 @@ test("definitions from a multi-file index retain their source URI and local line
         textDocument: { uri },
         position: { line: 0, character: 13 },
       });
-      expect(reply.result?.uri).toBe(pathToFileURL(file).href);
-      expect(reply.result?.range.start.line).toBe(4);
+      expect(reply.result).toMatchObject({
+        uri: pathToFileURL(file).href,
+        range: { start: { line: 4 } },
+      });
     }
   } finally {
     server.kill();
@@ -831,7 +888,7 @@ test("the bundled server uses the nearest config for example filtering in hover"
 .widget {}
 `,
   );
-  const { server, request } = ipcServer<{ contents: { value: string } }>();
+  const { server, request } = ipcServer();
   try {
     await request("initialize", {
       processId: process.pid,
@@ -853,7 +910,7 @@ test("the bundled server uses the nearest config for example filtering in hover"
         textDocument: { uri },
         position: { line: 0, character: 13 },
       });
-      const contents = reply.result?.contents.value;
+      const contents = hoverText(reply.result);
       expect(contents).toContain("Shared example");
       expect(contents).not.toContain("Audit fixture");
       expect(contents?.includes("Interactive example")).toBe(dir === nested);

@@ -138,8 +138,9 @@ test("--fix writes deterministic doc-comment scaffolds before reporting", () => 
 
 test("formatResults: json includes the rule and file", () => {
   const results = lintFiles(["dirty/*.css"], FIXTURES);
-  const json = JSON.parse(formatResults(results, "json")) as { file: string }[];
-  expect(json[0]?.file).toBe("dirty/a.css");
+  const json: unknown = JSON.parse(formatResults(results, "json"));
+  if (!Array.isArray(json)) throw new TypeError("Expected JSON results to be an array");
+  expect(json[0]).toHaveProperty("file", "dirty/a.css");
 });
 
 test("formatResults: github emits an annotation per violation", () => {

@@ -172,10 +172,14 @@ test("@structure region highlights nested @scope and @variant with names", () =>
       typeof p === "object" &&
       p !== null &&
       "match" in p &&
-      (p as Record<string, unknown>).match?.toString().includes("scope"),
+      typeof p.match === "string" &&
+      p.match.includes("scope"),
   );
   expect(scopePattern).toBeDefined();
-  const SCOPE = arkRegex.as((scopePattern as Record<string, string>)?.match ?? "", "u");
+  if (!scopePattern || typeof scopePattern.match !== "string") {
+    throw new TypeError("Expected a scope pattern");
+  }
+  const SCOPE = arkRegex.as(scopePattern.match, "u");
   const scopeMatch = SCOPE.exec("@scope (.menu) {");
   expect(scopeMatch?.[0]).toBe("@scope");
   expect(SCOPE.exec("@scope-menu (.menu) {")).toBeNull();
@@ -185,15 +189,19 @@ test("@structure region highlights nested @scope and @variant with names", () =>
       typeof p === "object" &&
       p !== null &&
       "match" in p &&
-      (p as Record<string, unknown>).match?.toString().includes("variant"),
+      typeof p.match === "string" &&
+      p.match.includes("variant"),
   );
   expect(structureTagPattern).toBeDefined();
   const nestedVariant = "  .menu {\n    @variant compact {";
-  const VARIANT = arkRegex.as((structureTagPattern as Record<string, string>)?.match ?? "", "u");
+  if (!structureTagPattern || typeof structureTagPattern.match !== "string") {
+    throw new TypeError("Expected a variant pattern");
+  }
+  const VARIANT = arkRegex.as(structureTagPattern.match, "u");
   const variantMatch = VARIANT.exec(nestedVariant);
   expect(variantMatch?.[1]).toBe("@variant");
   expect(variantMatch?.[2]).toBe("compact");
-  expect((structureTagPattern as Record<string, unknown>)?.captures).toBeDefined();
+  expect(structureTagPattern.captures).toBeDefined();
 });
 
 test.each([

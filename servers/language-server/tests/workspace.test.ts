@@ -59,6 +59,9 @@ test("client configuration maps discovery and hover settings and rejects malform
     hoverSectionOrder: ["summary"],
   });
   expect(() => parseClientSettings({ include: "**/*.css" })).toThrow("cssdoc.include");
+  expect(() => parseClientSettings({ hover: { sectionOrder: ["unknown"] } })).toThrow(
+    "cssdoc.hover.sectionOrder",
+  );
   expect(() => parseClientSettings({ hover: { sections: { summary: "sometimes" } } })).toThrow(
     "cssdoc.hover.sections.summary",
   );

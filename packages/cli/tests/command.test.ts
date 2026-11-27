@@ -1,15 +1,13 @@
-import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { expect, test } from "vite-plus/test";
 
+import packageMetadata from "../package.json" with { type: "json" };
 import { createCssDocProgram, runCli, type CliRuntime } from "../src/cli.ts";
 import { runLint, type LintCliOptions, type LintCliResult } from "../src/index.ts";
 
 const FIXTURES = resolve(import.meta.dirname, "fixtures");
-const { version: packageVersion } = JSON.parse(
-  readFileSync(new URL("../package.json", import.meta.url), "utf8"),
-) as { version: string };
+const { version: packageVersion } = packageMetadata;
 
 interface HarnessOptions {
   stdinIsTTY?: boolean;

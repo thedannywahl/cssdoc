@@ -650,8 +650,30 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
   if (meta.length > 0) lines.push(meta.join(" · "), "");
 
   // Each reorderable section builds its own fragment; they're emitted in `sectionOrder` below.
-  const fragments = {} as Record<SectionKey, string[]>;
-  for (const key of DEFAULT_SECTION_ORDER) fragments[key] = [];
+  const fragments: Record<SectionKey, string[]> = {
+    demo: [],
+    examples: [],
+    usage: [],
+    annotations: [],
+    modifiers: [],
+    parts: [],
+    shadowParts: [],
+    pseudoElements: [],
+    states: [],
+    slots: [],
+    structure: [],
+    subcomponents: [],
+    cssProperties: [],
+    functions: [],
+    animations: [],
+    layers: [],
+    conditions: [],
+    tokensConsumed: [],
+    compat: [],
+    accessibility: [],
+    related: [],
+    see: [],
+  };
 
   const spec = options.resolveDemo ? options.resolveDemo(entry) : entry.demo;
   if (spec) fragments.demo.push("## Demo", "", ...fencedBlock("demo", spec), "");

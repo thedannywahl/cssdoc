@@ -58,6 +58,7 @@ import {
 } from "@cssdoc/regex";
 import css from "@eslint/css";
 import { regex as arkRegex } from "arkregex";
+import type { JSSyntaxElement, Linter, Rule } from "eslint";
 
 type Position = { line: number; column: number };
 const DOC_COMMENT = arkRegex.as(`${DOC_COMMENT_START_SOURCE}[\\s\\S]*?${COMMENT_END_SOURCE}`);
@@ -74,11 +75,7 @@ const COLOR_VALUE = arkRegex.as(String.raw`(#[0-9a-f]{3,8}|rgb|hsl|var)`, "i");
 const LENGTH_VALUE = arkRegex.as(String.raw`^\d+(\.\d+)?(px|em|rem|%|vh|vw)$|var\(`);
 const NUMBER_VALUE = arkRegex.as(String.raw`^\d+(\.\d+)?$|var\(`);
 
-interface ReportDescriptor {
-  node?: unknown;
-  loc?: Position | { start: Position; end: Position };
-  message: string;
-}
+type ReportDescriptor = Rule.ReportDescriptor & { message: string };
 
 interface RuleContext {
   options: readonly unknown[];
@@ -86,6 +83,37 @@ interface RuleContext {
   filename?: string;
   sourceCode: { text: string; getLocFromIndex: (index: number) => Position };
   report: (descriptor: ReportDescriptor) => void;
+}
+
+function isRuleContext(value: unknown): value is RuleContext {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    !("options" in value) ||
+    !Array.isArray(value.options) ||
+    !("report" in value) ||
+    typeof value.report !== "function" ||
+    !("sourceCode" in value) ||
+    typeof value.sourceCode !== "object" ||
+    value.sourceCode === null
+  ) {
+    return false;
+  }
+  return (
+    "text" in value.sourceCode &&
+    typeof value.sourceCode.text === "string" &&
+    "getLocFromIndex" in value.sourceCode &&
+    typeof value.sourceCode.getLocFromIndex === "function" &&
+    (!("cwd" in value) || value.cwd === undefined || typeof value.cwd === "string") &&
+    (!("filename" in value) || value.filename === undefined || typeof value.filename === "string")
+  );
+}
+
+function ruleContext(value: unknown): RuleContext {
+  if (!isRuleContext(value)) {
+    throw new TypeError("cssdoc rules require a text source and report callback");
+  }
+  return value;
 }
 
 /** Cache loaded `cssdoc.json` per start folder — reused across every linted stylesheet. */
@@ -103,20 +131,26 @@ interface RuleModule {
   meta: {
     type: "problem" | "suggestion";
     docs: { description: string };
-    schema: unknown[];
+    schema: Extract<NonNullable<NonNullable<Rule.RuleModule["meta"]>["schema"]>, unknown[]>;
   };
-  create: (context: RuleContext) => Record<string, (node: never) => void>;
+  create: (context: unknown) => Record<string, (node: JSSyntaxElement) => void>;
+}
+
+// Functions have `name` metadata, so callable presets also satisfy ESLint's config shape.
+interface ConfigFactory {
+  (options?: { css?: string[] }): Linter.Config[];
+  readonly name: string;
 }
 
 interface Plugin {
   meta: { name: string; version: string };
   rules: Record<string, RuleModule>;
-  configs: Record<string, unknown[] | ((options?: unknown) => unknown[])> & {
-    recommended: unknown[];
-    strict: unknown[];
-    relaxed: unknown[];
-    classUsage: (options?: { css?: string[] }) => unknown[];
-    full: (options?: { css?: string[] }) => unknown[];
+  configs: Record<string, Linter.Config[] | ConfigFactory> & {
+    recommended: Linter.Config[];
+    strict: Linter.Config[];
+    relaxed: Linter.Config[];
+    classUsage: ConfigFactory;
+    full: ConfigFactory;
   };
 }
 
@@ -146,7 +180,8 @@ const validDocComments: RuleModule = {
       },
     ],
   },
-  create(context) {
+  create(rawContext) {
+    const context = ruleContext(rawContext);
     const options = (context.options[0] ?? {}) as DocCommentsOptions;
     // Load the nearest `cssdoc.json` (from the linted file's folder) as the config base; inline options
     // override it. `toConfiguration()` also carries custom tags to the parser.
@@ -259,12 +294,12 @@ function classUsageDiagnosticsForSource(source: string, index: CssDocIndex): Cla
   return out;
 }
 
-interface JsxAttribute {
+interface JsxAttribute extends JSSyntaxElement {
   name?: { name?: string };
-  value?: { type?: string; value?: unknown };
+  value?: JSSyntaxElement & { value?: unknown };
 }
 
-interface JsxOpeningElement {
+interface JsxOpeningElement extends JSSyntaxElement {
   name?: { name?: string };
   attributes?: JsxAttribute[];
 }
@@ -297,7 +332,8 @@ const validClassUsage: RuleModule = {
       },
     ],
   },
-  create(context): Record<string, (node: never) => void> {
+  create(rawContext): Record<string, (node: JSSyntaxElement) => void> {
+    const context = ruleContext(rawContext);
     const options = (context.options[0] ?? {}) as ClassUsageOptions;
     if (!options.css?.length) return {};
     const index = indexFor(options.css, context.cwd ?? process.cwd(), options.modifierConvention);
@@ -387,7 +423,8 @@ const requireComponentDocs: RuleModule = {
       },
     ],
   },
-  create(context) {
+  create(rawContext) {
+    const context = ruleContext(rawContext);
     const options = (context.options[0] ?? {}) as { pattern?: string; skipUtilities?: boolean };
     const pattern =
       options.pattern === null || options.pattern === undefined
@@ -396,16 +433,26 @@ const requireComponentDocs: RuleModule = {
     const skipUtilities = options.skipUtilities !== false;
 
     return {
-      Rule(node: never): void {
-        const rule = node as { selector?: { value?: string }; block?: unknown; parent?: unknown };
-        const selector = rule.selector?.value;
+      Rule(node: JSSyntaxElement): void {
+        const selectorNode = "selector" in node ? node.selector : undefined;
+        const selector =
+          selectorNode &&
+          typeof selectorNode === "object" &&
+          "value" in selectorNode &&
+          typeof selectorNode.value === "string"
+            ? selectorNode.value
+            : undefined;
         if (!selector || !selector.startsWith(".")) return;
 
         const baseName = selector.slice(1).split(COMPONENT_NAME_SEPARATOR)[0] ?? "";
         if (!pattern.test(baseName)) return;
 
         // Check if this rule or its peers have docs
-        const docComment = (rule as never as { raws?: { between?: string } }).raws?.between ?? "";
+        const raws = "raws" in node ? node.raws : undefined;
+        const docComment =
+          raws && typeof raws === "object" && "between" in raws && typeof raws.between === "string"
+            ? raws.between
+            : "";
         const hasDoc = DOC_COMMENT.exec(docComment) !== null;
         if (hasDoc) return;
 
@@ -433,14 +480,15 @@ const validCustomProperties: RuleModule = {
     docs: { description: "Validate custom property usage against documented syntax." },
     schema: [],
   },
-  create(context) {
+  create(rawContext) {
+    const context = ruleContext(rawContext);
     // Load doc configuration to infer defaults for custom properties
     loadDocConfig(dirname(context.filename ?? process.cwd()));
 
     return {
-      Declaration(node: never): void {
-        const decl = node as { property?: string; value?: string };
-        const propName = decl.property;
+      Declaration(node: JSSyntaxElement): void {
+        const propName =
+          "property" in node && typeof node.property === "string" ? node.property : undefined;
         if (!propName?.startsWith("--")) return;
 
         // Check @property syntax validation
@@ -454,7 +502,7 @@ const validCustomProperties: RuleModule = {
         if (!syntax) return; // No declared syntax, can't validate
 
         // Basic syntax validation examples
-        const value = decl.value ?? "";
+        const value = "value" in node && typeof node.value === "string" ? node.value : "";
         const isColor = syntax === "<color>";
         const isLength = syntax === "<length>";
         const isNumber = syntax === "<number>";
@@ -493,17 +541,16 @@ const plugin: Plugin = {
     "require-component-docs": requireComponentDocs,
     "valid-custom-properties": validCustomProperties,
   },
-  configs: {} as Record<string, unknown[] | ((options?: unknown) => unknown[])> & {
-    recommended: unknown[];
-    strict: unknown[];
-    relaxed: unknown[];
-    classUsage: (options?: { css?: string[] }) => unknown[];
-    full: (options?: { css?: string[] }) => unknown[];
+  configs: {
+    recommended: [],
+    strict: [],
+    relaxed: [],
+    classUsage,
+    full,
   },
 };
 
-const cssRecommendedRules =
-  ((css.configs.recommended as unknown as unknown[])?.[0] as Record<string, unknown>)?.rules ?? {};
+const cssRecommendedRules = css.configs.recommended.rules;
 
 /** A flat-config array that lints `**\/*.css` with the CSS language and enables doc-comment hygiene. */
 plugin.configs.recommended = [
@@ -599,18 +646,20 @@ plugin.configs.relaxed = [
  * ];
  * ```
  */
-plugin.configs.classUsage = (options?: { css?: string[] }): unknown[] => [
-  {
-    files: ["**/*.{js,jsx,ts,tsx}"],
-    plugins: { cssdoc: plugin },
-    rules: { "cssdoc/valid-class-usage": ["warn", options] },
-  },
-  {
-    files: ["**/*.html"],
-    plugins: { cssdoc: plugin },
-    rules: { "cssdoc/valid-class-usage": ["warn", options] },
-  },
-];
+function classUsage(options?: { css?: string[] }): Linter.Config[] {
+  return [
+    {
+      files: ["**/*.{js,jsx,ts,tsx}"],
+      plugins: { cssdoc: plugin },
+      rules: { "cssdoc/valid-class-usage": ["warn", options] },
+    },
+    {
+      files: ["**/*.html"],
+      plugins: { cssdoc: plugin },
+      rules: { "cssdoc/valid-class-usage": ["warn", options] },
+    },
+  ];
+}
 
 /**
  * Full preset: recommended doc-comment validation + class-usage checks.
@@ -626,9 +675,8 @@ plugin.configs.classUsage = (options?: { css?: string[] }): unknown[] => [
  * ];
  * ```
  */
-plugin.configs.full = (options?: { css?: string[] }): unknown[] => [
-  ...plugin.configs.recommended,
-  ...plugin.configs.classUsage(options),
-];
+function full(options?: { css?: string[] }): Linter.Config[] {
+  return [...plugin.configs.recommended, ...plugin.configs.classUsage(options)];
+}
 
 export default plugin;

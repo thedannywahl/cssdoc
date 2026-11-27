@@ -27,6 +27,23 @@ import { type Application, ParameterType, RendererEvent } from "typedoc";
 
 import { emitCssApi } from "./emit.ts";
 
+declare module "typedoc" {
+  interface TypeDocOptionMap {
+    /** CSS source paths for the reference. */
+    cssdocCss: string[];
+    /** Reference output subdirectory. */
+    cssdocOut: string;
+    /** Reference sidebar label. */
+    cssdocLabel: string;
+    /** Reference link prefix. */
+    cssdocBaseHref: string;
+    /** cssdoc configuration path. */
+    cssdocConfig: string;
+    /** Allowed modifier precedence modes. */
+    cssdocGlobalPrecedence: { base: "base"; global: "global" };
+  }
+}
+
 /**
  * TypeDoc entry point. Declares the `cssdoc*` options and, after rendering, emits the CSS reference and
  * merges its sidebar.
@@ -67,15 +84,16 @@ export function load(app: Application): void {
   app.options.addDeclaration({
     name: "cssdocGlobalPrecedence",
     help: 'Precedence model for overlapping global and base modifiers ("base" or "global").',
-    type: ParameterType.String,
+    type: ParameterType.Map,
+    map: { base: "base", global: "global" },
     defaultValue: "base",
   });
 
   app.renderer.on(RendererEvent.END, (event: RendererEvent) => {
-    const css = app.options.getValue("cssdocCss") as string[];
+    const css = app.options.getValue("cssdocCss");
     if (css.length === 0) return;
-    const baseHref = app.options.getValue("cssdocBaseHref") as string;
-    const configPath = app.options.getValue("cssdocConfig") as string;
+    const baseHref = app.options.getValue("cssdocBaseHref");
+    const configPath = app.options.getValue("cssdocConfig");
     const configFile = configPath ? CssDocConfigFile.loadFile(configPath) : undefined;
     if (configFile?.hasErrors || configFile?.fileNotFound) {
       app.logger.error(
@@ -86,13 +104,11 @@ export function load(app: Application): void {
     emitCssApi({
       outputDirectory: event.outputDirectory,
       css,
-      outSubdir: app.options.getValue("cssdocOut") as string,
-      label: app.options.getValue("cssdocLabel") as string,
+      outSubdir: app.options.getValue("cssdocOut"),
+      label: app.options.getValue("cssdocLabel"),
       baseHref: baseHref || undefined,
       configFile,
-      globalPrecedence: app.options.getValue("cssdocGlobalPrecedence") as string as
-        | "base"
-        | "global",
+      globalPrecedence: app.options.getValue("cssdocGlobalPrecedence"),
     });
   });
 }

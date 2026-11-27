@@ -25,6 +25,7 @@ export {
 export {
   buildCssApi,
   buildSidebar,
+  parseSidebar,
   type BuildCssApiOptions,
   type BuildCssApiResult,
   type SidebarItem,

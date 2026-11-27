@@ -27,6 +27,10 @@ buildCssApi({
 Writes one page per record, an `index.md`, and a `css-sidebar.json`. For string output without the
 filesystem, use `renderEntry(entry)` and `renderIndex(entries)`.
 
+Use `parseSidebar(JSON.parse(json))` to validate an existing sidebar before merging it. It checks
+nested nodes and optional fields, preserves extra theme metadata, and throws `TypeError` for malformed
+data.
+
 The renderer escapes Vue-sensitive prose and removes unsafe Markdown destinations. Links accept
 relative, HTTP(S), and `mailto:` destinations; images accept relative and HTTP(S) destinations.
 For 1.0 examples, remarks, and usage, the recorded prose mode controls whether Markdown is interpreted.

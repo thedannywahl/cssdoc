@@ -1,11 +1,12 @@
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { CssDocConfigFile } from "@cssdoc/config";
+import { Application } from "typedoc";
 import { expect, test } from "vite-plus/test";
 
-import { TYPEDOC_SIDEBAR_FILE, emitCssApi, mergeCssSidebar } from "../src/index.ts";
+import { TYPEDOC_SIDEBAR_FILE, emitCssApi, load, mergeCssSidebar } from "../src/index.ts";
 
 const CSS = `
 /**
@@ -14,6 +15,32 @@ const CSS = `
  */
 .button { color: red; }
 `;
+
+test("TypeDoc validates the registered modifier precedence option", async () => {
+  const app = await Application.bootstrap({ plugin: [] });
+  load(app);
+  expect(app.options.getValue("cssdocGlobalPrecedence")).toBe("base");
+  app.options.setValue("cssdocGlobalPrecedence", "global");
+  expect(app.options.getValue("cssdocGlobalPrecedence")).toBe("global");
+  expect(() => app.options.setValue("cssdocGlobalPrecedence", "invalid")).toThrow(
+    "cssdocGlobalPrecedence",
+  );
+});
+
+test("emitCssApi rejects malformed nested sidebar nodes without overwriting the sidebar", () => {
+  const out = mkdtempSync(join(tmpdir(), "cssdoc-invalid-sidebar-"));
+  try {
+    const cssPath = join(out, "components.css");
+    const sidebarPath = join(out, TYPEDOC_SIDEBAR_FILE);
+    const original = JSON.stringify([{ text: "Modules", items: [{ text: 9 }] }]);
+    writeFileSync(cssPath, CSS);
+    writeFileSync(sidebarPath, original);
+    expect(() => emitCssApi({ outputDirectory: out, css: [cssPath] })).toThrow("Invalid sidebar");
+    expect(readFileSync(sidebarPath, "utf8")).toBe(original);
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+});
 
 function cssSidebarItems(path: string): unknown[] {
   const sidebar: unknown = JSON.parse(readFileSync(path, "utf8"));

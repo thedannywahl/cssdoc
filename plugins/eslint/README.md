@@ -48,6 +48,8 @@ export default [
 ```
 
 `valid-doc-comments` reports every [`@cssdoc/lint-core`](../../packages/lint-core#rules) violation.
+The `recommended`, `strict`, and `relaxed` presets also include `@eslint/css`'s recommended CSS rules
+at their upstream severities. Use the manual configuration above for cssdoc-only checks.
 
 ## Checking class usage (JSX + HTML)
 

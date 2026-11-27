@@ -4,9 +4,20 @@
  * - New cssdoc-specific rules (require-component-docs, valid-custom-properties)
  * - Configuration structure and plugin interface
  */
-import { expect, test } from "vite-plus/test";
+import { expect, test, vi } from "vite-plus/test";
 
 import plugin from "../src/index.ts";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function record(value: unknown): Record<string, unknown> {
+  if (!isRecord(value)) {
+    throw new TypeError("Expected a configuration object");
+  }
+  return value;
+}
 
 // ── Preset Configuration Tests ──────────────────────────────────────────────────────────────────
 
@@ -41,67 +52,63 @@ test("plugin.configs.full() returns an array", () => {
 });
 
 test("plugin.configs.recommended includes cssdoc plugin", () => {
-  const config = plugin.configs.recommended[0] as Record<string, unknown>;
+  const config = record(plugin.configs.recommended[0]);
   expect(config.files).toEqual(["**/*.css"]);
   expect(config.language).toBe("css/css");
 });
 
 test("plugin.configs.recommended includes valid-doc-comments rule", () => {
-  const config = plugin.configs.recommended[0] as Record<string, Record<string, unknown>>;
-  const { rules } = config;
+  const rules = record(plugin.configs.recommended[0].rules);
   expect(rules["cssdoc/valid-doc-comments"]).toBe("warn");
 });
 
 test("plugin.configs.strict includes error-level doc-comment rule", () => {
-  const config = plugin.configs.strict[0] as Record<string, Record<string, unknown>>;
-  const { rules } = config;
+  const rules = record(plugin.configs.strict[0].rules);
   expect(rules["cssdoc/valid-doc-comments"]).toBeDefined();
-  const ruleConfig = Array.isArray(rules["cssdoc/valid-doc-comments"])
-    ? (rules["cssdoc/valid-doc-comments"] as unknown[])[0]
+  const ruleConfig: unknown = Array.isArray(rules["cssdoc/valid-doc-comments"])
+    ? rules["cssdoc/valid-doc-comments"][0]
     : rules["cssdoc/valid-doc-comments"];
   expect(ruleConfig).toBe("error");
 });
 
 test("plugin.configs.strict includes error-level options with strict rule enforcement", () => {
-  const config = plugin.configs.strict[0] as Record<string, Record<string, unknown>>;
-  const { rules } = config;
-  const ruleConfig = Array.isArray(rules["cssdoc/valid-doc-comments"])
-    ? (rules["cssdoc/valid-doc-comments"] as unknown[])[1]
+  const rules = record(plugin.configs.strict[0].rules);
+  const ruleConfig: unknown = Array.isArray(rules["cssdoc/valid-doc-comments"])
+    ? rules["cssdoc/valid-doc-comments"][1]
     : null;
   expect(ruleConfig).toBeDefined();
-  const options = ruleConfig as Record<string, Record<string, string>>;
-  expect(options.rules?.["unknown-modifier"]).toBe("error");
-  expect(options.rules?.["unknown-part"]).toBe("error");
+  const options = record(record(ruleConfig).rules);
+  expect(options["unknown-modifier"]).toBe("error");
+  expect(options["unknown-part"]).toBe("error");
 });
 
 test("plugin.configs.relaxed includes warn-level with relaxed options", () => {
-  const config = plugin.configs.relaxed[0] as Record<string, Record<string, unknown>>;
-  const { rules } = config;
+  const rules = record(plugin.configs.relaxed[0].rules);
   expect(rules["cssdoc/valid-doc-comments"]).toBeDefined();
-  const ruleConfig = Array.isArray(rules["cssdoc/valid-doc-comments"])
-    ? (rules["cssdoc/valid-doc-comments"] as unknown[])[1]
+  const ruleConfig: unknown = Array.isArray(rules["cssdoc/valid-doc-comments"])
+    ? rules["cssdoc/valid-doc-comments"][1]
     : null;
   expect(ruleConfig).toBeDefined();
-  const options = ruleConfig as Record<string, Record<string, string>>;
-  expect(options.rules?.["unknown-modifier"]).toBe("off");
-  expect(options.rules?.["unknown-part"]).toBe("off");
-  expect(options.rules?.["unknown-pseudo"]).toBe("off");
+  const options = record(record(ruleConfig).rules);
+  expect(options["unknown-modifier"]).toBe("off");
+  expect(options["unknown-part"]).toBe("off");
+  expect(options["unknown-pseudo"]).toBe("off");
 });
 
 test("plugin.configs.classUsage() returns config for JS and HTML files", () => {
   const result = plugin.configs.classUsage();
   expect(result).toHaveLength(2);
-  expect((result[0] as Record<string, unknown>).files).toContain("**/*.{js,jsx,ts,tsx}");
-  expect((result[1] as Record<string, unknown>).files).toContain("**/*.html");
+  expect(result[0].files).toContain("**/*.{js,jsx,ts,tsx}");
+  expect(result[1].files).toContain("**/*.html");
 });
 
 test("plugin.configs.classUsage() with options passes css option to rules", () => {
   const result = plugin.configs.classUsage({ css: ["dist/components.css"] });
-  const jsConfig = result[0] as Record<string, Record<string, unknown>>;
-  const { rules } = jsConfig;
+  const rules = record(result[0].rules);
   const classUsageRule = rules["cssdoc/valid-class-usage"];
   expect(Array.isArray(classUsageRule)).toBe(true);
-  const ruleConfig = (classUsageRule as unknown[])[1] as Record<string, unknown>;
+  if (!Array.isArray(classUsageRule)) throw new TypeError("Expected rule options");
+  const ruleConfig = record(classUsageRule[1]);
   expect(ruleConfig.css).toEqual(["dist/components.css"]);
 });
 
@@ -134,25 +141,25 @@ test("require-component-docs has proper meta structure", () => {
 
 test("require-component-docs schema has proper structure", () => {
   const rule = plugin.rules["require-component-docs"];
-  const schema = rule.meta.schema[0] as Record<string, unknown>;
+  const schema = record(rule.meta.schema[0]);
   expect(schema.type).toBe("object");
   expect(schema.additionalProperties).toBe(false);
 });
 
 test("require-component-docs schema has pattern property", () => {
   const rule = plugin.rules["require-component-docs"];
-  const schema = rule.meta.schema[0] as Record<string, Record<string, unknown>>;
-  expect(schema.properties?.pattern).toBeDefined();
-  const patternProp = schema.properties?.pattern as Record<string, unknown>;
+  const properties = record(record(rule.meta.schema[0]).properties);
+  expect(properties.pattern).toBeDefined();
+  const patternProp = record(properties.pattern);
   expect(patternProp.type).toBe("string");
   expect(patternProp.description).toContain("RegExp pattern");
 });
 
 test("require-component-docs schema has skipUtilities property", () => {
   const rule = plugin.rules["require-component-docs"];
-  const schema = rule.meta.schema[0] as Record<string, Record<string, unknown>>;
-  expect(schema.properties?.skipUtilities).toBeDefined();
-  const skipUtilProp = schema.properties?.skipUtilities as Record<string, unknown>;
+  const properties = record(record(rule.meta.schema[0]).properties);
+  expect(properties.skipUtilities).toBeDefined();
+  const skipUtilProp = record(properties.skipUtilities);
   expect(skipUtilProp.type).toBe("boolean");
   expect(skipUtilProp.description).toContain("@utility");
 });
@@ -161,9 +168,10 @@ test("require-component-docs create function returns object with Rule visitor", 
   const rule = plugin.rules["require-component-docs"];
   const mockContext = {
     options: [],
-    sourceCode: { text: "" },
+    sourceCode: { text: "", getLocFromIndex: () => ({ line: 1, column: 0 }) },
+    report: vi.fn<() => void>(),
   };
-  const visitors = rule.create(mockContext as never);
+  const visitors = rule.create(mockContext);
   expect(visitors).toBeTypeOf("object");
   expect(visitors.Rule).toBeTypeOf("function");
 });
@@ -173,10 +181,11 @@ test("require-component-docs matches configured component names before selector 
   const visitors = plugin.rules["require-component-docs"].create({
     options: [{ pattern: "^Button$" }],
     sourceCode: { text: "", getLocFromIndex: () => ({ line: 1, column: 0 }) },
-    report: ({ message }) => messages.push(message),
+    report: ({ message }: { message: string }) => messages.push(message),
   });
   for (const selector of [".ButtonPrimary", ".Button:hover", ".Button-secondary", ".card"]) {
-    visitors.Rule({ selector: { value: selector } } as never);
+    const node = { type: "Rule", selector: { value: selector } };
+    visitors.Rule(node);
   }
   expect(messages).toEqual(
     Array.from({ length: 3 }, () => "Component `.Button` should have a @component doc comment."),
@@ -208,11 +217,12 @@ test("valid-custom-properties create function returns object with Declaration vi
   const rule = plugin.rules["valid-custom-properties"];
   const mockContext = {
     options: [],
-    sourceCode: { text: "" },
+    sourceCode: { text: "", getLocFromIndex: () => ({ line: 1, column: 0 }) },
+    report: vi.fn<() => void>(),
     filename: "test.css",
     cwd: process.cwd(),
   };
-  const visitors = rule.create(mockContext as never);
+  const visitors = rule.create(mockContext);
   expect(visitors).toBeTypeOf("object");
   expect(visitors.Declaration).toBeTypeOf("function");
 });
@@ -230,10 +240,12 @@ test("valid-custom-properties applies each declared syntax on repeated visits", 
       ].join("\n"),
       getLocFromIndex: () => ({ line: 1, column: 0 }),
     },
-    report: ({ message }) => messages.push(message),
+    report: ({ message }: { message: string }) => messages.push(message),
   });
-  const visit = (property: string, value: string) =>
-    visitors.Declaration({ property, value } as never);
+  const visit = (property: string, value: string) => {
+    const node = { type: "Declaration", property, value };
+    visitors.Declaration(node);
+  };
   visit("--color", "invalid");
   visit("--length", "invalid");
   visit("--count", "invalid");
@@ -253,7 +265,7 @@ test("valid-custom-properties applies each declared syntax on repeated visits", 
 
 test("valid-doc-comments schema has proper structure", () => {
   const rule = plugin.rules["valid-doc-comments"];
-  const schema = rule.meta.schema[0] as Record<string, unknown>;
+  const schema = record(rule.meta.schema[0]);
   expect(schema.type).toBe("object");
   expect(schema.properties).toBeDefined();
   expect(schema.additionalProperties).toBe(false);
@@ -261,16 +273,16 @@ test("valid-doc-comments schema has proper structure", () => {
 
 test("valid-doc-comments schema has all expected properties", () => {
   const rule = plugin.rules["valid-doc-comments"];
-  const schema = rule.meta.schema[0] as Record<string, Record<string, unknown>>;
-  expect(schema.properties?.rules).toBeDefined();
-  expect(schema.properties?.modifierConvention).toBeDefined();
-  expect(schema.properties?.naming).toBeDefined();
-  expect(schema.properties?.structureIgnore).toBeDefined();
+  const properties = record(record(rule.meta.schema[0]).properties);
+  expect(properties.rules).toBeDefined();
+  expect(properties.modifierConvention).toBeDefined();
+  expect(properties.naming).toBeDefined();
+  expect(properties.structureIgnore).toBeDefined();
 });
 
 test("valid-class-usage schema has proper structure", () => {
   const rule = plugin.rules["valid-class-usage"];
-  const schema = rule.meta.schema[0] as Record<string, unknown>;
+  const schema = record(rule.meta.schema[0]);
   expect(schema.type).toBe("object");
   expect(schema.properties).toBeDefined();
   expect(schema.additionalProperties).toBe(false);
@@ -278,22 +290,21 @@ test("valid-class-usage schema has proper structure", () => {
 
 test("valid-class-usage schema requires css option", () => {
   const rule = plugin.rules["valid-class-usage"];
-  const schema = rule.meta.schema[0] as Record<string, unknown>;
-  expect(schema.required as string[]).toContain("css");
+  const schema = record(rule.meta.schema[0]);
+  expect(schema.required).toContain("css");
 });
 
 test("valid-class-usage schema has css property definition", () => {
   const rule = plugin.rules["valid-class-usage"];
-  const schema = rule.meta.schema[0] as Record<string, Record<string, unknown>>;
-  const cssProp = schema.properties?.css as Record<string, unknown>;
+  const cssProp = record(record(record(rule.meta.schema[0]).properties).css);
   expect(cssProp.type).toBe("array");
   expect(cssProp.items).toBeDefined();
 });
 
 test("valid-class-usage schema has modifierConvention property", () => {
   const rule = plugin.rules["valid-class-usage"];
-  const schema = rule.meta.schema[0] as Record<string, Record<string, unknown>>;
-  expect(schema.properties?.modifierConvention).toBeDefined();
+  const properties = record(record(rule.meta.schema[0]).properties);
+  expect(properties.modifierConvention).toBeDefined();
 });
 
 // ── Plugin Rules Export ─────────────────────────────────────────────────────────────────────────

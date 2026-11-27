@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import process from "node:process";
 
 import tab from "@bomb.sh/tab/commander";
@@ -6,13 +5,12 @@ import * as clack from "@clack/prompts";
 import { Command, CommanderError, InvalidArgumentError, Option } from "@commander-js/extra-typings";
 import { DASH_SOURCE, DIGIT_SOURCE } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
-import type { Command as CommanderCommand } from "commander";
+import { Command as CommanderCommand } from "commander";
 
+import packageMetadata from "../package.json" with { type: "json" };
 import { runLint, type LintCliOptions, type LintCliResult } from "./index.ts";
 
-const { version } = JSON.parse(
-  readFileSync(new URL("../package.json", import.meta.url), "utf8"),
-) as { version: string };
+const { version } = packageMetadata;
 const INTEGER = arkRegex.as(`^${DASH_SOURCE}?${DIGIT_SOURCE}+$`, "u");
 
 interface PromptAdapter {
@@ -199,7 +197,10 @@ export function createCssDocProgram(runtime: CliRuntime = defaultRuntime): Comma
       });
     });
 
-  tab(program as unknown as CommanderCommand, { completionCommandName: "complete" });
+  if (!(program instanceof CommanderCommand)) {
+    throw new TypeError("Shell completion requires a Commander command");
+  }
+  tab(program, { completionCommandName: "complete" });
   return program;
 }
 

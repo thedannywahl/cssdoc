@@ -91,8 +91,8 @@ export class Switch extends LitElement {
     }
   `;
 
-  render() {
-    return html`<div class="switch" part="track"><span part="thumb"></span></div>` as string;
+  render(): unknown {
+    return html`<div class="switch" part="track"><span part="thumb"></span></div>`;
   }
 }
 
