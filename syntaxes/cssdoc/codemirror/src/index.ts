@@ -134,19 +134,14 @@ const TOKEN = arkRegex.as(
 );
 
 const GROUP_TYPE: Record<string, CssdocTokenType> = {
-  record: "record",
   rtag: "tag",
   rname: "record",
-  modifier: "modifier",
   mtag: "tag",
   mname: "modifier",
-  part: "part",
   ptag: "tag",
   pname: "part",
-  property: "property",
   proptag: "tag",
   propname: "property",
-  ref: "ref",
   reftag: "tag",
   refnum: "ref",
   membertag: "tag",
@@ -221,7 +216,7 @@ export const tokenizeComment = (
     if (blockTag && !allowedTags.has(blockTag[0])) continue;
     for (const key of Object.keys(groups)) {
       const gi = groups[key];
-      if (gi && gi[0] !== gi[1]) {
+      if (gi && gi[0] !== gi[1] && GROUP_TYPE[key]) {
         out.push({ from: gi[0], to: gi[1], type: GROUP_TYPE[key] });
       }
     }
@@ -232,10 +227,31 @@ export const tokenizeComment = (
     }
   }
   for (const highlight of highlights) {
+    if (highlight.role === "argument") {
+      const type: CssdocTokenType = RECORD_TAGS.includes(highlight.tag)
+        ? "record"
+        : highlight.tag === "modifier"
+          ? "modifier"
+          : highlight.tag === "part" || highlight.tag === "selector"
+            ? "part"
+            : highlight.tag === "cssproperty" || highlight.tag === "property"
+              ? "property"
+              : "keyword";
+      let cursor = highlight.start;
+      const overlaps = out
+        .filter((token) => token.from < highlight.end && token.to > highlight.start)
+        .toSorted((a, b) => a.from - b.from);
+      for (const token of overlaps) {
+        if (cursor < token.from) out.push({ from: cursor, to: token.from, type });
+        cursor = Math.max(cursor, token.to);
+      }
+      if (cursor < highlight.end) out.push({ from: cursor, to: highlight.end, type });
+      continue;
+    }
     const type =
       highlight.role === "inlineTag"
         ? "tag"
-        : highlight.role === "inlinePunctuation"
+        : highlight.role === "inlinePunctuation" || highlight.role === "divider"
           ? "punct"
           : highlight.role === "inlineContent"
             ? "link"

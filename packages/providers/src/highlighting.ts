@@ -21,7 +21,14 @@ export interface DocHighlight {
   /** Exclusive UTF-16 offset in the supplied comment. */
   end: number;
   /** Semantic role of this span. */
-  role: "blockTag" | "inlineTag" | "inlinePunctuation" | "inlineContent" | "code";
+  role:
+    | "blockTag"
+    | "argument"
+    | "divider"
+    | "inlineTag"
+    | "inlinePunctuation"
+    | "inlineContent"
+    | "code";
   /** Canonical name of the containing tag, without `@`. */
   tag: string;
 }
@@ -131,6 +138,25 @@ export function highlightDocComment(
     const next = doc.blocks[index + 1]?.start ?? text.length;
     const body = doc.prose.find((item) => item.span.start >= block.start && item.span.start < next);
     const proseStart = body && body.text ? textOffset(block, body.span.start) : block.text.length;
+    if (body) {
+      const headerEnd = body.header.length;
+      const header = block.text.slice(match[0].length, headerEnd);
+      const inline = scanInlineTagsOutsideCode(header, [], configuration);
+      let cursor = 0;
+      for (const boundary of [...inline, { start: header.length, end: header.length }]) {
+        let start = cursor;
+        let end = boundary.start;
+        while (start < end && header[start].trim() === "") start++;
+        while (end > start && header[end - 1].trim() === "") end--;
+        for (const source of mappedRanges(block, match[0].length + start, match[0].length + end)) {
+          result.push({ ...source, role: "argument", tag: definition.canonicalName });
+        }
+        cursor = boundary.end;
+      }
+      for (const source of mappedRanges(block, headerEnd, headerEnd + 1)) {
+        result.push({ ...source, role: "divider", tag: definition.canonicalName });
+      }
+    }
     const parts = body
       ? [
           { text: block.text.slice(match[0].length, proseStart), offset: match[0].length },

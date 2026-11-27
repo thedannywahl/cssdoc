@@ -151,6 +151,19 @@ test("uses prose-aware inline highlights instead of lexical matches inside Markd
   expect(tokens).toContainEqual({ type: "link", text: "button" });
 });
 
+test("adapts shared header and divider spans without overlapping tokens", () => {
+  const src = '/** @part [data-slot="action"] {@private} - Action. */';
+  const tokens = tokenizeComment(src);
+  expect(tokens).toContainEqual(
+    expect.objectContaining({ type: "punct", from: src.indexOf(" - ") + 1 }),
+  );
+  expect(tokens).toContainEqual(
+    expect.objectContaining({ type: "tag", from: src.indexOf("@private") }),
+  );
+  const ordered = tokens.toSorted((a, b) => a.from - b.from);
+  expect(ordered.every((token, i) => i === 0 || ordered[i - 1].to <= token.from)).toBe(true);
+});
+
 test("lightly highlights an @structure body — class selectors and braces, nothing else", () => {
   const toks = label("@structure Caption.\n.tabs {\n  .list:has(.tab) {}\n}\n@a11y ok");
   // The parts (class selectors) light up, including one inside :has().

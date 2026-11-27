@@ -1368,10 +1368,15 @@ export class CssDocLanguageService {
             tokenType:
               highlight.role === "inlineTag"
                 ? tokenTypes.decorator
-                : highlight.role === "inlineContent"
+                : highlight.role === "inlineContent" || highlight.role === "argument"
                   ? tokenTypes.variable
                   : tokenTypes.keyword,
-            tokenModifiers: 0,
+            tokenModifiers:
+              highlight.role === "argument" && highlight.tag === "modifier"
+                ? 1 << modifiers.modification
+                : highlight.role === "argument" && highlight.tag.startsWith("css")
+                  ? 1 << modifiers.optional
+                  : 0,
           });
           continue;
         }

@@ -25,6 +25,9 @@ checkClassUsage([{ base: "btn", tokens: ["btn", "-x"], token: "-x" }], index);
 
 Adding an aspect is one module in `aspects.ts` plus a line in the aggregate — no adapter changes.
 Hover cards render 1.0 plain-mode remarks and examples as literal text, preserving line breaks.
+`highlightDocComment` from `@cssdoc/providers/highlighting` exposes source-mapped block tags,
+structured-header arguments and dividers, inline tags, and protected code. Its highlighting
+coverage is still partial; Markdown styling and structure tokens aren't yet shared.
 
 ## License
 

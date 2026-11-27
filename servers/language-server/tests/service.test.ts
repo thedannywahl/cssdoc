@@ -1070,6 +1070,27 @@ test("semantic tokens highlight inline tags without overlaps or Markdown code", 
   ).toBe(true);
 });
 
+test("semantic tokens include shared header arguments and dividers without overlaps", () => {
+  const text = "/** @component 😀button {@private} - Internal. */";
+  const svc = new CssDocLanguageService(createIndex(""));
+  const tokens = svc.semanticTokens(text).toSorted((a, b) => a.startCharacter - b.startCharacter);
+  expect(
+    tokens.map((token) => text.slice(token.startCharacter, token.startCharacter + token.length)),
+  ).toContain("😀button");
+  expect(
+    tokens.map((token) => text.slice(token.startCharacter, token.startCharacter + token.length)),
+  ).toContain("-");
+  expect(
+    tokens.map((token) => text.slice(token.startCharacter, token.startCharacter + token.length)),
+  ).toContain("private");
+  expect(
+    tokens.every(
+      (token, i) =>
+        i === 0 || tokens[i - 1].startCharacter + tokens[i - 1].length <= token.startCharacter,
+    ),
+  ).toBe(true);
+});
+
 test("inlayHints: shows custom property metadata", () => {
   const docCss = `
 /**

@@ -151,6 +151,29 @@ test("Markdown syntax inside inline labels doesn't override the inline tag", () 
   ).toEqual(["@link"]);
 });
 
+test("shared highlighting separates header arguments, metadata, and the prose divider", () => {
+  const text = [
+    "/**",
+    " * @component button {@private} - 😀 Internal control.",
+    ' * @part [data-slot="action"] - Action.',
+    " * @remarks - **Markdown**",
+    " */",
+  ].join("\r\n");
+  const tokens = highlightDocComment(text);
+  expect(
+    tokens
+      .filter((token) => token.role === "argument")
+      .map((token) => text.slice(token.start, token.end)),
+  ).toEqual(["button", '[data-slot="action"]']);
+  expect(
+    tokens
+      .filter((token) => token.role === "divider")
+      .map((token) => text.slice(token.start, token.end)),
+  ).toEqual(["-", "-", "-"]);
+  expect(tokens.some((token) => token.tag === "private" && token.role === "inlineTag")).toBe(true);
+  expect(tokens.every((token, i) => i === 0 || tokens[i - 1].end <= token.start)).toBe(true);
+});
+
 test("private examples don't appear in hover cards", () => {
   const idx = createIndex(`/** @component button
  * @example docs - Visible example.
