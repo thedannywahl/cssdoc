@@ -51,10 +51,11 @@ query occurrences and compare CSS numbers without losing decimal precision. Cont
 their case. They return unavailable when a numeric spelling changes the token's integer type.
 Unsupported query syntax, including style queries and nested conditions that the CSS parser can't
 represent, also returns unavailable.
-`resolveSupportsMemberReference` uses source-backed supports occurrences for declaration conditions.
+`resolveSupportsMemberReference` uses source-backed supports occurrences for declaration conditions
+and supported `selector()` functions.
 It preserves value case and integer token types where CSS interpretation may differ, returning
-unavailable when those differences could affect a match. Unsupported functions, custom-property
-values, and nested conditions also return unavailable.
+unavailable when those differences could affect a match. Unsupported functions or selector forms,
+custom-property values, and nested conditions also return unavailable.
 
 `projectPrivateLinksInLookup` projects links using the prose's original reference lookup.
 It preserves labels as literal fragments and reports unavailable targets; callers must handle that

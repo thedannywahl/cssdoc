@@ -673,7 +673,7 @@ test("supports members preserve occurrences without guessing value case sensitiv
   expect(resolve("card#supports((display: grid) foo (color: red))")).toEqual({
     status: "invalid-subject",
   });
-  expect(resolve("card#supports(selector(:has(.card)))")).toMatchObject({ status: "unavailable" });
+  expect(resolve("card#supports(selector(:has(.card)))")).toEqual({ status: "missing" });
   expect(resolve("card#supports(font-tech(color-COLRv1))")).toMatchObject({
     status: "unavailable",
   });
@@ -710,7 +710,7 @@ test("supports members preserve occurrences without guessing value case sensitiv
     status: "resolved",
   });
   const unsupported = createIndex(
-    "/** @component card */ @supports selector(:has(.card)) { .card {} }",
+    "/** @component card */ @supports font-tech(color-COLRv1) { .card {} }",
   );
   expect(resolve("card#supports((display: grid))", unsupported)).toMatchObject({
     status: "unavailable",
@@ -722,6 +722,33 @@ test("supports members preserve occurrences without guessing value case sensitiv
       workspace: { complete: true, sources: [{ index, sourceKey: "cards.css" }] },
     }),
   ).toBe("private");
+});
+
+test("supports selector functions use selector identity and preserve duplicates", () => {
+  const index = createIndex(`/** @component card */
+@supports selector(:has(.card > [data-kind=main])) { .card {} }
+@supports SELECTOR(:HAS(.card>[data-kind="main"])) { .card {} }
+@supports selector(.CARD) { .card {} }`);
+  const resolve = (text: string) => {
+    const parsed = parseReference(text);
+    if (!parsed.ok) throw new Error(parsed.error);
+    return resolveSupportsMemberReference(parsed.reference, {
+      workspace: { complete: true, sources: [{ index }] },
+    });
+  };
+  expect(resolve("card#supports(selector(:has(.card > [data-kind=main])))")).toMatchObject({
+    status: "ambiguous",
+    stage: "member",
+    candidates: [
+      { occurrence: { span: { start: { line: 2 } } } },
+      { occurrence: { span: { start: { line: 3 } } } },
+    ],
+  });
+  expect(resolve("card#supports(selector(.CARD))")).toMatchObject({ status: "resolved" });
+  expect(resolve("card#supports(selector(.card))")).toEqual({ status: "missing" });
+  expect(resolve("card#supports(selector(:unknown(value)))")).toMatchObject({
+    status: "unavailable",
+  });
 });
 
 test("createIndex parses the model and resolves class lookups", () => {

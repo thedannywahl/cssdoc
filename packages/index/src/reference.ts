@@ -723,6 +723,28 @@ function supportsKey(input: string): SupportsKey {
             if (child.type === "Identifier") operators.add(child);
           }
           break;
+        case "FeatureFunction": {
+          if (
+            asciiLower(ident.decode(node.feature)) !== "selector" ||
+            node.value.type !== "Selector"
+          ) {
+            unsupported = true;
+            return walk.skip;
+          }
+          const selector = selectorKey(generate(node.value), "part");
+          if (selector.status !== "valid") {
+            unsupported = true;
+            return walk.skip;
+          }
+          const normalized = parse(selector.key, { context: "selector" });
+          if (normalized.type !== "Selector") {
+            unsupported = true;
+            return walk.skip;
+          }
+          node.feature = "selector";
+          node.value = normalized;
+          return walk.skip;
+        }
         case "Declaration": {
           const property = ident.decode(node.property);
           if (property.startsWith("--")) unsupported = true;
