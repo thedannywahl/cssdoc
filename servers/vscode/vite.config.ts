@@ -17,7 +17,7 @@ const config: UserConfig = mergeConfig(
       tasks: {
         build: "node scripts/build.mjs",
         check: "vp check",
-        "type-check": "tsc --noEmit",
+        "type-check": "tsc --noEmit && tsc --noEmit -p examples/tsconfig.json",
         test: "vp test",
         icon: { command: "node scripts/gen-icon.mjs", cache: false },
         package: {

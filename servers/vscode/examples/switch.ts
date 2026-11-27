@@ -1,4 +1,3 @@
-// @ts-nocheck — a demo fixture; `lit` isn't a dependency of this repo.
 // A Lit-style web component. cssdoc documents shadow-DOM parts (@csspart, targeted from outside the
 // shadow tree with ::part()) and custom states (@cssstate :state(...)) the same way it documents
 // class parts and modifiers — here inside a Lit `css` template (the JS/TS embedded host). The doc
@@ -9,6 +8,7 @@
 //   - Hover <x-switch> ......................... See all examples in hover card
 //   - Delete an @example line .................. "incomplete-example" diagnostic appears
 import { LitElement, css, html } from "lit";
+import type { CSSResult, TemplateResult } from "lit";
 
 /**
  * @component switch
@@ -63,7 +63,7 @@ import { LitElement, css, html } from "lit";
  * </div>
  */
 export class Switch extends LitElement {
-  static styles: string = css`
+  static override styles: CSSResult = css`
     .switch {
       display: inline-flex;
       cursor: pointer;
@@ -91,7 +91,7 @@ export class Switch extends LitElement {
     }
   `;
 
-  render(): unknown {
+  override render(): TemplateResult {
     return html`<div class="switch" part="track"><span part="thumb"></span></div>`;
   }
 }

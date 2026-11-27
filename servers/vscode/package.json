@@ -30,6 +30,7 @@
     "@vscode/vsce": "catalog:",
     "arkregex": "catalog:",
     "esbuild": "catalog:",
+    "lit": "^3.3.3",
     "ovsx": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
