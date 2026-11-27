@@ -313,6 +313,49 @@ test("restriction lint preserves repository conventions and checks unsafe forms"
   }
 });
 
+test("lint rejects accidental switch fallthrough", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".fallthrough-check-"));
+  try {
+    const file = join(directory, "switches.mjs");
+    writeFileSync(
+      file,
+      [
+        "function broken(value) {",
+        "  switch (value) {",
+        '    case 1: console.error("one");',
+        '    case 2: return "two";',
+        '    default: return "other";',
+        "  }",
+        "}",
+        "function intentional(value) {",
+        "  switch (value) {",
+        '    case 1: console.error("one");',
+        "      // falls through",
+        '    case 2: return "two";',
+        '    default: return "other";',
+        "  }",
+        "}",
+        "console.error(broken(1), intentional(1));",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "eslint(no-fallthrough)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["error", 4]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("selected nursery rules check control flow, imports, and Node ESM globals", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".nursery-check-"));
