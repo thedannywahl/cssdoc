@@ -12,7 +12,13 @@ import type {
 import { ALPHA_UPPER_SOURCE } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
 import { generate, ident, parse, tokenTypes, tokenize, walk } from "css-tree";
-import type { CssDocIndex, RecordInfo, ScopeOccurrence, SourceSpan } from "./index.ts";
+import type {
+  CssDocIndex,
+  MediaOccurrence,
+  RecordInfo,
+  ScopeOccurrence,
+  SourceSpan,
+} from "./index.ts";
 
 type NamedMemberByKind = {
   csspart: CssPart;
@@ -542,6 +548,122 @@ export function resolveScopeMemberReference(
   const candidates: ScopeMemberCandidate[] = [];
   for (const occurrence of occurrences) {
     const candidateKey = scopeKey(occurrence.prelude);
+    if (candidateKey.status !== "valid") return { status: "unavailable", candidates: [record] };
+    if (candidateKey.key === key.key) candidates.push({ record, occurrence });
+  }
+  if (candidates.length === 0) return { status: "missing" };
+  if (candidates.length > 1) return { status: "ambiguous", stage: "member", candidates };
+  return { status: "resolved", candidate: candidates[0] };
+}
+
+/** One CSS `@media` occurrence and its owning record. */
+export interface MediaMemberCandidate {
+  /** Owning record and its source provenance. */
+  record: ReferenceCandidate;
+  /** Source occurrence of the CSS media rule. */
+  occurrence: MediaOccurrence;
+}
+
+/** Resolution of a CSS media member reference. */
+export type MediaMemberResolution =
+  | { status: "resolved"; candidate: MediaMemberCandidate }
+  | { status: "missing" }
+  | { status: "ambiguous"; stage: "record"; candidates: readonly ReferenceCandidate[] }
+  | { status: "ambiguous"; stage: "member"; candidates: readonly MediaMemberCandidate[] }
+  | { status: "unavailable"; candidates: readonly ReferenceCandidate[] }
+  | { status: "invalid-subject" };
+
+function mediaKey(input: string): SelectorKey {
+  try {
+    const ast = parse(input, {
+      context: "atrulePrelude",
+      atrule: "media",
+      onParseError(error) {
+        throw error;
+      },
+    });
+    if (ast.type !== "AtrulePrelude" || ast.children.size !== 1) return { status: "invalid" };
+    const list = ast.children.first;
+    if (list?.type !== "MediaQueryList" || list.children.size === 0) return { status: "invalid" };
+
+    let unsupported = false;
+    const keyword = (name: string): string => {
+      const decoded = ident.decode(name);
+      if (decoded.startsWith("--")) unsupported = true;
+      return ident.encode(asciiLower(decoded));
+    };
+    const canonicalNumber = (text: string): boolean => {
+      const value = Number(text);
+      return (
+        Number.isFinite(value) &&
+        String(value) === text &&
+        (!Number.isInteger(value) || Number.isSafeInteger(value))
+      );
+    };
+    walk(ast, (node) => {
+      switch (node.type) {
+        case "MediaQuery":
+          if (node.mediaType) node.mediaType = keyword(node.mediaType);
+          if (node.modifier) node.modifier = asciiLower(node.modifier);
+          break;
+        case "Feature":
+        case "Identifier":
+          node.name = keyword(node.name);
+          break;
+        case "Dimension":
+          node.unit = keyword(node.unit);
+          if (!canonicalNumber(node.value)) unsupported = true;
+          break;
+        case "Number":
+          if (!canonicalNumber(node.value)) unsupported = true;
+          break;
+        case "AtrulePrelude":
+        case "MediaQueryList":
+        case "Condition":
+        case "FeatureRange":
+        case "Ratio":
+          break;
+        default:
+          unsupported = true;
+      }
+    });
+    if (unsupported) return { status: "unsupported" };
+    return { status: "valid", key: generate(ast) };
+  } catch (error) {
+    if (error instanceof SyntaxError) return { status: "invalid" };
+    throw error;
+  }
+}
+
+/**
+ * Resolve a CSS media query from source-preserved occurrences.
+ *
+ * Unsupported prelude forms and noncanonical numeric spellings return unavailable rather than a
+ * potentially incorrect missing or unique result.
+ *
+ * @param reference - A parsed reference with a `media(...)` member.
+ * @param lookup - Explicit source provenance and scope completeness.
+ * @returns A resolved media rule, missing or ambiguous candidates, an invalid subject, or unavailable.
+ */
+export function resolveMediaMemberReference(
+  reference: CssDocReference,
+  lookup: ReferenceLookup,
+): MediaMemberResolution {
+  if (reference.member?.kind !== "media") return { status: "unavailable", candidates: [] };
+  const key = mediaKey(reference.member.subject);
+  if (key.status === "invalid") return { status: "invalid-subject" };
+  if (key.status === "unsupported") return { status: "unavailable", candidates: [] };
+  const resolution = resolveRecordReference(reference, lookup);
+  if (resolution.status === "missing") return { status: "missing" };
+  if (resolution.status === "ambiguous")
+    return { status: "ambiguous", stage: "record", candidates: resolution.candidates };
+  if (resolution.status === "unavailable") return resolution;
+  const record = resolution.candidate;
+  const occurrences = record.record.mediaOccurrences;
+  if (!occurrences) return { status: "unavailable", candidates: [record] };
+  const candidates: MediaMemberCandidate[] = [];
+  for (const occurrence of occurrences) {
+    const candidateKey = mediaKey(occurrence.prelude);
     if (candidateKey.status !== "valid") return { status: "unavailable", candidates: [record] };
     if (candidateKey.key === key.key) candidates.push({ record, occurrence });
   }

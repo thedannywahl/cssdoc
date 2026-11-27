@@ -50,6 +50,7 @@ import {
 } from "@cssdoc/regex";
 export {
   resolveNamedMemberReference,
+  resolveMediaMemberReference,
   resolveRecordReference,
   resolveScopeMemberReference,
   resolveSelectorMemberReference,
@@ -59,6 +60,8 @@ export type {
   NamedMemberCandidate,
   NamedMemberOccurrence,
   NamedMemberResolution,
+  MediaMemberCandidate,
+  MediaMemberResolution,
   RecordReferenceResolution,
   ReferenceCandidate,
   ReferenceLookup,
@@ -111,6 +114,14 @@ export interface Location {
 /** A CSS `@scope` enclosing rules owned by one record. */
 export interface ScopeOccurrence {
   /** Authored scope prelude, or an empty string when omitted. */
+  prelude: string;
+  /** Range of the CSS at-rule, when available. */
+  span?: SourceSpan;
+}
+
+/** A CSS `@media` occurrence enclosing rules owned by one record. */
+export interface MediaOccurrence {
+  /** Authored media prelude. */
   prelude: string;
   /** Range of the CSS at-rule, when available. */
   span?: SourceSpan;
@@ -197,6 +208,8 @@ export interface RecordInfo {
   memberSpans: Map<string, SourceSpan>;
   /** CSS scope occurrences; absent when the index was built without source CSS. */
   scopeOccurrences?: readonly ScopeOccurrence[];
+  /** CSS media occurrences; absent when the source can't be analyzed as plain CSS. */
+  mediaOccurrences?: readonly MediaOccurrence[];
   /** Modifier names authored via `@modifier` (used for drift detection). */
   authoredModifiers: Set<string>;
   /**
@@ -612,6 +625,7 @@ interface Build {
   ruleSpan?: SourceSpan;
   memberSpans: Map<string, SourceSpan>;
   scopeOccurrences: ScopeOccurrence[];
+  mediaOccurrences: MediaOccurrence[];
   authoredModifiers: Set<string>;
   authoredParts: Map<string, string>;
   authoredShadowParts: Set<string>;
@@ -704,13 +718,16 @@ function scanNodes(
       }
       if (node.nodes) scanNodes(node.nodes, build, base, matcher, true);
     } else if (node.type === "atrule") {
+      const name = node.name.toLowerCase();
       if (
-        node.name.toLowerCase() === "scope" &&
+        (name === "scope" || name === "media") &&
         node.nodes &&
         containsStyleRule(node.nodes, inStyleRule)
       ) {
         const span = spanOf(node);
-        build.scopeOccurrences.push({ prelude: node.params, ...(span ? { span } : {}) });
+        const occurrence = { prelude: node.params, ...(span ? { span } : {}) };
+        if (name === "scope") build.scopeOccurrences.push(occurrence);
+        else build.mediaOccurrences.push(occurrence);
       }
       if (node.name === "property") set(memberKey("property", node.params.trim()), node);
       else if (node.name === "function") {
@@ -784,6 +801,7 @@ export function createIndex(
           docCommentSpan: docSpan,
           memberSpans: new Map(),
           scopeOccurrences: [],
+          mediaOccurrences: [],
           authoredModifiers: new Set(doc.modifiers.keys()),
           // name → selector: non-class parts use their explicit selector; class parts use ".${name}".
           authoredParts: new Map(
@@ -812,6 +830,7 @@ export function createIndex(
       ruleSpan: build?.ruleSpan,
       memberSpans: build?.memberSpans ?? new Map(),
       ...(build && !options.parse ? { scopeOccurrences: build.scopeOccurrences } : {}),
+      ...(build && !options.parse ? { mediaOccurrences: build.mediaOccurrences } : {}),
       authoredModifiers: build?.authoredModifiers ?? new Set(),
       authoredParts: build?.authoredParts ?? new Map(),
       authoredShadowParts: build?.authoredShadowParts ?? new Set(),

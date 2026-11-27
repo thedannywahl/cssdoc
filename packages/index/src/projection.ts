@@ -2,6 +2,7 @@ import type { CssDocConfiguration, CssDocReference } from "@cssdoc/core";
 import { projectPrivateLinks, type PublicProseProjection } from "@cssdoc/core/prose";
 import {
   resolveNamedMemberReference,
+  resolveMediaMemberReference,
   resolveRecordReference,
   resolveScopeMemberReference,
   resolveSelectorMemberReference,
@@ -30,13 +31,15 @@ export function referenceVisibility(
   const result =
     member.kind === "scope"
       ? resolveScopeMemberReference(reference, lookup)
-      : member.kind === "modifier" ||
-          member.kind === "part" ||
-          member.kind === "wrapper" ||
-          member.kind === "state" ||
-          member.kind === "pseudo-element"
-        ? resolveSelectorMemberReference(reference, lookup)
-        : resolveNamedMemberReference(reference, lookup);
+      : member.kind === "media"
+        ? resolveMediaMemberReference(reference, lookup)
+        : member.kind === "modifier" ||
+            member.kind === "part" ||
+            member.kind === "wrapper" ||
+            member.kind === "state" ||
+            member.kind === "pseudo-element"
+          ? resolveSelectorMemberReference(reference, lookup)
+          : resolveNamedMemberReference(reference, lookup);
   if (result.status !== "resolved") return "unavailable";
   return result.candidate.record.record.entry.visibility === "internal" ? "private" : "public";
 }

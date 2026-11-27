@@ -10,6 +10,7 @@ import {
   memberKey,
   projectPrivateLinksInLookup,
   referenceVisibility,
+  resolveMediaMemberReference,
   resolveNamedMemberReference,
   resolveRecordReference,
   resolveScopeMemberReference,
@@ -189,7 +190,7 @@ test("private-link projection resolves visibility in the original lookup context
 
 test("member link visibility requires a complete and uniquely resolved member", () => {
   const index = createIndex(`/** @component secret {@private} */
-@scope (.secret) { .secret {} }`);
+@scope (.secret) { @media (width > 30px) { .secret {} } }`);
   const record = index.records[0];
   const named: NamedMemberOccurrence[] = [{ kind: "slot", member: { name: "label" } }];
   const selectors: SelectorMemberOccurrence[] = [{ kind: "part", selector: ".icon" }];
@@ -201,7 +202,12 @@ test("member link visibility requires a complete and uniquely resolved member", 
     selectorMemberOccurrences: new Map([[record, selectors]]),
   };
   const lookup = { workspace: { complete: true, sources: [source] } };
-  for (const text of ["secret#slot(label)", "secret#part(.icon)", "secret#scope((.secret))"]) {
+  for (const text of [
+    "secret#slot(label)",
+    "secret#part(.icon)",
+    "secret#scope((.secret))",
+    "secret#media((width > 30px))",
+  ]) {
     const parsed = parseReference(text);
     if (!parsed.ok) throw new Error(parsed.error);
     expect(referenceVisibility(parsed.reference, lookup)).toBe("private");
@@ -453,6 +459,62 @@ test("ordinary comments cannot steal a record's source scope occurrences", () =>
   ).toEqual([["(.card)", "(.still-card)"], ["(.other)"]]);
   expect(index.records[0].docCommentSpan?.start.line).toBe(3);
   expect(index.records[1].docCommentSpan?.start.line).toBe(7);
+});
+
+test("media members use owned source occurrences and parsed query identity", () => {
+  const css = `/** @component card */
+@media screen and (min-width: 40rem) {
+  .card {}
+  @media (orientation: landscape) { .card {} }
+}
+@media SCREEN and (min-width:40REM) { .card {} }
+.card { @media (width > 30px) { color: red } }
+@media (empty) { @keyframes fade { from { opacity: 0 } } }
+@media (color), (hover) { .card {} }
+/** @component other */
+@media (color) { .other {} }`;
+  const index = createIndex(css, { file: "cards.css" });
+  const resolve = (text: string, scopeIndex = index, complete = true) => {
+    const parsed = parseReference(text);
+    if (!parsed.ok) throw new Error(parsed.error);
+    return resolveMediaMemberReference(parsed.reference, {
+      workspace: { complete, sources: [{ index: scopeIndex, sourceKey: "cards.css" }] },
+    });
+  };
+  expect(index.records[0].mediaOccurrences?.map((item) => item.prelude)).toEqual([
+    "screen and (min-width: 40rem)",
+    "(orientation: landscape)",
+    "SCREEN and (min-width:40REM)",
+    "(width > 30px)",
+    "(color), (hover)",
+  ]);
+  expect(resolve(String.raw`card#media(scr\65 en and (min-width: 40rem))`)).toMatchObject({
+    status: "ambiguous",
+    stage: "member",
+    candidates: [
+      { occurrence: { span: { start: { line: 2 } } }, record: { sourceKey: "cards.css" } },
+      { occurrence: { span: { start: { line: 6 } } } },
+    ],
+  });
+  expect(resolve("card#media((orientation: LANDSCAPE))")).toMatchObject({ status: "resolved" });
+  expect(resolve("card#media((width>30px))")).toMatchObject({ status: "resolved" });
+  expect(resolve("card#media((color), (hover))")).toMatchObject({ status: "resolved" });
+  expect(resolve("card#media((hover), (color))")).toEqual({ status: "missing" });
+  expect(resolve("card#media((width>31px))")).toEqual({ status: "missing" });
+  expect(resolve("card#media((empty))")).toEqual({ status: "missing" });
+  expect(resolve("card#media((??))")).toEqual({ status: "invalid-subject" });
+  expect(resolve("card#media((width>.5px))")).toMatchObject({ status: "unavailable" });
+  expect(resolve("card#media((width:calc(30px + 1px)))")).toMatchObject({ status: "unavailable" });
+  expect(resolve("card#media((color))", index, false)).toMatchObject({ status: "unavailable" });
+  expect(resolve("card#media((color))", indexFromEntries(index.entries))).toMatchObject({
+    status: "unavailable",
+  });
+  expect(resolve("card#media((color))", createIndex(css, { parse: postcss.parse }))).toMatchObject({
+    status: "unavailable",
+  });
+  expect(resolve("other#media((color))")).toMatchObject({ status: "resolved" });
+  const uncertain = createIndex("/** @component card */ @media (width: 1.0px) { .card {} }");
+  expect(resolve("card#media((width:1px))", uncertain)).toMatchObject({ status: "unavailable" });
 });
 
 test("createIndex parses the model and resolves class lookups", () => {
