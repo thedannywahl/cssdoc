@@ -528,6 +528,33 @@ test("switch lint requires cases or an intentional fallback", () => {
   }
 });
 
+test("Node imports use the node: protocol in root and package lint runs", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".node-protocol-check-"));
+  try {
+    const file = join(directory, "imports.mjs");
+    writeFileSync(
+      file,
+      'import fs from "fs";\nimport path from "node:path";\nconsole.error(fs, path);\n',
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
+      const diagnostics = parseLintOutput(result.stdout).diagnostics.filter(
+        ({ code }) => code === "unicorn(prefer-node-protocol)",
+      );
+      expect(diagnostics.map(({ severity, labels }) => [severity, labels[0].span.line])).toEqual([
+        ["error", 1],
+      ]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("regexp lint detects dangerous native patterns in root and package runs", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".regexp-check-"));
