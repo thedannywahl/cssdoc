@@ -136,6 +136,21 @@ test("plain prose highlights inline tags in backticks but not fences", () => {
   ).toEqual(["@link"]);
 });
 
+test("Markdown syntax inside inline labels doesn't override the inline tag", () => {
+  const text = "/** @remarks - {@link button | `plain` label} `{@link hidden}` */";
+  const tokens = highlightDocComment(text);
+  expect(
+    tokens
+      .filter((token) => token.role === "inlineContent")
+      .map((token) => text.slice(token.start, token.end)),
+  ).toEqual(["button | `plain` label"]);
+  expect(
+    tokens
+      .filter((token) => token.role === "inlineTag")
+      .map((token) => text.slice(token.start, token.end)),
+  ).toEqual(["@link"]);
+});
+
 test("private examples don't appear in hover cards", () => {
   const idx = createIndex(`/** @component button
  * @example docs - Visible example.

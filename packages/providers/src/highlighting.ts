@@ -104,7 +104,7 @@ export function highlightDocComment(
     addInlineHighlights(
       result,
       text,
-      mode === "plain" ? fencedProseRanges(text) : markdownCodeRanges(text),
+      mode === "plain" ? fencedProseRanges(text) : markdownCodeRanges(text, configuration),
       (start, end) => {
         const ranges: { start: number; end: number }[] = [];
         let lineStart = start;
@@ -148,7 +148,9 @@ export function highlightDocComment(
       : [{ text: block.text.slice(match[0].length), offset: match[0].length }];
     for (const part of parts) {
       const code =
-        part.mode === "markdown" ? markdownCodeRanges(part.text) : fencedProseRanges(part.text);
+        part.mode === "markdown"
+          ? markdownCodeRanges(part.text, configuration)
+          : fencedProseRanges(part.text);
       addInlineHighlights(
         result,
         part.text,

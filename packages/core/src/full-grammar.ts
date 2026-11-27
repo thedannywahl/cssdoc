@@ -9,10 +9,14 @@ import type { CssParse } from "./model.ts";
  * Find CommonMark inline and block code ranges in framing-free prose.
  *
  * @param text - Markdown prose.
+ * @param configuration - Active inline-tag vocabulary.
  * @returns Half-open UTF-16 ranges relative to the prose.
  */
-export function markdownCodeRanges(text: string): { start: number; end: number }[] {
-  const ranges: { start: number; end: number }[] = [];
+export function markdownCodeRanges(
+  text: string,
+  configuration: CssDocConfiguration = new CssDocConfiguration(),
+): { start: number; end: number }[] {
+  const ranges: { start: number; end: number; block: boolean }[] = [];
   type Node = {
     type: string;
     position?: { start: { offset?: number }; end: { offset?: number } };
@@ -23,13 +27,25 @@ export function markdownCodeRanges(text: string): { start: number; end: number }
       const start = node.position?.start.offset;
       const end = node.position?.end.offset;
       if (start === undefined || end === undefined) throw new Error("Markdown code has no offsets");
-      ranges.push({ start, end });
+      ranges.push({ start, end, block: node.type === "code" });
       return;
     }
     for (const child of node.children ?? []) visit(child);
   };
   visit(fromMarkdown(text));
-  return ranges;
+  const tags = scanInlineTags(text, configuration).filter((tag) => tag.closed);
+  return ranges
+    .filter(
+      (range) =>
+        range.block ||
+        !tags.some(
+          (tag) =>
+            tag.start < range.start &&
+            tag.end >= range.end &&
+            !ranges.some((code) => code.start <= tag.start && code.end > tag.start),
+        ),
+    )
+    .map(({ start, end }) => ({ start, end }));
 }
 
 function maskInlineTags(text: string, configuration: CssDocConfiguration): string {
