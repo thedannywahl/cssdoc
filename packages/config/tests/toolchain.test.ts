@@ -313,6 +313,38 @@ test("restriction lint preserves repository conventions and checks unsafe forms"
   }
 });
 
+test("lint prefers native import.meta path properties", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".import-meta-check-"));
+  try {
+    const file = join(directory, "paths.mjs");
+    writeFileSync(
+      file,
+      [
+        'import { fileURLToPath } from "node:url";',
+        "const legacy = fileURLToPath(import.meta.url);",
+        "const modern = import.meta.filename;",
+        "const relative = fileURLToPath(new URL('..', import.meta.url));",
+        "console.error(legacy, modern, relative);",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "unicorn(prefer-import-meta-properties)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["warning", 2]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));

@@ -62,7 +62,7 @@ export function syncZedVersion(directory, write = false) {
   return version;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && resolve(process.argv[1]) === import.meta.filename) {
   const mode = process.argv[2];
   if (mode !== "--write" && mode !== "--check") {
     throw new Error("Usage: node scripts/sync-zed-version.mjs --write|--check");

@@ -1,6 +1,5 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 
 export function updateRegistryVersion(content, version) {
   if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/u.test(version)) {
@@ -27,7 +26,7 @@ export function updateRegistryVersion(content, version) {
   );
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && resolve(process.argv[1]) === import.meta.filename) {
   const [file, version] = process.argv.slice(2);
   if (!file || !version) {
     throw new Error("Usage: node update-zed-registry.mjs <extensions.toml> <version>");

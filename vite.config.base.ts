@@ -140,7 +140,7 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/escape-case": "off",
       "unicorn/prefer-spread": "off",
       "unicorn/relative-url-style": "off",
-      "unicorn/prefer-import-meta-properties": "off",
+      "unicorn/prefer-import-meta-properties": "warn",
       "unicorn/no-process-exit": "off",
       "unicorn/prefer-set-has": "off",
       "unicorn/prefer-ternary": "off",
