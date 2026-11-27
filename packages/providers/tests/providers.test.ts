@@ -174,6 +174,22 @@ test("shared highlighting separates header arguments, metadata, and the prose di
   expect(tokens.every((token, i) => i === 0 || tokens[i - 1].end <= token.start)).toBe(true);
 });
 
+test("shared Markdown highlighting respects modes, nested syntax, inline tags, and code", () => {
+  const text = "/** @remarks - **bold *inner* {@link button | `label`}** `{@link code}` */";
+  const config = new CssDocConfiguration();
+  config.setProseSettings({ mode: "markdown" });
+  const tokens = highlightDocComment(text, config);
+  const markdown = tokens.filter((token) => token.role === "markdown");
+  expect(markdown.some((token) => token.markdownKind === "strong")).toBe(true);
+  expect(markdown.some((token) => token.markdownKind === "emphasis")).toBe(true);
+  expect(tokens.filter((token) => token.role === "inlineTag").map((token) => token.tag)).toEqual([
+    "link",
+  ]);
+  expect(tokens.every((token, i) => i === 0 || tokens[i - 1].end <= token.start)).toBe(true);
+  config.setProseSettings({ mode: "plain" });
+  expect(highlightDocComment(text, config).some((token) => token.role === "markdown")).toBe(false);
+});
+
 test("private examples don't appear in hover cards", () => {
   const idx = createIndex(`/** @component button
  * @example docs - Visible example.

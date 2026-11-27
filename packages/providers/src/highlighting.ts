@@ -5,7 +5,12 @@ import {
   scanInlineTagsOutsideCode,
   type DocCommentBlock,
 } from "@cssdoc/core/lite";
-import { markdownCodeRanges, parseDocComment } from "@cssdoc/core/prose";
+import {
+  markdownCodeRanges,
+  markdownSyntaxRanges,
+  parseDocComment,
+  type MarkdownSyntaxRange,
+} from "@cssdoc/core/prose";
 import {
   AT_SOURCE,
   CARRIAGE_RETURN_CHAR,
@@ -28,9 +33,42 @@ export interface DocHighlight {
     | "inlineTag"
     | "inlinePunctuation"
     | "inlineContent"
+    | "markdown"
     | "code";
   /** Canonical name of the containing tag, without `@`. */
   tag: string;
+  /** Markdown construct for a Markdown span. */
+  markdownKind?: MarkdownSyntaxRange["kind"];
+}
+
+function addMarkdownHighlights(
+  result: DocHighlight[],
+  text: string,
+  code: readonly { start: number; end: number }[],
+  map: (start: number, end: number) => { start: number; end: number }[],
+  configuration: CssDocConfiguration,
+  tag: string,
+): void {
+  const markdown = markdownSyntaxRanges(text, configuration);
+  const blocked = [...code, ...scanInlineTagsOutsideCode(text, code, configuration)];
+  const boundaries = [
+    ...new Set([
+      ...markdown.flatMap((range) => [range.start, range.end]),
+      ...blocked.flatMap((range) => [range.start, range.end]),
+    ]),
+  ].toSorted((a, b) => a - b);
+  for (let i = 0; i + 1 < boundaries.length; i++) {
+    const start = boundaries[i];
+    const end = boundaries[i + 1];
+    if (blocked.some((range) => start < range.end && end > range.start)) continue;
+    const scope = markdown
+      .filter((range) => start >= range.start && end <= range.end)
+      .toSorted((a, b) => b.depth - a.depth)[0];
+    if (!scope) continue;
+    for (const source of map(start, end)) {
+      result.push({ ...source, role: "markdown", tag, markdownKind: scope.kind });
+    }
+  }
 }
 
 function textOffset(block: DocCommentBlock, sourceOffset: number): number {
@@ -176,6 +214,16 @@ export function highlightDocComment(
         configuration,
         definition.canonicalName,
       );
+      if (part.mode === "markdown") {
+        addMarkdownHighlights(
+          result,
+          part.text,
+          code,
+          (start, end) => mappedRanges(block, part.offset + start, part.offset + end),
+          configuration,
+          definition.canonicalName,
+        );
+      }
     }
   }
   return result.toSorted((a, b) => a.start - b.start);

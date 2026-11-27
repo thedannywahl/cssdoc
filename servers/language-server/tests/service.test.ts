@@ -1091,6 +1091,25 @@ test("semantic tokens include shared header arguments and dividers without overl
   ).toBe(true);
 });
 
+test("semantic tokens expose shared Markdown spans without overlapping inline tags", () => {
+  const text = "/** @remarks - **bold {@link button}** */";
+  const svc = new CssDocLanguageService(createIndex(""));
+  const tokens = svc.semanticTokens(text).toSorted((a, b) => a.startCharacter - b.startCharacter);
+  expect(
+    tokens.some(
+      (token) =>
+        token.tokenType === 3 &&
+        text.slice(token.startCharacter, token.startCharacter + token.length).includes("bold"),
+    ),
+  ).toBe(true);
+  expect(
+    tokens.every(
+      (token, i) =>
+        i === 0 || tokens[i - 1].startCharacter + tokens[i - 1].length <= token.startCharacter,
+    ),
+  ).toBe(true);
+});
+
 test("inlayHints: shows custom property metadata", () => {
   const docCss = `
 /**

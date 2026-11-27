@@ -27,7 +27,8 @@ Adding an aspect is one module in `aspects.ts` plus a line in the aggregate — 
 Hover cards render 1.0 plain-mode remarks and examples as literal text, preserving line breaks.
 `highlightDocComment` from `@cssdoc/providers/highlighting` exposes source-mapped block tags,
 structured-header arguments and dividers, inline tags, and protected code. Its highlighting
-coverage is still partial; Markdown styling and structure tokens aren't yet shared.
+also reports Markdown constructs in Markdown-mode prose. Coverage is still partial; structure and
+directive tokens aren't yet shared.
 
 ## License
 

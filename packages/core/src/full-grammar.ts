@@ -8,7 +8,7 @@ import {
 import { fromMarkdown } from "mdast-util-from-markdown";
 import { CssDocConfiguration, type ProseMode } from "./configuration.ts";
 import { parseDocComment as parsePlainDocComment, type ParsedDoc } from "./grammar.ts";
-import { fencedProseRanges, scanInlineTags } from "./inline.ts";
+import { fencedProseRanges, scanInlineTags, scanInlineTagsOutsideCode } from "./inline.ts";
 import type { CssParse } from "./model.ts";
 
 /**
@@ -52,6 +52,75 @@ export function markdownCodeRanges(
         ),
     )
     .map(({ start, end }) => ({ start, end }));
+}
+
+/** A source range for one Markdown construct. Nested constructs can overlap. */
+export interface MarkdownSyntaxRange {
+  /** Inclusive UTF-16 source offset. */
+  start: number;
+  /** Exclusive UTF-16 source offset. */
+  end: number;
+  /** Markdown AST node type. */
+  kind:
+    | "emphasis"
+    | "strong"
+    | "link"
+    | "image"
+    | "heading"
+    | "list"
+    | "blockquote"
+    | "thematicBreak";
+  /** Nesting depth for resolving overlapping constructs. */
+  depth: number;
+}
+
+/**
+ * Find Markdown construct ranges while keeping cssdoc inline tags opaque.
+ *
+ * @param text - Markdown prose.
+ * @param configuration - Active inline-tag vocabulary.
+ * @returns Source-relative ranges, including nested constructs.
+ */
+export function markdownSyntaxRanges(
+  text: string,
+  configuration: CssDocConfiguration = new CssDocConfiguration(),
+): MarkdownSyntaxRange[] {
+  const code = markdownCodeRanges(text, configuration);
+  const masked = text.split("");
+  for (const tag of scanInlineTagsOutsideCode(text, code, configuration)) {
+    if (!tag.closed) continue;
+    for (let i = tag.start; i < tag.end; i++) {
+      if (text[i] !== CARRIAGE_RETURN_CHAR && text[i] !== LINE_FEED_CHAR) masked[i] = "x";
+    }
+  }
+  const kinds = new Set<MarkdownSyntaxRange["kind"]>([
+    "emphasis",
+    "strong",
+    "link",
+    "image",
+    "heading",
+    "list",
+    "blockquote",
+    "thematicBreak",
+  ]);
+  const ranges: MarkdownSyntaxRange[] = [];
+  type Node = {
+    type: string;
+    position?: { start: { offset?: number }; end: { offset?: number } };
+    children?: readonly Node[];
+  };
+  const visit = (node: Node, depth: number): void => {
+    const kind = [...kinds].find((item) => item === node.type);
+    if (kind) {
+      const start = node.position?.start.offset;
+      const end = node.position?.end.offset;
+      if (start === undefined || end === undefined) throw new Error("Markdown node has no offsets");
+      ranges.push({ start, end, kind, depth });
+    }
+    for (const child of node.children ?? []) visit(child, depth + 1);
+  };
+  visit(fromMarkdown(masked.join("")), 0);
+  return ranges;
 }
 
 /**

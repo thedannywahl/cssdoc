@@ -1370,7 +1370,9 @@ export class CssDocLanguageService {
                 ? tokenTypes.decorator
                 : highlight.role === "inlineContent" || highlight.role === "argument"
                   ? tokenTypes.variable
-                  : tokenTypes.keyword,
+                  : highlight.role === "markdown"
+                    ? tokenTypes.comment
+                    : tokenTypes.keyword,
             tokenModifiers:
               highlight.role === "argument" && highlight.tag === "modifier"
                 ? 1 << modifiers.modification

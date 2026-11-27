@@ -164,6 +164,15 @@ test("adapts shared header and divider spans without overlapping tokens", () => 
   expect(ordered.every((token, i) => i === 0 || ordered[i - 1].to <= token.from)).toBe(true);
 });
 
+test("adapts shared Markdown spans without coloring inline tags as Markdown", () => {
+  const src = "/** @remarks - **bold {@link button}** */";
+  const tokens = tokenizeComment(src);
+  expect(tokens.some((token) => token.type === "markdown-strong")).toBe(true);
+  expect(tokens.some((token) => src.slice(token.from, token.to) === "@link")).toBe(true);
+  const ordered = tokens.toSorted((a, b) => a.from - b.from);
+  expect(ordered.every((token, i) => i === 0 || ordered[i - 1].to <= token.from)).toBe(true);
+});
+
 test("lightly highlights an @structure body — class selectors and braces, nothing else", () => {
   const toks = label("@structure Caption.\n.tabs {\n  .list:has(.tab) {}\n}\n@a11y ok");
   // The parts (class selectors) light up, including one inside :has().

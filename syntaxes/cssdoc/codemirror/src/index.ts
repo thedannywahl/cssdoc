@@ -66,7 +66,12 @@ export type CssdocTokenType =
   | "ref"
   | "record"
   | "keyword"
-  | "rule";
+  | "rule"
+  | "markdown"
+  | "markdown-emphasis"
+  | "markdown-strong"
+  | "markdown-heading"
+  | "markdown-link";
 
 /** A highlighted span within a comment. `from`/`to` are offsets into the scanned comment text. */
 export interface CssdocToken {
@@ -201,7 +206,10 @@ export const tokenizeComment = (
     if (fences.some((range) => m.index >= range.start && m.index < range.end)) continue;
     if (
       highlights.some(
-        (range) => range.role.startsWith("inline") && m.index >= range.start && m.index < range.end,
+        (range) =>
+          (range.role.startsWith("inline") || range.role === "markdown") &&
+          m.index >= range.start &&
+          m.index < range.end,
       )
     )
       continue;
@@ -227,6 +235,17 @@ export const tokenizeComment = (
     }
   }
   for (const highlight of highlights) {
+    if (highlight.role === "markdown") {
+      const type: CssdocTokenType =
+        highlight.markdownKind === "emphasis" ||
+        highlight.markdownKind === "strong" ||
+        highlight.markdownKind === "heading" ||
+        highlight.markdownKind === "link"
+          ? `markdown-${highlight.markdownKind}`
+          : "markdown";
+      out.push({ from: highlight.start, to: highlight.end, type });
+      continue;
+    }
     if (highlight.role === "argument") {
       const type: CssdocTokenType = RECORD_TAGS.includes(highlight.tag)
         ? "record"
@@ -348,5 +367,10 @@ export const cssdocHighlight = (configuration?: CssDocConfiguration): Extension 
     ".cm-cssdoc-record": { color: "#24292e", fontWeight: "bold" },
     ".cm-cssdoc-keyword": { color: "#d73a49" },
     ".cm-cssdoc-rule": { color: "#6f42c1" },
+    ".cm-cssdoc-markdown": { color: "#6a737d" },
+    ".cm-cssdoc-markdown-emphasis": { fontStyle: "italic" },
+    ".cm-cssdoc-markdown-strong": { fontWeight: "bold" },
+    ".cm-cssdoc-markdown-heading": { fontWeight: "bold" },
+    ".cm-cssdoc-markdown-link": { color: "#0366d6", textDecoration: "underline" },
   }),
 ];
