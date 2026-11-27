@@ -22,6 +22,7 @@ index.location("button", "modifier:-color-secondary"); // → { file, span } | u
 
 `createIndex(css)` includes spans; `indexFromEntries(entries)` builds a lookup-only index from a model
 snapshot (`index.toManifest()`), without spans.
+Record boundaries follow the core parser: ordinary block comments don't open records.
 
 `resolveRecordReference` resolves the record portion of a parsed reference across explicitly
 provided workspace or provider indexes. Supply each source's portable key and scope completeness;

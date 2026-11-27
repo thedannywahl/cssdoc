@@ -356,6 +356,22 @@ test("scope member resolution retains nested CSS occurrences and source spans", 
   expect(resolve("card#scope((.card))", invalidSource)).toMatchObject({ status: "unavailable" });
 });
 
+test("ordinary comments cannot steal a record's source scope occurrences", () => {
+  const index = createIndex(`/* @component card */
+@scope (.decoy) { .decoy {} }
+/** @component card */
+@scope (.card) { .card {} }
+/* @component other */
+@scope (.still-card) { .card {} }
+/** @component other */
+@scope (.other) { .other {} }`);
+  expect(
+    index.records.map((record) => record.scopeOccurrences?.map((scope) => scope.prelude)),
+  ).toEqual([["(.card)", "(.still-card)"], ["(.other)"]]);
+  expect(index.records[0].docCommentSpan?.start.line).toBe(3);
+  expect(index.records[1].docCommentSpan?.start.line).toBe(7);
+});
+
 test("createIndex parses the model and resolves class lookups", () => {
   index = createIndex(CSS, { file: "components.css", modifierConvention: "rscss" });
   expect(index.componentForClass(".button")?.name).toBe("button");

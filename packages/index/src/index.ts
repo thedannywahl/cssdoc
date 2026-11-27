@@ -24,6 +24,7 @@ import {
   type StructureNode,
   type StructureVariant,
   DEFAULT_MODIFIER_CONVENTION,
+  isCssDocComment,
   ModifierMatcher,
   parseCssDocs,
   parseDocComment,
@@ -768,7 +769,7 @@ export function createIndex(
   const root = (options.parse ?? postcss.parse)(css);
   let current: Build | undefined;
   for (const node of root.nodes) {
-    if (node.type === "comment") {
+    if (node.type === "comment" && isCssDocComment(node, css)) {
       const name = recordNameOf(node.toString(), options.configuration);
       const entry = name ? entryQueues.get(name)?.shift() : undefined;
       if (name && entry) {

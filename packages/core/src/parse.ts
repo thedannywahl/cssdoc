@@ -1014,8 +1014,15 @@ function buildEntry(
  * `@component` (a TODO, a banner) would otherwise mint a phantom, summary-less record. We check the raw
  * source at the comment's offset for the `/**` opener, falling back to the leftover `*` that a `/**`
  * leaves at the start of the comment body when no offset is available.
+ *
+ * @param node - The PostCSS comment.
+ * @param source - The original stylesheet.
+ * @returns Whether the comment has a doc-comment opener.
  */
-function isDocComment(node: Extract<ChildNode, { type: "comment" }>, source: string): boolean {
+export function isCssDocComment(
+  node: Extract<ChildNode, { type: "comment" }>,
+  source: string,
+): boolean {
   const offset = node.source?.start?.offset;
   return offset === undefined
     ? node.text.startsWith(ASTERISK_CHAR)
@@ -1051,7 +1058,7 @@ export function parseCssDocs(css: string, options: ParseOptions = {}): CssDocEnt
   let current: Record_ | null = null;
 
   for (const node of root.nodes) {
-    if (node.type === "comment" && isDocComment(node, css)) {
+    if (node.type === "comment" && isCssDocComment(node, css)) {
       const name = options.isRecordBoundary
         ? options.isRecordBoundary(node.text)
         : recordNameOf(node.toString(), configuration);
