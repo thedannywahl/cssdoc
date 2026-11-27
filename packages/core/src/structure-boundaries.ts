@@ -51,6 +51,19 @@ export function hasStructureDocDivider(line: string): boolean {
 }
 
 /**
+ * Find the text following a top-level documentation divider.
+ *
+ * @param line - The documentation tag line.
+ * @returns The offset after the divider and its optional formatting space.
+ */
+export function docProseStart(line: string): number | undefined {
+  const result = scanStructure(line, { stack: [], comment: false, escaped: false }, true);
+  if (result.dividerAt === undefined || result.dividerLength === undefined) return undefined;
+  const end = result.dividerAt + result.dividerLength;
+  return line[end] === " " ? end + 1 : end;
+}
+
+/**
  * Check whether a top-level at-rule line opens a CSS block rather than header metadata.
  *
  * @param line - The potential at-rule line.
@@ -69,7 +82,13 @@ function scanStructure(
   line: string,
   state: StructureBoundaryState,
   findDivider: boolean,
-): { opened: boolean; divider: boolean; openAt?: number } {
+): {
+  opened: boolean;
+  divider: boolean;
+  openAt?: number;
+  dividerAt?: number;
+  dividerLength?: number;
+} {
   const SEPARATOR: Regex | undefined = findDivider
     ? arkRegex.as(`^(?!${DASH_SOURCE}{2})${CSSDOC_DESCRIPTION_SEPARATOR_SOURCE}(?=\\s|$)`, "u")
     : undefined;
@@ -77,6 +96,8 @@ function scanStructure(
   let opened = false;
   let openAt: number | undefined;
   let divider = false;
+  let dividerAt: number | undefined;
+  let dividerLength: number | undefined;
   for (let i = 0; i < line.length; i++) {
     const char = line[i];
     const next = line[i + 1];
@@ -103,11 +124,15 @@ function scanStructure(
       SEPARATOR &&
       state.stack.length === 0 &&
       i > 0 &&
-      (line[i - 1] === " " || line[i - 1] === "\t") &&
-      SEPARATOR.test(line.slice(i))
+      (line[i - 1] === " " || line[i - 1] === "\t")
     ) {
-      divider = true;
-      break;
+      const match = line.slice(i).match(SEPARATOR);
+      if (match) {
+        divider = true;
+        dividerAt = i;
+        dividerLength = match[0].length;
+        break;
+      }
     }
     if (char === FORWARD_SLASH_CHAR && next === ASTERISK_CHAR) {
       state.comment = true;
@@ -130,5 +155,5 @@ function scanStructure(
   }
   if (state.escaped) state.escaped = false;
   else state.quote = undefined;
-  return { opened, divider, openAt };
+  return { opened, divider, openAt, dividerAt, dividerLength };
 }

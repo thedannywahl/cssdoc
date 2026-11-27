@@ -92,6 +92,7 @@ catalog:
   "@arethetypeswrong/cli": ^0.18.5
   eslint-plugin-tsdoc: ^0.5.4
   eslint-plugin-tsdoc-require-2: ^1.2.7
+  mdast-util-from-markdown: ^2.1.0
 
 overrides:
   vite@*: "catalog:"

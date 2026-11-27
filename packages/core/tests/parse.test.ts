@@ -5,10 +5,12 @@ import {
   CssDocConfiguration,
   CssDocTagDefinition,
   parseCssDocs,
+  parseDocComment as parseFullDocComment,
   structureCustomMediaRefs,
   toMermaid,
   toMermaidVariants,
 } from "../src/index.ts";
+import { parseDocComment as parseLiteDocComment } from "../src/lite.ts";
 import postcss from "postcss";
 import { blockSourceRange, collectDocCommentBlocks } from "../src/blocks.ts";
 import { frameCommentLines } from "../src/framing.ts";
@@ -92,6 +94,38 @@ test("block text ranges map through CRLF framing and UTF-16 characters", () => {
   });
   expect(() => blockSourceRange(block, -1, 0)).toThrow(RangeError);
   expect(() => blockSourceRange(block, 0, block.text.length + 1)).toThrow(RangeError);
+});
+
+test("full and lite expose the same authored blocks and UTF-16 ranges", () => {
+  const raw = [
+    "/**",
+    " * @component card",
+    " * @example docs, demo {@private} -",
+    " * ```css",
+    " * 😀 @component example",
+    " * @remarks - code",
+    " * ```",
+    " * @unknown - preserved",
+    " */",
+  ].join("\r\n");
+  const config = new CssDocConfiguration();
+  const enabled = parseLiteDocComment(raw, config).blocks;
+  config.setSupportForTag(config.tryGetTagDefinition("example")!, false);
+  const lite = parseLiteDocComment(raw, config).blocks;
+  const full = parseFullDocComment(raw, config).blocks;
+
+  expect(full).toEqual(lite);
+  expect(lite).toEqual(enabled);
+  expect(lite.map((block) => raw.slice(block.start, block.end))).toEqual([
+    "@component card",
+    "@example docs, demo {@private} -\r\n * ```css\r\n * 😀 @component example\r\n * @remarks - code\r\n * ```",
+    "@unknown - preserved",
+  ]);
+  const example = lite[1]!;
+  const start = example.text.indexOf("😀");
+  const end = example.text.indexOf("@remarks") + "@remarks".length;
+  const span = blockSourceRange(example, start, end);
+  expect(raw.slice(span.start, span.end)).toBe("😀 @component example\r\n * @remarks");
 });
 
 test("block collection preserves header whitespace before a continuation", () => {
@@ -207,6 +241,99 @@ test("top-level CSS at-rules with doc-tag names remain part of the structure", (
   expect(blocks[0]?.text).toContain('@media (selector([data-text="{@private}"]))');
   expect(blocks[0]?.text).toContain("@component child {}");
   expect(blocks[1]?.text).toBe("@component next {@private}");
+});
+
+test("fences protect tag boundaries and record discovery until a matching closer", () => {
+  const raw = [
+    "/**",
+    " * @example - ````css",
+    " * @component false-record",
+    " * ```",
+    " * @remarks - Still code.",
+    " * ````",
+    " * @component real-record",
+    " */",
+  ].join("\r\n");
+  const blocks = collectDocCommentBlocks(raw, new CssDocConfiguration());
+  expect(blocks).toHaveLength(2);
+  expect(raw.slice(blocks[0]!.start, blocks[0]!.end)).toContain("@remarks - Still code.");
+  expect(raw.slice(blocks[1]!.start, blocks[1]!.end)).toBe("@component real-record");
+  expect(recordNameOf(raw)).toBe("real-record");
+});
+
+test("unclosed nested fences protect all remaining tag-shaped lines", () => {
+  const raw = [
+    "/**",
+    " * @example -",
+    " * > - ~~~css",
+    " * >   @remarks - Code.",
+    " * @component not-a-record",
+    " * }",
+    " */",
+  ].join("\n");
+  const blocks = collectDocCommentBlocks(raw, new CssDocConfiguration());
+  expect(blocks).toHaveLength(1);
+  expect(blocks[0]?.text).toContain("@component not-a-record");
+  expect(recordNameOf(raw)).toBeUndefined();
+});
+
+test("nested fenced and indented code retain their boundaries", () => {
+  const raw = [
+    "/**",
+    " * @remarks -",
+    " * > - ```",
+    " * >   @component example",
+    " * >   ```",
+    " *",
+    " *     @component indented",
+    " *",
+    " * @component actual",
+    " */",
+  ].join("\n");
+  const blocks = collectDocCommentBlocks(raw, new CssDocConfiguration());
+  expect(blocks).toHaveLength(2);
+  expect(blocks[0]?.text).toContain("@component indented");
+  expect(recordNameOf(raw)).toBe("actual");
+});
+
+test("headings and lazy blockquote continuations classify indented tag lines correctly", () => {
+  const raw = [
+    "/**",
+    " * @remarks - # Heading",
+    " *     @component example",
+    " *",
+    " * @remarks - > Paragraph",
+    " *     @component actual",
+    " */",
+  ].join("\r\n");
+  const blocks = collectDocCommentBlocks(raw, new CssDocConfiguration());
+  expect(blocks.map((block) => raw.slice(block.start, block.end))).toEqual([
+    "@remarks - # Heading\r\n *     @component example",
+    "@remarks - > Paragraph",
+    "@component actual",
+  ]);
+  expect(recordNameOf(raw)).toBe("actual");
+});
+
+test("invalid backtick info strings do not open fenced code", () => {
+  const raw = "/**\n * @example -\n * ```bad`info\n * @component real\n */";
+  expect(recordNameOf(raw)).toBe("real");
+});
+
+test("a partially consumed tab can close a fence in a list", () => {
+  const raw = [
+    "/**",
+    " * @example -",
+    " * - ~~~",
+    " * \t@component example",
+    " * \t~~~",
+    " * @component actual",
+    " */",
+  ].join("\n");
+  const blocks = collectDocCommentBlocks(raw, new CssDocConfiguration());
+  expect(blocks).toHaveLength(2);
+  expect(raw.slice(blocks[1]!.start, blocks[1]!.end)).toBe("@component actual");
+  expect(recordNameOf(raw)).toBe("actual");
 });
 
 test("record boundaries ignore record-shaped text in prose and nested structure", () => {

@@ -55,6 +55,11 @@ parts, consumed and declared custom properties, and deprecated-alias links are e
 selectors, so they never drift. Authored doc comments supply only prose (summaries, descriptions) and
 delimit one component from the next.
 
+To inspect authored tag text without a CSS parser, use `parseDocComment` from `@cssdoc/core/lite`.
+Its `blocks` include unknown and disabled tags as well as examples, with UTF-16 offsets relative to
+the input comment. `blockSourceRange` maps a range in a block's framing-free text back to the input.
+These blocks contain authored text, including private content; filter it before publishing.
+
 ## The doc-comment grammar
 
 A `/** … */` block above a component's rules. Records are delimited by `@component`/`@name`. The tag
@@ -95,7 +100,7 @@ they exist, so it's standards-aligned:
 | `@cssstate <x> — <desc>`                   | A component state.                                                             |
 | `@example`, `@deprecated`, `@demo`, `@see` | As in TSDoc.                                                                   |
 
-Unknown tags are ignored, so the grammar degrades gracefully.
+Unknown tags don't populate interpreted fields, but remain available in `parseDocComment`'s `blocks`.
 
 **Multi-line descriptions:** Long tag descriptions can span multiple lines by indenting continuation
 lines. The parser joins them into a single line, except where Markdown structure (lists, headers,

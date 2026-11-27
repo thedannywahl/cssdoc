@@ -9,7 +9,9 @@ import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import { CssDocConfiguration } from "./configuration.ts";
 import { frameCommentLines } from "./framing.ts";
+import { scanCodeBoundaryLine, type CodeBoundaryState } from "./code-boundaries.ts";
 import {
+  docProseStart,
   hasStructureDocDivider,
   opensStructureAtRule,
   scanStructureLine,
@@ -82,12 +84,12 @@ export function blockSourceRange(
  * Collect tag blocks while retaining their offsets in the comment input.
  *
  * @param raw - A block comment or its inner text.
- * @param configuration - The active tag configuration.
+ * @param configuration - The active tag configuration (defaults to the standard vocabulary).
  * @returns The tag blocks in source order.
  */
 export function collectDocCommentBlocks(
   raw: string,
-  configuration: CssDocConfiguration,
+  configuration: CssDocConfiguration = new CssDocConfiguration(),
 ): DocCommentBlock[] {
   const TAG_LINE: Regex = arkRegex.as(
     String.raw`^\s*${AT_SOURCE}(${CSSDOC_BLOCK_TAG_NAME_SOURCE})`,
@@ -109,9 +111,11 @@ export function collectDocCommentBlocks(
   const blocks: DocCommentBlock[] = [];
   let inStructureBlock = false;
   let structureState: StructureBoundaryState = { stack: [], comment: false, escaped: false };
+  let codeState: CodeBoundaryState = { containers: [], indented: false, paragraph: false };
   let leadingTrim = start - lineStart;
   for (const line of body.split("\n")) {
     const sourceStart = lines[lineIndex].start + leadingTrim;
+    const inCode = blocks.length > 0 && !inStructureBlock && scanCodeBoundaryLine(line, codeState);
     const tagMatch = line.match(TAG_LINE);
     const isKnownTag =
       tagMatch !== null && configuration.tryGetTagDefinition(tagMatch[1]) !== undefined;
@@ -126,6 +130,7 @@ export function collectDocCommentBlocks(
       opensStructureAtRule(line);
     const startsBlock =
       tagMatch !== null &&
+      !inCode &&
       !opensCssBlock &&
       (hasDocDivider ||
         (isKnownTag
@@ -145,9 +150,13 @@ export function collectDocCommentBlocks(
         segments: [{ textStart: 0, sourceStart: sourceStart + tagStart, length: text.length }],
       });
       inStructureBlock = tagMatch[1] === "structure";
+      codeState = { containers: [], indented: false, paragraph: false };
       if (inStructureBlock) {
         structureState = { stack: [], comment: false, escaped: false };
         scanStructureLine(line.slice(tagMatch[0].length), structureState);
+      } else {
+        const proseStart = docProseStart(line);
+        if (proseStart !== undefined) scanCodeBoundaryLine(line.slice(proseStart), codeState);
       }
     } else if (blocks.length) {
       const block = blocks[blocks.length - 1];

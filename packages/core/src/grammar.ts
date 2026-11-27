@@ -41,7 +41,7 @@ import type { ChildNode } from "postcss";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import { CssDocConfiguration } from "./configuration.ts";
-import { collectDocCommentBlocks } from "./blocks.ts";
+import { collectDocCommentBlocks, type DocCommentBlock } from "./blocks.ts";
 import { frameCommentLines } from "./framing.ts";
 import {
   cardinalityFromMatch,
@@ -190,6 +190,8 @@ export interface DocCondition {
 
 /** The structured content extracted from one doc-comment block. */
 export interface ParsedDoc {
+  /** Authored tag blocks and their UTF-16 ranges, including unknown and disabled tags. */
+  blocks: readonly DocCommentBlock[];
   /** A record-opening tag's canonical name. Marks a record boundary. */
   component?: string;
   /** The record kind chosen by the opening tag. */
@@ -484,8 +486,8 @@ function parseModifierBody(description: string | undefined): DocModifier {
 
 /**
  * Parse a doc-comment's inner text or a complete block into a {@link ParsedDoc}. The `configuration`
- * decides which tags are active and which custom tags to capture; unknown or unsupported tags are
- * ignored, so the grammar degrades gracefully.
+ * decides which tags are active and which custom tags to capture. Unknown and unsupported tags
+ * remain in {@link ParsedDoc.blocks} but don't populate the interpreted fields.
  *
  * @param raw - A complete doc comment or unframed text without leading comment markers.
  * @param configuration - The active tag configuration (defaults to the full standard vocabulary).
@@ -497,7 +499,9 @@ export function parseDocComment(
   configuration: CssDocConfiguration = new CssDocConfiguration(),
   parse?: CssParse,
 ): ParsedDoc {
+  const blocks = collectDocCommentBlocks(raw, configuration);
   const doc: ParsedDoc = {
+    blocks,
     modifiers: new Map(),
     modifierSelectors: new Map(),
     parts: new Map(),
@@ -536,7 +540,7 @@ export function parseDocComment(
     String.raw`^${AT_SOURCE}(${CSSDOC_BLOCK_TAG_NAME_SOURCE})${SPACE_TAB_SOURCE}*([\s\S]*)$`,
     "u",
   );
-  for (const block of collectDocCommentBlocks(raw, configuration)) {
+  for (const block of blocks) {
     const m = block.text.match(BLOCK_HEADER);
     if (!m) continue;
     const tagName = m[1];

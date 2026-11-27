@@ -22,6 +22,8 @@ export {
   stripCommentFraming,
 } from "./grammar.ts";
 export type { ParsedDoc, DocCssProperty, DocModifier, DocCondition } from "./grammar.ts";
+export { blockSourceRange, collectDocCommentBlocks } from "./blocks.ts";
+export type { DocCommentBlock, DocCommentSegment } from "./blocks.ts";
 export { CssDocConfiguration, CssDocTagDefinition } from "./configuration.ts";
 export type {
   CssDocSyntaxKind,
