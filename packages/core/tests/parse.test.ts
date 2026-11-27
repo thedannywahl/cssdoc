@@ -2,6 +2,7 @@ import { parse as parsePostcss } from "postcss";
 import { expect, test } from "vite-plus/test";
 
 import { blockSourceRange, collectDocCommentBlocks } from "../src/blocks.ts";
+import { cardinalityFromMatch } from "../src/cardinality.ts";
 import { frameCommentLines } from "../src/framing.ts";
 import {
   parseDocComment,
@@ -2808,6 +2809,15 @@ test("@structure bounded `:max-<n>` and chained `:one-or-more:max-<n>` cardinali
     ".item": "one-or-more-max-3",
     ".tag": "one-or-more-max-4", // `:more` shorthand chains the same as `:one-or-more`
   });
+});
+
+test("cardinality captures preserve numeric spelling and reject invalid bounds", () => {
+  expect(cardinalityFromMatch({ max: "002" })).toBe("max-002");
+  expect(cardinalityFromMatch({ oomMax: "9007199254740993" })).toBe(
+    "one-or-more-max-9007199254740993",
+  );
+  expect(cardinalityFromMatch({ max: "2px" })).toBeUndefined();
+  expect(cardinalityFromMatch({ oomMax: "-2" })).toBeUndefined();
 });
 
 test("@structure bounded cardinality also parses on `@component` at-rule refs", () => {

@@ -165,11 +165,14 @@ export function resolveRuleOptions(options?: RuleOptions): ResolvedRuleOptions {
 export function resolveRuleSeverities(
   overrides?: Partial<Record<RuleId, RuleSeverity | boolean>>,
 ): RuleSeverities {
-  const resolved = { ...DEFAULT_RULE_SEVERITIES };
+  const resolved: RuleSeverities & Record<string, RuleSeverity | undefined> = {
+    ...DEFAULT_RULE_SEVERITIES,
+  };
+  const defaults: Readonly<Record<string, RuleSeverity | undefined>> = DEFAULT_RULE_SEVERITIES;
   if (!overrides) return resolved;
-  for (const [rule, value] of Object.entries(overrides) as [RuleId, RuleSeverity | boolean][]) {
+  for (const [rule, value] of Object.entries(overrides)) {
     if (value === undefined) continue;
-    if (typeof value === "boolean") resolved[rule] = value ? DEFAULT_RULE_SEVERITIES[rule] : "off";
+    if (typeof value === "boolean") resolved[rule] = value ? defaults[rule] : "off";
     else resolved[rule] = value;
   }
   return resolved;

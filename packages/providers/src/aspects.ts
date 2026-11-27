@@ -864,7 +864,7 @@ export const record = {
     };
     // Each section builds into its own fragment, keyed by section name; the emit loop at the end appends
     // them in `sectionOrder` (default {@link HOVER_SECTION_KEYS}), so users can reorder or drop sections.
-    const fragments = {} as Record<HoverSectionKey, string[]>;
+    const fragments: Partial<Record<HoverSectionKey, string[]>> = {};
     const prose = (key: HoverSectionKey, prefix: string, text?: string): void => {
       const w = want(key, Boolean(text?.trim()));
       if (w !== "skip") {

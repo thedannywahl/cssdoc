@@ -36,9 +36,9 @@ import {
   type HoverSectionOrder,
   type HoverSections,
   type ResolvedNaming,
-  type RuleId,
   type RuleOptions,
   type RuleSeverities,
+  type RuleSeverity,
   type UsageOptions,
 } from "./types.ts";
 
@@ -71,9 +71,10 @@ export {
  * it. Aspects emit a placeholder `warning`; this overrides it.
  */
 function applySeverities(diagnostics: Diagnostic[], severities: RuleSeverities): Diagnostic[] {
+  const configuredSeverities: Readonly<Record<string, RuleSeverity | undefined>> = severities;
   const out: Diagnostic[] = [];
   for (const d of diagnostics) {
-    const severity = severities[d.rule as RuleId] ?? "warn";
+    const severity = configuredSeverities[d.rule] ?? "warn";
     if (severity === "off") continue;
     out.push({ ...d, severity: severity === "error" ? "error" : "warning" });
   }

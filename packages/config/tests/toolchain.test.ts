@@ -2380,6 +2380,62 @@ test("TSDoc definitions follow the cssdoc vocabulary", () => {
   ]);
 });
 
+test("model-layer lint rejects unsafe assertions but accepts guarded narrowing", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  for (const name of ["core", "index", "providers"]) {
+    const workspace = join(root, "packages", name);
+    const directory = mkdtempSync(join(workspace, "tests/.unsafe-assertion-check-"));
+    try {
+      const file = join(directory, "assertions.ts");
+      writeFileSync(
+        join(directory, "tsconfig.json"),
+        JSON.stringify({
+          extends: "../../../../tsconfig.base.json",
+          include: ["*.ts"],
+        }),
+      );
+      writeFileSync(
+        file,
+        [
+          "function unsafe(value: unknown): string {",
+          "  return value as string;",
+          "}",
+          "function safe(value: unknown): string {",
+          '  if (typeof value !== "string") throw new TypeError("Expected a string");',
+          "  return value;",
+          "}",
+          'const literal = "value" as const;',
+          "console.error(unsafe(literal), safe(literal));",
+        ].join("\n"),
+      );
+      for (const cwd of [root, workspace]) {
+        const result = spawnSync(
+          "vp",
+          [
+            "lint",
+            "--config",
+            join(root, "vite.config.ts"),
+            "--no-ignore",
+            "--format",
+            "json",
+            file,
+          ],
+          { cwd, encoding: "utf8" },
+        );
+        expect(result.status, `${cwd}\n${result.stdout}\n${result.stderr}`).toBe(1);
+        expect(
+          parseLintOutput(result.stdout)
+            .diagnostics.filter(({ code }) => code === "typescript(no-unsafe-type-assertion)")
+            .map(({ severity, labels }) => [severity, labels[0].span.line]),
+          `${cwd}\n${result.stdout}\n${result.stderr}`,
+        ).toEqual([["error", 2]]);
+      }
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  }
+});
+
 test("TSDoc lint recognizes cssdoc tags without accepting unknown tags", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, "packages/core/src/.tsdoc-check-"));

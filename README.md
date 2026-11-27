@@ -118,7 +118,12 @@ and warn about invalid named imports. Node ESM scripts also warn about undefined
 accepting CommonJS-only globals. TypeScript checks undefined names separately.
 
 Type-aware linting rejects unsafe assignments, arguments, calls, member access, and returns in
-TypeScript. It also checks for redundant assertions, deprecated APIs, and potentially misleading template interpolations.
+TypeScript. It also checks for redundant assertions, deprecated APIs, and potentially misleading
+template interpolations.
+Core, index, and providers also reject unsafe type assertions; other packages' assertion
+boundaries remain under review. Preserve captured cardinality digits rather than coercing them through
+floating-point numbers, and replace AST nodes with correctly typed nodes instead of changing their
+discriminants through casts.
 Config and provider JSON are narrowed by runtime schema validation, not type assertions. ArkType
 definitions in `@cssdoc/core/schema` generate the static draft-07 schemas exported by core/lite and
 `@cssdoc/json`; malformed provider snapshots

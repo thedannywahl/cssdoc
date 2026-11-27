@@ -30,12 +30,20 @@ const TRAILING_CARDINALITY: Regex = arkRegex.as(
 const BOUNDED_MAX: Regex = arkRegex.as(`^max-(${DIGIT_SOURCE}+)$`, "u");
 const BOUNDED_ONE_OR_MORE_MAX: Regex = arkRegex.as(`^one-or-more-max-(${DIGIT_SOURCE}+)$`, "u");
 
+function isBoundedCardinality(value: string): value is Cardinality {
+  return BOUNDED_MAX.test(value) || BOUNDED_ONE_OR_MORE_MAX.test(value);
+}
+
 /** Convert captured cardinality groups to a canonical value, if one is recognized. */
 export function cardinalityFromMatch(
   groups: Record<string, string | undefined>,
 ): Cardinality | undefined {
-  if (groups.oomMax) return `one-or-more-max-${groups.oomMax}` as `one-or-more-max-${number}`;
-  if (groups.max) return `max-${groups.max}` as `max-${number}`;
+  const bounded = groups.oomMax
+    ? `one-or-more-max-${groups.oomMax}`
+    : groups.max
+      ? `max-${groups.max}`
+      : undefined;
+  if (bounded !== undefined) return isBoundedCardinality(bounded) ? bounded : undefined;
   if (groups.kw && Object.hasOwn(CSSDOC_CARDINALITY_KEYWORDS, groups.kw)) {
     return CSSDOC_CARDINALITY_KEYWORDS[groups.kw];
   }

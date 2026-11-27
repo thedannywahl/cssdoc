@@ -335,7 +335,7 @@ function resolveValue(
 ): string {
   if (!value.includes("var(")) return value;
   const parsed = valueParser(value);
-  parsed.walk((node) => {
+  parsed.walk((node, index, nodes) => {
     if (node.type !== "function" || node.value !== "var") return undefined;
     const ref = node.nodes.find((n) => n.type === "word")?.value;
     if (!ref?.startsWith("--")) return false;
@@ -350,9 +350,12 @@ function resolveValue(
           : resolveValue(fallback, values, seen)
         : resolveValue(declared, values, new Set([...seen, ref]));
     if (replacement !== undefined) {
-      (node as unknown as { type: string; value: string; nodes: [] }).type = "word";
-      node.value = replacement;
-      (node as unknown as { nodes: [] }).nodes = [];
+      nodes[index] = {
+        type: "word",
+        value: replacement,
+        sourceIndex: node.sourceIndex,
+        sourceEndIndex: node.sourceEndIndex,
+      };
     }
     return false; // never descend into a var()'s own arguments
   });

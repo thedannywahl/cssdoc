@@ -67,7 +67,7 @@ export const baseConfig: UserConfig = defineConfig({
         "warn",
         { accessibility: "no-public", overrides: { parameterProperties: "off" } },
       ],
-      // Pending: replace external-data and AST boundary assertions with verified guards or types.
+      // Core, index, and providers enforce this below; remaining assertion boundaries are under review.
       "typescript/no-unsafe-type-assertion": "off",
       // Falsy primitive defaults (including empty strings and zero) can be intentional.
       "typescript/prefer-nullish-coalescing": ["warn", { ignorePrimitives: true }],
@@ -336,6 +336,14 @@ export const baseConfig: UserConfig = defineConfig({
       "import/max-dependencies": "off",
     },
     overrides: [
+      {
+        files: [
+          "**/packages/core/**/*.ts",
+          "**/packages/index/**/*.ts",
+          "**/packages/providers/**/*.ts",
+        ],
+        rules: { "typescript/no-unsafe-type-assertion": "error" },
+      },
       {
         // Untyped JavaScript files don't provide reliable type information for these checks.
         files: ["**/*.{js,jsx,mjs,cjs}"],

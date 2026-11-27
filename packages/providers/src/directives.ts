@@ -108,13 +108,24 @@ const lineAt = (source: string, index: number): number => {
 export function parseDirectives(source: string): Directive[] {
   const out: Directive[] = [];
   for (const { start: at, match: m } of directiveMatches(source)) {
+    const kind = m[1];
+    switch (kind) {
+      case "disable":
+      case "enable":
+      case "disable-line":
+      case "disable-next-line":
+      case "expect-error":
+        break;
+      default:
+        throw new Error(`Unexpected cssdoc directive kind: ${kind}`);
+    }
     // A ` - <reason>` suffix (space-hyphen-space) splits the justification off the rule list. Rule ids
     // never contain a standalone ` - `, so this can't swallow one (e.g. `missing-summary` is untouched).
     const reasonAt = m[2].search(REASON_SEPARATOR);
     const rulesPart = (reasonAt === -1 ? m[2] : m[2].slice(0, reasonAt)).trim();
     const reason = reasonAt === -1 ? undefined : m[2].slice(reasonAt + 3).trim();
     out.push({
-      kind: m[1] as DirectiveKind,
+      kind,
       rules: rulesPart ? rulesPart.split(RULE_SEPARATOR).filter(Boolean) : null,
       reason: reason || undefined,
       startLine: lineAt(source, at),
