@@ -32,6 +32,7 @@ declare const data: PatternReferenceGroup[];
 export { data };
 
 const definitions = new URL("../../packages/regex/src/definitions/", import.meta.url);
+const CODE_GROUP_TAG = arkRegex.as(String.raw`<(?:input|label) [^>]+>`, "gu");
 const CODE_GROUP_ATTRIBUTE = arkRegex.as(
   String.raw`(?<attribute>name|id|for)="(?<identifier>(?:group|tab)-\d+)"`,
   "gu",
@@ -143,7 +144,7 @@ const loader: { watch: string; load: () => Promise<PatternReferenceGroup[]> } = 
         ].join("\n\n"),
       );
       // VitePress numbers tabs within each render. Scope the radio IDs and names to each card.
-      const codeGroupHtml = codeGroup.replace(/<(?:input|label) [^>]+>/gu, (tag) =>
+      const codeGroupHtml = codeGroup.replaceAll(CODE_GROUP_TAG, (tag) =>
         tag.replace(CODE_GROUP_ATTRIBUTE, `$<attribute>="regex-${pattern.name}-$<identifier>"`),
       );
       let group =

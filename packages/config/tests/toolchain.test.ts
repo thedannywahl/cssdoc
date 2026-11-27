@@ -409,6 +409,37 @@ test("lint prefers sets for repeated membership checks", () => {
   }
 });
 
+test("lint prefers replaceAll for global replacements", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".replace-all-check-"));
+  try {
+    const file = join(directory, "replace.mjs");
+    writeFileSync(
+      file,
+      [
+        "const legacy = 'banana'.replace(/a/gu, 'o');",
+        "const modern = 'banana'.replaceAll('a', 'o');",
+        "const first = 'banana'.replace('a', 'o');",
+        "console.error(legacy, modern, first);",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "unicorn(prefer-string-replace-all)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["warning", 1]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));

@@ -29,7 +29,7 @@ const inline = (text?: string): string => (text ? md.renderInline(text) : "");
 const block = (text?: string): string => (text ? md.render(text) : "");
 
 const escapeHtml = (s: string): string =>
-  s.replace(/&/gu, "&amp;").replace(/</gu, "&lt;").replace(/>/gu, "&gt;");
+  s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 
 const ESCAPED_VALUE_TYPE = arkRegex.as(
   `&lt;(?<type>${ALPHA_LOWER_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*)&gt;`,
