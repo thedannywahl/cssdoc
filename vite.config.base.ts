@@ -153,7 +153,7 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/number-literal-case": "off",
       "unicorn/filename-case": "off",
       "unicorn/no-useless-undefined": "off",
-      "unicorn/no-lonely-if": "off",
+      "unicorn/no-lonely-if": "warn",
       "unicorn/prefer-string-replace-all": "warn",
       "unicorn/prefer-structured-clone": "warn",
       "unicorn/prefer-code-point": "warn",

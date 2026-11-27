@@ -1268,6 +1268,43 @@ test("lint requires explicit collection lengths without rewriting meaningful thr
   }
 });
 
+test("lint combines lonely guards but preserves blocks with intervening side effects", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".lonely-guard-check-"));
+  try {
+    const file = join(directory, "guards.mjs");
+    writeFileSync(
+      file,
+      [
+        "function nested(a, b) {",
+        '  if (a) { if (b) console.error("both"); }',
+        "}",
+        "function combined(a, b) {",
+        '  if (a && b) console.error("both");',
+        "}",
+        "function sideEffects(a, b) {",
+        '  if (a) { console.error("a"); if (b) console.error("both"); }',
+        "}",
+        "nested(true, false); combined(true, false); sideEffects(true, false);",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "unicorn(no-lonely-if)")
+          .map(({ severity }) => severity),
+      ).toEqual(["warning"]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));

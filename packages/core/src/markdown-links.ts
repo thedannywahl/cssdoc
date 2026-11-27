@@ -22,8 +22,13 @@ export function sanitizeMarkdownLinks(text: string): string {
   const tree: Node = fromMarkdown(text);
   const definitions = new Map<string, string>();
   const collect = (node: Node): void => {
-    if (node.type === "definition" && node.identifier !== undefined && node.url !== undefined) {
-      if (!definitions.has(node.identifier)) definitions.set(node.identifier, node.url);
+    if (
+      node.type === "definition" &&
+      node.identifier !== undefined &&
+      node.url !== undefined &&
+      !definitions.has(node.identifier)
+    ) {
+      definitions.set(node.identifier, node.url);
     }
     for (const child of node.children ?? []) collect(child);
   };

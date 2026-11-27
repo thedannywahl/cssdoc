@@ -666,8 +666,8 @@ export class CssDocLanguageService {
     const scopes = this.workspaceScopes(path);
     if (path) {
       for (const s of scopes) {
-        if (s.dir && containsPath(s.dir, path)) {
-          if (!best || s.dir.length > best.dir.length) best = s;
+        if (s.dir && containsPath(s.dir, path) && (!best || s.dir.length > best.dir.length)) {
+          best = s;
         }
       }
     }

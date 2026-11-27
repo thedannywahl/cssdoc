@@ -469,18 +469,21 @@ export const record = {
         );
       }
       // Component base-class name case (e.g. SUIT PascalCase). Only components carry this convention.
-      if (naming?.component && info.entry.kind === "component" && info.entry.className) {
-        if (!naming.component.test(stripDot(info.entry.className))) {
-          out.push(
-            warn({
-              aspect: "record",
-              rule: "component-name-case",
-              message: `Component class "${info.entry.className}" doesn't match the configured name case.`,
-              record: info.entry.name,
-              span: info.span,
-            }),
-          );
-        }
+      if (
+        naming?.component &&
+        info.entry.kind === "component" &&
+        info.entry.className &&
+        !naming.component.test(stripDot(info.entry.className))
+      ) {
+        out.push(
+          warn({
+            aspect: "record",
+            rule: "component-name-case",
+            message: `Component class "${info.entry.className}" doesn't match the configured name case.`,
+            record: info.entry.name,
+            span: info.span,
+          }),
+        );
       }
       // Every class named anywhere in an @structure selector should resolve to the component class, a
       // documented member, or another documented component (a composed subcomponent) — catches drift when

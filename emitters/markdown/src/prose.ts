@@ -115,23 +115,24 @@ function escapeMarkdown(text: string): string {
   const visit = (node: Node): void => {
     const start = node.position?.start.offset;
     const end = node.position?.end.offset;
-    if (start !== undefined && end !== undefined) {
-      if (node.type === "code" || node.type === "inlineCode") {
-        const source = text.slice(start, end);
-        const fenced = source.startsWith(BACKTICK_CHAR) || source.startsWith(TILDE_CHAR);
-        const protect =
-          (node.type === "inlineCode" || !fenced) &&
-          node.value?.includes(BRACE_OPEN_CHAR.repeat(2));
-        edits.push({
-          start,
-          end,
-          text:
-            protect && node.value !== undefined
-              ? vueSafeCode(node.value, node.type === "inlineCode")
-              : source,
-        });
-        return;
-      }
+    if (
+      start !== undefined &&
+      end !== undefined &&
+      (node.type === "code" || node.type === "inlineCode")
+    ) {
+      const source = text.slice(start, end);
+      const fenced = source.startsWith(BACKTICK_CHAR) || source.startsWith(TILDE_CHAR);
+      const protect =
+        (node.type === "inlineCode" || !fenced) && node.value?.includes(BRACE_OPEN_CHAR.repeat(2));
+      edits.push({
+        start,
+        end,
+        text:
+          protect && node.value !== undefined
+            ? vueSafeCode(node.value, node.type === "inlineCode")
+            : source,
+      });
+      return;
     }
     for (const child of node.children ?? []) visit(child);
   };
