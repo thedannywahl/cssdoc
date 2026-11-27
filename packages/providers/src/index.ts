@@ -43,7 +43,12 @@ import {
 
 export * from "./types.ts";
 export * from "./syntax.ts";
-export { highlightDocComment, type DocHighlight } from "./highlighting.ts";
+export {
+  highlightDirectives,
+  highlightDocComment,
+  type DirectiveHighlight,
+  type DocHighlight,
+} from "./highlighting.ts";
 export { linkSyntax, mdnUrlForType } from "./mdn.ts";
 export { applyDirectives, parseDirectives } from "./directives.ts";
 export {

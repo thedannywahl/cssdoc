@@ -27,7 +27,7 @@ import {
   docCommentFenceRanges,
   type CssDocConfiguration,
 } from "@cssdoc/core/lite";
-import { highlightDocComment } from "@cssdoc/providers/highlighting";
+import { highlightDirectives, highlightDocComment } from "@cssdoc/providers/highlighting";
 import { CSSDOC_TAGS, cssdocTagNamesByArgument, cssdocTagNamesByKind } from "@cssdoc/spec";
 import { regex as arkRegex } from "arkregex";
 import {
@@ -41,12 +41,6 @@ import {
   ALPHANUMERIC_EXTENDED_SOURCE,
   SPACE_TAB_SOURCE,
   WORD_BOUNDARY_SOURCE,
-  toRegExp,
-  TOKEN_CLASS_SELECTOR_REQUIRED_DOT,
-  COMMENT_START_SOURCE,
-  BRACE_OPEN_SOURCE,
-  BRACE_CLOSE_SOURCE,
-  CSSDOC_DIRECTIVE_KIND_SOURCE,
   TOKEN_CUSTOM_PROPERTY_SOURCE,
   TOKENIZER_RECORD_TAG_SOURCE,
   TOKENIZER_MODIFIER_TAG_SOURCE,
@@ -156,13 +150,6 @@ const GROUP_TYPE: Record<string, CssdocTokenType> = {
   cprop: "property",
 };
 
-const DIRECTIVE: RegExp = arkRegex.as(
-  String.raw`^${COMMENT_START_SOURCE}\s*(cssdoc-${CSSDOC_DIRECTIVE_KIND_SOURCE})([^*]*?)\*/`,
-  "du",
-);
-const DIRECTIVE_REASON = arkRegex.as(String.raw`\s-\s`, "u");
-const DIRECTIVE_RULE = arkRegex.as(String.raw`[^\s,]+`, "gu");
-
 /**
  * Tokenize one CSS comment into doc-tag spans.
  *
@@ -175,23 +162,13 @@ export const tokenizeComment = (
   configuration?: CssDocConfiguration,
 ): CssdocToken[] => {
   const out: CssdocToken[] = [];
-  const directive = DIRECTIVE.exec(text);
-  if (directive) {
-    const keywordRange = directive.indices?.[1];
-    const rulesRange = directive.indices?.[2];
-    if (!keywordRange || !rulesRange) throw new Error("Missing directive capture indices");
-    const [from, to] = keywordRange;
-    out.push({ from, to, type: "keyword" });
-    const rules = directive[2];
-    const reasonAt = rules.search(DIRECTIVE_REASON);
-    const rulesPart = reasonAt === -1 ? rules : rules.slice(0, reasonAt);
-    const rulesStart = rulesRange[0];
-    for (const match of rulesPart.matchAll(DIRECTIVE_RULE)) {
-      const start = rulesStart + match.index;
-      out.push({ from: start, to: start + match[0].length, type: "rule" });
-    }
-    return out;
-  }
+  const directives = highlightDirectives(text);
+  if (directives.length)
+    return directives.map((range) => ({
+      from: range.start,
+      to: range.end,
+      type: range.role === "directive" ? "keyword" : "rule",
+    }));
   const highlights = highlightDocComment(text, configuration);
   const blockTags = highlights.filter((highlight) => highlight.role === "blockTag");
   const allowedTags = new Set(blockTags.map((tag) => tag.start));
@@ -207,7 +184,9 @@ export const tokenizeComment = (
     if (
       highlights.some(
         (range) =>
-          (range.role.startsWith("inline") || range.role === "markdown") &&
+          (range.role.startsWith("inline") ||
+            range.role.startsWith("structure") ||
+            range.role === "markdown") &&
           m.index >= range.start &&
           m.index < range.end,
       )
@@ -235,6 +214,16 @@ export const tokenizeComment = (
     }
   }
   for (const highlight of highlights) {
+    if (highlight.role.startsWith("structure")) {
+      const type: CssdocTokenType =
+        highlight.role === "structureSelector"
+          ? "part"
+          : highlight.role === "structureAtRule"
+            ? "tag"
+            : "punct";
+      out.push({ from: highlight.start, to: highlight.end, type });
+      continue;
+    }
     if (highlight.role === "markdown") {
       const type: CssdocTokenType =
         highlight.markdownKind === "emphasis" ||
@@ -276,26 +265,6 @@ export const tokenizeComment = (
             ? "link"
             : undefined;
     if (type) out.push({ from: highlight.start, to: highlight.end, type });
-  }
-  for (const block of blocks) {
-    const tag = blockTags.find((tag) => tag.start === block.start && tag.tag === "structure");
-    if (!tag) continue;
-    const start = tag.end;
-    const body = text.slice(start, block.end);
-
-    // Pattern to match class selectors with required dot to avoid matching bare identifiers
-    const classPattern = toRegExp(TOKEN_CLASS_SELECTOR_REQUIRED_DOT);
-    for (const m of body.matchAll(classPattern)) {
-      const from = start + (m.index ?? 0);
-      out.push({ from, to: from + m[0].length, type: "part" });
-    }
-
-    // Pattern to match braces for nesting visualization
-    const bracePattern = arkRegex.as(`${BRACE_OPEN_SOURCE}|${BRACE_CLOSE_SOURCE}`, "gu");
-    for (const m of body.matchAll(bracePattern)) {
-      const from = start + (m.index ?? 0);
-      out.push({ from, to: from + m[0].length, type: "punct" });
-    }
   }
   return out.toSorted((a, b) => a.from - b.from);
 };

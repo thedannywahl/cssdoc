@@ -23,6 +23,7 @@ import {
   DASH_SOURCE,
 } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
+import { tokenize, tokenTypes } from "./css-tokenizer.ts";
 
 type DirectiveKind = "disable" | "enable" | "disable-line" | "disable-next-line" | "expect-error";
 
@@ -39,10 +40,61 @@ interface Directive {
 
 const DIRECTIVE = arkRegex.as(
   String.raw`${COMMENT_START_SOURCE}\s*cssdoc-(${CSSDOC_DIRECTIVE_KIND_SOURCE})([^*]*?)${COMMENT_END_SOURCE}`,
-  "gu",
+  "dgu",
 );
 const REASON_SEPARATOR = arkRegex.as(String.raw`\s${DASH_SOURCE}\s`, "u");
 const RULE_SEPARATOR = arkRegex.as(String.raw`[\s,]+`, "u");
+const RULE = arkRegex.as(String.raw`[^\s,]+`, "gu");
+
+function directiveMatches(source: string): { start: number; match: RegExpMatchArray }[] {
+  const matches: { start: number; match: RegExpMatchArray }[] = [];
+  tokenize(source, (type, start, end) => {
+    if (type !== tokenTypes.Comment) return;
+    const match = [...source.slice(start, end).matchAll(DIRECTIVE)][0];
+    if (match?.index === 0) matches.push({ start, match });
+  });
+  return matches;
+}
+
+/** Source range of a directive keyword or rule name. */
+export interface DirectiveHighlight {
+  /** Inclusive UTF-16 offset in the supplied CSS. */
+  start: number;
+  /** Exclusive UTF-16 offset in the supplied CSS. */
+  end: number;
+  /** Whether the range is the directive keyword or one rule name. */
+  role: "directive" | "directiveRule";
+}
+
+/**
+ * Find directive syntax using the same recognition and reason boundary as diagnostics.
+ *
+ * @param source - CSS text or an individual CSS comment.
+ * @returns Non-overlapping source-relative ranges in order.
+ */
+export function highlightDirectives(source: string): DirectiveHighlight[] {
+  const result: DirectiveHighlight[] = [];
+  for (const { start, match } of directiveMatches(source)) {
+    const kind = match.indices?.[1];
+    const rules = match.indices?.[2];
+    if (!kind || !rules) throw new Error("Missing directive source offsets");
+    result.push({
+      start: start + kind[0] - "cssdoc-".length,
+      end: start + kind[1],
+      role: "directive",
+    });
+    const reasonAt = match[2].search(REASON_SEPARATOR);
+    const ruleText = reasonAt < 0 ? match[2] : match[2].slice(0, reasonAt);
+    for (const rule of ruleText.matchAll(RULE)) {
+      result.push({
+        start: start + rules[0] + rule.index,
+        end: start + rules[0] + rule.index + rule[0].length,
+        role: "directiveRule",
+      });
+    }
+  }
+  return result;
+}
 
 const lineAt = (source: string, index: number): number => {
   let line = 1;
@@ -53,8 +105,7 @@ const lineAt = (source: string, index: number): number => {
 /** Parse every `cssdoc-*` directive comment out of a CSS source. */
 export function parseDirectives(source: string): Directive[] {
   const out: Directive[] = [];
-  for (const m of source.matchAll(DIRECTIVE)) {
-    const at = m.index ?? 0;
+  for (const { start: at, match: m } of directiveMatches(source)) {
     // A ` - <reason>` suffix (space-hyphen-space) splits the justification off the rule list. Rule ids
     // never contain a standalone ` - `, so this can't swallow one (e.g. `missing-summary` is untouched).
     const reasonAt = m[2].search(REASON_SEPARATOR);

@@ -979,6 +979,37 @@ test("semanticTokens: extracts doc comment tags as tokens", () => {
   expect(decoratorToken).toBeDefined();
 });
 
+test("semantic tokens highlight directives in embedded CSS but not strings or host markup", () => {
+  const text = [
+    "<p>/* cssdoc-disable outside */</p>",
+    "<style>",
+    '.x { content: "/* cssdoc-disable fake */"; }',
+    "/* cssdoc-disable-line missing-summary - reason */",
+    "</style>",
+  ].join("\r\n");
+  const lines = text.split("\r\n");
+  const svc = new CssDocLanguageService(createIndex(""));
+  const tokens = svc.semanticTokens(text, "/example.html");
+  expect(
+    tokens.map((token) =>
+      lines[token.line].slice(token.startCharacter, token.startCharacter + token.length),
+    ),
+  ).toEqual(["cssdoc-disable-line", "missing-summary"]);
+});
+
+test("semantic tokens include structure selectors and nested CSS at-rules", () => {
+  const text = "/** @structure\n * @scope (.card) {\n * .card { .label {} }\n * }\n */";
+  const lines = text.split("\n");
+  const svc = new CssDocLanguageService(createIndex(""));
+  const tokens = svc.semanticTokens(text);
+  const values = tokens.map((token) =>
+    lines[token.line].slice(token.startCharacter, token.startCharacter + token.length),
+  );
+  expect(values).toContain("@scope");
+  expect(values).toContain(".label");
+  expect(values).toContain("{");
+});
+
 test("semantic tokens use line-relative UTF-16 positions in multiline and inline comments", () => {
   const text = `/**\n * @component button\n * @summary Click me\n */\n.💫 {} /** @deprecated Old */`;
   const lines = text.split("\n");

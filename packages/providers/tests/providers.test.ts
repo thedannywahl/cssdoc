@@ -2,6 +2,7 @@ import { CssDocConfiguration, CssDocTagDefinition } from "@cssdoc/core";
 import { createIndex } from "@cssdoc/index";
 import { expect, test } from "vite-plus/test";
 import {
+  applyDirectives,
   checkClassUsage,
   completeClasses,
   completeCustomProperties,
@@ -9,6 +10,7 @@ import {
   hoverForClass,
   hoverForCustomProperty,
   highlightDocComment,
+  highlightDirectives,
   linkSyntax,
   lintModel,
   NAME_CASE_PRESETS,
@@ -36,6 +38,41 @@ const CSS = `
 `;
 
 const index = createIndex(CSS, { file: "components.css", modifierConvention: "rscss" });
+
+test("directive highlights share diagnostic syntax and ignore strings and reasons", () => {
+  const text = [
+    '.x { content: "/* cssdoc-disable fake */"; }',
+    "/* cssdoc-disable-line missing-summary,",
+    "   undocumented-modifier - 😀 reason */",
+  ].join("\r\n");
+  expect(
+    highlightDirectives(text).map((token) => [token.role, text.slice(token.start, token.end)]),
+  ).toEqual([
+    ["directive", "cssdoc-disable-line"],
+    ["directiveRule", "missing-summary"],
+    ["directiveRule", "undocumented-modifier"],
+  ]);
+  expect(parseDirectives(text)).toMatchObject([
+    { kind: "disable-line", rules: ["missing-summary", "undocumented-modifier"] },
+  ]);
+});
+
+test("directive-looking strings cannot suppress diagnostics", () => {
+  const source = `.x { content: "/* cssdoc-disable missing-summary */"; }
+/** @component button */
+.button {}
+/* cssdoc-disable missing-summary */
+/** @component chip */
+.chip {}`;
+  const diagnostics = lintModel(
+    createIndex(source),
+    resolveRuleSeverities({ "missing-summary": "warn" }),
+  );
+  const filtered = applyDirectives(diagnostics, source);
+  expect(
+    filtered.filter((item) => item.rule === "missing-summary").map((item) => item.record),
+  ).toEqual(["button"]);
+});
 
 test("block highlighting follows scanner ownership and configuration", () => {
   const text = [
@@ -188,6 +225,36 @@ test("shared Markdown highlighting respects modes, nested syntax, inline tags, a
   expect(tokens.every((token, i) => i === 0 || tokens[i - 1].end <= token.start)).toBe(true);
   config.setProseSettings({ mode: "plain" });
   expect(highlightDocComment(text, config).some((token) => token.role === "markdown")).toBe(false);
+});
+
+test("structure highlights CSS tokens without coloring quoted or commented selectors", () => {
+  const text = [
+    "/**",
+    " * @structure - Overview.",
+    " * @scope (.card) {",
+    ' *   .card[data-label=".fake {}"] { .real {} }',
+    " * }",
+    " */",
+  ].join("\r\n");
+  const tokens = highlightDocComment(text);
+  expect(
+    tokens
+      .filter((token) => token.role.startsWith("structure"))
+      .map((token) => [token.role, text.slice(token.start, token.end)]),
+  ).toEqual([
+    ["structureAtRule", "@scope"],
+    ["structureSelector", ".card"],
+    ["structurePunctuation", "{"],
+    ["structureSelector", ".card"],
+    ["structureSelector", '[data-label=".fake {}"]'],
+    ["structurePunctuation", "{"],
+    ["structureSelector", ".real"],
+    ["structurePunctuation", "{"],
+    ["structurePunctuation", "}"],
+    ["structurePunctuation", "}"],
+    ["structurePunctuation", "}"],
+  ]);
+  expect(tokens.every((token, i) => i === 0 || tokens[i - 1].end <= token.start)).toBe(true);
 });
 
 test("private examples don't appear in hover cards", () => {

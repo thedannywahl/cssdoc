@@ -20,6 +20,10 @@ const cssTreeBundle = (() => {
   return createRequire(providers).resolve("css-tree"); // → css-tree/cjs/index.cjs (require condition)
 })();
 const cssTreeForkShim = fileURLToPath(new URL("../src/shims/css-tree.ts", import.meta.url));
+const cssTreeTokenizer = (() => {
+  const providers = createRequire(languageServer).resolve("@cssdoc/providers");
+  return createRequire(providers).resolve("css-tree/tokenizer");
+})();
 
 // jsonc-parser (via @cssdoc/config) resolves to its UMD build by default, whose factory does a runtime
 // `require("./impl/format")` esbuild can't follow. Point at its ESM build, which uses static imports.
@@ -72,6 +76,7 @@ await build({
   ...common,
   entryPoints: ["src/server-main.ts"],
   alias: {
+    "css-tree/tokenizer": cssTreeTokenizer,
     "css-tree": cssTreeForkShim,
     "css-tree-bundle": cssTreeBundle,
     "jsonc-parser": jsoncParserEsm,

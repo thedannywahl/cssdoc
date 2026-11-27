@@ -15,9 +15,13 @@ import {
   AT_SOURCE,
   CARRIAGE_RETURN_CHAR,
   CSSDOC_BLOCK_TAG_NAME_SOURCE,
+  LINE_ENDING_SOURCE,
   LINE_FEED_CHAR,
 } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
+import { tokenize, tokenTypes } from "./css-tokenizer.ts";
+export { highlightDirectives } from "./directives.ts";
+export type { DirectiveHighlight } from "./directives.ts";
 
 /** A source-mapped doc-comment highlighting span. */
 export interface DocHighlight {
@@ -34,11 +38,60 @@ export interface DocHighlight {
     | "inlinePunctuation"
     | "inlineContent"
     | "markdown"
+    | "structureSelector"
+    | "structureAtRule"
+    | "structurePunctuation"
     | "code";
   /** Canonical name of the containing tag, without `@`. */
   tag: string;
   /** Markdown construct for a Markdown span. */
   markdownKind?: MarkdownSyntaxRange["kind"];
+}
+
+function addStructureHighlights(
+  result: DocHighlight[],
+  block: DocCommentBlock,
+  start: number,
+): void {
+  const text = block.text.slice(start);
+  let dot: number | undefined;
+  let bracketStart: number | undefined;
+  let brackets = 0;
+  const append = (from: number, to: number, role: DocHighlight["role"]): void => {
+    for (const range of mappedRanges(block, start + from, start + to)) {
+      result.push({ ...range, role, tag: "structure" });
+    }
+  };
+  tokenize(text, (type, from, to) => {
+    if (brackets) {
+      if (type === tokenTypes.LeftSquareBracket) brackets++;
+      else if (type === tokenTypes.RightSquareBracket) {
+        brackets--;
+        if (brackets === 0 && bracketStart !== undefined) {
+          append(bracketStart, to, "structureSelector");
+          bracketStart = undefined;
+        }
+      }
+      return;
+    }
+    if (dot !== undefined) {
+      if (type === tokenTypes.Ident && from === dot + 1) {
+        append(dot, to, "structureSelector");
+        dot = undefined;
+        return;
+      }
+      dot = undefined;
+    }
+    if (type === tokenTypes.Delim && text[from] === ".") dot = from;
+    else if (type === tokenTypes.LeftSquareBracket) {
+      bracketStart = from;
+      brackets = 1;
+    } else if (type === tokenTypes.Hash) append(from, to, "structureSelector");
+    else if (type === tokenTypes.AtKeyword) append(from, to, "structureAtRule");
+    else if (type === tokenTypes.LeftCurlyBracket || type === tokenTypes.RightCurlyBracket)
+      append(from, to, "structurePunctuation");
+  });
+  if (bracketStart !== undefined) append(bracketStart, text.length, "structureSelector");
 }
 
 function addMarkdownHighlights(
@@ -176,6 +229,12 @@ export function highlightDocComment(
     const next = doc.blocks[index + 1]?.start ?? text.length;
     const body = doc.prose.find((item) => item.span.start >= block.start && item.span.start < next);
     const proseStart = body && body.text ? textOffset(block, body.span.start) : block.text.length;
+    const LINE_ENDING = arkRegex.as(LINE_ENDING_SOURCE, "u");
+    const firstLineEnding = LINE_ENDING.exec(block.text);
+    const structureStart =
+      definition.canonicalName === "structure" && firstLineEnding
+        ? firstLineEnding.index + firstLineEnding[0].length
+        : block.text.length;
     if (body) {
       const headerEnd = body.header.length;
       const header = block.text.slice(match[0].length, headerEnd);
@@ -200,7 +259,7 @@ export function highlightDocComment(
           { text: block.text.slice(match[0].length, proseStart), offset: match[0].length },
           { text: body.text, offset: proseStart, mode: body.mode },
         ]
-      : [{ text: block.text.slice(match[0].length), offset: match[0].length }];
+      : [{ text: block.text.slice(match[0].length, structureStart), offset: match[0].length }];
     for (const part of parts) {
       const code =
         part.mode === "markdown"
@@ -224,6 +283,9 @@ export function highlightDocComment(
           definition.canonicalName,
         );
       }
+    }
+    if (definition.canonicalName === "structure") {
+      addStructureHighlights(result, block, structureStart);
     }
   }
   return result.toSorted((a, b) => a.start - b.start);

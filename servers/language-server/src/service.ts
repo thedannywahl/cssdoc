@@ -81,6 +81,7 @@ import {
   definitionForCustomProperty,
   hoverForClass,
   hoverForCustomProperty,
+  highlightDirectives,
   highlightDocComment,
   lintModel,
   resolveNaming,
@@ -1350,6 +1351,16 @@ export class CssDocLanguageService {
     const host = path ? detectEmbeddedHost(path) : undefined;
     const projected = host ? projectCss(text, { host }) : text;
     const configuration = this.scopeForPath(path).configuration;
+    for (const directive of highlightDirectives(projected)) {
+      const position = positionAt(text, directive.start);
+      tokens.push({
+        line: position.line,
+        startCharacter: position.character,
+        length: directive.end - directive.start,
+        tokenType: directive.role === "directive" ? tokenTypes.keyword : tokenTypes.variable,
+        tokenModifiers: 0,
+      });
+    }
     const docComments = projected.matchAll(SEMANTIC_DOC_COMMENT);
     for (const block of docComments) {
       const blockText = block[0];
@@ -1368,11 +1379,15 @@ export class CssDocLanguageService {
             tokenType:
               highlight.role === "inlineTag"
                 ? tokenTypes.decorator
-                : highlight.role === "inlineContent" || highlight.role === "argument"
+                : highlight.role === "inlineContent" ||
+                    highlight.role === "argument" ||
+                    highlight.role === "structureSelector"
                   ? tokenTypes.variable
-                  : highlight.role === "markdown"
-                    ? tokenTypes.comment
-                    : tokenTypes.keyword,
+                  : highlight.role === "structureAtRule"
+                    ? tokenTypes.decorator
+                    : highlight.role === "markdown"
+                      ? tokenTypes.comment
+                      : tokenTypes.keyword,
             tokenModifiers:
               highlight.role === "argument" && highlight.tag === "modifier"
                 ? 1 << modifiers.modification
