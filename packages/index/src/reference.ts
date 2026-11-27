@@ -821,6 +821,7 @@ function supportsKey(input: string): SupportsKey {
         default:
           unsupported = true;
       }
+      return undefined;
     });
     if (invalid) return { status: "invalid" };
     if (unsupported) return { status: "unsupported" };
@@ -963,6 +964,7 @@ function queryKey(input: string, kind: "media" | "container"): QueryKey {
         default:
           unsupported = true;
       }
+      return undefined;
     });
     if (invalid) return { status: "invalid" };
     if (unsupported) return { status: "unsupported" };

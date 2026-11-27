@@ -73,7 +73,7 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/array-type": "off",
       "typescript/prefer-regexp-exec": "off",
       "typescript/no-explicit-any": "error",
-      "typescript/consistent-return": "off",
+      "typescript/consistent-return": "warn",
       "typescript/restrict-template-expressions": "off",
       // LSP clients may still send rootUri; the VS Code client still forwards push settings.
       "typescript/no-deprecated": [

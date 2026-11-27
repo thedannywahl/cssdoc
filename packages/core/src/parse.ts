@@ -923,6 +923,7 @@ function buildEntry(
             for (const [key, sel] of doc.wrapperSelectors) {
               if (sel === node.selector) return doc.wrappers.get(key);
             }
+            return undefined;
           })();
         if (description) node.description = description;
         applyWrappers(node.children);
