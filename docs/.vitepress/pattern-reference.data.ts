@@ -168,13 +168,7 @@ const loader: { watch: string; load: () => Promise<PatternReferenceGroup[]> } = 
         fixtures: pattern.fixtures,
       });
     }
-    const groups = [
-      cssdoc,
-      css,
-      ...Array.from(tiers)
-        .sort(([a], [b]) => b - a)
-        .map(([, group]) => group),
-    ];
+    const groups = [cssdoc, css, ...[...tiers].sort(([a], [b]) => b - a).map(([, group]) => group)];
     for (const group of groups) group.patterns.sort((a, b) => a.name.localeCompare(b.name, "en"));
     return groups;
   },

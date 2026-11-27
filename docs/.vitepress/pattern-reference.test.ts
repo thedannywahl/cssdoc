@@ -67,9 +67,7 @@ test("the pattern reference preserves registry patterns and their test fixtures"
   expect(groups.map(({ id }) => id)).toEqual([
     "cssdoc-grammar",
     "css-grammar",
-    ...Array.from(populatedTiers)
-      .sort((a, b) => b - a)
-      .map((tier) => `tier-${tier}`),
+    ...[...populatedTiers].sort((a, b) => b - a).map((tier) => `tier-${tier}`),
   ]);
   expect(
     groups[0].patterns.find((row) => row.name === "CSSDOC_DESCRIPTION_SEPARATOR"),

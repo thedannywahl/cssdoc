@@ -1424,6 +1424,38 @@ test("lint prefers exitCode so command output can drain before termination", () 
   }
 });
 
+test("lint spreads iterable copies but preserves mapped and array-like conversions", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".iterable-copy-check-"));
+  try {
+    const file = join(directory, "copies.mjs");
+    writeFileSync(
+      file,
+      [
+        "const values = new Set([1, 2]);",
+        "console.error(Array.from(values));",
+        "console.error([...values]);",
+        "console.error(Array.from(values, (value) => value * 2));",
+        "console.error(Array.from({ length: 2 }));",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "unicorn(prefer-spread)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["warning", 2]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));

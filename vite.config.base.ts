@@ -161,7 +161,7 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/no-useless-collection-argument": "warn",
       "unicorn/catch-error-name": "off",
       "unicorn/escape-case": "off",
-      "unicorn/prefer-spread": "off",
+      "unicorn/prefer-spread": "warn",
       "unicorn/relative-url-style": "off",
       "unicorn/prefer-import-meta-properties": "warn",
       "unicorn/no-process-exit": "warn",

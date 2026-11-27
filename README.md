@@ -121,6 +121,8 @@ TypeScript. It also checks for redundant assertions, deprecated APIs, and potent
 Type-check failures throw `TypeError`; range failures use `RangeError`.
 End-relative array access uses `at`, and index searches compare against their `-1` sentinel.
 Collection conditions compare `length` or `size` explicitly against zero or the required threshold.
+Copy iterables with spread; use `Array.from` when mapping during conversion or handling array-like
+objects that aren't iterable.
 Use logical fallbacks instead of repeating the same operand in a ternary. Keep `||` for deliberate
 empty-string or zero defaults and `??` for nullish-only defaults.
 Numeric reference captures already contain only decimal digits, so they use `Number` rather than
