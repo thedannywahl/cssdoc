@@ -166,8 +166,8 @@ export function renderPage(
   }
   const stage = entry.releaseStage ? ` <span class="badge">${esc(entry.releaseStage)}</span>` : "";
   const visibility = entry.visibility === "internal" ? ' <span class="badge">internal</span>' : "";
-  parts.push(`<h1>${esc(entry.name)}${stage}${visibility}</h1>`);
   parts.push(
+    `<h1>${esc(entry.name)}${stage}${visibility}</h1>`,
     `<div>${code(entry.className)}${entry.summary ? ` — ${prose(entry.summary)}` : ""}</div>`,
   );
   if (entry.deprecated) {

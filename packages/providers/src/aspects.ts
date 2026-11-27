@@ -1027,8 +1027,8 @@ export const record = {
               if (i > 0) frag.push("");
               frag.push(
                 `${FORWARD_SLASH_CHAR}${ASTERISK_CHAR} Variant: ${variant.name ?? `Variant ${i + 1}`} ${COMMENT_END_TEXT}`,
+                ...renderStructureTree(variant.nodes),
               );
-              frag.push(...renderStructureTree(variant.nodes));
             });
             frag.push(MARKDOWN_BACKTICK_FENCE_TEXT);
           } else {

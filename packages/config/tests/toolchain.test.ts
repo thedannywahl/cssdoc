@@ -1305,6 +1305,40 @@ test("lint combines lonely guards but preserves blocks with intervening side eff
   }
 });
 
+test("lint groups adjacent collection writes but preserves interleaved observations", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".collection-writes-check-"));
+  try {
+    const file = join(directory, "writes.mjs");
+    writeFileSync(
+      file,
+      [
+        "const separate = [];",
+        "separate.push(1); separate.push(2);",
+        "const grouped = [];",
+        "grouped.push(1, 2);",
+        "const observed = [];",
+        "observed.push(1); console.error(observed.length); observed.push(2);",
+        "console.error(separate, grouped, observed);",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "unicorn(prefer-single-call)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["warning", 2]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));

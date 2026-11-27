@@ -149,7 +149,7 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/prefer-number-coercion": "warn",
       "unicorn/prefer-at": "warn",
       "unicorn/prefer-type-error": "warn",
-      "unicorn/prefer-single-call": "off",
+      "unicorn/prefer-single-call": "warn",
       "unicorn/number-literal-case": "off",
       "unicorn/filename-case": "off",
       "unicorn/no-useless-undefined": "off",

@@ -532,21 +532,27 @@ function renderTree(
   for (const node of nodes) {
     if (node.scope !== undefined) {
       // @scope boundary: emit a labelled header at the current depth, then recurse into its children.
-      out.push(`${"  ".repeat(depth)}@scope ${node.scope}`);
-      out.push(...renderTree(node.children, self, resolveComponent, depth + 1));
+      out.push(
+        `${"  ".repeat(depth)}@scope ${node.scope}`,
+        ...renderTree(node.children, self, resolveComponent, depth + 1),
+      );
       continue;
     }
     if (node.variants !== undefined) {
       // A nested `@variant` group: this position is exactly one of these alternatives.
       out.push(`${"  ".repeat(depth)}(choose one)`);
       node.variants.forEach((variant, i) => {
-        out.push(`${"  ".repeat(depth + 1)}${variant.name ?? `Variant ${i + 1}`}`);
-        out.push(...renderTree(variant.nodes, self, resolveComponent, depth + 2));
+        out.push(
+          `${"  ".repeat(depth + 1)}${variant.name ?? `Variant ${i + 1}`}`,
+          ...renderTree(variant.nodes, self, resolveComponent, depth + 2),
+        );
       });
       continue;
     }
-    out.push(`${"  ".repeat(depth)}${structureLabel(node, self, resolveComponent)}`);
-    out.push(...renderTree(node.children, self, resolveComponent, depth + 1));
+    out.push(
+      `${"  ".repeat(depth)}${structureLabel(node, self, resolveComponent)}`,
+      ...renderTree(node.children, self, resolveComponent, depth + 1),
+    );
   }
   return out;
 }
@@ -871,8 +877,9 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
       // Default: one combined diagram, a labelled subgraph per variant ("pick one of these").
       if (view !== "diagram") {
         variants.forEach((variant, i) => {
-          fragments.structure.push(`\`// Variant: ${variant.name ?? `Variant ${i + 1}`}\``, "");
           fragments.structure.push(
+            `\`// Variant: ${variant.name ?? `Variant ${i + 1}`}\``,
+            "",
             ...fencedBlock(
               "text",
               renderTree(variant.nodes, self, options.resolveComponent).join("\n"),

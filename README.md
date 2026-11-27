@@ -76,7 +76,8 @@ their generators.
 
 Style linting follows the formatter's import order and preserves authored ordering in catalogs,
 schemas, and fixtures. It permits concise single-line guards but requires braces for multiline
-control flow. Combine nested guards when they have no intervening work or alternate branches.
+control flow. Combine nested guards when they have no intervening work or alternate branches, and
+group adjacent collection writes when argument evaluation doesn't depend on earlier writes.
 Tests import `test` from Vitest explicitly, including inside `describe`, and use strict boolean assertions where intended;
 fixtures may include literal template placeholders and unsafe URLs.
 
