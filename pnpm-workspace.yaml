@@ -96,6 +96,7 @@ catalog:
   mdast-util-to-hast: 13.2.1
   hast-util-to-html: 9.0.5
   hast-util-sanitize: ^5.0.2
+  shiki: ^4.6.0
 
 overrides:
   vite@*: "catalog:"

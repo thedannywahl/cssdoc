@@ -27,6 +27,8 @@ import {
   ALPHA_SOURCE,
   ALPHANUMERIC_EXTENDED_SOURCE,
   AT_SOURCE,
+  ASTERISK_SOURCE,
+  BACKTICK_CHAR,
   BRACE_OPEN_SOURCE,
   BRACE_OPEN_CHAR,
   BRACE_CLOSE_SOURCE,
@@ -45,6 +47,8 @@ import {
   TOKEN_CLASS_SELECTOR_SOURCE,
   CSSDOC_COMPONENT_REF_SOURCE,
   CSSDOC_DIRECTIVE_KIND_SOURCE,
+  COMMENT_END_SOURCE,
+  TILDE_CHAR,
 } from "@cssdoc/regex";
 
 /** A TextMate capture assignment (`{ "1": { name } }`). */
@@ -130,14 +134,23 @@ export function buildInjectionGrammar(): InjectionGrammar {
         t.name !== "pseudo",
     ).map((t) => t.name),
   );
+  const fencePrefix = `(?:${SPACE_TAB_SOURCE}*${ASTERISK_SOURCE}${SPACE_TAB_SOURCE}?)?${SPACE_TAB_SOURCE}{0,3}`;
+  const fenceRule = (marker: string): TmRule => ({
+    name: "markup.fenced_code.block.cssdoc",
+    begin: `^(?!.*${COMMENT_END_SOURCE})${fencePrefix}(${marker}{3,})${marker === BACKTICK_CHAR ? `[^${BACKTICK_CHAR}]*` : ".*"}$`,
+    end: `^${fencePrefix}\\1${marker}*${SPACE_TAB_SOURCE}*$|(?=${COMMENT_END_SOURCE})`,
+  });
 
   return {
     $schema: "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
     name: "cssdoc",
     scopeName: "text.cssdoc",
-    injectionSelector: "L:comment.block.css, L:comment.block.scss, L:comment.block.less",
+    injectionSelector:
+      "L:comment.block.css - markup.fenced_code.block.cssdoc, L:comment.block.scss - markup.fenced_code.block.cssdoc, L:comment.block.less - markup.fenced_code.block.cssdoc",
     patterns: [
       { include: "#directive-comment" },
+      { include: "#backtick-fence" },
+      { include: "#tilde-fence" },
       { include: "#inline-tag" },
       { include: "#record-tag" },
       { include: "#modifier-tag" },
@@ -151,6 +164,8 @@ export function buildInjectionGrammar(): InjectionGrammar {
       { include: "#custom-property" },
     ],
     repository: {
+      "backtick-fence": fenceRule(BACKTICK_CHAR),
+      "tilde-fence": fenceRule(TILDE_CHAR),
       "directive-comment": {
         begin: `(?<=/\\*)[ \\t]*(?=cssdoc-${CSSDOC_DIRECTIVE_KIND_SOURCE}|$)`,
         end: `(?=\\*/)|(?=\\S)(?!cssdoc-${CSSDOC_DIRECTIVE_KIND_SOURCE})`,

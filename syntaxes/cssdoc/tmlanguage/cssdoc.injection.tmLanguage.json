@@ -2,10 +2,16 @@
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
   "name": "cssdoc",
   "scopeName": "text.cssdoc",
-  "injectionSelector": "L:comment.block.css, L:comment.block.scss, L:comment.block.less",
+  "injectionSelector": "L:comment.block.css - markup.fenced_code.block.cssdoc, L:comment.block.scss - markup.fenced_code.block.cssdoc, L:comment.block.less - markup.fenced_code.block.cssdoc",
   "patterns": [
     {
       "include": "#directive-comment"
+    },
+    {
+      "include": "#backtick-fence"
+    },
+    {
+      "include": "#tilde-fence"
     },
     {
       "include": "#inline-tag"
@@ -42,6 +48,16 @@
     }
   ],
   "repository": {
+    "backtick-fence": {
+      "name": "markup.fenced_code.block.cssdoc",
+      "begin": "^(?!.*\\*\\/)(?:[ \\t]*\\*[ \\t]?)?[ \\t]{0,3}(`{3,})[^`]*$",
+      "end": "^(?:[ \\t]*\\*[ \\t]?)?[ \\t]{0,3}\\1`*[ \\t]*$|(?=\\*\\/)"
+    },
+    "tilde-fence": {
+      "name": "markup.fenced_code.block.cssdoc",
+      "begin": "^(?!.*\\*\\/)(?:[ \\t]*\\*[ \\t]?)?[ \\t]{0,3}(~{3,}).*$",
+      "end": "^(?:[ \\t]*\\*[ \\t]?)?[ \\t]{0,3}\\1~*[ \\t]*$|(?=\\*\\/)"
+    },
     "directive-comment": {
       "begin": "(?<=/\\*)[ \\t]*(?=cssdoc-(?:disable-next-line|disable-line|disable|enable|expect-error)\\b|$)",
       "end": "(?=\\*/)|(?=\\S)(?!cssdoc-(?:disable-next-line|disable-line|disable|enable|expect-error)\\b)",

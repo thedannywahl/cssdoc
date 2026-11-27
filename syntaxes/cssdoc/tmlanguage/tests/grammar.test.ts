@@ -1,8 +1,83 @@
 import { expect, test } from "vite-plus/test";
 import { CSSDOC_TAG_NAMES } from "@cssdoc/spec";
-import { buildAtRuleInjectionGrammar, buildInjectionGrammar } from "../src/index.ts";
+import { createHighlighter } from "shiki";
+import cssdoc, { buildAtRuleInjectionGrammar, buildInjectionGrammar } from "../src/index.ts";
 import grammar from "../cssdoc.injection.tmLanguage.json" with { type: "json" };
 import atRuleGrammar from "../cssdoc.atrules.injection.tmLanguage.json" with { type: "json" };
+
+test.each([
+  ["```", "````"],
+  ["~~~~", "~~~~~"],
+])("fenced code suppresses cssdoc tags until a matching %s fence closes", async (open, close) => {
+  const highlighter = await createHighlighter({
+    langs: [cssdoc, "css"],
+    themes: ["github-light"],
+  });
+  try {
+    const code = [
+      "/**",
+      " * @example",
+      ` * ${open}css`,
+      " * @component hidden",
+      " * {@link hidden}",
+      ` * ${open.slice(0, -1)}`,
+      " * @part hidden",
+      ` * ${close}`,
+      " * @summary visible",
+      " */",
+    ].join("\n");
+    const lines = highlighter.codeToTokensBase(code, {
+      lang: "css",
+      theme: "github-light",
+      includeExplanation: "scopeName",
+    });
+    const hasTag = (line: number) =>
+      lines[line]?.some((token) =>
+        token.explanation?.some((part) =>
+          part.scopes.some((scope) => scope.scopeName === "storage.type.class.cssdoc"),
+        ),
+      );
+    expect(hasTag(1)).toBe(true);
+    expect(hasTag(3)).toBe(false);
+    expect(hasTag(4)).toBe(false);
+    expect(hasTag(6)).toBe(false);
+    expect(hasTag(8)).toBe(true);
+  } finally {
+    highlighter.dispose();
+  }
+});
+
+test.each([" * ```", " * ``` */"])(
+  "an unclosed fence stops at the comment boundary: %s",
+  async (fence) => {
+    const highlighter = await createHighlighter({
+      langs: [cssdoc, "css"],
+      themes: ["github-light"],
+    });
+    try {
+      const code = [
+        "/**",
+        " * @example",
+        fence,
+        ...(fence.endsWith("*/") ? [] : [" * @component hidden", " */"]),
+        "/** @component visible */",
+      ].join("\n");
+      const lines = highlighter.codeToTokensBase(code, {
+        lang: "css",
+        theme: "github-light",
+        includeExplanation: "scopeName",
+      });
+      const scopes = (line: number) =>
+        lines[line]?.flatMap((token) =>
+          (token.explanation ?? []).flatMap((part) => part.scopes.map((scope) => scope.scopeName)),
+        );
+      expect(scopes(fence.endsWith("*/") ? 2 : 3)).not.toContain("storage.type.class.cssdoc");
+      expect(scopes(lines.length - 1)).toContain("storage.type.class.cssdoc");
+    } finally {
+      highlighter.dispose();
+    }
+  },
+);
 
 test("is a well-formed injection grammar", () => {
   expect(grammar.scopeName).toBe("text.cssdoc");
