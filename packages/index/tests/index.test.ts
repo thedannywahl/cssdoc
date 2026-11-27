@@ -10,6 +10,7 @@ import {
   memberKey,
   projectPrivateLinksInLookup,
   referenceVisibility,
+  resolveContainerMemberReference,
   resolveMediaMemberReference,
   resolveNamedMemberReference,
   resolveRecordReference,
@@ -509,6 +510,13 @@ test("media members use owned source occurrences and parsed query identity", () 
   expect(resolve("card#media((width>31px))")).toEqual({ status: "missing" });
   expect(resolve("card#media((empty))")).toEqual({ status: "missing" });
   expect(resolve("card#media((??))")).toEqual({ status: "invalid-subject" });
+  expect(resolve("card#media((width > 1px) foo (height > 2px))")).toEqual({
+    status: "invalid-subject",
+  });
+  expect(resolve("card#media((width > 1px) and)")).toEqual({ status: "invalid-subject" });
+  expect(resolve("card#media(not ((width > 1px) and (height > 2px)))")).toMatchObject({
+    status: "unavailable",
+  });
   expect(resolve("card#media((width>.5px))")).toEqual({ status: "missing" });
   expect(resolve("card#media((width:5e-1px))")).toMatchObject({ status: "resolved" });
   expect(resolve("card#media((width:9007199254740992px))")).toMatchObject({
@@ -530,6 +538,84 @@ test("media members use owned source occurrences and parsed query identity", () 
   expect(resolve("other#media((color))")).toMatchObject({ status: "resolved" });
   const equivalent = createIndex("/** @component card */ @media (width: 1.0px) { .card {} }");
   expect(resolve("card#media((width:1px))", equivalent)).toMatchObject({ status: "resolved" });
+});
+
+test("container members preserve occurrences, names, and complete lookup semantics", () => {
+  const css = `/** @component card {@private} */
+@container Layout (width > 30px) {
+  .card {}
+  @container (orientation: landscape) { .card {} }
+}
+@container Layout (WIDTH>30PX) { .card {} }
+@container layout (width > 30px) { .card {} }
+.card { @container (width: .50px) { color: red } }
+@container (height > 1px) { @keyframes fade { from { opacity: 0 } } }
+/** @component other */
+@container (width > 10px) { .other {} }`;
+  const index = createIndex(css, { file: "cards.css" });
+  const resolve = (text: string, scopeIndex = index, complete = true) => {
+    const parsed = parseReference(text);
+    if (!parsed.ok) throw new Error(parsed.error);
+    return resolveContainerMemberReference(parsed.reference, {
+      workspace: { complete, sources: [{ index: scopeIndex, sourceKey: "cards.css" }] },
+    });
+  };
+  expect(index.records[0].containerOccurrences?.map((item) => item.prelude)).toEqual([
+    "Layout (width > 30px)",
+    "(orientation: landscape)",
+    "Layout (WIDTH>30PX)",
+    "layout (width > 30px)",
+    "(width: .50px)",
+  ]);
+  expect(resolve(String.raw`card#container(Lay\6f ut (width>30px))`)).toMatchObject({
+    status: "ambiguous",
+    stage: "member",
+    candidates: [
+      { occurrence: { span: { start: { line: 2 } } }, record: { sourceKey: "cards.css" } },
+      { occurrence: { span: { start: { line: 6 } } } },
+    ],
+  });
+  expect(resolve("card#container(layout (width > 30px))")).toMatchObject({
+    status: "resolved",
+    candidate: { occurrence: { span: { start: { line: 7 } } } },
+  });
+  expect(resolve("card#container((orientation: LANDSCAPE))")).toMatchObject({ status: "resolved" });
+  expect(resolve("card#container((width: 5e-1px))")).toMatchObject({ status: "resolved" });
+  expect(resolve("card#container((height > 1px))")).toEqual({ status: "missing" });
+  expect(resolve("card#container((??))")).toEqual({ status: "invalid-subject" });
+  expect(resolve("card#container(none (width > 1px))")).toEqual({ status: "invalid-subject" });
+  expect(resolve("card#container((width > 1px) and (height > 2px) or (color))")).toEqual({
+    status: "invalid-subject",
+  });
+  expect(resolve("card#container(style(--theme: dark))")).toMatchObject({ status: "unavailable" });
+  expect(resolve("card#container(not ((width > 1px) and (height > 2px)))")).toMatchObject({
+    status: "unavailable",
+  });
+  expect(resolve("card#container((width: .5px))", index, false)).toMatchObject({
+    status: "unavailable",
+  });
+  expect(resolve("card#container((width: .5px))", indexFromEntries(index.entries))).toMatchObject({
+    status: "unavailable",
+  });
+  expect(
+    resolve("card#container((width: .5px))", createIndex(css, { parse: postcss.parse })),
+  ).toMatchObject({
+    status: "unavailable",
+  });
+  expect(resolve("other#container((width > 10px))")).toMatchObject({ status: "resolved" });
+  const unsupported = createIndex(
+    "/** @component card */ @container style(--theme: dark) { .card {} }",
+  );
+  expect(resolve("card#container((width > 1px))", unsupported)).toMatchObject({
+    status: "unavailable",
+  });
+  const parsed = parseReference("card#container(layout (width > 30px))");
+  if (!parsed.ok) throw new Error(parsed.error);
+  expect(
+    referenceVisibility(parsed.reference, {
+      workspace: { complete: true, sources: [{ index, sourceKey: "cards.css" }] },
+    }),
+  ).toBe("private");
 });
 
 test("createIndex parses the model and resolves class lookups", () => {

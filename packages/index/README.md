@@ -41,14 +41,16 @@ map entry or an incomplete source produces an unavailable result.
 `pseudo-element` subjects against explicit `selectorMemberOccurrences`. Set
 `selectorMembersComplete` only when that map preserves every selector occurrence for the source.
 Namespaced type selectors and unsupported CSS parser forms produce an unavailable result. Neither
-resolver collects those named or selector occurrences automatically. Supports and container
-members remain unsupported.
+resolver collects those named or selector occurrences automatically. Supports members remain
+unsupported.
 
 `resolveScopeMemberReference` uses CSS `@scope` occurrences collected from a record's owned rules,
 including nested scopes and source spans. Model-only indexes and indexes built with a custom dialect
 parser return unavailable for scope members. Unsupported selector syntax also returns unavailable.
-`resolveMediaMemberReference` similarly uses source-backed media occurrences and compares CSS numbers
-without losing decimal precision. Unsupported query syntax returns unavailable.
+`resolveMediaMemberReference` and `resolveContainerMemberReference` similarly use source-backed
+query occurrences and compare CSS numbers without losing decimal precision. Container names retain
+their case. Unsupported query syntax, including style queries and nested conditions that the CSS
+parser can't represent, returns unavailable.
 
 `projectPrivateLinksInLookup` projects links using the prose's original reference lookup.
 It preserves labels as literal fragments and reports unavailable targets; callers must handle that

@@ -11,8 +11,9 @@ import type {
 } from "@cssdoc/core";
 import { ALPHA_UPPER_SOURCE } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
-import { generate, ident, parse, tokenTypes, tokenize, walk } from "css-tree";
+import { generate, ident, parse, tokenTypes, tokenize, walk, type Condition } from "css-tree";
 import type {
+  ContainerOccurrence,
   CssDocIndex,
   MediaOccurrence,
   RecordInfo,
@@ -573,6 +574,23 @@ export type MediaMemberResolution =
   | { status: "unavailable"; candidates: readonly ReferenceCandidate[] }
   | { status: "invalid-subject" };
 
+/** One CSS `@container` occurrence and its owning record. */
+export interface ContainerMemberCandidate {
+  /** Owning record and its source provenance. */
+  record: ReferenceCandidate;
+  /** Source occurrence of the CSS container rule. */
+  occurrence: ContainerOccurrence;
+}
+
+/** Resolution of a CSS container member reference. */
+export type ContainerMemberResolution =
+  | { status: "resolved"; candidate: ContainerMemberCandidate }
+  | { status: "missing" }
+  | { status: "ambiguous"; stage: "record"; candidates: readonly ReferenceCandidate[] }
+  | { status: "ambiguous"; stage: "member"; candidates: readonly ContainerMemberCandidate[] }
+  | { status: "unavailable"; candidates: readonly ReferenceCandidate[] }
+  | { status: "invalid-subject" };
+
 function canonicalCssNumber(text: string): string | undefined {
   const negative = text.startsWith("-");
   const unsigned = text.startsWith("-") || text.startsWith("+") ? text.slice(1) : text;
@@ -592,20 +610,83 @@ function canonicalCssNumber(text: string): string | undefined {
   return `${negative ? "-" : ""}${digits.slice(start, end)}e${exponent}`;
 }
 
-function mediaKey(input: string): SelectorKey {
+function validQueryCondition(condition: Condition): boolean {
+  const children = condition.children.toArray();
+  const operator = (index: number): string | undefined => {
+    const node = children[index];
+    return node?.type === "Identifier" ? asciiLower(ident.decode(node.name)) : undefined;
+  };
+  if (operator(0) === "not") return children.length === 2 && operator(1) === undefined;
+  if (children.length === 0 || children.length % 2 === 0) return false;
+  let connector: string | undefined;
+  for (let i = 0; i < children.length; i++) {
+    const value = operator(i);
+    if (i % 2 === 0) {
+      if (value !== undefined) return false;
+    } else {
+      if (value !== "and" && value !== "or") return false;
+      if (connector && connector !== value) return false;
+      connector = value;
+    }
+  }
+  return true;
+}
+
+function hasNestedQuery(input: string): boolean {
+  let depth = 0;
+  let nested = false;
+  tokenize(input, (type) => {
+    if (type === tokenTypes.LeftParenthesis || type === tokenTypes.Function) {
+      depth++;
+      if (depth > 1) nested = true;
+    } else if (type === tokenTypes.RightParenthesis) {
+      depth--;
+    }
+  });
+  return nested;
+}
+
+function queryKey(input: string, kind: "media" | "container"): SelectorKey {
   try {
     const ast = parse(input, {
       context: "atrulePrelude",
-      atrule: "media",
+      atrule: kind,
       onParseError(error) {
         throw error;
       },
     });
-    if (ast.type !== "AtrulePrelude" || ast.children.size !== 1) return { status: "invalid" };
-    const list = ast.children.first;
-    if (list?.type !== "MediaQueryList" || list.children.size === 0) return { status: "invalid" };
+    if (ast.type !== "AtrulePrelude") return { status: "invalid" };
+    let containerName: object | undefined;
+    if (kind === "media") {
+      if (ast.children.size !== 1) return { status: "invalid" };
+      const list = ast.children.first;
+      if (list?.type !== "MediaQueryList" || list.children.size === 0) return { status: "invalid" };
+    } else {
+      const children = ast.children.toArray();
+      if (children.length === 2 && children[0].type === "Identifier") {
+        containerName = children[0];
+        const name = asciiLower(ident.decode(children[0].name));
+        if (
+          [
+            "none",
+            "and",
+            "or",
+            "not",
+            "default",
+            "initial",
+            "inherit",
+            "unset",
+            "revert",
+            "revert-layer",
+          ].includes(name)
+        )
+          return { status: "invalid" };
+      } else if (children.length !== 1) return { status: "invalid" };
+      if (children[children.length - 1].type !== "Condition") return { status: "unsupported" };
+    }
 
     let unsupported = false;
+    let invalid = false;
     const keyword = (name: string): string => {
       const decoded = ident.decode(name);
       if (decoded.startsWith("--")) unsupported = true;
@@ -618,8 +699,11 @@ function mediaKey(input: string): SelectorKey {
           if (node.modifier) node.modifier = asciiLower(node.modifier);
           break;
         case "Feature":
-        case "Identifier":
           node.name = keyword(node.name);
+          break;
+        case "Identifier":
+          node.name =
+            node === containerName ? ident.encode(ident.decode(node.name)) : keyword(node.name);
           break;
         case "Dimension":
         case "Number":
@@ -632,7 +716,10 @@ function mediaKey(input: string): SelectorKey {
           break;
         case "AtrulePrelude":
         case "MediaQueryList":
+          break;
         case "Condition":
+          if (!validQueryCondition(node)) invalid = true;
+          break;
         case "FeatureRange":
         case "Ratio":
           break;
@@ -640,10 +727,13 @@ function mediaKey(input: string): SelectorKey {
           unsupported = true;
       }
     });
+    if (invalid) return { status: "invalid" };
     if (unsupported) return { status: "unsupported" };
     return { status: "valid", key: generate(ast) };
   } catch (error) {
-    if (error instanceof SyntaxError) return { status: "invalid" };
+    // css-tree doesn't parse all valid nested query conditions.
+    if (error instanceof SyntaxError)
+      return { status: hasNestedQuery(input) ? "unsupported" : "invalid" };
     throw error;
   }
 }
@@ -663,7 +753,7 @@ export function resolveMediaMemberReference(
   lookup: ReferenceLookup,
 ): MediaMemberResolution {
   if (reference.member?.kind !== "media") return { status: "unavailable", candidates: [] };
-  const key = mediaKey(reference.member.subject);
+  const key = queryKey(reference.member.subject, "media");
   if (key.status === "invalid") return { status: "invalid-subject" };
   if (key.status === "unsupported") return { status: "unavailable", candidates: [] };
   const resolution = resolveRecordReference(reference, lookup);
@@ -676,7 +766,43 @@ export function resolveMediaMemberReference(
   if (!occurrences) return { status: "unavailable", candidates: [record] };
   const candidates: MediaMemberCandidate[] = [];
   for (const occurrence of occurrences) {
-    const candidateKey = mediaKey(occurrence.prelude);
+    const candidateKey = queryKey(occurrence.prelude, "media");
+    if (candidateKey.status !== "valid") return { status: "unavailable", candidates: [record] };
+    if (candidateKey.key === key.key) candidates.push({ record, occurrence });
+  }
+  if (candidates.length === 0) return { status: "missing" };
+  if (candidates.length > 1) return { status: "ambiguous", stage: "member", candidates };
+  return { status: "resolved", candidate: candidates[0] };
+}
+
+/**
+ * Resolve a CSS container query from source-preserved occurrences.
+ *
+ * Unsupported prelude forms return unavailable rather than a potentially incorrect result.
+ *
+ * @param reference - A parsed reference with a `container(...)` member.
+ * @param lookup - Explicit source provenance and lookup completeness.
+ * @returns A resolved container rule, missing or ambiguous candidates, an invalid subject, or unavailable.
+ */
+export function resolveContainerMemberReference(
+  reference: CssDocReference,
+  lookup: ReferenceLookup,
+): ContainerMemberResolution {
+  if (reference.member?.kind !== "container") return { status: "unavailable", candidates: [] };
+  const key = queryKey(reference.member.subject, "container");
+  if (key.status === "invalid") return { status: "invalid-subject" };
+  if (key.status === "unsupported") return { status: "unavailable", candidates: [] };
+  const resolution = resolveRecordReference(reference, lookup);
+  if (resolution.status === "missing") return { status: "missing" };
+  if (resolution.status === "ambiguous")
+    return { status: "ambiguous", stage: "record", candidates: resolution.candidates };
+  if (resolution.status === "unavailable") return resolution;
+  const record = resolution.candidate;
+  const occurrences = record.record.containerOccurrences;
+  if (!occurrences) return { status: "unavailable", candidates: [record] };
+  const candidates: ContainerMemberCandidate[] = [];
+  for (const occurrence of occurrences) {
+    const candidateKey = queryKey(occurrence.prelude, "container");
     if (candidateKey.status !== "valid") return { status: "unavailable", candidates: [record] };
     if (candidateKey.key === key.key) candidates.push({ record, occurrence });
   }
