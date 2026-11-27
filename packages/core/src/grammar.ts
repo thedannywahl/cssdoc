@@ -44,6 +44,7 @@ import { CssDocConfiguration } from "./configuration.ts";
 import { blockSourceRange, collectDocCommentBlocks, type DocCommentBlock } from "./blocks.ts";
 import { frameCommentLines } from "./framing.ts";
 import { docProseStart } from "./structure-boundaries.ts";
+import { collectProse, type DocCommentProse } from "./prose-shared.ts";
 import {
   cardinalityFromMatch,
   splitTrailingCardinality,
@@ -198,6 +199,8 @@ export interface DocCondition {
 export interface ParsedDoc {
   /** Authored tag blocks and their UTF-16 ranges, including unknown and disabled tags. */
   blocks: readonly DocCommentBlock[];
+  /** Framing-free prose and source ranges; lite always uses plain interpretation. */
+  prose: readonly DocCommentProse[];
   /** A record-opening tag's canonical name. Marks a record boundary. */
   component?: string;
   /** The record kind chosen by the opening tag. */
@@ -520,6 +523,7 @@ export function parseDocComment(
   const blocks = collectDocCommentBlocks(raw, configuration);
   const doc: ParsedDoc = {
     blocks,
+    prose: collectProse(raw, blocks, configuration),
     modifiers: new Map(),
     modifierSelectors: new Map(),
     parts: new Map(),
@@ -558,7 +562,9 @@ export function parseDocComment(
     String.raw`^${AT_SOURCE}(${CSSDOC_BLOCK_TAG_NAME_SOURCE})${SPACE_TAB_SOURCE}*([\s\S]*)$`,
     "u",
   );
-  for (const block of blocks) {
+  const PRIVATE_SOURCE = `${BRACE_OPEN_SOURCE}${AT_SOURCE}private${BRACE_CLOSE_SOURCE}`;
+  const PRIVATE: Regex = arkRegex.as(PRIVATE_SOURCE, "u");
+  for (const [blockIndex, block] of blocks.entries()) {
     const m = block.text.match(BLOCK_HEADER);
     if (!m) continue;
     const tagName = m[1];
@@ -577,7 +583,10 @@ export function parseDocComment(
     if (definition.canonicalName === "example") {
       const FIRST_LINE_END: Regex = arkRegex.as(LINE_ENDING_SOURCE, "u");
       const firstLineEnd = block.text.search(FIRST_LINE_END);
-      const firstLine = block.text.slice(0, firstLineEnd < 0 ? undefined : firstLineEnd);
+      let firstLine = block.text.slice(0, firstLineEnd < 0 ? undefined : firstLineEnd);
+      if (firstLineEnd >= 0 && firstLine.endsWith(CARRIAGE_RETURN_CHAR)) {
+        firstLine = firstLine.slice(0, -1);
+      }
       const proseStart = docProseStart(firstLine);
       const dividerEnd =
         proseStart === undefined
@@ -587,8 +596,6 @@ export function parseDocComment(
         tagName.length + 1,
         dividerEnd === undefined ? undefined : dividerEnd - 1,
       );
-      const PRIVATE_SOURCE = `${BRACE_OPEN_SOURCE}${AT_SOURCE}private${BRACE_CLOSE_SOURCE}`;
-      const PRIVATE: Regex = arkRegex.as(PRIVATE_SOURCE, "u");
       const HEADER: Regex = arkRegex.as(
         `^${SPACE_TAB_SOURCE}*(?:(${CSSDOC_EXAMPLE_LABEL_SOURCE}(?:${SPACE_TAB_SOURCE}*,${SPACE_TAB_SOURCE}*${CSSDOC_EXAMPLE_LABEL_SOURCE})*)(?:${SPACE_TAB_SOURCE}+(${PRIVATE_SOURCE}))?|(${PRIVATE_SOURCE}))?${SPACE_TAB_SOURCE}*$`,
         "u",
@@ -640,6 +647,29 @@ export function parseDocComment(
       continue;
     }
 
+    const next = blocks[blockIndex + 1]?.start ?? raw.length;
+    const body = doc.prose.find(
+      (prose) => prose.span.start >= block.start && prose.span.start < next,
+    );
+    if (body?.private) {
+      if (definition.canonicalName !== "remarks" && definition.canonicalName !== "privateRemarks") {
+        let safeRest = body.header
+          .slice(tagName.length + 1)
+          .replace(PRIVATE, "")
+          .trim();
+        if (definition.canonicalName === "structure") {
+          const FIRST_LINE_END: Regex = arkRegex.as(LINE_ENDING_SOURCE, "u");
+          const lineEnd = block.text.search(FIRST_LINE_END);
+          if (lineEnd >= 0) safeRest += block.text.slice(lineEnd);
+        }
+        applyBlockTag(doc, definition.canonicalName, definition.tagNameWithoutAt, safeRest, parse);
+      }
+      continue;
+    }
+    if (definition.canonicalName === "remarks" && body) {
+      doc.remarks = body.text;
+      continue;
+    }
     applyBlockTag(doc, definition.canonicalName, definition.tagNameWithoutAt, rest, parse);
   }
   // A dotted component name (`menu.item`) implies membership in its immediate parent (`menu`), unless

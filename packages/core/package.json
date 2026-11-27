@@ -38,13 +38,13 @@
     "@cssdoc/regex": "workspace:*",
     "@cssdoc/spec": "workspace:*",
     "arkregex": "catalog:",
+    "mdast-util-from-markdown": "catalog:",
     "postcss": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "esbuild": "catalog:",
-    "mdast-util-from-markdown": "catalog:",
     "publint": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",

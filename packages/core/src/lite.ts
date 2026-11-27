@@ -24,11 +24,14 @@ export {
 export type { ParsedDoc, DocCssProperty, DocModifier, DocCondition } from "./grammar.ts";
 export { blockSourceRange, collectDocCommentBlocks } from "./blocks.ts";
 export type { DocCommentBlock, DocCommentSegment } from "./blocks.ts";
+export type { DocCommentProse } from "./prose-shared.ts";
 export { CssDocConfiguration, CssDocTagDefinition } from "./configuration.ts";
 export type {
   CssDocSyntaxKind,
   CssDocTagDefinitionOptions,
   InlineCommentMode,
+  ProseMode,
+  ProseSettings,
 } from "./configuration.ts";
 export {
   DEFAULT_MODIFIER_CONVENTION,

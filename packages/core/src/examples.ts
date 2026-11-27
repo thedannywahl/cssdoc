@@ -42,20 +42,38 @@ export function selectExamples(
  * @returns A public projection without private example content or metadata.
  */
 export function projectPublicExamples(entry: CssDocEntry): CssDocEntry {
-  if (!entry.privateExamples?.length) return entry;
+  if (!entry.privateExamples?.length && !entry.prose?.some((body) => body.private)) return entry;
   const excluded = new Set(entry.privateExamples);
   const examples: string[] = [];
   const labels: Record<number, readonly string[]> = {};
+  const indices = new Map<number, number>();
   for (const [index, example] of entry.examples.entries()) {
     if (excluded.has(index)) continue;
+    indices.set(index, examples.length);
     const exampleLabels = entry.exampleLabels?.[index];
     if (exampleLabels) labels[examples.length] = exampleLabels;
     examples.push(example);
   }
-  const { privateExamples: _privateExamples, exampleLabels: _exampleLabels, ...rest } = entry;
+  const prose = entry.prose
+    ?.filter(
+      (body) =>
+        !body.private && (body.exampleIndex === undefined || indices.has(body.exampleIndex)),
+    )
+    .map((body) =>
+      body.exampleIndex === undefined
+        ? body
+        : { ...body, exampleIndex: indices.get(body.exampleIndex)! },
+    );
+  const {
+    privateExamples: _privateExamples,
+    exampleLabels: _exampleLabels,
+    prose: _prose,
+    ...rest
+  } = entry;
   return {
     ...rest,
     examples,
     ...(Object.keys(labels).length ? { exampleLabels: labels } : {}),
+    ...(prose?.length ? { prose } : {}),
   };
 }

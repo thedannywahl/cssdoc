@@ -58,11 +58,11 @@ import {
 import { CssDocConfiguration, type InlineCommentMode } from "./configuration.ts";
 import {
   deriveSelectorName,
-  parseDocComment,
   recordNameOf,
   stripCommentFraming,
   type ParsedDoc,
 } from "./grammar.ts";
+import { parseDocComment } from "./full-grammar.ts";
 import { ModifierMatcher, resolveModifierConvention } from "./modifier.ts";
 import type {
   CssAnimation,
@@ -983,6 +983,7 @@ function buildEntry(
     layers: [...acc.layers.values()].toSorted(byName),
     conditions: acc.conditions,
     examples: doc.examples,
+    ...(doc.prose.length ? { prose: doc.prose } : {}),
     ...(doc.exampleLabels ? { exampleLabels: doc.exampleLabels } : {}),
     ...(doc.privateExamples ? { privateExamples: doc.privateExamples } : {}),
     structure,

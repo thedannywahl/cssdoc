@@ -889,6 +889,9 @@ importers:
       arkregex:
         specifier: 'catalog:'
         version: 0.0.15
+      mdast-util-from-markdown:
+        specifier: 'catalog:'
+        version: 2.1.0(supports-color@10.2.2)
       postcss:
         specifier: 'catalog:'
         version: 8.5.33
@@ -902,9 +905,6 @@ importers:
       esbuild:
         specifier: 'catalog:'
         version: 0.28.2
-      mdast-util-from-markdown:
-        specifier: 'catalog:'
-        version: 2.1.0(supports-color@10.2.2)
       publint:
         specifier: 'catalog:'
         version: 0.3.25

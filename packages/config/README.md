@@ -36,6 +36,11 @@ const model = parseCssDocs(css, { configuration: configFile.toConfiguration() })
   "supportForTags": {
     "@privateRemarks": false,
   },
+  "prose": {
+    "mode": "auto",
+    "tags": { "@example": "markdown" },
+    "remarkKinds": { "usage": "plain" },
+  },
 }
 ```
 
@@ -45,6 +50,11 @@ const model = parseCssDocs(css, { configuration: configFile.toConfiguration() })
 | `noStandardTags` | Disable every built-in standard tag; only `tagDefinitions` stay supported.                                                 |
 | `tagDefinitions` | Custom tags: `tagName`, `syntaxKind` (`record`/`block`/`modifier`/`inline`), `allowMultiple?`, `recordKind?`, `aliasFor?`. |
 | `supportForTags` | Enable/disable specific tags by name.                                                                                      |
+| `prose`          | Select `plain`, `markdown` (default), or `auto` interpretation, with tag and remark-kind overrides.                        |
+
+Remark-kind overrides take precedence over tag overrides, then the global mode. Use `null` to clear
+an inherited setting. Full core records the effective mode on extracted prose; lite always uses
+`plain`. Emitter integration is still in progress.
 
 `loadForFolder` walks up from a folder to the nearest `cssdoc.json`. A missing file yields a
 `fileNotFound` instance (not an error); a malformed one collects messages on `getErrorSummary()`

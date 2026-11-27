@@ -11,6 +11,33 @@ const fixture = (name: string): string =>
   fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
 const fixturesDir = fileURLToPath(new URL("./fixtures/", import.meta.url));
 
+test("prose settings inherit, reset, and report unknown tags during loading", () => {
+  const dir = mkdtempSync(join(tmpdir(), "cssdoc-prose-"));
+  const write = (file: string, value: object) =>
+    writeFileSync(join(dir, file), JSON.stringify(value));
+  try {
+    write("base.json", {
+      prose: { mode: "plain", tags: { "@component": "auto" }, remarkKinds: { usage: "markdown" } },
+    });
+    write("cssdoc.json", {
+      extends: ["./base.json"],
+      prose: { tags: { "@name": null }, remarkKinds: { usage: null } },
+    });
+    const config = CssDocConfigFile.loadFile(join(dir, "cssdoc.json"));
+    expect(config.hasErrors).toBe(false);
+    expect(config.toConfiguration().proseModeFor("@component")).toBe("plain");
+    expect(config.toConfiguration().proseModeFor("@remarks", "usage")).toBe("plain");
+    write("cssdoc.json", { prose: { tags: { "@unknown": "plain" } } });
+    const invalid = CssDocConfigFile.loadFile(join(dir, "cssdoc.json"));
+    expect(invalid.getErrorSummary()).toContain("Unknown prose block tag");
+    expect(invalid.toConfiguration().proseModeFor("@part")).toBe("markdown");
+    write("cssdoc.json", { prose: { mode: "other" } });
+    expect(CssDocConfigFile.loadFile(join(dir, "cssdoc.json")).hasErrors).toBe(true);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("example filters inherit by surface and select without changing the model", () => {
   const dir = mkdtempSync(join(tmpdir(), "cssdoc-example-filters-"));
   const write = (file: string, value: object) =>

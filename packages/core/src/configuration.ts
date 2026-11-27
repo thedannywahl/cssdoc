@@ -16,7 +16,15 @@ import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import { CSSDOC_TAGS, CSSDOC_TAG_NAMES } from "@cssdoc/spec";
 import type { CssRecordKind } from "./model.ts";
-import { AT_SOURCE, AT_CHAR, ALPHA_SOURCE, ALPHANUMERIC_SOURCE } from "@cssdoc/regex";
+import {
+  AT_SOURCE,
+  AT_CHAR,
+  ALPHA_SOURCE,
+  ALPHA_LOWER_SOURCE,
+  ALPHANUMERIC_SOURCE,
+  DASH_SOURCE,
+  DIGIT_SOURCE,
+} from "@cssdoc/regex";
 import {
   DEFAULT_MODIFIER_CONVENTION,
   resolveModifierConvention,
@@ -107,6 +115,19 @@ function def(options: CssDocTagDefinitionOptions): CssDocTagDefinition {
  */
 export type InlineCommentMode = "append" | "prepend" | "replace" | "ignore";
 
+/** How authored prose is interpreted. */
+export type ProseMode = "plain" | "markdown" | "auto";
+
+/** Global and scoped prose-mode overrides. Null clears an inherited setting. */
+export interface ProseSettings {
+  /** The default prose mode. */
+  mode?: ProseMode | null;
+  /** Per-tag modes, keyed by tag name with or without `@`. */
+  tags?: Readonly<Record<string, ProseMode | null>> | null;
+  /** Per-kind modes for `@remarks`. */
+  remarkKinds?: Readonly<Record<string, ProseMode | null>> | null;
+}
+
 /**
  * A parse configuration: the set of tag definitions plus which are supported. Construct one to get the
  * full standard vocabulary, then add custom tags or disable standard ones.
@@ -127,6 +148,9 @@ export class CssDocConfiguration {
   private _modifierConvention: ModifierConvention = DEFAULT_MODIFIER_CONVENTION;
   private _inlineComments: InlineCommentMode = "append";
   private _globalPrecedence: "base" | "global" = "base";
+  private _proseMode?: ProseMode;
+  private readonly _proseTags = new Map<string, ProseMode>();
+  private readonly _proseRemarkKinds = new Map<string, ProseMode>();
 
   constructor() {
     this.addTagDefinitions(CssDocConfiguration.standardTags(), true);
@@ -163,6 +187,75 @@ export class CssDocConfiguration {
   /** Set the global-modifier precedence (see {@link globalPrecedence}). */
   setGlobalPrecedence(mode: "base" | "global"): void {
     this._globalPrecedence = mode;
+  }
+
+  /**
+   * Apply prose settings over previously configured values.
+   *
+   * @param settings - Global and scoped overrides; null clears an override.
+   * @throws If a mode, tag, or remark kind is invalid.
+   */
+  setProseSettings(settings: ProseSettings): void {
+    const validMode = (mode: ProseMode | null | undefined): void => {
+      if (mode != null && mode !== "plain" && mode !== "markdown" && mode !== "auto") {
+        throw new Error(`Invalid prose mode: ${JSON.stringify(mode)}`);
+      }
+    };
+    validMode(settings.mode);
+    const tags: [string, ProseMode | null][] = [];
+    for (const [name, mode] of Object.entries(settings.tags ?? {})) {
+      validMode(mode);
+      const definition = this.tryGetTagDefinition(name);
+      if (!definition || definition.syntaxKind === "inline") {
+        throw new Error(`Unknown prose block tag: ${JSON.stringify(name)}`);
+      }
+      tags.push([definition.canonicalName, mode]);
+    }
+    const part = `(?:${ALPHA_LOWER_SOURCE}|${DIGIT_SOURCE})`;
+    const KIND: Regex = arkRegex.as(
+      `^${ALPHA_LOWER_SOURCE}${part}*(?:${DASH_SOURCE}${part}+)*$`,
+      "u",
+    );
+    for (const [kind, mode] of Object.entries(settings.remarkKinds ?? {})) {
+      validMode(mode);
+      if (!KIND.test(kind)) throw new Error(`Invalid remark kind: ${JSON.stringify(kind)}`);
+    }
+    if (settings.mode !== undefined) this._proseMode = settings.mode ?? undefined;
+    if (settings.tags === null) this._proseTags.clear();
+    for (const [tag, mode] of tags) {
+      if (mode === null) this._proseTags.delete(tag);
+      else this._proseTags.set(tag, mode);
+    }
+    if (settings.remarkKinds === null) this._proseRemarkKinds.clear();
+    for (const [kind, mode] of Object.entries(settings.remarkKinds ?? {})) {
+      if (mode === null) this._proseRemarkKinds.delete(kind);
+      else this._proseRemarkKinds.set(kind, mode);
+    }
+  }
+
+  /**
+   * Resolve prose mode by remark kind, canonical tag, then global setting.
+   *
+   * @param tagName - A registered block tag or its alias.
+   * @param remarkKind - An optional `@remarks` kind.
+   * @returns The selected mode, defaulting to `markdown`.
+   * @throws If the tag isn't registered as a block or record tag.
+   */
+  proseModeFor(tagName: string, remarkKind?: string): ProseMode {
+    const definition =
+      this.tryGetTagDefinition(tagName) ??
+      this._tagDefinitions.find((candidate) => candidate.canonicalName === tagName);
+    if (!definition || definition.syntaxKind === "inline") {
+      throw new Error(`Unknown prose block tag: ${JSON.stringify(tagName)}`);
+    }
+    return (
+      (definition.canonicalName === "remarks" && remarkKind
+        ? this._proseRemarkKinds.get(remarkKind)
+        : undefined) ??
+      this._proseTags.get(definition.canonicalName) ??
+      this._proseMode ??
+      "markdown"
+    );
   }
 
   /** Every registered tag definition, in registration order. */

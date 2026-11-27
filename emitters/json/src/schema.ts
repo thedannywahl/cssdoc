@@ -243,6 +243,32 @@ export const cssDocEntrySchema: {
       },
     },
     examples: { type: "array", items: { type: "string" } },
+    prose: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["tag", "header", "text", "mode", "span"],
+        properties: {
+          tag: { type: "string" },
+          header: { type: "string" },
+          text: { type: "string" },
+          mode: { enum: ["plain", "markdown"] },
+          remarkKind: { type: "string" },
+          private: { type: "boolean" },
+          exampleIndex: { type: "integer", minimum: 0 },
+          span: {
+            type: "object",
+            additionalProperties: false,
+            required: ["start", "end"],
+            properties: {
+              start: { type: "integer", minimum: 0 },
+              end: { type: "integer", minimum: 0 },
+            },
+          },
+        },
+      },
+    },
     exampleLabels: {
       type: "object",
       propertyNames: { pattern: "^(0|[1-9][0-9]*)$" },

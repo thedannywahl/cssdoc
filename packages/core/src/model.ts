@@ -373,6 +373,8 @@ export interface CssSource {
 export interface CssDocEntry {
   /** The canonical record name from a record-opening tag, e.g. `button`. */
   name: string;
+  /** Source-preserving prose and its effective full-core interpretation. */
+  prose?: readonly import("./prose-shared.ts").DocCommentProse[];
   /** Which kind of CSS surface this documents (defaults to `component`). */
   kind: CssRecordKind;
   /** The base CSS selector — a class (`.button`), attribute (`[data-layout="x"]`), ID (`#foo`),

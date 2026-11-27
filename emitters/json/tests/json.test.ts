@@ -1,7 +1,7 @@
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { parseCssDocs } from "@cssdoc/core";
+import { parseCssDocs, toJson } from "@cssdoc/core";
 import { Ajv } from "ajv";
 import { expect, test } from "vite-plus/test";
 import { cssDocSchema, renderJson, writeJson } from "../src/index.ts";
@@ -139,6 +139,8 @@ test("public JSON removes private examples and reindexes public labels", () => {
 /** @component button
  * @example docs - First.
  * @example secret {@private} - Sensitive example.
+ * @remarks todo - Private work item.
+ * @summary {@private} - Private summary.
  * @example demo - Last.
  */
 .button {}
@@ -148,11 +150,19 @@ test("public JSON removes private examples and reindexes public labels", () => {
   expect(publicModel[0].exampleLabels).toEqual({ 0: ["docs"], 1: ["demo"] });
   expect(JSON.stringify(publicModel)).not.toContain("Sensitive");
   expect(JSON.stringify(publicModel)).not.toContain("secret");
+  expect(JSON.stringify(publicModel)).not.toContain("Private work item");
+  expect(JSON.stringify(publicModel)).not.toContain("Private summary");
+  expect(publicModel[0].prose.map((body: { exampleIndex?: number }) => body.exampleIndex)).toEqual([
+    0, 1,
+  ]);
+  expect(toJson(entries)).not.toContain("Sensitive");
+  expect(toJson(entries)).not.toContain("Private work item");
   expect(publicModel[0].privateExamples).toBeUndefined();
   expect(new Ajv().compile(cssDocSchema)(publicModel)).toBe(true);
   const privateModel = JSON.parse(renderJson(entries, { includePrivate: true }));
   expect(privateModel[0].examples[1]).toBe("Sensitive example.");
   expect(privateModel[0].privateExamples).toEqual([1]);
+  expect(JSON.stringify(privateModel)).toContain("Private work item");
   const outDir = mkdtempSync(join(tmpdir(), "cssdoc-json-private-"));
   const output = writeJson({ entries, outDir, perRecord: true });
   expect(readFileSync(output.modelPath, "utf8")).not.toContain("Sensitive");

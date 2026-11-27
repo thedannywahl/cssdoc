@@ -19,6 +19,7 @@ import type {
   ExampleFilter,
   InlineCommentMode,
   ModifierConventionInput,
+  ProseSettings,
 } from "@cssdoc/core";
 import { cssDocSchema } from "./schema.ts";
 
@@ -138,6 +139,7 @@ interface RawConfig {
   supportForTags?: Record<string, boolean>;
   modifierConvention?: ModifierConventionInput;
   inlineComments?: InlineCommentMode;
+  prose?: ProseSettings | null;
   providers?: ProviderRef[];
   rules?: Record<string, RuleSeverityOverride>;
   overrides?: RuleOverrideBlock[];
@@ -173,6 +175,7 @@ interface ConfigFileInit {
   extendsFiles: CssDocConfigFile[];
   modifierConvention?: ModifierConventionInput;
   inlineComments?: InlineCommentMode;
+  prose?: ProseSettings | null;
   providers: ProviderRef[];
   rules: Record<string, RuleSeverityOverride>;
   overrides: ResolvedRuleOverrideBlock[];
@@ -203,6 +206,8 @@ export class CssDocConfigFile {
   readonly modifierConvention?: ModifierConventionInput;
   /** How inline `/* … *\/` comments combine with tag prose, if declared by this file. */
   readonly inlineComments?: InlineCommentMode;
+  /** Prose overrides declared by this file. */
+  readonly prose?: ProseSettings | null;
   /**
    * Upstream cssdoc providers this file consumes (this file's own — NOT inherited via `extends`, which
    * carries configuration, not components). Resolve with {@link resolveProviders}.
@@ -250,6 +255,7 @@ export class CssDocConfigFile {
     this.extendsFiles = init.extendsFiles;
     this.modifierConvention = init.modifierConvention;
     this.inlineComments = init.inlineComments;
+    this.prose = init.prose;
     this.providers = init.providers;
     const severities: Record<string, RuleSeverityOverride> = {};
     const naming: NamingOverride = {};
@@ -324,6 +330,11 @@ export class CssDocConfigFile {
     }
     if (this.inlineComments !== undefined) {
       configuration.setInlineComments(this.inlineComments);
+    }
+    if (this.prose === null) {
+      configuration.setProseSettings({ mode: null, tags: null, remarkKinds: null });
+    } else if (this.prose !== undefined) {
+      configuration.setProseSettings(this.prose);
     }
     configuration.setGlobalPrecedence(this.globalPrecedence);
   }
@@ -476,6 +487,19 @@ export class CssDocConfigFile {
       }
     }
 
+    let prose = raw.prose;
+    if (prose) {
+      const configuration = new CssDocConfiguration();
+      for (const extended of extendsFiles) extended.configureParser(configuration);
+      configuration.addTagDefinitions(tagDefinitions, true);
+      try {
+        configuration.setProseSettings(prose);
+      } catch (error) {
+        messages.push(isErrorInstance(error) ? error.message : String(error));
+        prose = undefined;
+      }
+    }
+
     return new CssDocConfigFile({
       filePath,
       fileNotFound: false,
@@ -486,6 +510,7 @@ export class CssDocConfigFile {
       extendsFiles,
       modifierConvention: raw.modifierConvention,
       inlineComments: raw.inlineComments,
+      prose,
       providers: raw.providers ?? [],
       rules: raw.rules ?? {},
       overrides: (raw.overrides ?? []).map((override) => ({

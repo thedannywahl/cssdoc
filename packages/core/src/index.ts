@@ -27,6 +27,7 @@
 // links a CSS parser, postcss). Consumers who never parse should import from `@cssdoc/core/lite` to keep
 // postcss out of their bundle — this entry statically imports it for `parseCssDocs`.
 export * from "./lite.ts";
+export { parseDocComment } from "./full-grammar.ts";
 export { parseCssDocs } from "./parse.ts";
 export { ampStaysAtScope, scopeMatchesBase, scopePreludeBase } from "./parse.ts";
 export { compileCustomMediaDeclarations } from "./compile.ts";

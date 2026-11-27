@@ -164,6 +164,37 @@ export const cssDocSchema: Record<string, unknown> = {
         },
       },
     },
+    prose: {
+      description: "Prose interpretation and scoped mode overrides.",
+      anyOf: [
+        { type: "null" },
+        {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            mode: { enum: ["plain", "markdown", "auto", null] },
+            tags: {
+              anyOf: [
+                { type: "null" },
+                {
+                  type: "object",
+                  additionalProperties: { enum: ["plain", "markdown", "auto", null] },
+                },
+              ],
+            },
+            remarkKinds: {
+              anyOf: [
+                { type: "null" },
+                {
+                  type: "object",
+                  additionalProperties: { enum: ["plain", "markdown", "auto", null] },
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
     rules: {
       description: "Per-rule severity overrides (off/warn/error).",
       type: "object",

@@ -26,6 +26,72 @@ import {
 import { ModifierMatcher } from "../src/modifier.ts";
 import { scanStructureLine, type StructureBoundaryState } from "../src/structure-boundaries.ts";
 
+test("full and lite share prose spans while respecting mode precedence", () => {
+  const raw = [
+    "/**",
+    " * @component button",
+    " * @remarks usage - 😀 **important**",
+    " * @remarks - ordinary text",
+    " * @example docs -",
+    " * ```css",
+    " * @component hidden",
+    " * ```",
+    " */",
+  ].join("\r\n");
+  const config = new CssDocConfiguration();
+  config.setProseSettings({
+    mode: "auto",
+    tags: { "@remarks": "plain" },
+    remarkKinds: { usage: "markdown" },
+  });
+  const full = parseFullDocComment(raw, config);
+  const lite = parseLiteDocComment(raw, config);
+  expect(full.prose.map((body) => body.mode)).toEqual(["markdown", "plain", "markdown"]);
+  expect(lite.prose.map((body) => body.mode)).toEqual(["plain", "plain", "plain"]);
+  expect(full.prose.map(({ span }) => span)).toEqual(lite.prose.map(({ span }) => span));
+  expect(raw.slice(full.prose[0].span.start, full.prose[0].span.end)).toBe("😀 **important**");
+  expect(full.examples).toEqual(["```css\r\n@component hidden\r\n```"]);
+  expect(full.prose[2].text).toBe(full.examples[0]);
+  expect(full.blocks.map((block) => block.text)).toEqual(lite.blocks.map((block) => block.text));
+});
+
+test("auto ignores recognized inline metadata but detects real Markdown", () => {
+  const config = new CssDocConfiguration();
+  config.setProseSettings({ mode: "auto" });
+  const parsed = parseFullDocComment(
+    [
+      "@remarks - {@link button | **plain label**}",
+      "@remarks - ordinary text",
+      "@remarks - **strong**",
+      "@remarks - one",
+      "",
+      "two",
+    ].join("\n"),
+    config,
+  );
+  expect(parsed.prose.map((body) => body.mode)).toEqual(["plain", "plain", "markdown", "markdown"]);
+});
+
+test("mode settings resolve aliases and clear inherited overrides", () => {
+  const config = new CssDocConfiguration();
+  config.addTagDefinition(
+    new CssDocTagDefinition({ tagName: "@custom-alias", syntaxKind: "block", aliasFor: "custom" }),
+  );
+  config.setProseSettings({
+    mode: "plain",
+    tags: { "@name": "auto", "@custom-alias": "markdown" },
+    remarkKinds: { usage: "auto" },
+  });
+  expect(config.proseModeFor("component")).toBe("auto");
+  expect(parseFullDocComment("@custom-alias - **test**", config).prose[0].mode).toBe("markdown");
+  config.setProseSettings({ tags: { component: null }, remarkKinds: null });
+  expect(config.proseModeFor("name")).toBe("plain");
+  expect(config.proseModeFor("remarks", "usage")).toBe("plain");
+  expect(() => config.setProseSettings({ tags: { "@not-registered": "plain" } })).toThrow(
+    "Unknown prose block tag",
+  );
+});
+
 test("comment framing preserves source ranges through CRLF and non-BMP text", () => {
   const raw = "/**\r\n * @remarks - 😀 First\r\n *   second\r\n *\r\n */";
   const lines = frameCommentLines(raw, "framed");
