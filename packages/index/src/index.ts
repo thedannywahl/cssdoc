@@ -50,6 +50,7 @@ import {
 export { resolveNamedMemberReference, resolveRecordReference } from "./reference.ts";
 export type {
   NamedMemberCandidate,
+  NamedMemberOccurrence,
   NamedMemberResolution,
   RecordReferenceResolution,
   ReferenceCandidate,

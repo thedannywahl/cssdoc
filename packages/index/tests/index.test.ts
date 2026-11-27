@@ -2,6 +2,7 @@ import { CssDocConfiguration, parseReference } from "@cssdoc/core";
 import { expect, test } from "vite-plus/test";
 import {
   type CssDocIndex,
+  type NamedMemberOccurrence,
   createIndex,
   indexFromEntries,
   memberKey,
@@ -170,6 +171,47 @@ test("named member resolution uses CSS identifiers and preserves duplicates", ()
       workspace: { complete: true, sources: [{ index: duplicate, membersComplete: true }] },
     }),
   ).toMatchObject({ status: "ambiguous", candidates: [{}, {}] });
+});
+
+test("named member resolution uses pre-deduplication occurrences and their spans", () => {
+  const index = createIndex("/** @component button */ .button {}");
+  const record = index.records[0];
+  const first = { start: { line: 2, column: 1 }, end: { line: 2, column: 8 } };
+  const second = { start: { line: 5, column: 1 }, end: { line: 5, column: 8 } };
+  const occurrences: NamedMemberOccurrence[] = [
+    { kind: "slot", member: { name: "label" }, span: first },
+    { kind: "slot", member: { name: "label" }, span: second },
+    { kind: "csspart", member: { name: "label" }, span: second },
+  ];
+  const lookup = (items: ReadonlyMap<typeof record, readonly NamedMemberOccurrence[]>) => ({
+    workspace: {
+      complete: true,
+      sources: [
+        { index, sourceKey: "buttons.css", membersComplete: true, namedMemberOccurrences: items },
+      ],
+    },
+  });
+  const resolve = (text: string, items = new Map([[record, occurrences]])) => {
+    const parsed = parseReference(text);
+    if (!parsed.ok) throw new Error(parsed.error);
+    return resolveNamedMemberReference(parsed.reference, lookup(items));
+  };
+  expect(resolve("button#slot(label)")).toMatchObject({
+    status: "ambiguous",
+    stage: "member",
+    candidates: [
+      { span: first, record: { sourceKey: "buttons.css" } },
+      { span: second, record: { sourceKey: "buttons.css" } },
+    ],
+  });
+  expect(resolve("button#csspart(label)")).toMatchObject({
+    status: "resolved",
+    candidate: { span: second },
+  });
+  expect(resolve("button#slot(missing)")).toEqual({ status: "missing" });
+  expect(resolve("button#slot(label)", new Map())).toMatchObject({ status: "unavailable" });
+  expect(resolve("button#slot(label)", new Map([[record, []]]))).toEqual({ status: "missing" });
+  expect(record.entry.slots).toEqual([]);
 });
 
 test("createIndex parses the model and resolves class lookups", () => {

@@ -31,8 +31,12 @@ Source-qualified lookups are unavailable if an otherwise matching input has no s
 
 `resolveNamedMemberReference` additionally resolves `csspart`, `slot`, `property`, `token`,
 `function`, `keyframes`, and `layer` members using CSS-parsed identifiers. Set a source's
-`membersComplete` only if its model retains every member occurrence; otherwise member lookup is
-unavailable. Selector and at-rule-prelude members aren't supported by this function.
+`membersComplete` only when every occurrence is available. If the model collapses duplicates,
+provide a `namedMemberOccurrences` map keyed by the source index's `RecordInfo` objects; include an
+empty list for records with no named surfaces. Each occurrence may carry its source span. A missing
+map entry or an incomplete source produces an unavailable result. The index doesn't yet collect
+these occurrences automatically. Selector and at-rule-prelude members aren't supported by this
+function.
 
 ## License
 

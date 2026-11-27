@@ -10,7 +10,29 @@ import type {
   ReferenceMemberKind,
 } from "@cssdoc/core";
 import { ident, parse, tokenTypes, tokenize } from "css-tree";
-import type { CssDocIndex, RecordInfo } from "./index.ts";
+import type { CssDocIndex, RecordInfo, SourceSpan } from "./index.ts";
+
+type NamedMemberByKind = {
+  csspart: CssPart;
+  slot: CssSlot;
+  property: CssPropertyDeclared;
+  token: CssTokenConsumed;
+  function: CssFunction;
+  keyframes: CssAnimation;
+  layer: CssLayer;
+};
+
+/** One occurrence of a named surface, before model deduplication. */
+export type NamedMemberOccurrence = {
+  [K in keyof NamedMemberByKind]: {
+    /** Typed surface represented by this occurrence. */
+    kind: K;
+    /** The surface at this occurrence. */
+    member: NamedMemberByKind[K];
+    /** Source range of the occurrence, when available. */
+    span?: SourceSpan;
+  };
+}[keyof NamedMemberByKind];
 
 /** One indexed source and its explicitly assigned portable source key, when available. */
 export interface ReferenceSource {
@@ -18,8 +40,13 @@ export interface ReferenceSource {
   index: CssDocIndex;
   /** Project-relative or explicitly assigned virtual key; never inferred from an absolute path. */
   sourceKey?: string;
-  /** Whether member occurrences are complete and haven't been deduplicated. Defaults to false. */
+  /** Whether member occurrences are complete, either in the model or the occurrence map. */
   membersComplete?: boolean;
+  /**
+   * Occurrences for records whose model has collapsed duplicates. When provided, a record missing
+   * from this map has unavailable members; use an empty list if it has no named surfaces.
+   */
+  namedMemberOccurrences?: ReadonlyMap<RecordInfo, readonly NamedMemberOccurrence[]>;
 }
 
 /** A lookup scope and whether its candidate set is complete. */
@@ -48,6 +75,8 @@ export interface ReferenceCandidate {
   providerId?: string;
   /** Whether this source retains all member occurrences. */
   membersComplete?: boolean;
+  /** Named occurrences supplied for this particular record, before deduplication. */
+  namedMemberOccurrences?: readonly NamedMemberOccurrence[];
 }
 
 /** Result of resolving the record portion of a reference. */
@@ -91,7 +120,14 @@ export function resolveRecordReference(
         ...(providerId === undefined ? {} : { providerId }),
         ...(source.membersComplete === undefined
           ? {}
-          : { membersComplete: source.membersComplete }),
+          : {
+              membersComplete:
+                source.membersComplete &&
+                (!source.namedMemberOccurrences || source.namedMemberOccurrences.has(record)),
+            }),
+        ...(source.namedMemberOccurrences?.has(record)
+          ? { namedMemberOccurrences: source.namedMemberOccurrences.get(record)! }
+          : {}),
       });
     }
   }
@@ -116,6 +152,8 @@ export interface NamedMemberCandidate {
     | CssFunction
     | CssAnimation
     | CssLayer;
+  /** Source range of this occurrence, when supplied. */
+  span?: SourceSpan;
 }
 
 /** Resolution of the named-member forms supported by {@link resolveNamedMemberReference}. */
@@ -172,8 +210,8 @@ function identifierKey(input: string, layer: boolean, empty: boolean): string[] 
 /**
  * Resolve a named typed member when its owning source retains all member occurrences.
  *
- * Selector and at-rule-prelude members aren't supported by this function. An unmarked or
- * deduplicated source is unavailable rather than a claimed unique or missing result.
+ * Selector and at-rule-prelude members aren't supported by this function. A source must establish
+ * occurrence completeness, either in the model or in its supplied named-occurrence list.
  *
  * @param reference - A parsed reference with a typed member.
  * @param lookup - Explicit source provenance and completeness.
@@ -204,26 +242,34 @@ export function resolveNamedMemberReference(
     return { status: "unavailable", candidates: [resolution.candidate] };
   const record = resolution.candidate;
   const entry = record.record.entry;
-  const members =
-    kind === "csspart"
-      ? entry.shadowParts
-      : kind === "slot"
-        ? entry.slots
-        : kind === "property"
-          ? entry.cssPropertiesDeclared
-          : kind === "token"
-            ? entry.cssPropertiesConsumed
-            : kind === "function"
-              ? entry.functions
-              : kind === "keyframes"
-                ? entry.animations
-                : entry.layers;
+  const members: readonly { member: NamedMemberCandidate["member"]; span?: SourceSpan }[] =
+    record.namedMemberOccurrences
+      ? record.namedMemberOccurrences.filter((occurrence) => occurrence.kind === kind)
+      : (kind === "csspart"
+          ? entry.shadowParts
+          : kind === "slot"
+            ? entry.slots
+            : kind === "property"
+              ? entry.cssPropertiesDeclared
+              : kind === "token"
+                ? entry.cssPropertiesConsumed
+                : kind === "function"
+                  ? entry.functions
+                  : kind === "keyframes"
+                    ? entry.animations
+                    : entry.layers
+        ).map((candidate) => ({ member: candidate }));
   const candidates: NamedMemberCandidate[] = [];
-  for (const candidate of members) {
-    const candidateKey = identifierKey(candidate.name, kind === "layer", kind === "slot");
+  for (const occurrence of members) {
+    const candidateKey = identifierKey(occurrence.member.name, kind === "layer", kind === "slot");
     if (candidateKey === undefined) return { status: "unavailable", candidates: [record] };
     if (JSON.stringify(candidateKey) === JSON.stringify(key))
-      candidates.push({ record, kind, member: candidate });
+      candidates.push({
+        record,
+        kind,
+        member: occurrence.member,
+        ...(occurrence.span ? { span: occurrence.span } : {}),
+      });
   }
   if (candidates.length === 0) return { status: "missing" };
   if (candidates.length > 1) return { status: "ambiguous", stage: "member", candidates };
