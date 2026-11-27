@@ -73,7 +73,8 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/prefer-nullish-coalescing": ["warn", { ignorePrimitives: true }],
       // TypeScript permits ignored callback results; css-tree also consumes walk.skip from void-typed visitors.
       "typescript/strict-void-return": "off",
-      "typescript/method-signature-style": "off",
+      // Function properties enforce parameter variance in callback contracts; class methods are unchanged.
+      "typescript/method-signature-style": ["warn", "property"],
       "typescript/no-confusing-void-expression": ["warn", { ignoreArrowShorthand: true }],
       "typescript/consistent-type-definitions": "off",
       "typescript/promise-function-async": "off",

@@ -16,12 +16,12 @@ const { version } = JSON.parse(
 const INTEGER = arkRegex.as(`^${DASH_SOURCE}?${DIGIT_SOURCE}+$`, "u");
 
 interface PromptAdapter {
-  intro(message: string): void;
-  outro(message: string): void;
-  cancel(message: string): void;
-  text(options: clack.TextOptions): Promise<string | symbol>;
-  confirm(options: clack.ConfirmOptions): Promise<boolean | symbol>;
-  isCancel(value: unknown): value is symbol;
+  intro: (message: string) => void;
+  outro: (message: string) => void;
+  cancel: (message: string) => void;
+  text: (options: clack.TextOptions) => Promise<string | symbol>;
+  confirm: (options: clack.ConfirmOptions) => Promise<boolean | symbol>;
+  isCancel: (value: unknown) => value is symbol;
   log: Pick<typeof clack.log, "error" | "info" | "message" | "success" | "warn">;
 }
 
@@ -29,11 +29,11 @@ interface PromptAdapter {
 export interface CliRuntime {
   stdinIsTTY: boolean;
   stdoutIsTTY: boolean;
-  writeOut(message: string): void;
-  writeErr(message: string): void;
-  setExitCode(exitCode: number): void;
+  writeOut: (message: string) => void;
+  writeErr: (message: string) => void;
+  setExitCode: (exitCode: number) => void;
   prompts: PromptAdapter;
-  lint(options: LintCliOptions): LintCliResult;
+  lint: (options: LintCliOptions) => LintCliResult;
 }
 
 const defaultRuntime: CliRuntime = {

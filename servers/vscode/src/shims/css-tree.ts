@@ -1,7 +1,7 @@
 const cssTree = require("css-tree-bundle") as {
   fork?: (...args: unknown[]) => unknown;
   generate?: (...args: unknown[]) => unknown;
-  ident?: { decode(input: string): string; encode(input: string): string };
+  ident?: { decode: (input: string) => string; encode: (input: string) => string };
   parse?: (...args: unknown[]) => unknown;
   tokenTypes?: Readonly<Record<string, number>>;
   tokenize?: (...args: unknown[]) => unknown;
@@ -21,7 +21,7 @@ if (
 }
 
 /** CSS identifier helpers from the bundled parser. */
-export const ident: { decode(input: string): string; encode(input: string): string } =
+export const ident: { decode: (input: string) => string; encode: (input: string) => string } =
   cssTree.ident;
 /** Generate CSS from the bundled parser's AST. */
 export const generate: (...args: unknown[]) => unknown = cssTree.generate;

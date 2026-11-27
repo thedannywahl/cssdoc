@@ -121,6 +121,8 @@ css-tree consumes traversal-control symbols from visitors typed as returning `vo
 misuse and confusing void expressions have separate checks.
 Public class members omit redundant `public` modifiers. Constructor parameter properties are exempt
 because their modifiers can declare the properties themselves.
+Callback contracts use function-property signatures so TypeScript checks parameter variance.
+Class implementations keep method syntax.
 Untyped JavaScript is excluded from the unsafe-boundary and interpolation checks because it lacks
 reliable type information; the standalone VS Code Lit example is also excluded from the assignment,
 call, and member-access checks.

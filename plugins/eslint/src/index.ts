@@ -84,8 +84,8 @@ interface RuleContext {
   options: readonly unknown[];
   cwd?: string;
   filename?: string;
-  sourceCode: { text: string; getLocFromIndex(index: number): Position };
-  report(descriptor: ReportDescriptor): void;
+  sourceCode: { text: string; getLocFromIndex: (index: number) => Position };
+  report: (descriptor: ReportDescriptor) => void;
 }
 
 /** Cache loaded `cssdoc.json` per start folder — reused across every linted stylesheet. */
@@ -105,7 +105,7 @@ interface RuleModule {
     docs: { description: string };
     schema: unknown[];
   };
-  create(context: RuleContext): Record<string, (node: never) => void>;
+  create: (context: RuleContext) => Record<string, (node: never) => void>;
 }
 
 interface Plugin {

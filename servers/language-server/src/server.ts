@@ -62,7 +62,7 @@ export function startLanguageServer(): void {
   let supportsConfiguration = false;
   let hoverFormat: "markdown" | "plaintext" = "plaintext";
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
-  let watcher: { dispose(): void } | undefined;
+  let watcher: { dispose: () => void } | undefined;
   let watcherGeneration = 0;
   let configurationGeneration = 0;
 
