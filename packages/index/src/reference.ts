@@ -695,6 +695,15 @@ function queryKey(input: string, kind: "media" | "container"): SelectorKey {
     walk(ast, (node) => {
       switch (node.type) {
         case "MediaQuery":
+          if (
+            node.mediaType &&
+            node.condition?.type === "Condition" &&
+            node.condition.children.some(
+              (child) =>
+                child.type === "Identifier" && asciiLower(ident.decode(child.name)) === "or",
+            )
+          )
+            invalid = true;
           if (node.mediaType) node.mediaType = keyword(node.mediaType);
           if (node.modifier) node.modifier = asciiLower(node.modifier);
           break;

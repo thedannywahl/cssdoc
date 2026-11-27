@@ -514,6 +514,9 @@ test("media members use owned source occurrences and parsed query identity", () 
     status: "invalid-subject",
   });
   expect(resolve("card#media((width > 1px) and)")).toEqual({ status: "invalid-subject" });
+  expect(resolve("card#media(screen and (color) or (hover))")).toEqual({
+    status: "invalid-subject",
+  });
   expect(resolve("card#media(not ((width > 1px) and (height > 2px)))")).toMatchObject({
     status: "unavailable",
   });
