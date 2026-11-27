@@ -329,6 +329,80 @@ test("selected nursery rules check control flow, imports, and Node ESM globals",
   }
 });
 
+test("type-aware lint rejects floating promises", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/type-aware-check-"));
+  try {
+    writeFileSync(
+      join(directory, "tsconfig.json"),
+      JSON.stringify({ extends: join(root, "tsconfig.base.json"), include: ["*.ts"] }),
+    );
+    const file = join(directory, "promises.ts");
+    writeFileSync(file, "async function work() { return 1; }\nwork();\nvoid work();\n");
+    const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
+    const output: {
+      diagnostics: { code: string; severity: string; labels: { span: { line: number } }[] }[];
+    } = JSON.parse(result.stdout);
+    expect(
+      output.diagnostics
+        .filter(({ code }) => code === "typescript(no-floating-promises)")
+        .map(({ severity, labels }) => [severity, labels[0].span.line]),
+    ).toEqual([["error", 2]]);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("type-aware lint detects unsafe boundaries", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/type-aware-check-"));
+  try {
+    writeFileSync(
+      join(directory, "tsconfig.json"),
+      JSON.stringify({ extends: join(root, "tsconfig.base.json"), include: ["*.ts"] }),
+    );
+    const file = join(directory, "unsafe.ts");
+    writeFileSync(
+      file,
+      [
+        'const value = JSON.parse("{}");',
+        "const assigned: string = value;",
+        "function take(input: string) { return input; }",
+        "take(value);",
+        "value.run();",
+        "const member = value.name;",
+        'function returned(): string { return JSON.parse("\\"\\""); }',
+        "console.error(assigned, member, returned());",
+      ].join("\n"),
+    );
+    const rules = [
+      "no-unsafe-assignment",
+      "no-unsafe-argument",
+      "no-unsafe-call",
+      "no-unsafe-member-access",
+      "no-unsafe-return",
+    ];
+    const args = rules.flatMap((rule) => ["-D", `typescript/${rule}`]);
+    const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", ...args, file], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
+    const output: { diagnostics: { code: string; severity: string }[] } = JSON.parse(result.stdout);
+    for (const rule of rules) {
+      expect(output.diagnostics).toContainEqual(
+        expect.objectContaining({ code: `typescript(${rule})`, severity: "error" }),
+      );
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("regexp lint detects dangerous native patterns in root and package runs", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".regexp-check-"));
