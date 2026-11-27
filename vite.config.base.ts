@@ -80,7 +80,7 @@ export const baseConfig: UserConfig = defineConfig({
       // Promise-owning declarations are async; concise arrow forwarders needn't wrap an existing promise.
       "typescript/promise-function-async": ["warn", { checkArrowFunctions: false }],
       "typescript/array-type": "off",
-      "typescript/prefer-regexp-exec": "off",
+      "typescript/prefer-regexp-exec": "warn",
       "typescript/no-explicit-any": "error",
       "typescript/consistent-return": "warn",
       "typescript/restrict-template-expressions": [

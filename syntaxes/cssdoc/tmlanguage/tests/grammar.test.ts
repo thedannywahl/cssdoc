@@ -1,5 +1,6 @@
 /* oxlint-disable eslint/require-unicode-regexp -- TextMate patterns use Oniguruma syntax. */
 import { CSSDOC_TAG_NAMES } from "@cssdoc/spec";
+import { regex as arkRegex } from "arkregex";
 import { createHighlighter } from "shiki";
 import { expect, test } from "vite-plus/test";
 
@@ -174,15 +175,10 @@ test("@structure region highlights nested @scope and @variant with names", () =>
       (p as Record<string, unknown>).match?.toString().includes("scope"),
   );
   expect(scopePattern).toBeDefined();
-  const scopeMatch = "@scope (.menu) {".match(
-    new RegExp((scopePattern as Record<string, string>)?.match ?? "", "u"),
-  );
+  const SCOPE = arkRegex.as((scopePattern as Record<string, string>)?.match ?? "", "u");
+  const scopeMatch = SCOPE.exec("@scope (.menu) {");
   expect(scopeMatch?.[0]).toBe("@scope");
-  expect(
-    "@scope-menu (.menu) {".match(
-      new RegExp((scopePattern as Record<string, string>)?.match ?? "", "u"),
-    ),
-  ).toBeNull();
+  expect(SCOPE.exec("@scope-menu (.menu) {")).toBeNull();
 
   const structureTagPattern = structurePatterns.find(
     (p: unknown) =>
@@ -193,9 +189,8 @@ test("@structure region highlights nested @scope and @variant with names", () =>
   );
   expect(structureTagPattern).toBeDefined();
   const nestedVariant = "  .menu {\n    @variant compact {";
-  const variantMatch = nestedVariant.match(
-    new RegExp((structureTagPattern as Record<string, string>)?.match ?? "", "u"),
-  );
+  const VARIANT = arkRegex.as((structureTagPattern as Record<string, string>)?.match ?? "", "u");
+  const variantMatch = VARIANT.exec(nestedVariant);
   expect(variantMatch?.[1]).toBe("@variant");
   expect(variantMatch?.[2]).toBe("compact");
   expect((structureTagPattern as Record<string, unknown>)?.captures).toBeDefined();
@@ -213,7 +208,8 @@ test.each([
 ])("@structure component references include the full :%s cardinality", (cardinality) => {
   const pattern = buildInjectionGrammar().repository["structure-tag"]?.patterns?.[0]?.match;
   expect(pattern).toBeDefined();
-  const match = `@component button:${cardinality}`.match(new RegExp(pattern!, "u"));
+  const COMPONENT_REFERENCE = arkRegex.as(pattern!, "u");
+  const match = COMPONENT_REFERENCE.exec(`@component button:${cardinality}`);
   expect(match?.[2]).toBe(`button:${cardinality}`);
 });
 
