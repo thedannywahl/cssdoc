@@ -15,6 +15,7 @@ import {
 import { regex as arkRegex } from "arkregex";
 import { CssDocConfiguration } from "./configuration.ts";
 import { scanCodeBoundaryLine, type CodeBoundaryState } from "./code-boundaries.ts";
+import { safeProseUrl } from "./prose-url.ts";
 
 /** A recognized inline tag, with UTF-16 offsets relative to the scanned text. */
 export interface InlineTag {
@@ -28,7 +29,21 @@ export interface InlineTag {
   tag: string;
   /** Whether the closing brace was found. */
   closed: boolean;
+  /** Offset of the top-level link label separator, when present. */
+  separator?: number;
 }
+
+/** A parsed link, or an explicit reason its syntax cannot be interpreted. */
+export type InlineLinkResult =
+  | {
+      ok: true;
+      target: { kind: "reference" | "url"; value: string };
+      label?: string;
+    }
+  | {
+      ok: false;
+      error: "incomplete" | "missing-target" | "invalid-url" | "invalid-label";
+    };
 
 /**
  * Find fenced code lines in framing-free prose, including an incomplete fence.
@@ -83,6 +98,7 @@ export function scanInlineTags(
     let quote = false;
     let escaped = false;
     let label = false;
+    let separator: number | undefined;
     let end = nameEnd;
     for (; end < text.length; end++) {
       const char = text[end];
@@ -95,9 +111,10 @@ export function scanInlineTags(
       } else if (char === QUOTE_DOUBLE_CHAR) {
         quote = !quote;
       } else if (!quote) {
-        if (definition.canonicalName === "link" && char === PIPE_CHAR && stack.length === 0)
+        if (definition.canonicalName === "link" && char === PIPE_CHAR && stack.length === 0) {
           label = true;
-        else if (char === PAREN_OPEN_CHAR || char === BRACKET_OPEN_CHAR) stack.push(char);
+          separator = end;
+        } else if (char === PAREN_OPEN_CHAR || char === BRACKET_OPEN_CHAR) stack.push(char);
         else if (char === PAREN_CLOSE_CHAR && stack.at(-1) === PAREN_OPEN_CHAR) stack.pop();
         else if (char === BRACKET_CLOSE_CHAR && stack.at(-1) === BRACKET_OPEN_CHAR) stack.pop();
         else if (char === BRACE_CLOSE_CHAR && stack.length === 0) break;
@@ -110,8 +127,81 @@ export function scanInlineTags(
       nameEnd,
       tag: definition.canonicalName,
       closed,
+      ...(separator === undefined ? {} : { separator }),
     });
     start = end;
   }
   return result;
+}
+
+/**
+ * Interpret a scanned link's target and plain-text label without resolving references.
+ *
+ * @param text - The source text supplied to {@link scanInlineTags}.
+ * @param tag - A link returned by the scanner for that text.
+ * @returns A decoded URL or authored reference and optional label, or a syntax error.
+ * @throws If the tag isn't a link or its offsets don't describe the supplied text.
+ */
+export function parseInlineLink(text: string, tag: InlineTag): InlineLinkResult {
+  if (
+    tag.tag !== "link" ||
+    tag.start < 0 ||
+    tag.nameEnd < tag.start + 2 ||
+    tag.end < tag.nameEnd ||
+    tag.end > text.length ||
+    (tag.separator !== undefined && (tag.separator < tag.nameEnd || tag.separator >= tag.end))
+  ) {
+    throw new RangeError("Invalid inline link range");
+  }
+  if (!tag.closed) return { ok: false, error: "incomplete" };
+  const end = tag.end - 1;
+  const rawTarget = text.slice(tag.nameEnd, tag.separator ?? end).trim();
+  if (!rawTarget) return { ok: false, error: "missing-target" };
+  let label: string | undefined;
+  if (tag.separator !== undefined) {
+    const raw = text.slice(tag.separator + 1, end).trim();
+    label = "";
+    for (let i = 0; i < raw.length; i++) {
+      if (raw[i] !== BACKSLASH_CHAR) {
+        label += raw[i];
+        continue;
+      }
+      const next = raw[++i];
+      if (next !== BACKSLASH_CHAR && next !== PIPE_CHAR && next !== BRACE_CLOSE_CHAR)
+        return { ok: false, error: "invalid-label" };
+      label += next;
+    }
+    if (!label.trim()) return { ok: false, error: "invalid-label" };
+  }
+  let target: { kind: "reference" | "url"; value: string } = {
+    kind: "reference",
+    value: rawTarget,
+  };
+  if (rawTarget.startsWith(`url${PAREN_OPEN_CHAR}`)) {
+    if (!rawTarget.endsWith(PAREN_CLOSE_CHAR)) return { ok: false, error: "invalid-url" };
+    const argument = rawTarget.slice(4, -1).trim();
+    let decoded: unknown;
+    try {
+      decoded = JSON.parse(argument);
+    } catch (error) {
+      if (error instanceof SyntaxError) return { ok: false, error: "invalid-url" };
+      throw error;
+    }
+    if (typeof decoded !== "string" || !safeProseUrl(decoded)) {
+      return { ok: false, error: "invalid-url" };
+    }
+    try {
+      const url = new URL(decoded);
+      if (
+        (url.protocol !== "http:" && url.protocol !== "https:" && url.protocol !== "mailto:") ||
+        (url.protocol === "mailto:" && !url.pathname)
+      )
+        return { ok: false, error: "invalid-url" };
+    } catch (error) {
+      if (error instanceof TypeError) return { ok: false, error: "invalid-url" };
+      throw error;
+    }
+    target = { kind: "url", value: decoded };
+  }
+  return { ok: true, target, ...(label === undefined ? {} : { label }) };
 }

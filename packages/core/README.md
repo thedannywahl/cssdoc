@@ -65,6 +65,10 @@ For Markdown-aware prose modes without a CSS parser, use `parseDocComment` from
 `@cssdoc/core/prose`. The lite entry always interprets prose as plain text and doesn't load a
 Markdown parser.
 
+`scanInlineTags` finds enabled inline tags with offsets in the original text. For a scanned
+`{@link ...}`, `parseInlineLink` decodes its plain-text label and validates external URLs. Reference
+targets remain authored strings; this helper doesn't resolve them or determine their visibility.
+
 ## The doc-comment grammar
 
 A `/** … */` block above a component's rules. Records are delimited by `@component`/`@name`. The tag

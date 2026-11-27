@@ -6,6 +6,7 @@ import {
   CssDocTagDefinition,
   parseCssDocs,
   parseDocComment as parseFullDocComment,
+  parseInlineLink,
   scanInlineTags,
   selectExamples,
   structureCustomMediaRefs,
@@ -104,6 +105,37 @@ test("inline link labels treat quotes and brackets as plain text", () => {
     "{@link next}",
   ]);
   expect(tags.every((tag) => tag.closed)).toBe(true);
+});
+
+test("inline links decode labels and JSON-quoted external URLs", () => {
+  const text =
+    '{@link source("a|b.css")::component:x | One\\|two\\} \\\\ three} {@link url("https://example.test/a?x=1") | Website}';
+  const [reference, url] = scanInlineTags(text);
+  expect(parseInlineLink(text, reference)).toEqual({
+    ok: true,
+    target: { kind: "reference", value: 'source("a|b.css")::component:x' },
+    label: "One|two} \\ three",
+  });
+  expect(parseInlineLink(text, url)).toEqual({
+    ok: true,
+    target: { kind: "url", value: "https://example.test/a?x=1" },
+    label: "Website",
+  });
+});
+
+test.each([
+  ["{@link}", "missing-target"],
+  ["{@link button | }", "invalid-label"],
+  ["{@link button | bad\\n}", "invalid-label"],
+  ['{@link url("javascript:alert(1)")}', "invalid-url"],
+  ['{@link url("/relative")}', "invalid-url"],
+  ['{@link url("//example.test")}', "invalid-url"],
+  ['{@link url("https://example.test/\\u000a")}', "invalid-url"],
+  ["{@link url(123)}", "invalid-url"],
+  ["{@link unfinished", "incomplete"],
+] as const)("inline links report invalid input: %s", (text, error) => {
+  const [tag] = scanInlineTags(text);
+  expect(parseInlineLink(text, tag)).toEqual({ ok: false, error });
 });
 
 test("usage and remarks identify the effective prose occurrence without matching text", () => {
