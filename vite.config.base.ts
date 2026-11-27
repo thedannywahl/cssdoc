@@ -75,7 +75,16 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-explicit-any": "error",
       "typescript/consistent-return": "off",
       "typescript/restrict-template-expressions": "off",
-      "typescript/no-deprecated": "off",
+      // LSP clients may still send rootUri; the VS Code client still forwards push settings.
+      "typescript/no-deprecated": [
+        "warn",
+        {
+          allow: [
+            { from: "package", package: "vscode-languageserver-protocol", name: "rootUri" },
+            { from: "package", package: "vscode-languageclient", name: "configurationSection" },
+          ],
+        },
+      ],
       "typescript/no-misused-spread": "error",
       // Ambient declarations must follow their sources into cross-package TypeScript projects.
       "typescript/triple-slash-reference": ["warn", { path: "always" }],

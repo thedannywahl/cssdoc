@@ -810,6 +810,53 @@ test("type-aware lint requires comparators for non-string array sorts", () => {
   }
 });
 
+test("type-aware lint flags deprecated APIs", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/type-aware-check-"));
+  try {
+    writeFileSync(
+      join(directory, "tsconfig.json"),
+      JSON.stringify({ extends: join(root, "tsconfig.base.json"), include: ["*.ts"] }),
+    );
+    const file = join(directory, "deprecated.ts");
+    writeFileSync(
+      file,
+      [
+        "/** @deprecated Use modern instead. */",
+        "function old() { return 1; }",
+        "function modern() { return 1; }",
+        "console.error(old(), modern());",
+        "interface Example {",
+        "  /** @deprecated */ rootUri: string;",
+        "  /** @deprecated */ configurationSection: string;",
+        "}",
+        "function local(value: Example) { console.error(value.rootUri, value.configurationSection); }",
+        "local({ rootUri: '', configurationSection: '' });",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "typescript(no-deprecated)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([
+        ["warning", 4],
+        ["warning", 9],
+        ["warning", 9],
+        ["warning", 10],
+        ["warning", 10],
+      ]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("type import lint requires type-only imports", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, "packages/config/tests/type-aware-check-"));
