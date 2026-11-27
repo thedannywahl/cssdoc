@@ -114,7 +114,8 @@ test("packed lite and its transitive module graph contain no Markdown engine", a
       output.imports.filter((entry) => entry.external).map((entry) => entry.path),
     );
     expect(externals).toEqual([]);
-    expect(paths.filter(isMarkdownEngine)).toEqual([]);
+    const markdownPaths = paths.filter(isMarkdownEngine);
+    expect(markdownPaths).toEqual([]);
   } finally {
     rmSync(outDir, { recursive: true, force: true });
   }
