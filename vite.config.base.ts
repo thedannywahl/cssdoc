@@ -72,7 +72,7 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-base-to-string": "error",
       "typescript/non-nullable-type-assertion-style": "off",
       "typescript/unbound-method": "error",
-      "typescript/no-unnecessary-template-expression": "off",
+      "typescript/no-unnecessary-template-expression": "warn",
       "typescript/no-unnecessary-type-parameters": "off",
       "unicorn/prefer-node-protocol": "error",
       // Re-enable newly activated Unicorn rules individually after review.

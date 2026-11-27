@@ -1473,7 +1473,7 @@ export class CssDocLanguageService {
       for (const match of propMatches) {
         const propStart = match.index ?? 0;
         const propPos = positionAt(text, propStart);
-        const hintLabel = prop.property.syntax ? `${prop.property.syntax}` : "custom property";
+        const hintLabel = prop.property.syntax ? prop.property.syntax : "custom property";
 
         const tooltipParts: string[] = [`Property: ${propName}`, `Declared in: ${prop.record}`];
         if (prop.property.description) {
