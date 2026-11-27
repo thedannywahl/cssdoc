@@ -189,6 +189,36 @@ test("public JSON removes private examples and reindexes public labels", () => {
   expect(readFileSync(output.recordPaths[0], "utf8")).not.toContain("Sensitive");
 });
 
+test("public JSON omits legacy private remarks and to-dos without mutating the model", () => {
+  const entries = parseCssDocs(`/** @component button
+ * @privateRemarks Internal design detail.
+ * @todo Internal work item.
+ * @todo - Another internal work item.
+ */
+.button {}`);
+  const original = JSON.stringify(entries);
+  const publicJson = renderJson(entries);
+  expect(publicJson).not.toContain("Internal design detail");
+  expect(publicJson).not.toContain("Internal work item");
+  expect(publicJson).not.toContain("Another internal work item");
+  expect(toJson(entries)).not.toContain("Internal design detail");
+  expect(toJson(entries)).not.toContain("Internal work item");
+  expect(toJson(entries)).not.toContain("Another internal work item");
+  expect(renderJson(entries, { includePrivate: true })).toContain("Internal design detail");
+  expect(renderJson(entries, { includePrivate: true })).toContain("Internal work item");
+  expect(renderJson(entries, { includePrivate: true })).toContain("Another internal work item");
+  expect(JSON.stringify(entries)).toBe(original);
+  expect(new Ajv().compile(cssDocSchema)(JSON.parse(publicJson))).toBe(true);
+  const outDir = mkdtempSync(join(tmpdir(), "cssdoc-json-private-notes-"));
+  const output = writeJson({ entries, outDir, perRecord: true });
+  for (const path of [output.modelPath, output.recordPaths[0]]) {
+    const written = readFileSync(path, "utf8");
+    expect(written).not.toContain("Internal design detail");
+    expect(written).not.toContain("Internal work item");
+    expect(written).not.toContain("Another internal work item");
+  }
+});
+
 test("structureVariants (from @variant blocks) round-trips through JSON and validates against the schema", () => {
   const VARIANT_CSS = `
 /**

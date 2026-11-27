@@ -653,7 +653,7 @@ export function parseDocComment(
     const body = doc.prose.find(
       (prose) => prose.span.start >= block.start && prose.span.start < next,
     );
-    if (body?.private) {
+    if (body?.private && definition.canonicalName !== "todo") {
       if (definition.canonicalName !== "remarks" && definition.canonicalName !== "privateRemarks") {
         if (definition.canonicalName === "usage") usageBody = undefined;
         let safeRest = body.header

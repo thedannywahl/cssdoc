@@ -11,7 +11,7 @@ import {
   type CssDocConfiguration,
   type CssDocEntry,
   parseCssDocs,
-  projectPublicExamples,
+  projectPublicEntry,
 } from "@cssdoc/core";
 import { type CssDialect, resolveParser } from "@cssdoc/dialects";
 import { parseCssDocsFromSource } from "@cssdoc/embedded";
@@ -43,10 +43,10 @@ function resolveEntries(input: ModelInput): CssDocEntry[] {
 }
 
 /**
- * Serialize the model to pretty JSON, omitting internal records and private examples by default.
+ * Serialize the model to pretty JSON, omitting internal records and private content by default.
  *
  * @param entries - Records to serialize.
- * @param options - Whether to include internal records or private examples.
+ * @param options - Whether to include internal records or private content.
  * @returns A JSON array followed by a newline.
  */
 export function renderJson(
@@ -58,7 +58,7 @@ export function renderJson(
     : entries.filter((entry) => entry.visibility !== "internal");
   const projected = options.includePrivate
     ? visibleEntries
-    : visibleEntries.map(projectPublicExamples);
+    : visibleEntries.map(projectPublicEntry);
   return `${JSON.stringify(projected, null, 2)}\n`;
 }
 
@@ -84,7 +84,7 @@ export interface WriteJsonOptions extends ModelInput {
   schema?: boolean;
   /** Include records marked `@visibility internal`; defaults to false. */
   includeInternal?: boolean;
-  /** Include examples marked private; defaults to false. */
+  /** Include private authoring content; defaults to false. */
   includePrivate?: boolean;
 }
 
@@ -115,7 +115,7 @@ export function writeJson(options: WriteJsonOptions): WriteJsonResult {
   let entries = resolveEntries(options)
     .filter((entry) => options.includeInternal || entry.visibility !== "internal")
     .toSorted((a, b) => a.name.localeCompare(b.name));
-  if (!options.includePrivate) entries = entries.map(projectPublicExamples);
+  if (!options.includePrivate) entries = entries.map(projectPublicEntry);
   mkdirSync(options.outDir, { recursive: true });
 
   const modelPath = join(options.outDir, "model.json");

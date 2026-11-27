@@ -69,6 +69,7 @@ export function projectPublicExamples(entry: CssDocEntry): CssDocEntry {
     if (exampleLabels) labels[examples.length] = exampleLabels;
     examples.push(example);
   }
+
   const prose = entry.prose
     ?.filter(
       (body) =>
@@ -91,4 +92,17 @@ export function projectPublicExamples(entry: CssDocEntry): CssDocEntry {
     ...(Object.keys(labels).length ? { exampleLabels: labels } : {}),
     ...(prose?.length ? { prose } : {}),
   };
+}
+
+/**
+ * Remove currently modeled private content from an entry for public serialization.
+ *
+ * @param entry - A parsed record, including internal authoring content.
+ * @returns A non-mutating projection without private examples, prose, remarks, or to-dos.
+ */
+export function projectPublicEntry(entry: CssDocEntry): CssDocEntry {
+  const projected = projectPublicExamples(entry);
+  if (projected.privateRemarks === undefined && projected.todos.length === 0) return projected;
+  const { privateRemarks: _privateRemarks, ...rest } = projected;
+  return { ...rest, todos: [] };
 }

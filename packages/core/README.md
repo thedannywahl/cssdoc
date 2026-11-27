@@ -24,6 +24,10 @@ const model = parseCssDocs(readFileSync("dist/components.css", "utf8"));
 writeFileSync("css-docs.json", toJson(model));
 ```
 
+`toJson` omits private examples, prose, legacy private remarks, and to-dos by default. Pass
+`{ includePrivate: true }` to retain them. It doesn't resolve inline references or redact their
+targets; check authored public prose before publishing it.
+
 Generate `@custom-media` declarations from `@structure` profile references:
 
 ```ts

@@ -21,6 +21,10 @@ writeJson({
 `renderJson(entries)` returns the JSON string; `cssDocSchema` is the draft-07 schema object (kept in
 step with `@cssdoc/core`'s model — a test validates the model against it).
 
+By default, JSON output omits private examples, prose, legacy private remarks, and to-dos. Set
+`includePrivate: true` to retain them. Inline references aren't resolved or redacted yet; check
+authored public prose before publishing it.
+
 ## License
 
 MIT

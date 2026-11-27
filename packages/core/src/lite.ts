@@ -65,6 +65,7 @@ export { buildCustomMediaDeclarations, structureCustomMediaRefs } from "./custom
 export type { BuildCustomMediaOptions, StructureCustomMediaRef } from "./customMedia.ts";
 export {
   projectPublicExamples,
+  projectPublicEntry,
   selectExampleIndices,
   selectExamples,
   type ExampleFilter,
@@ -93,16 +94,16 @@ export type {
 } from "./model.ts";
 
 import type { CssDocEntry } from "./model.ts";
-import { projectPublicExamples } from "./examples.ts";
+import { projectPublicEntry } from "./examples.ts";
 
 /**
  * Serialize a documentation model to pretty JSON, omitting private examples by default.
  *
  * @param model - The entries from `parseCssDocs`.
- * @param options - Set `includePrivate` to retain private examples.
+ * @param options - Set `includePrivate` to retain private content.
  * @returns A JSON string.
  */
 export function toJson(model: CssDocEntry[], options: { includePrivate?: boolean } = {}): string {
-  const entries = options.includePrivate ? model : model.map(projectPublicExamples);
+  const entries = options.includePrivate ? model : model.map(projectPublicEntry);
   return `${JSON.stringify(entries, null, 2)}\n`;
 }

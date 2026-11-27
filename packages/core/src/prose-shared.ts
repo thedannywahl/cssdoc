@@ -95,6 +95,7 @@ export function collectProse(
       ...(remarkKind ? { remarkKind } : {}),
       ...(PRIVATE.test(header) ||
       definition.canonicalName === "privateRemarks" ||
+      definition.canonicalName === "todo" ||
       remarkKind === "todo"
         ? { private: true }
         : {}),
