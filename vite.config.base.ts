@@ -23,7 +23,6 @@ export const baseConfig: UserConfig = defineConfig({
     rules: {
       // These rules conflict with explicit test imports, precise assertions, and shared setup.
       "vitest/no-importing-vitest-globals": "off",
-      "vitest/prefer-importing-vitest-globals": "warn",
       "vitest/no-hooks": "off",
       "vitest/require-hook": "off",
       "vitest/prefer-expect-assertions": "off",
