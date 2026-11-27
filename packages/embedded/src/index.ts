@@ -376,10 +376,12 @@ export function extractCssBlocks(source: string, opts: EmbeddedOptions = {}): Cs
  * @returns The dialect selected for the combined projection.
  */
 export const projectionDialect = (source: string, opts: EmbeddedOptions = {}): ParserDialect => {
-  const dialects = scan(source, opts).regions.map((r) => r.dialect);
-  if (dialects.includes("scss") || dialects.includes("sass")) return "scss";
-  if (dialects.includes("less")) return "less";
-  return "css";
+  let dialect: ParserDialect = "css";
+  for (const region of scan(source, opts).regions) {
+    if (region.dialect === "scss" || region.dialect === "sass") return "scss";
+    if (region.dialect === "less") dialect = "less";
+  }
+  return dialect;
 };
 
 /**

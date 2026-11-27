@@ -143,10 +143,15 @@ export interface DocDecorators {
   isReadonly: boolean;
 }
 
-const RELEASE_STAGES: readonly CssReleaseStage[] = ["alpha", "beta", "experimental", "stable"];
+const RELEASE_STAGES = new Set<string>([
+  "alpha",
+  "beta",
+  "experimental",
+  "stable",
+] satisfies CssReleaseStage[]);
 
 function isReleaseStage(value: string): value is CssReleaseStage {
-  return RELEASE_STAGES.includes(value as CssReleaseStage);
+  return RELEASE_STAGES.has(value);
 }
 
 /**

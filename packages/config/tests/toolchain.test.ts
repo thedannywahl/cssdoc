@@ -377,6 +377,38 @@ test("lint prefers flat for flattening arrays", () => {
   }
 });
 
+test("lint prefers sets for repeated membership checks", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".set-has-check-"));
+  try {
+    const file = join(directory, "membership.mjs");
+    writeFileSync(
+      file,
+      [
+        "const values = ['one', 'two'];",
+        "function unsafe(value) { return values.includes(value); }",
+        "const set = new Set(['one', 'two']);",
+        "function safe(value) { return set.has(value); }",
+        "console.error(unsafe('one'), safe('two'));",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "unicorn(prefer-set-has)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["warning", 1]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));

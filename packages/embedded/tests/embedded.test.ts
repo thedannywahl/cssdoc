@@ -15,8 +15,20 @@ import {
   lintCssDocsFromSource,
   parseCssDocsFromSource,
   projectCss,
+  projectionDialect,
   scanClassUsages,
 } from "../src/index.ts";
+
+test("projection dialect prefers scss over less regardless of region order", () => {
+  const less = "<style lang='less'>.less {}</style>";
+  const scss = "<style lang='scss'>.scss {}</style>";
+  const sass = "<style lang='sass'>.sass {}</style>";
+  expect(projectionDialect(`${less}${scss}`, { host: "html" })).toBe("scss");
+  expect(projectionDialect(`${scss}${less}`, { host: "html" })).toBe("scss");
+  expect(projectionDialect(`${less}${sass}`, { host: "html" })).toBe("scss");
+  expect(projectionDialect(less, { host: "html" })).toBe("less");
+  expect(projectionDialect("<style>.plain {}</style>", { host: "html" })).toBe("css");
+});
 
 test("host detection and style language matching retain their case and offset behavior", () => {
   expect(detectEmbeddedHost("component.VUE")).toBe("html");
