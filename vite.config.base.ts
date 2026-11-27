@@ -85,7 +85,6 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/prefer-node-protocol": "error",
       // Re-enable newly activated Unicorn rules individually after review.
       "unicorn/explicit-length-check": "off",
-      "unicorn/switch-case-braces": "off",
       "unicorn/import-style": "off",
       "unicorn/prefer-string-raw": "off",
       "unicorn/no-nested-ternary": "off",
@@ -128,6 +127,8 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/no-null": "off",
       // forEach is useful when the callback also needs an index.
       "unicorn/no-array-for-each": "off",
+      // Case clauses only need braces when they introduce block-scoped declarations.
+      "unicorn/switch-case-braces": "off",
       // Check regex correctness and risky performance without imposing stylistic rewrites.
       "regexp/no-contradiction-with-assertion": "error",
       "regexp/no-dupe-disjunctions": "warn",
