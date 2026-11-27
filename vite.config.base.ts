@@ -64,7 +64,6 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-require-imports": "error",
       "typescript/ban-ts-comment": "error",
       "typescript/explicit-module-boundary-types": "error",
-      "typescript/no-dynamic-delete": "off",
       "typescript/require-array-sort-compare": "off",
       "typescript/prefer-includes": "warn",
       "typescript/no-base-to-string": "error",
@@ -76,6 +75,8 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-inferrable-types": "off",
       // no-require-imports covers this deprecated, narrower rule.
       "typescript/no-var-requires": "off",
+      // HTML sanitization removes a property selected from the node's tag.
+      "typescript/no-dynamic-delete": "off",
       "unicorn/prefer-node-protocol": "error",
       // Re-enable newly activated Unicorn rules individually after review.
       "unicorn/explicit-length-check": "off",
