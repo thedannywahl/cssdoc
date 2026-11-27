@@ -93,6 +93,8 @@ catalog:
   eslint-plugin-tsdoc: ^0.5.4
   eslint-plugin-tsdoc-require-2: ^1.2.7
   mdast-util-from-markdown: ^2.1.0
+  mdast-util-to-hast: 13.2.1
+  hast-util-to-html: 9.0.5
 
 overrides:
   vite@*: "catalog:"

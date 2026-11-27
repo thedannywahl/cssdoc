@@ -40,6 +40,10 @@ Use a dedicated output folder so the build can remove generated pages for delete
 HTML navigation links accept relative URLs, HTTP(S), and `mailto:`. Unsafe destinations render as
 unlinked text.
 
+Standalone HTML renders CommonMark prose and examples. Raw HTML is escaped; prose links accept
+relative URLs, HTTP(S), and `mailto:`, while images accept relative URLs and HTTP(S). Unsafe links
+and image sources are omitted.
+
 ## Select examples for your docs
 
 If a stylesheet uses `@example docs -` to mark examples for publication, set

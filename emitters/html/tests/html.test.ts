@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { parseCssDocs } from "@cssdoc/core";
 import { expect, test } from "vite-plus/test";
 import { buildHtml, renderIndex, renderPage } from "../src/index.ts";
+import { renderProse } from "../src/prose.ts";
 
 const CSS = `
 /**
@@ -42,10 +43,46 @@ test("buildHtml selects examples without filtering the returned model", () => {
 `;
   const { entries, pages } = buildHtml({ css, outDir, exampleFilter: { labels: ["demo"] } });
   const html = readFileSync(pages[0], "utf8");
-  expect(html).toContain("&lt;button&gt;Shared&lt;/button&gt;");
+  expect(html).toContain("&#x3C;button>Shared&#x3C;/button>");
   expect(html).not.toContain("Audit fixture");
   expect(entries[0].examples).toHaveLength(2);
   expect(renderPage(entries[0], { exampleFilter: { labels: [] } })).not.toContain("<h2>Examples");
+});
+
+test("renders CommonMark prose while preventing unsafe links, images, and raw HTML", () => {
+  const [entry] = parseCssDocs("/** @component button */ .button {}");
+  entry.remarks = [
+    "**bold** [safe](https://example.com) [relative](./docs) [mail](mailto:a@example.com)",
+    "[bad](javascript:alert%281%29) [network](//evil.example) [reference][bad-ref]",
+    "![safe](https://example.com/image.png) ![bad](mailto:a@example.com)",
+    "",
+    "[bad-ref]: data:text/html,alert",
+    "",
+    '<script>alert("x")</script>',
+  ].join("\n");
+  entry.parts.push({ name: "label", description: "*Label* [bad](javascript:alert%281%29)" });
+  const html = renderPage(entry);
+  expect(html).toContain("<strong>bold</strong>");
+  expect(html).toContain('<a href="https://example.com">safe</a>');
+  expect(html).toContain('<a href="./docs">relative</a>');
+  expect(html).toContain('<a href="mailto:a@example.com">mail</a>');
+  expect(html).toContain('<img src="https://example.com/image.png" alt="safe">');
+  expect(html).toContain("<em>Label</em>");
+  expect(html).not.toContain('href="javascript:');
+  expect(html).not.toContain('href="//evil.example');
+  expect(html).not.toContain('href="data:text/html');
+  expect(html).not.toContain('src="mailto:');
+  expect(html).not.toContain("<script>");
+  expect(html).toContain("&#x3C;script>");
+});
+
+test("sanitizes decoded control characters and image-reference URLs", () => {
+  const html = renderProse(
+    "[control](jav&#x09;ascript:alert) [mail][shared] ![image][shared]\n\n[shared]: mailto:a@example.com",
+  );
+  expect(html).not.toContain("javascript:");
+  expect(html).not.toContain('src="mailto:');
+  expect(html).toContain('<a href="mailto:a@example.com">mail</a>');
 });
 
 test("renderPage produces a standalone, escaped HTML document", () => {
@@ -117,9 +154,7 @@ test("renderPage escapes HTML-unsafe prose", () => {
     `/**\n * @component x\n * @summary A <b> & "y" tag &amp; <i>"z"</i>.\n */\n.x { color: red; }`,
   );
   const html = renderPage(entry!);
-  expect(html).toContain(
-    "A &lt;b&gt; &amp; &quot;y&quot; tag &amp;amp; &lt;i&gt;&quot;z&quot;&lt;/i&gt;.",
-  );
+  expect(html).toContain('A &#x3C;b> &#x26; "y" tag &#x26; &#x3C;i>"z"&#x3C;/i>.');
   expect(html).not.toContain("A <b> &");
 });
 

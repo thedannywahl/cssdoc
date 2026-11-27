@@ -22,6 +22,7 @@ import {
   LESS_THAN_CHAR,
   QUOTE_DOUBLE_CHAR,
 } from "@cssdoc/regex";
+import { renderProse, safeLinkUrl } from "./prose.ts";
 
 /** Either a CSS source or an already-parsed model. */
 export interface ModelInput {
@@ -55,22 +56,7 @@ const esc = (text: string | undefined): string =>
 
 const code = (text: string | undefined): string => (text ? `<code>${esc(text)}</code>` : "—");
 
-function safeLinkUrl(value: string): boolean {
-  if (!value || value !== value.trim() || value.startsWith("//") || value.includes("\\")) {
-    return false;
-  }
-  for (let i = 0; i < value.length; i++) {
-    const char = value.charCodeAt(i);
-    if (char <= 0x1f || (char >= 0x7f && char <= 0x9f)) return false;
-  }
-  try {
-    const url = new URL(value, "https://cssdoc.invalid/");
-    return url.protocol === "https:" || url.protocol === "http:" || url.protocol === "mailto:";
-  } catch (error) {
-    if (error instanceof TypeError) return false;
-    throw error;
-  }
-}
+const prose = (text: string | undefined): string => (text ? renderProse(text, true) : "");
 
 // Base64 encode helper for TypeScript 6 compatibility (Uint8Array.toBase64 is ES2026)
 const toBase64 = (bytes: Uint8Array): string => Buffer.from(bytes).toString("base64");
@@ -153,10 +139,12 @@ export function renderPage(
   const stage = entry.releaseStage ? ` <span class="badge">${esc(entry.releaseStage)}</span>` : "";
   const visibility = entry.visibility === "internal" ? ' <span class="badge">internal</span>' : "";
   parts.push(`<h1>${esc(entry.name)}${stage}${visibility}</h1>`);
-  parts.push(`<p>${code(entry.className)}${entry.summary ? ` — ${esc(entry.summary)}` : ""}</p>`);
+  parts.push(
+    `<div>${code(entry.className)}${entry.summary ? ` — ${prose(entry.summary)}` : ""}</div>`,
+  );
   if (entry.deprecated)
-    parts.push(`<p class="warn"><strong>Deprecated</strong> — ${esc(entry.deprecated)}</p>`);
-  if (entry.remarks) parts.push(`<p>${esc(entry.remarks)}</p>`);
+    parts.push(`<div class="warn"><strong>Deprecated</strong> — ${prose(entry.deprecated)}</div>`);
+  if (entry.remarks) parts.push(renderProse(entry.remarks));
 
   const meta = [
     entry.since && `<strong>Since:</strong> ${esc(entry.since)}`,
@@ -173,7 +161,7 @@ export function renderPage(
     (annotations.length
       ? table(
           ["Ref", "Annotation"],
-          annotations.map((a) => [code(String(a.ref)), esc(a.text).replaceAll("\n", "<br>")]),
+          annotations.map((a) => [code(String(a.ref)), prose(a.text)]),
         )
       : "") +
       (refs.length
@@ -191,18 +179,18 @@ export function renderPage(
           if (m.deprecated) {
             const via = m.deprecated.canonical
               ? `use ${code(`.${m.deprecated.canonical}`)}`
-              : esc(m.deprecated.note);
+              : prose(m.deprecated.note);
             details.push(`<em>Deprecated</em> — ${via}`);
           }
           if (m.alias) {
             const via = m.alias.canonical
               ? `maps to ${code(`.${m.alias.canonical}`)}`
-              : esc(m.alias.note);
+              : prose(m.alias.note);
             details.push(`<em>Alias</em> — ${via}`);
           }
           return [code(`.${m.name}`), details.join(" ")];
         }
-        return [code(`.${m.name}`), esc(m.description) || "—"];
+        return [code(`.${m.name}`), prose(m.description) || "—"];
       }),
     ),
   );
@@ -210,21 +198,21 @@ export function renderPage(
     "Parts",
     table(
       ["Part", "Description"],
-      entry.parts.map((p) => [code(`.${p.name}`), esc(p.description) || "—"]),
+      entry.parts.map((p) => [code(`.${p.name}`), prose(p.description) || "—"]),
     ),
   );
   section(
     "Shadow parts",
     table(
       ["Part", "Description"],
-      entry.shadowParts.map((p) => [code(`::part(${p.name})`), esc(p.description) || "—"]),
+      entry.shadowParts.map((p) => [code(`::part(${p.name})`), prose(p.description) || "—"]),
     ),
   );
   section(
     "Pseudo-elements",
     table(
       ["Pseudo-element", "Description"],
-      entry.pseudoElements.map((p) => [code(`::${p.name}`), esc(p.description) || "—"]),
+      entry.pseudoElements.map((p) => [code(`::${p.name}`), prose(p.description) || "—"]),
     ),
   );
   section(
@@ -239,7 +227,7 @@ export function renderPage(
               ? `:${s.name}`
               : `.${s.name}`,
         ),
-        esc(s.description) || "—",
+        prose(s.description) || "—",
       ]),
     ),
   );
@@ -249,7 +237,7 @@ export function renderPage(
       ["Slot", "Description"],
       entry.slots.map((s) => [
         s.name ? code(s.name) : "<em>(default)</em>",
-        esc(s.description) || "—",
+        prose(s.description) || "—",
       ]),
     ),
   );
@@ -261,7 +249,7 @@ export function renderPage(
         code(p.name),
         code(p.syntax),
         code(p.defaultValue),
-        esc(p.description) || "—",
+        prose(p.description) || "—",
       ]),
     ),
   );
@@ -273,7 +261,7 @@ export function renderPage(
         code(f.name),
         f.parameters.map((p) => code(p)).join(", ") || "—",
         code(f.result),
-        esc(f.description) || "—",
+        prose(f.description) || "—",
       ]),
     ),
   );
@@ -281,14 +269,14 @@ export function renderPage(
     "Animations",
     table(
       ["Animation", "Description"],
-      entry.animations.map((a) => [code(a.name), esc(a.description) || "—"]),
+      entry.animations.map((a) => [code(a.name), prose(a.description) || "—"]),
     ),
   );
   section(
     "Cascade layers",
     table(
       ["Layer", "Description"],
-      entry.layers.map((l) => [code(l.name), esc(l.description) || "—"]),
+      entry.layers.map((l) => [code(l.name), prose(l.description) || "—"]),
     ),
   );
   section(
@@ -298,14 +286,14 @@ export function renderPage(
       entry.conditions.map((c) => [
         esc(c.type),
         code(c.containerName ? `${c.containerName} ${c.query}` : c.query),
-        esc(c.description) || "—",
+        prose(c.description) || "—",
       ]),
     ),
   );
   if (entry.structureVariants?.length)
     section(
       "Structure",
-      (entry.structureDescription ? `<p>${esc(entry.structureDescription)}</p>` : "") +
+      (entry.structureDescription ? renderProse(entry.structureDescription) : "") +
         entry.structureVariants
           .map(
             (variant, i) =>
@@ -316,13 +304,13 @@ export function renderPage(
   else if (entry.structure?.length)
     section(
       "Structure",
-      (entry.structureDescription ? `<p>${esc(entry.structureDescription)}</p>` : "") +
+      (entry.structureDescription ? renderProse(entry.structureDescription) : "") +
         structureList(entry.structure),
     );
   const examples = selectExamples(entry, options.exampleFilter);
   if (examples.length)
-    section("Examples", examples.map((ex) => `<pre><code>${esc(ex)}</code></pre>`).join("\n"));
-  if (entry.accessibility) section("Accessibility", `<p>${esc(entry.accessibility)}</p>`);
+    section("Examples", examples.map((example) => renderProse(example)).join("\n"));
+  if (entry.accessibility) section("Accessibility", renderProse(entry.accessibility));
   if (entry.see.length)
     section("See also", `<ul>${entry.see.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>`);
 
@@ -350,7 +338,7 @@ export function renderIndex(
     return [
       safeLinkUrl(href) ? `<a href="${esc(href)}">${esc(e.name)}</a>` : esc(e.name),
       code(e.className),
-      esc(e.summary) || "—",
+      prose(e.summary) || "—",
     ];
   });
   return doc(title, `<h1>${esc(title)}</h1>\n${table(["Name", "Class", "Summary"], rows)}`);
