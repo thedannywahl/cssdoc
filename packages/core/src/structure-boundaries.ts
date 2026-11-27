@@ -130,7 +130,7 @@ export function opensStructureAtRule(
     const result = scanStructure(text, state, false);
     if (result.openAt !== undefined) {
       const tag = text.slice(result.openAt).match(INLINE_TAG)?.[0];
-      return !(tag?.endsWith(BRACE_CLOSE_CHAR) && tag.indexOf(BRACE_OPEN_CHAR, 1) === -1);
+      return !(tag?.endsWith(BRACE_CLOSE_CHAR) && !tag.includes(BRACE_OPEN_CHAR, 1));
     }
   }
   return false;
