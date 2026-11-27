@@ -177,6 +177,40 @@ test.each(["plain", "markdown", "auto"] as const)(
   },
 );
 
+test("embedded CRLF fixture retains unmatched inline backticks and later block ownership", () => {
+  const source = [
+    "<style>",
+    "/**",
+    " * @component card",
+    " * @remarks - Use `unfinished literal",
+    " * @summary Still outside code.",
+    " * ```css",
+    " * @component hidden",
+    " */",
+    ".card {}",
+    "</style>",
+  ].join("\r\n");
+  const projection = projectCss(source, { host: "html" });
+  const start = projection.indexOf("/**");
+  const end = projection.indexOf("*/", start) + 2;
+  const comment = projection.slice(start, end);
+  const full = parseFullDocComment(comment, new CssDocConfiguration());
+  const lite = parseLiteDocComment(comment, new CssDocConfiguration());
+  expect(full.blocks.map((block) => block.text)).toEqual(lite.blocks.map((block) => block.text));
+  expect(full.blocks).toHaveLength(3);
+  expect(full.blocks[0].text).toContain("@component card");
+  expect(full.blocks[1].text).toContain("@remarks - Use `unfinished literal");
+  expect(full.blocks[2].text).toContain("@summary Still outside code.");
+  expect(full.blocks[2].text).toContain("@component hidden");
+  expect(full.prose.map((body) => body.span)).toEqual(lite.prose.map((body) => body.span));
+  expect(parseCssDocsFromSource(source, { host: "html" })).toHaveLength(1);
+  expect(
+    highlightDocComment(comment, new ProviderConfiguration())
+      .filter((token) => token.role === "blockTag")
+      .map((token) => comment.slice(token.start, token.end)),
+  ).toEqual(["@component", "@remarks", "@summary"]);
+});
+
 test("CR-only host lines retain embedded comment offsets and region positions", () => {
   const source = [
     "<p>😀</p>",
