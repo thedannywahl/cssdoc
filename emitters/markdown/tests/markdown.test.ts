@@ -45,8 +45,46 @@ test("private examples never appear in Markdown output", () => {
 
 test("escapes repeated Vue and table delimiters while preserving code spans", () => {
   const text = "<x> {{a}} | `<y> {{b}}` | <z>";
-  expect(escProse(text)).toBe("&lt;x> &#123;&#123;a}} | `<y> {{b}}` | &lt;z>");
-  expect(cell(text)).toBe("&lt;x> &#123;&#123;a}} \\| `<y> {{b}}` \\| &lt;z>");
+  expect(escProse(text)).toBe(
+    '&lt;x> &#123;&#123;a}} | <code v-pre="">&#x3C;y> {{b}}</code> | &lt;z>',
+  );
+  expect(cell(text)).toBe(
+    '&lt;x> &#123;&#123;a}} \\| <code v-pre="">&#x3C;y> {{b}}</code> \\| &lt;z>',
+  );
+});
+
+test("Vue-safe inline code stays literal inside prose and tables", async () => {
+  const markdown = [
+    safeMarkdownBlock("Before `` <tag>{{code}} | & `` after."),
+    "",
+    "| Code |",
+    "| --- |",
+    `| ${cell("`` {{table}} | & ``")} |`,
+  ].join("\n");
+  const html = await (await createMarkdownRenderer(process.cwd())).renderAsync(markdown);
+  const compiled = compileTemplate({ source: html, filename: "entry.vue", id: "entry" });
+  expect(html).toContain('<code v-pre="">');
+  expect(html).toContain("{{code}}");
+  expect(html).toContain("{{table}}");
+  expect(html).toContain("&#124;");
+  expect(html).toContain("&#x26;");
+  expect(compiled.errors).toEqual([]);
+  expect(compiled.code).not.toContain("_ctx.code");
+  expect(compiled.code).not.toContain("_ctx.table");
+});
+
+test.each([
+  "    {{code}}\n    <tag>",
+  ">     {{code}}\n>     <tag>",
+  "-     {{code}}\n      <tag>",
+])("Vue-safe indented code preserves literal content: %s", async (source) => {
+  const markdown = safeMarkdownBlock(source);
+  const html = await (await createMarkdownRenderer(process.cwd())).renderAsync(markdown);
+  const compiled = compileTemplate({ source: html, filename: "entry.vue", id: "entry" });
+  expect(html).toContain('<pre v-pre=""><code>{{code}}&#10;&#x3C;tag>&#10;</code></pre>');
+  expect(compiled.errors).toEqual([]);
+  expect(compiled.code).not.toContain("_ctx.code");
+  expect(compiled.code).toContain(JSON.stringify("{{code}}\n<tag>\n"));
 });
 
 test("plain prose preserves CRLF, CR, and LF as individual line breaks", () => {
@@ -55,7 +93,7 @@ test("plain prose preserves CRLF, CR, and LF as individual line breaks", () => {
 
 test("escapes prose around empty, multiline, and unmatched backtick spans", () => {
   expect(escProse("<a> `` `<b>\n{{c}}` <d> `unclosed")).toBe(
-    "&lt;a> `` `<b>\n{{c}}` &lt;d> `unclosed",
+    '&lt;a> `` <code v-pre="">&#x3C;b> {{c}}</code> &lt;d> `unclosed',
   );
 });
 
@@ -79,7 +117,7 @@ test("sanitizes decoded unsafe URLs while preserving code and safe links", () =>
   expect(result).not.toContain("jav&#x61;script");
   expect(result).toContain("bad image");
   expect(result).toContain("reference image&#45;ref [mail][mail]");
-  expect(result).toContain("`` code `<tag>` {{value}} ``");
+  expect(result).toContain('<code v-pre="">code `&#x3C;tag>` {{value}}</code>');
   expect(result).toContain("```html\n<tag>{{value}}</tag>\n```");
 });
 

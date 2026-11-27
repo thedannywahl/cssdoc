@@ -712,6 +712,9 @@ importers:
       arkregex:
         specifier: 'catalog:'
         version: 0.0.15
+      hast-util-to-html:
+        specifier: 'catalog:'
+        version: 9.0.5
       mdast-util-from-markdown:
         specifier: 'catalog:'
         version: 2.1.0(supports-color@10.2.2)
@@ -7930,7 +7933,7 @@ snapshots:
       '@shikijs/types': 4.5.0
       '@shikijs/vscode-textmate': 10.0.2
       '@types/hast': 3.0.5
-      hast-util-to-html: 9.0.5
+      hast-util-to-html: 9.0.7
 
   '@shikijs/core@4.6.0':
     dependencies:

@@ -299,8 +299,7 @@ const LIST_ITEM_PREFIX: Regex = arkRegex.as(
 
 /**
  * Escape prose for VitePress markdown (which compiles through Vue's SFC parser): a raw `<tag>` reads as
- * an HTML element and `{{ }}` as interpolation. Backticked code spans are exempt (Vue skips them), so
- * only free prose is escaped.
+ * an HTML element and `{{ }}` as interpolation. Code stays literal, including in Vue templates.
  */
 export function escProse(text: string): string {
   return safeMarkdownProse(text);

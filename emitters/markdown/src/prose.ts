@@ -5,11 +5,13 @@ import {
   LESS_THAN_CHAR,
   LINE_ENDING_SOURCE,
   LINE_FEED_CHAR,
+  PIPE_CHAR,
   TILDE_CHAR,
 } from "@cssdoc/regex";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
 import { fromMarkdown } from "mdast-util-from-markdown";
+import { toHtml } from "hast-util-to-html";
 
 type Node = {
   type: string;
@@ -18,9 +20,26 @@ type Node = {
   url?: string;
   identifier?: string;
   alt?: string | null;
+  value?: string;
 };
 
 type Edit = { start: number; end: number; text: string };
+
+function vueSafeCode(value: string, inline: boolean): string {
+  const LINE_ENDING: Regex = arkRegex.as(LINE_ENDING_SOURCE, "gu");
+  const code = {
+    type: "element" as const,
+    tagName: "code",
+    properties: inline ? { "v-pre": "" } : {},
+    children: [
+      { type: "text" as const, value: inline ? value.replace(LINE_ENDING, " ") : `${value}\n` },
+    ],
+  };
+  const html = inline
+    ? toHtml(code)
+    : toHtml({ type: "element", tagName: "pre", properties: { "v-pre": "" }, children: [code] });
+  return html.replaceAll(PIPE_CHAR, "&#124;").replaceAll(LINE_FEED_CHAR, "&#10;");
+}
 
 function literal(text: string): string {
   let result = "";
@@ -118,7 +137,20 @@ function sanitize(text: string, escape: boolean): string {
     const end = node.position?.end.offset;
     if (start !== undefined && end !== undefined) {
       if (node.type === "code" || node.type === "inlineCode") {
-        edits.push({ start, end, text: text.slice(start, end) });
+        const source = text.slice(start, end);
+        const fenced = source.startsWith(BACKTICK_CHAR) || source.startsWith(TILDE_CHAR);
+        const protect =
+          escape &&
+          (node.type === "inlineCode" || !fenced) &&
+          node.value?.includes(BRACE_OPEN_CHAR.repeat(2));
+        edits.push({
+          start,
+          end,
+          text:
+            protect && node.value !== undefined
+              ? vueSafeCode(node.value, node.type === "inlineCode")
+              : source,
+        });
         return;
       }
       const image = node.type === "image" || node.type === "imageReference";

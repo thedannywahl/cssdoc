@@ -32,6 +32,7 @@ For 1.0 examples and remarks, the recorded prose mode controls whether Markdown 
 Examples with an explicit prose divider aren't automatically fenced.
 Unclosed Markdown fences in standalone prose blocks are closed before subsequent generated sections.
 Blockquote markers remain intact, including around fenced code.
+Inline and indented code containing Vue interpolation uses `v-pre` to keep its contents literal.
 
 ## The `resolveToken` hook
 
