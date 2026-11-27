@@ -45,8 +45,8 @@ test("private examples never appear in Markdown output", () => {
 
 test("escapes repeated Vue and table delimiters while preserving code spans", () => {
   const text = "<x> {{a}} | `<y> {{b}}` | <z>";
-  expect(escProse(text)).toBe("&lt;x&gt; &#123;&#123;a}} | `<y> {{b}}` | &lt;z&gt;");
-  expect(cell(text)).toBe("&lt;x&gt; &#123;&#123;a}} \\| `<y> {{b}}` \\| &lt;z&gt;");
+  expect(escProse(text)).toBe("&lt;x> &#123;&#123;a}} | `<y> {{b}}` | &lt;z>");
+  expect(cell(text)).toBe("&lt;x> &#123;&#123;a}} \\| `<y> {{b}}` \\| &lt;z>");
 });
 
 test("plain prose preserves CRLF, CR, and LF as individual line breaks", () => {
@@ -55,7 +55,7 @@ test("plain prose preserves CRLF, CR, and LF as individual line breaks", () => {
 
 test("escapes prose around empty, multiline, and unmatched backtick spans", () => {
   expect(escProse("<a> `` `<b>\n{{c}}` <d> `unclosed")).toBe(
-    "&lt;a&gt; `` `<b>\n{{c}}` &lt;d&gt; `unclosed",
+    "&lt;a> `` `<b>\n{{c}}` &lt;d> `unclosed",
   );
 });
 
@@ -81,6 +81,29 @@ test("sanitizes decoded unsafe URLs while preserving code and safe links", () =>
   expect(result).toContain("reference image&#45;ref [mail][mail]");
   expect(result).toContain("`` code `<tag>` {{value}} ``");
   expect(result).toContain("```html\n<tag>{{value}}</tag>\n```");
+});
+
+test("preserves blockquotes and protects their fenced code and surrounding Vue-sensitive prose", async () => {
+  const source = [
+    "> Intro",
+    ">",
+    "> ```html",
+    "> <tag>{{code}}</tag>",
+    "> ```",
+    ">",
+    "> {{danger}} <img src=x onerror=alert(1)>",
+  ].join("\n");
+  const markdown = safeMarkdownBlock(source);
+  const html = await (await createMarkdownRenderer(process.cwd())).renderAsync(markdown);
+  const compiled = compileTemplate({ source: html, filename: "entry.vue", id: "entry" });
+  expect(markdown).toContain("> ```html");
+  expect(html).toContain("<blockquote>");
+  expect(html).toContain('v-pre=""');
+  expect(html).not.toContain("{{danger}}");
+  expect(html).not.toContain("<img");
+  expect(compiled.errors).toEqual([]);
+  expect(compiled.code).not.toContain("_ctx.code");
+  expect(compiled.code).not.toContain("_ctx.danger");
 });
 
 test.each([

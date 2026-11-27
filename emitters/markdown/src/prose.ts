@@ -2,7 +2,6 @@ import { safeProseUrl } from "@cssdoc/core";
 import {
   BACKTICK_CHAR,
   BRACE_OPEN_CHAR,
-  GREATER_THAN_CHAR,
   LESS_THAN_CHAR,
   LINE_ENDING_SOURCE,
   LINE_FEED_CHAR,
@@ -52,7 +51,6 @@ export function plainProse(text: string): string {
 function escapeFree(text: string): string {
   return text
     .replaceAll(LESS_THAN_CHAR, "&lt;")
-    .replaceAll(GREATER_THAN_CHAR, "&gt;")
     .replaceAll(BRACE_OPEN_CHAR.repeat(2), "&#123;&#123;");
 }
 

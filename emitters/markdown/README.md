@@ -31,6 +31,7 @@ relative, HTTP(S), and `mailto:` destinations; images accept relative and HTTP(S
 For 1.0 examples and remarks, the recorded prose mode controls whether Markdown is interpreted.
 Examples with an explicit prose divider aren't automatically fenced.
 Unclosed Markdown fences in standalone prose blocks are closed before subsequent generated sections.
+Blockquote markers remain intact, including around fenced code.
 
 ## The `resolveToken` hook
 
