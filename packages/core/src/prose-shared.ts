@@ -33,7 +33,12 @@ export interface DocCommentProse {
   /** Index into the record's examples, for example prose. */
   exampleIndex?: number;
   /** UTF-16 range relative to the original comment. */
-  span: { start: number; end: number };
+  span: {
+    /** Inclusive UTF-16 offset of the prose in the original comment. */
+    start: number;
+    /** Exclusive UTF-16 offset of the prose in the original comment. */
+    end: number;
+  };
 }
 
 /**

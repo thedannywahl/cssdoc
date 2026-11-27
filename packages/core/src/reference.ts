@@ -24,9 +24,24 @@ import type { CssRecordKind } from "./model.ts";
 
 /** Source or provider lookup scope for a record reference. */
 export type ReferenceScope =
-  | { kind: "workspace" }
-  | { kind: "source"; sourceKey: string }
-  | { kind: "provider"; providerId: string; sourceKey?: string };
+  | {
+      /** Lookup across the consumer's workspace sources. */
+      kind: "workspace";
+    }
+  | {
+      /** Lookup in one workspace source. */
+      kind: "source";
+      /** Portable key identifying the workspace source. */
+      sourceKey: string;
+    }
+  | {
+      /** Lookup in a registered provider's sources. */
+      kind: "provider";
+      /** Consumer-side identifier of the provider. */
+      providerId: string;
+      /** Optional portable key restricting the lookup to one provider source. */
+      sourceKey?: string;
+    };
 
 /** Member types accepted after a record reference. */
 export type ReferenceMemberKind =
@@ -56,13 +71,28 @@ export interface CssDocReference {
   /** Canonical record name. */
   name: string;
   /** Optional typed member and its authored CSS subject, including surrounding whitespace. */
-  member?: { kind: ReferenceMemberKind; subject: string };
+  member?: {
+    /** Surface type selected by the reference. */
+    kind: ReferenceMemberKind;
+    /** Authored CSS subject, including surrounding whitespace. */
+    subject: string;
+  };
 }
 
 /** Result of parsing a record reference. */
 export type ReferenceParseResult =
-  | { ok: true; reference: CssDocReference }
-  | { ok: false; error: "invalid-reference" | "invalid-source-key" | "invalid-provider-id" };
+  | {
+      /** True when the reference framing and identity syntax are valid. */
+      ok: true;
+      /** Parsed reference with its authored member subject preserved. */
+      reference: CssDocReference;
+    }
+  | {
+      /** False when the reference cannot be parsed. */
+      ok: false;
+      /** Invalid reference syntax, source key, or provider identifier. */
+      error: "invalid-reference" | "invalid-source-key" | "invalid-provider-id";
+    };
 
 const RECORD_NAME = arkRegex.as(`^${CSSDOC_QUALIFIED_REFERENCE_SOURCE}$`, "u");
 const PROVIDER_ID = arkRegex.as(

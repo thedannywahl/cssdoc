@@ -125,10 +125,28 @@ export interface ReferenceCandidate {
 
 /** Result of resolving the record portion of a reference. */
 export type RecordReferenceResolution =
-  | { status: "resolved"; candidate: ReferenceCandidate }
-  | { status: "missing" }
-  | { status: "ambiguous"; candidates: readonly ReferenceCandidate[] }
-  | { status: "unavailable"; candidates: readonly ReferenceCandidate[] };
+  | {
+      /** Exactly one record matches in a complete lookup scope. */
+      status: "resolved";
+      /** Matching record and its source provenance. */
+      candidate: ReferenceCandidate;
+    }
+  | {
+      /** No record matches in a complete lookup scope. */
+      status: "missing";
+    }
+  | {
+      /** Multiple records match in a complete lookup scope. */
+      status: "ambiguous";
+      /** Matching records retained without deduplication. */
+      candidates: readonly ReferenceCandidate[];
+    }
+  | {
+      /** The required scope or source provenance is incomplete. */
+      status: "unavailable";
+      /** Known record candidates; their uniqueness cannot be established. */
+      candidates: readonly ReferenceCandidate[];
+    };
 
 /**
  * Resolve a reference's record identity without discarding duplicates.
@@ -212,12 +230,42 @@ export interface NamedMemberCandidate {
 
 /** Resolution of the named-member forms supported by {@link resolveNamedMemberReference}. */
 export type NamedMemberResolution =
-  | { status: "resolved"; candidate: NamedMemberCandidate }
-  | { status: "missing" }
-  | { status: "ambiguous"; stage: "record"; candidates: readonly ReferenceCandidate[] }
-  | { status: "ambiguous"; stage: "member"; candidates: readonly NamedMemberCandidate[] }
-  | { status: "unavailable"; candidates: readonly ReferenceCandidate[] }
-  | { status: "invalid-subject" };
+  | {
+      /** Exactly one named-member occurrence matches. */
+      status: "resolved";
+      /** Matching named member and its owning record. */
+      candidate: NamedMemberCandidate;
+    }
+  | {
+      /** No record or named member matches in a complete lookup. */
+      status: "missing";
+    }
+  | {
+      /** Multiple records match before member lookup. */
+      status: "ambiguous";
+      /** Record identity caused the ambiguity. */
+      stage: "record";
+      /** Matching records retained without deduplication. */
+      candidates: readonly ReferenceCandidate[];
+    }
+  | {
+      /** Multiple named-member occurrences match in one record. */
+      status: "ambiguous";
+      /** Member occurrences caused the ambiguity. */
+      stage: "member";
+      /** Matching named-member occurrences retained without deduplication. */
+      candidates: readonly NamedMemberCandidate[];
+    }
+  | {
+      /** Required records or named-member occurrences are incomplete or unsupported. */
+      status: "unavailable";
+      /** Known records whose member lookup could not be completed. */
+      candidates: readonly ReferenceCandidate[];
+    }
+  | {
+      /** The authored subject is invalid for the requested named-member type. */
+      status: "invalid-subject";
+    };
 
 function identifierKey(input: string, layer: boolean, empty: boolean): string[] | undefined {
   if (empty) {
@@ -353,12 +401,42 @@ export interface SelectorMemberCandidate {
 
 /** Resolution of a selector-backed member reference. */
 export type SelectorMemberResolution =
-  | { status: "resolved"; candidate: SelectorMemberCandidate }
-  | { status: "missing" }
-  | { status: "ambiguous"; stage: "record"; candidates: readonly ReferenceCandidate[] }
-  | { status: "ambiguous"; stage: "member"; candidates: readonly SelectorMemberCandidate[] }
-  | { status: "unavailable"; candidates: readonly ReferenceCandidate[] }
-  | { status: "invalid-subject" };
+  | {
+      /** Exactly one selector-backed occurrence matches. */
+      status: "resolved";
+      /** Matching selector occurrence and its owning record. */
+      candidate: SelectorMemberCandidate;
+    }
+  | {
+      /** No record or selector occurrence matches in a complete lookup. */
+      status: "missing";
+    }
+  | {
+      /** Multiple records match before member lookup. */
+      status: "ambiguous";
+      /** Record identity caused the ambiguity. */
+      stage: "record";
+      /** Matching records retained without deduplication. */
+      candidates: readonly ReferenceCandidate[];
+    }
+  | {
+      /** Multiple selector-backed occurrences match in one record. */
+      status: "ambiguous";
+      /** Member occurrences caused the ambiguity. */
+      stage: "member";
+      /** Matching selector occurrences retained without deduplication. */
+      candidates: readonly SelectorMemberCandidate[];
+    }
+  | {
+      /** Required records, selector occurrences, or selector syntax are unavailable. */
+      status: "unavailable";
+      /** Known records whose member lookup could not be completed. */
+      candidates: readonly ReferenceCandidate[];
+    }
+  | {
+      /** The authored subject is not a valid selector for the requested member type. */
+      status: "invalid-subject";
+    };
 
 type SelectorKey =
   | { status: "valid"; key: string }
@@ -511,12 +589,42 @@ export interface ScopeMemberCandidate {
 
 /** Resolution of a CSS scope member reference. */
 export type ScopeMemberResolution =
-  | { status: "resolved"; candidate: ScopeMemberCandidate }
-  | { status: "missing" }
-  | { status: "ambiguous"; stage: "record"; candidates: readonly ReferenceCandidate[] }
-  | { status: "ambiguous"; stage: "member"; candidates: readonly ScopeMemberCandidate[] }
-  | { status: "unavailable"; candidates: readonly ReferenceCandidate[] }
-  | { status: "invalid-subject" };
+  | {
+      /** Exactly one CSS scope occurrence matches. */
+      status: "resolved";
+      /** Matching scope occurrence and its owning record. */
+      candidate: ScopeMemberCandidate;
+    }
+  | {
+      /** No record or scope occurrence matches in a complete lookup. */
+      status: "missing";
+    }
+  | {
+      /** Multiple records match before member lookup. */
+      status: "ambiguous";
+      /** Record identity caused the ambiguity. */
+      stage: "record";
+      /** Matching records retained without deduplication. */
+      candidates: readonly ReferenceCandidate[];
+    }
+  | {
+      /** Multiple scope occurrences match in one record. */
+      status: "ambiguous";
+      /** Member occurrences caused the ambiguity. */
+      stage: "member";
+      /** Matching scope occurrences retained without deduplication. */
+      candidates: readonly ScopeMemberCandidate[];
+    }
+  | {
+      /** Required records, scope occurrences, or scope syntax are unavailable. */
+      status: "unavailable";
+      /** Known records whose member lookup could not be completed. */
+      candidates: readonly ReferenceCandidate[];
+    }
+  | {
+      /** The authored subject is not a valid CSS scope prelude. */
+      status: "invalid-subject";
+    };
 
 function scopeKey(input: string): SelectorKey {
   try {
@@ -600,12 +708,42 @@ export interface MediaMemberCandidate {
 
 /** Resolution of a CSS media member reference. */
 export type MediaMemberResolution =
-  | { status: "resolved"; candidate: MediaMemberCandidate }
-  | { status: "missing" }
-  | { status: "ambiguous"; stage: "record"; candidates: readonly ReferenceCandidate[] }
-  | { status: "ambiguous"; stage: "member"; candidates: readonly MediaMemberCandidate[] }
-  | { status: "unavailable"; candidates: readonly ReferenceCandidate[] }
-  | { status: "invalid-subject" };
+  | {
+      /** Exactly one CSS media occurrence matches. */
+      status: "resolved";
+      /** Matching media occurrence and its owning record. */
+      candidate: MediaMemberCandidate;
+    }
+  | {
+      /** No record or media occurrence matches in a complete lookup. */
+      status: "missing";
+    }
+  | {
+      /** Multiple records match before member lookup. */
+      status: "ambiguous";
+      /** Record identity caused the ambiguity. */
+      stage: "record";
+      /** Matching records retained without deduplication. */
+      candidates: readonly ReferenceCandidate[];
+    }
+  | {
+      /** Multiple media occurrences match in one record. */
+      status: "ambiguous";
+      /** Member occurrences caused the ambiguity. */
+      stage: "member";
+      /** Matching media occurrences retained without deduplication. */
+      candidates: readonly MediaMemberCandidate[];
+    }
+  | {
+      /** Required records, media occurrences, or media syntax are unavailable. */
+      status: "unavailable";
+      /** Known records whose member lookup could not be completed. */
+      candidates: readonly ReferenceCandidate[];
+    }
+  | {
+      /** The authored subject is not a valid CSS media prelude. */
+      status: "invalid-subject";
+    };
 
 /** One CSS `@container` occurrence and its owning record. */
 export interface ContainerMemberCandidate {
@@ -617,12 +755,42 @@ export interface ContainerMemberCandidate {
 
 /** Resolution of a CSS container member reference. */
 export type ContainerMemberResolution =
-  | { status: "resolved"; candidate: ContainerMemberCandidate }
-  | { status: "missing" }
-  | { status: "ambiguous"; stage: "record"; candidates: readonly ReferenceCandidate[] }
-  | { status: "ambiguous"; stage: "member"; candidates: readonly ContainerMemberCandidate[] }
-  | { status: "unavailable"; candidates: readonly ReferenceCandidate[] }
-  | { status: "invalid-subject" };
+  | {
+      /** Exactly one CSS container occurrence matches. */
+      status: "resolved";
+      /** Matching container occurrence and its owning record. */
+      candidate: ContainerMemberCandidate;
+    }
+  | {
+      /** No record or container occurrence matches in a complete lookup. */
+      status: "missing";
+    }
+  | {
+      /** Multiple records match before member lookup. */
+      status: "ambiguous";
+      /** Record identity caused the ambiguity. */
+      stage: "record";
+      /** Matching records retained without deduplication. */
+      candidates: readonly ReferenceCandidate[];
+    }
+  | {
+      /** Multiple container occurrences match in one record. */
+      status: "ambiguous";
+      /** Member occurrences caused the ambiguity. */
+      stage: "member";
+      /** Matching container occurrences retained without deduplication. */
+      candidates: readonly ContainerMemberCandidate[];
+    }
+  | {
+      /** Required records, container occurrences, or container syntax are unavailable. */
+      status: "unavailable";
+      /** Known records whose member lookup could not be completed. */
+      candidates: readonly ReferenceCandidate[];
+    }
+  | {
+      /** The authored subject is not a valid CSS container prelude. */
+      status: "invalid-subject";
+    };
 
 /** One CSS `@supports` occurrence and its owning record. */
 export interface SupportsMemberCandidate {
@@ -634,12 +802,42 @@ export interface SupportsMemberCandidate {
 
 /** Resolution of a CSS supports member reference. */
 export type SupportsMemberResolution =
-  | { status: "resolved"; candidate: SupportsMemberCandidate }
-  | { status: "missing" }
-  | { status: "ambiguous"; stage: "record"; candidates: readonly ReferenceCandidate[] }
-  | { status: "ambiguous"; stage: "member"; candidates: readonly SupportsMemberCandidate[] }
-  | { status: "unavailable"; candidates: readonly ReferenceCandidate[] }
-  | { status: "invalid-subject" };
+  | {
+      /** Exactly one CSS supports occurrence matches. */
+      status: "resolved";
+      /** Matching supports occurrence and its owning record. */
+      candidate: SupportsMemberCandidate;
+    }
+  | {
+      /** No record or supports occurrence matches in a complete lookup. */
+      status: "missing";
+    }
+  | {
+      /** Multiple records match before member lookup. */
+      status: "ambiguous";
+      /** Record identity caused the ambiguity. */
+      stage: "record";
+      /** Matching records retained without deduplication. */
+      candidates: readonly ReferenceCandidate[];
+    }
+  | {
+      /** Multiple supports occurrences match in one record. */
+      status: "ambiguous";
+      /** Member occurrences caused the ambiguity. */
+      stage: "member";
+      /** Matching supports occurrences retained without deduplication. */
+      candidates: readonly SupportsMemberCandidate[];
+    }
+  | {
+      /** Required records, supports occurrences, or supports syntax are unavailable. */
+      status: "unavailable";
+      /** Known records whose member lookup could not be completed. */
+      candidates: readonly ReferenceCandidate[];
+    }
+  | {
+      /** The authored subject is not a valid CSS supports prelude. */
+      status: "invalid-subject";
+    };
 
 function canonicalCssNumber(text: string): string | undefined {
   const negative = text.startsWith("-");

@@ -29,7 +29,12 @@ export function normalizedCodeBoundaryText(text: string): string {
 }
 
 /** Find complete inline-backtick code spans without carrying unmatched openers across lines. */
-export function inlineCodeRanges(text: string): { start: number; end: number }[] {
+export function inlineCodeRanges(text: string): {
+  /** Inclusive UTF-16 offset of the opening backticks in the supplied text. */
+  start: number;
+  /** Exclusive UTF-16 offset after the closing backticks in the supplied text. */
+  end: number;
+}[] {
   const ranges: { start: number; end: number }[] = [];
   let start = 0;
   while (start < text.length) {

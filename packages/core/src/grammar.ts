@@ -308,7 +308,15 @@ export interface ParsedDoc {
   /** Private examples, keyed by zero-based index into {@link examples}. */
   privateExamples?: number[];
   /** Source ranges of 1.0 example bodies, keyed by example index and relative to the input comment. */
-  exampleSpans?: Record<number, { start: number; end: number }>;
+  exampleSpans?: Record<
+    number,
+    {
+      /** Inclusive UTF-16 offset of the example body in the input comment. */
+      start: number;
+      /** Exclusive UTF-16 offset of the example body in the input comment. */
+      end: number;
+    }
+  >;
   /** `@structure` — the nested-CSS body, parsed into a selector tree by {@link parseStructure}. */
   structure?: StructureNode[];
   /** Alternative DOM shapes from top-level `@variant` blocks in `@structure`, when authored. */
@@ -328,14 +336,27 @@ export interface ParsedDoc {
   /** Parsed `@ref` values in author order. */
   refs: number[];
   /** Named annotation definitions from `@annotation`. */
-  namedAnnotations: Map<string, { text: string; private?: boolean }>;
+  namedAnnotations: Map<
+    string,
+    {
+      /** Authored annotation prose. */
+      text: string;
+      /** Whether the annotation carries a private marker. */
+      private?: boolean;
+    }
+  >;
   /** Named or structured annotation references from `@ref`. */
   namedRefs: Array<{
+    /** Numeric or named annotation identifier. */
     ref: number | string;
+    /** Authored annotation prose, when supplied with the reference. */
     text?: string;
+    /** Whether the reference carries a private marker. */
     private?: boolean;
+    /** Record-level attachment of the annotation reference. */
     attachment: "record";
   }>;
+  /** Identifiers of annotations or references marked private in the doc comment. */
   privateAnnotationIds: Set<string | number>;
   /** Record-level object-model decorators. */
   decorators: DocDecorators;

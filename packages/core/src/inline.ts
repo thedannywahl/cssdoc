@@ -40,12 +40,22 @@ export interface InlineTag {
 /** A parsed link, or an explicit reason its syntax cannot be interpreted. */
 export type InlineLinkResult =
   | {
+      /** True when the link target and label have valid syntax. */
       ok: true;
-      target: { kind: "reference" | "url"; value: string };
+      /** Parsed target, without resolving record references. */
+      target: {
+        /** Whether the target is a record reference or a URL. */
+        kind: "reference" | "url";
+        /** Authored reference or decoded URL. */
+        value: string;
+      };
+      /** Plain-text link label, when supplied. */
       label?: string;
     }
   | {
+      /** False when the link cannot be interpreted. */
       ok: false;
+      /** Syntax or URL-policy failure that prevented parsing. */
       error: "incomplete" | "missing-target" | "invalid-url" | "invalid-label";
     };
 
@@ -55,7 +65,12 @@ export type InlineLinkResult =
  * @param text - Authored prose.
  * @returns Half-open UTF-16 ranges relative to the prose.
  */
-export function fencedProseRanges(text: string): { start: number; end: number }[] {
+export function fencedProseRanges(text: string): {
+  /** Inclusive UTF-16 offset of the fenced line in the supplied prose. */
+  start: number;
+  /** Exclusive UTF-16 offset of the fenced line in the supplied prose. */
+  end: number;
+}[] {
   const ENDING = arkRegex.as(LINE_ENDING_SOURCE, "gu");
   const state: CodeBoundaryState = { containers: [], indented: false, paragraph: false };
   const ranges: { start: number; end: number }[] = [];
