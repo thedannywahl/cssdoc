@@ -447,19 +447,6 @@ test("type-aware lint detects unsafe boundaries", () => {
       "no-unsafe-member-access",
       "no-unsafe-return",
     ];
-    const args = rules.flatMap((rule) => ["-D", `typescript/${rule}`]);
-    const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", ...args, file], {
-      cwd: root,
-      encoding: "utf8",
-    });
-    expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
-    const output = parseLintOutput(result.stdout);
-    for (const rule of rules) {
-      expect(output.diagnostics).toContainEqual(
-        expect.objectContaining({ code: `typescript(${rule})`, severity: "error" }),
-      );
-    }
-
     const safe = join(directory, "safe.ts");
     writeFileSync(safe, 'const value: unknown = JSON.parse("{}");\nconsole.error(value);\n');
     for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
@@ -468,12 +455,7 @@ test("type-aware lint detects unsafe boundaries", () => {
         encoding: "utf8",
       });
       expect(configured.status, `${configured.stdout}\n${configured.stderr}`).toBe(1);
-      for (const rule of [
-        "no-unsafe-assignment",
-        "no-unsafe-argument",
-        "no-unsafe-call",
-        "no-unsafe-member-access",
-      ]) {
+      for (const rule of rules) {
         const diagnostics = parseLintOutput(configured.stdout).diagnostics.filter(
           ({ code }) => code === `typescript(${rule})`,
         );

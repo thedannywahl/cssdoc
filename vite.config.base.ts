@@ -33,7 +33,7 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-unsafe-argument": "error",
       "typescript/no-unsafe-call": "error",
       "typescript/no-unsafe-member-access": "error",
-      "typescript/no-unsafe-return": "off",
+      "typescript/no-unsafe-return": "error",
       // Re-enable newly activated TypeScript rules individually after review.
       "typescript/prefer-readonly-parameter-types": "off",
       "typescript/strict-boolean-expressions": "off",
@@ -226,6 +226,7 @@ export const baseConfig: UserConfig = defineConfig({
           "typescript/no-unsafe-argument": "off",
           "typescript/no-unsafe-call": "off",
           "typescript/no-unsafe-member-access": "off",
+          "typescript/no-unsafe-return": "off",
         },
       },
       {
