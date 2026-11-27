@@ -65,3 +65,16 @@ test("rejects malformed or duplicate fields without writing partial changes", ()
     'version = "0.1.0"',
   );
 });
+
+test.each(["1.2", "1.2.3+build", "", 123])(
+  "rejects invalid language-server version %s without writing",
+  (version) => {
+    const directory = fixture();
+    const packagePath = join(directory, "servers/language-server/package.json");
+    const manifest = join(directory, "servers/zed/extension.toml");
+    const original = readFileSync(manifest, "utf8");
+    writeFileSync(packagePath, JSON.stringify({ version }));
+    expect(() => syncZedVersion(directory, true)).toThrow("Invalid language-server version");
+    expect(readFileSync(manifest, "utf8")).toBe(original);
+  },
+);

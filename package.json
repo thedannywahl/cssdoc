@@ -23,6 +23,7 @@
     "@arethetypeswrong/cli": "catalog:",
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
+    "arkregex": "catalog:",
     "bumpp": "catalog:",
     "changelogen": "catalog:",
     "eslint-plugin-tsdoc": "catalog:",

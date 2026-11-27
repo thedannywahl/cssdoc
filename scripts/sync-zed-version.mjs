@@ -2,27 +2,37 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { regex as arkRegex } from "arkregex";
+
 const root = fileURLToPath(new URL("..", import.meta.url));
+const LANGUAGE_SERVER_VERSION = arkRegex.as(String.raw`^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$`, "u");
+const ZED_EXTENSION_VERSION = arkRegex.as(
+  String.raw`^(?<prefix>version = ")(?<version>[^"]+)(?<suffix>")$`,
+  "gmu",
+);
+const ZED_CARGO_VERSION = arkRegex.as(
+  String.raw`^(?<prefix>\[package\]\nname = "cssdoc-zed"\nversion = ")(?<version>[^"]+)(?<suffix>")$`,
+  "gmu",
+);
+const ZED_LOCK_VERSION = arkRegex.as(
+  String.raw`^(?<prefix>\[\[package\]\]\nname = "cssdoc-zed"\nversion = ")(?<version>[^"]+)(?<suffix>")$`,
+  "gmu",
+);
+const ZED_RUST_VERSION = arkRegex.as(
+  String.raw`^(?<prefix>const VERSION: &str = ")(?<version>[^"]+)(?<suffix>";)$`,
+  "gmu",
+);
 const fields = [
-  ["servers/zed/extension.toml", /^(?<prefix>version = ")(?<version>[^"]+)(?<suffix>")$/gmu],
-  [
-    "servers/zed/Cargo.toml",
-    /^(?<prefix>\[package\]\nname = "cssdoc-zed"\nversion = ")(?<version>[^"]+)(?<suffix>")$/gmu,
-  ],
-  [
-    "servers/zed/Cargo.lock",
-    /^(?<prefix>\[\[package\]\]\nname = "cssdoc-zed"\nversion = ")(?<version>[^"]+)(?<suffix>")$/gmu,
-  ],
-  [
-    "servers/zed/src/lib.rs",
-    /^(?<prefix>const VERSION: &str = ")(?<version>[^"]+)(?<suffix>";)$/gmu,
-  ],
+  ["servers/zed/extension.toml", ZED_EXTENSION_VERSION],
+  ["servers/zed/Cargo.toml", ZED_CARGO_VERSION],
+  ["servers/zed/Cargo.lock", ZED_LOCK_VERSION],
+  ["servers/zed/src/lib.rs", ZED_RUST_VERSION],
 ];
 
 export function syncZedVersion(directory, write = false) {
   const packagePath = resolve(directory, "servers/language-server/package.json");
   const { version } = JSON.parse(readFileSync(packagePath, "utf8"));
-  if (typeof version !== "string" || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/u.test(version)) {
+  if (typeof version !== "string" || !LANGUAGE_SERVER_VERSION.test(version)) {
     throw new Error(`Invalid language-server version in ${packagePath}: ${version}`);
   }
 

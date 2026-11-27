@@ -450,6 +450,9 @@ importers:
       '@commitlint/config-conventional':
         specifier: 'catalog:'
         version: 21.2.4
+      arkregex:
+        specifier: 'catalog:'
+        version: 0.0.15
       bumpp:
         specifier: 'catalog:'
         version: 12.3.0
