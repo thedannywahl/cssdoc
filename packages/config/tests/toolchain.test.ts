@@ -2430,6 +2430,68 @@ test("lint permits workspace filename conventions but rejects snake-case module 
   }
 });
 
+test("lint checks Oxc correctness without rejecting valid numeric and ownership contracts", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/.oxc-check-"));
+  try {
+    writeFileSync(
+      join(directory, "tsconfig.json"),
+      JSON.stringify({ extends: "../../../../tsconfig.base.json", include: ["*.ts"] }),
+    );
+    const file = join(directory, "checks.test.ts");
+    writeFileSync(
+      file,
+      [
+        "export function sparse(): number[] { return new Array<number>(3).map(() => 1); }",
+        "export function filled(): number[] { return new Array<number>(3).fill(0).map(() => 1); }",
+        'export function replace(text: string): string { return text.replaceAll(/x/, "y"); }',
+        'export function safeReplace(text: string): string { return text.replaceAll(/x/g, "y"); }',
+        "export function matches(text: string): IterableIterator<RegExpExecArray> { return text.matchAll(/x/); }",
+        "export function safeMatches(text: string): IterableIterator<RegExpExecArray> { return text.matchAll(/x/g); }",
+        "export function radix(value: number): string { return value.toString(64); }",
+        "export function safeRadix(value: number): string { return value.toString(16); }",
+        "export function precision(value: number): string[] { return [value.toFixed(100), value.toExponential(100), value.toPrecision(100)]; }",
+        "export function clamp(value: number): number { return Math.min(Math.max(value, 100), 0); }",
+        "export function safeClamp(value: number): number { return Math.min(Math.max(value, 0), 100); }",
+        "export const enum Mode { On = 1 }",
+        "export enum RuntimeMode { On = 1 }",
+        "export function erase(value: number): number { return value * 0; }",
+        "export function compare(a: string | number, b: string | number): boolean { return a === b || a < b; }",
+        "export function receiver(this: { value: number }): number { return this.value; }",
+        "export function copied(items: readonly { value: number }[]): Array<{ value: number; active: boolean }> { return items.map(item => ({ ...item, active: true })); }",
+        "export function branching(check: () => boolean, effect: () => void): number { if (check()) { effect(); return 1; } else { effect(); return 2; } }",
+        "export function flags(value: number, mask: number): number { return value & mask; }",
+        "export function recurse(depth: number, marker: string): number { return depth === 0 ? 0 : recurse(depth - 1, marker); }",
+        "export function accumulating(items: readonly number[]): number[] { return items.reduce<number[]>((acc, item) => [...acc, item], []); }",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../core/", import.meta.url))]) {
+      const result = spawnSync(
+        "vp",
+        ["lint", "--config", join(root, "vite.config.ts"), "--no-ignore", "--format", "json", file],
+        { cwd, encoding: "utf8" },
+      );
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code.startsWith("oxc("))
+          .sort((a, b) => a.labels[0].span.line - b.labels[0].span.line)
+          .map(({ code, severity, labels }) => [labels[0].span.line, code, severity]),
+      ).toEqual([
+        [1, "oxc(uninvoked-array-callback)", "error"],
+        [3, "oxc(bad-replace-all-arg)", "error"],
+        [5, "oxc(bad-match-all-arg)", "error"],
+        [10, "oxc(bad-min-max-func)", "error"],
+        [12, "oxc(no-const-enum)", "error"],
+        [20, "oxc(only-used-in-recursion)", "warning"],
+        [21, "oxc(no-accumulating-spread)", "warning"],
+      ]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint narrows unknown conditions while preserving known truthiness and return values", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, "packages/config/tests/.condition-check-"));

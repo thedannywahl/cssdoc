@@ -9,6 +9,7 @@ const lintPlugins: NonNullable<NonNullable<UserConfig["lint"]>["plugins"]> = [
   "eslint",
   "import",
   "node",
+  "oxc",
   "promise",
   "vitest",
   "jsdoc",
@@ -112,7 +113,7 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/unbound-method": "error",
       "typescript/no-unnecessary-template-expression": "warn",
       "typescript/no-unnecessary-type-parameters": "warn",
-      // Explicit exported types satisfy isolatedDeclarations.
+      // Computed exported strings still require annotations under isolatedDeclarations.
       "typescript/no-inferrable-types": "off",
       // Parsers and framework callbacks deliberately accept and mutate shared objects.
       "typescript/prefer-readonly-parameter-types": "off",
@@ -139,6 +140,31 @@ export const baseConfig: UserConfig = defineConfig({
       // Targeted unsafe-function, wrapper-object, and empty-object rules replace this deprecated rule.
       "typescript/ban-types": "off",
       "typescript/no-empty-object-type": "error",
+      // Preserve modern syntax, package barrels, and intentional ownership boundaries.
+      "oxc/no-async-await": "off",
+      "oxc/no-optional-chaining": "off",
+      "oxc/no-rest-spread-properties": "off",
+      "oxc/no-barrel-file": "off",
+      // Published const enums aren't compatible with consumers' isolated-module compilation.
+      "oxc/no-const-enum": "error",
+      // This heuristic doesn't know whether a decimal represents a mathematical constant.
+      "oxc/approx-constant": "off",
+      // The workspace has no Express 4 endpoint host.
+      "oxc/no-async-endpoint-handlers": "off",
+      // Exported callbacks can have an explicitly typed receiver and be bound by their consumer.
+      "oxc/no-this-in-exported-function": "off",
+      // Borrowed array elements mustn't become mutated just to avoid copying them.
+      "oxc/no-map-spread": "off",
+      // Hoisting shared branch code can change its ordering relative to predicate side effects.
+      "oxc/branches-sharing-code": "off",
+      // The installed rule still rejects ES2026's valid precision arguments up to 100.
+      "oxc/number-arg-out-of-range": "off",
+      // Multiplication by zero preserves signed zero and produces NaN for non-finite inputs.
+      "oxc/erasing-op": "off",
+      // Combining strict equality with a relational comparison isn't coercive <= or >=.
+      "oxc/double-comparisons": "off",
+      // Recursive-only parameters may preserve a public signature; don't apply the unsafe fix.
+      "oxc/only-used-in-recursion": "warn",
       "unicorn/prefer-node-protocol": "error",
       "unicorn/no-accessor-recursion": "error",
       "unicorn/no-array-fill-with-reference-type": "error",

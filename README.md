@@ -131,6 +131,23 @@ Disabled rules remain deliberate, not a waiver for existing diagnostics:
 | Regexp grapheme, control-character, replacement-dollar, spelling, ordering, and repetition preferences          | Multi-character tokens, control-character validation, and literal dollars can be intentional. Preserve authored tier grouping and pattern spelling.                                                                         |
 | TSDoc per-tag mandates and `restrict-tags`                                                                      | The 56 tag-mandate rules test presence, not applicability: parameterless functions don't need `@param`, and ordinary declarations mustn't all become `@deprecated`. TSDoc syntax and `tsdoc.json` already own allowed tags. |
 
+The retained `no-inferrable-types` exception isn't hypothetical: removing the annotation from the
+exported computed schema string produces compiler error TS9010. That rule's parameter and property
+options don't exempt exported variables.
+
+Oxc linting checks invalid array callbacks, regexp arguments, comparisons, clamps, and discarded
+errors. Const enums are errors because published declarations must work with isolated-module
+consumers. Accumulating spreads and suspicious compound assignments remain warnings; recursive-only
+parameters also warn rather than inviting an unsafe signature-changing fix. Twelve Oxc rules stay off:
+
+| Rules                                                                                   | Why they stay off                                                                                                                                                                  |
+| --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `no-async-await`, `no-optional-chaining`, `no-rest-spread-properties`, `no-barrel-file` | Modern syntax and package entry-point barrels are intentional.                                                                                                                     |
+| `no-async-endpoint-handlers`, `no-this-in-exported-function`                            | There's no Express 4 host; exported callbacks can declare a receiver and be bound by their caller.                                                                                 |
+| `approx-constant`, `branches-sharing-code`, `no-map-spread`                             | A decimal needn't represent a mathematical constant. Hoisting can reorder predicate side effects, and mapping borrowed elements must preserve the input.                           |
+| `number-arg-out-of-range`                                                               | The installed implementation rejects valid ES2026 precision arguments up to 100 for `toFixed`, `toExponential`, and `toPrecision`. It has no range override.                       |
+| `erasing-op`, `double-comparisons`                                                      | Multiplying by zero preserves signed zero and produces NaN for non-finite values. Strict equality combined with a relational comparison isn't equivalent to coercive `<=` or `>=`. |
+
 Numeric literal casing stays formatter-owned: Oxfmt writes lowercase hexadecimal digits, while
 `unicorn/number-literal-case` demands uppercase. Vue prop-count limits and component-name casing
 also stay off: component APIs need different prop counts, and registration names follow their
