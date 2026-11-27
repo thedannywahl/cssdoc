@@ -225,11 +225,12 @@ const model = scope(
   },
 ).export();
 
-type Mutable<T> = T extends readonly (infer Item)[]
-  ? Mutable<Item>[]
-  : T extends object
-    ? { -readonly [Key in keyof T as Key extends number ? string : Key]: Mutable<T[Key]> }
-    : T;
+type Mutable<T> =
+  T extends ReadonlyArray<infer Item>
+    ? Array<Mutable<Item>>
+    : T extends object
+      ? { -readonly [Key in keyof T as Key extends number ? string : Key]: Mutable<T[Key]> }
+      : T;
 type RuntimeEntry = typeof model.CssDocEntry.infer;
 type Equal<Left, Right> =
   // Fresh generic signatures distinguish exact types, including optional-field drift.

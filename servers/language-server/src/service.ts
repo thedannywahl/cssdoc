@@ -1143,19 +1143,19 @@ export class CssDocLanguageService {
   private modifierUsages(
     text: string,
     scope: ConfigScope,
-  ): { usage: ClassUsage; start: number; end: number }[] {
+  ): Array<{ usage: ClassUsage; start: number; end: number }> {
     // Providers' components count as documented bases too, so a component only reachable via a
     // `providers` entry (not this scope's own auto-detected files) is still recognized.
     const usageIndex = scope.siblingIndex ?? scope.index;
     const { matcher } = usageIndex;
-    const results: { usage: ClassUsage; start: number; end: number }[] = [];
+    const results: Array<{ usage: ClassUsage; start: number; end: number }> = [];
 
     if (matcher.convention.structure === "attribute") {
       for (const tag of text.matchAll(ATTRIBUTE_USAGE_TAG)) {
         const tagStart = tag.index ?? 0;
         const attrs = [...tag[0].matchAll(QUOTED_ATTRIBUTE)];
         const tokens: string[] = [];
-        const classTokens: { token: string; start: number; end: number }[] = [];
+        const classTokens: Array<{ token: string; start: number; end: number }> = [];
         const elementName = tag[1].toLowerCase();
         for (const a of attrs) {
           if (a[1] === "class" || a[1] === "className") {

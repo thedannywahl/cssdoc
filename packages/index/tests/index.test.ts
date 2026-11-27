@@ -206,7 +206,7 @@ test("source-qualified resolution accounts for matching unkeyed inputs", () => {
   const other = createIndex("/** @component other */ .other {}");
   const reference = parseReference('source("a.css")::component:button');
   if (!reference.ok) throw new Error(reference.error);
-  const resolve = (sources: { index: CssDocIndex; sourceKey?: string }[]) =>
+  const resolve = (sources: Array<{ index: CssDocIndex; sourceKey?: string }>) =>
     resolveRecordReference(reference.reference, { workspace: { complete: true, sources } });
 
   expect(resolve([{ index: unkeyed }])).toMatchObject({

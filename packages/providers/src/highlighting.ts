@@ -100,8 +100,8 @@ function addStructureHighlights(
 function addMarkdownHighlights(
   result: DocHighlight[],
   text: string,
-  code: readonly { start: number; end: number }[],
-  map: (start: number, end: number) => { start: number; end: number }[],
+  code: ReadonlyArray<{ start: number; end: number }>,
+  map: (start: number, end: number) => Array<{ start: number; end: number }>,
   configuration: CssDocConfiguration,
   tag: string,
 ): void {
@@ -139,7 +139,7 @@ function mappedRanges(
   block: DocCommentBlock,
   start: number,
   end: number,
-): { start: number; end: number }[] {
+): Array<{ start: number; end: number }> {
   return block.segments.flatMap((segment) => {
     const from = Math.max(start, segment.textStart);
     let to = Math.min(end, segment.textStart + segment.length);
@@ -156,8 +156,8 @@ function mappedRanges(
 function addInlineHighlights(
   result: DocHighlight[],
   text: string,
-  code: readonly { start: number; end: number }[],
-  map: (start: number, end: number) => { start: number; end: number }[],
+  code: ReadonlyArray<{ start: number; end: number }>,
+  map: (start: number, end: number) => Array<{ start: number; end: number }>,
   configuration: CssDocConfiguration,
   tag: string,
 ): void {
@@ -199,7 +199,7 @@ export function highlightDocComment(
       text,
       mode === "plain" ? fencedProseRanges(text) : markdownCodeRanges(text, configuration),
       (start, end) => {
-        const ranges: { start: number; end: number }[] = [];
+        const ranges: Array<{ start: number; end: number }> = [];
         let lineStart = start;
         for (let i = start; i < end; i++) {
           if (text[i] !== CARRIAGE_RETURN_CHAR && text[i] !== LINE_FEED_CHAR) continue;

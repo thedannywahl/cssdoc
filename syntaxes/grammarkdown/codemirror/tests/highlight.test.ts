@@ -53,7 +53,7 @@ test("updates editor decorations when an edit changes multiline context", () => 
   });
   const read = (editor: EditorState) => {
     const sets = editor.facet(EditorView.decorations);
-    const spans: { from: number; to: number; className: string }[] = [];
+    const spans: Array<{ from: number; to: number; className: string }> = [];
     for (const set of sets) {
       if (typeof set === "function") throw new TypeError("Expected state-provided decorations");
       set.between(0, editor.doc.length, (from, to, decoration) => {

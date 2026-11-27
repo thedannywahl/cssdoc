@@ -48,8 +48,8 @@ const REASON_SEPARATOR = arkRegex.as(String.raw`\s${DASH_SOURCE}\s`, "u");
 const RULE_SEPARATOR = arkRegex.as(String.raw`[\s,]+`, "u");
 const RULE = arkRegex.as(String.raw`[^\s,]+`, "gu");
 
-function directiveMatches(source: string): { start: number; match: RegExpMatchArray }[] {
-  const matches: { start: number; match: RegExpMatchArray }[] = [];
+function directiveMatches(source: string): Array<{ start: number; match: RegExpMatchArray }> {
+  const matches: Array<{ start: number; match: RegExpMatchArray }> = [];
   tokenize(source, (type, start, end) => {
     if (type !== tokenTypes.Comment) return;
     const match = [...source.slice(start, end).matchAll(DIRECTIVE)][0];

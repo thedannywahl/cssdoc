@@ -88,14 +88,14 @@ export interface CssModifier {
    * or state name on `component`; the CSS rule causing the effect lives in that other record's own
    * stylesheet, not this one, so there'd otherwise be nothing on this modifier pointing a reader there.
    */
-  affects?: {
+  affects?: Array<{
     /** Name of the affected record. */
     component: string;
     /** Name of the affected part, pseudo-element, or state. */
     target: string;
     /** Optional authored explanation of the effect. */
     description?: string;
-  }[];
+  }>;
 }
 
 /** A sub-element ("part") of a component — a scoped child class like `.item` or `.tip`. */

@@ -138,7 +138,7 @@ const usage = computed(() => {
     const index = createIndex(css.value, { modifierConvention: cfg.value.convention });
     const { matcher } = index;
     const bases = new Set<string>();
-    const usages: { base?: string; tokens: string[]; token: string }[] = [];
+    const usages: Array<{ base?: string; tokens: string[]; token: string }> = [];
     // Shared, comment-aware scanner: reads class/className/:class/class:name per element and skips
     // commented-out markup, so `<!-- <div class="tabs--gone"> -->` examples don't get flagged.
     for (const site of scanClassUsages(html.value)) {

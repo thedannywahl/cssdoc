@@ -16,7 +16,7 @@ const CSS = `
 .button--size-sm { font-size: small; }
 `;
 
-const lint = (code: string): { ruleId: string | null; message: string }[] => {
+const lint = (code: string): Array<{ ruleId: string | null; message: string }> => {
   const linter = new Linter();
   return linter
     .verify(code, plugin.configs.recommended, "test.css")

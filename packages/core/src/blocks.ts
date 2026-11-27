@@ -58,15 +58,15 @@ export interface DocCommentSegment {
  * @param blocks - Blocks produced by {@link collectDocCommentBlocks}.
  * @returns Half-open UTF-16 ranges relative to the original comment.
  */
-export function docCommentFenceRanges(blocks: readonly DocCommentBlock[]): {
+export function docCommentFenceRanges(blocks: readonly DocCommentBlock[]): Array<{
   /** Inclusive UTF-16 offset of the fenced line in the original comment. */
   start: number;
   /** Exclusive UTF-16 offset of the fenced line in the original comment. */
   end: number;
-}[] {
+}> {
   const ENDING: Regex = arkRegex.as(LINE_ENDING_SOURCE, "gu");
   const STRUCTURE: Regex = arkRegex.as(`^${AT_SOURCE}structure(?:\\s|$)`, "u");
-  const ranges: { start: number; end: number }[] = [];
+  const ranges: Array<{ start: number; end: number }> = [];
   for (const block of blocks) {
     if (STRUCTURE.exec(block.text) !== null) continue;
     const state: CodeBoundaryState = { containers: [], indented: false, paragraph: false };

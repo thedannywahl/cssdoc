@@ -17,7 +17,7 @@ const CSS = `
 `;
 
 // The fixtures use the rscss convention; pass it as a secondary option (the parser defaults to BEM).
-const lint = async (code: string): Promise<{ text: string; rule: string | undefined }[]> => {
+const lint = async (code: string): Promise<Array<{ text: string; rule: string | undefined }>> => {
   const result = await stylelint.lint({
     code,
     config: {
@@ -32,7 +32,7 @@ const lint = async (code: string): Promise<{ text: string; rule: string | undefi
 
 const lintRanged = async (
   code: string,
-): Promise<{ text: string; line: number; endLine?: number }[]> => {
+): Promise<Array<{ text: string; line: number; endLine?: number }>> => {
   const result = await stylelint.lint({
     code,
     config: {

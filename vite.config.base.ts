@@ -75,10 +75,11 @@ export const baseConfig: UserConfig = defineConfig({
       // Function properties enforce parameter variance in callback contracts; class methods are unchanged.
       "typescript/method-signature-style": ["warn", "property"],
       "typescript/no-confusing-void-expression": ["warn", { ignoreArrowShorthand: true }],
+      // Interfaces support augmentation; object aliases can supply implicit index signatures.
       "typescript/consistent-type-definitions": "off",
       // Promise-owning declarations are async; concise arrow forwarders needn't wrap an existing promise.
       "typescript/promise-function-async": ["warn", { checkArrowFunctions: false }],
-      "typescript/array-type": "off",
+      "typescript/array-type": ["warn", { default: "array-simple" }],
       "typescript/prefer-regexp-exec": "warn",
       "typescript/no-explicit-any": "error",
       "typescript/consistent-return": "warn",

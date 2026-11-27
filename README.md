@@ -112,6 +112,7 @@ Disabled rules remain deliberate, not a waiver for existing diagnostics:
 | Promise callback-to-await preference                                                                            | A callback-shaped API doesn't necessarily offer a promise equivalent. Await is preferred where a promise or Thenable exists.                                 |
 | Unicorn awaited-result member and relative-URL style preferences                                                | Direct property access on an awaited result and explicit `./` URL prefixes are valid, useful syntax choices.                                                 |
 | JSDoc mandatory returns and TypeScript type tags                                                                | Document useful return behavior; TypeScript signatures already supply types. JavaScript's documented tags require types.                                     |
+| TypeScript interface/type uniformity                                                                            | Interfaces support declaration merging; object aliases can provide implicit index signatures. Choose the form that fits the contract.                        |
 
 Nursery linting stays off as a category. Selected rules reject unreachable loops and dead stores
 and warn about invalid named imports. Node ESM scripts also warn about undefined names without
@@ -136,6 +137,8 @@ Use `object` for object values and `unknown` for untrusted values, not the broad
 interfaces are rejected too; non-null intersections such as `T & {}` remain valid.
 Strict Boolean values don't need literal comparisons; nullable and unknown values can still use
 explicit Boolean guards. The CLI normalizes Node's optional terminal flags to booleans.
+Simple array types use `T[]` or `readonly T[]`; complex element types use `Array<T>` or
+`ReadonlyArray<T>` to avoid extra grouping parentheses.
 Type-check failures throw `TypeError`; range failures use `RangeError`.
 End-relative array access uses `at`, and index searches compare against their `-1` sentinel.
 Collection conditions compare `length` or `size` explicitly against zero or the required threshold.

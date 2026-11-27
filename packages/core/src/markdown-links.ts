@@ -33,7 +33,7 @@ export function sanitizeMarkdownLinks(text: string): string {
     for (const child of node.children ?? []) collect(child);
   };
   collect(tree);
-  const edits: { start: number; end: number; text: string }[] = [];
+  const edits: Array<{ start: number; end: number; text: string }> = [];
   const visit = (node: Node): void => {
     const start = node.position?.start.offset;
     const end = node.position?.end.offset;

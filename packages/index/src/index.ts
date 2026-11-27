@@ -257,14 +257,14 @@ export interface RecordInfo {
   /** Distinct values seen for each property declared inside this record's rules. */
   propertyValues: Map<string, Set<string>>;
   /** Declarations that include reset-like keywords (`unset`/`initial`/`inherit`/`revert`). */
-  resetValueUsages: {
+  resetValueUsages: Array<{
     /** Name of the declaration's property. */
     property: string;
     /** Authored declaration value. */
     value: string;
     /** Declaration range, when known. */
     span?: SourceSpan;
-  }[];
+  }>;
 }
 
 /** A serializable snapshot of the index (the model plus its file), for tools that consume JSON. */
@@ -568,24 +568,24 @@ export class CssDocIndex {
   }
 
   /** Every declared custom property, paired with the record that declares it (for `var(...)` completion). */
-  allCustomProperties(): {
+  allCustomProperties(): Array<{
     /** Declared custom property. */
     property: CssPropertyDeclared;
     /** Name of the record declaring the property. */
     record: string;
-  }[] {
+  }> {
     return this.records.flatMap((r) =>
       r.entry.cssPropertiesDeclared.map((property) => ({ property, record: r.entry.name })),
     );
   }
 
   /** Every custom function, paired with its record. */
-  allFunctions(): {
+  allFunctions(): Array<{
     /** Documented custom function. */
     fn: CssFunction;
     /** Name of the record containing the function. */
     record: string;
-  }[] {
+  }> {
     return this.records.flatMap((r) =>
       r.entry.functions.map((fn) => ({ fn, record: r.entry.name })),
     );
@@ -667,7 +667,7 @@ interface Build {
   authoredPartLines: Map<string, SourceSpan>;
   selectorText: string;
   propertyValues: Map<string, Set<string>>;
-  resetValueUsages: { property: string; value: string; span?: SourceSpan }[];
+  resetValueUsages: Array<{ property: string; value: string; span?: SourceSpan }>;
 }
 
 function containsStyleRule(nodes: readonly ChildNode[], inStyleRule: boolean): boolean {

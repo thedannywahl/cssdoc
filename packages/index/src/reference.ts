@@ -356,7 +356,7 @@ export function resolveNamedMemberReference(
   }
   const record = resolution.candidate;
   const { entry } = record.record;
-  const members: readonly { member: NamedMemberCandidate["member"]; span?: SourceSpan }[] =
+  const members: ReadonlyArray<{ member: NamedMemberCandidate["member"]; span?: SourceSpan }> =
     record.namedMemberOccurrences
       ? record.namedMemberOccurrences.filter((occurrence) => occurrence.kind === kind)
       : (kind === "csspart"
@@ -638,7 +638,7 @@ function scopeKey(input: string): SelectorKey {
     if (ast.type !== "AtrulePrelude" || ast.children.size !== 1) return { status: "invalid" };
     const scope = ast.children.first;
     if (scope?.type !== "Scope") return { status: "unsupported" };
-    const components: (string[] | null)[] = [];
+    const components: Array<string[] | null> = [];
     for (const list of [scope.root, scope.limit]) {
       if (!list) {
         components.push(null);

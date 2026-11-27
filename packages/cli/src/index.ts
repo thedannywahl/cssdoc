@@ -156,7 +156,7 @@ function applyFixes(source: string, violations: readonly Violation[]): string {
       end: offsetAt(source, edit.span.end),
     }))
     .toSorted((a, b) => a.start - b.start || a.end - b.end || a.index - b.index);
-  const accepted: { edit: (typeof edits)[number]; start: number; end: number }[] = [];
+  const accepted: Array<{ edit: (typeof edits)[number]; start: number; end: number }> = [];
   let lastEnd = -1;
   for (const candidate of ordered) {
     if (candidate.start < lastEnd) continue;

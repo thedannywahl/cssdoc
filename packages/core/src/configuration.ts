@@ -210,7 +210,7 @@ export class CssDocConfiguration {
       }
     };
     validMode(settings.mode);
-    const tags: [string, ProseMode | null][] = [];
+    const tags: Array<[string, ProseMode | null]> = [];
     for (const [name, mode] of Object.entries(settings.tags ?? {})) {
       validMode(mode);
       const definition = this.tryGetTagDefinition(name);

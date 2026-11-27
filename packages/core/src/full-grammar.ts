@@ -22,8 +22,8 @@ import type { CssParse } from "./model.ts";
 export function markdownCodeRanges(
   text: string,
   configuration: CssDocConfiguration = new CssDocConfiguration(),
-): { start: number; end: number }[] {
-  const ranges: { start: number; end: number; block: boolean }[] = [];
+): Array<{ start: number; end: number }> {
+  const ranges: Array<{ start: number; end: number; block: boolean }> = [];
   type Node = {
     type: string;
     position?: { start: { offset?: number }; end: { offset?: number } };
@@ -136,10 +136,10 @@ export function escapedInlineOpenerRanges(
   text: string,
   mode: "plain" | "markdown",
   configuration: CssDocConfiguration = new CssDocConfiguration(),
-): { start: number; end: number }[] {
+): Array<{ start: number; end: number }> {
   const code =
     mode === "markdown" ? markdownCodeRanges(text, configuration) : fencedProseRanges(text);
-  const ranges: { start: number; end: number }[] = [];
+  const ranges: Array<{ start: number; end: number }> = [];
   for (let i = 0; i < text.length; i++) {
     if (text[i] !== BACKSLASH_CHAR) continue;
     const start = i;

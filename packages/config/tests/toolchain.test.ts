@@ -32,7 +32,7 @@ interface LintDiagnostic {
   filename: string;
   message: string;
   help?: string;
-  labels: { span: { line: number } }[];
+  labels: Array<{ span: { line: number } }>;
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -2386,6 +2386,48 @@ test("TSDoc definitions follow the cssdoc vocabulary", () => {
     { tagName: "@module", syntaxKind: "block" },
     ...definitions,
   ]);
+});
+
+test("lint uses suffixes for simple array types and generics for complex array types", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/.array-type-check-"));
+  try {
+    writeFileSync(
+      join(directory, "tsconfig.json"),
+      JSON.stringify({ extends: "../../../../tsconfig.base.json", include: ["*.ts"] }),
+    );
+    const file = join(directory, "arrays.ts");
+    writeFileSync(
+      file,
+      [
+        "export type SimpleGeneric = Array<string>;",
+        "export type ComplexSuffix = { value: string }[];",
+        "export type Simple = string[];",
+        "export type Complex = Array<{ value: string }>;",
+        "export type ReadonlySimple = readonly string[];",
+        "export type ReadonlyComplex = ReadonlyArray<{ value: string }>;",
+        "export type Tuple = Array<[number, string]>;",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../core/", import.meta.url))]) {
+      const result = spawnSync(
+        "vp",
+        ["lint", "--config", join(root, "vite.config.ts"), "--no-ignore", "--format", "json", file],
+        { cwd, encoding: "utf8" },
+      );
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "typescript(array-type)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([
+        ["warning", 1],
+        ["warning", 2],
+      ]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 });
 
 test("lint simplifies strict Boolean comparisons but preserves nullable and unknown guards", () => {

@@ -204,7 +204,7 @@ export function buildCssApi(options: BuildCssApiOptions): BuildCssApiResult {
     options.resolveComponent ?? ((className: string) => componentByClass.get(className));
   // `@memberOf` feeds the parent's Subcomponents section from the inverse direction — a member doesn't
   // need to be nested in the parent's own `@structure` tree.
-  const membersByParent = new Map<string, { name: string; href: string }[]>();
+  const membersByParent = new Map<string, Array<{ name: string; href: string }>>();
   for (const e of entries) {
     if (!e.memberOf) continue;
     const list = membersByParent.get(e.memberOf.component) ?? [];

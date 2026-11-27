@@ -13,7 +13,7 @@ interface HarnessOptions {
   stdinIsTTY?: boolean;
   stdoutIsTTY?: boolean;
   textValue?: string | symbol;
-  confirmValues?: (boolean | symbol)[];
+  confirmValues?: Array<boolean | symbol>;
   result?: LintCliResult;
 }
 

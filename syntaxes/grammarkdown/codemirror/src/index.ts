@@ -57,7 +57,7 @@ const patterns = {
   parameter: rulePattern("parameters"),
 };
 
-const outsideRules: [RegExp, GrammarkdownTokenType][] = [
+const outsideRules: Array<[RegExp, GrammarkdownTokenType]> = [
   [patterns.comment, "comment"],
   [patterns.prose, "prose"],
   [patterns.directive, "directive"],
@@ -68,7 +68,7 @@ const outsideRules: [RegExp, GrammarkdownTokenType][] = [
   [patterns.optional, "operator"],
   [patterns.nonterminal, "nonterminal"],
 ];
-const constraintRules: [RegExp, GrammarkdownTokenType][] = [
+const constraintRules: Array<[RegExp, GrammarkdownTokenType]> = [
   [patterns.keyword, "keyword"],
   [patterns.terminal, "terminal"],
   [arkRegex.as("[+~?]|[∈∉≠]|!=", "dy"), "operator"],

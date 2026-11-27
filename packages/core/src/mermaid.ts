@@ -230,7 +230,7 @@ export function toMermaid(roots: StructureNode[], options: MermaidOptions = {}):
  * @returns Mermaid source, or an empty string when there are no variants with nodes.
  */
 export function toMermaidVariants(
-  variants: readonly { name?: string; nodes: StructureNode[] }[],
+  variants: ReadonlyArray<{ name?: string; nodes: StructureNode[] }>,
   options: MermaidOptions = {},
 ): string {
   const groups = variants
@@ -249,7 +249,7 @@ export function toMermaidVariants(
 
 /** Shared node/edge/link rendering for {@link toMermaid} and {@link toMermaidVariants}. */
 function renderTrees(
-  groups: readonly { roots: StructureNode[]; label?: string }[],
+  groups: ReadonlyArray<{ roots: StructureNode[]; label?: string }>,
   options: MermaidOptions,
 ): { nodes: string[]; edges: string[]; links: string[] } {
   const nodes: string[] = [];

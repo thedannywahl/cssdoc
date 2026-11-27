@@ -128,7 +128,9 @@ function hoverText(value: unknown): string | undefined {
   return value.contents.value;
 }
 
-function ipcServer(configuration?: (items: { scopeUri?: string; section: string }[]) => unknown[]) {
+function ipcServer(
+  configuration?: (items: Array<{ scopeUri?: string; section: string }>) => unknown[],
+) {
   const server = fork(serverBundle, ["--node-ipc"], { silent: true });
   type Reply = { id: number; result?: unknown; method?: string; params?: unknown };
   const pending = new Map<number, (reply: Reply) => void>();

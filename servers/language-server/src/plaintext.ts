@@ -4,7 +4,7 @@ const markdown = new MarkdownExit();
 
 const inlineText = (tokens: readonly Token[]): string => {
   let text = "";
-  const links: (string | null)[] = [];
+  const links: Array<string | null> = [];
   for (const token of tokens) {
     switch (token.type) {
       case "text":

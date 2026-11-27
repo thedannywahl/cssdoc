@@ -200,14 +200,14 @@ export interface DocModifier {
   /** Set from an inline `@global` marker — this modifier applies to any record (not just its parent). */
   global?: boolean;
   /** Set from an inline `@affects <component>.<target>` marker — a descendant record this modifier changes the rendering of. */
-  affects?: {
+  affects?: Array<{
     /** Name of the affected record. */
     component: string;
     /** Name of the affected part, pseudo-element, or state. */
     target: string;
     /** Optional authored explanation of the effect. */
     description?: string;
-  }[];
+  }>;
 }
 
 /** An authored conditional-support tag (`@container`/`@supports`/`@media`/`@responsive`). */
@@ -374,12 +374,12 @@ export interface ParsedDoc {
   /** `@members <name>, <name>, …` — the inverse direction, when authored. */
   members?: string[];
   /** Repeatable `@member <name> [private]` declarations on the parent record. */
-  memberEntries: {
+  memberEntries: Array<{
     /** Name of the member record. */
     name: string;
     /** Whether the member is private. */
     private: boolean;
-  }[];
+  }>;
   /** Set by a record-level `@global` tag — modifiers of this record apply to other records. */
   global?: boolean;
   /** Content of registered custom (block) tags, keyed by tag name without its `@`. */

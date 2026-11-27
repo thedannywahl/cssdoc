@@ -42,14 +42,14 @@ export interface HtmlCustomData {
   /** VS Code custom-data format version. */
   version: 1.1;
   /** Global attributes offered by this data set. */
-  globalAttributes: {
+  globalAttributes: Array<{
     /** Attribute name. */
     name: string;
     /** Attribute description, when supplied. */
     description?: string;
     /** Suggested attribute values. */
     values: HtmlAttributeValue[];
-  }[];
+  }>;
 }
 
 /** Build the `css.customData` document: the declared custom properties. */

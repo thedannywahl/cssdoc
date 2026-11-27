@@ -295,7 +295,7 @@ const cssdocPlugin = (configuration?: CssDocConfiguration) =>
       }
 
       private generateDecorations(view: EditorView): DecorationSet {
-        const decorations: Range<Decoration>[] = [];
+        const decorations: Array<Range<Decoration>> = [];
         const seen = new Set<number>();
         for (const { from, to } of view.visibleRanges) {
           syntaxTree(view.state).iterate({

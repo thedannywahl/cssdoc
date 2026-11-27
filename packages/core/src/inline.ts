@@ -65,15 +65,15 @@ export type InlineLinkResult =
  * @param text - Authored prose.
  * @returns Half-open UTF-16 ranges relative to the prose.
  */
-export function fencedProseRanges(text: string): {
+export function fencedProseRanges(text: string): Array<{
   /** Inclusive UTF-16 offset of the fenced line in the supplied prose. */
   start: number;
   /** Exclusive UTF-16 offset of the fenced line in the supplied prose. */
   end: number;
-}[] {
+}> {
   const ENDING = arkRegex.as(LINE_ENDING_SOURCE, "gu");
   const state: CodeBoundaryState = { containers: [], indented: false, paragraph: false };
-  const ranges: { start: number; end: number }[] = [];
+  const ranges: Array<{ start: number; end: number }> = [];
   let start = 0;
   for (const ending of [...text.matchAll(ENDING), undefined]) {
     const end = ending?.index ?? text.length;
@@ -174,7 +174,7 @@ export function scanInlineTags(
  */
 export function scanInlineTagsOutsideCode(
   text: string,
-  protectedRanges: readonly { start: number; end: number }[],
+  protectedRanges: ReadonlyArray<{ start: number; end: number }>,
   configuration: CssDocConfiguration = new CssDocConfiguration(),
 ): InlineTag[] {
   const result: InlineTag[] = [];

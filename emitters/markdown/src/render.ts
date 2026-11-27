@@ -188,12 +188,12 @@ export interface RenderEntryOptions {
    * direction of `@structure` containment. Supplied by `buildCssApi` from the full set of records;
    * merged into the "Subcomponents" section alongside structurally-nested children.
    */
-  members?: readonly {
+  members?: ReadonlyArray<{
     /** Member record name. */
     name: string;
     /** URL of the member's page. */
     href: string;
-  }[];
+  }>;
   /** Reorder (or drop) the `##` sections; defaults to {@link DEFAULT_SECTION_ORDER}. */
   sectionOrder?: readonly SectionKey[];
   /**
@@ -268,12 +268,12 @@ export interface RenderIndexOptions {
 }
 
 /** Sidebar/index groups, in display order. Only kinds with records appear. */
-export const KIND_GROUPS: readonly {
+export const KIND_GROUPS: ReadonlyArray<{
   /** Record kind assigned to this group. */
   kind: CssRecordKind;
   /** Group label shown in the index and sidebar. */
   label: string;
-}[] = [
+}> = [
   { kind: "component", label: "Components" },
   { kind: "utility", label: "Utilities" },
   { kind: "declaration", label: "Declarations" },
@@ -562,7 +562,7 @@ function subcomponentsOf(
   groups: readonly StructureNode[][],
   self: string,
   resolve: (className: string) => { name: string; href: string } | undefined,
-): { name: string; href: string }[] {
+): Array<{ name: string; href: string }> {
   const byName = new Map<string, { name: string; href: string }>();
   const walk = (ns: StructureNode[]): void => {
     for (const node of ns) {
@@ -855,7 +855,7 @@ export function renderEntry(sourceEntry: CssDocEntry, options: RenderEntryOption
     );
   }
 
-  const structuralSubs: { name: string; href: string }[] = [];
+  const structuralSubs: Array<{ name: string; href: string }> = [];
   if (entry.structure?.length || entry.structureVariants?.length) {
     fragments.structure.push("## Structure", "");
     if (entry.structureDescription) {
