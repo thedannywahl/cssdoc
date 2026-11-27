@@ -54,7 +54,7 @@ function quotePrefix(line: string, cursor: Cursor): boolean {
   return true;
 }
 
-function listPrefix(line: string, cursor: Cursor): number | undefined {
+function listPrefix(line: string, cursor: Cursor, allowEmpty: boolean): number | undefined {
   const saved = { ...cursor };
   whitespace(line, cursor, 3);
   if (cursor.virtual > 0) {
@@ -86,12 +86,20 @@ function listPrefix(line: string, cursor: Cursor): number | undefined {
     cursor.column++;
   }
   if (line[cursor.index] !== " " && line[cursor.index] !== "\t") {
+    if (allowEmpty && isBlank(line.slice(cursor.index))) {
+      return cursor.column - saved.column + 1;
+    }
     Object.assign(cursor, saved);
     return undefined;
   }
   const paddingStart = { ...cursor };
-  const padding = whitespace(line, cursor, 4);
-  if (padding === 0 || isBlank(line.slice(cursor.index))) {
+  whitespace(line, cursor, 4);
+  if (isBlank(line.slice(cursor.index))) {
+    if (allowEmpty) {
+      Object.assign(cursor, paddingStart);
+      whitespace(line, cursor, 1);
+      return cursor.column - saved.column;
+    }
     Object.assign(cursor, saved);
     return undefined;
   }
@@ -106,6 +114,7 @@ function containerPrefix(
   line: string,
   previous: readonly Container[],
   addContainers: boolean,
+  allowEmpty = false,
 ): { cursor: Cursor; containers: Container[]; matched: boolean } {
   const cursor: Cursor = { index: 0, column: 0, virtual: 0 };
   const containers: Container[] = [];
@@ -115,6 +124,10 @@ function containerPrefix(
     } else {
       const saved = { ...cursor };
       if (whitespace(line, cursor, container.indent) < container.indent) {
+        if (isBlank(line.slice(cursor.index))) {
+          containers.push(container);
+          continue;
+        }
         Object.assign(cursor, saved);
         return { cursor, containers, matched: false };
       }
@@ -130,7 +143,7 @@ function containerPrefix(
       const content = { ...cursor };
       whitespace(line, content, 3);
       if (content.virtual === 0 && isThematicBreak(line.slice(content.index))) break;
-      const indent = listPrefix(line, cursor);
+      const indent = listPrefix(line, cursor, allowEmpty);
       if (indent === undefined) break;
       containers.push({ kind: "list", indent });
     }
@@ -218,7 +231,7 @@ export function scanCodeBoundaryLine(line: string, state: CodeBoundaryState): bo
     return true;
   }
 
-  let prefix = containerPrefix(line, state.containers, true);
+  let prefix = containerPrefix(line, state.containers, true, !state.paragraph);
   if (!prefix.matched) {
     const continuation = { ...prefix.cursor };
     if (
@@ -228,7 +241,7 @@ export function scanCodeBoundaryLine(line: string, state: CodeBoundaryState): bo
     ) {
       return false;
     }
-    prefix = containerPrefix(line, prefix.containers, true);
+    prefix = containerPrefix(line, prefix.containers, true, true);
     state.paragraph = false;
     state.indented = false;
   }

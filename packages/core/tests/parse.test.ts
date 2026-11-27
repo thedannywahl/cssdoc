@@ -207,6 +207,15 @@ test("unframed and inline comments retain trailing spaces and line endings", () 
   expect(recordNameOf(incomplete)).toBeUndefined();
 });
 
+test("a blank list continuation doesn't hide a following tag as indented code", () => {
+  const raw = "/**\n * @remarks -\n * - item\n *\n *     @component actual\n */";
+  expect(recordNameOf(raw)).toBe("actual");
+  expect(collectDocCommentBlocks(raw).map((block) => raw.slice(block.start, block.end))).toEqual([
+    "@remarks -\n * - item",
+    "@component actual",
+  ]);
+});
+
 test("structure lexical state ignores braces in selectors, strings, escapes, and comments", () => {
   const state: StructureBoundaryState = { stack: [], comment: false, escaped: false };
   expect(scanStructureLine('.card[data-x="}"] {', state)).toBe(true);
