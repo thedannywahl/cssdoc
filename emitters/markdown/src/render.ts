@@ -37,7 +37,12 @@ import {
   toMermaid,
   toMermaidVariants,
 } from "@cssdoc/core";
-import { plainProse, safeMarkdownProse, sanitizeMarkdownLinks } from "./prose.ts";
+import {
+  plainProse,
+  safeMarkdownBlock,
+  safeMarkdownProse,
+  sanitizeMarkdownLinks,
+} from "./prose.ts";
 
 const WHITESPACE = toRegExp(WHITESPACE_RUN);
 
@@ -581,7 +586,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
     lines.push(
       prose?.mode === "plain"
         ? plainProse(entry.remarks)
-        : escProse(prose ? entry.remarks : normalizeProseMarkdown(entry.remarks)),
+        : safeMarkdownBlock(prose ? entry.remarks : normalizeProseMarkdown(entry.remarks)),
       "",
     );
   }
@@ -617,14 +622,17 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
       const raw = entry.examples[index];
       const prose = entry.prose?.find((body) => body.exampleIndex === index);
       if (prose) {
-        fragments.examples.push(prose.mode === "plain" ? plainProse(raw) : escProse(raw), "");
+        fragments.examples.push(
+          prose.mode === "plain" ? plainProse(raw) : safeMarkdownBlock(raw),
+          "",
+        );
         continue;
       }
       const ex = raw.trim();
       // An example that already carries a fenced block is Markdown (prose + code) — emit it verbatim.
       // Only bare, fence-less code gets auto-fenced (sniffing markup vs CSS).
       if (MARKDOWN_BACKTICK_FENCE_LINE_PREFIX.exec(ex) !== null)
-        fragments.examples.push(escProse(ex), "");
+        fragments.examples.push(safeMarkdownBlock(ex), "");
       else
         fragments.examples.push(
           `${MARKDOWN_BACKTICK_FENCE_TEXT}${ex.includes(LESS_THAN_CHAR) ? "html" : "css"}`,
@@ -638,7 +646,8 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
   const importSnippet = options.importSnippet?.(entry);
   if (entry.usage || importSnippet) {
     fragments.usage.push("## Usage", "");
-    if (entry.usage) fragments.usage.push(escProse(normalizeProseMarkdown(entry.usage)), "");
+    if (entry.usage)
+      fragments.usage.push(safeMarkdownBlock(normalizeProseMarkdown(entry.usage)), "");
     if (importSnippet)
       fragments.usage.push(
         `${MARKDOWN_BACKTICK_FENCE_TEXT}css`,
@@ -1004,7 +1013,7 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
     fragments.accessibility.push(
       "## Accessibility",
       "",
-      escProse(normalizeProseMarkdown(entry.accessibility)),
+      safeMarkdownBlock(normalizeProseMarkdown(entry.accessibility)),
       "",
     );
   }
@@ -1048,7 +1057,7 @@ export function renderIndex(
     ? entries
     : entries.filter((entry) => entry.visibility !== "internal");
   const lines = [`# ${options.title ?? "CSS API reference"}`, ""];
-  if (options.intro) lines.push(escProse(options.intro), "");
+  if (options.intro) lines.push(safeMarkdownBlock(options.intro), "");
   for (const group of groupEntries(visibleEntries, options.groups)) {
     lines.push(
       `## ${group.label}`,

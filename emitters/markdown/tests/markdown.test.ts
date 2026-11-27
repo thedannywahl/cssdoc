@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { CssDocConfiguration, parseCssDocs } from "@cssdoc/core";
 import { expect, test } from "vite-plus/test";
 import { createMarkdownRenderer } from "vitepress";
+import { compileTemplate } from "vue/compiler-sfc";
 import {
   buildCssApi,
   buildSidebar,
@@ -12,7 +13,7 @@ import {
   renderIndex,
 } from "../src/index.ts";
 import { cell, escProse } from "../src/render.ts";
-import { plainProse } from "../src/prose.ts";
+import { plainProse, safeMarkdownBlock } from "../src/prose.ts";
 
 const CSS = `
 /**
@@ -80,6 +81,73 @@ test("sanitizes decoded unsafe URLs while preserving code and safe links", () =>
   expect(result).toContain("reference image&#45;ref [mail][mail]");
   expect(result).toContain("`` code `<tag>` {{value}} ``");
   expect(result).toContain("```html\n<tag>{{value}}</tag>\n```");
+});
+
+test.each([
+  ["```html\n<div>{{example}}</div>", "```"],
+  ["   ````css\r\n.button {}\r\n```", "````"],
+  ["~~~~css\n.button {}", "~~~~"],
+])("closes document-spanning Markdown fences without changing code: %s", (source, close) => {
+  expect(safeMarkdownBlock(source)).toBe(`${source}\n${close}`);
+});
+
+test.each(["```css\n.button {}\n```", "> ```css\n> .button {}", "- ```\n  example"])(
+  "does not add fences when the next block already ends the code: %s",
+  (source) => {
+    expect(safeMarkdownBlock(source)).toBe(escProse(source));
+  },
+);
+
+test("unclosed example fences cannot consume or bypass safety in later generated sections", async () => {
+  const [entry] = parseCssDocs(`/** @component button
+ * @usage - [unsafe](javascript:alert) {{danger}} <x-tag>
+ * @example docs -
+ * \`\`\`\`html
+ * <button>{{example}}</button>
+ * \`\`\`
+ */
+.button {}
+.button.-busy {}`);
+  const markdown = renderEntry(entry);
+  const html = await (await createMarkdownRenderer(process.cwd())).renderAsync(markdown);
+  const compiled = compileTemplate({ source: html, filename: "entry.vue", id: "entry" });
+  expect(markdown).toContain("<button>{{example}}</button>\n```\n````\n\n## Usage");
+  expect(html).toContain("Usage");
+  expect(html).toContain('v-pre=""');
+  expect(html).toContain("{{example}}");
+  expect(compiled.errors).toEqual([]);
+  expect(compiled.code).not.toContain("_ctx.example");
+  expect(compiled.code).not.toContain("_ctx.danger");
+  expect(html).not.toContain('href="javascript:');
+  expect(html).not.toContain("{{danger}}");
+  expect(html).not.toContain("<x-tag>");
+});
+
+test("unclosed remarks and index introductions leave generated sections outside code", async () => {
+  const [entry] = parseCssDocs(`/** @component button
+ * @remarks - Introduction
+ *
+ * ~~~~
+ * {{example}}
+ */
+.button {}`);
+  const renderer = await createMarkdownRenderer(process.cwd());
+  const page = renderEntry(entry, {
+    resolveSource: () => ({ href: "javascript:alert", label: "source" }),
+  });
+  const index = renderIndex([entry], { intro: "```css\n.button {}" });
+  const pageHtml = await renderer.renderAsync(page);
+  const indexHtml = await renderer.renderAsync(index);
+  expect(page).toContain("{{example}}\n~~~~\n\n**Source:**");
+  expect(pageHtml).toContain("<strong>Source:</strong>");
+  expect(pageHtml).not.toContain('href="javascript:');
+  expect(index).toContain(".button {}\n```\n\n## ");
+  expect(indexHtml).toContain("<table");
+  for (const html of [pageHtml, indexHtml]) {
+    const compiled = compileTemplate({ source: html, filename: "entry.vue", id: "entry" });
+    expect(compiled.errors).toEqual([]);
+    expect(compiled.code).not.toContain("_ctx.example");
+  }
 });
 
 test("VitePress renders 1.0 examples and prose safely in their effective modes", async () => {

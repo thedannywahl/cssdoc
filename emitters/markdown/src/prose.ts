@@ -1,10 +1,12 @@
 import { safeProseUrl } from "@cssdoc/core";
 import {
+  BACKTICK_CHAR,
   BRACE_OPEN_CHAR,
   GREATER_THAN_CHAR,
   LESS_THAN_CHAR,
   LINE_ENDING_SOURCE,
   LINE_FEED_CHAR,
+  TILDE_CHAR,
 } from "@cssdoc/regex";
 import type { Regex } from "arkregex";
 import { regex as arkRegex } from "arkregex";
@@ -62,6 +64,34 @@ function escapeFree(text: string): string {
  */
 export function safeMarkdownProse(text: string): string {
   return sanitize(text, true);
+}
+
+/**
+ * Keep an unclosed authored fence from consuming subsequent generated blocks.
+ *
+ * @param text - Authored Markdown rendered as a standalone block.
+ * @returns Safe Markdown with any document-spanning fence closed.
+ */
+export function safeMarkdownBlock(text: string): string {
+  const safe = safeMarkdownProse(text);
+  const probe = `${safe}\n\n# cssdoc-boundary`;
+  const node: Node | undefined = fromMarkdown(probe).children.at(-1);
+  const start = node?.position?.start.offset;
+  if (
+    node?.type !== "code" ||
+    start === undefined ||
+    start >= safe.length ||
+    node.position?.end.offset !== probe.length
+  ) {
+    return safe;
+  }
+  const marker = safe[start];
+  if (marker !== BACKTICK_CHAR && marker !== TILDE_CHAR) {
+    throw new Error("Unclosed Markdown code block has no opening fence");
+  }
+  let end = start;
+  while (safe[end] === marker) end++;
+  return `${safe}\n${marker.repeat(end - start)}`;
 }
 
 /**
