@@ -1,4 +1,4 @@
-import { CssDocConfiguration } from "@cssdoc/core";
+import { CssDocConfiguration, CssDocTagDefinition } from "@cssdoc/core";
 import { createIndex } from "@cssdoc/index";
 import { expect, test } from "vite-plus/test";
 import {
@@ -8,6 +8,7 @@ import {
   definitionForClass,
   hoverForClass,
   hoverForCustomProperty,
+  highlightDocComment,
   linkSyntax,
   lintModel,
   NAME_CASE_PRESETS,
@@ -35,6 +36,50 @@ const CSS = `
 `;
 
 const index = createIndex(CSS, { file: "components.css", modifierConvention: "rscss" });
+
+test("block highlighting follows scanner ownership and configuration", () => {
+  const text = [
+    "/**",
+    " * @name 😀",
+    " * @example -",
+    " * ```css",
+    " * @component hidden",
+    " * ```",
+    " * @custom - Text",
+    " * @summary - Disabled",
+    " * @unknown - Unknown",
+    " */",
+  ].join("\r\n");
+  const config = new CssDocConfiguration();
+  config.addTagDefinition(new CssDocTagDefinition({ tagName: "custom", syntaxKind: "block" }));
+  config.setSupportForTag(config.tryGetTagDefinition("summary")!, false);
+  const tokens = highlightDocComment(text, config);
+  expect(tokens.map((token) => [text.slice(token.start, token.end), token.tag])).toEqual([
+    ["@name", "component"],
+    ["@example", "example"],
+    ["@custom", "custom"],
+  ]);
+  expect(tokens.every((token, index) => index === 0 || tokens[index - 1].end <= token.start)).toBe(
+    true,
+  );
+});
+
+test("block highlighting retains incomplete fences and nested CSS scope ownership", () => {
+  const text = [
+    "/**",
+    " * @structure",
+    " * @scope (.card) { .card {} }",
+    " * @scope (.card) - Scope",
+    " * @example -",
+    " * ```css",
+    " * @remarks - still code",
+  ].join("\n");
+  const config = new CssDocConfiguration();
+  config.addTagDefinition(new CssDocTagDefinition({ tagName: "scope", syntaxKind: "block" }));
+  expect(
+    highlightDocComment(text, config).map((token) => text.slice(token.start, token.end)),
+  ).toEqual(["@structure", "@scope", "@example"]);
+});
 
 test("private examples don't appear in hover cards", () => {
   const idx = createIndex(`/** @component button

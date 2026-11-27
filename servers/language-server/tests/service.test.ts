@@ -1,4 +1,4 @@
-import { parseCssDocs } from "@cssdoc/core";
+import { CssDocConfiguration, CssDocTagDefinition, parseCssDocs } from "@cssdoc/core";
 import { createIndex, indexFromEntries } from "@cssdoc/index";
 import { DEFAULT_RULE_SEVERITIES, resolveRuleSeverities } from "@cssdoc/providers";
 import { expect, test } from "vite-plus/test";
@@ -995,6 +995,44 @@ test("semantic tokens use line-relative UTF-16 positions in multiline and inline
     { line: 4, text: "deprecated" },
     { line: 4, text: "Old" },
   ]);
+});
+
+test("semantic tokens follow configured block ownership in embedded CSS and incomplete fences", () => {
+  const config = new CssDocConfiguration();
+  config.addTagDefinition(new CssDocTagDefinition({ tagName: "custom", syntaxKind: "block" }));
+  config.setSupportForTag(config.tryGetTagDefinition("summary")!, false);
+  const idx = createIndex("");
+  const svc = new CssDocLanguageService(idx);
+  svc.setScopes([
+    {
+      dir: "/app",
+      index: idx,
+      severities: DEFAULT_RULE_SEVERITIES,
+      naming: {},
+      configuration: config,
+    },
+  ]);
+  const text = [
+    "<p>/** @component outside */</p>",
+    "<style>😀 /**",
+    " * @custom - Text",
+    " * @summary - Disabled",
+    " * @example -",
+    " * ```css",
+    " * @component hidden",
+    " */",
+    "</style>",
+  ].join("\r\n");
+  const lines = text.split("\r\n");
+  const tags = svc
+    .semanticTokens(text, "/app/example.html")
+    .filter((token) => token.tokenType === 4)
+    .map((token) =>
+      lines[token.line].slice(token.startCharacter, token.startCharacter + token.length),
+    );
+  expect(tags).toEqual(["custom", "example"]);
+  const incomplete = "/** @component button\n * @example -\n * ```\n * @summary hidden";
+  expect(svc.semanticTokens(incomplete).filter((token) => token.tokenType === 4)).toHaveLength(2);
 });
 
 test("inlayHints: shows custom property metadata", () => {

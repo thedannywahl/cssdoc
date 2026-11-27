@@ -37,6 +37,7 @@ import {
   HTML_LIKE_TAG_NAME_SOURCE,
   HTML_QUOTED_ATTRIBUTE,
   LESS_THAN_CHAR,
+  LINE_ENDING_SOURCE,
   PAREN_OPEN_SOURCE,
   QUOTE_DOUBLE_CHAR,
   QUOTE_SINGLE_CHAR,
@@ -80,6 +81,7 @@ import {
   definitionForCustomProperty,
   hoverForClass,
   hoverForCustomProperty,
+  highlightDocComment,
   lintModel,
   resolveNaming,
   selectorDefines,
@@ -97,6 +99,10 @@ const ANNOTATION_MARKER = arkRegex.as(
 );
 const DOC_COMMENT: Regex = arkRegex.as(
   `${DOC_COMMENT_START_SOURCE}[\\s\\S]*?${COMMENT_END_SOURCE}`,
+  "gu",
+);
+const SEMANTIC_DOC_COMMENT: Regex = arkRegex.as(
+  `${DOC_COMMENT_START_SOURCE}[\\s\\S]*?(?:${COMMENT_END_SOURCE}|$)`,
   "gu",
 );
 const COMMENT_OPENING: Regex = arkRegex.as(`^${COMMENT_START_SOURCE}${ASTERISK_SOURCE}?`);
@@ -252,7 +258,8 @@ function offsetAt(text: string, position: LspPosition): number {
 }
 
 function positionAt(text: string, offset: number): LspPosition {
-  const upto = text.slice(0, offset).split("\n");
+  const LINE_ENDING: Regex = arkRegex.as(LINE_ENDING_SOURCE, "gu");
+  const upto = text.slice(0, offset).split(LINE_ENDING);
   return { line: upto.length - 1, character: upto[upto.length - 1].length };
 }
 
@@ -1320,7 +1327,7 @@ export class CssDocLanguageService {
    * Semantic tokens for syntax highlighting in doc comments (`@component`, `@modifier`, `@deprecated`, etc).
    * Returns encoded tokens in LSP format: each token is [line, startChar, length, tokenType, modifiers].
    */
-  semanticTokens(text: string, _path?: string): LspSemanticToken[] {
+  semanticTokens(text: string, path?: string): LspSemanticToken[] {
     const tokens: LspSemanticToken[] = [];
 
     // Token type indices (must match client legend)
@@ -1340,29 +1347,28 @@ export class CssDocLanguageService {
     };
 
     // Parse doc comments in CSS to find cssdoc tags
-    const docComments = text.matchAll(DOC_COMMENT);
+    const host = path ? detectEmbeddedHost(path) : undefined;
+    const projected = host ? projectCss(text, { host }) : text;
+    const configuration = this.scopeForPath(path).configuration;
+    const docComments = projected.matchAll(SEMANTIC_DOC_COMMENT);
     for (const block of docComments) {
       const blockText = block[0];
       const blockStart = block.index ?? 0;
-      const blockLines = blockText.split("\n");
-
-      const start = positionAt(text, blockStart);
-      let currentLine = start.line;
-
-      for (const line of blockLines) {
-        const lineStart = currentLine === start.line ? start.character : 0;
-
-        // Find @-tags in this line
+      for (const highlight of highlightDocComment(blockText, configuration)) {
+        const LINE_ENDING: Regex = arkRegex.as(LINE_ENDING_SOURCE, "u");
+        const line = blockText.slice(highlight.start).split(LINE_ENDING, 1)[0];
         const tagMatches = line.matchAll(SEMANTIC_TAG);
         for (const match of tagMatches) {
+          if (match.index !== 0) continue;
           const tagName = match[1];
-          const tagStart = (match.index ?? 0) + 1; // +1 for @
+          const tagStart = blockStart + highlight.start + 1;
           const tagValue = match[2];
+          const tagPosition = positionAt(text, tagStart);
 
           // Emit @tag token
           tokens.push({
-            line: currentLine,
-            startCharacter: lineStart + tagStart,
+            line: tagPosition.line,
+            startCharacter: tagPosition.character,
             length: tagName.length,
             tokenType: tokenTypes.decorator,
             tokenModifiers: 0,
@@ -1376,18 +1382,18 @@ export class CssDocLanguageService {
 
           // Emit value token if present
           if (tagValue) {
-            const valueStart = (match.index ?? 0) + match[0].indexOf(tagValue, tagName.length + 1);
+            const valueStart =
+              blockStart + highlight.start + match[0].indexOf(tagValue, tagName.length + 1);
+            const valuePosition = positionAt(text, valueStart);
             tokens.push({
-              line: currentLine,
-              startCharacter: lineStart + valueStart,
+              line: valuePosition.line,
+              startCharacter: valuePosition.character,
               length: Math.min(tagValue.length, 50),
               tokenType: tokenTypes.variable,
               tokenModifiers: modifierFlags,
             });
           }
         }
-
-        currentLine++;
       }
     }
 
