@@ -18,12 +18,14 @@ import {
   type CodeBoundaryState,
 } from "./code-boundaries.ts";
 import {
+  analyzeDocCommentHeader,
   docProseStart,
   hasStructureDocDivider,
   opensStructureAtRule,
   scanStructureLine,
   type StructureBoundaryState,
 } from "./structure-boundaries.ts";
+import type { DocCommentHeaderAnalysis } from "./structure-boundaries.ts";
 
 /** A tag block and its source range within a doc-comment input. */
 export interface DocCommentBlock {
@@ -35,6 +37,8 @@ export interface DocCommentBlock {
   end: number;
   /** Framing-free text segments and their corresponding source offsets. */
   segments: DocCommentSegment[];
+  /** One parsed tag header for the block's first line, when a divider is present. */
+  header?: DocCommentHeaderAnalysis;
 }
 
 /** A contiguous UTF-16 range shared by block text and the original comment. */
@@ -205,6 +209,7 @@ export function collectDocCommentBlocks(
         start: sourceStart + tagStart,
         end: sourceStart + lastNonWhitespace,
         segments: [{ textStart: 0, sourceStart: sourceStart + tagStart, length: text.length }],
+        header: analyzeDocCommentHeader(text, tagMatch[1].length + 1),
       });
       inStructureBlock = tagMatch[1] === "structure";
       structureHasBody = false;

@@ -927,6 +927,16 @@ test("inline code ranges leave unmatched backticks unowned", () => {
   expect(inlineCodeRanges("Use `unfinished")).toEqual([]);
 });
 
+test("collected block headers carry shared argument and prose ranges", () => {
+  const raw = "/**\n * @modifier .button--busy {interaction} - Indicates ongoing work.\n */";
+  const [block] = collectDocCommentBlocks(raw);
+  expect(block.text.slice(block.header!.argumentStart, block.header!.argumentEnd)).toBe(
+    ".button--busy {interaction} ",
+  );
+  expect(block.text.slice(block.header!.dividerStart, block.header!.dividerEnd)).toBe("-");
+  expect(block.text.slice(block.header!.proseStart)).toBe("Indicates ongoing work.");
+});
+
 test("a partially consumed tab can close a fence in a list", () => {
   const raw = [
     "/**",

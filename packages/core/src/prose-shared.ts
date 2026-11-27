@@ -69,7 +69,7 @@ export function collectProse(
     let firstLine = block.text.slice(0, lineEnd < 0 ? undefined : lineEnd);
     if (lineEnd >= 0 && firstLine.endsWith(CARRIAGE_RETURN_CHAR))
       firstLine = firstLine.slice(0, -1);
-    const proseStart = docProseStart(firstLine);
+    const proseStart = block.header?.proseStart ?? docProseStart(firstLine);
     if (proseStart === undefined) continue;
     const dividerEnd = proseStart - (firstLine[proseStart - 1] === " " ? 1 : 0);
     const header = firstLine.slice(0, dividerEnd - 1);

@@ -31,6 +31,48 @@ export interface StructureBoundaryState {
   escaped: boolean;
 }
 
+/** One tag-line header analysis, shared by block collection and prose/example parsing. */
+export interface DocCommentHeaderAnalysis {
+  /** End of the tag name and start of its argument/header text. */
+  argumentStart: number;
+  /** End of the argument/header text before the divider. */
+  argumentEnd: number;
+  /** Start of the description divider. */
+  dividerStart: number;
+  /** Exclusive end of the description divider. */
+  dividerEnd: number;
+  /** Start of framing-free prose after the divider and optional space. */
+  proseStart: number;
+}
+
+/**
+ * Analyze a tag header once, outside the block collector, prose extractor, and examples.
+ *
+ * @param line - The framing-free first line of one block.
+ * @param argumentStart - Offset immediately after the matched tag name.
+ * @returns Shared header ranges, or undefined when no top-level divider is present.
+ */
+export function analyzeDocCommentHeader(
+  line: string,
+  argumentStart: number,
+): DocCommentHeaderAnalysis | undefined {
+  const result = scanStructure(line, { stack: [], comment: false, escaped: false }, true);
+  if (result.dividerAt === undefined || result.dividerLength === undefined) return undefined;
+  const dividerEnd = result.dividerAt + result.dividerLength;
+  while (
+    argumentStart < line.length &&
+    (line[argumentStart] === " " || line[argumentStart] === "\t")
+  )
+    argumentStart++;
+  return {
+    argumentStart,
+    argumentEnd: result.dividerAt,
+    dividerStart: result.dividerAt,
+    dividerEnd,
+    proseStart: line[dividerEnd] === " " ? dividerEnd + 1 : dividerEnd,
+  };
+}
+
 /**
  * Advance the CSS lexical state over one framed structure line.
  *
@@ -59,10 +101,8 @@ export function hasStructureDocDivider(line: string): boolean {
  * @returns The offset after the divider and its optional formatting space.
  */
 export function docProseStart(line: string): number | undefined {
-  const result = scanStructure(line, { stack: [], comment: false, escaped: false }, true);
-  if (result.dividerAt === undefined || result.dividerLength === undefined) return undefined;
-  const end = result.dividerAt + result.dividerLength;
-  return line[end] === " " ? end + 1 : end;
+  const result = analyzeDocCommentHeader(line, 0);
+  return result?.proseStart;
 }
 
 /**

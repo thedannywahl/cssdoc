@@ -596,7 +596,7 @@ export function parseDocComment(
       const FIRST_LINE_END: Regex = arkRegex.as(LINE_ENDING_SOURCE, "u");
       const firstLineEnd = block.text.search(FIRST_LINE_END);
       const firstLine = block.text.slice(0, firstLineEnd < 0 ? undefined : firstLineEnd);
-      const proseStart = docProseStart(firstLine);
+      const proseStart = block.header?.proseStart ?? docProseStart(firstLine);
       const header = firstLine.slice(0, proseStart === undefined ? undefined : proseStart);
       privateRecord ||= scanInlineTags(header).some(
         (tag) =>
@@ -617,7 +617,7 @@ export function parseDocComment(
       if (firstLineEnd >= 0 && firstLine.endsWith(CARRIAGE_RETURN_CHAR)) {
         firstLine = firstLine.slice(0, -1);
       }
-      const proseStart = docProseStart(firstLine);
+      const proseStart = block.header?.proseStart ?? docProseStart(firstLine);
       const dividerEnd =
         proseStart === undefined
           ? undefined
