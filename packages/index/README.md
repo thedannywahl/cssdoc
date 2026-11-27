@@ -50,13 +50,13 @@ parser return unavailable for scope members. Unsupported selector syntax also re
 query occurrences and compare CSS numbers without losing decimal precision. Container names retain
 their case. They return unavailable when a numeric spelling changes the token's integer type.
 Container `style()` declarations support exact values; comparisons involving different opaque
-values return unavailable. Unsupported query syntax and nested conditions the CSS parser can't
-represent also return unavailable.
+values return unavailable. Unsupported query syntax the CSS parser can't represent also returns
+unavailable.
 `resolveSupportsMemberReference` uses source-backed supports occurrences for declaration conditions
 and supported `selector()` functions.
 It preserves value case and integer token types where CSS interpretation may differ, returning
-unavailable when those differences could affect a match. Unsupported functions or selector forms,
-custom-property values, and nested conditions also return unavailable.
+unavailable when those differences could affect a match. Unsupported functions or selector forms and
+custom-property values also return unavailable.
 
 `projectPrivateLinksInLookup` projects links using the prose's original reference lookup.
 It preserves labels as literal fragments and reports unavailable targets; callers must handle that

@@ -664,6 +664,19 @@ function validQueryCondition(condition: Condition): boolean {
   return true;
 }
 
+function classifyQueryCondition(
+  condition: Condition,
+  nestedConditions: Set<Condition>,
+): "valid" | "invalid" | "unsupported" {
+  for (const child of condition.children) {
+    if (child.type === "Condition") nestedConditions.add(child);
+  }
+  if (validQueryCondition(condition)) return "valid";
+  if (nestedConditions.has(condition) && condition.children.first?.type === "Identifier")
+    return "unsupported";
+  return "invalid";
+}
+
 function hasNestedQuery(input: string): boolean {
   let depth = 0;
   let nested = false;
@@ -698,12 +711,10 @@ type SupportsKey =
 
 function supportsKey(input: string): SupportsKey {
   try {
+    // Nested conditions use css-tree's recovery path; validate the resulting nodes below.
     const ast = parse(input, {
       context: "atrulePrelude",
       atrule: "supports",
-      onParseError(error) {
-        throw error;
-      },
     });
     if (ast.type !== "AtrulePrelude" || ast.children.size !== 1) return { status: "invalid" };
     const condition = ast.children.first;
@@ -715,14 +726,18 @@ function supportsKey(input: string): SupportsKey {
     const valueStrings: StringNode[] = [];
     const numberTypes: string[] = [];
     const operators = new Set<Identifier>();
+    const nestedConditions = new Set<Condition>();
     walk(ast, (node) => {
       switch (node.type) {
-        case "Condition":
-          if (!validQueryCondition(node)) invalid = true;
+        case "Condition": {
+          const status = classifyQueryCondition(node, nestedConditions);
+          if (status === "invalid") invalid = true;
+          else if (status === "unsupported") unsupported = true;
           for (const child of node.children) {
             if (child.type === "Identifier") operators.add(child);
           }
           break;
+        }
         case "FeatureFunction": {
           if (
             asciiLower(ident.decode(node.feature)) !== "selector" ||
@@ -745,6 +760,10 @@ function supportsKey(input: string): SupportsKey {
           node.value = normalized;
           return walk.skip;
         }
+        case "GeneralEnclosed":
+          if (mayBeGeneralEnclosed(generate(node))) unsupported = true;
+          else invalid = true;
+          return walk.skip;
         case "Declaration": {
           const property = ident.decode(node.property);
           if (property.startsWith("--")) unsupported = true;
@@ -802,12 +821,10 @@ type QueryKey =
 
 function queryKey(input: string, kind: "media" | "container"): QueryKey {
   try {
+    // Nested conditions use css-tree's recovery path; validate the resulting nodes below.
     const ast = parse(input, {
       context: "atrulePrelude",
       atrule: kind,
-      onParseError(error) {
-        throw error;
-      },
     });
     if (ast.type !== "AtrulePrelude") return { status: "invalid" };
     let containerName: object | undefined;
@@ -843,6 +860,7 @@ function queryKey(input: string, kind: "media" | "container"): QueryKey {
     let invalid = false;
     let opaque = false;
     const numberTypes: string[] = [];
+    const nestedConditions = new Set<Condition>();
     const keyword = (name: string): string => {
       const decoded = ident.decode(name);
       if (decoded.startsWith("--")) unsupported = true;
@@ -850,6 +868,10 @@ function queryKey(input: string, kind: "media" | "container"): QueryKey {
     };
     walk(ast, (node) => {
       switch (node.type) {
+        case "GeneralEnclosed":
+          if (mayBeGeneralEnclosed(generate(node))) unsupported = true;
+          else invalid = true;
+          return walk.skip;
         case "FeatureFunction":
           if (
             kind !== "container" ||
@@ -901,7 +923,11 @@ function queryKey(input: string, kind: "media" | "container"): QueryKey {
         case "MediaQueryList":
           break;
         case "Condition":
-          if (!validQueryCondition(node)) invalid = true;
+          {
+            const status = classifyQueryCondition(node, nestedConditions);
+            if (status === "invalid") invalid = true;
+            else if (status === "unsupported") unsupported = true;
+          }
           break;
         case "FeatureRange":
         case "Ratio":
@@ -915,7 +941,6 @@ function queryKey(input: string, kind: "media" | "container"): QueryKey {
     const numericKey = generate(ast);
     return { status: "valid", key: JSON.stringify([numericKey, numberTypes]), numericKey, opaque };
   } catch (error) {
-    // css-tree doesn't parse all valid nested query conditions.
     if (error instanceof SyntaxError)
       return {
         status: hasNestedQuery(input) || mayBeGeneralEnclosed(input) ? "unsupported" : "invalid",

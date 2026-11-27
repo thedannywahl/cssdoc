@@ -518,8 +518,8 @@ test("media members use owned source occurrences and parsed query identity", () 
   expect(resolve("card#media(screen and (color) or (hover))")).toEqual({
     status: "invalid-subject",
   });
-  expect(resolve("card#media(not ((width > 1px) and (height > 2px)))")).toMatchObject({
-    status: "unavailable",
+  expect(resolve("card#media(not ((width > 1px) and (height > 2px)))")).toEqual({
+    status: "missing",
   });
   expect(resolve("card#media((width>.5px))")).toEqual({ status: "missing" });
   expect(resolve("card#media((width:5e-1px))")).toMatchObject({ status: "resolved" });
@@ -594,8 +594,8 @@ test("container members preserve occurrences, names, and complete lookup semanti
     status: "invalid-subject",
   });
   expect(resolve("card#container(style(--theme: dark))")).toMatchObject({ status: "unavailable" });
-  expect(resolve("card#container(not ((width > 1px) and (height > 2px)))")).toMatchObject({
-    status: "unavailable",
+  expect(resolve("card#container(not ((width > 1px) and (height > 2px)))")).toEqual({
+    status: "missing",
   });
   expect(resolve("card#container((width: .5px))", index, false)).toMatchObject({
     status: "unavailable",
@@ -646,6 +646,75 @@ test("container style queries retain case-sensitive custom-property values", () 
   expect(resolve("card#container(style(--Theme: dark))")).toMatchObject({ status: "unavailable" });
   expect(resolve("card#container(style(--theme: Dark))")).toMatchObject({ status: "unavailable" });
   expect(resolve("card#container(style(--Theme))")).toMatchObject({ status: "unavailable" });
+});
+
+test("nested query conditions resolve structurally without accepting malformed operators", () => {
+  const index = createIndex(`/** @component card */
+@media not ((width > 1px) and (height > 2px)) { .card {} }
+@media NOT ((WIDTH>1PX) AND (HEIGHT>2PX)) { .card {} }
+@media screen and ((color) or (hover)) { .card {} }
+@container layout ((width > 1px) or (height > 2px)) { .card {} }
+@supports not ((display: grid) and (width: 1px)) { .card {} }`);
+  const lookup = { workspace: { complete: true, sources: [{ index, sourceKey: "card.css" }] } };
+  const reference = (text: string) => {
+    const parsed = parseReference(text);
+    if (!parsed.ok) throw new Error(parsed.error);
+    return parsed.reference;
+  };
+  expect(
+    resolveMediaMemberReference(
+      reference("card#media(not ((width>1px) and (height>2px)))"),
+      lookup,
+    ),
+  ).toMatchObject({
+    status: "ambiguous",
+    stage: "member",
+    candidates: [
+      { occurrence: { span: { start: { line: 2 } } }, record: { sourceKey: "card.css" } },
+      { occurrence: { span: { start: { line: 3 } } } },
+    ],
+  });
+  expect(
+    resolveMediaMemberReference(reference("card#media(screen and ((COLOR) OR (hover)))"), lookup),
+  ).toMatchObject({
+    status: "resolved",
+    candidate: { occurrence: { span: { start: { line: 4 } } } },
+  });
+  expect(
+    resolveContainerMemberReference(
+      reference("card#container(layout ((WIDTH>1PX) OR (height>2px)))"),
+      lookup,
+    ),
+  ).toMatchObject({ status: "resolved" });
+  expect(
+    resolveSupportsMemberReference(
+      reference("card#supports(not ((DISPLAY:grid) AND (width:1.0PX)))"),
+      lookup,
+    ),
+  ).toMatchObject({ status: "resolved" });
+  expect(
+    resolveSupportsMemberReference(
+      reference("card#supports(not ((display:grid) and (width:1px) or (color:red)))"),
+      lookup,
+    ),
+  ).toEqual({ status: "invalid-subject" });
+  expect(resolveMediaMemberReference(reference("card#media(((width:1px) and))"), lookup)).toEqual({
+    status: "invalid-subject",
+  });
+  expect(resolveContainerMemberReference(reference("card#container(((??)))"), lookup)).toEqual({
+    status: "invalid-subject",
+  });
+  expect(
+    resolveSupportsMemberReference(reference("card#supports((unknown future syntax))"), lookup),
+  ).toMatchObject({ status: "unavailable" });
+  const unknown = createIndex(`/** @component card */
+@media (unknown future syntax) { .card {} }
+@media (color) { .card {} }`);
+  expect(
+    resolveMediaMemberReference(reference("card#media((color))"), {
+      workspace: { complete: true, sources: [{ index: unknown }] },
+    }),
+  ).toMatchObject({ status: "unavailable" });
 });
 
 test("supports members preserve occurrences without guessing value case sensitivity", () => {
@@ -700,8 +769,8 @@ test("supports members preserve occurrences without guessing value case sensitiv
   expect(resolve("card#supports((unknown future syntax))")).toMatchObject({
     status: "unavailable",
   });
-  expect(resolve("card#supports(not ((display:grid) and (color:red)))")).toMatchObject({
-    status: "unavailable",
+  expect(resolve("card#supports(not ((display:grid) and (color:red)))")).toEqual({
+    status: "missing",
   });
   expect(resolve("card#supports((display: grid))", index, false)).toMatchObject({
     status: "unavailable",
