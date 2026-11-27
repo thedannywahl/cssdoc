@@ -62,7 +62,11 @@ export const baseConfig: UserConfig = defineConfig({
       "eslint/no-fallthrough": "error",
       // Evaluate declaration conventions separately from assertion safety.
       "typescript/no-unnecessary-type-assertion": "warn",
-      "typescript/explicit-member-accessibility": "off",
+      // Public members are implicit; constructor parameter properties can require an access modifier.
+      "typescript/explicit-member-accessibility": [
+        "warn",
+        { accessibility: "no-public", overrides: { parameterProperties: "off" } },
+      ],
       // Pending: replace external-data and AST boundary assertions with verified guards or types.
       "typescript/no-unsafe-type-assertion": "off",
       // Falsy primitive defaults (including empty strings and zero) can be intentional.
