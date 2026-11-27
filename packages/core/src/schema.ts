@@ -232,6 +232,8 @@ type Mutable<T> = T extends readonly (infer Item)[]
     : T;
 type RuntimeEntry = typeof model.CssDocEntry.infer;
 type Equal<Left, Right> =
+  // Fresh generic signatures distinguish exact types, including optional-field drift.
+  // oxlint-disable-next-line typescript/no-unnecessary-type-parameters
   (<T>() => T extends Left ? 1 : 2) extends <T>() => T extends Right ? 1 : 2 ? true : false;
 type CheckedRuntimeEntry =
   Equal<Mutable<CssDocEntry>, RuntimeEntry> extends true ? RuntimeEntry : never;

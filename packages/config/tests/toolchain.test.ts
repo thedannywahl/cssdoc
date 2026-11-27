@@ -2388,6 +2388,40 @@ test("TSDoc definitions follow the cssdoc vocabulary", () => {
   ]);
 });
 
+test("lint rejects unrelated generic parameters but preserves input-output relationships", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/.generic-parameter-check-"));
+  try {
+    writeFileSync(
+      join(directory, "tsconfig.json"),
+      JSON.stringify({ extends: "../../../../tsconfig.base.json", include: ["*.ts"] }),
+    );
+    const file = join(directory, "generics.ts");
+    writeFileSync(
+      file,
+      [
+        "export function unrelated<T extends string>(value: T): string { return value; }",
+        "export function identity<T>(value: T): T { return value; }",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../core/", import.meta.url))]) {
+      const result = spawnSync(
+        "vp",
+        ["lint", "--config", join(root, "vite.config.ts"), "--no-ignore", "--format", "json", file],
+        { cwd, encoding: "utf8" },
+      );
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "typescript(no-unnecessary-type-parameters)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["warning", 1]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("workspace lint rejects unsafe assertions but accepts guarded narrowing", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   for (const name of ["core", "index", "providers", "config"]) {

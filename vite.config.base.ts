@@ -110,8 +110,7 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/non-nullable-type-assertion-style": "warn",
       "typescript/unbound-method": "error",
       "typescript/no-unnecessary-template-expression": "warn",
-      // Protocol test helpers use caller-selected reply types in their inferred return signatures.
-      "typescript/no-unnecessary-type-parameters": "off",
+      "typescript/no-unnecessary-type-parameters": "warn",
       // Explicit exported types satisfy isolatedDeclarations.
       "typescript/no-inferrable-types": "off",
       // Parsers and framework callbacks deliberately accept and mutate shared objects.
