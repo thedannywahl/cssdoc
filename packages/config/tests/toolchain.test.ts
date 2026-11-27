@@ -514,6 +514,36 @@ test("type-aware lint detects unsafe boundaries", () => {
   }
 });
 
+test("TypeScript lint rejects the unsafe Function type", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/type-aware-check-"));
+  try {
+    const file = join(directory, "functions.ts");
+    writeFileSync(
+      file,
+      [
+        "let unsafe: Function;",
+        "let safe: (value: string) => void;",
+        "console.error(unsafe, safe);",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../cli/", import.meta.url))]) {
+      const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
+        cwd,
+        encoding: "utf8",
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "typescript(no-unsafe-function-type)")
+          .map(({ severity, labels }) => [severity, labels[0].span.line]),
+      ).toEqual([["error", 1]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("type import lint requires type-only imports", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, "packages/config/tests/type-aware-check-"));
