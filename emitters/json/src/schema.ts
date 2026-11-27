@@ -299,12 +299,32 @@ export const cssDocEntrySchema: {
         required: ["ref", "text"],
         additionalProperties: false,
         properties: {
-          ref: { type: "number" },
+          ref: { oneOf: [{ type: "number" }, { type: "string" }] },
           text: { type: "string" },
+          private: { type: "boolean" },
         },
       },
     },
-    refs: { type: "array", items: { type: "number" } },
+    refs: {
+      type: "array",
+      items: {
+        oneOf: [
+          { type: "number" },
+          { type: "string" },
+          {
+            type: "object",
+            required: ["ref"],
+            additionalProperties: false,
+            properties: {
+              ref: { oneOf: [{ type: "number" }, { type: "string" }] },
+              text: { type: "string" },
+              private: { type: "boolean" },
+              attachment: { enum: ["record", "css"] },
+            },
+          },
+        ],
+      },
+    },
     decorators: {
       type: "array",
       items: { enum: ["readonly", "preventExtensions", "sealed", "frozen"] },

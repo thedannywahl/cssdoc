@@ -65,6 +65,7 @@ import {
   type RecordInfo,
   type SourceSpan,
   memberKey,
+  projectPublicModel,
 } from "@cssdoc/index";
 import { linkSyntax } from "./mdn.ts";
 import { matchesSyntax } from "./syntax.ts";
@@ -402,7 +403,8 @@ export const record = {
       if (refs.length) {
         const annotations = new Set(annotationRows.map((a) => a.ref));
         for (const ref of refs) {
-          if (annotations.has(ref)) continue;
+          const refId = typeof ref === "object" ? ref.ref : ref;
+          if (annotations.has(refId)) continue;
           out.push(
             warn({
               aspect: "record",
@@ -785,8 +787,19 @@ export const record = {
     exampleFilter?: ExampleFilter | null,
     presentation: HoverPresentation = "vscode",
   ): Hover | undefined {
-    const entry = index.componentForClass(base);
-    if (!entry) return undefined;
+    const originalEntry = index.componentForClass(base);
+    if (!originalEntry) return undefined;
+    const [projectedEntry] =
+      originalEntry.visibility === "internal"
+        ? [originalEntry]
+        : projectPublicModel([originalEntry], {
+            lookupFor: () => ({ workspace: { complete: true, sources: [{ index }] } }),
+            literalText: (text) => literalMarkdownText(text),
+          });
+    const entry =
+      projectedEntry === originalEntry
+        ? projectedEntry
+        : { ...projectedEntry, todos: originalEntry.todos };
     const selectorFor = (name: string): string => index.matcher.selectorFor(name);
     // Inline HTML accents (the client enables `supportHtml`): a warning colour for deprecation, and
     // symbol-category colours so a selector/property/name pops over its prose description — mirroring

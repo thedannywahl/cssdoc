@@ -188,7 +188,7 @@
       }
     },
     "block-tag": {
-      "match": "(@(?:summary|stage|visibility|remarks|privateRemarks|todo|deprecated|example|see|since|group|category|defaultValue|annotations|ref|readonly|global|interaction|alias|preventExtensions|noextend|sealed|frozen|function|keyframes|animation|layer|container|supports|media|responsive|a11y|accessibility|structure|element|demo|usage|compat|related|memberOf|members|member))\\b",
+      "match": "(@(?:summary|stage|visibility|remarks|privateRemarks|todo|deprecated|example|see|since|group|category|defaultValue|annotations|annotation|ref|readonly|global|interaction|alias|preventExtensions|noextend|sealed|frozen|function|keyframes|animation|layer|container|supports|media|responsive|a11y|accessibility|structure|element|demo|usage|compat|related|memberOf|members|member))\\b",
       "name": "storage.type.class.cssdoc"
     },
     "structure-tag": {

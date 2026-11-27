@@ -993,8 +993,19 @@ function buildEntry(
     deprecated: doc.deprecated,
     see: doc.see,
     usage: doc.usage,
-    annotations: [...doc.annotations, ...acc.annotations].map(([ref, text]) => ({ ref, text })),
-    refs: [...doc.refs, ...acc.refs],
+    annotations: [
+      ...[...doc.annotations, ...acc.annotations].map(([ref, text]) => ({
+        ref,
+        text,
+        ...(doc.privateAnnotationIds?.has(ref) ? { private: true } : {}),
+      })),
+      ...[...(doc.namedAnnotations?.entries() ?? [])].map(([ref, annotation]) => ({
+        ref,
+        text: annotation.text,
+        ...(annotation.private || doc.privateAnnotationIds?.has(ref) ? { private: true } : {}),
+      })),
+    ],
+    refs: [...[...doc.refs, ...acc.refs], ...(doc.namedRefs ?? [])],
     decorators,
     compat: doc.compat,
     related: doc.related,

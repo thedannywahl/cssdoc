@@ -122,6 +122,12 @@ export const CSSDOC_TAGS: readonly CssdocTag[] = [
     description: "A legend defining numbered @ref callouts used elsewhere in the record.",
   },
   {
+    name: "annotation",
+    kind: "block",
+    allowMultiple: true,
+    description: "Defines a named or numbered annotation.",
+  },
+  {
     name: "ref",
     kind: "block",
     allowMultiple: true,

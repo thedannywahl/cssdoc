@@ -33,6 +33,7 @@ import {
 import {
   type ExampleFilter,
   cardinalityToken,
+  literalMarkdownText,
   selectExampleIndices,
   toMermaid,
   toMermaidVariants,
@@ -43,6 +44,12 @@ import {
   safeMarkdownProse,
   sanitizeMarkdownLinks,
 } from "./prose.ts";
+import {
+  indexFromEntries,
+  projectPublicModel,
+  type PublicProseContext,
+  type ReferenceLookup,
+} from "@cssdoc/index";
 
 const WHITESPACE = toRegExp(WHITESPACE_RUN);
 
@@ -138,6 +145,10 @@ export const DEFAULT_SECTION_ORDER: readonly SectionKey[] = [
 
 /** Options controlling how one entry renders. */
 export interface RenderEntryOptions {
+  /** Include private authoring content without public projection. */
+  includePrivate?: boolean;
+  /** Resolve private-link and annotation visibility in the original prose source. */
+  lookupFor?: (context: PublicProseContext) => ReferenceLookup;
   /** Select rendered examples. Omit or pass null to show all examples. */
   exampleFilter?: ExampleFilter | null;
   /** Resolve a consumed token's type/value (adds Type + Value columns to "Tokens consumed"). */
@@ -230,6 +241,10 @@ export interface RenderEntryOptions {
 
 /** Options controlling how the index renders. */
 export interface RenderIndexOptions {
+  /** Include private authoring content without public projection. */
+  includePrivate?: boolean;
+  /** Resolve private-link visibility in the original prose source. */
+  lookupFor?: (context: PublicProseContext) => ReferenceLookup;
   /** The index H1 (defaults to `"CSS API reference"`). */
   title?: string;
   /** An intro paragraph under the H1. */
@@ -561,6 +576,16 @@ function subcomponentsOf(
 
 /** Render one record to a markdown page. */
 export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}): string {
+  if (!options.includePrivate) {
+    const index = indexFromEntries([entry]);
+    const [publicEntry] = projectPublicModel([entry], {
+      includeInternal: entry.visibility === "internal",
+      lookupFor:
+        options.lookupFor ?? (() => ({ workspace: { complete: true, sources: [{ index }] } })),
+      literalText: (text) => literalMarkdownText(text),
+    });
+    entry = publicEntry;
+  }
   const annotations = entry.annotations ?? [];
   const refs = entry.refs ?? [];
   const prefix = options.headingPrefix ? `${options.headingPrefix} ` : "";
@@ -667,7 +692,10 @@ export function renderEntry(entry: CssDocEntry, options: RenderEntryOptions = {}
       );
     }
     if (refs.length) {
-      fragments.annotations.push(`**Refs:** ${refs.map((r) => `\`${r}\``).join(", ")}`, "");
+      fragments.annotations.push(
+        `**Refs:** ${refs.map((r) => `\`${typeof r === "object" ? r.ref : r}\``).join(", ")}`,
+        "",
+      );
     }
   }
 
@@ -1037,10 +1065,21 @@ export function renderIndex(
   entries: readonly CssDocEntry[],
   options: RenderIndexOptions = {},
 ): string {
+  const projected = options.includePrivate
+    ? entries
+    : (() => {
+        const index = indexFromEntries([...entries]);
+        return projectPublicModel(entries, {
+          includeInternal: options.includeInternal,
+          lookupFor:
+            options.lookupFor ?? (() => ({ workspace: { complete: true, sources: [{ index }] } })),
+          literalText: (text) => literalMarkdownText(text),
+        });
+      })();
   const baseHref = options.baseHref ?? "/";
   const visibleEntries = options.includeInternal
-    ? entries
-    : entries.filter((entry) => entry.visibility !== "internal");
+    ? projected
+    : projected.filter((entry) => entry.visibility !== "internal");
   const lines = [`# ${options.title ?? "CSS API reference"}`, ""];
   if (options.intro) lines.push(safeMarkdownBlock(options.intro), "");
   for (const group of groupEntries(visibleEntries, options.groups)) {

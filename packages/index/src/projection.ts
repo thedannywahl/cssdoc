@@ -26,10 +26,14 @@ export function referenceVisibility(
 ): "public" | "private" | "unavailable" {
   const member = reference.member;
   if (!member) {
+    if (reference.name.startsWith("-")) return "public";
+    if (reference.name.includes("--")) return "public";
     const result = resolveRecordReference(reference, lookup);
     if (result.status !== "resolved") return "unavailable";
     return result.candidate.record.entry.visibility === "internal" ? "private" : "public";
   }
+  const record = resolveRecordReference(reference, lookup);
+  if (record.status !== "resolved") return "unavailable";
   const result =
     member.kind === "scope"
       ? resolveScopeMemberReference(reference, lookup)
@@ -46,7 +50,18 @@ export function referenceVisibility(
                 member.kind === "pseudo-element"
               ? resolveSelectorMemberReference(reference, lookup)
               : resolveNamedMemberReference(reference, lookup);
-  if (result.status !== "resolved") return "unavailable";
+  if (result.status !== "resolved") {
+    const memberComplete =
+      member.kind === "modifier" ||
+      member.kind === "part" ||
+      member.kind === "wrapper" ||
+      member.kind === "state" ||
+      member.kind === "pseudo-element"
+        ? record.candidate.selectorMembersComplete
+        : record.candidate.membersComplete;
+    if (memberComplete !== undefined) return "unavailable";
+    return record.candidate.record.entry.visibility === "internal" ? "unavailable" : "public";
+  }
   return result.candidate.record.record.entry.visibility === "internal" ? "private" : "public";
 }
 

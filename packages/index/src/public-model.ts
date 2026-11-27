@@ -28,6 +28,10 @@ export interface PublicModelOptions {
   configuration?: CssDocConfiguration;
   /** Retain internal records, while still removing their private content. */
   includeInternal?: boolean;
+  /**
+   * Encode a literal private-link label for a specific renderer. Omit to retain plain model text.
+   */
+  literalText?: (text: string, mode: "plain" | "markdown", path: string) => string;
 }
 
 /**
@@ -90,7 +94,13 @@ export function projectPublicModel(
           )
         )
           throw new Error(`Cannot establish prose mode in ${original.name} at ${path}`);
-        return first.fragments.map((fragment) => fragment.text).join("");
+        return first.fragments
+          .map((fragment) =>
+            fragment.kind === "literal"
+              ? (options.literalText?.(fragment.text, modes[0], path) ?? fragment.text)
+              : fragment.text,
+          )
+          .join("");
       };
       const described = <T extends { description?: string }>(item: T, path: string): T => ({
         ...item,
@@ -132,6 +142,19 @@ export function projectPublicModel(
           ? { variants: item.variants.map((item, i) => variant(item, `${path}.variants[${i}]`)) }
           : {}),
       });
+      const privateAnnotationIds = new Set(
+        entry.annotations
+          .filter((annotation) => annotation.private)
+          .map((annotation) => String(annotation.ref)),
+      );
+      const annotations = entry.annotations.filter((annotation) => !annotation.private);
+      const refs = entry.refs.filter((ref) => {
+        if (typeof ref === "object") {
+          if (ref.private) return false;
+          if (privateAnnotationIds.has(String(ref.ref))) return false;
+        } else if (privateAnnotationIds.has(String(ref))) return false;
+        return true;
+      });
       return {
         ...entry,
         summary: project(entry.summary, "summary"),
@@ -159,10 +182,11 @@ export function projectPublicModel(
         layers: entry.layers.map((item, i) => described(item, `layers[${i}]`)),
         conditions: entry.conditions.map((item, i) => described(item, `conditions[${i}]`)),
         related: entry.related.map((item, i) => described(item, `related[${i}]`)),
-        annotations: entry.annotations.map((item, i) => ({
+        annotations: annotations.map((item, i) => ({
           ...item,
           text: project(item.text, `annotations[${i}].text`)!,
         })),
+        refs,
         see: entry.see.map((text, i) => project(text, `see[${i}]`)!),
         compat: entry.compat.map((text, i) => project(text, `compat[${i}]`)!),
         examples: entry.examples.map((text, i) => {

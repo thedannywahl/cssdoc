@@ -350,10 +350,24 @@ export interface CssMemberDeclaration {
 
 /** One annotation legend row from `@annotations`. */
 export interface CssAnnotation {
-  /** Numeric reference index, consumed by `@ref`. */
-  ref: number;
+  /** Reference ID, numeric or named, consumed by `@ref`. */
+  ref: number | string;
   /** Free-form legend text for that index. */
   text: string;
+  /** Whether this definition is private authoring content. */
+  private?: boolean;
+}
+
+/** One citation of an annotation, including optional attachment metadata. */
+export interface CssAnnotationReference {
+  /** Authored reference ID. */
+  ref: number | string;
+  /** Optional prose from a prose-bearing `@ref`. */
+  text?: string;
+  /** Whether this reference is private authoring content. */
+  private?: boolean;
+  /** Where the reference attaches: the record or an ordinary-comment CSS location. */
+  attachment?: "record" | "css";
 }
 
 /** Record-level object-model decorators. */
@@ -468,7 +482,7 @@ export interface CssDocEntry {
   /** Local annotation legend rows from `@annotations`, in author order. */
   annotations: CssAnnotation[];
   /** Local annotation references from `@ref`, in author order. */
-  refs: number[];
+  refs: Array<number | string | CssAnnotationReference>;
   /** Record-level object-model decorators. */
   decorators: CssDecorator[];
   /** Browser-support / feature-compatibility notes from `@compat`. */

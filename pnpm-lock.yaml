@@ -598,6 +598,9 @@ importers:
       '@cssdoc/embedded':
         specifier: workspace:*
         version: link:../../packages/embedded
+      '@cssdoc/index':
+        specifier: workspace:*
+        version: link:../../packages/index
       '@cssdoc/regex':
         specifier: workspace:*
         version: link:../../packages/regex
@@ -675,6 +678,9 @@ importers:
       '@cssdoc/embedded':
         specifier: workspace:*
         version: link:../../packages/embedded
+      '@cssdoc/index':
+        specifier: workspace:*
+        version: link:../../packages/index
       '@cssdoc/regex':
         specifier: workspace:*
         version: link:../../packages/regex
@@ -709,6 +715,9 @@ importers:
       '@cssdoc/embedded':
         specifier: workspace:*
         version: link:../../packages/embedded
+      '@cssdoc/index':
+        specifier: workspace:*
+        version: link:../../packages/index
       '@cssdoc/regex':
         specifier: workspace:*
         version: link:../../packages/regex

@@ -18,6 +18,12 @@ import {
 import { type CssDialect, resolveParser } from "@cssdoc/dialects";
 import { parseCssDocsFromSource } from "@cssdoc/embedded";
 import {
+  indexFromEntries,
+  projectPublicModel,
+  type PublicProseContext,
+  type ReferenceLookup,
+} from "@cssdoc/index";
+import {
   AMPERSAND_CHAR,
   GREATER_THAN_CHAR,
   LESS_THAN_CHAR,
@@ -127,8 +133,23 @@ function structureList(nodes: StructureNode[]): string {
  */
 export function renderPage(
   entry: CssDocEntry,
-  options: { indexHref?: string; exampleFilter?: ExampleFilter | null } = {},
+  options: {
+    indexHref?: string;
+    exampleFilter?: ExampleFilter | null;
+    includePrivate?: boolean;
+    lookupFor?: (context: PublicProseContext) => ReferenceLookup;
+  } = {},
 ): string {
+  if (!options.includePrivate) {
+    const index = indexFromEntries([entry]);
+    const [publicEntry] = projectPublicModel([entry], {
+      includeInternal: entry.visibility === "internal",
+      lookupFor:
+        options.lookupFor ?? (() => ({ workspace: { complete: true, sources: [{ index }] } })),
+      literalText: (text) => esc(text),
+    });
+    entry = publicEntry;
+  }
   const annotations = entry.annotations ?? [];
   const refs = entry.refs ?? [];
   const parts: string[] = [];
@@ -170,7 +191,9 @@ export function renderPage(
         )
       : "") +
       (refs.length
-        ? `<p><strong>Refs:</strong> ${refs.map((r) => code(String(r))).join(", ")}</p>`
+        ? `<p><strong>Refs:</strong> ${refs
+            .map((r) => code(String(typeof r === "object" ? r.ref : r)))
+            .join(", ")}</p>`
         : ""),
   );
 
@@ -340,12 +363,28 @@ export function renderPage(
  */
 export function renderIndex(
   entries: readonly CssDocEntry[],
-  options: { title?: string; includeInternal?: boolean } = {},
+  options: {
+    title?: string;
+    includeInternal?: boolean;
+    includePrivate?: boolean;
+    lookupFor?: (context: PublicProseContext) => ReferenceLookup;
+  } = {},
 ): string {
   const title = options.title ?? "CSS API reference";
-  const visibleEntries = options.includeInternal
+  const projected = options.includePrivate
     ? entries
-    : entries.filter((entry) => entry.visibility !== "internal");
+    : (() => {
+        const index = indexFromEntries([...entries]);
+        return projectPublicModel(entries, {
+          includeInternal: options.includeInternal,
+          lookupFor:
+            options.lookupFor ?? (() => ({ workspace: { complete: true, sources: [{ index }] } })),
+          literalText: (text) => esc(text),
+        });
+      })();
+  const visibleEntries = options.includeInternal
+    ? projected
+    : projected.filter((entry) => entry.visibility !== "internal");
   const rows = visibleEntries.map((e) => {
     const href = `${e.name}.html`;
     return [
@@ -367,6 +406,10 @@ export interface BuildHtmlOptions extends ModelInput {
   exampleFilter?: ExampleFilter | null;
   /** Include records marked `@visibility internal`; defaults to false. */
   includeInternal?: boolean;
+  /** Include private authoring content without public projection. */
+  includePrivate?: boolean;
+  /** Resolve private-link visibility in the original prose source. */
+  lookupFor?: (context: PublicProseContext) => ReferenceLookup;
 }
 
 /** What {@link buildHtml} produced. */
@@ -389,7 +432,18 @@ export interface BuildHtmlResult {
  * records on failure.
  */
 export function buildHtml(options: BuildHtmlOptions): BuildHtmlResult {
-  const entries = resolveEntries(options)
+  const originalEntries = resolveEntries(options);
+  const originalIndex = indexFromEntries([...originalEntries]);
+  const projectedEntries = options.includePrivate
+    ? originalEntries
+    : projectPublicModel(originalEntries, {
+        includeInternal: options.includeInternal,
+        lookupFor:
+          options.lookupFor ??
+          (() => ({ workspace: { complete: true, sources: [{ index: originalIndex }] } })),
+        literalText: (text) => esc(text),
+      });
+  const entries = projectedEntries
     .filter((entry) => options.includeInternal || entry.visibility !== "internal")
     .toSorted((a, b) => a.name.localeCompare(b.name));
   mkdirSync(options.outDir, { recursive: true });
@@ -398,11 +452,18 @@ export function buildHtml(options: BuildHtmlOptions): BuildHtmlResult {
     const path = join(options.outDir, `${entry.name}.html`);
     writeFileSync(
       path,
-      renderPage(entry, { indexHref: "index.html", exampleFilter: options.exampleFilter }),
+      renderPage(entry, {
+        indexHref: "index.html",
+        exampleFilter: options.exampleFilter,
+        includePrivate: true,
+      }),
     );
     pages.push(path);
   }
   const indexPath = join(options.outDir, "index.html");
-  writeFileSync(indexPath, renderIndex(entries, { title: options.title, includeInternal: true }));
+  writeFileSync(
+    indexPath,
+    renderIndex(entries, { title: options.title, includeInternal: true, includePrivate: true }),
+  );
   return { entries, pages, indexPath };
 }

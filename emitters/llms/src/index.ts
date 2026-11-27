@@ -15,6 +15,12 @@ import {
 } from "@cssdoc/core";
 import { type CssDialect, resolveParser } from "@cssdoc/dialects";
 import { parseCssDocsFromSource } from "@cssdoc/embedded";
+import {
+  indexFromEntries,
+  projectPublicModel,
+  type PublicProseContext,
+  type ReferenceLookup,
+} from "@cssdoc/index";
 import { WHITESPACE_RUN, PAREN_CLOSE_SOURCE, toRegExp } from "@cssdoc/regex";
 import { regex as arkRegex } from "arkregex";
 
@@ -49,6 +55,10 @@ export interface RenderLlmsOptions {
   intro?: string;
   /** Include records marked `@visibility internal`; defaults to false. */
   includeInternal?: boolean;
+  /** Include private authoring content without public projection. */
+  includePrivate?: boolean;
+  /** Resolve private-link visibility in the original prose source. */
+  lookupFor?: (context: PublicProseContext) => ReferenceLookup;
 }
 
 const WHITESPACE = toRegExp(WHITESPACE_RUN);
@@ -89,10 +99,20 @@ export function renderLlms(
   entries: readonly CssDocEntry[],
   options: RenderLlmsOptions = {},
 ): string {
+  const projected = options.includePrivate
+    ? entries
+    : (() => {
+        const index = indexFromEntries([...entries]);
+        return projectPublicModel(entries, {
+          includeInternal: options.includeInternal,
+          lookupFor:
+            options.lookupFor ?? (() => ({ workspace: { complete: true, sources: [{ index }] } })),
+        });
+      })();
   const lines: string[] = [`# ${options.title ?? "CSS components"}`, ""];
   if (options.intro) lines.push(`> ${clean(options.intro)}`, "");
 
-  const sorted = entries
+  const sorted = projected
     .filter((entry) => options.includeInternal || entry.visibility !== "internal")
     .toSorted((a, b) => a.name.localeCompare(b.name));
   for (const e of sorted) {
@@ -115,7 +135,7 @@ export function renderLlms(
     );
     facet(
       "Refs",
-      refs.map((r) => `\`${r}\``),
+      refs.map((r) => `\`${typeof r === "object" ? r.ref : r}\``),
     );
     facet(
       "Parts",

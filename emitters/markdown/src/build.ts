@@ -7,10 +7,20 @@
  */
 import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { CssDocConfiguration, CssDocEntry } from "@cssdoc/core";
-import { parseCssDocs } from "@cssdoc/core";
+import {
+  literalMarkdownText,
+  parseCssDocs,
+  type CssDocConfiguration,
+  type CssDocEntry,
+} from "@cssdoc/core";
 import { type CssDialect, resolveParser } from "@cssdoc/dialects";
 import { parseCssDocsFromSource } from "@cssdoc/embedded";
+import {
+  indexFromEntries,
+  projectPublicModel,
+  type PublicProseContext,
+  type ReferenceLookup,
+} from "@cssdoc/index";
 import { DOT_CHAR } from "@cssdoc/regex";
 import {
   type RenderEntryOptions,
@@ -36,6 +46,8 @@ export interface SidebarItem {
 
 /** Options for {@link buildCssApi}. */
 export interface BuildCssApiOptions extends RenderEntryOptions, RenderIndexOptions {
+  /** Resolve private-link visibility for prose in its original source. */
+  lookupFor?: (context: PublicProseContext) => ReferenceLookup;
   /** The CSS source (one string, or several concatenated). */
   css: string | string[];
   /** The output directory (created if missing). */
@@ -119,7 +131,18 @@ export function buildCssApi(options: BuildCssApiOptions): BuildCssApiResult {
           parse,
         })
       : parseCssDocs(css, { configuration: options.configuration, parse });
-  const entries = parsed
+  const originalEntries = parsed;
+  const originalIndex = indexFromEntries([...originalEntries]);
+  const projectedEntries = options.includePrivate
+    ? originalEntries
+    : projectPublicModel(originalEntries, {
+        includeInternal: options.includeInternal,
+        lookupFor:
+          options.lookupFor ??
+          (() => ({ workspace: { complete: true, sources: [{ index: originalIndex }] } })),
+        literalText: (text) => literalMarkdownText(text),
+      });
+  const entries = projectedEntries
     .filter((entry) => options.includeInternal || entry.visibility !== "internal")
     .toSorted((a, b) => a.name.localeCompare(b.name));
   const baseHref = options.baseHref ?? "/";
@@ -163,7 +186,7 @@ export function buildCssApi(options: BuildCssApiOptions): BuildCssApiResult {
       membersByParent.set(e.name, list);
     }
   }
-  const renderOptions = { ...options, resolveComponent };
+  const renderOptions = { ...options, resolveComponent, includePrivate: true };
 
   const pages: string[] = [];
   for (const entry of entries) {
@@ -189,7 +212,7 @@ export function buildCssApi(options: BuildCssApiOptions): BuildCssApiResult {
   }
 
   const indexPath = join(options.outDir, "index.md");
-  writeFileSync(indexPath, renderIndex(entries, options));
+  writeFileSync(indexPath, renderIndex(entries, { ...options, includePrivate: true }));
 
   const sidebarPath = join(options.outDir, options.sidebarFileName ?? "css-sidebar.json");
   writeFileSync(

@@ -15,6 +15,7 @@
     { "tagName": "@group", "syntaxKind": "block" },
     { "tagName": "@category", "syntaxKind": "block" },
     { "tagName": "@annotations", "syntaxKind": "block" },
+    { "tagName": "@annotation", "syntaxKind": "block", "allowMultiple": true },
     { "tagName": "@ref", "syntaxKind": "block", "allowMultiple": true },
     { "tagName": "@global", "syntaxKind": "block" },
     { "tagName": "@interaction", "syntaxKind": "block" },

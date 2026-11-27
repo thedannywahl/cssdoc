@@ -303,6 +303,16 @@ export interface ParsedDoc {
   annotations: Map<number, string>;
   /** Parsed `@ref` values in author order. */
   refs: number[];
+  /** Named annotation definitions from `@annotation`. */
+  namedAnnotations: Map<string, { text: string; private?: boolean }>;
+  /** Named or structured annotation references from `@ref`. */
+  namedRefs: Array<{
+    ref: number | string;
+    text?: string;
+    private?: boolean;
+    attachment: "record";
+  }>;
+  privateAnnotationIds: Set<string | number>;
   /** Record-level object-model decorators. */
   decorators: DocDecorators;
   /** `@compat` browser-support / feature-compatibility notes. */
@@ -547,6 +557,9 @@ export function parseDocComment(
     see: [],
     annotations: new Map(),
     refs: [],
+    namedAnnotations: new Map(),
+    namedRefs: [],
+    privateAnnotationIds: new Set(),
     decorators: {
       preventExtensions: false,
       sealed: false,
@@ -909,14 +922,57 @@ function applyBlockTag(
       for (const row of parseAnnotationsBody(rest)) doc.annotations.set(row.ref, row.text);
       break;
     }
+    case "annotation": {
+      const privateMarker = rest.includes("{@private}");
+      const cleaned = rest.replace("{@private}", "").trim();
+      const match = cleaned.match(/^([A-Za-z0-9_.-]+)(?:\s*(?:-|—)\s*)?([\s\S]*)$/);
+      if (match) {
+        const id = match[1];
+        const text = match[2].trim();
+        doc.namedAnnotations.set(id, { text, ...(privateMarker ? { private: true } : {}) });
+        if (privateMarker) doc.privateAnnotationIds.add(id);
+      }
+      break;
+    }
     case "ref": {
-      const parsed = parseRef(rest);
-      if (parsed !== undefined) {
-        doc.refs.push(parsed.ref);
-        // Inline prose (@ref 1. Prevent…) populates annotations without needing @annotations.
-        // @annotations block wins if it already set this ref.
-        if (parsed.text && !doc.annotations.has(parsed.ref))
-          doc.annotations.set(parsed.ref, parsed.text);
+      const privateMarker = rest.includes("{@private}");
+      const cleaned = rest.replace("{@private}", "").trim();
+      const numeric = cleaned.match(/^(\d+)(?:\.|\s|$)([\s\S]*)$/);
+      if (numeric) {
+        const ref = Number.parseInt(numeric[1], 10);
+        if (privateMarker) doc.privateAnnotationIds.add(ref);
+        doc.refs.push(ref);
+        const text = numeric[2].replace(/^[.\s-—]+/, "").trim();
+        if (text) {
+          if (!doc.annotations.has(ref)) doc.annotations.set(ref, text);
+          if (privateMarker) doc.privateAnnotationIds.add(ref);
+        }
+        break;
+      }
+      const named = cleaned.match(/^([A-Za-z][A-Za-z0-9_.-]*)(?:\s*(?:-|—)\s*)?([\s\S]*)$/);
+      if (named) {
+        const id = named[1];
+        const text = named[2].replace(/^[\s-—]+/, "").trim() || undefined;
+        doc.namedRefs.push({
+          ref: /^\d+$/.test(id) ? Number.parseInt(id, 10) : id,
+          ...(text ? { text } : {}),
+          ...(privateMarker ? { private: true } : {}),
+          attachment: "record",
+        });
+        if (privateMarker)
+          doc.privateAnnotationIds.add(/^\d+$/.test(id) ? Number.parseInt(id, 10) : id);
+        if (text) {
+          const numeric = /^\d+$/.test(id) ? Number.parseInt(id, 10) : undefined;
+          if (numeric !== undefined && !doc.annotations.has(numeric))
+            doc.annotations.set(numeric, text);
+          if (numeric === undefined) {
+            const existing = doc.namedAnnotations.get(id);
+            doc.namedAnnotations.set(id, {
+              text,
+              ...(privateMarker || existing?.private ? { private: true } : {}),
+            });
+          }
+        }
       }
       break;
     }
@@ -1213,15 +1269,6 @@ function parseAnnotationsBody(raw: string): DocAnnotation[] {
   }
   if (current) rows.push(current);
   return rows;
-}
-
-/** Parse `@ref <n>[. prose]` — returns the numeric index and any trailing description. */
-function parseRef(rest: string): { ref: number; text?: string } | undefined {
-  const REF: Regex = arkRegex.as(String.raw`^(${DIGIT_SOURCE}+)${DOT_SOURCE}?\s*(.*)$`, "u");
-  const m = rest.match(REF);
-  if (!m) return undefined;
-  const text = m[2].trim() || undefined;
-  return { ref: Number.parseInt(m[1], 10), text };
 }
 
 /**
