@@ -63,6 +63,8 @@ vp run check:publish # check each package with publint and ATTW
 ```
 
 Package configs merge shared lint, format, and library pack settings from `vite.config.base.ts`.
+Source modules use ESM. The extension's css-tree shim retains `require` because esbuild resolves it
+to the dependency's CommonJS implementation for the bundled server.
 Package commands remain in each package's `vite.config.ts` as Vite tasks. The remaining
 `package.json` scripts bridge the install-time `prepare` and publish-time `prepublishOnly` lifecycle
 hooks to those tasks.

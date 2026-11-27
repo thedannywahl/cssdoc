@@ -173,7 +173,7 @@ export const baseConfig: UserConfig = defineConfig({
       "unicorn/prefer-includes": "warn",
       "unicorn/prefer-array-flat": "warn",
       "unicorn/prefer-logical-operator-over-ternary": "warn",
-      "unicorn/prefer-module": "off",
+      "unicorn/prefer-module": "warn",
       "unicorn/no-useless-spread": "warn",
       // JSON, LSP, and DOM APIs use null as part of their contracts.
       "unicorn/no-null": "off",
@@ -364,7 +364,10 @@ export const baseConfig: UserConfig = defineConfig({
       {
         // Esbuild resolves this shim's CommonJS require to css-tree's CJS implementation.
         files: ["**/servers/vscode/src/shims/css-tree.ts", "src/shims/css-tree.ts"],
-        rules: { "typescript/no-require-imports": "off" },
+        rules: {
+          "typescript/no-require-imports": "off",
+          "unicorn/prefer-module": "off",
+        },
       },
       {
         // Preserve the published schema's permissive nested-property types.

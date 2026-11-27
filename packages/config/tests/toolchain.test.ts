@@ -1372,6 +1372,35 @@ test("lint prefers logical fallbacks without conflating empty values and nullish
   }
 });
 
+test("lint prefers ESM while preserving the extension CommonJS parser shim", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const vscode = fileURLToPath(new URL("../../../servers/vscode/", import.meta.url));
+  const directory = mkdtempSync(join(root, ".module-check-"));
+  try {
+    const legacy = join(directory, "legacy.mjs");
+    const modern = join(directory, "modern.mjs");
+    const shim = join(vscode, "src/shims/css-tree.ts");
+    writeFileSync(legacy, 'const fs = require("node:fs");\nconsole.error(fs);\n');
+    writeFileSync(modern, 'import { readFile } from "node:fs";\nconsole.error(readFile);\n');
+    for (const cwd of [root, vscode]) {
+      const result = spawnSync(
+        "vp",
+        ["lint", "--no-ignore", "--format", "json", legacy, modern, shim],
+        { cwd, encoding: "utf8" },
+      );
+      // The ESM fixture also correctly rejects the undefined CommonJS require global.
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(1);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "unicorn(prefer-module)")
+          .map(({ severity, filename }) => [severity, filename.endsWith("legacy.mjs")]),
+      ).toEqual([["warning", true]]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("lint rejects accidental switch fallthrough", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const directory = mkdtempSync(join(root, ".fallthrough-check-"));
