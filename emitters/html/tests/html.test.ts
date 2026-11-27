@@ -1,7 +1,7 @@
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { parseCssDocs } from "@cssdoc/core";
+import { CssDocConfiguration, parseCssDocs } from "@cssdoc/core";
 import { expect, test } from "vite-plus/test";
 import { buildHtml, renderIndex, renderPage } from "../src/index.ts";
 import { renderProse } from "../src/prose.ts";
@@ -28,6 +28,31 @@ test("private examples never appear in HTML output", () => {
   const html = renderPage(entry);
   expect(html).toContain("Visible example.");
   expect(html).not.toContain("Private example.");
+});
+
+test("HTML respects prose modes for remarks and filtered examples", () => {
+  const configuration = new CssDocConfiguration();
+  configuration.setProseSettings({
+    mode: "plain",
+    remarkKinds: { usage: "markdown" },
+  });
+  const [entry] = parseCssDocs(
+    `/** @component button
+ * @remarks usage - **Rendered**
+ * @example docs - **Literal** <script>
+ * @example demo - **Shown**
+ */
+.button {}`,
+    { configuration },
+  );
+  const html = renderPage(entry, {
+    exampleFilter: { labels: ["docs"], includeUnlabeled: false },
+  });
+  expect(html).toContain("<strong>Rendered</strong>");
+  expect(html).toContain('class="prose-plain">**Literal** &#x3C;script>');
+  expect(html).not.toContain("<strong>Literal</strong>");
+  expect(html).not.toContain("**Shown**");
+  expect(html).not.toContain("<script>");
 });
 
 test("buildHtml selects examples without filtering the returned model", () => {

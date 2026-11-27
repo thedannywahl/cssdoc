@@ -12,7 +12,7 @@ import {
   type ExampleFilter,
   type StructureNode,
   parseCssDocs,
-  selectExamples,
+  selectExampleIndices,
 } from "@cssdoc/core";
 import { type CssDialect, resolveParser } from "@cssdoc/dialects";
 import { parseCssDocsFromSource } from "@cssdoc/embedded";
@@ -77,6 +77,7 @@ th, td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid #888
 .warn { background: #f5a5; border-left: 3px solid #d80; padding: 0.5rem 0.75rem; border-radius: 3px; }
 pre { background: #8881; padding: 0.75rem; border-radius: 4px; overflow: auto; }
 a { color: inherit; }
+.prose-plain { white-space: pre-wrap; }
 `;
 
 function doc(title: string, body: string): string {
@@ -144,7 +145,12 @@ export function renderPage(
   );
   if (entry.deprecated)
     parts.push(`<div class="warn"><strong>Deprecated</strong> — ${prose(entry.deprecated)}</div>`);
-  if (entry.remarks) parts.push(renderProse(entry.remarks));
+  if (entry.remarks) {
+    const mode = entry.prose?.findLast(
+      (body) => body.tag === "remarks" && !body.private && body.text === entry.remarks,
+    )?.mode;
+    parts.push(renderProse(entry.remarks, false, mode));
+  }
 
   const meta = [
     entry.since && `<strong>Since:</strong> ${esc(entry.since)}`,
@@ -307,9 +313,17 @@ export function renderPage(
       (entry.structureDescription ? renderProse(entry.structureDescription) : "") +
         structureList(entry.structure),
     );
-  const examples = selectExamples(entry, options.exampleFilter);
+  const examples = selectExampleIndices(entry, options.exampleFilter);
   if (examples.length)
-    section("Examples", examples.map((example) => renderProse(example)).join("\n"));
+    section(
+      "Examples",
+      examples
+        .map((index) => {
+          const mode = entry.prose?.find((body) => body.exampleIndex === index)?.mode;
+          return renderProse(entry.examples[index], false, mode);
+        })
+        .join("\n"),
+    );
   if (entry.accessibility) section("Accessibility", renderProse(entry.accessibility));
   if (entry.see.length)
     section("See also", `<ul>${entry.see.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>`);

@@ -23,15 +23,30 @@ export function selectExamples(
   filter?: ExampleFilter | null,
 ): readonly string[] {
   if (!filter && !entry.privateExamples?.length) return entry.examples;
+  return selectExampleIndices(entry, filter).map((index) => entry.examples[index]);
+}
+
+/**
+ * Select original example indices, retaining their relationship to source metadata.
+ *
+ * @param entry - A record's examples and optional labels keyed by example index.
+ * @param filter - Labels to include and whether to retain unlabeled examples.
+ * @returns Selected indices in source order, excluding private examples.
+ */
+export function selectExampleIndices(
+  entry: Pick<CssDocEntry, "examples" | "exampleLabels" | "privateExamples">,
+  filter?: ExampleFilter | null,
+): number[] {
   const allowed = new Set(filter?.labels);
   const privateExamples = new Set(entry.privateExamples);
-  return entry.examples.filter((_, index) => {
-    if (privateExamples.has(index)) return false;
-    if (!filter) return true;
+  return entry.examples.flatMap((_, index) => {
+    if (privateExamples.has(index)) return [];
+    if (!filter) return [index];
     const labels = entry.exampleLabels?.[index];
-    return labels?.length
+    const matches = labels?.length
       ? labels.some((label) => allowed.has(label))
       : (filter.includeUnlabeled ?? true);
+    return matches ? [index] : [];
   });
 }
 

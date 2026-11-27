@@ -69,9 +69,19 @@ function sanitizeHtml(node: HtmlNode): void {
  *
  * @param text - Authored prose.
  * @param inline - Omit the wrapping paragraph for a single paragraph.
+ * @param mode - Effective interpretation of this prose.
  * @returns Safe HTML.
  */
-export function renderProse(text: string, inline = false): string {
+export function renderProse(
+  text: string,
+  inline = false,
+  mode: "plain" | "markdown" = "markdown",
+): string {
+  if (mode === "plain") {
+    const escaped = toHtml({ type: "text", value: text });
+    const tag = inline ? "span" : "p";
+    return `<${tag} class="prose-plain">${escaped}</${tag}>`;
+  }
   const tree = fromMarkdown(text);
   sanitizeMarkdown(tree);
   const html = toHast(tree, { allowDangerousHtml: true });

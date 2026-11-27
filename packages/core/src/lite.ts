@@ -47,7 +47,12 @@ export type { MermaidOptions } from "./mermaid.ts";
 export { cardinalityToken, cardinalityIsDashed } from "./cardinality.ts";
 export { buildCustomMediaDeclarations, structureCustomMediaRefs } from "./customMedia.ts";
 export type { BuildCustomMediaOptions, StructureCustomMediaRef } from "./customMedia.ts";
-export { projectPublicExamples, selectExamples, type ExampleFilter } from "./examples.ts";
+export {
+  projectPublicExamples,
+  selectExampleIndices,
+  selectExamples,
+  type ExampleFilter,
+} from "./examples.ts";
 export type {
   CssAnimation,
   CssCondition,
