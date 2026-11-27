@@ -485,6 +485,8 @@ test("type import lint requires type-only imports", () => {
         'import { type Item as InlineItem } from "./dependency.ts";',
         'import type { Item as TypeItem } from "./dependency.ts";',
         "export type Example = Item | InlineItem | TypeItem;",
+        "export function inferred() { return 1; }",
+        "export function declared(): number { return 1; }",
       ].join("\n"),
     );
     const result = spawnSync("vp", ["lint", "--no-ignore", "--format", "json", file], {
@@ -501,6 +503,11 @@ test("type import lint requires type-only imports", () => {
         .filter(({ code }) => code === "typescript(no-import-type-side-effects)")
         .map(({ severity, labels }) => [severity, labels[0].span.line]),
     ).toEqual([["error", 2]]);
+    expect(
+      output.diagnostics
+        .filter(({ code }) => code === "typescript(explicit-module-boundary-types)")
+        .map(({ severity, labels }) => [severity, labels[0].span.line]),
+    ).toEqual([["error", 5]]);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
@@ -749,7 +756,10 @@ test("documentation lint accepts TSDoc return descriptions and rejects empty one
         encoding: "utf8",
       });
 
-    writeFileSync(file, "/** Returns a value.\n * @returns\n */\nexport const value = () => 1;\n");
+    writeFileSync(
+      file,
+      "/** Returns a value.\n * @returns\n */\nexport const value = (): number => 1;\n",
+    );
     const missing = lint();
     expect(missing.status).toBe(1);
     const output = parseLintOutput(missing.stdout);
@@ -759,7 +769,7 @@ test("documentation lint accepts TSDoc return descriptions and rejects empty one
 
     writeFileSync(
       file,
-      "/** Returns a value.\n * @returns The value.\n */\nexport const value = () => 1;\n",
+      "/** Returns a value.\n * @returns The value.\n */\nexport const value = (): number => 1;\n",
     );
     expect(lint().status).toBe(0);
   } finally {
@@ -784,17 +794,17 @@ test("documentation lint checks parameter tags without requiring them on every f
 
     expect(
       lint(
-        "/** Combines values.\n * @param first - First value.\n */\nexport function combine(first: number, second: number) { return first + second; }\n",
+        "/** Combines values.\n * @param first - First value.\n */\nexport function combine(first: number, second: number): number { return first + second; }\n",
       ),
     ).toContain("jsdoc(require-param)");
     expect(
       lint(
-        "/** Combines values.\n * @param first\n */\nexport function combine(first: number) { return first; }\n",
+        "/** Combines values.\n * @param first\n */\nexport function combine(first: number): number { return first; }\n",
       ),
     ).toContain("jsdoc(require-param-description)");
     expect(
       lint(
-        "/** Combines values.\n * @param\n */\nexport function combine(first: number) { return first; }\n",
+        "/** Combines values.\n * @param\n */\nexport function combine(first: number): number { return first; }\n",
       ),
     ).toContain("jsdoc(require-param-name)");
     expect(lint("/** A value.\n * @public extra\n */\nexport const value = 1;\n")).toContain(
@@ -802,12 +812,12 @@ test("documentation lint checks parameter tags without requiring them on every f
     );
     expect(
       lint(
-        "/** Combines values. */\nexport function combine(first: number, second: number) { return first + second; }\n",
+        "/** Combines values. */\nexport function combine(first: number, second: number): number { return first + second; }\n",
       ),
     ).not.toContain("jsdoc(require-param)");
     expect(
       lint(
-        "/** Combines values.\n * @param first - First value.\n * @param second - Second value.\n * @throws If the inputs cannot be combined.\n */\nexport function combine(first: number, second: number) { return first + second; }\n",
+        "/** Combines values.\n * @param first - First value.\n * @param second - Second value.\n * @throws If the inputs cannot be combined.\n */\nexport function combine(first: number, second: number): number { return first + second; }\n",
       ),
     ).toEqual([]);
   } finally {
