@@ -34,9 +34,13 @@ export interface CliRuntime {
   lint: (options: LintCliOptions) => LintCliResult;
 }
 
+function isTerminal(stream: { readonly isTTY?: boolean }): boolean {
+  return stream.isTTY === true;
+}
+
 const defaultRuntime: CliRuntime = {
-  stdinIsTTY: process.stdin.isTTY === true,
-  stdoutIsTTY: process.stdout.isTTY === true,
+  stdinIsTTY: isTerminal(process.stdin),
+  stdoutIsTTY: isTerminal(process.stdout),
   writeOut: (message) => process.stdout.write(message),
   writeErr: (message) => process.stderr.write(message),
   setExitCode: (exitCode) => {

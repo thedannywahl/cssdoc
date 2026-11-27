@@ -123,8 +123,8 @@ export const baseConfig: UserConfig = defineConfig({
       "typescript/no-var-requires": "off",
       // HTML sanitization removes a property selected from the node's tag.
       "typescript/no-dynamic-delete": "off",
-      // isTTY can be absent at runtime when standard streams are redirected.
-      "typescript/no-unnecessary-boolean-literal-compare": "off",
+      // Literal comparisons still distinguish nullable or untrusted values from strict booleans.
+      "typescript/no-unnecessary-boolean-literal-compare": "warn",
       // Public boundaries have explicit types; local helpers can use inference.
       "typescript/explicit-function-return-type": "off",
       // Vue's component declaration and autocomplete-friendly string unions use empty object types.

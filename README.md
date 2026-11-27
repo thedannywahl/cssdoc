@@ -134,6 +134,8 @@ The model's exact-type equality check needs fresh generic signatures to detect o
 so only that check is exempt.
 Use `object` for object values and `unknown` for untrusted values, not the broad `{}` type. Empty
 interfaces are rejected too; non-null intersections such as `T & {}` remain valid.
+Strict Boolean values don't need literal comparisons; nullable and unknown values can still use
+explicit Boolean guards. The CLI normalizes Node's optional terminal flags to booleans.
 Type-check failures throw `TypeError`; range failures use `RangeError`.
 End-relative array access uses `at`, and index searches compare against their `-1` sentinel.
 Collection conditions compare `length` or `size` explicitly against zero or the required threshold.
