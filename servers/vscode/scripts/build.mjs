@@ -62,7 +62,7 @@ const common = {
   bundle: true,
   platform: "node",
   format: "cjs",
-  target: "node20",
+  target: "node24",
   minify: true,
   logLevel: "info",
 };

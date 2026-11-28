@@ -22,6 +22,8 @@ A language server brings completion, hover, go-to-definition, and deprecation qu
 
 ## Setup
 
+Requires VS Code 1.125.0 or newer. Both extension bundles target its bundled Node.js 24 runtime.
+
 **Zero-config by default.** The extension auto-detects the CSS in your workspace and reads its doc comments — no setting required.
 
 - Add a `cssdoc.json` file to customize your configuration for a workspace.
