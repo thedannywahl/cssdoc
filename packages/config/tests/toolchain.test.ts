@@ -2430,6 +2430,47 @@ test("lint permits workspace filename conventions but rejects snake-case module 
   }
 });
 
+test("lint keeps declarations separate without splitting destructuring or loop initializers", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/.declaration-check-"));
+  try {
+    writeFileSync(
+      join(directory, "tsconfig.json"),
+      JSON.stringify({ extends: "../../../../tsconfig.base.json", include: ["*.ts"] }),
+    );
+    const file = join(directory, "declarations.test.ts");
+    writeFileSync(
+      file,
+      [
+        "const first = 1, second = 2;",
+        "const third = 3;",
+        "const fourth = 4;",
+        "const [left, right] = [first, second];",
+        "export function loop(): number {",
+        "  let total = 0;",
+        "  for (let start = 0, end = 3; start < end; start++, end--) total += start;",
+        "  return total + third + fourth + left + right;",
+        "}",
+      ].join("\n"),
+    );
+    for (const cwd of [root, fileURLToPath(new URL("../../core/", import.meta.url))]) {
+      const result = spawnSync(
+        "vp",
+        ["lint", "--config", join(root, "vite.config.ts"), "--no-ignore", "--format", "json", file],
+        { cwd, encoding: "utf8" },
+      );
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout)
+          .diagnostics.filter(({ code }) => code === "eslint(one-var)")
+          .map(({ labels }) => labels[0].span.line),
+      ).toEqual([1]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("root and docs lint enforce the same Vue correctness rules", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const docs = join(root, "docs");

@@ -449,7 +449,7 @@ export const baseConfig: UserConfig = defineConfig({
       // Catalog and fixture ordering, short parser names, numeric examples, and concise guards carry meaning.
       "eslint/sort-keys": "off",
       "eslint/sort-vars": "off",
-      "eslint/one-var": "off",
+      "eslint/one-var": ["warn", "never"],
       "eslint/no-magic-numbers": "off",
       "eslint/id-length": "off",
       "eslint/curly": ["warn", "multi-line"],
