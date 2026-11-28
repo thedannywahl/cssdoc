@@ -108,7 +108,7 @@
       ]
     },
     "record-tag": {
-      "match": "(@(?:component|name|utility|declaration))\\b[ \\t]*([A-Za-z][A-Za-z0-9\\-_]*(?:\\.[A-Za-z][A-Za-z0-9\\-_]*)*)?",
+      "match": "(@(?:component|name|utility|declaration))\\b[ \\t]*([A-Za-z][\\w\\-]*(?:\\.[A-Za-z][\\w\\-]*)*)?",
       "captures": {
         "1": {
           "name": "storage.type.class.cssdoc"
@@ -119,7 +119,7 @@
       }
     },
     "modifier-tag": {
-      "match": "(@(?:modifier))\\b[ \\t]*(-?[A-Za-z][A-Za-z0-9\\-_]*)?",
+      "match": "(@(?:modifier))\\b[ \\t]*(-?[A-Za-z][\\w\\-]*)?",
       "captures": {
         "1": {
           "name": "storage.type.class.cssdoc"
@@ -130,7 +130,7 @@
       }
     },
     "state-tag": {
-      "match": "(@(?:cssstate))\\b[ \\t]*(:?[A-Za-z][A-Za-z0-9\\-_]*(?:\\([A-Za-z0-9\\-_]*\\))?)?",
+      "match": "(@(?:cssstate))\\b[ \\t]*(:?[A-Za-z][\\w\\-]*(?:\\([\\w\\-]*\\))?)?",
       "captures": {
         "1": {
           "name": "storage.type.class.cssdoc"
@@ -141,7 +141,7 @@
       }
     },
     "part-tag": {
-      "match": "(@(?:part|csspart|wrapper|slot|selector|pseudo))\\b[ \\t]*(\\.?[A-Za-z][A-Za-z0-9\\-_]*)?",
+      "match": "(@(?:part|csspart|wrapper|slot|selector|pseudo))\\b[ \\t]*(\\.?[A-Za-z][\\w\\-]*)?",
       "captures": {
         "1": {
           "name": "storage.type.class.cssdoc"
@@ -152,7 +152,7 @@
       }
     },
     "property-tag": {
-      "match": "(@(?:cssproperty|property|tokens))\\b[ \\t]*(--[A-Za-z][A-Za-z0-9\\-_]*)?",
+      "match": "(@(?:cssproperty|property|tokens))\\b[ \\t]*(--[A-Za-z][\\w\\-]*)?",
       "captures": {
         "1": {
           "name": "storage.type.class.cssdoc"
@@ -163,7 +163,7 @@
       }
     },
     "ref-tag": {
-      "match": "(@(?:ref))\\b[ \\t]*([0-9]+\\.?)?",
+      "match": "(@(?:ref))\\b[ \\t]*(\\d+\\.?)?",
       "captures": {
         "1": {
           "name": "storage.type.class.cssdoc"
@@ -174,7 +174,7 @@
       }
     },
     "member-tag": {
-      "match": "(@(?:memberOf|member))\\b(?:[ \\t]+([A-Za-z0-9\\-_]+)(?:[ \\t]+(private)(?![A-Za-z0-9\\-_]))?)?",
+      "match": "(@(?:memberOf|member))\\b(?:[ \\t]+([\\w\\-]+)(?:[ \\t]+(private)(?![\\w\\-]))?)?",
       "captures": {
         "1": {
           "name": "storage.type.class.cssdoc"
@@ -201,7 +201,7 @@
       "end": "(?=@)|(?=\\*/)",
       "patterns": [
         {
-          "match": "((?:@component|@variant|@modifier|@state|@part))\\b[ \\t]*((?<ref>(?<identifier>[a-zA-Z_\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*)(?::(?<card>(?:(?<oomKw>one-or-more|more):max-(?<oomMax>[0-9]+)|max-(?<max>[0-9]+)|(?<kw>optional|opt|many|one-or-more|more))))?))?",
+          "match": "((?:@component|@variant|@modifier|@state|@part))\\b[ \\t]*((?<ref>(?<identifier>[a-zA-Z_\\u0080-\\uFFFF][\\w\\-\\u0080-\\uFFFF]*)(?::(?<card>(?<oomKw>one-or-more|more):max-(?<oomMax>[0-9]+)|max-(?<max>[0-9]+)|(?<kw>optional|opt|many|one-or-more|more)))?))?",
           "captures": {
             "1": {
               "name": "storage.type.class.cssdoc"
@@ -212,7 +212,7 @@
           }
         },
         {
-          "match": "@scope(?![A-Za-z0-9\\-_])",
+          "match": "@scope(?![\\w\\-])",
           "name": "storage.type.class.cssdoc"
         },
         {
@@ -224,7 +224,7 @@
           "name": "variable.other.modifier.cssdoc"
         },
         {
-          "match": "\\.?[A-Za-z](?:[A-Za-z0-9\\-_])*",
+          "match": "\\.?[A-Za-z][A-Za-z0-9\\-_]*",
           "name": "entity.other.attribute-name.part.cssdoc"
         },
         {
@@ -234,7 +234,7 @@
       ]
     },
     "custom-property": {
-      "match": "(?![\\w-])--[A-Za-z][A-Za-z0-9\\-_]*",
+      "match": "(?![\\w-])--[A-Za-z][\\w\\-]*",
       "name": "support.type.custom-property.cssdoc"
     }
   }
