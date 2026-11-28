@@ -146,6 +146,31 @@ The retained `no-inferrable-types` exception isn't hypothetical: removing the an
 exported computed schema string produces compiler error TS9010. That rule's parameter and property
 options don't exempt exported variables.
 
+The retained global disables have also been reviewed against their installed option schemas.
+Relaxed options aren't a reason to enable a rule if its remaining findings still express valid
+contracts. These workspace re-probes inform the decisions:
+
+| Rule                              | Options checked                                                                    | Why it stays off                                                                                       |
+| --------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `class-methods-use-this`          | Ignore overrides, interface implementations, and function fields                   | Cohesive private instance helpers don't need forced static conversion.                                 |
+| `no-duplicate-imports`            | Allow separate type imports                                                        | This removes the findings, but `import/no-duplicates` already owns the coverage.                       |
+| `no-magic-numbers`                | Ignore enums, type literals, defaults, fields, and indexes                         | Grammar offsets and fixture values still don't need invented constant names.                           |
+| `func-style`                      | Allow arrows and typed expressions in declaration mode                             | The remaining const-bound named generator is valid; expression mode would reject hoisted declarations. |
+| `node/no-sync`                    | Allow root-level calls                                                             | Public synchronous APIs and isolated fixture helpers remain valid.                                     |
+| `strict-void-return`              | Allow `any` results                                                                | Known typed callback results, including `walk.skip`, remain necessary.                                 |
+| `explicit-function-return-type`   | Allow expressions, typed callbacks, higher-order functions, void arrows, and IIFEs | Local helpers can infer their results; module-boundary checks protect exported signatures.             |
+| `prefer-readonly-parameter-types` | Ignore inferred inputs and parameter properties; treat methods as readonly         | Explicitly mutable parser and framework inputs aren't deep-readonly contracts.                         |
+| `no-array-sort`                   | Allow spread copies and expression statements                                      | Sorting fresh or owned arrays in expressions remains valid without another allocation.                 |
+| `no-array-reverse`                | Allow expression statements                                                        | Reversing owned directive diagnostics before adding them to output is valid.                           |
+| `no-useless-undefined`            | Ignore arguments and arrow expression bodies                                       | Explicit returns still preserve return consistency.                                                    |
+| `vitest/prefer-expect-assertions` | Require counters only for callback assertions                                      | The remaining awaited polling test already has unconditional awaited expectations.                     |
+| `jsdoc/require-returns`           | Ignore getters                                                                     | Useful prose needn't repeat an obvious return contract in a mandatory tag.                             |
+
+Other available options select a mandatory spelling, add exception lists, or change numerical caps.
+None establishes a new requirement for export forms, comment casing, ordering, suite wrappers, or
+parser size. Capture, Unicode, and replacement options must also preserve the existing regex
+contracts; the equivalent native rules mustn't silently reintroduce bans waived in the regexp plugin.
+
 Oxc linting checks invalid array callbacks, regexp arguments, comparisons, clamps, and discarded
 errors. Const enums are errors because published declarations must work with isolated-module
 consumers. Accumulating spreads and suspicious compound assignments remain warnings; recursive-only
