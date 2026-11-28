@@ -2471,6 +2471,45 @@ test("lint keeps declarations separate without splitting destructuring or loop i
   }
 });
 
+test("lint permits regex contracts consistently across native and JavaScript checks", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, "packages/config/tests/.regex-contract-check-"));
+  try {
+    const file = join(directory, "contracts.mjs");
+    writeFileSync(
+      file,
+      [
+        "const utf16 = /./;",
+        String.raw`const controls = /[\0-\x1F]/u;`,
+        'const captures = /(a)/u.exec("a");',
+        String.raw`console.error(utf16.test("x"), controls.test("\u0000"), captures?.[1]);`,
+      ].join("\n"),
+    );
+    const incompatible = new Set([
+      "eslint(require-unicode-regexp)",
+      "eslint(prefer-named-capture-group)",
+      "eslint(no-control-regex)",
+      "regexp(require-unicode-regexp)",
+      "regexp(require-unicode-sets-regexp)",
+      "regexp(prefer-named-capture-group)",
+      "regexp(no-control-character)",
+    ]);
+    for (const cwd of [root, fileURLToPath(new URL("../../core/", import.meta.url))]) {
+      const result = spawnSync(
+        "vp",
+        ["lint", "--config", join(root, "vite.config.ts"), "--no-ignore", "--format", "json", file],
+        { cwd, encoding: "utf8" },
+      );
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(
+        parseLintOutput(result.stdout).diagnostics.filter(({ code }) => incompatible.has(code)),
+      ).toEqual([]);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("root and docs lint enforce the same Vue correctness rules", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const docs = join(root, "docs");

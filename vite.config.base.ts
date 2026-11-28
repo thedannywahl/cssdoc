@@ -331,6 +331,10 @@ export const baseConfig: UserConfig = defineConfig({
       "eslint/no-empty-character-class": "off",
       "eslint/no-invalid-regexp": "off",
       "eslint/no-misleading-character-class": "off",
+      // Match the regexp policy: UTF-16 matching, positional captures, and control validation are valid.
+      "eslint/require-unicode-regexp": "off",
+      "eslint/prefer-named-capture-group": "off",
+      "eslint/no-control-regex": "off",
       "regexp/no-octal": "warn",
       "regexp/no-standalone-backslash": "warn",
       "regexp/control-character-escape": "warn",
