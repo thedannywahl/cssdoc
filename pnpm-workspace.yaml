@@ -64,6 +64,7 @@ catalog:
   vitepress: 2.0.0-alpha.21
   # Quality gates
   "@e18e/eslint-plugin": ^0.8.1
+  "@eslint/json": ^2.1.1
   "@vitest/coverage-v8": 5.1.1
   publint: ^0.3.25
   # Release
