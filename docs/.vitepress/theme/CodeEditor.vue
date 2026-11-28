@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Compartment, Extension } from "@codemirror/state";
+import { Compartment, EditorState, type Extension } from "@codemirror/state";
 import { cssdocHighlight } from "@cssdoc/codemirror";
 import type { EditorView } from "codemirror";
 import { useData } from "vitepress";
@@ -28,7 +28,6 @@ const langExtension = async (lang: typeof props.lang): Promise<Extension> => {
 onMounted(async () => {
   // CodeMirror is heavy and browser-only — load it lazily on mount.
   const { basicSetup, EditorView } = await import("codemirror");
-  const { EditorState, Compartment } = await import("@codemirror/state");
   darkTheme = (await import("@codemirror/theme-one-dark")).oneDark;
   const language = await langExtension(props.lang);
   if (unmounted) return;
