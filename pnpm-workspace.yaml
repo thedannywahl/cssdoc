@@ -65,6 +65,8 @@ catalog:
   # Quality gates
   "@e18e/eslint-plugin": ^0.8.1
   "@eslint/json": ^2.1.1
+  "@eslint/markdown": ^9.0.0
+  markdownlint-cli2: ^0.24.2
   "@vitest/coverage-v8": 5.1.1
   publint: ^0.3.25
   # Release
