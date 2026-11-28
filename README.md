@@ -316,7 +316,8 @@ discovery doesn't disable JSON checks in docs. The shared staged command checks 
 
 The audit covered 26 authored pages and all 21 ESLint Markdown plus 53 markdownlint rules.
 Every rule had a positive controlled fixture; every installed option schema was reviewed.
-Only one unlabeled fence needed a content edit. The nine fragment reports were anchors generated
+An unlabeled fence needed a language, and a nested-backtick example needed double-backtick delimiters.
+The nine fragment reports were anchors generated
 by a grammar include or Vue data. Only those two pages bypass source-only fragment validation.
 Generated API pages, private notes, build output, and agent worktree copies are excluded.
 Vue components, script blocks, containers, fence metadata, and front matter remain valid.
@@ -351,66 +352,81 @@ Heading-sibling, tag, fence-language, fragment-case/pattern, and table-missing-c
 remove the documented scope limits or make optional spelling policies universal requirements.
 
 [docs/.markdownlint-cli2.jsonc](./docs/.markdownlint-cli2.jsonc) explicitly selects every rule.
-Its descriptive-link check adds coverage missing from ESLint Markdown and remains advisory:
+Its supplemental checks add coverage missing from ESLint Markdown and remain advisory:
 markdownlint-cli2 reports warnings without failing. ESLint Markdown errors and warnings fail its
 `--max-warnings 0` gate. Neither runner rewrites Markdown; Oxfmt remains the formatter.
 The CLI2 JSONC file has a file-specific no-trailing-comma override to avoid VS Code JSON diagnostics.
 
-| markdownlint rule | Decision                                                                                                        |
-| ----------------- | --------------------------------------------------------------------------------------------------------------- |
-| MD001             | Off; ESLint heading-increment owns coverage.                                                                    |
-| MD003             | Off; Oxfmt owns heading spelling.                                                                               |
-| MD004             | Off; Oxfmt owns bullet spelling.                                                                                |
-| MD005             | Off; Oxfmt owns list indentation.                                                                               |
-| MD007             | Off; Oxfmt owns indentation; start/width options aren't content rules.                                          |
-| MD009             | Off; Oxfmt owns trailing whitespace and hard-break spelling.                                                    |
-| MD010             | Off; tabs can be intentional in examples; Oxfmt owns supported formatting.                                      |
-| MD011             | Off; ESLint reversed-media syntax owns coverage.                                                                |
-| MD012             | Off; Oxfmt owns blank-line layout.                                                                              |
-| MD013             | Off; line budgets, table/code exclusions, and strict/stern modes don't fit authored examples and wide tables.   |
-| MD014             | Off; shell prompts are a display convention, not universally invalid examples.                                  |
-| MD018             | Off; ESLint missing-heading-space owns coverage.                                                                |
-| MD019             | Off; Oxfmt owns heading whitespace.                                                                             |
-| MD020             | Off; ESLint also checks closed headings.                                                                        |
-| MD021             | Off; Oxfmt owns heading whitespace.                                                                             |
-| MD022             | Off; Oxfmt owns heading spacing, including front-matter boundaries.                                             |
-| MD023             | Off; Oxfmt owns heading indentation.                                                                            |
-| MD024             | Off; repeated subsection names are valid, with or without sibling-only checking.                                |
-| MD025             | Off; ESLint H1 checking owns coverage and ignores browser-title metadata.                                       |
-| MD026             | Off; punctuation in titles is authored prose.                                                                   |
-| MD027             | Off; Oxfmt owns blockquote spacing.                                                                             |
-| MD028             | Off; blank lines can separate independent quotations.                                                           |
-| MD029             | Off; Oxfmt owns ordered-list markers.                                                                           |
-| MD030             | Off; Oxfmt owns list-marker spacing.                                                                            |
-| MD031             | Off; Oxfmt owns fence spacing, including nested lists.                                                          |
-| MD032             | Off; Oxfmt owns list spacing.                                                                                   |
-| MD033             | Off; Vue/HTML markup is intentional, not restricted to a fixed tag list.                                        |
-| MD034             | Off; GFM autolinks are valid.                                                                                   |
-| MD035             | Off; Oxfmt owns thematic-break spelling.                                                                        |
-| MD036             | Off; standalone emphasis isn't necessarily a heading.                                                           |
-| MD037             | Off; ESLint emphasis-space checking owns coverage.                                                              |
-| MD038             | Off; code-span padding can be meaningful; the source probe also misread escaped backticks.                      |
-| MD039             | Off; link-text padding isn't universally invalid content.                                                       |
-| MD040             | Off; ESLint fence-language checking owns coverage, including VitePress metadata.                                |
-| MD041             | Off; home layouts and Vue script preambles needn't start with an H1.                                            |
-| MD042             | Off; ESLint empty-link checking owns coverage.                                                                  |
-| MD043             | Off; pages have different structures, not one required heading template.                                        |
-| MD044             | Off; a capitalization list can't distinguish product names from CLI/API spellings.                              |
-| MD045             | Off; ESLint alt-text advice owns coverage.                                                                      |
-| MD046             | Off; Oxfmt owns code-block spelling; indented examples remain valid.                                            |
-| MD047             | Off; Oxfmt owns final newlines.                                                                                 |
-| MD048             | Off; Oxfmt owns fence spelling.                                                                                 |
-| MD049             | Off; Oxfmt owns emphasis spelling.                                                                              |
-| MD050             | Off; Oxfmt owns strong-emphasis spelling.                                                                       |
-| MD051             | Off; ESLint static-fragment checking owns coverage, with dynamic-page exceptions.                               |
-| MD052             | Off; ESLint reference checks own coverage; shortcut syntax and ignored-label options don't add needed coverage. |
-| MD053             | Off; ESLint duplicate/unused-definition checks own coverage.                                                    |
-| MD054             | Off; inline, reference, and automatic links are all valid.                                                      |
-| MD055             | Off; Oxfmt owns table-pipe spelling.                                                                            |
-| MD056             | Off; ESLint detects discarded extra cells without banning valid omitted cells.                                  |
-| MD058             | Off; Oxfmt owns table spacing.                                                                                  |
-| MD059             | Warn; use descriptive link labels instead of generic text such as "here."                                       |
-| MD060             | Off; Oxfmt owns table alignment and delimiter spacing.                                                          |
+The follow-up audit ran every markdownlint positive fixture through the workspace's actual Oxfmt
+configuration, then compared the remaining findings with ESLint. It also tested compatible options
+and rescanned all 26 authored pages. Code-block styles, code-span padding, and link-text padding
+survive formatting and aren't checked by ESLint; they now get supplemental warnings.
+MD041 checks the first heading's level after
+Vue/script preambles; it permits headingless home layouts and doesn't count browser-title metadata.
+The old MD038 report wasn't a parser false positive: backslash-escaped backticks don't escape
+delimiters inside a code span. Rendering confirmed that the broken example swallowed prose, and
+double-backtick delimiters fixed it.
+Three apparent consistency gaps weren't safe to enable: MD003's consistent mode rejects setext
+headings followed by level-three ATX headings; MD004 can merge separate adjacent lists if its
+suggested marker changes are applied; and Oxfmt deliberately emits mixed thematic-break markers
+at the start of a page, avoiding front-matter ambiguity. VitePress also strips shell prompts from
+copied shell snippets, so MD014 doesn't close a copy/paste gap.
+
+| markdownlint rule | Decision                                                                                                          |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------- |
+| MD001             | Off; ESLint heading-increment owns coverage.                                                                      |
+| MD003             | Off; consistent mode rejects valid setext + ATX heading hierarchies; other modes force one spelling policy.       |
+| MD004             | Off; different markers preserve separate adjacent lists; changing them can merge lists.                           |
+| MD005             | Off; Oxfmt corrected inconsistent list indentation in the coverage probe.                                         |
+| MD007             | Off; Oxfmt corrected unordered-list indentation; nondefault widths would impose another layout policy.            |
+| MD009             | Off; Oxfmt removed trailing spaces; strict/code-block options would restrict intentional whitespace.              |
+| MD010             | Off; Oxfmt replaced prose tabs; opaque code examples can contain meaningful tabs, so code-block checks don't fit. |
+| MD011             | Off; ESLint reversed-media syntax owns coverage.                                                                  |
+| MD012             | Off; Oxfmt collapsed excess blank lines in the coverage probe.                                                    |
+| MD013             | Off; line budgets, table/code exclusions, and strict/stern modes don't fit authored examples and wide tables.     |
+| MD014             | Off; shell prompts are intentional display syntax; VitePress removes them when copying shell snippets.            |
+| MD018             | Off; ESLint missing-heading-space owns coverage.                                                                  |
+| MD019             | Off; Oxfmt removed extra opening-heading spaces.                                                                  |
+| MD020             | Off; ESLint also checks closed headings.                                                                          |
+| MD021             | Off; Oxfmt removed extra closed-heading spaces.                                                                   |
+| MD022             | Off; Oxfmt inserted heading blank lines; extra spacing/front-matter requirements aren't needed.                   |
+| MD023             | Off; Oxfmt removed heading indentation.                                                                           |
+| MD024             | Off; repeated subsection names are valid, with or without sibling-only checking.                                  |
+| MD025             | Off; ESLint H1 checking owns coverage and ignores browser-title metadata.                                         |
+| MD026             | Off; punctuation in titles is authored prose.                                                                     |
+| MD027             | Off; Oxfmt corrected extra blockquote spacing.                                                                    |
+| MD028             | Off; blank lines can separate independent quotations.                                                             |
+| MD029             | Off; Oxfmt corrected ordered-list numbering; one-or-ordered permits both valid conventions.                       |
+| MD030             | Off; Oxfmt corrected list-marker spacing.                                                                         |
+| MD031             | Off; Oxfmt inserted blank lines around code fences.                                                               |
+| MD032             | Off; Oxfmt inserted blank lines around lists.                                                                     |
+| MD033             | Off; Vue/HTML markup is intentional, not restricted to a fixed tag list.                                          |
+| MD034             | Off; GFM autolinks are valid.                                                                                     |
+| MD035             | Off; Oxfmt intentionally mixes thematic-break markers at page start to avoid front-matter ambiguity.              |
+| MD036             | Off; standalone emphasis isn't necessarily a heading.                                                             |
+| MD037             | Off; ESLint emphasis-space checking owns coverage.                                                                |
+| MD038             | Warn; catch extra code-span padding and delimiter mistakes; CommonMark padding remains valid.                     |
+| MD039             | Warn; catch padded link labels that Oxfmt leaves intact.                                                          |
+| MD040             | Off; ESLint fence-language checking owns coverage, including VitePress metadata.                                  |
+| MD041             | Warn; the first heading must be H1; allow preambles and headingless pages, ignoring browser-title metadata.       |
+| MD042             | Off; ESLint empty-link checking owns coverage.                                                                    |
+| MD043             | Off; pages have different structures, not one required heading template.                                          |
+| MD044             | Off; a capitalization list can't distinguish product names from CLI/API spellings.                                |
+| MD045             | Off; ESLint alt-text advice owns coverage.                                                                        |
+| MD046             | Warn; require consistent code-block style per page; fenced-only and indented-only pages remain valid.             |
+| MD047             | Off; Oxfmt added the missing final newline.                                                                       |
+| MD048             | Off; Oxfmt normalized fence markers; forcing tildes would fight the formatter.                                    |
+| MD049             | Off; Oxfmt normalizes consistent emphasis; forcing asterisks would unnecessarily reject valid underscores.        |
+| MD050             | Off; Oxfmt normalized strong-emphasis markers.                                                                    |
+| MD051             | Off; ESLint static-fragment checking owns coverage, with dynamic-page exceptions.                                 |
+| MD052             | Off; ESLint reference checks own coverage; shortcut syntax and ignored-label options don't add needed coverage.   |
+| MD053             | Off; ESLint duplicate/unused-definition checks own coverage.                                                      |
+| MD054             | Off; inline, reference, and automatic links are all valid.                                                        |
+| MD055             | Off; Oxfmt normalized table pipes.                                                                                |
+| MD056             | Off; ESLint detects discarded extra cells without banning valid omitted cells.                                    |
+| MD058             | Off; Oxfmt inserted blank lines around tables.                                                                    |
+| MD059             | Warn; use descriptive link labels instead of generic text such as "here."                                         |
+| MD060             | Off; Oxfmt aligned the table fixture; compact/tight styles would fight that layout.                               |
 
 The rule inventory tests require review of upstream additions. Controlled markdownlint reference
 fixtures ran with a Micromark-backed rule enabled: isolated MD052/MD053 checks don't initialize

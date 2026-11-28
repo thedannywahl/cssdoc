@@ -68,7 +68,7 @@ sentence (`Deprecated — use .x` and the reason prose) sat inside the styled sp
 trailing reason prose, so the pill styling ballooned to cover it.
 
 **Fix / rule** — Wrap **only the marker word** (`Deprecated`, `experimental`) in the span and leave the
-reason prose outside it (`<span>Deprecated</span> — use \`.x\`.`). Drop the code-span backticks around
+reason prose outside it (``<span>Deprecated</span> — use `.x`.``). Drop the code-span backticks around
 a stage word so it styles as a bare pill. The pure-Markdown fallback (no `classNames`) stays plain text.
 
 ## Emitted Markdown must be VitePress/Vue-safe

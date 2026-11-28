@@ -41,6 +41,17 @@ interface LintDiagnostic {
   labels: Array<{ span: { line: number } }>;
 }
 
+interface MarkdownlintSdk {
+  lint: (options: {
+    strings: Record<string, string>;
+    config: Record<string, unknown>;
+  }) => Promise<unknown>;
+}
+
+function isMarkdownlintSdk(value: unknown): value is MarkdownlintSdk {
+  return isObject(value) && typeof value.lint === "function";
+}
+
 function isObject(value: unknown): value is Record<string, unknown> {
   return (typeof value === "object" && value !== null) || typeof value === "function";
 }
@@ -83,6 +94,18 @@ function getStagedCommands(): string[] {
     throw new TypeError("Missing staged checks");
   }
   return commands;
+}
+
+function getMarkdownlintRules(docs: string): Record<string, unknown> {
+  const errors: ParseError[] = [];
+  const cli: unknown = parseJsonc(
+    readFileSync(join(docs, ".markdownlint-cli2.jsonc"), "utf8"),
+    errors,
+  );
+  if (errors.length > 0 || !isObject(cli) || !isObject(cli.config)) {
+    throw new Error("Missing or malformed markdownlint configuration");
+  }
+  return cli.config;
 }
 
 test("every installed e18e rule has an explicit evaluated disposition", () => {
@@ -340,22 +363,12 @@ test("every installed docs Markdown rule has an explicit evaluated disposition",
       "utf8",
     ),
   );
-  const errors: ParseError[] = [];
-  const cli: unknown = parseJsonc(
-    readFileSync(join(docs, ".markdownlint-cli2.jsonc"), "utf8"),
-    errors,
-  );
-  if (
-    errors.length > 0 ||
-    !isObject(schema) ||
-    !isObject(schema.properties) ||
-    !isObject(cli) ||
-    !isObject(cli.config)
-  ) {
-    throw new Error("Missing or malformed markdownlint configuration");
+  const rules = getMarkdownlintRules(docs);
+  if (!isObject(schema) || !isObject(schema.properties)) {
+    throw new Error("Missing markdownlint rule schema");
   }
   expect(
-    Object.keys(cli.config)
+    Object.keys(rules)
       .filter((name) => name.startsWith("MD"))
       .sort(),
   ).toEqual(
@@ -434,7 +447,76 @@ test("docs Markdown lint preserves VitePress syntax and validates static content
   ]);
 });
 
-test("docs Markdown task reports syntax errors and supplemental link-text warnings", () => {
+test("supplemental Markdown checks catch formatter-surviving gaps without banning valid syntax", async () => {
+  const docs = fileURLToPath(new URL("../../../docs/", import.meta.url));
+  const root = dirname(docs);
+  const require = createRequire(join(docs, "package.json"));
+  const sdk: unknown = await import(require.resolve("markdownlint-cli2/markdownlint/promise"));
+  if (!isMarkdownlintSdk(sdk)) {
+    throw new Error("Missing markdownlint SDK");
+  }
+  const rules = getMarkdownlintRules(docs);
+  const { lint } = sdk;
+  const cases: Array<[string, string]> = [
+    ["MD038", "Use ` padded`."],
+    ["MD039", "[ padded ](url)"],
+    [
+      "MD041",
+      "---\ntitle: Browser title\n---\n<script setup>\nconst x = 1;\n</script>\n\n## Heading",
+    ],
+    ["MD046", "```text\nfenced\n```\n\n    indented"],
+  ];
+  const directory = mkdtempSync(join(docs, ".markdown-coverage-check-"));
+  try {
+    for (const [rule, text] of cases) writeFileSync(join(directory, `${rule}.md`), text);
+    const formatted = spawnSync("vp", ["fmt", directory], { cwd: root, encoding: "utf8" });
+    expect(formatted.status, `${formatted.stdout}\n${formatted.stderr}`).toBe(0);
+    await Promise.all(
+      cases.map(async ([rule]) => {
+        const result: unknown = await lint({
+          strings: { probe: readFileSync(join(directory, `${rule}.md`), "utf8") },
+          config: rules,
+        });
+        if (!isObject(result) || !Array.isArray(result.probe)) {
+          throw new Error("Missing supplemental Markdown diagnostics");
+        }
+        const names = result.probe.map((error: unknown) => {
+          if (
+            !isObject(error) ||
+            !Array.isArray(error.ruleNames) ||
+            typeof error.ruleNames[0] !== "string" ||
+            error.severity !== "warning"
+          ) {
+            throw new Error("Malformed or non-advisory supplemental Markdown diagnostic");
+          }
+          return error.ruleNames[0];
+        });
+        expect([...new Set(names)], `Formatter-surviving ${rule}`).toEqual([rule]);
+      }),
+    );
+    await Promise.all(
+      [
+        "Heading\n===\n\nSubheading\n---\n\n### Details",
+        "- first list\n\n* separate list",
+        "***\n\n---",
+        "Use ``literal `backticks` ``.",
+        "[Descriptive](url)",
+        "---\ntitle: Browser title\n---\n<script setup>\nconst x = 1;\n</script>\n\n# Heading",
+        "---\nlayout: home\n---",
+        "    indented",
+        "```ts {1}\nconst x = 1;\n```",
+      ].map(async (text) => {
+        const result: unknown = await lint({ strings: { valid: text }, config: rules });
+        if (!isObject(result)) throw new Error("Missing supplemental Markdown results");
+        expect(result.valid, `Valid Markdown: ${text}`).toEqual([]);
+      }),
+    );
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("docs Markdown task reports syntax errors and supplemental Markdown warnings", () => {
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const docs = join(root, "docs");
   const directory = mkdtempSync(join(docs, ".markdown-lint-check-"));
@@ -457,15 +539,17 @@ test("docs Markdown task reports syntax errors and supplemental link-text warnin
     expect(staged.status, `${staged.stdout}\n${staged.stderr}`).toBe(1);
     expect(staged.stdout).toContain("markdown/no-missing-label-refs");
 
-    writeFileSync(file, "[here](https://example.com)\n");
+    writeFileSync(file, "[here](https://example.com)\n\nUse ` padded`.\n");
     const advisory = spawnSync("vp", ["run", "docs:lint"], { cwd: root, encoding: "utf8" });
     expect(advisory.status, `${advisory.stdout}\n${advisory.stderr}`).toBe(0);
     expect(`${advisory.stdout}\n${advisory.stderr}`).toContain("MD059");
+    expect(`${advisory.stdout}\n${advisory.stderr}`).toContain("MD038");
 
     writeFileSync(file, "[Documentation](https://example.com)\n");
     const passed = spawnSync("vp", ["run", "docs:lint"], { cwd: root, encoding: "utf8" });
     expect(passed.status, `${passed.stdout}\n${passed.stderr}`).toBe(0);
     expect(`${passed.stdout}\n${passed.stderr}`).not.toContain("MD059");
+    expect(`${passed.stdout}\n${passed.stderr}`).not.toContain("MD038");
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
