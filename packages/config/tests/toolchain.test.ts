@@ -13,11 +13,13 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import e18e from "@e18e/eslint-plugin";
 import { afterAll, expect, test, vi } from "vite-plus/test";
 
 import docsConfig from "../../../docs/vite.config.ts";
 import grammarConfig from "../../../syntaxes/cssdoc/tmlanguage/vite.config.ts";
 import tsdocConfig from "../../../tsdoc.json" with { type: "json" };
+import { baseConfig } from "../../../vite.config.base.ts";
 import cliConfig from "../../cli/vite.config.ts";
 import regexConfig from "../../regex/vite.config.ts";
 import { CSSDOC_TAG_NAMES, CSSDOC_TAGS } from "../../spec/src/index.ts";
@@ -68,6 +70,103 @@ function parseLintOutput(json: string): { diagnostics: LintDiagnostic[] } {
   }
   return { diagnostics: value.diagnostics };
 }
+
+test("every installed e18e rule has an explicit evaluated disposition", () => {
+  const rules = baseConfig.lint?.rules;
+  const installed = e18e.rules;
+  if (!rules || !installed) throw new Error("Missing base or e18e lint rules");
+  expect(
+    Object.keys(rules)
+      .filter((name) => name.startsWith("e18e/"))
+      .map((name) => name.slice("e18e/".length))
+      .sort(),
+  ).toEqual(Object.keys(installed).sort());
+});
+
+test("e18e checks add root/package coverage while preserving semantic exceptions", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".e18e-check-"));
+  try {
+    const positive = join(directory, "positive.mjs");
+    const safe = join(directory, "safe.mjs");
+    const isolated = join(directory, "isolated.test.mjs");
+    writeFileSync(
+      positive,
+      [
+        'import pad from "left-pad";',
+        "export const padded = (value) => pad(value, 3);",
+        "export const match = (value) => /^value/u.test(value);",
+        "export const alias = (values) => values.reduce((result, value) => {",
+        "  const previous = result;",
+        "  return [...previous, value];",
+        "}, []);",
+        "export const nested = (values) => values.reduce(",
+        "  ({ list }, value) => ({ list: [...list, value] }), { list: [] });",
+        "export const loop = (values) => {",
+        "  let result = [];",
+        "  for (const value of values) result = [...result, value];",
+        "  return result;",
+        "};",
+      ].join("\n"),
+    );
+    writeFileSync(
+      safe,
+      [
+        'import { Linter } from "eslint";',
+        "export const linter = () => new Linter();",
+        "const pattern = /^value/u;",
+        "export const match = (value) => pattern.test(value);",
+        'export const fresh = (value) => new RegExp("value", "g").exec(value);',
+        "export const removed = (values) => [...values].splice(0, 1);",
+        "export const sparse = (values) => values.slice().sort();",
+        "export const getter = (value) => Array.from({ length: 3 }, () => value.count);",
+        "export const snapshot = (values, mapper) => [...values].map(mapper);",
+        "export const found = (values) => !values.find((value) => value === undefined);",
+        "export const key = (map, key) => {",
+        "  const value = map.get(key) ?? [];",
+        "  map.set(key, value);",
+        "  return value;",
+        "};",
+      ].join("\n"),
+    );
+    writeFileSync(isolated, "export const match = (value) => /^value/u.test(value);");
+    for (const cwd of [root, fileURLToPath(new URL("../../core/", import.meta.url))]) {
+      const result = spawnSync(
+        "vp",
+        [
+          "lint",
+          "--config",
+          join(root, "vite.config.ts"),
+          "--no-ignore",
+          "--format",
+          "json",
+          positive,
+          safe,
+          isolated,
+        ],
+        { cwd, encoding: "utf8" },
+      );
+      expect([0, 1], `${result.stdout}\n${result.stderr}`).toContain(result.status);
+      const { diagnostics } = parseLintOutput(result.stdout);
+      const additions = diagnostics.filter(({ code }) => code.startsWith("e18e("));
+      expect(
+        additions
+          .toSorted((a, b) => a.code.localeCompare(b.code))
+          .map(({ code, filename }) => [code, filename.endsWith("/positive.mjs")]),
+      ).toEqual([
+        ["e18e(ban-dependencies)", true],
+        ["e18e(no-spread-in-reduce)", true],
+        ["e18e(no-spread-in-reduce)", true],
+        ["e18e(prefer-static-regex)", true],
+      ]);
+      expect(diagnostics).toContainEqual(
+        expect.objectContaining({ code: "oxc(no-accumulating-spread)" }),
+      );
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
 
 test("the TypeScript catalog matches the compiler revision targeted by Vite+'s tsrs", () => {
   const require = createRequire(import.meta.url);

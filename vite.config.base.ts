@@ -87,8 +87,52 @@ export const baseConfig: UserConfig = defineConfig({
     },
     options: { typeAware: true, typeCheck: true },
     plugins: lintPlugins,
-    jsPlugins: [{ name: "regexp", specifier: "eslint-plugin-regexp" }],
+    jsPlugins: [
+      { name: "regexp", specifier: "eslint-plugin-regexp" },
+      { name: "e18e", specifier: "@e18e/eslint-plugin" },
+    ],
     rules: {
+      "e18e/prefer-static-regex": "warn",
+      // Also catches aliased/destructured accumulators; Oxc still covers accumulation in loops.
+      "e18e/no-spread-in-reduce": "warn",
+      // ESLint is a public adapter API here, not a replaceable command-line linter.
+      "e18e/ban-dependencies": ["warn", { allowed: ["eslint"] }],
+      // Existing native rules own these overlapping checks.
+      "e18e/prefer-array-at": "off",
+      "e18e/prefer-includes": "off",
+      "e18e/prefer-exponentiation-operator": "off",
+      "e18e/prefer-nullish-coalescing": "off",
+      "e18e/prefer-object-has-own": "off",
+      "e18e/prefer-date-now": "off",
+      "e18e/prefer-flatmap-over-map-flat": "off",
+      // Preserve sparse copies, iterable receivers, and splice's removed-elements result.
+      "e18e/prefer-array-to-reversed": "off",
+      "e18e/prefer-array-to-sorted": "off",
+      "e18e/prefer-array-to-spliced": "off",
+      // These fixes change callback arity, consumption order, getter reads, or array-like support.
+      "e18e/prefer-array-from-map": "off",
+      "e18e/prefer-array-fill": "off",
+      "e18e/prefer-spread-syntax": "off",
+      "e18e/prefer-array-some": "off",
+      // Deferred bindings, caught exceptions, and stateful matching are observable contracts.
+      "e18e/prefer-timer-args": "off",
+      "e18e/prefer-url-canparse": "off",
+      "e18e/prefer-regex-test": "off",
+      "e18e/prefer-throw-if-no-entry": "off",
+      // Repeated getters and coercive regex inputs aren't interchangeable with strict equality.
+      "e18e/prefer-inline-equality": "off",
+      "e18e/prefer-includes-over-regex-test": "off",
+      // Keep the Unicode code-point policy and the distinction between absent and undefined keys.
+      "e18e/prefer-string-fromcharcode": "off",
+      "e18e/no-delete-property": "off",
+      // These suggestions don't supply the missing receiver, index, or runtime guarantees.
+      "e18e/prefer-charcode-at-in-loop": "off",
+      "e18e/prefer-slice-over-split-index": "off",
+      "e18e/prefer-get-or-insert": "off",
+      // TypeScript ESLint parser services aren't available through the Oxlint JS-plugin bridge.
+      "e18e/no-indexof-equality": "off",
+      // Representative Node 24/26 sorts were faster with V8's cached localeCompare path.
+      "e18e/prefer-static-collator": "off",
       "typescript/no-floating-promises": "error",
       "typescript/no-misused-promises": "error",
       "typescript/consistent-type-imports": "error",
@@ -505,6 +549,11 @@ export const baseConfig: UserConfig = defineConfig({
       "import/max-dependencies": "off",
     },
     overrides: [
+      {
+        // Tests intentionally construct isolated patterns, including constructors expected to throw.
+        files: ["**/*.test.*", "**/*.spec.*", "**/tests/**"],
+        rules: { "e18e/prefer-static-regex": "off" },
+      },
       {
         // JSX examples need HTML semantics, not assumptions about a React runtime.
         files: ["**/*.{jsx,tsx}"],

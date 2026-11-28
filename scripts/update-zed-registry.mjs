@@ -1,23 +1,35 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
+import { regex as arkRegex } from "arkregex";
+
+const RELEASE_VERSION = arkRegex.as(String.raw`^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$`, "u");
+const REGISTRY_SECTION = arkRegex.as(String.raw`^\[cssdoc-language-server\]\s*$`, "gmu");
+const NEXT_SECTION = arkRegex.as(String.raw`^\[`, "mu");
+const REGISTRY_SUBMODULE = arkRegex.as(
+  String.raw`^submodule = "extensions/cssdoc-language-server"$`,
+  "mu",
+);
+const REGISTRY_PATH = arkRegex.as(String.raw`^path = "servers/zed"$`, "mu");
+const REGISTRY_VERSION = arkRegex.as(String.raw`^version = "[^"]+"$`, "gmu");
+
 export function updateRegistryVersion(content, version) {
-  if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/u.test(version)) {
+  if (!RELEASE_VERSION.test(version)) {
     throw new Error(`Invalid release version: ${version}`);
   }
-  const sections = [...content.matchAll(/^\[cssdoc-language-server\]\s*$/gmu)];
+  const sections = [...content.matchAll(REGISTRY_SECTION)];
   if (sections.length !== 1) throw new Error("Expected one cssdoc-language-server registry entry");
   const start = sections[0].index;
-  const next = content.slice(start + sections[0][0].length).search(/^\[/mu);
+  const next = content.slice(start + sections[0][0].length).search(NEXT_SECTION);
   const end = next < 0 ? content.length : start + sections[0][0].length + next;
   const entry = content.slice(start, end);
-  if (!/^submodule = "extensions\/cssdoc-language-server"$/mu.test(entry)) {
+  if (!REGISTRY_SUBMODULE.test(entry)) {
     throw new Error("Unexpected Zed registry submodule");
   }
-  if (!/^path = "servers\/zed"$/mu.test(entry)) {
+  if (!REGISTRY_PATH.test(entry)) {
     throw new Error("Unexpected Zed registry extension path");
   }
-  const versions = [...entry.matchAll(/^version = "[^"]+"$/gmu)];
+  const versions = [...entry.matchAll(REGISTRY_VERSION)];
   if (versions.length !== 1) throw new Error("Expected one Zed registry version");
   return (
     content.slice(0, start) +
