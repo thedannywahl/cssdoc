@@ -19,6 +19,10 @@ independent flags or global state are needed. Use `RegExp.escape` for literal ru
 configured regex syntax. Don't apply regex autofixes in bulk before checking capture shapes, flags,
 source consumers, and adversarial input.
 
+Allow explicit hyphen escapes in the native `no-useless-escape` rule. They prevent accidental ranges
+and avoid conflicting with regex-plugin fixes that serialize character classes with `\-`.
+Generator-owned model declarations must stay outside lint autofixes as well as formatting.
+
 When a whitespace prefix overlaps a prose capture, capture the separator once and trim at the
 consumer. For free-form description separators, don't retry a whitespace run at every character.
 Keep greedy identifier boundaries explicit when the following capture accepts the same characters.

@@ -1066,7 +1066,7 @@ export const cssDocEntrySchema: Readonly<Record<string, unknown>> = {
     },
     "intersection246": {
       "type": "string",
-      "pattern": String.raw`^(?:optional|many|one-or-more|max-\d+|one-or-more-max-\d+)$`
+      "pattern": "^(?:optional|many|one-or-more|max-\\d+|one-or-more-max-\\d+)$"
     }
   }
 };
@@ -2143,7 +2143,7 @@ export const cssDocSchema: Readonly<Record<string, unknown>> = {
     },
     "intersection246": {
       "type": "string",
-      "pattern": String.raw`^(?:optional|many|one-or-more|max-\d+|one-or-more-max-\d+)$`
+      "pattern": "^(?:optional|many|one-or-more|max-\\d+|one-or-more-max-\\d+)$"
     }
   },
   "title": "cssdoc model",

@@ -137,7 +137,6 @@ export function collectDocCommentBlocks(
 ): DocCommentBlock[] {
   const TAG_LINE: RegExp = /^\s*@([A-Za-z][\w-]*)/u;
   const INDENTED_AT_RULE: RegExp = /^\s+@/u;
-  const COMMENT_OPENING: RegExp = /^\/\*/u;
   const framed = raw.startsWith("/*");
   const lines = frameCommentLines(raw, framed ? "framed" : "none");
   const text = lines.map((line) => line.text + line.ending).join("");

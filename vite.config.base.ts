@@ -388,6 +388,8 @@ export const baseConfig: UserConfig = defineConfig({
       "regexp/no-useless-character-class": "warn",
       // Native no-useless-escape also covers ordinary JS strings; strict covers constructor identities.
       "regexp/no-useless-escape": "off",
+      // Explicit hyphens prevent accidental ranges and match the regex plugin's pattern rewrites.
+      "eslint/no-useless-escape": ["error", { allowRegexCharacters: ["-"] }],
       "regexp/no-useless-non-capturing-group": "warn",
       "regexp/prefer-character-class": "warn",
       "regexp/prefer-d": "warn",
