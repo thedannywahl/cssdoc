@@ -4,6 +4,34 @@ Hard-won fixes and gotchas from cssdoc work, including those found in downstream
 Each entry is symptom → root cause → the durable rule. Version and PR numbers are left out; the lesson
 is timeless.
 
+## Documentation bundle warnings hide different kinds of payloads
+
+**Symptom** — Documentation builds reported a redundant CodeMirror import and oversized JavaScript
+chunks.
+
+**Root cause** — The editor imported CodeMirror state dynamically after dependencies had already
+loaded it statically. Mermaid loaded with the site theme, and the playground bundled several
+dependencies together. Generated reference/search data and prebundled vendor grammars/layout engines
+also exceeded the ordinary code threshold; module splitting can't divide those individual modules.
+
+**Fix / rule** — Import CodeMirror state consistently, load Mermaid only when rendering a mounted
+diagram, and split client dependencies by package. Leave the SSR graph alone: package grouping can
+introduce initialization cycles there. Preserve execution order in the client graph.
+
+The documentation build enforces raw and gzip limits rather than merely suppressing warnings:
+
+| Payload            | Raw bytes | Gzip bytes |
+| ------------------ | --------: | ---------: |
+| Ordinary code      |   500,000 |    200,000 |
+| ELK layout engine  | 1,600,000 |    500,000 |
+| Mermaid grammar    |   700,000 |    150,000 |
+| Local search index | 1,350,000 |    270,000 |
+| Pattern reference  |   750,000 |     45,000 |
+
+The exceptions cover measured, indivisible payloads with limited headroom. Every module in an
+exception chunk must belong to that payload; adding ordinary application code restores the ordinary
+limit. Keep the full search index, reference examples, and Mermaid diagram/layout features.
+
 ## Playground HTML editor crashes, or preset changes leave stale text
 
 **Symptom** — The HTML editor stayed blank with a Lezer `TreeNode.nextChild` error. A preset selected

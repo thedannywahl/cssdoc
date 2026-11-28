@@ -23,7 +23,6 @@
 </template>
 
 <script setup lang="ts">
-import mermaid from "mermaid";
 import { useData } from "vitepress";
 import { computed, nextTick, ref, watch } from "vue";
 
@@ -124,47 +123,50 @@ const renderDiagram = async (): Promise<void> => {
   const el = diagramRef.value;
   if (!el) return;
 
-  const themeVariables = getThemeVariables();
-
-  mermaid.initialize({
-    startOnLoad: false,
-    securityLevel: "loose",
-    theme: "base",
-    themeVariables,
-    // Enhanced flowchart configuration (Mermaid v12 features)
-    flowchart: {
-      useMaxWidth: true,
-      nodeSpacing: 26,
-      rankSpacing: 28,
-      padding: 6,
-      htmlLabels: true, // Enable rich text labels
-      arrowMarkerAbsolute: true, // Better SVG compatibility
-      nodeDistance: 50, // Control node distribution
-    },
-    // Accessibility enhancements
-    accessibility: {
-      usemax: true,
-    },
-    // SVG optimization for smaller exports
-    gantt: { useWidth: 100 },
-    sequence: {
-      diagramMarginX: 50,
-      diagramMarginY: 10,
-      actorMargin: 50,
-      width: 150,
-      height: 65,
-      boxMargin: 10,
-      boxTextMargin: 5,
-      noteMargin: 10,
-      messageAlign: "center",
-      mirrorActors: true,
-    },
-  });
-
-  delete el.dataset.processed;
-  el.textContent = graphText.value;
-
   try {
+    const { default: mermaid } = await import("mermaid");
+    if (diagramRef.value !== el) return;
+
+    const themeVariables = getThemeVariables();
+
+    mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: "loose",
+      theme: "base",
+      themeVariables,
+      // Enhanced flowchart configuration (Mermaid v12 features)
+      flowchart: {
+        useMaxWidth: true,
+        nodeSpacing: 26,
+        rankSpacing: 28,
+        padding: 6,
+        htmlLabels: true, // Enable rich text labels
+        arrowMarkerAbsolute: true, // Better SVG compatibility
+        nodeDistance: 50, // Control node distribution
+      },
+      // Accessibility enhancements
+      accessibility: {
+        usemax: true,
+      },
+      // SVG optimization for smaller exports
+      gantt: { useWidth: 100 },
+      sequence: {
+        diagramMarginX: 50,
+        diagramMarginY: 10,
+        actorMargin: 50,
+        width: 150,
+        height: 65,
+        boxMargin: 10,
+        boxTextMargin: 5,
+        noteMargin: 10,
+        messageAlign: "center",
+        mirrorActors: true,
+      },
+    });
+
+    delete el.dataset.processed;
+    el.textContent = graphText.value;
+
     await mermaid.run({ nodes: [el], suppressErrors: false });
   } catch (error) {
     console.error("Mermaid rendering error:", error);

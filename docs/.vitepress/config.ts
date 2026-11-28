@@ -9,6 +9,7 @@ import type { DefaultTheme, UserConfig } from "vitepress";
 import { defineConfig } from "vitepress";
 import llmstxt from "vitepress-plugin-llms";
 
+import { docsBundleBudget } from "./plugins/bundle-budget.js";
 import { expandTheme, pruneThemeBundle } from "./plugins/pantoken-theme.js";
 import { mermaidPlugin } from "./plugins/vitepress-mermaid/index.js";
 import { createSidebars } from "./sidebar.js";
@@ -53,6 +54,7 @@ const config: UserConfig = defineConfig({
     css: { postcss: { plugins: [expandTheme()] } },
     build: { cssCodeSplit: false },
     plugins: [
+      docsBundleBudget(),
       pruneThemeBundle(),
       llmstxt({
         title: "cssdoc",
