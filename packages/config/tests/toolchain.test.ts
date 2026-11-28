@@ -210,12 +210,15 @@ test("JSON lint preserves dialects and detects duplicate keys and unsafe interch
     [String.raw`{"\udc00":1}`, "json/no-unsafe-values"],
   ];
   await Promise.all(
-    invalid.map(async ([text, ruleId]) => {
-      const [result] = await eslint.lintText(text, { filePath: join(root, "lint-probe.json") });
-      expect(result?.messages.map((message) => [message.ruleId, message.severity])).toEqual([
-        [ruleId, 2],
-      ]);
-    }),
+    ["lint-probe.json", "docs/lint-probe.json"].flatMap((file) =>
+      invalid.map(async ([text, ruleId]) => {
+        const [result] = await eslint.lintText(text, { filePath: join(root, file) });
+        expect(
+          result?.messages.map((message) => [message.ruleId, message.severity]),
+          `Unsafe JSON: ${file}`,
+        ).toEqual([[ruleId, 2]]);
+      }),
+    ),
   );
   await Promise.all(
     [
@@ -236,6 +239,7 @@ test("JSON lint preserves dialects and detects duplicate keys and unsafe interch
       "servers/vscode/.vscode/tasks.json",
       "tsconfig.base.json",
       "docs/tsconfig.typedoc.json",
+      "docs/.markdownlint-cli2.jsonc",
       "packages/config/tests/fixtures/cssdoc.json",
       "packages/config/tests/fixtures/base.cssdoc.json",
       "docs/examples/cssdoc.rscss.json",
@@ -254,6 +258,7 @@ test("JSON lint preserves dialects and detects duplicate keys and unsafe interch
   await Promise.all(
     [
       ["package.json", jsonc],
+      ["docs/package.json", jsonc],
       ["lint-probe.json", '{"value":1,}'],
       ["lint-probe.jsonc", "{value:1}"],
     ].map(async ([file, text]) => {
@@ -439,7 +444,7 @@ test("docs Markdown task reports syntax errors and supplemental link-text warnin
     const failed = spawnSync("vp", ["run", "docs:lint"], { cwd: root, encoding: "utf8" });
     expect(failed.status, `${failed.stdout}\n${failed.stderr}`).toBe(1);
     expect(failed.stdout).toContain("markdown/no-missing-label-refs");
-    const command = getStagedCommands()[1];
+    const command = getStagedCommands()[0];
     if (!command?.startsWith("vp exec eslint --config docs/eslint.config.mjs ")) {
       throw new Error("Missing Markdown lint gate before staged formatting");
     }

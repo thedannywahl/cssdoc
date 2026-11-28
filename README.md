@@ -311,6 +311,8 @@ includes it, so CI and release gates check authored docs. JS/Vue linting stays o
 fences aren't separately linted as executable programs.
 Staged checks also validate raw docs Markdown before formatting; the explicit docs base path keeps
 root Markdown and other packages outside that gate.
+The docs ESLint config inherits the root JSON policy with explicit base paths, so per-file config
+discovery doesn't disable JSON checks in docs. The shared staged command checks both languages once.
 
 The audit covered 26 authored pages and all 21 ESLint Markdown plus 53 markdownlint rules.
 Every rule had a positive controlled fixture; every installed option schema was reviewed.

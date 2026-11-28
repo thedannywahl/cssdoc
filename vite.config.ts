@@ -13,7 +13,6 @@ const config: UserConfig = mergeConfig(
   defineConfig({
     staged: {
       "*": [
-        "vp exec eslint --config eslint.config.mjs --max-warnings 0 --no-warn-ignored",
         "vp exec eslint --config docs/eslint.config.mjs --max-warnings 0 --no-warn-ignored",
         "vp check --fix",
       ],

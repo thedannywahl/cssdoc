@@ -1,21 +1,10 @@
 import markdown from "@eslint/markdown";
 import { defineConfig } from "eslint/config";
 
+import jsonConfig from "../eslint.config.mjs";
+
 export default defineConfig([
-  { ignores: ["**/*.{js,mjs,cjs}"] },
-  {
-    basePath: import.meta.dirname,
-    ignores: [
-      "**/node_modules/**",
-      "**/dist/**",
-      "**/coverage/**",
-      "**/.vitepress/cache/**",
-      "**/.worktrees/**",
-      "**/.claude/worktrees/**",
-      "reference/**",
-      "internal/**",
-    ],
-  },
+  ...jsonConfig,
   {
     basePath: import.meta.dirname,
     files: ["**/*.md"],

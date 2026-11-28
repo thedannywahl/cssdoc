@@ -13,6 +13,7 @@ const rules = {
 
 export default defineConfig([
   {
+    basePath: import.meta.dirname,
     ignores: [
       // ESLint otherwise includes these extensions by default; Oxlint owns them.
       "**/*.{js,mjs,cjs}",
@@ -30,12 +31,14 @@ export default defineConfig([
     ],
   },
   {
+    basePath: import.meta.dirname,
     files: ["**/*.json"],
     plugins: { json },
     language: "json/json",
     rules,
   },
   {
+    basePath: import.meta.dirname,
     files: [
       "**/*.jsonc",
       "**/.vscode/*.json",
