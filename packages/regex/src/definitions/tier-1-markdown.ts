@@ -4,14 +4,30 @@
  * @module
  */
 
-import type { RawPatternDef, PatternResolver } from "../types.ts";
+import type { PatternDefinition } from "../types.ts";
+
+/** Literal three-backtick fence marker. */
+export const MARKDOWN_BACKTICK_FENCE_TEXT: string = "```";
+
+/** One to six heading markers followed by whitespace */
+export const MARKDOWN_ATX_HEADING_PREFIX: RegExp = /#{1,6}\s/;
+/** Three backticks used as a Markdown fence marker, without line or block rules */
+export const MARKDOWN_BACKTICK_FENCE: RegExp = /`{3}/u;
+/** Three backticks after the start of a line and optional whitespace */
+export const MARKDOWN_BACKTICK_FENCE_LINE_PREFIX: RegExp = /(?:^|\n)\s*`{3}/u;
+/** Captured single-backtick-delimited span, including empty and multiline spans */
+export const MARKDOWN_SINGLE_BACKTICK_CODE_SPAN: RegExp = /(`[^`]*`)/u;
+/** Unordered list marker character, without surrounding whitespace */
+export const MARKDOWN_UNORDERED_LIST_MARKER: RegExp = /[-*+]/u;
+/** One or more ASCII digits followed by a period, without surrounding whitespace */
+export const MARKDOWN_ORDERED_LIST_MARKER: RegExp = /\d+\./u;
 
 /** Markdown heading, fence, code span, and list marker pattern definitions. */
-export const TIER_1_MARKDOWN_PATTERNS: Record<string, RawPatternDef> = {
+export const TIER_1_MARKDOWN_PATTERNS: Record<string, PatternDefinition> = {
   MARKDOWN_ATX_HEADING_PREFIX: {
     name: "MARKDOWN_ATX_HEADING_PREFIX",
     tier: 1,
-    pattern: (resolve: PatternResolver) => String.raw`${resolve("POUND_CHAR")}{1,6}\s`,
+    regex: MARKDOWN_ATX_HEADING_PREFIX,
     description: "One to six heading markers followed by whitespace",
     composedFrom: ["POUND_CHAR"],
     fixtures: {
@@ -26,8 +42,8 @@ export const TIER_1_MARKDOWN_PATTERNS: Record<string, RawPatternDef> = {
   MARKDOWN_BACKTICK_FENCE: {
     name: "MARKDOWN_BACKTICK_FENCE",
     tier: 1,
-    pattern: (resolve: PatternResolver) => `${resolve("BACKTICK_CHAR")}{3}`,
-    flags: "u",
+    regex: MARKDOWN_BACKTICK_FENCE,
+
     description: "Three backticks used as a Markdown fence marker, without line or block rules",
     composedFrom: ["BACKTICK_CHAR"],
     fixtures: {
@@ -41,9 +57,8 @@ export const TIER_1_MARKDOWN_PATTERNS: Record<string, RawPatternDef> = {
   MARKDOWN_BACKTICK_FENCE_LINE_PREFIX: {
     name: "MARKDOWN_BACKTICK_FENCE_LINE_PREFIX",
     tier: 1,
-    pattern: (resolve: PatternResolver) =>
-      String.raw`(?:^|${resolve("LINE_FEED")})\s*${resolve("MARKDOWN_BACKTICK_FENCE")}`,
-    flags: "u",
+    regex: MARKDOWN_BACKTICK_FENCE_LINE_PREFIX,
+
     description: "Three backticks after the start of a line and optional whitespace",
     composedFrom: ["LINE_FEED", "MARKDOWN_BACKTICK_FENCE"],
     fixtures: {
@@ -57,11 +72,8 @@ export const TIER_1_MARKDOWN_PATTERNS: Record<string, RawPatternDef> = {
   MARKDOWN_SINGLE_BACKTICK_CODE_SPAN: {
     name: "MARKDOWN_SINGLE_BACKTICK_CODE_SPAN",
     tier: 1,
-    pattern: (resolve: PatternResolver) => {
-      const backtick = resolve("BACKTICK_CHAR");
-      return `(${backtick}[^${backtick}]*${backtick})`;
-    },
-    flags: "u",
+    regex: MARKDOWN_SINGLE_BACKTICK_CODE_SPAN,
+
     description: "Captured single-backtick-delimited span, including empty and multiline spans",
     composedFrom: ["BACKTICK_CHAR"],
     fixtures: {
@@ -75,9 +87,8 @@ export const TIER_1_MARKDOWN_PATTERNS: Record<string, RawPatternDef> = {
   MARKDOWN_UNORDERED_LIST_MARKER: {
     name: "MARKDOWN_UNORDERED_LIST_MARKER",
     tier: 1,
-    pattern: (resolve: PatternResolver) =>
-      `[${resolve("DASH")}${resolve("ASTERISK_CHAR")}${resolve("PLUS_CHAR")}]`,
-    flags: "u",
+    regex: MARKDOWN_UNORDERED_LIST_MARKER,
+
     description: "Unordered list marker character, without surrounding whitespace",
     composedFrom: ["DASH", "ASTERISK_CHAR", "PLUS_CHAR"],
     fixtures: {
@@ -91,8 +102,8 @@ export const TIER_1_MARKDOWN_PATTERNS: Record<string, RawPatternDef> = {
   MARKDOWN_ORDERED_LIST_MARKER: {
     name: "MARKDOWN_ORDERED_LIST_MARKER",
     tier: 1,
-    pattern: (resolve: PatternResolver) => `${resolve("DIGIT")}+${resolve("DOT")}`,
-    flags: "u",
+    regex: MARKDOWN_ORDERED_LIST_MARKER,
+
     description: "One or more ASCII digits followed by a period, without surrounding whitespace",
     composedFrom: ["DIGIT", "DOT"],
     fixtures: {

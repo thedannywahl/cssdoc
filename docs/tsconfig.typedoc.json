@@ -2,7 +2,7 @@
   "//": "Compiler options for the TypeDoc API-reference build only (not used by vp check). Mirrors the packages' settings and enables skipLibCheck so third-party .d.ts (e.g. vite-plus) don't fail the run. The paths map resolves @cssdoc/* imports to source so cross-package {@link}s share one symbol identity with the documented reflections (otherwise they resolve to the built .d.ts and can't cross-link).",
   "compilerOptions": {
     "target": "esnext",
-    "lib": ["es2023"],
+    "lib": ["es2025"],
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "types": ["node"],

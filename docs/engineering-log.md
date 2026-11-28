@@ -4,6 +4,27 @@ Hard-won fixes and gotchas from cssdoc work, including those found in downstream
 Each entry is symptom → root cause → the durable rule. Version and PR numbers are left out; the lesson
 is timeless.
 
+## Regex flag rewrites break source consumers
+
+**Symptom** — After converting regex factories to native literals, an ignore-case autofix removed
+lowercase branches from shared patterns. Modifier extraction and syntax highlighting stopped
+recognizing lowercase names.
+
+**Root cause** — The rewrite preserved direct matching by adding `i`, but consumers of `.source`
+didn't inherit that flag. TextMate grammars also store pattern text rather than native regex objects.
+
+**Fix / rule** — Author canonical patterns as native literals, derive registry metadata from those
+declarations, and keep `use-ignore-case` off for shared source fragments. Clone native patterns when
+independent flags or global state are needed. Use `RegExp.escape` for literal runtime input, not for
+configured regex syntax. Don't apply regex autofixes in bulk before checking capture shapes, flags,
+source consumers, and adversarial input.
+
+When a whitespace prefix overlaps a prose capture, capture the separator once and trim at the
+consumer. For free-form description separators, don't retry a whitespace run at every character.
+Keep greedy identifier boundaries explicit when the following capture accepts the same characters.
+The attribute scanners retain empty unquoted class values, but modifier attributes reject
+whitespace-only values.
+
 ## Documentation bundle warnings hide different kinds of payloads
 
 **Symptom** — Documentation builds reported a redundant CodeMirror import and oversized JavaScript

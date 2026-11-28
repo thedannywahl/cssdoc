@@ -1,6 +1,5 @@
 /* oxlint-disable eslint/require-unicode-regexp -- TextMate patterns use Oniguruma syntax. */
 import { CSSDOC_TAG_NAMES } from "@cssdoc/spec";
-import { regex as arkRegex } from "arkregex";
 import { createHighlighter } from "shiki";
 import { expect, test } from "vite-plus/test";
 
@@ -179,7 +178,7 @@ test("@structure region highlights nested @scope and @variant with names", () =>
   if (!scopePattern || typeof scopePattern.match !== "string") {
     throw new TypeError("Expected a scope pattern");
   }
-  const SCOPE = arkRegex.as(scopePattern.match, "u");
+  const SCOPE = new RegExp(scopePattern.match, "u");
   const scopeMatch = SCOPE.exec("@scope (.menu) {");
   expect(scopeMatch?.[0]).toBe("@scope");
   expect(SCOPE.exec("@scope-menu (.menu) {")).toBeNull();
@@ -197,7 +196,7 @@ test("@structure region highlights nested @scope and @variant with names", () =>
   if (!structureTagPattern || typeof structureTagPattern.match !== "string") {
     throw new TypeError("Expected a variant pattern");
   }
-  const VARIANT = arkRegex.as(structureTagPattern.match, "u");
+  const VARIANT = new RegExp(structureTagPattern.match, "u");
   const variantMatch = VARIANT.exec(nestedVariant);
   expect(variantMatch?.[1]).toBe("@variant");
   expect(variantMatch?.[2]).toBe("compact");
@@ -216,7 +215,7 @@ test.each([
 ])("@structure component references include the full :%s cardinality", (cardinality) => {
   const pattern = buildInjectionGrammar().repository["structure-tag"]?.patterns?.[0]?.match;
   expect(pattern).toBeDefined();
-  const COMPONENT_REFERENCE = arkRegex.as(pattern!, "u");
+  const COMPONENT_REFERENCE = new RegExp(pattern!, "u");
   const match = COMPONENT_REFERENCE.exec(`@component button:${cardinality}`);
   expect(match?.[2]).toBe(`button:${cardinality}`);
 });

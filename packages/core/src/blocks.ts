@@ -1,15 +1,4 @@
-import {
-  AT_CHAR,
-  AT_SOURCE,
-  BRACE_OPEN_CHAR,
-  COMMENT_START_SOURCE,
-  CSSDOC_BLOCK_TAG_NAME_SOURCE,
-  CARRIAGE_RETURN_CHAR,
-  LINE_FEED_CHAR,
-  LINE_ENDING_SOURCE,
-} from "@cssdoc/regex";
-import type { Regex } from "arkregex";
-import { regex as arkRegex } from "arkregex";
+import { AT_CHAR, BRACE_OPEN_CHAR, CARRIAGE_RETURN_CHAR, LINE_FEED_CHAR } from "@cssdoc/regex";
 
 import {
   normalizedCodeBoundaryText,
@@ -64,8 +53,8 @@ export function docCommentFenceRanges(blocks: readonly DocCommentBlock[]): Array
   /** Exclusive UTF-16 offset of the fenced line in the original comment. */
   end: number;
 }> {
-  const ENDING: Regex = arkRegex.as(LINE_ENDING_SOURCE, "gu");
-  const STRUCTURE: Regex = arkRegex.as(`^${AT_SOURCE}structure(?:\\s|$)`, "u");
+  const ENDING: RegExp = /\r\n|\r|\n/gu;
+  const STRUCTURE: RegExp = /^@structure(?:\s|$)/u;
   const ranges: Array<{ start: number; end: number }> = [];
   for (const block of blocks) {
     if (STRUCTURE.exec(block.text) !== null) continue;
@@ -146,13 +135,10 @@ export function collectDocCommentBlocks(
   raw: string,
   configuration: CssDocConfiguration = new CssDocConfiguration(),
 ): DocCommentBlock[] {
-  const TAG_LINE: Regex = arkRegex.as(
-    String.raw`^\s*${AT_SOURCE}(${CSSDOC_BLOCK_TAG_NAME_SOURCE})`,
-    "u",
-  );
-  const INDENTED_AT_RULE: Regex = arkRegex.as(String.raw`^\s+${AT_SOURCE}`, "u");
-  const COMMENT_OPENING: Regex = arkRegex.as(`^${COMMENT_START_SOURCE}`, "u");
-  const framed = COMMENT_OPENING.test(raw);
+  const TAG_LINE: RegExp = /^\s*@([A-Za-z][\w-]*)/u;
+  const INDENTED_AT_RULE: RegExp = /^\s+@/u;
+  const COMMENT_OPENING: RegExp = /^\/\*/u;
+  const framed = raw.startsWith("/*");
   const lines = frameCommentLines(raw, framed ? "framed" : "none");
   const text = lines.map((line) => line.text + line.ending).join("");
   const start = text.length - text.trimStart().length;
@@ -187,7 +173,7 @@ export function collectDocCommentBlocks(
       blocks.length > 0 &&
       !inStructureBlock &&
       scanCodeBoundaryLine(normalizedCodeBoundaryText(line), codeState);
-    const tagMatch = line.match(TAG_LINE);
+    const tagMatch = TAG_LINE.exec(line);
     const isKnownTag =
       tagMatch !== null && configuration.tryGetTagDefinition(tagMatch[1]) !== undefined;
     const inNestedStructure =

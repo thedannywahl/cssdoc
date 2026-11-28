@@ -15,46 +15,22 @@ import { type CssDocEntry, type ParseOptions, parseCssDocs } from "@cssdoc/core"
 import { type CssDialect as ParserDialect, resolveParser } from "@cssdoc/dialects";
 import { type LintOptions, type Violation, lintCssDocs } from "@cssdoc/lint-core";
 import {
-  ALPHA_LOWER_SOURCE,
-  ALPHA_SOURCE,
   ASTERISK_CHAR,
   BACKSLASH_CHAR,
   BACKTICK_CHAR,
   BRACE_CLOSE_CHAR,
-  BRACE_CLOSE_SOURCE,
   BRACE_OPEN_CHAR,
-  BRACE_OPEN_SOURCE,
   CARRIAGE_RETURN_CHAR,
-  COLON_CHAR,
-  COMMENT_END_SOURCE,
-  COMMENT_START_SOURCE,
-  DASH_SOURCE,
   DOLLAR_CHAR,
-  EQUALS_CHAR,
   FILE_EXTENSION,
   FORWARD_SLASH_CHAR,
-  GREATER_THAN_CHAR,
-  HTML_COMMENT,
-  HTML_LIKE_CLASS_ATTRIBUTE_NAME_SOURCE,
-  HTML_LIKE_DOTTED_TAG_NAME_SOURCE,
-  HTML_LIKE_STYLE_CLOSE_PREFIX_SOURCE,
-  HTML_LIKE_STYLE_OPEN_TAG_SOURCE,
-  HTML_QUOTED_ATTRIBUTE_VALUE_SOURCE,
-  JAVASCRIPT_QUOTED_OR_TEMPLATE_LITERAL_LIKE,
-  JAVASCRIPT_TAGGED_TEMPLATE_BOUNDARY_SOURCE,
-  JAVASCRIPT_TAGGED_TEMPLATE_CHAIN_SEGMENT_SOURCE,
-  LESS_THAN_CHAR,
+  JAVASCRIPT_TAGGED_TEMPLATE_BOUNDARY,
+  JAVASCRIPT_TAGGED_TEMPLATE_CHAIN_SEGMENT,
   LINE_FEED_CHAR,
-  LINE_FEED_SOURCE,
   QUOTE_DOUBLE_CHAR,
   QUOTE_SINGLE_CHAR,
-  WORD_BOUNDARY_SOURCE,
-  MARKDOWN_BACKTICK_FENCE_SOURCE,
   MARKDOWN_BACKTICK_FENCE_TEXT,
-  escapeRegex,
-  toRegExp,
 } from "@cssdoc/regex";
-import { regex as arkRegex } from "arkregex";
 
 /** A host language cssdoc can pull embedded CSS out of. */
 export type EmbeddedHost = "js" | "html" | "markdown";
@@ -100,10 +76,7 @@ export const DEFAULT_TAGS: readonly string[] = [
   "injectGlobal",
 ];
 
-const LANG_ATTRIBUTE = arkRegex.as(
-  String.raw`${WORD_BOUNDARY_SOURCE}lang\s*${EQUALS_CHAR}\s*[${QUOTE_DOUBLE_CHAR}${QUOTE_SINGLE_CHAR}]?(${ALPHA_LOWER_SOURCE}+)`,
-  "iu",
-);
+const LANG_ATTRIBUTE = /\blang\s*=\s*["']?([a-z]+)/iu;
 
 interface Region {
   start: number;
@@ -186,8 +159,8 @@ function scanJs(
   const comments: Mask[] = [];
   if (tags.length === 0) return { regions, masks, comments };
   // Matches a CSS tag expression immediately before a backtick: `css`, `styled.x`, `styled(x)`, chains.
-  const tagRe = arkRegex.as(
-    `${JAVASCRIPT_TAGGED_TEMPLATE_BOUNDARY_SOURCE}(?:${tags.map((tag) => escapeRegex(tag)).join("|")})${JAVASCRIPT_TAGGED_TEMPLATE_CHAIN_SEGMENT_SOURCE}*\\s*$`,
+  const tagRe = new RegExp(
+    `${JAVASCRIPT_TAGGED_TEMPLATE_BOUNDARY.source}(?:${tags.map((tag) => RegExp.escape(tag)).join("|")})${JAVASCRIPT_TAGGED_TEMPLATE_CHAIN_SEGMENT.source}*\\s*$`,
     "u",
   );
   for (let i = 0; i < src.length; i++) {
@@ -240,15 +213,15 @@ function scanJs(
 function scanHtml(src: string): { regions: Region[] } {
   const regions: Region[] = [];
   const maskedSource = maskComments(src);
-  const open = arkRegex.as(HTML_LIKE_STYLE_OPEN_TAG_SOURCE, "giu");
-  const closeTag = arkRegex.as(HTML_LIKE_STYLE_CLOSE_PREFIX_SOURCE, "giu");
+  const open = /<style([^>]*)>/giu;
+  const closeTag = /<\/style/giu;
   let m: RegExpExecArray | null = open.exec(maskedSource);
   while (m) {
     const contentStart = m.index + m[0].length;
     closeTag.lastIndex = contentStart;
     const close = closeTag.exec(maskedSource)?.index ?? -1;
     const end = close === -1 ? maskedSource.length : close;
-    const lang = m[1].match(LANG_ATTRIBUTE)?.[1];
+    const lang = LANG_ATTRIBUTE.exec(m[1])?.[1];
     regions.push({ start: contentStart, end, host: "html", dialect: dialectFromLang(lang) });
     open.lastIndex = close === -1 ? maskedSource.length : close;
     m = open.exec(maskedSource);
@@ -259,10 +232,7 @@ function scanHtml(src: string): { regions: Region[] } {
 /** Find fenced CSS and SCSS code blocks in Markdown/MDX. */
 function scanMarkdown(src: string): { regions: Region[] } {
   const regions: Region[] = [];
-  const fence = arkRegex.as(
-    String.raw`(^|${LINE_FEED_SOURCE})${MARKDOWN_BACKTICK_FENCE_SOURCE}(${ALPHA_SOURCE}+)[^${LINE_FEED_SOURCE}]*${LINE_FEED_SOURCE}`,
-    "gu",
-  );
+  const fence = /(^|\n)`{3}([A-Za-z]+)(?![A-Za-z])[^\n]*\n/gu;
   let m: RegExpExecArray | null = fence.exec(src);
   while (m) {
     const lang = m[2].toLowerCase();
@@ -438,42 +408,20 @@ export interface ClassUsageSite {
   tokens: ClassToken[];
 }
 
-const TAG = arkRegex.as(
-  String.raw`${LESS_THAN_CHAR}(${HTML_LIKE_DOTTED_TAG_NAME_SOURCE})${WORD_BOUNDARY_SOURCE}([^${GREATER_THAN_CHAR}]*)${GREATER_THAN_CHAR}`,
-  "gu",
-);
+const TAG = /<([A-Za-z][\w.-]*)\b([^>]*)>/gu;
 // Static `class="…"` / `className="…"` — not `:class` / `v-bind:class` (excluded by the lookbehind).
-const STATIC_CLASS = arkRegex.as(
-  String.raw`(?<![${COLON_CHAR}\w${DASH_SOURCE}])${HTML_LIKE_CLASS_ATTRIBUTE_NAME_SOURCE}\s*${EQUALS_CHAR}\s*(${HTML_QUOTED_ATTRIBUTE_VALUE_SOURCE})`,
-  "gu",
-);
+const STATIC_CLASS = /(?<![:\w-])(?:className|class)\s*=\s*("([^"]*)"|'([^']*)')/gu;
 // JSX brace value: `className={ … }` / `class={ … }` (string/template literals inside are class names).
-const JSX_CLASS = arkRegex.as(
-  String.raw`(?<![${COLON_CHAR}\w${DASH_SOURCE}])${HTML_LIKE_CLASS_ATTRIBUTE_NAME_SOURCE}\s*${EQUALS_CHAR}\s*${BRACE_OPEN_SOURCE}([^${BRACE_OPEN_CHAR}${BRACE_CLOSE_CHAR}]*)${BRACE_CLOSE_SOURCE}`,
-  "gu",
-);
+const JSX_CLASS = /(?<![:\w-])(?:className|class)\s*=\s*\{([^{}]*)\}/gu;
 // Vue bound value: `:class="…"` / `v-bind:class="…"` (string literals inside the expression).
-const VUE_BOUND = arkRegex.as(
-  String.raw`(?:${COLON_CHAR}class|v-bind${COLON_CHAR}class)\s*${EQUALS_CHAR}\s*(${HTML_QUOTED_ATTRIBUTE_VALUE_SOURCE})`,
-  "gu",
-);
+const VUE_BOUND = /(?::class|v-bind:class)\s*=\s*("([^"]*)"|'([^']*)')/gu;
 // Svelte directive: `class:name` toggles the class `name`.
-const SVELTE_CLASS = arkRegex.as(
-  String.raw`${WORD_BOUNDARY_SOURCE}class${COLON_CHAR}([\w${DASH_SOURCE}]+)`,
-  "gu",
-);
-const STRING_LITERAL = toRegExp(JAVASCRIPT_QUOTED_OR_TEMPLATE_LITERAL_LIKE);
-const WORD = arkRegex.as(String.raw`\S+`, "gu");
+const SVELTE_CLASS = /\bclass:([\w-]+)/gu;
+const STRING_LITERAL = /(["'`])((?:(?!\1)[\s\S])*)\1/gu;
+const WORD = /\S+/gu;
 // Comment forms to blank before scanning, so commented-out markup isn't read as a usage. The `//`
 // form guards against `://` (URLs) so a `href="http://…"` isn't mistaken for a line comment.
-const COMMENT_RES = [
-  toRegExp(HTML_COMMENT),
-  arkRegex.as(`${COMMENT_START_SOURCE}[\\s\\S]*?${COMMENT_END_SOURCE}`, "gu"),
-  arkRegex.as(
-    String.raw`(?<![${COLON_CHAR}${FORWARD_SLASH_CHAR}])${FORWARD_SLASH_CHAR}{2}[^${LINE_FEED_SOURCE}]*`,
-    "gu",
-  ),
-];
+const COMMENT_RES = [/<!--[\s\S]*?-->/gu, /\/\*[\s\S]*?\*\//gu, /(?<![:/])\/{2}[^\n]*/gu];
 
 /** Blank every `${ … }` interpolation in a template-literal body to same-length spaces, so a static
  * prefix like `-icon-` followed by an interpolation still tokenizes to `-icon-` instead of the raw expression

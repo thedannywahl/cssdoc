@@ -39,7 +39,6 @@
   "dependencies": {
     "@cssdoc/regex": "workspace:*",
     "@cssdoc/spec": "workspace:*",
-    "arkregex": "catalog:",
     "arktype": "catalog:",
     "mdast-util-from-markdown": "catalog:",
     "postcss": "catalog:"

@@ -33,19 +33,7 @@ import {
   splitModifierArg,
   splitPartArg,
 } from "@cssdoc/core";
-import {
-  AT_SOURCE,
-  COMMENT_LINE_PREFIX,
-  CSSDOC_BASE_CLASS_REFERENCE,
-  CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE,
-  CSSDOC_CUSTOM_STATE_SELECTOR,
-  CSSDOC_SCANNED_PSEUDO_SELECTOR,
-  CSSDOC_SHADOW_PART_SELECTOR,
-  DOT_CHAR,
-  WORD_BOUNDARY_SOURCE,
-  toRegExp,
-} from "@cssdoc/regex";
-import { regex as arkRegex } from "arkregex";
+import { COMMENT_LINE_PREFIX, DOT_CHAR } from "@cssdoc/regex";
 import { parse as parsePostcss, type ChildNode } from "postcss";
 import valueParser from "postcss-value-parser";
 
@@ -88,13 +76,10 @@ export type {
  * case, so a PascalCase or namespaced/prefixed class (`.Button`, `.PFX-badge`) is picked up as a part —
  * `-`-led modifiers and digit-led idents are excluded. Shares the parser's class-name pattern.
  */
-const CLASS_REF = toRegExp(CSSDOC_BASE_CLASS_REFERENCE);
-const AUTHORED_MEMBER = arkRegex.as(String.raw`^${AT_SOURCE}(modifier|part)\s+([\s\S]*)$`, "u");
-const CUSTOM_FUNCTION = arkRegex.as(`^(${CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE})`, "u");
-const RESET_VALUE = arkRegex.as(
-  `${WORD_BOUNDARY_SOURCE}(?:unset|initial|inherit|revert|revert-layer)${WORD_BOUNDARY_SOURCE}`,
-  "u",
-);
+const CLASS_REF = /\.([A-Za-z_][\w-]*)/gu;
+const AUTHORED_MEMBER = /^@(modifier|part)\s([\s\S]*)$/u;
+const CUSTOM_FUNCTION = /^(--[\w-]+)/u;
+const RESET_VALUE = /\b(?:unset|initial|inherit|revert|revert-layer)\b/u;
 
 /** A 1-based line/column position (matching PostCSS). */
 export interface Position {
@@ -304,7 +289,7 @@ function scanAuthoredTagLines(
   const lines = text.split("\n");
   for (const [i, line] of lines.entries()) {
     const stripped = line.replace(COMMENT_LINE_PREFIX, "");
-    const m = stripped.match(AUTHORED_MEMBER);
+    const m = AUTHORED_MEMBER.exec(stripped);
     if (!m) continue;
     const lineNumber = startLine + i;
     const span: SourceSpan = {
@@ -312,10 +297,10 @@ function scanAuthoredTagLines(
       end: { line: lineNumber, column: line.length + 1 },
     };
     if (m[1] === "modifier") {
-      const { name } = splitModifierArg(m[2]);
+      const { name } = splitModifierArg(m[2].trimStart());
       if (!modifierLines.has(name)) modifierLines.set(name, span);
     } else {
-      const { name } = splitPartArg(m[2]);
+      const { name } = splitPartArg(m[2].trimStart());
       if (!partLines.has(name)) partLines.set(name, span);
     }
   }
@@ -692,9 +677,9 @@ function scanNodes(
   matcher: ModifierMatcher,
   inStyleRule = false,
 ): void {
-  const customState = toRegExp(CSSDOC_CUSTOM_STATE_SELECTOR);
-  const shadowPart = toRegExp(CSSDOC_SHADOW_PART_SELECTOR);
-  const pseudo = toRegExp(CSSDOC_SCANNED_PSEUDO_SELECTOR);
+  const customState = /:state\(\s*([\w-]+)\s*\)/gu;
+  const shadowPart = /::part\(\s*([\w-]+)\s*\)/gu;
+  const pseudo = /::?[\w-]+(\([^)]*\))?/gu;
   const baseNoDot = stripDot(base);
   const set = (key: string, node: ChildNode): void => {
     const span = spanOf(node);
@@ -721,7 +706,7 @@ function scanNodes(
         for (const pe of matcher.pseudoElementsIn(selector)) {
           set(memberKey("pseudo-element", pe.name), node);
         }
-        const bare = selector.replace(pseudo, "");
+        const bare = selector.replaceAll(pseudo, "");
         const modNames = new Set<string>();
         for (const mod of matcher.modifiersIn(bare, baseNoDot)) {
           modNames.add(mod.name);
@@ -767,7 +752,7 @@ function scanNodes(
       }
       if (node.name === "property") set(memberKey("property", node.params.trim()), node);
       else if (node.name === "function") {
-        const fn = node.params.trim().match(CUSTOM_FUNCTION);
+        const fn = CUSTOM_FUNCTION.exec(node.params.trim());
         if (fn) set(memberKey("function", fn[1]), node);
       } else if (node.name === "keyframes") set(memberKey("animation", node.params.trim()), node);
       else if (node.name === "layer") {

@@ -25,7 +25,7 @@ import {
   projectPublicModel,
 } from "@cssdoc/index";
 import {
-  ALPHANUMERIC_EXTENDED_SOURCE,
+  ALPHANUMERIC_EXTENDED,
   ASTERISK_CHAR,
   AT_CHAR,
   BACKTICK_CHAR,
@@ -36,37 +36,20 @@ import {
   CARET_CHAR,
   COLON_CHAR,
   COMMENT_END_TEXT,
-  CSS_CLASS_ATTRIBUTE_SELECTOR,
-  CSS_CLASS_REFERENCE,
-  CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE,
-  CSSDOC_QUALIFIED_REFERENCE_SOURCE,
-  CSSDOC_SHORTHAND_STRUCTURE_REFERENCE_SOURCE,
-  CSSDOC_TYPED_STRUCTURE_REFERENCE_SOURCE,
   DOLLAR_CHAR,
   DOT_CHAR,
-  DOT_SOURCE,
+  DOT,
   FORWARD_SLASH_CHAR,
   GREATER_THAN_CHAR,
-  HTML_CUSTOM_ELEMENT_LIKE_NAME_SOURCE,
   LESS_THAN_CHAR,
-  LINE_ENDING_SOURCE,
   LINE_FEED_CHAR,
   MARKDOWN_BACKTICK_FENCE_LINE_PREFIX,
   MARKDOWN_BACKTICK_FENCE_TEXT,
   PAREN_CLOSE_CHAR,
-  PAREN_CLOSE_SOURCE,
   PAREN_OPEN_CHAR,
-  PAREN_OPEN_SOURCE,
-  POUND_CHAR,
-  STRUCTURE_RECORD_KIND_SOURCE,
-  TILDE_CHAR,
   UNDERSCORE_CHAR,
-  WORD_BOUNDARY_SOURCE,
-  escapeRegex,
-  toRegExp,
+  WORD_BOUNDARY,
 } from "@cssdoc/regex";
-import type { Regex } from "arkregex";
-import { regex as arkRegex } from "arkregex";
 
 import { linkSyntax } from "./mdn.ts";
 import { matchesSyntax } from "./syntax.ts";
@@ -96,9 +79,9 @@ const linkedSyntax = (syntax: string): string => {
 };
 
 const codeSpan = (text: string): string => `${BACKTICK_CHAR}${text}${BACKTICK_CHAR}`;
-const LINE_ENDING: Regex = arkRegex.as(LINE_ENDING_SOURCE, "gu");
+const LINE_ENDING: RegExp = /\r\n|\r|\n/gu;
 const plainHoverProse = (text: string): string =>
-  literalMarkdownText(unescapeInlineOpeners(text, "plain")).replace(
+  literalMarkdownText(unescapeInlineOpeners(text, "plain")).replaceAll(
     LINE_ENDING,
     `  ${LINE_FEED_CHAR}`,
   );
@@ -108,7 +91,7 @@ const codicon = (name: string): string =>
   `${DOLLAR_CHAR}${PAREN_OPEN_CHAR}${name}${PAREN_CLOSE_CHAR}`;
 const dash = (d?: string): string => (d ? ` — ${d}` : "");
 const emptySection = `${UNDERSCORE_CHAR}—${UNDERSCORE_CHAR}`;
-const SELECTOR_PREFIX: Regex = arkRegex.as(`^[${DOT_CHAR}${POUND_CHAR}]`, "u");
+const SELECTOR_PREFIX: RegExp = /^[.#]/u;
 const stripDot = (name: string): string => (name.startsWith(DOT_CHAR) ? name.slice(1) : name);
 const warn = (d: Omit<Diagnostic, "severity">): Diagnostic => ({ ...d, severity: "warning" });
 const scaffoldDocLine = (commentSpan: SourceSpan | undefined, line: string): Diagnostic["fix"] => {
@@ -126,18 +109,18 @@ const scaffoldDocLine = (commentSpan: SourceSpan | undefined, line: string): Dia
   };
 };
 
-const CUSTOM_ELEMENT: Regex = arkRegex.as(`^${HTML_CUSTOM_ELEMENT_LIKE_NAME_SOURCE}$`, "u");
+const CUSTOM_ELEMENT: RegExp = /^[a-z][\d._a-z]*-[\d\-._a-z]+$/u;
 
 /** A `*`-glob name (e.g. `-icon-*`) as a regex source over one class token (`*` → any `[\w-]` run). */
 const globSource = (name: string): string =>
   name
     .split(ASTERISK_CHAR)
-    .map((part) => escapeRegex(part))
-    .join(`${ALPHANUMERIC_EXTENDED_SOURCE}*`);
+    .map((part) => RegExp.escape(part))
+    .join(`${ALPHANUMERIC_EXTENDED.source}*`);
 
 /** `class` attribute selectors, capturing the operator (`~`/`^`/`$`/`*`/`|`/none) and the value. */
-const CLASS_ATTR = toRegExp(CSS_CLASS_ATTRIBUTE_SELECTOR);
-const CLASS_REFERENCE = toRegExp(CSS_CLASS_REFERENCE);
+const CLASS_ATTR = /\[\s*class\s*([~^$*|]?)=\s*(?!\s)(?:"([^"]*)"|'([^']*)'|([^\]\s]*))\s*\]/gu;
+const CLASS_REFERENCE = /\.([\w-]+)/gu;
 
 /**
  * Whether `selectorText` (the record's concatenated selectors) defines the modifier/part `selector`.
@@ -157,14 +140,14 @@ export const selectorDefines = (selectorText: string, selector: string): boolean
   const prefix = name.split(ASTERISK_CHAR)[0]; // literal part before the first `*`
 
   // 1. A literal class token matching the (glob) name — e.g. `.-icon-foo` for `-icon-*`, `.-foo` for `-foo`.
-  const CLASS: Regex = arkRegex.as(
-    `${DOT_SOURCE}${globSource(name)}(?!${ALPHANUMERIC_EXTENDED_SOURCE})`,
+  const CLASS: RegExp = new RegExp(
+    `${DOT.source}${globSource(name)}(?!${ALPHANUMERIC_EXTENDED.source})`,
     "u",
   );
   if (CLASS.exec(selectorText) !== null) return true;
 
   // 2. `class` attribute selectors, evaluated per operator against the modifier as a class token.
-  const glob: Regex = arkRegex.as(`^${globSource(name)}$`, "u");
+  const glob: RegExp = new RegExp(`^${globSource(name)}$`, "u");
   for (const m of selectorText.matchAll(CLASS_ATTR)) {
     const op = m[1];
     const v = m[2] ?? m[3] ?? m[4] ?? "";
@@ -186,27 +169,22 @@ export const selectorDefines = (selectorText: string, selector: string): boolean
  */
 const globMatch = (pattern: string, value: string): boolean => {
   if (!pattern.includes(ASTERISK_CHAR)) return pattern === value;
-  const re: Regex = arkRegex.as(
+  const re: RegExp = new RegExp(
     `^${pattern
       .split(ASTERISK_CHAR)
-      .map((part) => escapeRegex(part))
+      .map((part) => RegExp.escape(part))
       .join(".*")}$`,
     "u",
   );
   return re.test(value);
 };
 
-const STRUCTURE_REF_KIND: Regex = arkRegex.as(`^${STRUCTURE_RECORD_KIND_SOURCE}$`, "u");
-const CUSTOM_MEDIA_REFERENCE = String.raw`(${CSSDOC_QUALIFIED_REFERENCE_SOURCE})\s+${PAREN_OPEN_SOURCE}\s*(${CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE})\s*${PAREN_CLOSE_SOURCE}(?:\s+(private))?`;
-const TYPED_CUSTOM_MEDIA: Regex = arkRegex.as(
-  String.raw`^(${STRUCTURE_RECORD_KIND_SOURCE})\s+${CUSTOM_MEDIA_REFERENCE}$`,
-  "u",
-);
-const SHORTHAND_CUSTOM_MEDIA: Regex = arkRegex.as(`^${CUSTOM_MEDIA_REFERENCE}$`, "u");
-const TERMINAL_COMPOUND: Regex = arkRegex.as(
-  String.raw`([^\s${GREATER_THAN_CHAR}${TILDE_CHAR}+]+)\s*$`,
-  "u",
-);
+const STRUCTURE_REF_KIND: RegExp = /^(?:component|name|utility|declaration)$/u;
+const TYPED_CUSTOM_MEDIA: RegExp =
+  /^(component|name|utility|declaration)\s+([\w-]+(?:\.[\w-]+)*)\s+\(\s*(--[\w-]+)\s*\)(?:\s+(private))?$/u;
+const SHORTHAND_CUSTOM_MEDIA: RegExp =
+  /^([\w-]+(?:\.[\w-]+)*)\s+\(\s*(--[\w-]+)\s*\)(?:\s+(private))?$/u;
+const TERMINAL_COMPOUND: RegExp = /([^\s>~+]+)\s*$/u;
 
 type StructureRecordRef = { kind?: string; name: string; profile?: string; private?: boolean };
 
@@ -215,8 +193,9 @@ const parseStructureRecordRef = (selector: string): StructureRecordRef | undefin
   const raw = selector.slice(1).trim();
   if (!raw) return undefined;
 
-  const TYPED: Regex = arkRegex.as(`^${CSSDOC_TYPED_STRUCTURE_REFERENCE_SOURCE}$`, "u");
-  const typed = raw.match(TYPED);
+  const TYPED: RegExp =
+    /^(component|name|utility|declaration)\s+([\w-]+(?:\.[\w-]+)*)(?::([\w-]+))?(?:\s+(private))?$/u;
+  const typed = TYPED.exec(raw);
   if (typed) {
     return {
       kind: typed[1] === "name" ? "component" : typed[1],
@@ -226,7 +205,7 @@ const parseStructureRecordRef = (selector: string): StructureRecordRef | undefin
     };
   }
 
-  const typedCustomMedia = raw.match(TYPED_CUSTOM_MEDIA);
+  const typedCustomMedia = TYPED_CUSTOM_MEDIA.exec(raw);
   if (typedCustomMedia) {
     return {
       kind: typedCustomMedia[1] === "name" ? "component" : typedCustomMedia[1],
@@ -236,7 +215,7 @@ const parseStructureRecordRef = (selector: string): StructureRecordRef | undefin
     };
   }
 
-  const shorthandCustomMedia = raw.match(SHORTHAND_CUSTOM_MEDIA);
+  const shorthandCustomMedia = SHORTHAND_CUSTOM_MEDIA.exec(raw);
   if (shorthandCustomMedia) {
     if (STRUCTURE_REF_KIND.test(shorthandCustomMedia[1])) return undefined;
     return {
@@ -246,8 +225,8 @@ const parseStructureRecordRef = (selector: string): StructureRecordRef | undefin
     };
   }
 
-  const SHORTHAND: Regex = arkRegex.as(`^${CSSDOC_SHORTHAND_STRUCTURE_REFERENCE_SOURCE}$`, "u");
-  const shorthand = raw.match(SHORTHAND);
+  const SHORTHAND: RegExp = /^([\w-]+(?:\.[\w-]+)*)(?::([\w-]+))?(?:\s+(private))?$/u;
+  const shorthand = SHORTHAND.exec(raw);
   if (!shorthand) return undefined;
   // Guard against malformed `@kind` without a name being interpreted as shorthand.
   if (STRUCTURE_REF_KIND.test(shorthand[1])) return undefined;
@@ -338,8 +317,8 @@ export const record = {
               ...(options.values.allowInherit ? [] : ["inherit"]),
             ];
       return keywords.find((k) => {
-        const KEYWORD: Regex = arkRegex.as(
-          `${WORD_BOUNDARY_SOURCE}${k}${WORD_BOUNDARY_SOURCE}`,
+        const KEYWORD: RegExp = new RegExp(
+          `${WORD_BOUNDARY.source}${k}${WORD_BOUNDARY.source}`,
           "u",
         );
         return KEYWORD.test(value);
@@ -1345,7 +1324,7 @@ export const part = {
           // A CSS-derived part is covered when an authored chain @part has it as its terminal compound.
           const cls = `${DOT_CHAR}${p.name}`;
           const coveredByChain = [...info.authoredParts.values()].some(
-            (sel) => (sel.match(TERMINAL_COMPOUND)?.[1] ?? sel) === cls,
+            (sel) => (TERMINAL_COMPOUND.exec(sel)?.[1] ?? sel) === cls,
           );
           if (coveredByChain) continue;
           out.push(

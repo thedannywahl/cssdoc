@@ -5,19 +5,15 @@
  * @module
  */
 
-import { CSSDOC_EXAMPLE_LABEL_SOURCE, DIGIT_SOURCE } from "@cssdoc/regex";
-import { regex as arkRegex } from "arkregex";
 import { ArkErrors, type JsonSchema, scope, type } from "arktype";
 
 import type { CssDocEntry, StructureNode } from "./model.ts";
 
 export { ArkErrors } from "arktype";
 
-const EXAMPLE_INDEX = arkRegex.as(`^(?:0|[1-9]${DIGIT_SOURCE}*)$`);
-const EXAMPLE_LABEL = arkRegex.as(`^(?:${CSSDOC_EXAMPLE_LABEL_SOURCE})$`);
-const STORED_CARDINALITY = arkRegex.as(
-  `^(?:optional|many|one-or-more|max-${DIGIT_SOURCE}+|one-or-more-max-${DIGIT_SOURCE}+)$`,
-);
+const EXAMPLE_INDEX = /^(?:0|[1-9]\d*)$/;
+const EXAMPLE_LABEL = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const STORED_CARDINALITY = /^(?:optional|many|one-or-more|max-\d+|one-or-more-max-\d+)$/;
 
 function uniqueItems(items: readonly unknown[]): boolean {
   return new Set(items).size === items.length;

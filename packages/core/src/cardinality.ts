@@ -5,30 +5,19 @@
  * @module
  */
 
-import {
-  COLON_SOURCE,
-  CSSDOC_CARDINALITY_KEYWORDS,
-  CSSDOC_CARDINALITY_SOURCE,
-  DIGIT_SOURCE,
-} from "@cssdoc/regex";
-import type { Regex } from "arkregex";
-import { regex as arkRegex } from "arkregex";
+import { CSSDOC_CARDINALITY_KEYWORDS } from "@cssdoc/regex";
 
 import type { StructureNode } from "./model.ts";
 
 type Cardinality = NonNullable<StructureNode["cardinality"]>;
 
 /** Match a structure cardinality suffix at the end of a string. */
-export const STRUCTURE_CARDINALITY: Regex = arkRegex.as(
-  String.raw`${COLON_SOURCE}${CSSDOC_CARDINALITY_SOURCE}\s*$`,
-  "u",
-);
-const TRAILING_CARDINALITY: Regex = arkRegex.as(
-  String.raw`^(?<base>[\s\S]*?)${COLON_SOURCE}${CSSDOC_CARDINALITY_SOURCE}(?:\s+(?<private>private))?\s*$`,
-  "u",
-);
-const BOUNDED_MAX: Regex = arkRegex.as(`^max-(${DIGIT_SOURCE}+)$`, "u");
-const BOUNDED_ONE_OR_MORE_MAX: Regex = arkRegex.as(`^one-or-more-max-(${DIGIT_SOURCE}+)$`, "u");
+export const STRUCTURE_CARDINALITY: RegExp =
+  /:(?<card>(?<oomKw>one-or-more|more):max-(?<oomMax>\d+)|max-(?<max>\d+)|(?<kw>optional|opt|many|one-or-more|more))\s*$/u;
+const TRAILING_CARDINALITY: RegExp =
+  /^(?<base>[\s\S]*?):(?<card>(?<oomKw>one-or-more|more):max-(?<oomMax>\d+)|max-(?<max>\d+)|(?<kw>optional|opt|many|one-or-more|more))(?:\s+(?<private>private))?\s*$/u;
+const BOUNDED_MAX: RegExp = /^max-(\d+)$/u;
+const BOUNDED_ONE_OR_MORE_MAX: RegExp = /^one-or-more-max-(\d+)$/u;
 
 function isBoundedCardinality(value: string): value is Cardinality {
   return BOUNDED_MAX.test(value) || BOUNDED_ONE_OR_MORE_MAX.test(value);
@@ -56,7 +45,7 @@ export function splitTrailingCardinality(raw: string): {
   cardinality?: Cardinality;
 } {
   const trimmed = raw.trim();
-  const match = trimmed.match(TRAILING_CARDINALITY);
+  const match = TRAILING_CARDINALITY.exec(trimmed);
   if (!match?.groups || !match.groups.base) return { params: trimmed };
   const card = cardinalityFromMatch(match.groups);
   if (!card) return { params: trimmed };
@@ -74,9 +63,9 @@ export function cardinalityToken(cardinality: Cardinality): string {
     case "one-or-more":
       return "1..n";
     default: {
-      const boundedMax = cardinality.match(BOUNDED_MAX);
+      const boundedMax = BOUNDED_MAX.exec(cardinality);
       if (boundedMax) return `0..${boundedMax[1]}`;
-      const boundedOneOrMoreMax = cardinality.match(BOUNDED_ONE_OR_MORE_MAX);
+      const boundedOneOrMoreMax = BOUNDED_ONE_OR_MORE_MAX.exec(cardinality);
       if (boundedOneOrMoreMax) return `1..${boundedOneOrMoreMax[1]}`;
       return cardinality;
     }

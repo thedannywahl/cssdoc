@@ -43,7 +43,6 @@
     "@cssdoc/index": "workspace:*",
     "@cssdoc/providers": "workspace:*",
     "@cssdoc/regex": "workspace:*",
-    "arkregex": "catalog:",
     "markdown-exit": "catalog:",
     "vscode-languageserver": "catalog:",
     "vscode-languageserver-textdocument": "catalog:"

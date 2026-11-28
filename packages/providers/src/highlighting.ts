@@ -11,14 +11,7 @@ import {
   parseDocComment,
   type MarkdownSyntaxRange,
 } from "@cssdoc/core/prose";
-import {
-  AT_SOURCE,
-  CARRIAGE_RETURN_CHAR,
-  CSSDOC_BLOCK_TAG_NAME_SOURCE,
-  LINE_ENDING_SOURCE,
-  LINE_FEED_CHAR,
-} from "@cssdoc/regex";
-import { regex as arkRegex } from "arkregex";
+import { CARRIAGE_RETURN_CHAR, LINE_FEED_CHAR } from "@cssdoc/regex";
 
 import { tokenize, tokenTypes } from "./css-tokenizer.ts";
 
@@ -189,7 +182,7 @@ export function highlightDocComment(
   text: string,
   configuration: CssDocConfiguration = new CssDocConfiguration(),
 ): DocHighlight[] {
-  const TAG = arkRegex.as(`^${AT_SOURCE}(${CSSDOC_BLOCK_TAG_NAME_SOURCE})`, "u");
+  const TAG = /^@([A-Za-z][\w-]*)/u;
   const result: DocHighlight[] = [];
   const doc = parseDocComment(text, configuration);
   if (doc.blocks.length === 0) {
@@ -233,7 +226,7 @@ export function highlightDocComment(
     const next = doc.blocks[index + 1]?.start ?? text.length;
     const body = doc.prose.find((item) => item.span.start >= block.start && item.span.start < next);
     const proseStart = body && body.text ? textOffset(block, body.span.start) : block.text.length;
-    const LINE_ENDING = arkRegex.as(LINE_ENDING_SOURCE, "u");
+    const LINE_ENDING = /\r\n|\r|\n/u;
     const firstLineEnding = LINE_ENDING.exec(block.text);
     const structureStart =
       definition.canonicalName === "structure" && firstLineEnding

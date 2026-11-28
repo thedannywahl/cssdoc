@@ -7,8 +7,6 @@
  * @module
  */
 
-import type { Regex } from "arkregex";
-import { regex as arkRegex } from "arkregex";
 import { describe, test, expect } from "vite-plus/test";
 
 import { PATTERN_DEFINITIONS, type UnifiedPatternDef } from "../src/definitions.js";
@@ -20,18 +18,13 @@ import {
   MARKDOWN_BACKTICK_FENCE,
   MARKDOWN_BACKTICK_FENCE_TEXT,
   MARKDOWN_BACKTICK_FENCE_LINE_PREFIX,
-  MARKDOWN_SINGLE_BACKTICK_CODE_SPAN,
-  HTML_COMMENT,
   HTML_QUOTED_ATTRIBUTE,
   HTML_QUOTED_ATTRIBUTE_VALUE,
   CARRIAGE_RETURN_CHAR,
   LINE_FEED_CHAR,
-  LINE_ENDING,
-  LINE_ENDING_SOURCE,
 } from "../src/index.ts";
-import { escapeRegex, escapeRegexChar, toRegExp } from "../src/lib.ts";
 
-function requiredRegex(def: UnifiedPatternDef): Regex {
+function requiredRegex(def: UnifiedPatternDef): RegExp {
   if (!def.regex) throw new Error(`Missing compiled regex for ${def.name}`);
   return def.regex;
 }
@@ -106,38 +99,10 @@ function matchesFixture(name: string, def: UnifiedPatternDef, input: string): bo
   return new RegExp(`^(?:${def.source})$`, def.flags).test(input);
 }
 
-test("escapes regex metacharacters without changing ordinary characters", () => {
-  for (const char of ".*+?^${}()|[]\\") {
-    expect(escapeRegexChar(char)).toBe(`\\${char}`);
-  }
-  expect(escapeRegexChar("-")).toBe("-");
-  expect(escapeRegexChar("é")).toBe("é");
-});
-
-test("escapes each metacharacter in a string while preserving literal text", () => {
-  const text = String.raw`é.a+[x]\z`;
-  const escaped = escapeRegex(text);
-  expect(escaped).toBe(String.raw`é\.a\+\[x\]\\z`);
-  expect(new RegExp(`^${escaped}$`, "u").test(text)).toBe(true);
-  expect(escapeRegex("")).toBe("");
-});
-
-test("adds global matching and anchors while preserving existing regex flags", () => {
-  const pattern = toRegExp(arkRegex.as("item", "iu"), "start-end");
-  expect(pattern.flags).toBe("giu");
-  expect([..."\nITEM\n".matchAll(pattern)]).toEqual([]);
-  expect([..."ITEM".matchAll(pattern)].map((match) => match[0])).toEqual(["ITEM"]);
-});
-
 test("distinguishes literal line characters and splits CRLF as one line ending", () => {
   expect(`${CARRIAGE_RETURN_CHAR}${LINE_FEED_CHAR}`).toBe("\r\n");
-  expect("one\r\ntwo\rthree\nfour".split(toRegExp(LINE_ENDING))).toEqual([
-    "one",
-    "two",
-    "three",
-    "four",
-  ]);
-  expect(arkRegex.as(`^${LINE_ENDING_SOURCE}$`, "u").test("\r\n")).toBe(true);
+  expect("one\r\ntwo\rthree\nfour".split(/\r\n|\r|\n/u)).toEqual(["one", "two", "three", "four"]);
+  expect(/^(?:\r\n|\r|\n)$/u.test("\r\n")).toBe(true);
 });
 
 test("captures only a trailing lowercase ASCII filename extension", () => {
@@ -164,7 +129,7 @@ test("keeps the literal fence distinct from its regex source and detects indente
 });
 
 test("captures simple code spans when splitting Markdown prose", () => {
-  const pattern = toRegExp(MARKDOWN_SINGLE_BACKTICK_CODE_SPAN);
+  const pattern = /(`[^`]*`)/gu;
   expect("a `x` b `` c `y\nz`".split(pattern)).toEqual([
     "a ",
     "`x`",
@@ -187,7 +152,7 @@ test("preserves HTML attribute value captures for either quote style", () => {
 });
 
 test("matches HTML comments separately, including multiline comments", () => {
-  const comments = toRegExp(HTML_COMMENT);
+  const comments = /<!--[\s\S]*?-->/gu;
   expect([..."<!-- a\nb --> text <!-- c -->".matchAll(comments)].map((match) => match[0])).toEqual([
     "<!-- a\nb -->",
     "<!-- c -->",
@@ -199,53 +164,64 @@ test.each([
   ["[ class ~= 'active' ]", ["~", undefined, "active", undefined]],
   ["[class=active]", ["", undefined, undefined, "active"]],
   ["[class$=]", ["$", undefined, undefined, ""]],
+  ["[class$=   ]", ["$", undefined, undefined, ""]],
 ])("captures the operator and value in %s", (selector, captures) => {
-  const pattern = new RegExp(PATTERN_DEFINITIONS.CSS_CLASS_ATTRIBUTE_SELECTOR.source, "u");
+  const pattern = requiredRegex(PATTERN_DEFINITIONS.CSS_CLASS_ATTRIBUTE_SELECTOR);
   expect(selector.match(pattern)?.slice(1)).toEqual(captures);
 });
 
+test("attribute patterns reject long unterminated whitespace without backtracking", () => {
+  const whitespace = " ".repeat(100_000);
+  const start = performance.now();
+  expect(
+    requiredRegex(PATTERN_DEFINITIONS.CSS_CLASS_ATTRIBUTE_SELECTOR).test(`[class=${whitespace}`),
+  ).toBe(false);
+  expect(
+    requiredRegex(PATTERN_DEFINITIONS.CSSDOC_MODIFIER_ATTRIBUTE).test(`[type=${whitespace}`),
+  ).toBe(false);
+  expect(performance.now() - start).toBeLessThan(1000);
+});
+
 test.each(["div", "<div>", "< div", "div >"])("captures the element name from %s", (token) => {
-  const pattern = new RegExp(`^${PATTERN_DEFINITIONS.CSSDOC_ELEMENT_TAG.source}$`, "u");
-  expect(token.match(pattern)?.[1]).toBe("div");
+  const pattern = /^<?\s*([a-z][a-z0-9-]*)\s*>?$/u;
+  expect(pattern.exec(token)?.[1]).toBe("div");
 });
 
 test("captures base-class references without admitting modifier or digit prefixes", () => {
-  const pattern = new RegExp(PATTERN_DEFINITIONS.CSSDOC_BASE_CLASS_REFERENCE.source, "gu");
+  const pattern = /\.([A-Za-z_][\w-]*)/gu;
   expect(
     [...".Card ._part-1 .-modifier .1part".matchAll(pattern)].map((match) => match[1]),
   ).toEqual(["Card", "_part-1"]);
 });
 
 test("captures permissive class references, including modifiers and digit prefixes", () => {
-  const pattern = toRegExp(requiredRegex(PATTERN_DEFINITIONS.CSS_CLASS_REFERENCE));
+  const pattern = /\.([\w-]+)/gu;
   expect(
     [...".Card ._part-1 .-modifier .1part".matchAll(pattern)].map((match) => match[1]),
   ).toEqual(["Card", "_part-1", "-modifier", "1part"]);
 });
 
 test("preserves selector scanning captures and strips functional pseudo selectors", () => {
-  const state = toRegExp(requiredRegex(PATTERN_DEFINITIONS.CSSDOC_CUSTOM_STATE_SELECTOR));
-  const part = toRegExp(requiredRegex(PATTERN_DEFINITIONS.CSSDOC_SHADOW_PART_SELECTOR));
-  const pseudo = toRegExp(requiredRegex(PATTERN_DEFINITIONS.CSSDOC_SCANNED_PSEUDO_SELECTOR));
+  const state = /:state\(\s*([\w-]+)\s*\)/gu;
+  const part = /::part\(\s*([\w-]+)\s*\)/gu;
+  const pseudo = /::?[\w-]+(\([^)]*\))?/gu;
   const selector = ".card:state( -open )::part(label):not(.hidden):hover";
   expect([...selector.matchAll(state)].map((match) => match[1])).toEqual(["-open"]);
   expect([...selector.matchAll(part)].map((match) => match[1])).toEqual(["label"]);
-  expect(selector.replace(pseudo, "")).toBe(".card");
+  expect(selector.replaceAll(pseudo, "")).toBe(".card");
 });
 
 test("preserves typed and shorthand structure reference captures", () => {
-  const typed = new RegExp(`^${PATTERN_DEFINITIONS.CSSDOC_TYPED_STRUCTURE_REFERENCE.source}$`, "u");
-  const shorthand = new RegExp(
-    `^${PATTERN_DEFINITIONS.CSSDOC_SHORTHAND_STRUCTURE_REFERENCE.source}$`,
-    "u",
-  );
-  expect("component menu.item:compact private".match(typed)?.slice(1)).toEqual([
+  const typed =
+    /^(component|name|utility|declaration)\s+([\w-]+(?:\.[\w-]+)*)(?::([\w-]+))?(?:\s+(private))?$/u;
+  const shorthand = /^([\w-]+(?:\.[\w-]+)*)(?::([\w-]+))?(?:\s+(private))?$/u;
+  expect(typed.exec("component menu.item:compact private")?.slice(1)).toEqual([
     "component",
     "menu.item",
     "compact",
     "private",
   ]);
-  expect("menu.item:compact private".match(shorthand)?.slice(1)).toEqual([
+  expect(shorthand.exec("menu.item:compact private")?.slice(1)).toEqual([
     "menu.item",
     "compact",
     "private",
@@ -265,9 +241,10 @@ describe("Pattern Definitions", () => {
         expect(def.source.length).toBeGreaterThan(0);
       });
 
-      test("has a compiled ArkRegex or is Tier 0", () => {
-        expect(def.regex === undefined).toBe(def.tier === 0);
-        const source = def.tier === 0 ? def.source : requiredRegex(def).source;
+      test("has a canonical native regex or is a literal primitive", () => {
+        const literal = name.endsWith("_CHAR") || name.endsWith("_TEXT");
+        expect(def.regex === undefined).toBe(literal);
+        const source = literal ? def.source : requiredRegex(def).source;
         expect(source).toBeTypeOf("string");
         expect(source.length).toBeGreaterThan(0);
       });

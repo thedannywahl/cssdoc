@@ -4,7 +4,6 @@ import { fileURLToPath } from "node:url";
 import grammarkdownGrammar from "@cssdoc/grammarkdown-tmlanguage";
 import { parseSidebar } from "@cssdoc/markdown";
 import cssdocGrammar, { cssdocAtRules } from "@cssdoc/tmlanguage";
-import { regex as arkRegex } from "arkregex";
 import type { DefaultTheme, UserConfig } from "vitepress";
 import { defineConfig } from "vitepress";
 import llmstxt from "vitepress-plugin-llms";
@@ -20,10 +19,10 @@ const base = process.env.DOCS_BASE ?? "/";
 
 // Canonical origin, used for the sitemap, per-page canonical links, and absolute social-card URLs.
 const hostname = "https://cssdoc.dev";
-const INDEX_MARKDOWN = arkRegex.as(String.raw`index\.md$`);
-const MARKDOWN_EXTENSION = arkRegex.as(String.raw`\.md$`);
-const GRAMMAR_PRODUCTION = arkRegex.as(String.raw`^([A-Za-z][A-Za-z0-9]*)\s+:{1,3}(?=\s|$)`);
-const EXAMPLE_DIAGNOSTIC = arkRegex.as(String.raw`(?:^|\s)diagnostic-(warning|error)="([^"]+)"`);
+const INDEX_MARKDOWN = /index\.md$/;
+const MARKDOWN_EXTENSION = /\.md$/;
+const GRAMMAR_PRODUCTION = /^([A-Z][A-Z0-9]*)\s+:{1,3}(?=\s|$)/i;
+const EXAMPLE_DIAGNOSTIC = /(?:^|\s)diagnostic-(warning|error)="([^"]+)"/;
 
 // One site-wide description, ~139 chars — a subset of the home hero tagline, long enough for social
 // unfurl previews (which want 120–140). Feeds the meta description, Open Graph, Twitter, and JSON-LD.

@@ -1,14 +1,4 @@
-import {
-  AT_SOURCE,
-  BRACE_CLOSE_SOURCE,
-  BRACE_OPEN_SOURCE,
-  CARRIAGE_RETURN_CHAR,
-  CSSDOC_BLOCK_TAG_NAME_SOURCE,
-  LINE_ENDING_SOURCE,
-  LINE_FEED_CHAR,
-  SPACE_TAB_SOURCE,
-} from "@cssdoc/regex";
-import { regex as arkRegex } from "arkregex";
+import { CARRIAGE_RETURN_CHAR, LINE_FEED_CHAR } from "@cssdoc/regex";
 
 import { blockSourceRange, type DocCommentBlock } from "./blocks.ts";
 import type { CssDocConfiguration } from "./configuration.ts";
@@ -54,10 +44,10 @@ export function collectProse(
   blocks: readonly DocCommentBlock[],
   configuration: CssDocConfiguration,
 ): DocCommentProse[] {
-  const TAG = arkRegex.as(`^${AT_SOURCE}(${CSSDOC_BLOCK_TAG_NAME_SOURCE})`, "u");
-  const ENDING = arkRegex.as(LINE_ENDING_SOURCE, "u");
-  const PRIVATE = arkRegex.as(`${BRACE_OPEN_SOURCE}${AT_SOURCE}private${BRACE_CLOSE_SOURCE}`, "u");
-  const FIRST_WORD = arkRegex.as(`^${SPACE_TAB_SOURCE}*([^\\s{]+)`, "u");
+  const TAG = /^@([A-Za-z][\w-]*)/u;
+  const ENDING = /\r\n|\r|\n/u;
+  const PRIVATE = /\{@private\}/u;
+  const FIRST_WORD = /^[ \t]*([^\s{]+)/u;
   const result: DocCommentProse[] = [];
   let examples = 0;
   for (const block of blocks) {

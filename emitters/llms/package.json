@@ -36,8 +36,7 @@
     "@cssdoc/dialects": "workspace:*",
     "@cssdoc/embedded": "workspace:*",
     "@cssdoc/index": "workspace:*",
-    "@cssdoc/regex": "workspace:*",
-    "arkregex": "catalog:"
+    "@cssdoc/regex": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",

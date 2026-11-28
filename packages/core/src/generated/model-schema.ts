@@ -646,7 +646,7 @@ export const cssDocEntrySchema: Readonly<Record<string, unknown>> = {
     "intersection255": {
       "type": "object",
       "patternProperties": {
-        "^(?:0|[1-9][0-9]*)$": {
+        "^(?:0|[1-9]\\d*)$": {
           "$ref": "#/definitions/intersection233"
         }
       },
@@ -988,7 +988,7 @@ export const cssDocEntrySchema: Readonly<Record<string, unknown>> = {
     },
     "intersection224": {
       "type": "string",
-      "pattern": "^(?:[a-z0-9]+(?:-[a-z0-9]+)*)$"
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
     },
     "union75": {
       "enum": [
@@ -1066,7 +1066,7 @@ export const cssDocEntrySchema: Readonly<Record<string, unknown>> = {
     },
     "intersection246": {
       "type": "string",
-      "pattern": "^(?:optional|many|one-or-more|max-[0-9]+|one-or-more-max-[0-9]+)$"
+      "pattern": String.raw`^(?:optional|many|one-or-more|max-\d+|one-or-more-max-\d+)$`
     }
   }
 };
@@ -1723,7 +1723,7 @@ export const cssDocSchema: Readonly<Record<string, unknown>> = {
     "intersection255": {
       "type": "object",
       "patternProperties": {
-        "^(?:0|[1-9][0-9]*)$": {
+        "^(?:0|[1-9]\\d*)$": {
           "$ref": "#/definitions/intersection233"
         }
       },
@@ -2065,7 +2065,7 @@ export const cssDocSchema: Readonly<Record<string, unknown>> = {
     },
     "intersection224": {
       "type": "string",
-      "pattern": "^(?:[a-z0-9]+(?:-[a-z0-9]+)*)$"
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
     },
     "union75": {
       "enum": [
@@ -2143,7 +2143,7 @@ export const cssDocSchema: Readonly<Record<string, unknown>> = {
     },
     "intersection246": {
       "type": "string",
-      "pattern": "^(?:optional|many|one-or-more|max-[0-9]+|one-or-more-max-[0-9]+)$"
+      "pattern": String.raw`^(?:optional|many|one-or-more|max-\d+|one-or-more-max-\d+)$`
     }
   },
   "title": "cssdoc model",

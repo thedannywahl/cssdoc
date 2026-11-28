@@ -1,15 +1,33 @@
 # @cssdoc/regex
 
-Type-safe, ArkRegex-based pattern library for cssdoc. Centralizes CSS, grammar-driven, and cssdoc-specific regex patterns with modern named capture groups.
+Native regular expressions and literal syntax primitives for CSS and cssdoc, with grammar metadata and test fixtures.
 
 ## Features
 
-- **ArkRegex**: Compiled patterns are available alongside their source strings
+- **Native literals**: Canonical patterns are ordinary `RegExp` objects that regex linters can inspect.
 - **Single Source of Truth**: Each pattern defined once with metadata and test fixtures in `definitions.ts`
 - **Maintainability**: Patterns traceable to W3C specs and CssDoc grammar
 - **Testing**: Pattern definitions include pass/fail fixtures
 
 ## Usage
+
+Import native patterns directly:
+
+```typescript
+import { CSS_IDENTIFIER } from "@cssdoc/regex";
+
+CSS_IDENTIFIER.test("my-class");
+const global = new RegExp(CSS_IDENTIFIER, `${CSS_IDENTIFIER.flags}g`);
+```
+
+The runtime resolver, compilation helpers, custom escaping helpers, and `_SOURCE` exports are gone.
+Use the native pattern's `.source` and `.flags` when runtime construction is necessary. Escape
+literal input with `RegExp.escape`; don't escape input explicitly authored as regex syntax.
+There's no compatibility wrapper or polyfill. Runtime escaping requires Node 24 or a modern browser
+with `RegExp.escape` support.
+
+Keep explicit case branches in shared source fragments: `.source` consumers don't inherit `i`.
+Modifier attributes require a non-whitespace value; empty unquoted class values remain supported.
 
 All patterns are exported from `definitions.ts` as a single `PATTERN_DEFINITIONS` object:
 
@@ -43,12 +61,11 @@ Definitions live in `tier-<number>-<domain>.ts` files. Tier 1 separates CSS and 
 `EQUALS_CHAR` provides the literal equals sign.
 `AMPERSAND_CHAR` provides the literal ampersand.
 `FILE_EXTENSION` captures a lowercase ASCII filename extension at the end of a string.
-`DOC_COMMENT_START_SOURCE` matches a doc-comment opener; `DOC_COMMENT_START_TEXT` is its literal form.
-`COMMENT_END_SOURCE` matches a block-comment closer; `COMMENT_END_TEXT` is its literal form.
+`DOC_COMMENT_START` matches a doc-comment opener; `DOC_COMMENT_START_TEXT` is its literal form.
+`COMMENT_END` matches a block-comment closer; `COMMENT_END_TEXT` is its literal form.
 `LESS_THAN_CHAR` and `GREATER_THAN_CHAR` provide literal angle brackets.
 `BACKTICK_CHAR` and `BACKSLASH_CHAR` provide literal backtick and backslash characters.
-`CARRIAGE_RETURN_CHAR` and `LINE_FEED_CHAR` are literal characters; their corresponding `_SOURCE`
-exports are for regex composition. `LINE_ENDING` matches CRLF, CR, or LF, treating CRLF as one match.
+`CARRIAGE_RETURN_CHAR` and `LINE_FEED_CHAR` are literal characters. `LINE_ENDING` matches CRLF, CR, or LF, treating CRLF as one match.
 `HTML_STANDARD_ELEMENT_NAME` matches a lowercase ASCII built-in-style name, not a list of known elements.
 `HTML_CUSTOM_ELEMENT_NAME` follows the HTML and DOM rules for valid custom-element names.
 `HTML_ELEMENT_NAME` matches either. `HTML_CUSTOM_ELEMENT_LIKE_NAME` preserves the narrower ASCII
@@ -79,29 +96,29 @@ multiline spans; it isn't a complete CommonMark inline parser.
 `MARKDOWN_UNORDERED_LIST_MARKER` and `MARKDOWN_ORDERED_LIST_MARKER` match the marker only; callers
 choose anchoring and required whitespace.
 `MARKDOWN_ATX_HEADING_PREFIX` matches one to six hash marks followed by whitespace.
-`REGEX_METACHARACTER_SOURCE` matches characters that need escaping in regular expressions.
-Use `escapeRegex(text)` to escape those characters throughout a string for use in a regex pattern.
-`CSSDOC_DESCRIPTION_SEPARATOR_SOURCE` matches `—`, `-`, and the parser's legacy `--` separator.
+Use `RegExp.escape(text)` when interpolating literal runtime data into a regex. Don't escape values
+that are explicitly configured as regex syntax.
+`CSSDOC_DESCRIPTION_SEPARATOR` matches `—`, `-`, and the parser's legacy `--` separator.
 Callers supply any whitespace required around it.
-`CSSDOC_MODIFIER_REFERENCE_SOURCE` matches canonical modifier references, and
-`CSSDOC_MODIFIER_ANNOTATION_PREFIX_SOURCE` matches optional punctuation before modifier annotations.
-`CSSDOC_BLOCK_TAG_NAME_SOURCE` matches the broader block-tag names accepted by the comment parser.
-`CSSDOC_EXAMPLE_LABEL_SOURCE` matches one label in an example's `labels=[...]` header.
-`CSSDOC_ATTRIBUTE_SELECTOR_SOURCE` and `CSSDOC_SELECTOR_TOKEN_SOURCE` match the parser's
-bracket-aware selector tokens. `CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE` matches the broader
-custom-property names accepted in doc tags. `CSSDOC_QUALIFIED_REFERENCE_SOURCE` matches the
+`CSSDOC_MODIFIER_REFERENCE` matches canonical modifier references, and
+`CSSDOC_MODIFIER_ANNOTATION_PREFIX` matches optional punctuation before modifier annotations.
+`CSSDOC_BLOCK_TAG_NAME` matches the broader block-tag names accepted by the comment parser.
+`CSSDOC_EXAMPLE_LABEL` matches one label in an example's `labels=[...]` header.
+`CSSDOC_ATTRIBUTE_SELECTOR` and `CSSDOC_SELECTOR_TOKEN` match the parser's
+bracket-aware selector tokens. `CSSDOC_CUSTOM_PROPERTY_TAG_NAME` matches the broader
+custom-property names accepted in doc tags. `CSSDOC_QUALIFIED_REFERENCE` matches the
 dot-separated reference segments accepted in structure tags.
-`CSSDOC_TYPED_STRUCTURE_REFERENCE_SOURCE` and `CSSDOC_SHORTHAND_STRUCTURE_REFERENCE_SOURCE`
+`CSSDOC_TYPED_STRUCTURE_REFERENCE` and `CSSDOC_SHORTHAND_STRUCTURE_REFERENCE`
 match structure reference bodies and capture their optional profiles and privacy flags.
-`CSS_CLASS_ATTRIBUTE_SELECTOR_SOURCE` matches a class attribute selector and captures its operator and value.
-`CSSDOC_STRUCTURE_SLOT_SOURCE` matches default and named slot selectors in structure nodes.
-`CSSDOC_ELEMENT_TAG_SOURCE` matches a lowercase ASCII element name with letters, digits, and hyphens,
+`CSS_CLASS_ATTRIBUTE_SELECTOR` matches a class attribute selector and captures its operator and value.
+`CSSDOC_STRUCTURE_SLOT` matches default and named slot selectors in structure nodes.
+`CSSDOC_ELEMENT_TAG` matches a lowercase ASCII element name with letters, digits, and hyphens,
 with independently optional angle brackets, and captures the name.
-`CSSDOC_BASE_CLASS_NAME_SOURCE` matches the class names used for base and scoped-part inference.
-`CSS_CLASS_REFERENCE_SOURCE` captures permissive class references, including modifier names.
-`CSSDOC_CUSTOM_STATE_SELECTOR_SOURCE`, `CSSDOC_SHADOW_PART_SELECTOR_SOURCE`, and
-`CSSDOC_SCANNED_PSEUDO_SELECTOR_SOURCE` support parser and index selector scanning.
-`CSSDOC_CARDINALITY_SOURCE` matches the cardinality suffixes supported by `@structure`;
+`CSSDOC_BASE_CLASS_NAME` matches the class names used for base and scoped-part inference.
+`CSS_CLASS_REFERENCE` captures permissive class references, including modifier names.
+`CSSDOC_CUSTOM_STATE_SELECTOR`, `CSSDOC_SHADOW_PART_SELECTOR`, and
+`CSSDOC_SCANNED_PSEUDO_SELECTOR` support parser and index selector scanning.
+`CSSDOC_CARDINALITY` matches the cardinality suffixes supported by `@structure`;
 `CSSDOC_CARDINALITY_KEYWORDS` maps their shorthand and full keywords to canonical values.
 
 ## Example: CSS Identifier
@@ -110,7 +127,7 @@ with independently optional angle brackets, and captures the name.
 import { PATTERN_DEFINITIONS } from "@cssdoc/regex";
 
 const def = PATTERN_DEFINITIONS.CSS_IDENTIFIER;
-const regex = new RegExp(def.source);
+const regex = new RegExp(`^(?:${def.source})$`, def.flags);
 console.log(regex.test("my-class")); // true
 console.log(regex.test("-my-class")); // false (cannot start with dash)
 ```
@@ -132,12 +149,12 @@ interface UnifiedPatternDef {
   // Tier level (0-4)
   tier: 0 | 1 | 2 | 3 | 4;
 
-  // Resolved pattern source and, for tiers above 0, compiled regex
+  // Source derived from the native regex, or the value of a literal primitive
   source: string;
-  regex?: Regex;
+  regex?: RegExp;
 
-  // Unicode flag: 'u' or 'v'
-  flags?: "u" | "v";
+  // Flags from the native regex
+  flags?: string;
 
   // Named capture groups and their descriptions
   captures?: Record<string, string>;
@@ -151,7 +168,7 @@ interface UnifiedPatternDef {
     fails: Array<{ input: string; reason: string }>;
   };
 
-  // Names of patterns this composes
+  // Related grammar fragments (metadata only)
   composedFrom?: string[];
 
   // Related pattern names
@@ -184,7 +201,7 @@ When adding or modifying patterns in `definitions.ts`:
 4. **Add comprehensive fixtures**:
    - Include at least 3-4 passing examples
    - Include edge cases and boundary conditions in failures
-   - Use composition functions for complex patterns
+   - Author the complete pattern as a native literal; sources and flags come from that literal.
 
 5. **Test locally**:
    ```bash
@@ -208,7 +225,7 @@ vp test packages/regex/tests/definitions.test.ts
 
 ## References
 
-- [ArkRegex Documentation](https://arktype.io/docs/regex)
+- [MDN RegExp](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp)
 - [W3C CSS Specification](https://www.w3.org/TR/CSS2/)
 - [HTML custom element names](https://html.spec.whatwg.org/multipage/custom-elements.html#valid-custom-element-name)
 - [DOM element local names](https://dom.spec.whatwg.org/#valid-element-local-name)

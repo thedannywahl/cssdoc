@@ -550,6 +550,11 @@ export const baseConfig: UserConfig = defineConfig({
     },
     overrides: [
       {
+        // Source consumers (including TextMate) don't inherit a fragment's ignore-case flag.
+        files: ["**/definitions/tier-*.ts"],
+        rules: { "regexp/use-ignore-case": "off" },
+      },
+      {
         // Tests intentionally construct isolated patterns, including constructors expected to throw.
         files: ["**/*.test.*", "**/*.spec.*", "**/tests/**"],
         rules: { "e18e/prefer-static-regex": "off" },

@@ -5,8 +5,6 @@ import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { DIGIT_SOURCE } from "@cssdoc/regex";
-import { regex as arkRegex } from "arkregex";
 import { expect, test } from "vite-plus/test";
 
 // Guards against the whole "the bundled server crashes on load" class of bug (e.g. an ESM dependency
@@ -17,7 +15,7 @@ import { expect, test } from "vite-plus/test";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const serverBundle = join(root, "dist", "server.cjs");
-const CONTENT_LENGTH = arkRegex.as(String.raw`Content-Length: (${DIGIT_SOURCE}+)\r\n\r\n`);
+const CONTENT_LENGTH = /Content-Length: (\d+)\r\n\r\n/;
 
 /** LSP framing: `Content-Length` header + JSON body. */
 const frame = (msg: unknown): string => {
@@ -47,7 +45,7 @@ test("the bundled server.cjs starts and answers LSP diagnostics", async () => {
   server.stdout.on("data", (chunk: Buffer) => {
     buf = Buffer.concat([buf, chunk]);
     for (;;) {
-      const header = buf.toString("latin1").match(CONTENT_LENGTH);
+      const header = CONTENT_LENGTH.exec(buf.toString("latin1"));
       if (!header) break;
       const start = (header.index ?? 0) + header[0].length;
       const len = Number(header[1]);

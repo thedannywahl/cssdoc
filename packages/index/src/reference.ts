@@ -9,8 +9,6 @@ import type {
   CssTokenConsumed,
   ReferenceMemberKind,
 } from "@cssdoc/core";
-import { ALPHA_UPPER_SOURCE } from "@cssdoc/regex";
-import { regex as arkRegex } from "arkregex";
 import {
   generate,
   ident,
@@ -443,9 +441,9 @@ type SelectorKey =
   | { status: "invalid" }
   | { status: "unsupported" };
 
-const ASCII_UPPER = arkRegex.as(ALPHA_UPPER_SOURCE, "gu");
+const ASCII_UPPER = /[A-Z]/gu;
 const asciiLower = (text: string): string =>
-  text.replace(ASCII_UPPER, (char) => char.toLowerCase());
+  text.replaceAll(ASCII_UPPER, (char) => char.toLowerCase());
 
 function selectorKey(input: string, kind: SelectorMemberOccurrence["kind"]): SelectorKey {
   try {

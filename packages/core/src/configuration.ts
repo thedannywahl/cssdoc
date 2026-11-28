@@ -13,18 +13,8 @@
  * @module
  */
 
-import {
-  AT_SOURCE,
-  AT_CHAR,
-  ALPHA_SOURCE,
-  ALPHA_LOWER_SOURCE,
-  ALPHANUMERIC_SOURCE,
-  DASH_SOURCE,
-  DIGIT_SOURCE,
-} from "@cssdoc/regex";
+import { AT_CHAR } from "@cssdoc/regex";
 import { CSSDOC_TAGS, CSSDOC_TAG_NAMES } from "@cssdoc/spec";
-import type { Regex } from "arkregex";
-import { regex as arkRegex } from "arkregex";
 
 import type { CssRecordKind } from "./model.ts";
 import {
@@ -56,12 +46,9 @@ export interface CssDocTagDefinitionOptions {
   description?: string;
 }
 
-const TAG_NAME: Regex = arkRegex.as(
-  String.raw`^${AT_SOURCE}?${ALPHA_SOURCE}(?:${ALPHANUMERIC_SOURCE}|-)*$`,
-  "u",
-);
+const TAG_NAME: RegExp = /^@?[A-Za-z][0-9A-Za-z-]*$/u;
 
-const LEADING_AT: Regex = arkRegex.as(String.raw`^${AT_SOURCE}`, "u");
+const LEADING_AT: RegExp = /^@/u;
 
 /** One tag in the vocabulary: its name, kind, and how it may be used. */
 export class CssDocTagDefinition {
@@ -219,11 +206,7 @@ export class CssDocConfiguration {
       }
       tags.push([definition.canonicalName, mode]);
     }
-    const part = `(?:${ALPHA_LOWER_SOURCE}|${DIGIT_SOURCE})`;
-    const KIND: Regex = arkRegex.as(
-      `^${ALPHA_LOWER_SOURCE}${part}*(?:${DASH_SOURCE}${part}+)*$`,
-      "u",
-    );
+    const KIND: RegExp = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/u;
     for (const [kind, mode] of Object.entries(settings.remarkKinds ?? {})) {
       validMode(mode);
       if (!KIND.test(kind)) throw new Error(`Invalid remark kind: ${JSON.stringify(kind)}`);

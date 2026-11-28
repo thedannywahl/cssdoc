@@ -10,8 +10,6 @@ import {
   resolveNaming,
   resolveRuleSeverities,
 } from "@cssdoc/providers";
-import { ALPHA_LOWER_SOURCE, ALPHANUMERIC_EXTENDED_SOURCE } from "@cssdoc/regex";
-import { regex as arkRegex } from "arkregex";
 import { type ParseError, parse as parseJsonc, printParseErrorCode } from "jsonc-parser";
 import { MarkdownExit } from "markdown-exit";
 import { computed, ref } from "vue";
@@ -31,14 +29,11 @@ const block = (text?: string): string => (text ? md.render(text) : "");
 const escapeHtml = (s: string): string =>
   s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 
-const ESCAPED_VALUE_TYPE = arkRegex.as(
-  `&lt;(?<type>${ALPHA_LOWER_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*)&gt;`,
-  "gu",
-);
+const ESCAPED_VALUE_TYPE = /&lt;(?<type>[a-z][\w-]*)&gt;/gu;
 
 /** Render a @property `syntax` descriptor with each `<type>` linked out to its MDN reference page. */
 const syntaxHtml = (syntax: string): string =>
-  escapeHtml(syntax).replace(
+  escapeHtml(syntax).replaceAll(
     ESCAPED_VALUE_TYPE,
     (_match, _type: string, _offset: number, _input: string, { type }: { type: string }) =>
       `<a href="${mdnUrlForType(type)}" target="_blank" rel="noopener noreferrer">&lt;${type}&gt;</a>`,

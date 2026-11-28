@@ -25,7 +25,6 @@
     "@commitlint/config-conventional": "catalog:",
     "@e18e/eslint-plugin": "catalog:",
     "@eslint/json": "catalog:",
-    "arkregex": "catalog:",
     "bumpp": "catalog:",
     "changelogen": "catalog:",
     "eslint": "catalog:",

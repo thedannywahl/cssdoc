@@ -4,15 +4,39 @@
  * @module
  */
 
-import type { RawPatternDef, PatternResolver } from "../types.ts";
+import type { PatternDefinition } from "../types.ts";
+
+/** Lowercase ASCII built-in-style element name shape, without validating membership */
+export const HTML_STANDARD_ELEMENT_NAME: RegExp = /[a-z][a-z0-9]*/;
+/** Lowercase ASCII tag-name heuristic with digits and hyphens, not a validator */
+export const HTML_LOWERCASE_TAG_NAME_LIKE: RegExp = /[a-z][a-z0-9-]*/u;
+/** ASCII custom-element-shaped name heuristic, not the complete HTML name grammar */
+export const HTML_CUSTOM_ELEMENT_LIKE_NAME: RegExp = /[a-z][a-z0-9._-]*-[a-z0-9._-]+/u;
+/** Valid custom element name under the HTML and DOM standards */
+export const HTML_CUSTOM_ELEMENT_NAME: RegExp =
+  /(?!(?:annotation-xml|color-profile|font-face|font-face-src|font-face-uri|font-face-format|font-face-name|missing-glyph)(?![^A-Z\0\t\n\f\r />]))[a-z][^A-Z\0\t\n\f\r />-]*-[^A-Z\0\t\n\f\r />]*/u;
+/** Built-in-style or custom-element-shaped name, without validating membership */
+export const HTML_ELEMENT_NAME: RegExp =
+  /(?:(?!(?:annotation-xml|color-profile|font-face|font-face-src|font-face-uri|font-face-format|font-face-name|missing-glyph)(?![^A-Z\0\t\n\f\r />]))[a-z][^A-Z\0\t\n\f\r />-]*-[^A-Z\0\t\n\f\r />]*|[a-z][a-z0-9]*)/u;
+/** ASCII host-tag name heuristic with word characters and hyphens */
+export const HTML_LIKE_TAG_NAME: RegExp = /[A-Za-z][\w-]*/u;
+/** Double- or single-quoted attribute value, capturing the unquoted content */
+export const HTML_QUOTED_ATTRIBUTE_VALUE: RegExp = /(?:"([^"]*)"|'([^']*)')/u;
+/** ASCII-like attribute name and quoted value, capturing the name and either value */
+export const HTML_QUOTED_ATTRIBUTE: RegExp = /([:\w-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/u;
+/** Non-greedy HTML comment delimiter heuristic, not a complete HTML comment parser */
+export const HTML_COMMENT: RegExp = /<!--[\s\S]*?-->/u;
+/** Style opener prefix heuristic capturing text up to the first greater-than sign */
+export const HTML_LIKE_STYLE_OPEN_TAG: RegExp = /<style([^>]*)>/u;
+/** Style closing-tag prefix heuristic, without requiring the closing greater-than sign */
+export const HTML_LIKE_STYLE_CLOSE_PREFIX: RegExp = /<\/style/u;
 
 /** HTML name, attribute, comment, and style-tag pattern definitions. */
-export const TIER_1_HTML_PATTERNS: Record<string, RawPatternDef> = {
+export const TIER_1_HTML_PATTERNS: Record<string, PatternDefinition> = {
   HTML_STANDARD_ELEMENT_NAME: {
     name: "HTML_STANDARD_ELEMENT_NAME",
     tier: 1,
-    pattern: (resolve: PatternResolver) =>
-      `${resolve("ALPHA_LOWER")}[${resolve("ALPHA_LOWER", true)}${resolve("DIGIT", true)}]*`,
+    regex: HTML_STANDARD_ELEMENT_NAME,
     description: "Lowercase ASCII built-in-style element name shape, without validating membership",
     composedFrom: ["ALPHA_LOWER", "DIGIT"],
     fixtures: {
@@ -28,9 +52,8 @@ export const TIER_1_HTML_PATTERNS: Record<string, RawPatternDef> = {
   HTML_LOWERCASE_TAG_NAME_LIKE: {
     name: "HTML_LOWERCASE_TAG_NAME_LIKE",
     tier: 1,
-    pattern: (resolve: PatternResolver) =>
-      `${resolve("ALPHA_LOWER")}[${resolve("ALPHA_LOWER", true)}${resolve("DIGIT", true)}${resolve("DASH")}]*`,
-    flags: "u",
+    regex: HTML_LOWERCASE_TAG_NAME_LIKE,
+
     description: "Lowercase ASCII tag-name heuristic with digits and hyphens, not a validator",
     composedFrom: ["ALPHA_LOWER", "DIGIT", "DASH"],
     fixtures: {
@@ -45,12 +68,8 @@ export const TIER_1_HTML_PATTERNS: Record<string, RawPatternDef> = {
   HTML_CUSTOM_ELEMENT_LIKE_NAME: {
     name: "HTML_CUSTOM_ELEMENT_LIKE_NAME",
     tier: 1,
-    pattern: (resolve: PatternResolver) => {
-      const start = resolve("ALPHA_LOWER");
-      const chars = `[${resolve("ALPHA_LOWER", true)}${resolve("DIGIT", true)}${resolve("DOT_CHAR")}${resolve("UNDERSCORE_CHAR")}${resolve("DASH")}]`;
-      return `${start}${chars}*${resolve("DASH")}${chars}+`;
-    },
-    flags: "u",
+    regex: HTML_CUSTOM_ELEMENT_LIKE_NAME,
+
     description: "ASCII custom-element-shaped name heuristic, not the complete HTML name grammar",
     composedFrom: ["ALPHA_LOWER", "DIGIT", "DOT_CHAR", "UNDERSCORE_CHAR", "DASH"],
     fixtures: {
@@ -66,14 +85,8 @@ export const TIER_1_HTML_PATTERNS: Record<string, RawPatternDef> = {
   HTML_CUSTOM_ELEMENT_NAME: {
     name: "HTML_CUSTOM_ELEMENT_NAME",
     tier: 1,
-    pattern: (resolve: PatternResolver) => {
-      const chars = String.raw`[^${resolve("ALPHA_UPPER", true)}\0\t${resolve("LINE_FEED")}\f${resolve("CARRIAGE_RETURN")} ${resolve("FORWARD_SLASH_CHAR")}${resolve("GREATER_THAN_CHAR")}]`;
-      const beforeDash = String.raw`[^${resolve("ALPHA_UPPER", true)}\0\t${resolve("LINE_FEED")}\f${resolve("CARRIAGE_RETURN")} ${resolve("FORWARD_SLASH_CHAR")}${resolve("GREATER_THAN_CHAR")}${resolve("DASH")}]`;
-      const reserved =
-        "annotation-xml|color-profile|font-face|font-face-src|font-face-uri|font-face-format|font-face-name|missing-glyph";
-      return `(?!(?:${reserved})(?!${chars}))${resolve("ALPHA_LOWER")}${beforeDash}*${resolve("DASH")}${chars}*`;
-    },
-    flags: "u",
+    regex: HTML_CUSTOM_ELEMENT_NAME,
+
     description: "Valid custom element name under the HTML and DOM standards",
     composedFrom: [
       "ALPHA_LOWER",
@@ -109,9 +122,8 @@ export const TIER_1_HTML_PATTERNS: Record<string, RawPatternDef> = {
   HTML_ELEMENT_NAME: {
     name: "HTML_ELEMENT_NAME",
     tier: 1,
-    pattern: (resolve: PatternResolver) =>
-      `(?:${resolve("HTML_CUSTOM_ELEMENT_NAME")}|${resolve("HTML_STANDARD_ELEMENT_NAME")})`,
-    flags: "u",
+    regex: HTML_ELEMENT_NAME,
+
     description: "Built-in-style or custom-element-shaped name, without validating membership",
     composedFrom: ["HTML_CUSTOM_ELEMENT_NAME", "HTML_STANDARD_ELEMENT_NAME"],
     fixtures: {
@@ -134,8 +146,8 @@ export const TIER_1_HTML_PATTERNS: Record<string, RawPatternDef> = {
   HTML_LIKE_TAG_NAME: {
     name: "HTML_LIKE_TAG_NAME",
     tier: 1,
-    pattern: (resolve: PatternResolver) => String.raw`${resolve("ALPHA")}[\w${resolve("DASH")}]*`,
-    flags: "u",
+    regex: HTML_LIKE_TAG_NAME,
+
     description: "ASCII host-tag name heuristic with word characters and hyphens",
     composedFrom: ["ALPHA", "DASH"],
     fixtures: {
@@ -150,12 +162,8 @@ export const TIER_1_HTML_PATTERNS: Record<string, RawPatternDef> = {
   HTML_QUOTED_ATTRIBUTE_VALUE: {
     name: "HTML_QUOTED_ATTRIBUTE_VALUE",
     tier: 1,
-    pattern: (resolve: PatternResolver) => {
-      const double = resolve("QUOTE_DOUBLE_CHAR");
-      const single = resolve("QUOTE_SINGLE_CHAR");
-      return `(?:${double}([^${double}]*)${double}|${single}([^${single}]*)${single})`;
-    },
-    flags: "u",
+    regex: HTML_QUOTED_ATTRIBUTE_VALUE,
+
     description: "Double- or single-quoted attribute value, capturing the unquoted content",
     composedFrom: ["QUOTE_DOUBLE_CHAR", "QUOTE_SINGLE_CHAR"],
     fixtures: {
@@ -169,9 +177,8 @@ export const TIER_1_HTML_PATTERNS: Record<string, RawPatternDef> = {
   HTML_QUOTED_ATTRIBUTE: {
     name: "HTML_QUOTED_ATTRIBUTE",
     tier: 1,
-    pattern: (resolve: PatternResolver) =>
-      String.raw`([:\w${resolve("DASH")}]+)\s*${resolve("EQUALS_CHAR")}\s*${resolve("HTML_QUOTED_ATTRIBUTE_VALUE")}`,
-    flags: "u",
+    regex: HTML_QUOTED_ATTRIBUTE,
+
     description: "ASCII-like attribute name and quoted value, capturing the name and either value",
     composedFrom: ["DASH", "EQUALS_CHAR", "HTML_QUOTED_ATTRIBUTE_VALUE"],
     fixtures: {
@@ -185,9 +192,8 @@ export const TIER_1_HTML_PATTERNS: Record<string, RawPatternDef> = {
   HTML_COMMENT: {
     name: "HTML_COMMENT",
     tier: 1,
-    pattern: (resolve: PatternResolver) =>
-      String.raw`${resolve("LESS_THAN_CHAR")}!${resolve("DOUBLE_DASH")}[\s\S]*?${resolve("DOUBLE_DASH")}${resolve("GREATER_THAN_CHAR")}`,
-    flags: "u",
+    regex: HTML_COMMENT,
+
     description: "Non-greedy HTML comment delimiter heuristic, not a complete HTML comment parser",
     composedFrom: ["LESS_THAN_CHAR", "DOUBLE_DASH", "GREATER_THAN_CHAR"],
     fixtures: {
@@ -201,9 +207,8 @@ export const TIER_1_HTML_PATTERNS: Record<string, RawPatternDef> = {
   HTML_LIKE_STYLE_OPEN_TAG: {
     name: "HTML_LIKE_STYLE_OPEN_TAG",
     tier: 1,
-    pattern: (resolve: PatternResolver) =>
-      `${resolve("LESS_THAN_CHAR")}style([^${resolve("GREATER_THAN_CHAR")}]*)${resolve("GREATER_THAN_CHAR")}`,
-    flags: "u",
+    regex: HTML_LIKE_STYLE_OPEN_TAG,
+
     description: "Style opener prefix heuristic capturing text up to the first greater-than sign",
     composedFrom: ["LESS_THAN_CHAR", "GREATER_THAN_CHAR"],
     fixtures: {
@@ -217,9 +222,8 @@ export const TIER_1_HTML_PATTERNS: Record<string, RawPatternDef> = {
   HTML_LIKE_STYLE_CLOSE_PREFIX: {
     name: "HTML_LIKE_STYLE_CLOSE_PREFIX",
     tier: 1,
-    pattern: (resolve: PatternResolver) =>
-      `${resolve("LESS_THAN_CHAR")}${resolve("FORWARD_SLASH_CHAR")}style`,
-    flags: "u",
+    regex: HTML_LIKE_STYLE_CLOSE_PREFIX,
+
     description:
       "Style closing-tag prefix heuristic, without requiring the closing greater-than sign",
     composedFrom: ["LESS_THAN_CHAR", "FORWARD_SLASH_CHAR"],

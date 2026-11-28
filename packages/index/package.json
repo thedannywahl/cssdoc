@@ -33,7 +33,6 @@
   "dependencies": {
     "@cssdoc/core": "workspace:*",
     "@cssdoc/regex": "workspace:*",
-    "arkregex": "catalog:",
     "css-tree": "catalog:",
     "postcss": "catalog:",
     "postcss-value-parser": "catalog:"

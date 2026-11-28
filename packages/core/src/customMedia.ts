@@ -1,16 +1,10 @@
-import {
-  STRUCTURE_RECORD_KIND_SOURCE,
-  TYPED_STRUCTURE_MEDIA_SOURCE,
-  UNTYPED_STRUCTURE_MEDIA_SOURCE,
-} from "@cssdoc/regex";
-import type { Regex } from "arkregex";
-import { regex as arkRegex } from "arkregex";
-
 import type { CssDocEntry, CssRecordKind, StructureNode } from "./model.ts";
 
-const TYPED_STRUCTURE_MEDIA: Regex = arkRegex.as(`^${TYPED_STRUCTURE_MEDIA_SOURCE}$`, "u");
-const UNTYPED_STRUCTURE_MEDIA: Regex = arkRegex.as(`^${UNTYPED_STRUCTURE_MEDIA_SOURCE}$`, "u");
-const STRUCTURE_RECORD_KIND: Regex = arkRegex.as(`^${STRUCTURE_RECORD_KIND_SOURCE}$`, "u");
+const TYPED_STRUCTURE_MEDIA: RegExp =
+  /^@(component|name|utility|declaration)[ \t]+([A-Za-z][\w\-]*)[ \t]*\([ \t]*(--[A-Za-z][\w\-]*)[ \t]*\)$/u;
+const UNTYPED_STRUCTURE_MEDIA: RegExp =
+  /^@([A-Za-z][\w\-]*)[ \t]*\([ \t]*(--[A-Za-z][\w\-]*)[ \t]*\)$/u;
+const STRUCTURE_RECORD_KIND: RegExp = /^(?:component|name|utility|declaration)$/u;
 
 function canonicalRecordKind(kind: string): CssRecordKind | undefined {
   if (kind === "name") return "component";
@@ -58,7 +52,7 @@ function parseStructureCustomMediaSelector(selector: string): {
   recordKind?: CssRecordKind;
   profile: string;
 } | null {
-  const typed = selector.match(TYPED_STRUCTURE_MEDIA);
+  const typed = TYPED_STRUCTURE_MEDIA.exec(selector);
   if (typed) {
     const recordKind = canonicalRecordKind(typed[1]);
     if (!recordKind) return null;
@@ -68,7 +62,7 @@ function parseStructureCustomMediaSelector(selector: string): {
       profile: typed[3],
     };
   }
-  const untyped = selector.match(UNTYPED_STRUCTURE_MEDIA);
+  const untyped = UNTYPED_STRUCTURE_MEDIA.exec(selector);
   if (!untyped) return null;
   // Guard malformed `@component (--x)` and peers from being treated as untyped record names.
   if (STRUCTURE_RECORD_KIND.test(untyped[1])) return null;

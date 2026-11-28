@@ -1,15 +1,14 @@
 {
   "name": "@cssdoc/regex",
   "version": "0.20.1",
-  "description": "Type-safe, ArkRegex-based pattern library for cssdoc. Centralizes CSS, grammar-driven, and cssdoc-specific regex patterns with modern named capture groups.",
+  "description": "Native regular expressions and literal syntax primitives for CSS and cssdoc, with grammar metadata and test fixtures.",
   "keywords": [
-    "arkregex",
     "css",
     "cssdoc",
     "named-capture-groups",
     "patterns",
     "regex",
-    "type-safe"
+    "regular-expressions"
   ],
   "homepage": "https://cssdoc.dev",
   "bugs": "https://github.com/thedannywahl/cssdoc/issues",
@@ -35,10 +34,6 @@
   },
   "scripts": {
     "prepublishOnly": "vp run build"
-  },
-  "dependencies": {
-    "arkregex": "catalog:",
-    "arktype": "catalog:"
   },
   "devDependencies": {
     "publint": "catalog:",

@@ -1,6 +1,4 @@
 import {
-  ALPHA_LOWER_SOURCE,
-  ALPHA_SOURCE,
   ASTERISK_CHAR,
   BACKSLASH_CHAR,
   BRACE_CLOSE_CHAR,
@@ -8,9 +6,6 @@ import {
   BRACKET_CLOSE_CHAR,
   BRACKET_OPEN_CHAR,
   COLON_CHAR,
-  CSSDOC_QUALIFIED_REFERENCE_SOURCE,
-  DASH_SOURCE,
-  DIGIT_SOURCE,
   FORWARD_SLASH_CHAR,
   PAREN_CLOSE_CHAR,
   PAREN_OPEN_CHAR,
@@ -18,7 +13,6 @@ import {
   QUOTE_DOUBLE_CHAR,
   QUOTE_SINGLE_CHAR,
 } from "@cssdoc/regex";
-import { regex as arkRegex, type Regex } from "arkregex";
 
 import type { CssRecordKind } from "./model.ts";
 
@@ -94,12 +88,9 @@ export type ReferenceParseResult =
       error: "invalid-reference" | "invalid-source-key" | "invalid-provider-id";
     };
 
-const RECORD_NAME = arkRegex.as(`^${CSSDOC_QUALIFIED_REFERENCE_SOURCE}$`, "u");
-const PROVIDER_ID = arkRegex.as(
-  `^${ALPHA_LOWER_SOURCE}(?:${ALPHA_LOWER_SOURCE}|${DIGIT_SOURCE})*(?:${DASH_SOURCE}(?:${ALPHA_LOWER_SOURCE}|${DIGIT_SOURCE})+)*$`,
-  "u",
-);
-const DRIVE_ROOT: Regex = arkRegex.as(`^${ALPHA_SOURCE}${COLON_CHAR}${FORWARD_SLASH_CHAR}`, "u");
+const RECORD_NAME = /^[\w-]+(?:\.[\w-]+)*$/u;
+const PROVIDER_ID = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/u;
+const DRIVE_ROOT: RegExp = /^[A-Za-z]:\//u;
 const MEMBER_KINDS: readonly ReferenceMemberKind[] = [
   "modifier",
   "part",

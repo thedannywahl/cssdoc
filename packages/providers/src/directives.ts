@@ -16,14 +16,6 @@
  * @module
  */
 
-import {
-  COMMENT_END_SOURCE,
-  COMMENT_START_SOURCE,
-  CSSDOC_DIRECTIVE_KIND_SOURCE,
-  DASH_SOURCE,
-} from "@cssdoc/regex";
-import { regex as arkRegex } from "arkregex";
-
 import { tokenize, tokenTypes } from "./css-tokenizer.ts";
 import { DEFAULT_RULE_SEVERITIES, type Diagnostic, type RuleSeverity } from "./types.ts";
 
@@ -40,13 +32,11 @@ interface Directive {
   endLine: number;
 }
 
-const DIRECTIVE = arkRegex.as(
-  String.raw`${COMMENT_START_SOURCE}\s*cssdoc-(${CSSDOC_DIRECTIVE_KIND_SOURCE})([^*]*?)${COMMENT_END_SOURCE}`,
-  "dgu",
-);
-const REASON_SEPARATOR = arkRegex.as(String.raw`\s${DASH_SOURCE}\s`, "u");
-const RULE_SEPARATOR = arkRegex.as(String.raw`[\s,]+`, "u");
-const RULE = arkRegex.as(String.raw`[^\s,]+`, "gu");
+const DIRECTIVE =
+  /\/\*\s*cssdoc-((?:disable-next-line|disable-line|disable|enable|expect-error)\b)([^*]*)\*\//dgu;
+const REASON_SEPARATOR = /\s-\s/u;
+const RULE_SEPARATOR = /[\s,]+/u;
+const RULE = /[^\s,]+/gu;
 
 function directiveMatches(source: string): Array<{ start: number; match: RegExpMatchArray }> {
   const matches: Array<{ start: number; match: RegExpMatchArray }> = [];

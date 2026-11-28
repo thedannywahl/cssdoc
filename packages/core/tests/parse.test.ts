@@ -570,6 +570,15 @@ test("1.0 example bodies, labels, privacy, and spans are shared by lite and full
   expect(raw.slice(span.start, span.end)).toBe("😀 first  \r\n *   second\r\n");
 });
 
+test.each(["Docs", "docs_demo", "-docs", "docs-", "docs--demo"])(
+  "example headers don't accept the invalid label %s",
+  (label) => {
+    const raw = `/** @example ${label} - Example. */`;
+    expect(parseLiteDocComment(raw).exampleLabels).toBeUndefined();
+    expect(parseFullDocComment(raw).exampleLabels).toBeUndefined();
+  },
+);
+
 test("private example metadata is scoped to the header, including malformed headers", () => {
   const [entry] = parseCssDocs(`/** @component card
  * @example docs, {@private} - malformed but private
@@ -1077,6 +1086,20 @@ test("parses quoted selector tokens and permissive custom-property names in tags
 test("parses a functional custom-state selector in a cssstate tag", () => {
   const doc = parseDocComment("/**\n * @cssstate :state(open) — Open state.\n */");
   expect(doc.cssStates.get(":state(open)")).toBe("Open state.");
+});
+
+test("legacy property prose doesn't shorten a hyphenated custom-property name", () => {
+  const doc = parseDocComment("/** @cssproperty --button-color Button color. */");
+  expect(doc.cssProperties).toEqual([
+    { name: "--button-color", syntax: undefined, description: "Button color." },
+  ]);
+});
+
+test("part parsing handles a long whitespace run without a description separator", () => {
+  const selector = `.part${" ".repeat(100_000)}!`;
+  const start = performance.now();
+  expect(splitPartArg(selector).selector).toBe(selector);
+  expect(performance.now() - start).toBeLessThan(1000);
 });
 
 test("parses canonical modifier references and annotation punctuation", () => {

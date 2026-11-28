@@ -36,7 +36,6 @@
     "@pantoken/vitepress": "catalog:",
     "@resvg/resvg-js": "catalog:",
     "@types/node": "catalog:",
-    "arkregex": "catalog:",
     "codemirror": "catalog:",
     "jsonc-parser": "catalog:",
     "markdown-exit": "catalog:",

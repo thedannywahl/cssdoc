@@ -28,7 +28,6 @@
     "@types/node": "catalog:",
     "@types/vscode": "1.125.0",
     "@vscode/vsce": "catalog:",
-    "arkregex": "catalog:",
     "esbuild": "catalog:",
     "lit": "^3.3.3",
     "ovsx": "catalog:",

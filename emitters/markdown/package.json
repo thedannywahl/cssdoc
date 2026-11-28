@@ -37,7 +37,6 @@
     "@cssdoc/embedded": "workspace:*",
     "@cssdoc/index": "workspace:*",
     "@cssdoc/regex": "workspace:*",
-    "arkregex": "catalog:",
     "hast-util-to-html": "catalog:",
     "mdast-util-from-markdown": "catalog:"
   },

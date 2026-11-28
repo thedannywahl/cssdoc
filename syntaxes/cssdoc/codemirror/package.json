@@ -39,8 +39,7 @@
     "@cssdoc/core": "workspace:*",
     "@cssdoc/providers": "workspace:*",
     "@cssdoc/regex": "workspace:*",
-    "@cssdoc/spec": "workspace:*",
-    "arkregex": "catalog:"
+    "@cssdoc/spec": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",

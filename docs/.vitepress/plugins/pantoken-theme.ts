@@ -1,9 +1,7 @@
-import { HEX_DIGIT_SOURCE } from "@cssdoc/regex";
 import { toCss } from "@pantoken/css";
 import { pruneCustomProps } from "@pantoken/plugin-prune-custom-props";
 import { byTheme, type Token } from "@pantoken/tokens";
 import { VITEPRESS_TO_INSTUI } from "@pantoken/vitepress";
-import { regex as arkRegex } from "arkregex";
 import postcss, {
   decl as createDeclaration,
   parse as parsePostcss,
@@ -21,7 +19,7 @@ const semanticColorTokens = new Set([
   "--instui-color-background-pastel-error",
   "--instui-color-background-pastel-info",
 ]);
-const HEX_COLOR = arkRegex.as(`^#${HEX_DIGIT_SOURCE}{6}$`, "i");
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
 /** Render Pantoken theme colors, VitePress brand bridges, and home-page backgrounds as CSS. */
 export function themeCss(tokens: readonly Token[] = byTheme("rebrand")): string {

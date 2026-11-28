@@ -4,16 +4,20 @@
  * @module
  */
 
-import type { RawPatternDef, PatternResolver } from "../types.ts";
+import type { PatternDefinition } from "../types.ts";
+
+/** ASCII host-tag name heuristic that also accepts dots, as in JSX member names */
+export const HTML_LIKE_DOTTED_TAG_NAME: RegExp = /[A-Za-z][\w.-]*/u;
+/** HTML class or JSX className attribute name */
+export const HTML_LIKE_CLASS_ATTRIBUTE_NAME: RegExp = /(?:className|class)/u;
 
 /** JSX tag and class attribute scanning pattern definitions. */
-export const TIER_1_JSX_PATTERNS: Record<string, RawPatternDef> = {
+export const TIER_1_JSX_PATTERNS: Record<string, PatternDefinition> = {
   HTML_LIKE_DOTTED_TAG_NAME: {
     name: "HTML_LIKE_DOTTED_TAG_NAME",
     tier: 1,
-    pattern: (resolve: PatternResolver) =>
-      String.raw`${resolve("ALPHA")}[\w${resolve("DOT_CHAR")}${resolve("DASH")}]*`,
-    flags: "u",
+    regex: HTML_LIKE_DOTTED_TAG_NAME,
+
     description: "ASCII host-tag name heuristic that also accepts dots, as in JSX member names",
     composedFrom: ["ALPHA", "DOT_CHAR", "DASH"],
     fixtures: {
@@ -27,8 +31,8 @@ export const TIER_1_JSX_PATTERNS: Record<string, RawPatternDef> = {
   HTML_LIKE_CLASS_ATTRIBUTE_NAME: {
     name: "HTML_LIKE_CLASS_ATTRIBUTE_NAME",
     tier: 1,
-    source: "(?:className|class)",
-    flags: "u",
+    regex: HTML_LIKE_CLASS_ATTRIBUTE_NAME,
+
     description: "HTML class or JSX className attribute name",
     fixtures: {
       passes: [{ input: "class" }, { input: "className" }],

@@ -44,7 +44,6 @@
     "@cssdoc/index": "workspace:*",
     "@cssdoc/lint-core": "workspace:*",
     "@cssdoc/regex": "workspace:*",
-    "arkregex": "catalog:",
     "commander": "catalog:"
   },
   "devDependencies": {

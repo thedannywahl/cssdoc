@@ -36,7 +36,6 @@
     "@cssdoc/core": "workspace:*",
     "@cssdoc/regex": "workspace:*",
     "ajv": "catalog:",
-    "arkregex": "catalog:",
     "jsonc-parser": "catalog:"
   },
   "devDependencies": {

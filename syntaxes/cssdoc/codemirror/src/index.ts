@@ -36,18 +36,17 @@ import {
 } from "@cssdoc/core/lite";
 import { highlightDirectives, highlightDocComment } from "@cssdoc/providers/highlighting";
 import {
-  ALPHANUMERIC_EXTENDED_SOURCE,
-  SPACE_TAB_SOURCE,
-  WORD_BOUNDARY_SOURCE,
-  TOKEN_CUSTOM_PROPERTY_SOURCE,
-  TOKENIZER_RECORD_TAG_SOURCE,
-  TOKENIZER_MODIFIER_TAG_SOURCE,
-  TOKENIZER_PART_TAG_SOURCE,
-  TOKENIZER_PROPERTY_TAG_SOURCE,
-  TOKENIZER_REF_TAG_SOURCE,
+  ALPHANUMERIC_EXTENDED,
+  SPACE_TAB,
+  WORD_BOUNDARY,
+  TOKEN_CUSTOM_PROPERTY,
+  TOKENIZER_RECORD_TAG,
+  TOKENIZER_MODIFIER_TAG,
+  TOKENIZER_PART_TAG,
+  TOKENIZER_PROPERTY_TAG,
+  TOKENIZER_REF_TAG,
 } from "@cssdoc/regex";
 import { CSSDOC_TAGS, cssdocTagNamesByArgument, cssdocTagNamesByKind } from "@cssdoc/spec";
-import { regex as arkRegex } from "arkregex";
 
 /** Semantic token kind a doc-comment span maps to. Each becomes a `cm-cssdoc-<kind>` class. */
 export type CssdocTokenType =
@@ -98,7 +97,7 @@ const PLAIN_TAGS = CSSDOC_TAGS.filter(
  * which appears as `@\\w+` after escaping. This gets replaced with specific tag alternations
  * (INLINE_TAGS, RECORD_TAGS, etc.).
  */
-const TAG_NAME_PLACEHOLDER_PATTERN = arkRegex.as(String.raw`@\\w\+`, "g");
+const TAG_NAME_PLACEHOLDER_PATTERN = /@\\w\+/g;
 
 /**
  * Create a tag alternation pattern for injecting into tokenizer patterns.
@@ -112,22 +111,22 @@ const createTagAlternation = (tags: readonly string[]): string => `@(?:${alt(tag
  * replaced with specific tag alternations (INLINE_TAGS, RECORD_TAGS, etc.).
  */
 const injectTags = (pattern: string, tags: readonly string[]): string =>
-  pattern.replace(TAG_NAME_PLACEHOLDER_PATTERN, createTagAlternation(tags));
+  pattern.replaceAll(TAG_NAME_PLACEHOLDER_PATTERN, createTagAlternation(tags));
 
 // One left-to-right alternation, so matches never overlap. The `d` flag exposes per-group offsets.
 // Token patterns follow structures defined in @cssdoc/regex/TOKENIZER_* patterns.
-const TOKEN = arkRegex.as(
+const TOKEN = new RegExp(
   [
-    injectTags(TOKENIZER_RECORD_TAG_SOURCE, RECORD_TAGS),
-    ...(MODIFIER_TAGS.length > 0 ? [injectTags(TOKENIZER_MODIFIER_TAG_SOURCE, MODIFIER_TAGS)] : []),
-    injectTags(TOKENIZER_PART_TAG_SOURCE, PART_TAGS),
-    injectTags(TOKENIZER_PROPERTY_TAG_SOURCE, PROPERTY_TAGS),
-    injectTags(TOKENIZER_REF_TAG_SOURCE, ["ref"]),
-    `(?<membertag>@(?:memberOf|member))${WORD_BOUNDARY_SOURCE}(?:${SPACE_TAB_SOURCE}+(?<membername>${ALPHANUMERIC_EXTENDED_SOURCE}+)(?:${SPACE_TAB_SOURCE}+(?<memberprivate>private)(?!${ALPHANUMERIC_EXTENDED_SOURCE}))?)?`,
+    injectTags(TOKENIZER_RECORD_TAG.source, RECORD_TAGS),
+    ...(MODIFIER_TAGS.length > 0 ? [injectTags(TOKENIZER_MODIFIER_TAG.source, MODIFIER_TAGS)] : []),
+    injectTags(TOKENIZER_PART_TAG.source, PART_TAGS),
+    injectTags(TOKENIZER_PROPERTY_TAG.source, PROPERTY_TAGS),
+    injectTags(TOKENIZER_REF_TAG.source, ["ref"]),
+    `(?<membertag>@(?:memberOf|member))${WORD_BOUNDARY.source}(?:${SPACE_TAB.source}+(?<membername>${ALPHANUMERIC_EXTENDED.source}+)(?:${SPACE_TAB.source}+(?<memberprivate>private)(?!${ALPHANUMERIC_EXTENDED.source}))?)?`,
     // bare block and record tags
-    `(?<btag>@(?:${alt(PLAIN_TAGS)})${WORD_BOUNDARY_SOURCE})`,
+    `(?<btag>@(?:${alt(PLAIN_TAGS)})${WORD_BOUNDARY.source})`,
     // a custom property named anywhere in the comment
-    `(?<cprop>${TOKEN_CUSTOM_PROPERTY_SOURCE})`,
+    `(?<cprop>${TOKEN_CUSTOM_PROPERTY.source})`,
   ].join("|"),
   "dg",
 );

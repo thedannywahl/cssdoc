@@ -1,14 +1,4 @@
-import {
-  ASTERISK_SOURCE,
-  COMMENT_END_SOURCE,
-  COMMENT_LINE_MARKER_SOURCE,
-  COMMENT_START_SOURCE,
-  SPACE_TAB_SOURCE,
-  CARRIAGE_RETURN_CHAR,
-  LINE_FEED_CHAR,
-} from "@cssdoc/regex";
-import type { Regex } from "arkregex";
-import { regex as arkRegex } from "arkregex";
+import { CARRIAGE_RETURN_CHAR, LINE_FEED_CHAR } from "@cssdoc/regex";
 
 /** One comment line after optional framing removal, with offsets into the original input. */
 export interface FramedCommentLine {
@@ -30,15 +20,12 @@ export interface FramedCommentLine {
  * @returns The untrimmed lines and their ranges relative to `raw`.
  */
 export function frameCommentLines(raw: string, prefixes: "framed" | "none"): FramedCommentLine[] {
-  const FRAMED_COMMENT_LINE_PREFIX: Regex = arkRegex.as(
-    `^${SPACE_TAB_SOURCE}*${COMMENT_LINE_MARKER_SOURCE} ?`,
-    "u",
-  );
-  const COMMENT_OPENING: Regex = arkRegex.as(`^${COMMENT_START_SOURCE}${ASTERISK_SOURCE}?`, "u");
+  const FRAMED_COMMENT_LINE_PREFIX: RegExp = /^[ \t]*\* ?/u;
+  const COMMENT_OPENING: RegExp = /^\/\*\*?/u;
   // `$` also matches before a final newline; only strip a terminator at the actual end.
-  const COMMENT_CLOSING: Regex = arkRegex.as(`${COMMENT_END_SOURCE}(?![\\s\\S])`, "u");
-  const start = raw.match(COMMENT_OPENING)?.[0].length ?? 0;
-  const end = raw.length - (raw.slice(start).match(COMMENT_CLOSING)?.[0].length ?? 0);
+  const COMMENT_CLOSING: RegExp = /\*\/$/u;
+  const start = COMMENT_OPENING.exec(raw)?.[0].length ?? 0;
+  const end = raw.length - (COMMENT_CLOSING.exec(raw.slice(start))?.[0].length ?? 0);
   const lines: FramedCommentLine[] = [];
 
   for (let cursor = start; cursor <= end;) {
@@ -65,7 +52,7 @@ export function frameCommentLines(raw: string, prefixes: "framed" | "none"): Fra
         : "";
     const rawLine = raw.slice(cursor, lineEnd);
     const prefix =
-      prefixes === "framed" ? rawLine.match(FRAMED_COMMENT_LINE_PREFIX)?.[0] : undefined;
+      prefixes === "framed" ? FRAMED_COMMENT_LINE_PREFIX.exec(rawLine)?.[0] : undefined;
     const prefixLength = prefix?.length ?? 0;
     const lineStart = cursor + prefixLength;
     lines.push({ text: raw.slice(lineStart, lineEnd), start: lineStart, end: lineEnd, ending });

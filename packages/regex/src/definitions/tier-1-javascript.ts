@@ -4,16 +4,22 @@
  * @module
  */
 
-import type { RawPatternDef, PatternResolver } from "../types.ts";
+import type { PatternDefinition } from "../types.ts";
+
+/** Start of input or a character that can precede a bare template-tag identifier */
+export const JAVASCRIPT_TAGGED_TEMPLATE_BOUNDARY: RegExp = /(?:[^.\w$]|^)/u;
+/** A dotted member or non-nested call suffix in a template-tag expression heuristic */
+export const JAVASCRIPT_TAGGED_TEMPLATE_CHAIN_SEGMENT: RegExp = /(?:\.[\w$]+|\([^()]*\))/u;
+/** Captured quoted or template literal heuristic without escape handling */
+export const JAVASCRIPT_QUOTED_OR_TEMPLATE_LITERAL_LIKE: RegExp = /(["'`])((?:(?!\1)[\s\S])*)\1/u;
 
 /** JavaScript template-tag and literal scanning pattern definitions. */
-export const TIER_1_JAVASCRIPT_PATTERNS: Record<string, RawPatternDef> = {
+export const TIER_1_JAVASCRIPT_PATTERNS: Record<string, PatternDefinition> = {
   JAVASCRIPT_TAGGED_TEMPLATE_BOUNDARY: {
     name: "JAVASCRIPT_TAGGED_TEMPLATE_BOUNDARY",
     tier: 1,
-    pattern: (resolve: PatternResolver) =>
-      String.raw`(?:[^${resolve("DOT_CHAR")}\w${resolve("DOLLAR_CHAR")}]|^)`,
-    flags: "u",
+    regex: JAVASCRIPT_TAGGED_TEMPLATE_BOUNDARY,
+
     description: "Start of input or a character that can precede a bare template-tag identifier",
     composedFrom: ["DOT_CHAR", "DOLLAR_CHAR"],
     fixtures: {
@@ -28,9 +34,8 @@ export const TIER_1_JAVASCRIPT_PATTERNS: Record<string, RawPatternDef> = {
   JAVASCRIPT_TAGGED_TEMPLATE_CHAIN_SEGMENT: {
     name: "JAVASCRIPT_TAGGED_TEMPLATE_CHAIN_SEGMENT",
     tier: 1,
-    pattern: (resolve: PatternResolver) =>
-      `(?:${resolve("DOT")}[${resolve("ALPHA", true)}${resolve("DIGIT", true)}${resolve("UNDERSCORE_CHAR")}${resolve("DOLLAR_CHAR")}]+|${resolve("PAREN_OPEN")}[^${resolve("PAREN_OPEN_CHAR")}${resolve("PAREN_CLOSE_CHAR")}]*${resolve("PAREN_CLOSE")})`,
-    flags: "u",
+    regex: JAVASCRIPT_TAGGED_TEMPLATE_CHAIN_SEGMENT,
+
     description: "A dotted member or non-nested call suffix in a template-tag expression heuristic",
     composedFrom: [
       "DOT",
@@ -55,9 +60,8 @@ export const TIER_1_JAVASCRIPT_PATTERNS: Record<string, RawPatternDef> = {
   JAVASCRIPT_QUOTED_OR_TEMPLATE_LITERAL_LIKE: {
     name: "JAVASCRIPT_QUOTED_OR_TEMPLATE_LITERAL_LIKE",
     tier: 1,
-    pattern: (resolve: PatternResolver) =>
-      String.raw`([${resolve("QUOTE_DOUBLE_CHAR")}${resolve("QUOTE_SINGLE_CHAR")}${resolve("BACKTICK_CHAR")}])((?:(?!\1)[\s\S])*)\1`,
-    flags: "u",
+    regex: JAVASCRIPT_QUOTED_OR_TEMPLATE_LITERAL_LIKE,
+
     description: "Captured quoted or template literal heuristic without escape handling",
     composedFrom: ["QUOTE_DOUBLE_CHAR", "QUOTE_SINGLE_CHAR", "BACKTICK_CHAR"],
     fixtures: {

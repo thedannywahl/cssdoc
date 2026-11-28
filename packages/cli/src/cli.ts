@@ -3,15 +3,13 @@ import process from "node:process";
 import tab from "@bomb.sh/tab/commander";
 import * as clack from "@clack/prompts";
 import { Command, CommanderError, InvalidArgumentError, Option } from "@commander-js/extra-typings";
-import { DASH_SOURCE, DIGIT_SOURCE } from "@cssdoc/regex";
-import { regex as arkRegex } from "arkregex";
 import { Command as CommanderCommand } from "commander";
 
 import packageMetadata from "../package.json" with { type: "json" };
 import { runLint, type LintCliOptions, type LintCliResult } from "./index.ts";
 
 const { version } = packageMetadata;
-const INTEGER = arkRegex.as(`^${DASH_SOURCE}?${DIGIT_SOURCE}+$`, "u");
+const INTEGER = /^-?\d+$/u;
 
 interface PromptAdapter {
   intro: (message: string) => void;

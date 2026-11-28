@@ -4,17 +4,62 @@
  * @module
  */
 
-import { escapeChar } from "../lib.ts";
-import type { RawPatternDef, PatternResolver } from "../types.ts";
+import type { PatternDefinition } from "../types.ts";
+
+/** A CRLF, CR, or LF line ending */
+export const LINE_ENDING: RegExp = /(?:\r\n|\r|\n)/u;
+/** Lowercase ASCII filename extension, capturing the extension without the dot */
+export const FILE_EXTENSION: RegExp = /\.([a-z]+)$/u;
+/** Less-than character (regex pattern) */
+export const LESS_THAN: RegExp = /</;
+/** Greater-than character (regex pattern) */
+export const GREATER_THAN: RegExp = />/;
+/** CSS block comment start (/*) */
+export const COMMENT_START: RegExp = /\/\*/;
+/** CSS doc-comment opener (/**) */
+export const DOC_COMMENT_START: RegExp = /\/\*\*/;
+/** CSS block comment end (*\/) */
+export const COMMENT_END: RegExp = /\*\//;
+/** CSS block comment line marker (*) */
+export const COMMENT_LINE_MARKER: RegExp = /\*/;
+/** Leading whitespace and a single block-comment line marker */
+export const COMMENT_LINE_PREFIX: RegExp = /^\s*\*\s?/;
+/** One or more JavaScript whitespace characters */
+export const WHITESPACE_RUN: RegExp = /\s+/u;
+/** At sign (regex pattern) */
+export const AT: RegExp = /@/;
+/** Pipe (regex pattern) */
+export const PIPE: RegExp = /\|/;
+/** Opening parenthesis (regex pattern) */
+export const PAREN_OPEN: RegExp = /\(/;
+/** Closing parenthesis (regex pattern) */
+export const PAREN_CLOSE: RegExp = /\)/;
+/** Colon (regex pattern) */
+export const COLON: RegExp = /:/;
+/** Period or dot (regex pattern) */
+export const DOT: RegExp = /\./;
+/** Hash or pound (regex pattern) */
+export const POUND: RegExp = /#/;
+/** Opening square bracket (regex pattern) */
+export const BRACKET_OPEN: RegExp = /\[/;
+/** Closing square bracket (regex pattern) */
+export const BRACKET_CLOSE: RegExp = /\]/;
+/** Single quote (regex pattern) */
+export const QUOTE_SINGLE: RegExp = /'/;
+/** Double quote (regex pattern) */
+export const QUOTE_DOUBLE: RegExp = /"/;
+/** Opening brace (regex pattern) */
+export const BRACE_OPEN: RegExp = /\{/;
+/** Closing brace (regex pattern) */
+export const BRACE_CLOSE: RegExp = /\}/;
 
 /** Common punctuation and text pattern definitions. */
-export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
+export const TIER_1_COMMON_PATTERNS: Record<string, PatternDefinition> = {
   LINE_ENDING: {
     name: "LINE_ENDING",
     tier: 1,
-    pattern: (resolve: PatternResolver) =>
-      `(?:${resolve("CARRIAGE_RETURN")}${resolve("LINE_FEED")}|${resolve("CARRIAGE_RETURN")}|${resolve("LINE_FEED")})`,
-    flags: "u",
+    regex: LINE_ENDING,
+
     description: "A CRLF, CR, or LF line ending",
     composedFrom: ["CARRIAGE_RETURN", "LINE_FEED"],
     fixtures: {
@@ -28,8 +73,8 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
   FILE_EXTENSION: {
     name: "FILE_EXTENSION",
     tier: 1,
-    pattern: (resolve: PatternResolver) => `${resolve("DOT")}(${resolve("ALPHA_LOWER")}+)$`,
-    flags: "u",
+    regex: FILE_EXTENSION,
+
     description: "Lowercase ASCII filename extension, capturing the extension without the dot",
     composedFrom: ["DOT", "ALPHA_LOWER"],
     fixtures: {
@@ -43,7 +88,7 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
   LESS_THAN: {
     name: "LESS_THAN",
     tier: 1,
-    pattern: (resolve: PatternResolver) => resolve("LESS_THAN_CHAR"),
+    regex: LESS_THAN,
     description: "Less-than character (regex pattern)",
     composedFrom: ["LESS_THAN_CHAR"],
     fixtures: {
@@ -57,7 +102,7 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
   GREATER_THAN: {
     name: "GREATER_THAN",
     tier: 1,
-    pattern: (resolve: PatternResolver) => resolve("GREATER_THAN_CHAR"),
+    regex: GREATER_THAN,
     description: "Greater-than character (regex pattern)",
     composedFrom: ["GREATER_THAN_CHAR"],
     fixtures: {
@@ -71,11 +116,7 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
   COMMENT_START: {
     name: "COMMENT_START",
     tier: 1,
-    pattern: (resolve: PatternResolver) => {
-      const slash = resolve("FORWARD_SLASH");
-      const asterisk = resolve("ASTERISK");
-      return `${slash}${asterisk}`;
-    },
+    regex: COMMENT_START,
     description: "CSS block comment start (/*)",
     composedFrom: ["FORWARD_SLASH", "ASTERISK"],
     fixtures: {
@@ -94,7 +135,7 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
     grammarSource: "cssdoc",
     grammarRelation: "exact",
     tier: 1,
-    pattern: (resolve: PatternResolver) => `${resolve("COMMENT_START")}${resolve("ASTERISK")}`,
+    regex: DOC_COMMENT_START,
     description: "CSS doc-comment opener (/**)",
     composedFrom: ["COMMENT_START", "ASTERISK"],
     fixtures: {
@@ -111,7 +152,7 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
     grammarSource: "cssdoc",
     grammarRelation: "exact",
     tier: 1,
-    pattern: (resolve: PatternResolver) => `${resolve("ASTERISK")}${resolve("FORWARD_SLASH")}`,
+    regex: COMMENT_END,
     description: "CSS block comment end (*/)",
     composedFrom: ["ASTERISK", "FORWARD_SLASH"],
     fixtures: {
@@ -126,7 +167,7 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
   COMMENT_LINE_MARKER: {
     name: "COMMENT_LINE_MARKER",
     tier: 1,
-    source: String.raw`\*`,
+    regex: COMMENT_LINE_MARKER,
     description: "CSS block comment line marker (*)",
     fixtures: {
       passes: [{ input: "*" }],
@@ -143,7 +184,7 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
     grammarSource: "cssdoc",
     grammarRelation: "related",
     tier: 1,
-    pattern: (resolve: PatternResolver) => String.raw`^\s*${resolve("COMMENT_LINE_MARKER")}\s?`,
+    regex: COMMENT_LINE_PREFIX,
     description: "Leading whitespace and a single block-comment line marker",
     composedFrom: ["COMMENT_LINE_MARKER"],
     fixtures: {
@@ -157,8 +198,8 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
   WHITESPACE_RUN: {
     name: "WHITESPACE_RUN",
     tier: 1,
-    source: String.raw`\s+`,
-    flags: "u",
+    regex: WHITESPACE_RUN,
+
     description: "One or more JavaScript whitespace characters",
     fixtures: {
       passes: [{ input: " " }, { input: "\t\n" }, { input: "\u00A0" }],
@@ -175,7 +216,7 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
     grammarSource: "cssdoc",
     grammarRelation: "exact",
     tier: 1,
-    pattern: (resolve: PatternResolver) => resolve("AT_CHAR"),
+    regex: AT,
     description: "At sign (regex pattern)",
     composedFrom: ["AT_CHAR"],
     fixtures: {
@@ -189,7 +230,7 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
   PIPE: {
     name: "PIPE",
     tier: 1,
-    pattern: (resolve: PatternResolver) => escapeChar(resolve, "PIPE_CHAR"),
+    regex: PIPE,
     description: "Pipe (regex pattern)",
     composedFrom: ["PIPE_CHAR"],
     fixtures: {
@@ -203,7 +244,7 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
   PAREN_OPEN: {
     name: "PAREN_OPEN",
     tier: 1,
-    pattern: (resolve: PatternResolver) => escapeChar(resolve, "PAREN_OPEN_CHAR"),
+    regex: PAREN_OPEN,
     description: "Opening parenthesis (regex pattern)",
     composedFrom: ["PAREN_OPEN_CHAR"],
     fixtures: {
@@ -217,7 +258,7 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
   PAREN_CLOSE: {
     name: "PAREN_CLOSE",
     tier: 1,
-    pattern: (resolve: PatternResolver) => escapeChar(resolve, "PAREN_CLOSE_CHAR"),
+    regex: PAREN_CLOSE,
     description: "Closing parenthesis (regex pattern)",
     composedFrom: ["PAREN_CLOSE_CHAR"],
     fixtures: {
@@ -231,7 +272,7 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
   COLON: {
     name: "COLON",
     tier: 1,
-    pattern: (resolve: PatternResolver) => resolve("COLON_CHAR"),
+    regex: COLON,
     description: "Colon (regex pattern)",
     composedFrom: ["COLON_CHAR"],
     fixtures: {
@@ -245,7 +286,7 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
   DOT: {
     name: "DOT",
     tier: 1,
-    pattern: (resolve: PatternResolver) => escapeChar(resolve, "DOT_CHAR"),
+    regex: DOT,
     description: "Period or dot (regex pattern)",
     composedFrom: ["DOT_CHAR"],
     fixtures: {
@@ -259,7 +300,7 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
   POUND: {
     name: "POUND",
     tier: 1,
-    pattern: (resolve: PatternResolver) => resolve("POUND_CHAR"),
+    regex: POUND,
     description: "Hash or pound (regex pattern)",
     composedFrom: ["POUND_CHAR"],
     fixtures: {
@@ -273,7 +314,7 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
   BRACKET_OPEN: {
     name: "BRACKET_OPEN",
     tier: 1,
-    pattern: (resolve: PatternResolver) => escapeChar(resolve, "BRACKET_OPEN_CHAR"),
+    regex: BRACKET_OPEN,
     description: "Opening square bracket (regex pattern)",
     composedFrom: ["BRACKET_OPEN_CHAR"],
     fixtures: {
@@ -287,7 +328,7 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
   BRACKET_CLOSE: {
     name: "BRACKET_CLOSE",
     tier: 1,
-    pattern: (resolve: PatternResolver) => escapeChar(resolve, "BRACKET_CLOSE_CHAR"),
+    regex: BRACKET_CLOSE,
     description: "Closing square bracket (regex pattern)",
     composedFrom: ["BRACKET_CLOSE_CHAR"],
     fixtures: {
@@ -301,7 +342,7 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
   QUOTE_SINGLE: {
     name: "QUOTE_SINGLE",
     tier: 1,
-    pattern: (resolve: PatternResolver) => escapeChar(resolve, "QUOTE_SINGLE_CHAR"),
+    regex: QUOTE_SINGLE,
     description: "Single quote (regex pattern)",
     composedFrom: ["QUOTE_SINGLE_CHAR"],
     fixtures: {
@@ -315,7 +356,7 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
   QUOTE_DOUBLE: {
     name: "QUOTE_DOUBLE",
     tier: 1,
-    pattern: (resolve: PatternResolver) => escapeChar(resolve, "QUOTE_DOUBLE_CHAR"),
+    regex: QUOTE_DOUBLE,
     description: "Double quote (regex pattern)",
     composedFrom: ["QUOTE_DOUBLE_CHAR"],
     fixtures: {
@@ -329,7 +370,7 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
   BRACE_OPEN: {
     name: "BRACE_OPEN",
     tier: 1,
-    pattern: (resolve: PatternResolver) => escapeChar(resolve, "BRACE_OPEN_CHAR"),
+    regex: BRACE_OPEN,
     description: "Opening brace (regex pattern)",
     composedFrom: ["BRACE_OPEN_CHAR"],
     fixtures: {
@@ -343,7 +384,7 @@ export const TIER_1_COMMON_PATTERNS: Record<string, RawPatternDef> = {
   BRACE_CLOSE: {
     name: "BRACE_CLOSE",
     tier: 1,
-    pattern: (resolve: PatternResolver) => escapeChar(resolve, "BRACE_CLOSE_CHAR"),
+    regex: BRACE_CLOSE,
     description: "Closing brace (regex pattern)",
     composedFrom: ["BRACE_CLOSE_CHAR"],
     fixtures: {

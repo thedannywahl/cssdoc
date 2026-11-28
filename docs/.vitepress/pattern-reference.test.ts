@@ -1,16 +1,15 @@
-import { regex as arkRegex } from "arkregex";
 import { expect, test } from "vite-plus/test";
 
 import { PATTERN_DEFINITIONS } from "../../packages/regex/src/definitions.ts";
 import loader from "./pattern-reference.data.ts";
 
-const CODE_CONTENT = arkRegex.as(String.raw`<code>(?<content>[\s\S]*?)</code>`, "u");
-const TAB_IDS = arkRegex.as(String.raw`<input [^>]*id="(?<id>[^"]+)"`, "gu");
-const LABEL_TARGETS = arkRegex.as(String.raw`<label [^>]*for="(?<target>[^"]+)"`, "gu");
-const HTML_TAG = arkRegex.as(String.raw`(?<!<)<[^>]+>`, "gu");
+const CODE_CONTENT = /<code>(?<content>[\s\S]*?)<\/code>/u;
+const TAB_IDS = /<input [^>]*id="(?<id>[^"]+)"/gu;
+const LABEL_TARGETS = /<label [^>]*for="(?<target>[^"]+)"/gu;
+const HTML_TAG = /(?<!<)<[^>]+>/gu;
 
 test("stripping tags preserves incomplete and empty tags", () => {
-  expect("a<<b>c<>d<".replace(HTML_TAG, "")).toBe("ac<>d<");
+  expect("a<<b>c<>d<".replaceAll(HTML_TAG, "")).toBe("ac<>d<");
 });
 
 test("the pattern reference preserves registry patterns and their test fixtures", async () => {
@@ -42,13 +41,10 @@ test("the pattern reference preserves registry patterns and their test fixtures"
     expect(row.codeGroupHtml.match(/class="shiki /gu)).toHaveLength(2);
   }
   const fileExtension = rows.find((row) => row.name === "FILE_EXTENSION")?.codeGroupHtml;
-  expect(fileExtension).toContain("PatternResolver");
-  expect(fileExtension).toContain("ALPHA_LOWER");
   expect(fileExtension).toContain("[a-z]");
   const commentStart = rows.find((row) => row.name === "COMMENT_START")?.codeGroupHtml;
-  const actual = commentStart?.match(CODE_CONTENT)?.groups?.content?.replace(HTML_TAG, "");
-  expect(actual).toContain('\n  const slash = resolve("FORWARD_SLASH");');
-  expect(actual).toMatch(/\n\}$/u);
+  const actual = commentStart?.match(CODE_CONTENT)?.groups?.content?.replaceAll(HTML_TAG, "");
+  expect(actual).toBe(String.raw`/\/\*/`);
   expect(
     groups.flatMap((group) =>
       group.patterns

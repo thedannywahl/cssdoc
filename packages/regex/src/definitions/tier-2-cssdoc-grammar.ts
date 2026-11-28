@@ -4,7 +4,7 @@
  * @module
  */
 
-import type { RawPatternDef, PatternResolver } from "../types.ts";
+import type { PatternDefinition } from "../types.ts";
 
 /** Map accepted structure cardinality keywords to their canonical values. */
 export const CSSDOC_CARDINALITY_KEYWORDS: Readonly<
@@ -16,13 +16,85 @@ export const CSSDOC_CARDINALITY_KEYWORDS: Readonly<
   "one-or-more": "one-or-more",
   more: "one-or-more",
 };
+/** Kind of an inline cssdoc diagnostic directive */
+export const CSSDOC_DIRECTIVE_KIND: RegExp =
+  /(?:disable-next-line|disable-line|disable|enable|expect-error)\b/;
+/** Permissive class reference with its name captured */
+export const CSS_CLASS_REFERENCE: RegExp = /\.([\w\-]+)/u;
+/** Custom state selector with its name captured */
+export const CSSDOC_CUSTOM_STATE_SELECTOR: RegExp = /:state\(\s*([\w\-]+)\s*\)/u;
+/** Shadow part selector with its name captured */
+export const CSSDOC_SHADOW_PART_SELECTOR: RegExp = /::part\(\s*([\w\-]+)\s*\)/u;
+/** Pseudo selector stripped before scanning classes */
+export const CSSDOC_SCANNED_PSEUDO_SELECTOR: RegExp = /::?[\w\-]+(\([^)]*\))?/u;
+/** Typed structure reference body with kind, name, profile, and privacy captures */
+export const CSSDOC_TYPED_STRUCTURE_REFERENCE: RegExp =
+  /(component|name|utility|declaration)\s+([\w\-]+(?:\.[\w\-]+)*)(?::([\w\-]+))?(?:\s+(private))?/u;
+/** Shorthand structure reference body with name, profile, and privacy captures */
+export const CSSDOC_SHORTHAND_STRUCTURE_REFERENCE: RegExp =
+  /([\w\-]+(?:\.[\w\-]+)*)(?::([\w\-]+))?(?:\s+(private))?/u;
+/** Class name accepted for base-class and scoped-part inference */
+export const CSSDOC_BASE_CLASS_NAME: RegExp = /(?:[A-Za-z_])[\w\-]*/;
+/** Class reference for base and scoped-part inference, capturing the name */
+export const CSSDOC_BASE_CLASS_REFERENCE: RegExp = /\.((?:[A-Za-z_])[\w\-]*)/u;
+/** Element name in an element tag, with independently optional angle brackets */
+export const CSSDOC_ELEMENT_TAG: RegExp = /<?\s*([a-z][a-z0-9-]*)\s*>?/u;
+/** Class attribute selector with operator and quoted or unquoted value captures */
+export const CSS_CLASS_ATTRIBUTE_SELECTOR: RegExp =
+  /\[\s*class\s*([~^$*|]?)=\s*(?!\s)(?:"([^"]*)"|'([^']*)'|([^\]\s]*))\s*\]/u;
+/** Bracketed CSS selector with quoted attribute values */
+export const CSSDOC_ATTRIBUTE_SELECTOR: RegExp = /\[(?:[^\]"']|"[^"]*"|'[^']*')*\]/;
+/** Selector token with bracketed attributes that can contain whitespace */
+export const CSSDOC_SELECTOR_TOKEN: RegExp = /(?:\[(?:[^\]"']|"[^"]*"|'[^']*')*\]|[^\s[])+/;
+/** Dot-separated reference segments accepted in structure tags */
+export const CSSDOC_QUALIFIED_REFERENCE: RegExp = /[\w\-]+(?:\.[\w\-]+)*/;
+/** Default or named slot selector in a structure node */
+export const CSSDOC_STRUCTURE_SLOT: RegExp = /slot(?:\[\s*name\s*=\s*["']?([\w\-]+)["']?\s*\])?/;
+/** Custom property name accepted in a cssdoc tag */
+export const CSSDOC_CUSTOM_PROPERTY_TAG_NAME: RegExp = /--[\w\-]+/;
+/** Block tag name without its at sign */
+export const CSSDOC_BLOCK_TAG_NAME: RegExp = /[A-Za-z][\w-]*/;
+/** Lowercase alphanumeric example label with optional hyphens */
+export const CSSDOC_EXAMPLE_LABEL: RegExp = /[a-z0-9]+(?:-[a-z0-9]+)*/;
+/** Separator between a cssdoc tag argument and its description */
+export const CSSDOC_DESCRIPTION_SEPARATOR: RegExp = /(?:—|-{1,2})/;
+/** Optional punctuation before a modifier annotation */
+export const CSSDOC_MODIFIER_ANNOTATION_PREFIX: RegExp = /(?:[-—]\s*)?/;
+/** A bare, class, or bracketed canonical modifier reference */
+export const CSSDOC_MODIFIER_REFERENCE: RegExp = /(?:\.?[\w-]+|\[[^\]]*\])/;
+/** Record reference name (starts with letter, then alphanumeric with hyphens) */
+export const RECORD_REFERENCE_NAME: RegExp = /[A-Za-z][A-Za-z0-9\-_]*/;
+/** CssDoc tag name */
+export const CSSDOC_TAG_NAME: RegExp = /@(?<tag>[A-Za-z]+(?:-[A-Za-z]+)*)/;
+/** CSS selector */
+export const CSSDOC_SELECTOR: RegExp =
+  /(?<selector>(?:[a-zA-Z_\-\u0080-\uFFFF][\w\-\u0080-\uFFFF]*|[.#[\]:~+>\s])+)/;
+/** Modifier name */
+export const CSSDOC_MODIFIER_NAME: RegExp = /(?<name>[a-zA-Z_\u0080-\uFFFF][\w\-\u0080-\uFFFF]*)/;
+/** Modifier with attribute selector */
+export const CSSDOC_MODIFIER_ATTRIBUTE: RegExp =
+  /\[(?<attr>[A-Za-z]+)\s*=\s*(?<value>[^\s\]][^\]]*)\]/;
+/** Pseudo selector */
+export const CSSDOC_PSEUDO_SELECTOR: RegExp =
+  /(?<pseudo>::?(?:before|after|first-letter|first-line|placeholder|selection|backdrop))/;
+/** Cardinality suffix in structure, without the leading colon */
+export const CSSDOC_CARDINALITY: RegExp =
+  /(?<card>(?<oomKw>one-or-more|more):max-(?<oomMax>[0-9]+)|max-(?<max>[0-9]+)|(?<kw>optional|opt|many|one-or-more|more))/;
+/** The \@structure tag keyword */
+export const CSSDOC_STRUCTURE_TAG_KEYWORD: RegExp = /@structure\b/;
+/** Any \@-prefixed tag keyword */
+export const CSSDOC_ANY_TAG_KEYWORD: RegExp = /@[A-Za-z]+\b/;
+/** Tag name placeholder for text replacement (\@tagname) */
+export const TAG_NAME_PLACEHOLDER: RegExp = /@[A-Za-z]+/;
+/** Structure record kind (component, name, utility, or declaration) */
+export const STRUCTURE_RECORD_KIND: RegExp = /(?:component|name|utility|declaration)/;
 
 /** CssDoc grammar, selector, and structure reference pattern definitions. */
-export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
+export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, PatternDefinition> = {
   CSSDOC_DIRECTIVE_KIND: {
     name: "CSSDOC_DIRECTIVE_KIND",
     tier: 2,
-    source: String.raw`(?:disable-next-line|disable-line|disable|enable|expect-error)\b`,
+    regex: CSSDOC_DIRECTIVE_KIND,
     description: "Kind of an inline cssdoc diagnostic directive",
     fixtures: {
       passes: [{ input: "disable" }, { input: "disable-next-line" }, { input: "expect-error" }],
@@ -35,9 +107,8 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   CSS_CLASS_REFERENCE: {
     name: "CSS_CLASS_REFERENCE",
     tier: 2,
-    pattern: (resolve: PatternResolver) =>
-      `${resolve("DOT")}(${resolve("ALPHANUMERIC_EXTENDED")}+)`,
-    flags: "u",
+    regex: CSS_CLASS_REFERENCE,
+
     description: "Permissive class reference with its name captured",
     composedFrom: ["DOT", "ALPHANUMERIC_EXTENDED"],
     fixtures: {
@@ -54,9 +125,8 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     grammarSource: "cssdoc",
     grammarRelation: "related",
     tier: 2,
-    pattern: (resolve: PatternResolver) =>
-      String.raw`${resolve("COLON")}state${resolve("PAREN_OPEN")}\s*(${resolve("ALPHANUMERIC_EXTENDED")}+)\s*${resolve("PAREN_CLOSE")}`,
-    flags: "u",
+    regex: CSSDOC_CUSTOM_STATE_SELECTOR,
+
     description: "Custom state selector with its name captured",
     composedFrom: ["COLON", "PAREN_OPEN", "ALPHANUMERIC_EXTENDED", "PAREN_CLOSE"],
     fixtures: {
@@ -70,9 +140,8 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   CSSDOC_SHADOW_PART_SELECTOR: {
     name: "CSSDOC_SHADOW_PART_SELECTOR",
     tier: 2,
-    pattern: (resolve: PatternResolver) =>
-      String.raw`${resolve("COLON")}${resolve("COLON")}part${resolve("PAREN_OPEN")}\s*(${resolve("ALPHANUMERIC_EXTENDED")}+)\s*${resolve("PAREN_CLOSE")}`,
-    flags: "u",
+    regex: CSSDOC_SHADOW_PART_SELECTOR,
+
     description: "Shadow part selector with its name captured",
     composedFrom: ["COLON", "PAREN_OPEN", "ALPHANUMERIC_EXTENDED", "PAREN_CLOSE"],
     fixtures: {
@@ -86,9 +155,8 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   CSSDOC_SCANNED_PSEUDO_SELECTOR: {
     name: "CSSDOC_SCANNED_PSEUDO_SELECTOR",
     tier: 2,
-    pattern: (resolve: PatternResolver) =>
-      `${resolve("COLON")}${resolve("COLON")}?${resolve("ALPHANUMERIC_EXTENDED")}+(${resolve("PAREN_OPEN")}[^${resolve("PAREN_CLOSE")}]*${resolve("PAREN_CLOSE")})?`,
-    flags: "u",
+    regex: CSSDOC_SCANNED_PSEUDO_SELECTOR,
+
     description: "Pseudo selector stripped before scanning classes",
     composedFrom: ["COLON", "ALPHANUMERIC_EXTENDED", "PAREN_OPEN", "PAREN_CLOSE"],
     fixtures: {
@@ -105,9 +173,8 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     grammarSource: "cssdoc",
     grammarRelation: "fragment",
     tier: 2,
-    pattern: (resolve: PatternResolver) =>
-      String.raw`(${resolve("STRUCTURE_RECORD_KIND")})\s+(${resolve("CSSDOC_QUALIFIED_REFERENCE")})(?:${resolve("COLON")}(${resolve("ALPHANUMERIC_EXTENDED")}+))?(?:\s+(private))?`,
-    flags: "u",
+    regex: CSSDOC_TYPED_STRUCTURE_REFERENCE,
+
     description: "Typed structure reference body with kind, name, profile, and privacy captures",
     composedFrom: [
       "STRUCTURE_RECORD_KIND",
@@ -133,9 +200,8 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     grammarSource: "cssdoc",
     grammarRelation: "fragment",
     tier: 2,
-    pattern: (resolve: PatternResolver) =>
-      String.raw`(${resolve("CSSDOC_QUALIFIED_REFERENCE")})(?:${resolve("COLON")}(${resolve("ALPHANUMERIC_EXTENDED")}+))?(?:\s+(private))?`,
-    flags: "u",
+    regex: CSSDOC_SHORTHAND_STRUCTURE_REFERENCE,
+
     description: "Shorthand structure reference body with name, profile, and privacy captures",
     composedFrom: ["CSSDOC_QUALIFIED_REFERENCE", "COLON", "ALPHANUMERIC_EXTENDED"],
     fixtures: {
@@ -156,8 +222,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     grammarSource: "cssdoc",
     grammarRelation: "exact",
     tier: 2,
-    pattern: (resolve: PatternResolver) =>
-      `(?:${resolve("ALPHA")}|${resolve("UNDERSCORE_CHAR")})${resolve("ALPHANUMERIC_EXTENDED")}*`,
+    regex: CSSDOC_BASE_CLASS_NAME,
     description: "Class name accepted for base-class and scoped-part inference",
     composedFrom: ["ALPHA", "UNDERSCORE_CHAR", "ALPHANUMERIC_EXTENDED"],
     fixtures: {
@@ -173,9 +238,8 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   CSSDOC_BASE_CLASS_REFERENCE: {
     name: "CSSDOC_BASE_CLASS_REFERENCE",
     tier: 2,
-    pattern: (resolve: PatternResolver) =>
-      `${resolve("DOT")}(${resolve("CSSDOC_BASE_CLASS_NAME")})`,
-    flags: "u",
+    regex: CSSDOC_BASE_CLASS_REFERENCE,
+
     description: "Class reference for base and scoped-part inference, capturing the name",
     composedFrom: ["DOT", "CSSDOC_BASE_CLASS_NAME"],
     fixtures: {
@@ -189,11 +253,8 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   CSSDOC_ELEMENT_TAG: {
     name: "CSSDOC_ELEMENT_TAG",
     tier: 2,
-    pattern: (resolve: PatternResolver) => {
-      const name = resolve("HTML_LOWERCASE_TAG_NAME_LIKE");
-      return String.raw`${resolve("LESS_THAN")}?\s*(${name})\s*${resolve("GREATER_THAN")}?`;
-    },
-    flags: "u",
+    regex: CSSDOC_ELEMENT_TAG,
+
     description: "Element name in an element tag, with independently optional angle brackets",
     composedFrom: ["LESS_THAN", "HTML_LOWERCASE_TAG_NAME_LIKE", "GREATER_THAN"],
     fixtures: {
@@ -216,19 +277,8 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   CSS_CLASS_ATTRIBUTE_SELECTOR: {
     name: "CSS_CLASS_ATTRIBUTE_SELECTOR",
     tier: 2,
-    pattern: (resolve: PatternResolver) => {
-      const open = resolve("BRACKET_OPEN");
-      const close = resolve("BRACKET_CLOSE");
-      const single = resolve("QUOTE_SINGLE_CHAR");
-      const double = resolve("QUOTE_DOUBLE_CHAR");
-      const asterisk = resolve("ASTERISK_CHAR");
-      const caret = resolve("CARET_CHAR");
-      const dollar = resolve("DOLLAR_CHAR");
-      const tilde = resolve("TILDE_CHAR");
-      const pipe = resolve("PIPE_CHAR");
-      return String.raw`${open}\s*class\s*([${tilde}${caret}${dollar}${asterisk}${pipe}]?)=\s*(?:${double}([^${double}]*)${double}|${single}([^${single}]*)${single}|([^${close}\s]*))\s*${close}`;
-    },
-    flags: "u",
+    regex: CSS_CLASS_ATTRIBUTE_SELECTOR,
+
     description: "Class attribute selector with operator and quoted or unquoted value captures",
     composedFrom: [
       "BRACKET_OPEN",
@@ -261,13 +311,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     grammarSource: "cssdoc",
     grammarRelation: "related",
     tier: 2,
-    pattern: (resolve: PatternResolver) => {
-      const open = resolve("BRACKET_OPEN");
-      const close = resolve("BRACKET_CLOSE");
-      const single = resolve("QUOTE_SINGLE_CHAR");
-      const double = resolve("QUOTE_DOUBLE_CHAR");
-      return String.raw`${open}(?:[^${close}${double}${single}]|${double}[^${double}]*${double}|${single}[^${single}]*${single})*${close}`;
-    },
+    regex: CSSDOC_ATTRIBUTE_SELECTOR,
     description: "Bracketed CSS selector with quoted attribute values",
     composedFrom: ["BRACKET_OPEN", "BRACKET_CLOSE", "QUOTE_SINGLE_CHAR", "QUOTE_DOUBLE_CHAR"],
     fixtures: {
@@ -289,8 +333,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     grammarSource: "cssdoc",
     grammarRelation: "related",
     tier: 2,
-    pattern: (resolve: PatternResolver) =>
-      String.raw`(?:${resolve("CSSDOC_ATTRIBUTE_SELECTOR")}|[^\s${resolve("BRACKET_OPEN")}]+)+`,
+    regex: CSSDOC_SELECTOR_TOKEN,
     description: "Selector token with bracketed attributes that can contain whitespace",
     composedFrom: ["CSSDOC_ATTRIBUTE_SELECTOR", "BRACKET_OPEN"],
     fixtures: {
@@ -308,10 +351,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     grammarSource: "cssdoc",
     grammarRelation: "fragment",
     tier: 2,
-    pattern: (resolve: PatternResolver) => {
-      const segment = `${resolve("ALPHANUMERIC_EXTENDED")}+`;
-      return `${segment}(?:${resolve("DOT")}${segment})*`;
-    },
+    regex: CSSDOC_QUALIFIED_REFERENCE,
     description: "Dot-separated reference segments accepted in structure tags",
     composedFrom: ["ALPHANUMERIC_EXTENDED", "DOT"],
     fixtures: {
@@ -330,13 +370,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     grammarSource: "cssdoc",
     grammarRelation: "related",
     tier: 2,
-    pattern: (resolve: PatternResolver) => {
-      const open = resolve("BRACKET_OPEN");
-      const close = resolve("BRACKET_CLOSE");
-      const quotes = `[${resolve("QUOTE_DOUBLE_CHAR")}${resolve("QUOTE_SINGLE_CHAR")}]`;
-      const name = resolve("ALPHANUMERIC_EXTENDED");
-      return String.raw`slot(?:${open}\s*name\s*=\s*${quotes}?(${name}+)${quotes}?\s*${close})?`;
-    },
+    regex: CSSDOC_STRUCTURE_SLOT,
     description: "Default or named slot selector in a structure node",
     composedFrom: [
       "BRACKET_OPEN",
@@ -366,8 +400,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     grammarSource: "cssdoc",
     grammarRelation: "exact",
     tier: 2,
-    pattern: (resolve: PatternResolver) =>
-      `${resolve("DOUBLE_DASH")}${resolve("ALPHANUMERIC_EXTENDED")}+`,
+    regex: CSSDOC_CUSTOM_PROPERTY_TAG_NAME,
     description: "Custom property name accepted in a cssdoc tag",
     composedFrom: ["DOUBLE_DASH", "ALPHANUMERIC_EXTENDED"],
     fixtures: {
@@ -385,7 +418,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     grammarSource: "cssdoc",
     grammarRelation: "related",
     tier: 2,
-    pattern: (resolve: PatternResolver) => String.raw`${resolve("ALPHA")}[\w${resolve("DASH")}]*`,
+    regex: CSSDOC_BLOCK_TAG_NAME,
     description: "Block tag name without its at sign",
     composedFrom: ["ALPHA", "DASH"],
     fixtures: {
@@ -403,10 +436,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     grammarSource: "cssdoc",
     grammarRelation: "fragment",
     tier: 2,
-    pattern: (resolve: PatternResolver) => {
-      const chars = `[${resolve("ALPHA_LOWER", true)}${resolve("DIGIT", true)}]`;
-      return `${chars}+(?:${resolve("DASH")}${chars}+)*`;
-    },
+    regex: CSSDOC_EXAMPLE_LABEL,
     description: "Lowercase alphanumeric example label with optional hyphens",
     composedFrom: ["ALPHA_LOWER", "DIGIT", "DASH"],
     fixtures: {
@@ -426,7 +456,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     grammarSource: "cssdoc",
     grammarRelation: "exact",
     tier: 2,
-    pattern: (resolve: PatternResolver) => `(?:—|${resolve("DASH")}{1,2})`,
+    regex: CSSDOC_DESCRIPTION_SEPARATOR,
     description: "Separator between a cssdoc tag argument and its description",
     composedFrom: ["DASH"],
     fixtures: {
@@ -444,7 +474,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     grammarSource: "cssdoc",
     grammarRelation: "fragment",
     tier: 2,
-    pattern: (resolve: PatternResolver) => String.raw`(?:[${resolve("DASH")}—]\s*)?`,
+    regex: CSSDOC_MODIFIER_ANNOTATION_PREFIX,
     description: "Optional punctuation before a modifier annotation",
     composedFrom: ["DASH"],
     fixtures: {
@@ -461,8 +491,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     grammarSource: "cssdoc",
     grammarRelation: "related",
     tier: 2,
-    pattern: (resolve: PatternResolver) =>
-      String.raw`(?:${resolve("DOT")}?[\w-]+|${resolve("BRACKET_OPEN")}[^${resolve("BRACKET_CLOSE")}]*${resolve("BRACKET_CLOSE")})`,
+    regex: CSSDOC_MODIFIER_REFERENCE,
     description: "A bare, class, or bracketed canonical modifier reference",
     composedFrom: ["DOT", "BRACKET_OPEN", "BRACKET_CLOSE"],
     fixtures: {
@@ -482,11 +511,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   RECORD_REFERENCE_NAME: {
     name: "RECORD_REFERENCE_NAME",
     tier: 2,
-    pattern: (resolve: PatternResolver) => {
-      const alpha = resolve("ALPHA", true);
-      const extended = resolve("ALPHANUMERIC_EXTENDED");
-      return `[${alpha}](?:${extended})*`;
-    },
+    regex: RECORD_REFERENCE_NAME,
     description: "Record reference name (starts with letter, then alphanumeric with hyphens)",
     composedFrom: ["ALPHA", "ALPHANUMERIC_EXTENDED"],
     fixtures: {
@@ -501,10 +526,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   CSSDOC_TAG_NAME: {
     name: "CSSDOC_TAG_NAME",
     tier: 2,
-    pattern: (resolve: PatternResolver) => {
-      const alpha = resolve("ALPHA", true);
-      return `@(?<tag>[${alpha}][${alpha}]*(?:-[${alpha}]+)*)`;
-    },
+    regex: CSSDOC_TAG_NAME,
     captures: { tag: "Tag name without @" },
     description: "CssDoc tag name",
     composedFrom: ["ALPHA"],
@@ -523,12 +545,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     grammarSource: "cssdoc",
     grammarRelation: "related",
     tier: 2,
-    pattern: (resolve: PatternResolver) => {
-      const start = resolve("CSS_IDENTIFIER_START_WITH_DASH");
-      const cont = resolve("CSS_IDENTIFIER_CONT");
-      const selector = `(?:${start}${cont}*|[.#\\[\\]:~+>\\s])`;
-      return `(?<selector>${selector}+)`;
-    },
+    regex: CSSDOC_SELECTOR,
     captures: { selector: "CSS selector" },
     description: "CSS selector",
     composedFrom: ["CSS_IDENTIFIER_START_WITH_DASH", "CSS_IDENTIFIER_CONT"],
@@ -551,11 +568,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     grammarSource: "cssdoc",
     grammarRelation: "related",
     tier: 2,
-    pattern: (resolve: PatternResolver) => {
-      const start = resolve("CSS_IDENTIFIER_START");
-      const cont = resolve("CSS_IDENTIFIER_CONT");
-      return `(?<name>${start}${cont}*)`;
-    },
+    regex: CSSDOC_MODIFIER_NAME,
     captures: { name: "Modifier name" },
     description: "Modifier name",
     composedFrom: ["CSS_IDENTIFIER_START", "CSS_IDENTIFIER_CONT"],
@@ -574,10 +587,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     grammarSource: "cssdoc",
     grammarRelation: "related",
     tier: 2,
-    pattern: (resolve: PatternResolver) => {
-      const alpha = resolve("ALPHA", true);
-      return `\\[(?<attr>[${alpha}]+)\\s*=\\s*(?<value>[^\\]]+)\\]`;
-    },
+    regex: CSSDOC_MODIFIER_ATTRIBUTE,
     captures: { attr: "Attribute name", value: "Attribute value" },
     description: "Modifier with attribute selector",
     composedFrom: ["ALPHA"],
@@ -589,6 +599,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
       ],
       fails: [
         { input: "[type]", reason: "missing value" },
+        { input: "[type=   ]", reason: "whitespace-only value" },
         { input: "", reason: "empty" },
         { input: "[type=button", reason: "missing closing bracket" },
       ],
@@ -597,7 +608,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   CSSDOC_PSEUDO_SELECTOR: {
     name: "CSSDOC_PSEUDO_SELECTOR",
     tier: 2,
-    source: String.raw`(?<pseudo>::?(?:before|after|first-letter|first-line|placeholder|selection|backdrop))`,
+    regex: CSSDOC_PSEUDO_SELECTOR,
     captures: { pseudo: "Pseudo element" },
     description: "Pseudo selector",
     fixtures: {
@@ -619,17 +630,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
     grammarSource: "cssdoc",
     grammarRelation: "fragment",
     tier: 2,
-    pattern: (resolve: PatternResolver) => {
-      const keywords = Object.keys(CSSDOC_CARDINALITY_KEYWORDS).join("|");
-      const oneOrMore = Object.entries(CSSDOC_CARDINALITY_KEYWORDS)
-        .filter(([, value]) => value === "one-or-more")
-        .map(([key]) => key)
-        .join("|");
-      const digit = resolve("DIGIT");
-      const colon = resolve("COLON");
-      const dash = resolve("DASH");
-      return String.raw`(?<card>(?:(?<oomKw>${oneOrMore})${colon}max${dash}(?<oomMax>${digit}+)|max${dash}(?<max>${digit}+)|(?<kw>${keywords})))`;
-    },
+    regex: CSSDOC_CARDINALITY,
     captures: {
       card: "Cardinality modifier",
       oomKw: "One-or-more keyword",
@@ -662,11 +663,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   CSSDOC_STRUCTURE_TAG_KEYWORD: {
     name: "CSSDOC_STRUCTURE_TAG_KEYWORD",
     tier: 2,
-    pattern: (resolve: PatternResolver) => {
-      const at = resolve("AT");
-      const wordBoundary = resolve("WORD_BOUNDARY");
-      return `${at}structure${wordBoundary}`;
-    },
+    regex: CSSDOC_STRUCTURE_TAG_KEYWORD,
     description: "The @structure tag keyword",
     composedFrom: ["AT", "WORD_BOUNDARY"],
     fixtures: {
@@ -680,12 +677,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   CSSDOC_ANY_TAG_KEYWORD: {
     name: "CSSDOC_ANY_TAG_KEYWORD",
     tier: 2,
-    pattern: (resolve: PatternResolver) => {
-      const at = resolve("AT");
-      const alpha = resolve("ALPHA");
-      const wordBoundary = resolve("WORD_BOUNDARY");
-      return `${at}${alpha}+${wordBoundary}`;
-    },
+    regex: CSSDOC_ANY_TAG_KEYWORD,
     description: "Any @-prefixed tag keyword",
     composedFrom: ["AT", "ALPHA", "WORD_BOUNDARY"],
     fixtures: {
@@ -699,11 +691,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   TAG_NAME_PLACEHOLDER: {
     name: "TAG_NAME_PLACEHOLDER",
     tier: 2,
-    pattern: (resolve: PatternResolver) => {
-      const at = resolve("AT");
-      const alpha = resolve("ALPHA");
-      return `${at}${alpha}+`;
-    },
+    regex: TAG_NAME_PLACEHOLDER,
     description: "Tag name placeholder for text replacement (@tagname)",
     composedFrom: ["AT", "ALPHA"],
     fixtures: {
@@ -717,7 +705,7 @@ export const TIER_2_CSSDOC_GRAMMAR_PATTERNS: Record<string, RawPatternDef> = {
   STRUCTURE_RECORD_KIND: {
     name: "STRUCTURE_RECORD_KIND",
     tier: 2,
-    source: String.raw`(?:component|name|utility|declaration)`,
+    regex: STRUCTURE_RECORD_KIND,
     description: "Structure record kind (component, name, utility, or declaration)",
     fixtures: {
       passes: [

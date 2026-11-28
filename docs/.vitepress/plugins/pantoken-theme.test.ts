@@ -2,14 +2,13 @@ import { readFileSync } from "node:fs";
 
 import { byTheme } from "@pantoken/tokens";
 import { VITEPRESS_TO_INSTUI } from "@pantoken/vitepress";
-import { regex as arkRegex } from "arkregex";
 import postcss, { parse as parsePostcss } from "postcss";
 import { describe, expect, test } from "vite-plus/test";
 
 import { expandTheme, pruneTheme, themeCss } from "./pantoken-theme.js";
 
-const SVG_DATA = arkRegex.as(String.raw`data:image/svg\+xml,(?<data>[^"]+)`, "gu");
-const CUSTOM_PROPERTY_REFERENCE = arkRegex.as(String.raw`var\((?<dependency>[^)]+)\)`, "gu");
+const SVG_DATA = /data:image\/svg\+xml,(?<data>[^"]+)/gu;
+const CUSTOM_PROPERTY_REFERENCE = /var\((?<dependency>[^)]+)\)/gu;
 
 describe("Pantoken docs theme", () => {
   test("uses the official brand bridge without changing neutral surfaces or typography", () => {

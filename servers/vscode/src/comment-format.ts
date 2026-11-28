@@ -1,11 +1,4 @@
-import {
-  ASTERISK_SOURCE,
-  AT_SOURCE,
-  COMMENT_END_TEXT,
-  DOC_COMMENT_START_SOURCE,
-  STRUCTURE_RECORD_KIND_SOURCE,
-} from "@cssdoc/regex";
-import { regex as arkRegex } from "arkregex";
+import { COMMENT_END_TEXT } from "@cssdoc/regex";
 
 /** An edit expressed as offsets in the current document text. */
 export interface CssDocEdit {
@@ -14,10 +7,7 @@ export interface CssDocEdit {
   newText: string;
 }
 
-const RECORD_TAG = arkRegex.as(
-  String.raw`^\s*${ASTERISK_SOURCE}?\s*${AT_SOURCE}(${STRUCTURE_RECORD_KIND_SOURCE})\s+\S+`,
-  "u",
-);
+const RECORD_TAG = /^\s*(?:\*\s*)?@(component|name|utility|declaration)\s+\S+/u;
 
 const lineStart = (text: string, offset: number): number => {
   const newline = text.lastIndexOf("\n", offset - 1);
@@ -43,7 +33,7 @@ const isCssDocRecord = (line: string): boolean => RECORD_TAG.test(line);
  */
 export function cssDocEdits(text: string, formatBlankLines: boolean): CssDocEdit[] {
   const edits: CssDocEdit[] = [];
-  const opener = arkRegex.as(DOC_COMMENT_START_SOURCE, "gu");
+  const opener = /\/\*\*/gu;
   let match: RegExpExecArray | null;
 
   while ((match = opener.exec(text))) {

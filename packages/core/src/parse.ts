@@ -11,50 +11,17 @@
  */
 
 import {
-  ALPHA_SOURCE,
-  ALPHANUMERIC_EXTENDED_SOURCE,
   ASTERISK_CHAR,
-  AT_SOURCE,
-  BRACE_CLOSE_SOURCE,
-  BRACE_OPEN_SOURCE,
   BRACKET_CLOSE_CHAR,
-  BRACKET_CLOSE_SOURCE,
   BRACKET_OPEN_CHAR,
-  BRACKET_OPEN_SOURCE,
   COLON_CHAR,
-  COLON_SOURCE,
-  CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE,
-  CSSDOC_CUSTOM_STATE_SELECTOR,
-  CSSDOC_BASE_CLASS_NAME_SOURCE,
-  CSSDOC_BASE_CLASS_REFERENCE,
-  CSSDOC_ELEMENT_TAG_SOURCE,
-  CSSDOC_MODIFIER_REFERENCE_SOURCE,
-  CSSDOC_SCANNED_PSEUDO_SELECTOR,
-  CSSDOC_SHADOW_PART_SELECTOR,
   DOC_COMMENT_START_TEXT,
-  DASH_SOURCE,
-  DIGIT_SOURCE,
+  DASH,
   DOT_CHAR,
-  DOT_SOURCE,
   EQUALS_CHAR,
-  GREATER_THAN_CHAR,
-  LINE_FEED_SOURCE,
-  TOKEN_CUSTOM_PROPERTY_SOURCE,
-  PSEUDO_SELECTOR_FUNCTIONAL,
-  PAREN_CLOSE_SOURCE,
   PAREN_OPEN_CHAR,
-  PAREN_OPEN_SOURCE,
-  QUOTE_DOUBLE_CHAR,
-  QUOTE_SINGLE_CHAR,
-  TILDE_CHAR,
-  WHITESPACE_RUN,
-  WORD_BOUNDARY_SOURCE,
-  escapeRegex,
-  toRegExp,
 } from "@cssdoc/regex";
 import { HTML_ELEMENT_GROUPS, HTML_ELEMENT_NAMES } from "@cssdoc/spec";
-import type { Regex } from "arkregex";
-import { regex as arkRegex } from "arkregex";
 import { parse as parsePostcss, type ChildNode } from "postcss";
 
 import { CssDocConfiguration, type InlineCommentMode } from "./configuration.ts";
@@ -85,11 +52,8 @@ import type {
 } from "./model.ts";
 import { ModifierMatcher, resolveModifierConvention } from "./modifier.ts";
 
-const WHITESPACE = toRegExp(WHITESPACE_RUN);
-const SELECTOR_COMBINATOR: Regex = arkRegex.as(
-  String.raw`[\s${GREATER_THAN_CHAR}+${TILDE_CHAR}]`,
-  "u",
-);
+const WHITESPACE = /\s+/gu;
+const SELECTOR_COMBINATOR: RegExp = /[\s>+~]/u;
 
 /**
  * Reduce an `@scope` at-rule's `params` (e.g. `(.pfx-alert)`) to a bare class name, or `undefined` for
@@ -97,11 +61,11 @@ const SELECTOR_COMBINATOR: Regex = arkRegex.as(
  * resolved to "this is the record's own base" safely, so `&`/`:scope` inside it are left unmatched).
  */
 export function scopePreludeBase(params: string): string | undefined {
-  const OPEN_PAREN: Regex = arkRegex.as(`^${PAREN_OPEN_SOURCE}`, "u");
-  const CLOSE_PAREN: Regex = arkRegex.as(`${PAREN_CLOSE_SOURCE}$`, "u");
-  const SCOPE_CLASS: Regex = arkRegex.as(`^${DOT_SOURCE}(${ALPHANUMERIC_EXTENDED_SOURCE}+)$`, "u");
+  const OPEN_PAREN: RegExp = /^\(/u;
+  const CLOSE_PAREN: RegExp = /\)$/u;
+  const SCOPE_CLASS: RegExp = /^\.([\w-]+)$/u;
   const inner = params.trim().replace(OPEN_PAREN, "").replace(CLOSE_PAREN, "").trim();
-  return inner.match(SCOPE_CLASS)?.[1];
+  return SCOPE_CLASS.exec(inner)?.[1];
 }
 
 /**
@@ -126,10 +90,10 @@ export function scopeMatchesBase(preludeBase: string | undefined, baseNoDot: str
  * a rule nested inside THAT one would have `&` refer to the new compound, not the original scope root.
  */
 export function ampStaysAtScope(branch: string): boolean {
-  const SCOPE_ROOT: Regex = arkRegex.as(`^(?:&|${COLON_SOURCE}scope)`, "u");
+  const SCOPE_ROOT: RegExp = /^(?:&|:scope)/u;
   // Ignore combinators inside a pseudo-class argument (e.g. `:not(a > b)`) — they don't touch this
   // selector's own structure. Uses PSEUDO_SELECTOR_FUNCTIONAL pattern to match :pseudo(...).
-  const stripped = branch.replace(toRegExp(PSEUDO_SELECTOR_FUNCTIONAL), "");
+  const stripped = branch.replaceAll(/:[A-Z][A-Z0-9\-_]*\([^)]*\)/gi, "");
   const trimmed = stripped.trim();
   if (!SCOPE_ROOT.test(trimmed)) return false;
   const rest = trimmed.replace(SCOPE_ROOT, "");
@@ -140,9 +104,9 @@ export function ampStaysAtScope(branch: string): boolean {
  * by {@link ModifierMatcher}'s matchers — used when the enclosing `@scope` doesn't resolve to this
  * record's own base (see {@link scopeMatchesBase}). */
 function neutralizeAmp(selector: string): string {
-  const AMP: Regex = arkRegex.as("&", "gu");
-  const SCOPE: Regex = arkRegex.as(`${COLON_SOURCE}scope${WORD_BOUNDARY_SOURCE}`, "gu");
-  return selector.replace(AMP, "").replace(SCOPE, "");
+  const AMP: RegExp = /&/gu;
+  const SCOPE: RegExp = /:scope\b/gu;
+  return selector.replaceAll(AMP, "").replaceAll(SCOPE, "");
 }
 
 /**
@@ -154,17 +118,13 @@ function neutralizeAmp(selector: string): string {
  * than silently mis-inferred to the bare `@name`. Used for base-class inference and the scoped-part scan.
  */
 /** A selector that is exactly one class — the base-class inference candidate filter. */
-const SINGLE_CLASS: Regex = arkRegex.as(`^${DOT_SOURCE}${CSSDOC_BASE_CLASS_NAME_SOURCE}$`, "u");
+const SINGLE_CLASS: RegExp = /^\.[A-Za-z_][\w-]*$/u;
 // A curated allow-list of ARIA/data-* attributes that reflect element *state* (not identity or
 // labeling) — avoids false positives on incidental attribute selectors like `[data-testid]`.
-const ATTRIBUTE_STATE_SOURCE = String.raw`${BRACKET_OPEN_SOURCE}\s*(aria-${ALPHANUMERIC_EXTENDED_SOURCE}+|data-state)\s*${EQUALS_CHAR}\s*(${QUOTE_DOUBLE_CHAR}(?:[^${QUOTE_DOUBLE_CHAR}\\]|\\.)*${QUOTE_DOUBLE_CHAR}|${QUOTE_SINGLE_CHAR}(?:[^${QUOTE_SINGLE_CHAR}\\]|\\.)*${QUOTE_SINGLE_CHAR}|${ALPHANUMERIC_EXTENDED_SOURCE}+)\s*${BRACKET_CLOSE_SOURCE}`;
 
 const unquote = (value: string): string => {
-  const QUOTES: Regex = arkRegex.as(
-    `^[${QUOTE_DOUBLE_CHAR}${QUOTE_SINGLE_CHAR}]|[${QUOTE_DOUBLE_CHAR}${QUOTE_SINGLE_CHAR}]$`,
-    "gu",
-  );
-  return value.trim().replace(QUOTES, "");
+  const QUOTES: RegExp = /^["']|["']$/gu;
+  return value.trim().replaceAll(QUOTES, "");
 };
 const sortUnique = (values: Iterable<string>): string[] =>
   [...new Set([...values].map((v) => v.toLowerCase()))].toSorted((a, b) => a.localeCompare(b));
@@ -181,8 +141,8 @@ function parseElementToken(
   if (trimmed === ASTERISK_CHAR || trimmed === "any") return { kind: "any" };
   const group = HTML_ELEMENT_GROUPS[trimmed];
   if (group !== undefined) return { kind: "group", alias: trimmed, members: group };
-  const ELEMENT_TAG: Regex = arkRegex.as(`^${CSSDOC_ELEMENT_TAG_SOURCE}$`, "u");
-  const m = trimmed.match(ELEMENT_TAG);
+  const ELEMENT_TAG: RegExp = /^<?\s*([a-z][a-z0-9-]*)\s*>?$/u;
+  const m = ELEMENT_TAG.exec(trimmed);
   if (m) return { kind: "tag", name: m[1] };
   return undefined;
 }
@@ -272,18 +232,15 @@ interface Collected {
 
 /** Parse numbered legend rows (`1. ...`) from plain text. */
 function parseLegendRows(text: string): Map<number, string> {
-  const TAG_START: Regex = arkRegex.as(`^${AT_SOURCE}${ALPHA_SOURCE}`, "u");
-  const LEGEND_ROW: Regex = arkRegex.as(
-    String.raw`^(${DIGIT_SOURCE}+)${DOT_SOURCE}\s*([\s\S]*)$`,
-    "u",
-  );
+  const TAG_START: RegExp = /^@[A-Za-z]/u;
+  const LEGEND_ROW: RegExp = /^(\d+)\.([\s\S]*)$/u;
   const out = new Map<number, string>();
   let current: number | undefined;
   for (const line of text.split("\n")) {
     const trimmed = line.trim();
     if (!trimmed) continue;
     if (TAG_START.exec(trimmed) !== null) break;
-    const marker = trimmed.match(LEGEND_ROW);
+    const marker = LEGEND_ROW.exec(trimmed);
     if (marker) {
       current = Number(marker[1]);
       out.set(current, marker[2].trim());
@@ -296,10 +253,7 @@ function parseLegendRows(text: string): Map<number, string> {
 
 /** Parse inline refs from plain text, capturing optional prose (`@ref 1. Prevent…`). */
 function parseInlineRefs(text: string): { refs: number[]; annotations: Map<number, string> } {
-  const INLINE_REF: Regex = arkRegex.as(
-    String.raw`${AT_SOURCE}ref\s+(${DIGIT_SOURCE}+)${DOT_SOURCE}?\s*([^${LINE_FEED_SOURCE}]*)`,
-    "gu",
-  );
+  const INLINE_REF: RegExp = /@ref\s+(\d+)\.?\s*([^\n]*)/gu;
   const refs: number[] = [];
   const annotations = new Map<number, string>();
   for (const m of text.matchAll(INLINE_REF)) {
@@ -319,7 +273,7 @@ function parseLegendFromInlineComment(text: string): {
   annotations: Map<number, string>;
   refs: number[];
 } {
-  const LEGEND_TAG: Regex = arkRegex.as(`^${AT_SOURCE}annotations${WORD_BOUNDARY_SOURCE}`, "u");
+  const LEGEND_TAG: RegExp = /^@annotations\b/u;
   const stripped = stripCommentFraming(text);
   const lines = stripped.split("\n");
   const first = lines.find((line) => line.trim().length > 0)?.trim() ?? "";
@@ -344,22 +298,16 @@ function addCondition(acc: Collected, condition: CssCondition): void {
 
 /** Derive a CSS custom function from an `@function` at-rule. */
 function collectFunction(node: Extract<ChildNode, { type: "atrule" }>, acc: Collected): void {
-  const FUNCTION_NAME: Regex = arkRegex.as(`^(${CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE})`, "u");
-  const PARAMETERS: Regex = arkRegex.as(
-    `${PAREN_OPEN_SOURCE}([^${PAREN_CLOSE_SOURCE}]*)${PAREN_CLOSE_SOURCE}`,
-    "u",
-  );
-  const PARAMETER: Regex = arkRegex.as(`(${CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE})`, "gu");
-  const RETURNS: Regex = arkRegex.as(
-    String.raw`${WORD_BOUNDARY_SOURCE}returns${WORD_BOUNDARY_SOURCE}\s+(.+)$`,
-    "iu",
-  );
+  const FUNCTION_NAME: RegExp = /^(--[\w-]+)/u;
+  const PARAMETERS: RegExp = /\(([^)]*)\)/u;
+  const PARAMETER: RegExp = /(--[\w-]+)/gu;
+  const RETURNS: RegExp = /\breturns\b\s(.+)$/iu;
   const params = node.params.trim();
-  const nameMatch = params.match(FUNCTION_NAME);
+  const nameMatch = FUNCTION_NAME.exec(params);
   if (!nameMatch) return;
-  const paren = params.match(PARAMETERS);
+  const paren = PARAMETERS.exec(params);
   const parameters = paren ? [...paren[1].matchAll(PARAMETER)].map((m) => m[1]) : [];
-  const returns = params.match(RETURNS);
+  const returns = RETURNS.exec(params);
   let result = returns?.[1]?.trim();
   if (!result) {
     const resultDecl = node.nodes?.find((n) => n.type === "decl" && n.prop === "result");
@@ -388,30 +336,19 @@ function collect(
   // misattribute the parent's modifiers to this member (see `scopeMatchesBase`'s docs).
   ownScopeEligible = true,
 ): void {
-  const VAR: Regex = arkRegex.as(
-    String.raw`var${PAREN_OPEN_SOURCE}\s*(${TOKEN_CUSTOM_PROPERTY_SOURCE})`,
-    "gu",
-  );
-  const DEPRECATED: Regex = arkRegex.as(
-    String.raw`${AT_SOURCE}deprecated.*?use\s+(${DOT_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}+|${BRACKET_OPEN_SOURCE}[^${BRACKET_CLOSE_SOURCE}]*${BRACKET_CLOSE_SOURCE})`,
-    "u",
-  );
-  const TODO: Regex = arkRegex.as(String.raw`(^|\s)${AT_SOURCE}todo${WORD_BOUNDARY_SOURCE}`, "u");
-  const TODO_PREFIX: Regex = arkRegex.as(
-    String.raw`^${AT_SOURCE}todo${WORD_BOUNDARY_SOURCE}[${COLON_CHAR}\s]*`,
-    "u",
-  );
-  const CSSDOC_DIRECTIVE: Regex = arkRegex.as(String.raw`^\s*cssdoc${DASH_SOURCE}`, "u");
-  const TRUE: Regex = arkRegex.as("^true$", "iu");
-  const CUSTOM_STATE = toRegExp(CSSDOC_CUSTOM_STATE_SELECTOR);
-  const ATTRIBUTE_STATE: Regex = arkRegex.as(ATTRIBUTE_STATE_SOURCE, "gu");
-  const SHADOW_PART = toRegExp(CSSDOC_SHADOW_PART_SELECTOR);
-  const PSEUDO = toRegExp(CSSDOC_SCANNED_PSEUDO_SELECTOR);
-  const FINAL_COMPOUND: Regex = arkRegex.as(
-    String.raw`([^\s${GREATER_THAN_CHAR}${TILDE_CHAR}+]+)\s*$`,
-    "u",
-  );
-  const CLASS_REF = toRegExp(CSSDOC_BASE_CLASS_REFERENCE);
+  const VAR: RegExp = /var\(\s*(--[A-Za-z][\w\-]*)/gu;
+  const DEPRECATED: RegExp = /@deprecated.*?use\s+(\.[\w-]+|\[[^\]]*\])/u;
+  const TODO: RegExp = /(^|\s)@todo\b/u;
+  const TODO_PREFIX: RegExp = /^@todo\b[:\s]*/u;
+  const CSSDOC_DIRECTIVE: RegExp = /^\s*cssdoc-/u;
+  const TRUE: RegExp = /^true$/iu;
+  const CUSTOM_STATE = /:state\(\s*([\w-]+)\s*\)/gu;
+  const ATTRIBUTE_STATE: RegExp =
+    /\[\s*(aria-[\w-]+|data-state)\s*=\s*("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[\w-]+)\s*\]/gu;
+  const SHADOW_PART = /::part\(\s*([\w-]+)\s*\)/gu;
+  const PSEUDO = /::?[\w-]+(\([^)]*\))?/gu;
+  const FINAL_COMPOUND: RegExp = /([^\s>~+]+)\s*$/u;
+  const CLASS_REF = /\.([A-Za-z_][\w-]*)/gu;
   let pendingCanonical: string | undefined;
   let pendingDescription: string | undefined;
 
@@ -420,7 +357,7 @@ function collect(
       const legend = parseLegendFromInlineComment(node.text);
       for (const [ref, text] of legend.annotations) acc.annotations.set(ref, text);
       for (const ref of legend.refs) acc.refs.push(ref);
-      const dep = node.text.match(DEPRECATED);
+      const dep = DEPRECATED.exec(node.text);
       if (dep) {
         pendingCanonical = matcher.normalizeMember(dep[1]);
       } else if (TODO.test(node.text)) {
@@ -429,7 +366,7 @@ function collect(
         if (todo) acc.todos.push(todo);
       } else if (!CSSDOC_DIRECTIVE.test(node.text) && inlineMode !== "ignore") {
         // Any other comment is provisional prose for the next member-defining rule.
-        const text = stripCommentFraming(node.text).replace(WHITESPACE, " ").trim();
+        const text = stripCommentFraming(node.text).replaceAll(WHITESPACE, " ").trim();
         if (text) pendingDescription = text;
       }
       continue;
@@ -531,7 +468,7 @@ function collect(
             acc.pseudoElements.set(pe.name, { name: pe.name, description: pendingDescription });
           }
         }
-        const bare = selector.replace(PSEUDO, ""); // drop pseudos
+        const bare = selector.replaceAll(PSEUDO, ""); // drop pseudos
         const matchable = ampEnabled ? bare : neutralizeAmp(bare);
         const mods = matcher.modifiersIn(matchable, baseNoDot);
         const modNames = new Set(mods.map((mod) => mod.name));
@@ -564,7 +501,7 @@ function collect(
         }
         if (inScope) {
           // Only derive parts from the final compound — ancestor segments are scoping context.
-          const finalBare = bare.match(FINAL_COMPOUND)?.[1] ?? bare;
+          const finalBare = FINAL_COMPOUND.exec(bare)?.[1] ?? bare;
           for (const m of finalBare.matchAll(CLASS_REF)) {
             const part = m[1];
             if (modNames.has(part)) continue; // a modifier, not a part
@@ -636,8 +573,9 @@ function buildEntry(
   inlineMode: InlineCommentMode,
   source?: CssSource,
 ): CssDocEntry {
-  const ATTRIBUTE_STATE_TAG: Regex = arkRegex.as(`^${ATTRIBUTE_STATE_SOURCE}$`, "u");
-  const LEADING_DOT: Regex = arkRegex.as(`^${DOT_SOURCE}`, "u");
+  const ATTRIBUTE_STATE_TAG: RegExp =
+    /^\[\s*(aria-[\w-]+|data-state)\s*=\s*("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[\w-]+)\s*\]$/u;
+  const LEADING_DOT: RegExp = /^\./u;
   // Base selector: an explicit @selector wins immediately when set.
   // Otherwise infer from bare single-class rules — preferring the one ending with the record name.
   let className = doc.className ?? "";
@@ -648,12 +586,12 @@ function buildEntry(
       .filter((n): n is ChildNode & { selector: string } => n.type === "rule")
       .map((n) => n.selector.trim())
       .filter((sel) => SINGLE_CLASS.test(sel));
-    const nameEsc = escapeRegex(name);
-    const endsWithName: Regex = arkRegex.as(`(?:^|${DASH_SOURCE})${nameEsc}$`, "u");
+    const nameEsc = RegExp.escape(name);
+    const endsWithName: RegExp = new RegExp(`(?:^|${DASH.source})${nameEsc}$`, "u");
     // A masked `${p}` prefix abuts the name with no `-` (`.aaaabadge`), so the boundary match above
     // misses it and would fall through to the first bare rule — a wrapper like `.aaaabadge-wrapper`.
     // Fall back to any bare class ending in the name (shortest first, so `.badge` beats `.superbadge`).
-    const endsLoose: Regex = arkRegex.as(`${nameEsc}$`, "u");
+    const endsLoose: RegExp = new RegExp(`${nameEsc}$`, "u");
     className =
       bare.find((sel) => endsWithName.test(sel.slice(1))) ??
       bare
@@ -708,28 +646,22 @@ function buildEntry(
       raw: string,
       allowBareCanonical: boolean,
     ): { canonical?: string; note?: string } => {
-      const OPEN_BRACKET: Regex = arkRegex.as(`^${BRACKET_OPEN_SOURCE}`, "u");
-      const CLOSE_BRACKET: Regex = arkRegex.as(`${BRACKET_CLOSE_SOURCE}$`, "u");
-      const LINK: Regex = arkRegex.as(
-        String.raw`${BRACE_OPEN_SOURCE}${AT_SOURCE}link\s+(${CSSDOC_MODIFIER_REFERENCE_SOURCE})\s*${BRACE_CLOSE_SOURCE}`,
-        "u",
-      );
-      const LINK_TEXT: Regex = arkRegex.as(
-        String.raw`${BRACE_OPEN_SOURCE}${AT_SOURCE}link\s+[^${BRACE_CLOSE_SOURCE}]*${BRACE_CLOSE_SOURCE}`,
-        "u",
-      );
-      const BARE: Regex = arkRegex.as(`^(${CSSDOC_MODIFIER_REFERENCE_SOURCE})(.*)$`, "u");
+      const OPEN_BRACKET: RegExp = /^\[/u;
+      const CLOSE_BRACKET: RegExp = /\]$/u;
+      const LINK: RegExp = /\{@link\s+(\.?[\w-]+|\[[^\]]*\])\s*\}/u;
+      const LINK_TEXT: RegExp = /\{@link\s[^}]*\}/u;
+      const BARE: RegExp = /^(\.?[\w-]+(?![\w-])|\[[^\]]*\])(.*)$/u;
       const trimmed = raw.trim();
       const normalizeCanonical = (value: string): string =>
         value.replace(LEADING_DOT, "").replace(OPEN_BRACKET, "").replace(CLOSE_BRACKET, "");
-      const link = trimmed.match(LINK);
+      const link = LINK.exec(trimmed);
       if (link) {
         const canonical = normalizeCanonical(link[1]);
         const note = trimmed.replace(LINK_TEXT, "").trim() || undefined;
         return { canonical, note };
       }
       if (allowBareCanonical) {
-        const bare = trimmed.match(BARE);
+        const bare = BARE.exec(trimmed);
         if (bare) {
           const canonical = normalizeCanonical(bare[1]);
           const note = bare[2].trim() || undefined;
@@ -738,14 +670,8 @@ function buildEntry(
       }
       return { note: trimmed || undefined };
     };
-    const DEPRECATED_INLINE: Regex = arkRegex.as(
-      String.raw`^(?:[${DASH_SOURCE}—]\s*)?${AT_SOURCE}deprecated${WORD_BOUNDARY_SOURCE}\s*([\s\S]*)$`,
-      "u",
-    );
-    const ALIAS_INLINE: Regex = arkRegex.as(
-      String.raw`^(?:[${DASH_SOURCE}—]\s*)?${AT_SOURCE}alias${WORD_BOUNDARY_SOURCE}\s*([\s\S]*)$`,
-      "u",
-    );
+    const DEPRECATED_INLINE: RegExp = /^(?:[-—]\s*)?@deprecated\b([\s\S]*)$/u;
+    const ALIAS_INLINE: RegExp = /^(?:[-—]\s*)?@alias\b([\s\S]*)$/u;
     const depInline = mdoc.description?.match(DEPRECATED_INLINE);
     const aliasInline = mdoc.description?.match(ALIAS_INLINE);
     const depInlineParsed = depInline ? parseCanonicalAndNote(depInline[1], false) : undefined;
@@ -837,7 +763,7 @@ function buildEntry(
     // name/selector for the attribute form must match the auto-derivation below (`key=unquoted-value`),
     // so an authored description and a CSS-derived usage merge into one state, not two.
     const isPseudo = rawState.startsWith(COLON_CHAR);
-    const attrMatch = rawState.match(ATTRIBUTE_STATE_TAG);
+    const attrMatch = ATTRIBUTE_STATE_TAG.exec(rawState);
     const state = isPseudo
       ? rawState.slice(1)
       : attrMatch

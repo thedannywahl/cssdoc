@@ -5,13 +5,10 @@ import {
   AT_CHAR,
   BRACE_OPEN_CHAR,
   LESS_THAN_CHAR,
-  LINE_ENDING_SOURCE,
   LINE_FEED_CHAR,
   PIPE_CHAR,
   TILDE_CHAR,
 } from "@cssdoc/regex";
-import type { Regex } from "arkregex";
-import { regex as arkRegex } from "arkregex";
 import { toHtml } from "hast-util-to-html";
 import { fromMarkdown } from "mdast-util-from-markdown";
 
@@ -25,13 +22,13 @@ type Node = {
 type Edit = { start: number; end: number; text: string };
 
 function vueSafeCode(value: string, inline: boolean): string {
-  const LINE_ENDING: Regex = arkRegex.as(LINE_ENDING_SOURCE, "gu");
+  const LINE_ENDING: RegExp = /\r\n|\r|\n/gu;
   const code = {
     type: "element" as const,
     tagName: "code",
     properties: inline ? { "v-pre": "" } : {},
     children: [
-      { type: "text" as const, value: inline ? value.replace(LINE_ENDING, " ") : `${value}\n` },
+      { type: "text" as const, value: inline ? value.replaceAll(LINE_ENDING, " ") : `${value}\n` },
     ],
   };
   const html = inline
@@ -47,8 +44,8 @@ function vueSafeCode(value: string, inline: boolean): string {
  * @returns Markdown-safe literal prose.
  */
 export function plainProse(text: string): string {
-  const LINE_ENDING: Regex = arkRegex.as(LINE_ENDING_SOURCE, "gu");
-  return literalMarkdownText(unescapeInlineOpeners(text, "plain")).replace(
+  const LINE_ENDING: RegExp = /\r\n|\r|\n/gu;
+  return literalMarkdownText(unescapeInlineOpeners(text, "plain")).replaceAll(
     LINE_ENDING,
     `<br>${LINE_FEED_CHAR}`,
   );

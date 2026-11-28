@@ -1,17 +1,12 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { regex as arkRegex } from "arkregex";
-
-const RELEASE_VERSION = arkRegex.as(String.raw`^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$`, "u");
-const REGISTRY_SECTION = arkRegex.as(String.raw`^\[cssdoc-language-server\]\s*$`, "gmu");
-const NEXT_SECTION = arkRegex.as(String.raw`^\[`, "mu");
-const REGISTRY_SUBMODULE = arkRegex.as(
-  String.raw`^submodule = "extensions/cssdoc-language-server"$`,
-  "mu",
-);
-const REGISTRY_PATH = arkRegex.as(String.raw`^path = "servers/zed"$`, "mu");
-const REGISTRY_VERSION = arkRegex.as(String.raw`^version = "[^"]+"$`, "gmu");
+const RELEASE_VERSION = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/u;
+const REGISTRY_SECTION = /^\[cssdoc-language-server\]\s*$/gmu;
+const NEXT_SECTION = /^\[/mu;
+const REGISTRY_SUBMODULE = /^submodule = "extensions\/cssdoc-language-server"$/mu;
+const REGISTRY_PATH = /^path = "servers\/zed"$/mu;
+const REGISTRY_VERSION = /^version = "[^"]+"$/gmu;
 
 export function updateRegistryVersion(content, version) {
   if (!RELEASE_VERSION.test(version)) {

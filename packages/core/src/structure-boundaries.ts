@@ -5,18 +5,13 @@ import {
   BRACE_OPEN_CHAR,
   BRACKET_CLOSE_CHAR,
   BRACKET_OPEN_CHAR,
-  CSSDOC_DESCRIPTION_SEPARATOR_SOURCE,
-  DASH_SOURCE,
   FORWARD_SLASH_CHAR,
   PAREN_CLOSE_CHAR,
   PAREN_OPEN_CHAR,
   QUOTE_DOUBLE_CHAR,
   QUOTE_SINGLE_CHAR,
-  TOKENIZER_INLINE_TAG_SOURCE,
   CARRIAGE_RETURN_CHAR,
 } from "@cssdoc/regex";
-import type { Regex } from "arkregex";
-import { regex as arkRegex } from "arkregex";
 
 import type { FramedCommentLine } from "./framing.ts";
 
@@ -118,7 +113,7 @@ export function opensStructureAtRule(
   lines: readonly FramedCommentLine[],
   lineIndex: number,
 ): boolean {
-  const INLINE_TAG: Regex = arkRegex.as(`^${TOKENIZER_INLINE_TAG_SOURCE}`, "u");
+  const INLINE_TAG: RegExp = /^(?<inline>\{(?<itag>@\w+)\b[ \t]*(?<itext>[^}]*)\}?)/u;
   const state: StructureBoundaryState = { stack: [], comment: false, escaped: false };
   for (let index = lineIndex; index < lines.length; index++) {
     const text = index === lineIndex ? line : lines[index].text;
@@ -129,7 +124,7 @@ export function opensStructureAtRule(
     }
     const result = scanStructure(text, state, false);
     if (result.openAt !== undefined) {
-      const tag = text.slice(result.openAt).match(INLINE_TAG)?.[0];
+      const tag = INLINE_TAG.exec(text.slice(result.openAt))?.[0];
       return !(tag?.endsWith(BRACE_CLOSE_CHAR) && !tag.includes(BRACE_OPEN_CHAR, 1));
     }
   }
@@ -147,9 +142,7 @@ function scanStructure(
   dividerAt?: number;
   dividerLength?: number;
 } {
-  const SEPARATOR: Regex | undefined = findDivider
-    ? arkRegex.as(`^(?!${DASH_SOURCE}{2})${CSSDOC_DESCRIPTION_SEPARATOR_SOURCE}(?=\\s|$)`, "u")
-    : undefined;
+  const SEPARATOR: RegExp | undefined = findDivider ? /^(?!-{2})(?:—|-{1,2})(?=\s|$)/u : undefined;
   const line = input.endsWith(CARRIAGE_RETURN_CHAR) ? input.slice(0, -1) : input;
   let opened = false;
   let openAt: number | undefined;

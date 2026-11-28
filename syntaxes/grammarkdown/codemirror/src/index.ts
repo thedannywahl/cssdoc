@@ -8,7 +8,6 @@ import { RangeSetBuilder, StateField, type Extension } from "@codemirror/state";
 import { Decoration, EditorView, type DecorationSet } from "@codemirror/view";
 import { buildGrammar } from "@cssdoc/grammarkdown-tmlanguage";
 import { BRACKET_CLOSE_CHAR, BRACKET_OPEN_CHAR } from "@cssdoc/regex";
-import { regex as arkRegex } from "arkregex";
 
 /** Semantic token kind, styled with a `cm-grammarkdown-<kind>` class. */
 export type GrammarkdownTokenType =
@@ -40,7 +39,7 @@ const grammar = buildGrammar();
 function rulePattern(name: string): RegExp {
   const source = grammar.repository[name]?.match;
   if (!source) throw new Error(`Missing grammarkdown TextMate match rule: ${name}`);
-  return arkRegex.as(source, "dy");
+  return new RegExp(source, "dy");
 }
 
 const patterns = {
@@ -71,7 +70,7 @@ const outsideRules: Array<[RegExp, GrammarkdownTokenType]> = [
 const constraintRules: Array<[RegExp, GrammarkdownTokenType]> = [
   [patterns.keyword, "keyword"],
   [patterns.terminal, "terminal"],
-  [arkRegex.as("[+~?]|[∈∉≠]|!=", "dy"), "operator"],
+  [/[+~?∈∉≠]|!=/dy, "operator"],
   [patterns.parameter, "parameter"],
 ];
 

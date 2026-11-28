@@ -27,28 +27,13 @@ import {
   type ReferenceLookup,
 } from "@cssdoc/index";
 import {
-  AT_SOURCE,
   BACKTICK_CHAR,
-  BRACE_OPEN_SOURCE,
-  BRACE_CLOSE_SOURCE,
-  CSS_CLASS_REFERENCE,
   CSSDOC_CARDINALITY_KEYWORDS,
-  CSSDOC_SHORTHAND_STRUCTURE_REFERENCE_SOURCE,
-  CSSDOC_STRUCTURE_SLOT_SOURCE,
-  CSSDOC_TYPED_STRUCTURE_REFERENCE_SOURCE,
   DOT_CHAR,
   LESS_THAN_CHAR,
   MARKDOWN_BACKTICK_FENCE_LINE_PREFIX,
-  MARKDOWN_ORDERED_LIST_MARKER_SOURCE,
-  MARKDOWN_UNORDERED_LIST_MARKER_SOURCE,
   PIPE_CHAR,
-  STRUCTURE_RECORD_KIND_SOURCE,
-  WHITESPACE_RUN,
-  WORD_BOUNDARY_SOURCE,
-  toRegExp,
 } from "@cssdoc/regex";
-import type { Regex } from "arkregex";
-import { regex as arkRegex } from "arkregex";
 
 import {
   plainProse,
@@ -57,7 +42,7 @@ import {
   sanitizeMarkdownLinks,
 } from "./prose.ts";
 
-const WHITESPACE = toRegExp(WHITESPACE_RUN);
+const WHITESPACE = /\s+/gu;
 
 function fencedBlock(language: string, text: string): string[] {
   let longest = 2;
@@ -324,10 +309,7 @@ export function groupEntries(
     .map((label) => ({ label, entries: byLabel.get(label)! }));
 }
 
-const LIST_ITEM_PREFIX: Regex = arkRegex.as(
-  `^(?:${MARKDOWN_UNORDERED_LIST_MARKER_SOURCE}|${MARKDOWN_ORDERED_LIST_MARKER_SOURCE}) `,
-  "u",
-);
+const LIST_ITEM_PREFIX: RegExp = /^(?:[-*+]|\d+\.) /u;
 
 /**
  * Escape prose for VitePress markdown (which compiles through Vue's SFC parser): a raw `<tag>` reads as
@@ -376,7 +358,7 @@ function tag(cls: string | undefined, label: string, fallback: string = label): 
 function code(text: string | undefined): string {
   if (!text) return "—";
   return `\`${text
-    .replace(WHITESPACE, " ")
+    .replaceAll(WHITESPACE, " ")
     .trim()
     .replaceAll(PIPE_CHAR, String.raw`\|`)}\``;
 }
@@ -392,22 +374,16 @@ function table(headers: string[], rows: string[][]): string[] {
 }
 
 /** Match a `slot` / `slot[name="x"]` structure node (a light-DOM content region → the default/named slot). */
-const SLOT_NODE: Regex = arkRegex.as(`^${CSSDOC_STRUCTURE_SLOT_SOURCE}$`, "u");
-const CLASS_REFERENCE = toRegExp(CSS_CLASS_REFERENCE);
-const ALIAS_PREFIX: Regex = arkRegex.as(
-  String.raw`^${AT_SOURCE}alias${WORD_BOUNDARY_SOURCE}\s*`,
-  "u",
-);
-const INLINE_LINK: Regex = arkRegex.as(
-  String.raw`${BRACE_OPEN_SOURCE}${AT_SOURCE}link\s+([^${BRACE_CLOSE_SOURCE}]+)${BRACE_CLOSE_SOURCE}`,
-  "u",
-);
+const SLOT_NODE: RegExp = /^slot(?:\[\s*name\s*=\s*["']?([\w-]+)["']?\s*\])?$/u;
+const CLASS_REFERENCE = /\.([\w-]+)/gu;
+const ALIAS_PREFIX: RegExp = /^@alias\b\s*/u;
+const INLINE_LINK: RegExp = /\{@link\s+(?!\s)([^}]+)\}/u;
 
 /** Every bare class in a selector, e.g. a comma-separated alternation list `.a, .b` → `["a", "b"]`. */
 const allClasses = (selector: string): string[] =>
   [...selector.matchAll(CLASS_REFERENCE)].map((m) => m[1]);
 
-const STRUCTURE_REF_KIND: Regex = arkRegex.as(`^${STRUCTURE_RECORD_KIND_SOURCE}$`, "u");
+const STRUCTURE_REF_KIND: RegExp = /^(?:component|name|utility|declaration)$/u;
 const parseStructureRecordRef = (
   selector: string,
 ): { kind?: string; name: string; profile?: string; private?: boolean } | undefined => {
@@ -415,8 +391,9 @@ const parseStructureRecordRef = (
   const raw = selector.slice(1).trim();
   if (!raw) return undefined;
 
-  const TYPED: Regex = arkRegex.as(`^${CSSDOC_TYPED_STRUCTURE_REFERENCE_SOURCE}$`, "u");
-  const typed = raw.match(TYPED);
+  const TYPED: RegExp =
+    /^(component|name|utility|declaration)\s+([\w-]+(?:\.[\w-]+)*)(?::([\w-]+))?(?:\s+(private))?$/u;
+  const typed = TYPED.exec(raw);
   if (typed) {
     return {
       kind: typed[1] === "name" ? "component" : typed[1],
@@ -426,8 +403,8 @@ const parseStructureRecordRef = (
     };
   }
 
-  const SHORTHAND: Regex = arkRegex.as(`^${CSSDOC_SHORTHAND_STRUCTURE_REFERENCE_SOURCE}$`, "u");
-  const shorthand = raw.match(SHORTHAND);
+  const SHORTHAND: RegExp = /^([\w-]+(?:\.[\w-]+)*)(?::([\w-]+))?(?:\s+(private))?$/u;
+  const shorthand = SHORTHAND.exec(raw);
   if (!shorthand) return undefined;
   if (STRUCTURE_REF_KIND.test(shorthand[1])) return undefined;
   return { name: shorthand[1], profile: shorthand[2], private: Boolean(shorthand[3]) };
@@ -485,7 +462,7 @@ function structureLabel(
   self?: string,
   resolveComponent?: RenderEntryOptions["resolveComponent"],
 ): string {
-  const slot = node.selector.match(SLOT_NODE);
+  const slot = SLOT_NODE.exec(node.selector);
   let base = node.selector;
   let kind: string | undefined;
   if (slot) {

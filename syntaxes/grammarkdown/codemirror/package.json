@@ -36,8 +36,7 @@
     "@codemirror/state": "catalog:",
     "@codemirror/view": "catalog:",
     "@cssdoc/grammarkdown-tmlanguage": "workspace:*",
-    "@cssdoc/regex": "workspace:*",
-    "arkregex": "catalog:"
+    "@cssdoc/regex": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",

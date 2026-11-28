@@ -52,42 +52,11 @@ import {
   selectorDefines,
 } from "@cssdoc/providers";
 import {
-  ALPHA_SOURCE,
-  ALPHANUMERIC_EXTENDED_SOURCE,
-  AT_SOURCE,
-  ASTERISK_SOURCE,
-  BRACE_OPEN_SOURCE,
-  CSS_CLASS_ATTRIBUTE_SELECTOR,
-  CSSDOC_BASE_CLASS_NAME_SOURCE,
-  CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE,
-  COMMENT_START_SOURCE,
-  COMMENT_END_SOURCE,
   COMMENT_END_TEXT,
   COMMENT_LINE_PREFIX,
-  DOC_COMMENT_START_SOURCE,
   DOC_COMMENT_START_TEXT,
-  DASH_SOURCE,
-  DIGIT_SOURCE,
-  DOUBLE_DASH_SOURCE,
   DOT_CHAR,
-  DOT_SOURCE,
-  EQUALS_CHAR,
-  FORWARD_SLASH_CHAR,
-  GREATER_THAN_CHAR,
-  HTML_LIKE_CLASS_ATTRIBUTE_NAME_SOURCE,
-  HTML_LIKE_TAG_NAME_SOURCE,
-  HTML_QUOTED_ATTRIBUTE,
-  LESS_THAN_CHAR,
-  LINE_ENDING_SOURCE,
-  PAREN_OPEN_SOURCE,
-  QUOTE_DOUBLE_CHAR,
-  QUOTE_SINGLE_CHAR,
-  WORD_BOUNDARY_SOURCE,
-  escapeRegex,
-  toRegExp,
 } from "@cssdoc/regex";
-import type { Regex } from "arkregex";
-import { regex as arkRegex } from "arkregex";
 
 /** Language ids handled as CSS (the value/hygiene checks run on these). */
 const CSS_LANGUAGES = new Set(["css", "scss", "less", "postcss"]);
@@ -95,40 +64,19 @@ const containsPath = (root: string, path: string): boolean => {
   const rel = relative(root, path);
   return rel !== ".." && !rel.startsWith(`..${sep}`) && !isAbsolute(rel);
 };
-const ANNOTATION_MARKER = arkRegex.as(
-  String.raw`^(${DIGIT_SOURCE}+)${DOT_SOURCE}\s*([\s\S]*)$`,
-  "u",
-);
-const DOC_COMMENT: Regex = arkRegex.as(
-  `${DOC_COMMENT_START_SOURCE}[\\s\\S]*?${COMMENT_END_SOURCE}`,
-  "gu",
-);
-const SEMANTIC_DOC_COMMENT: Regex = arkRegex.as(
-  `${DOC_COMMENT_START_SOURCE}[\\s\\S]*?(?:${COMMENT_END_SOURCE}|$)`,
-  "gu",
-);
-const COMMENT_OPENING: Regex = arkRegex.as(`^${COMMENT_START_SOURCE}${ASTERISK_SOURCE}?`);
-const COMMENT_CLOSING: Regex = arkRegex.as(`${COMMENT_END_SOURCE}$`);
-const ANNOTATIONS_TAG = arkRegex.as(String.raw`^\s*${AT_SOURCE}annotations\b`, "u");
-const COMMENT_TAG = arkRegex.as(String.raw`^\s*${AT_SOURCE}${ALPHA_SOURCE}`, "u");
-const ANNOTATION_REF = arkRegex.as(
-  String.raw`${AT_SOURCE}ref\s+(${DIGIT_SOURCE}+)${DOT_SOURCE}?`,
-  "gu",
-);
-const NON_WHITESPACE = arkRegex.as(String.raw`\S+`, "gu");
-const COMPLETION_TAG = arkRegex.as(
-  String.raw`(?:^|[\s*])${AT_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*$`,
-  "u",
-);
-const COMPLETION_TAG_SUFFIX = arkRegex.as(String.raw`^${ALPHANUMERIC_EXTENDED_SOURCE}*`, "u");
-const COMPLETION_VAR = arkRegex.as(
-  String.raw`var${PAREN_OPEN_SOURCE}\s*(${DOUBLE_DASH_SOURCE}${ALPHANUMERIC_EXTENDED_SOURCE}*)$`,
-  "u",
-);
-const SEMANTIC_TAG = arkRegex.as(
-  String.raw`${AT_SOURCE}(${ALPHANUMERIC_EXTENDED_SOURCE}+)(?:\s+([^\s][^*]*?))?(?=\s*(?:\*|$))`,
-  "gu",
-);
+const ANNOTATION_MARKER = /^(\d+)\.([\s\S]*)$/u;
+const DOC_COMMENT: RegExp = /\/\*\*[\s\S]*?\*\//gu;
+const SEMANTIC_DOC_COMMENT: RegExp = /\/\*\*[\s\S]*?(?:\*\/|$)/gu;
+const COMMENT_OPENING: RegExp = /^\/\*\*?/;
+const COMMENT_CLOSING: RegExp = /\*\/$/;
+const ANNOTATIONS_TAG = /^\s*@annotations\b/u;
+const COMMENT_TAG = /^\s*@[A-Za-z]/u;
+const ANNOTATION_REF = /@ref\s+(\d+)\.?/gu;
+const NON_WHITESPACE = /\S+/gu;
+const COMPLETION_TAG = /(?:^|[\s*])@[\w-]*$/u;
+const COMPLETION_TAG_SUFFIX = /^[\w-]*/u;
+const COMPLETION_VAR = /var\(\s*(--[\w-]*)$/u;
+const SEMANTIC_TAG = /@([\w-]+)(?:\s+(\S(?:[^*]*?[^\s*])?))?(?=\s*(?:\*|$))/gu;
 
 /** Map an editor `languageId` to an embedded host, for docs whose path extension isn't decisive. */
 const hostForLanguageId = (languageId?: string): EmbeddedHost | undefined => {
@@ -260,7 +208,7 @@ function offsetAt(text: string, position: LspPosition): number {
 }
 
 function positionAt(text: string, offset: number): LspPosition {
-  const LINE_ENDING: Regex = arkRegex.as(LINE_ENDING_SOURCE, "gu");
+  const LINE_ENDING: RegExp = /\r\n|\r|\n/gu;
   const upto = text.slice(0, offset).split(LINE_ENDING);
   return { line: upto.length - 1, character: upto.at(-1)!.length };
 }
@@ -292,7 +240,7 @@ function fallbackLegend(raw: string): Map<number, string> {
     if (COMMENT_TAG.exec(line) !== null) break;
     const trimmed = line.trim();
     if (!trimmed) continue;
-    const marker = trimmed.match(ANNOTATION_MARKER);
+    const marker = ANNOTATION_MARKER.exec(trimmed);
     if (marker) {
       current = Number(marker[1]);
       out.set(current, marker[2].trim());
@@ -373,7 +321,7 @@ function unmask(
  */
 function unmaskContent(content: string, projected: string, source: string): string {
   if (source === projected) return content;
-  const IDENTIFIER: Regex = arkRegex.as(CSSDOC_BASE_CLASS_NAME_SOURCE, "gu");
+  const IDENTIFIER: RegExp = /[A-Za-z_][\w-]*/gu;
   let out = content;
   const done = new Set<string>();
   for (const m of projected.matchAll(IDENTIFIER)) {
@@ -411,15 +359,9 @@ interface ClassAttr {
   valueEnd: number;
 }
 
-const CLASS_ATTR = arkRegex.as(
-  String.raw`${WORD_BOUNDARY_SOURCE}${HTML_LIKE_CLASS_ATTRIBUTE_NAME_SOURCE}\s*${EQUALS_CHAR}\s*${BRACE_OPEN_SOURCE}?\s*([${QUOTE_DOUBLE_CHAR}${QUOTE_SINGLE_CHAR}])((?:(?!\1)[\s\S])*)\1`,
-  "gu",
-);
-const ATTRIBUTE_USAGE_TAG = arkRegex.as(
-  String.raw`${LESS_THAN_CHAR}(${HTML_LIKE_TAG_NAME_SOURCE})([^${LESS_THAN_CHAR}${GREATER_THAN_CHAR}]*?)${FORWARD_SLASH_CHAR}?${GREATER_THAN_CHAR}`,
-  "gu",
-);
-const QUOTED_ATTRIBUTE = toRegExp(HTML_QUOTED_ATTRIBUTE);
+const CLASS_ATTR = /\b(?:className|class)\s*=\s*(?:\{\s*)?(["'])((?:(?!\1)[\s\S])*)\1/gu;
+const ATTRIBUTE_USAGE_TAG = /<([A-Za-z][\w-]*)(?![\w-])([^<>]*?)\/?>/gu;
+const QUOTED_ATTRIBUTE = /([:\w-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/gu;
 
 /** Every `class`/`className` attribute value in the text, with per-token offsets. */
 function classAttributes(text: string): ClassAttr[] {
@@ -447,7 +389,7 @@ function propertyAt(
   text: string,
   offset: number,
 ): { name: string; start: number; end: number } | undefined {
-  const CUSTOM_PROPERTY: Regex = arkRegex.as(CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE, "gu");
+  const CUSTOM_PROPERTY: RegExp = /--[\w-]+/gu;
   for (const m of text.matchAll(CUSTOM_PROPERTY)) {
     const start = m.index ?? 0;
     const end = start + m[0].length;
@@ -463,10 +405,7 @@ function classAttrAt(text: string, offset: number): ClassAttr | undefined {
 
 const stripLeadingDot = (s: string): string => (s.startsWith(DOT_CHAR) ? s.slice(1) : s);
 
-const CSS_CLASS_TOKEN: Regex = arkRegex.as(
-  `(?<!${DIGIT_SOURCE})${DOT_SOURCE}(${DASH_SOURCE}?${ALPHANUMERIC_EXTENDED_SOURCE}+)`,
-  "gu",
-);
+const CSS_CLASS_TOKEN: RegExp = /(?<!\d)\.([\w\-]+)/gu;
 
 /** The CSS class name under `offset` in a stylesheet — a `.name` selector token — else undefined. The
  *  `(?<!\d)` guard keeps decimals like `0.5em` from looking like a `.5em` class. */
@@ -495,7 +434,8 @@ function resolveCssClass(
   return owner === undefined ? undefined : { base: stripLeadingDot(owner.className), token };
 }
 
-const CLASS_ATTR_SELECTOR = toRegExp(CSS_CLASS_ATTRIBUTE_SELECTOR);
+const CLASS_ATTR_SELECTOR =
+  /\[\s*class\s*([~^$*|]?)=\s*(?!\s)(?:"([^"]*)"|'([^']*)'|([^\]\s]*))\s*\]/gu;
 
 /** The `[class OP="value"]` attribute selector under `offset` (its operator, value, and start), if any. */
 function cssClassAttrSelectorAt(
@@ -1408,7 +1348,7 @@ export class CssDocLanguageService {
           });
           continue;
         }
-        const LINE_ENDING: Regex = arkRegex.as(LINE_ENDING_SOURCE, "u");
+        const LINE_ENDING: RegExp = /\r\n|\r|\n/u;
         const line = blockText.slice(highlight.start).split(LINE_ENDING, 1)[0];
         const tagMatches = line.matchAll(SEMANTIC_TAG);
         for (const match of tagMatches) {
@@ -1475,7 +1415,7 @@ export class CssDocLanguageService {
     for (const prop of index.allCustomProperties()) {
       const propName = prop.property.name;
       // Use escaped pattern to find all property usages
-      const pattern: Regex = arkRegex.as(escapeRegex(propName), "gu");
+      const pattern: RegExp = new RegExp(RegExp.escape(propName), "gu");
       const propMatches = text.matchAll(pattern);
 
       for (const match of propMatches) {

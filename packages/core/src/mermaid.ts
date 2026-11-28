@@ -27,20 +27,7 @@
  * @module
  */
 
-import {
-  ALPHANUMERIC_EXTENDED_SOURCE,
-  AT_CHAR,
-  CSSDOC_SHORTHAND_STRUCTURE_REFERENCE_SOURCE,
-  CSSDOC_STRUCTURE_SLOT_SOURCE,
-  CSSDOC_TYPED_STRUCTURE_REFERENCE_SOURCE,
-  DOT_CHAR,
-  DOT_SOURCE,
-  POUND_CHAR,
-  QUOTE_DOUBLE_CHAR,
-  STRUCTURE_RECORD_KIND_SOURCE,
-} from "@cssdoc/regex";
-import type { Regex } from "arkregex";
-import { regex as arkRegex } from "arkregex";
+import { AT_CHAR, DOT_CHAR, POUND_CHAR } from "@cssdoc/regex";
 
 import { cardinalityIsDashed, cardinalityToken } from "./cardinality.ts";
 import type { StructureNode } from "./model.ts";
@@ -94,7 +81,7 @@ const CLASS_DEFS = [
 
 /** Every bare class in a selector, e.g. a comma-separated alternation list `.a, .b` → `["a", "b"]`. */
 const allClasses = (selector: string): string[] => {
-  const CLASS: Regex = arkRegex.as(`${DOT_SOURCE}(${ALPHANUMERIC_EXTENDED_SOURCE}+)`, "gu");
+  const CLASS: RegExp = /\.([\w-]+)/gu;
   return [...selector.matchAll(CLASS)].map((m) => m[1]);
 };
 
@@ -105,8 +92,9 @@ const parseStructureRecordRef = (
   const raw = selector.slice(1).trim();
   if (!raw) return undefined;
 
-  const TYPED: Regex = arkRegex.as(`^${CSSDOC_TYPED_STRUCTURE_REFERENCE_SOURCE}$`, "u");
-  const typed = raw.match(TYPED);
+  const TYPED: RegExp =
+    /^(component|name|utility|declaration)\s+([\w-]+(?:\.[\w-]+)*)(?::([\w-]+))?(?:\s+(private))?$/u;
+  const typed = TYPED.exec(raw);
   if (typed) {
     return {
       kind: typed[1] === "name" ? "component" : typed[1],
@@ -116,9 +104,9 @@ const parseStructureRecordRef = (
     };
   }
 
-  const SHORTHAND: Regex = arkRegex.as(`^${CSSDOC_SHORTHAND_STRUCTURE_REFERENCE_SOURCE}$`, "u");
-  const STRUCTURE_REF_KIND: Regex = arkRegex.as(`^${STRUCTURE_RECORD_KIND_SOURCE}$`, "u");
-  const shorthand = raw.match(SHORTHAND);
+  const SHORTHAND: RegExp = /^([\w-]+(?:\.[\w-]+)*)(?::([\w-]+))?(?:\s+(private))?$/u;
+  const STRUCTURE_REF_KIND: RegExp = /^(?:component|name|utility|declaration)$/u;
+  const shorthand = SHORTHAND.exec(raw);
   if (!shorthand) return undefined;
   if (STRUCTURE_REF_KIND.exec(shorthand[1]) !== null) return undefined;
   return { name: shorthand[1], profile: shorthand[2], private: Boolean(shorthand[3]) };
@@ -130,8 +118,8 @@ const colocNormalize = (sel: string): string =>
 
 /** Escape a label for a quoted Mermaid node body. */
 const esc = (text: string): string => {
-  const QUOTE: Regex = arkRegex.as(QUOTE_DOUBLE_CHAR, "gu");
-  return text.replace(QUOTE, "&quot;");
+  const QUOTE: RegExp = /"/gu;
+  return text.replaceAll(QUOTE, "&quot;");
 };
 
 interface Classified {
@@ -143,8 +131,8 @@ interface Classified {
 
 /** Classify one node: slot → root → sibling component → plain part. */
 function classify(node: StructureNode, isRoot: boolean, options: MermaidOptions): Classified {
-  const SLOT_NODE: Regex = arkRegex.as(`^${CSSDOC_STRUCTURE_SLOT_SOURCE}$`, "u");
-  const slot = node.selector.match(SLOT_NODE);
+  const SLOT_NODE: RegExp = /^slot(?:\[\s*name\s*=\s*["']?([\w-]+)["']?\s*\])?$/u;
+  const slot = SLOT_NODE.exec(node.selector);
   if (slot) return { klass: "cssdoc-slot", label: slot[1] ? `‹content: ${slot[1]}›` : "‹content›" };
   if (isRoot) {
     // A root has no incoming edge to carry its cardinality (an optional-ancestor wrapper), so it rides

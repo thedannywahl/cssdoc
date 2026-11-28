@@ -23,8 +23,6 @@ import {
   type PublicProseContext,
   type ReferenceLookup,
 } from "@cssdoc/index";
-import { WHITESPACE_RUN, PAREN_CLOSE_SOURCE, toRegExp } from "@cssdoc/regex";
-import { regex as arkRegex } from "arkregex";
 
 /** Either a CSS source or an already-parsed model. */
 export interface ModelInput {
@@ -63,9 +61,9 @@ export interface RenderLlmsOptions {
   lookupFor?: (context: PublicProseContext) => ReferenceLookup;
 }
 
-const WHITESPACE = toRegExp(WHITESPACE_RUN);
-const SPACE_BEFORE_CLOSE = arkRegex.as(String.raw`\s+${PAREN_CLOSE_SOURCE}`, "u");
-const clean = (text: string | undefined): string => (text ?? "").replace(WHITESPACE, " ").trim();
+const WHITESPACE = /\s+/gu;
+const SPACE_BEFORE_CLOSE = /\s+\)/u;
+const clean = (text: string | undefined): string => (text ?? "").replaceAll(WHITESPACE, " ").trim();
 const stripDash = (name: string): string => (name.startsWith("-") ? name.slice(1) : name);
 
 function modifier(m: CssModifier): string {

@@ -16,16 +16,16 @@
  * @module \@cssdoc/grammarkdown-tmlanguage
  */
 import {
-  ALPHA_SOURCE,
-  ALPHA_UPPER_SOURCE,
-  ALPHANUMERIC_SOURCE,
-  AT_SOURCE,
-  BRACKET_CLOSE_SOURCE,
-  BRACKET_OPEN_SOURCE,
-  COLON_SOURCE,
-  FORWARD_SLASH_SOURCE,
-  HEX_DIGIT_SOURCE,
-  WORD_BOUNDARY_SOURCE,
+  ALPHA,
+  ALPHA_UPPER,
+  ALPHANUMERIC,
+  AT,
+  BRACKET_CLOSE,
+  BRACKET_OPEN,
+  COLON,
+  FORWARD_SLASH,
+  HEX_DIGIT,
+  WORD_BOUNDARY,
 } from "@cssdoc/regex";
 
 interface TmRule {
@@ -54,8 +54,8 @@ export interface GrammarkdownGrammar {
   repository: Record<string, TmRule>;
 }
 
-const identifier = `${ALPHA_SOURCE}${ALPHANUMERIC_SOURCE}*`;
-const boundedIdentifier = `${WORD_BOUNDARY_SOURCE}${identifier}${WORD_BOUNDARY_SOURCE}`;
+const identifier = `${ALPHA.source}${ALPHANUMERIC.source}*`;
+const boundedIdentifier = `${WORD_BOUNDARY.source}${identifier}${WORD_BOUNDARY.source}`;
 
 /** Build the grammarkdown TextMate grammar. */
 export function buildGrammar(): GrammarkdownGrammar {
@@ -79,7 +79,7 @@ export function buildGrammar(): GrammarkdownGrammar {
     ],
     repository: {
       comment: {
-        match: `${FORWARD_SLASH_SOURCE}${FORWARD_SLASH_SOURCE}.*$`,
+        match: `${FORWARD_SLASH.source}${FORWARD_SLASH.source}.*$`,
         name: "comment.line.double-slash.grammarkdown",
       },
       prose: {
@@ -87,11 +87,11 @@ export function buildGrammar(): GrammarkdownGrammar {
         name: "string.unquoted.prose.grammarkdown",
       },
       directive: {
-        match: `${AT_SOURCE}(import|define|line|augments|noStrictParametricRedeclaration|noSyntacticPredicates)${WORD_BOUNDARY_SOURCE}`,
+        match: `${AT.source}(import|define|line|augments|noStrictParametricRedeclaration|noSyntacticPredicates)${WORD_BOUNDARY.source}`,
         name: "keyword.control.directive.grammarkdown",
       },
       production: {
-        match: `^\\s*(${identifier})\\s*(${BRACKET_OPEN_SOURCE}[^\\]]*${BRACKET_CLOSE_SOURCE})?\\s*(${COLON_SOURCE}{3}|${COLON_SOURCE}{2}|${COLON_SOURCE})`,
+        match: `^\\s*(${identifier})\\s*(${BRACKET_OPEN.source}[^\\]]*${BRACKET_CLOSE.source})?\\s*(${COLON.source}{3}|${COLON.source}{2}|${COLON.source})`,
         captures: {
           "1": { name: "entity.name.type.production.grammarkdown" },
           "2": {
@@ -102,8 +102,8 @@ export function buildGrammar(): GrammarkdownGrammar {
         },
       },
       constraint: {
-        begin: BRACKET_OPEN_SOURCE,
-        end: BRACKET_CLOSE_SOURCE,
+        begin: BRACKET_OPEN.source,
+        end: BRACKET_CLOSE.source,
         name: "meta.annotation.grammarkdown",
         patterns: [
           { include: "#keywords" },
@@ -122,11 +122,11 @@ export function buildGrammar(): GrammarkdownGrammar {
         name: "constant.language.character-class.grammarkdown",
       },
       codepoint: {
-        match: `${WORD_BOUNDARY_SOURCE}U\\+${HEX_DIGIT_SOURCE}{2,6}${WORD_BOUNDARY_SOURCE}`,
+        match: `${WORD_BOUNDARY.source}U\\+${HEX_DIGIT.source}{2,6}${WORD_BOUNDARY.source}`,
         name: "constant.numeric.codepoint.grammarkdown",
       },
       keywords: {
-        match: `${WORD_BOUNDARY_SOURCE}(but\\s+not|one\\s+of|lookahead|empty|here|but|not|or|of|no)${WORD_BOUNDARY_SOURCE}`,
+        match: `${WORD_BOUNDARY.source}(but\\s+not|one\\s+of|lookahead|empty|here|but|not|or|of|no)${WORD_BOUNDARY.source}`,
         name: "keyword.control.grammarkdown",
       },
       optional: {
@@ -134,7 +134,7 @@ export function buildGrammar(): GrammarkdownGrammar {
         name: "keyword.operator.optional.grammarkdown",
       },
       nonterminal: {
-        match: `${WORD_BOUNDARY_SOURCE}${ALPHA_UPPER_SOURCE}${ALPHANUMERIC_SOURCE}*${WORD_BOUNDARY_SOURCE}`,
+        match: `${WORD_BOUNDARY.source}${ALPHA_UPPER.source}${ALPHANUMERIC.source}*${WORD_BOUNDARY.source}`,
         name: "variable.other.nonterminal.grammarkdown",
       },
       parameters: {

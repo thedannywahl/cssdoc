@@ -43,37 +43,19 @@ import { scanClassUsages } from "@cssdoc/embedded";
 import { type CssDocIndex, createIndex } from "@cssdoc/index";
 import { type NamingRules, type RuleName, lintCssDocs } from "@cssdoc/lint-core";
 import { type RuleSeverity, checkClassUsage } from "@cssdoc/providers";
-import {
-  ALPHA_UPPER_SOURCE,
-  AT_CHAR,
-  BRACE_CLOSE_SOURCE,
-  BRACE_OPEN_SOURCE,
-  COLON_CHAR,
-  COMMENT_END_SOURCE,
-  CSSDOC_CUSTOM_PROPERTY_TAG_NAME,
-  CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE,
-  DASH_SOURCE,
-  DOC_COMMENT_START_SOURCE,
-  QUOTE_DOUBLE_CHAR,
-} from "@cssdoc/regex";
+import { CSSDOC_CUSTOM_PROPERTY_TAG_NAME } from "@cssdoc/regex";
 import css from "@eslint/css";
-import { regex as arkRegex } from "arkregex";
 import type { JSSyntaxElement, Linter, Rule } from "eslint";
 
 type Position = { line: number; column: number };
-const DOC_COMMENT = arkRegex.as(`${DOC_COMMENT_START_SOURCE}[\\s\\S]*?${COMMENT_END_SOURCE}`);
-const CLASS_WHITESPACE = arkRegex.as(String.raw`\s+`, "u");
-const DEFAULT_COMPONENT_NAME = arkRegex.as(`^${ALPHA_UPPER_SOURCE}`);
-const COMPONENT_NAME_SEPARATOR = arkRegex.as(
-  `[${DASH_SOURCE}${COLON_CHAR}]|(?=${ALPHA_UPPER_SOURCE})`,
-);
-const PROPERTY_SYNTAX = arkRegex.as(
-  String.raw`^${AT_CHAR}property\s+${CSSDOC_CUSTOM_PROPERTY_TAG_NAME_SOURCE}\s*${BRACE_OPEN_SOURCE}[\s\S]*?syntax${COLON_CHAR}\s*${QUOTE_DOUBLE_CHAR}([^${QUOTE_DOUBLE_CHAR}]+)${QUOTE_DOUBLE_CHAR}[\s\S]*?${BRACE_CLOSE_SOURCE}`,
-  "gm",
-);
-const COLOR_VALUE = arkRegex.as(String.raw`(#[0-9a-f]{3,8}|rgb|hsl|var)`, "i");
-const LENGTH_VALUE = arkRegex.as(String.raw`^\d+(\.\d+)?(px|em|rem|%|vh|vw)$|var\(`);
-const NUMBER_VALUE = arkRegex.as(String.raw`^\d+(\.\d+)?$|var\(`);
+const DOC_COMMENT = /\/\*\*[\s\S]*?\*\//;
+const CLASS_WHITESPACE = /\s+/u;
+const DEFAULT_COMPONENT_NAME = /^[A-Z]/;
+const COMPONENT_NAME_SEPARATOR = /[-:]|(?=[A-Z])/;
+const PROPERTY_SYNTAX = /^@property\s+--[\w-]+\s*\{[\s\S]*?syntax:\s*"([^"]+)"[\s\S]*?\}/gm;
+const COLOR_VALUE = /(#[0-9a-f]{3,8}|rgb|hsl|var)/i;
+const LENGTH_VALUE = /^\d+(\.\d+)?(px|em|rem|%|vh|vw)$|var\(/;
+const NUMBER_VALUE = /^\d+(\.\d+)?$|var\(/;
 
 type ReportDescriptor = Rule.ReportDescriptor & { message: string };
 
@@ -429,7 +411,7 @@ const requireComponentDocs: RuleModule = {
     const pattern =
       options.pattern === null || options.pattern === undefined
         ? DEFAULT_COMPONENT_NAME
-        : arkRegex.as(options.pattern);
+        : new RegExp(options.pattern);
     const skipUtilities = options.skipUtilities !== false;
 
     return {

@@ -1,6 +1,5 @@
 import { readdirSync, readFileSync } from "node:fs";
 
-import { regex as arkRegex } from "arkregex";
 import ts from "typescript";
 import { createMarkdownRenderer } from "vitepress";
 
@@ -32,11 +31,8 @@ declare const data: PatternReferenceGroup[];
 export { data };
 
 const definitions = new URL("../../packages/regex/src/definitions/", import.meta.url);
-const CODE_GROUP_TAG = arkRegex.as(String.raw`<(?:input|label) [^>]+>`, "gu");
-const CODE_GROUP_ATTRIBUTE = arkRegex.as(
-  String.raw`(?<attribute>name|id|for)="(?<identifier>(?:group|tab)-\d+)"`,
-  "gu",
-);
+const CODE_GROUP_TAG = /<(?:input|label) [^>]+>/gu;
+const CODE_GROUP_ATTRIBUTE = /(?<attribute>name|id|for)="(?<identifier>(?:group|tab)-\d+)"/gu;
 const tierSections: Record<
   UnifiedPatternDef["tier"],
   Pick<PatternReferenceGroup, "name" | "description">
@@ -76,6 +72,15 @@ function readAuthoredPatterns(): Map<string, string> {
       readFileSync(new URL(filename, definitions), "utf8"),
       ts.ScriptTarget.Latest,
     );
+    const declarations = new Map<string, ts.Expression>();
+    for (const statement of file.statements) {
+      if (!ts.isVariableStatement(statement)) continue;
+      for (const declaration of statement.declarationList.declarations) {
+        if (ts.isIdentifier(declaration.name) && declaration.initializer) {
+          declarations.set(declaration.name.text, declaration.initializer);
+        }
+      }
+    }
     const visit = (node: ts.Node): void => {
       if (ts.isObjectLiteralExpression(node)) {
         const properties = node.properties.filter(ts.isPropertyAssignment);
@@ -84,13 +89,20 @@ function readAuthoredPatterns(): Map<string, string> {
         )?.initializer;
         const sourceProperty = properties.find((property) => {
           const key = property.name.getText(file);
-          return key === "pattern" || key === "source";
+          return key === "regex" || key === "source";
         });
         if (name && ts.isStringLiteral(name) && sourceProperty) {
           const start = sourceProperty.getStart(file);
           const { line } = file.getLineAndCharacterOfPosition(start);
           const indent = file.text.slice(file.getLineStarts()[line], start);
-          const expression = sourceProperty.initializer.getText(file);
+          const { initializer } = sourceProperty;
+          const declaration = ts.isIdentifier(initializer)
+            ? declarations.get(initializer.text)
+            : initializer;
+          if (!declaration) {
+            throw new Error(`Missing authored declaration for ${name.text} in ${filename}`);
+          }
+          const expression = declaration.getText(file);
           authored.set(name.text, expression.replaceAll(`\n${indent}`, "\n"));
         }
       }
@@ -145,7 +157,7 @@ const loader: { watch: string; load: () => Promise<PatternReferenceGroup[]> } = 
       );
       // VitePress numbers tabs within each render. Scope the radio IDs and names to each card.
       const codeGroupHtml = codeGroup.replaceAll(CODE_GROUP_TAG, (tag) =>
-        tag.replace(CODE_GROUP_ATTRIBUTE, `$<attribute>="regex-${pattern.name}-$<identifier>"`),
+        tag.replaceAll(CODE_GROUP_ATTRIBUTE, `$<attribute>="regex-${pattern.name}-$<identifier>"`),
       );
       let group =
         pattern.grammarSource === "cssdoc"

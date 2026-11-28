@@ -5,8 +5,6 @@
  * @module
  */
 import type { SourceSpan } from "@cssdoc/index";
-import { ALPHA_LOWER_SOURCE, ALPHA_UPPER_SOURCE, ALPHANUMERIC_SOURCE } from "@cssdoc/regex";
-import { regex as arkRegex } from "arkregex";
 
 export type { Location, SourceSpan } from "@cssdoc/index";
 
@@ -308,10 +306,10 @@ export interface NamingRules {
 
 /** The built-in name-case patterns, tested against a class name without its leading dot. */
 export const NAME_CASE_PRESETS: Record<string, RegExp> = {
-  pascalCase: arkRegex.as(`^${ALPHA_UPPER_SOURCE}${ALPHANUMERIC_SOURCE}*$`, "u"),
-  camelCase: arkRegex.as(`^${ALPHA_LOWER_SOURCE}${ALPHANUMERIC_SOURCE}*$`, "u"),
+  pascalCase: /^[A-Z][0-9A-Za-z]*$/u,
+  camelCase: /^[a-z][0-9A-Za-z]*$/u,
   // Lowercase letters, digits, and hyphens — the common CSS/kebab class shape.
-  lowercase: arkRegex.as(`^${ALPHA_LOWER_SOURCE}(?:${ALPHA_LOWER_SOURCE}|[0-9-])*$`, "u"),
+  lowercase: /^[a-z][a-z0-9-]*$/u,
 };
 
 /** A {@link NamingRules} compiled to regexes (custom patterns compiled from their source). */
@@ -328,7 +326,7 @@ function compileNameCase(spec: NameCase | undefined): RegExp | undefined {
   if (spec in NAME_CASE_PRESETS) return NAME_CASE_PRESETS[spec];
   try {
     // Custom user pattern. Tested only against short class names; still the user's own config.
-    return arkRegex.as(spec, "u");
+    return new RegExp(spec, "u");
   } catch {
     return undefined; // an invalid pattern disables the check rather than throwing
   }

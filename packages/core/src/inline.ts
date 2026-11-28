@@ -6,16 +6,13 @@ import {
   BRACE_OPEN_CHAR,
   BRACKET_CLOSE_CHAR,
   BRACKET_OPEN_CHAR,
-  CSSDOC_BLOCK_TAG_NAME_SOURCE,
   FORWARD_SLASH_CHAR,
-  LINE_ENDING_SOURCE,
   PAREN_CLOSE_CHAR,
   PAREN_OPEN_CHAR,
   PIPE_CHAR,
   QUOTE_DOUBLE_CHAR,
   QUOTE_SINGLE_CHAR,
 } from "@cssdoc/regex";
-import { regex as arkRegex } from "arkregex";
 
 import { scanCodeBoundaryLine, type CodeBoundaryState } from "./code-boundaries.ts";
 import { CssDocConfiguration } from "./configuration.ts";
@@ -71,7 +68,7 @@ export function fencedProseRanges(text: string): Array<{
   /** Exclusive UTF-16 offset of the fenced line in the supplied prose. */
   end: number;
 }> {
-  const ENDING = arkRegex.as(LINE_ENDING_SOURCE, "gu");
+  const ENDING = /\r\n|\r|\n/gu;
   const state: CodeBoundaryState = { containers: [], indented: false, paragraph: false };
   const ranges: Array<{ start: number; end: number }> = [];
   let start = 0;
@@ -96,7 +93,7 @@ export function scanInlineTags(
   text: string,
   configuration: CssDocConfiguration = new CssDocConfiguration(),
 ): InlineTag[] {
-  const NAME = arkRegex.as(`^(${CSSDOC_BLOCK_TAG_NAME_SOURCE})(?=\\s|\\}|$)`, "u");
+  const NAME = /^([A-Za-z][\w-]*)(?=\s|\}|$)/u;
   const result: InlineTag[] = [];
   for (let start = 0; start + 1 < text.length; start++) {
     if (text[start] !== BRACE_OPEN_CHAR || text[start + 1] !== AT_CHAR) continue;

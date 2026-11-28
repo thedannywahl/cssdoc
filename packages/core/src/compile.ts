@@ -1,6 +1,3 @@
-import { TOKEN_CUSTOM_PROPERTY_SOURCE, SPACE_TAB_SOURCE } from "@cssdoc/regex";
-import type { Regex } from "arkregex";
-import { regex as arkRegex } from "arkregex";
 import { parse as parsePostcss } from "postcss";
 
 import { buildCustomMediaDeclarations } from "./customMedia.ts";
@@ -8,10 +5,7 @@ import type { BuildCustomMediaOptions } from "./customMedia.ts";
 import type { ParseOptions } from "./model.ts";
 import { parseCssDocs } from "./parse.ts";
 
-const INLINE_CUSTOM_MEDIA_PARAMS: Regex = arkRegex.as(
-  String.raw`^(${TOKEN_CUSTOM_PROPERTY_SOURCE})${SPACE_TAB_SOURCE}+(.+)$`,
-  "u",
-);
+const INLINE_CUSTOM_MEDIA_PARAMS: RegExp = /^(--[A-Za-z][\w-]*)[ \t](.+)$/u;
 
 function inlineCustomMediaMap(
   css: string,
@@ -20,7 +14,7 @@ function inlineCustomMediaMap(
   const root = (parse ?? parsePostcss)(css);
   const out = new Map<string, string | boolean>();
   root.walkAtRules("custom-media", (rule) => {
-    const match = rule.params.trim().match(INLINE_CUSTOM_MEDIA_PARAMS);
+    const match = INLINE_CUSTOM_MEDIA_PARAMS.exec(rule.params.trim());
     if (!match) return;
     const profile = match[1];
     const rawValue = match[2].trim();
