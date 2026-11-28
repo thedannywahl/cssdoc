@@ -244,6 +244,9 @@ catalogs:
     '@commitlint/config-conventional':
       specifier: ^21.2.4
       version: 21.2.4
+    '@e18e/eslint-plugin':
+      specifier: ^0.8.1
+      version: 0.8.1
     '@eslint/css':
       specifier: ^2.0.1
       version: 2.0.1
@@ -453,6 +456,9 @@ importers:
       '@commitlint/config-conventional':
         specifier: 'catalog:'
         version: 21.2.4
+      '@e18e/eslint-plugin':
+        specifier: 'catalog:'
+        version: 0.8.1(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))(oxlint@1.94.0(vite-plus@1.8.0(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1(@vitest/browser@5.1.1(@voidzero-dev/vite-plus-core@8.3.8001(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1))(vitest@5.1.1))(vitest@5.1.1))(@vitest/ui@5.1.1(vitest@5.1.1))(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1)))
       arkregex:
         specifier: 'catalog:'
         version: 0.0.15
@@ -2047,6 +2053,17 @@ packages:
 
   '@docsearch/sidepanel-js@4.7.1':
     resolution: {integrity: sha512-uyOKbC6rjHCZBVbLCSZVb1NDWzjbD27WqxTuRYnkTW717laEj2dX+W8Ho1fNHSyG4dqssIlPWlXdg+McGxxxxg==}
+
+  '@e18e/eslint-plugin@0.8.1':
+    resolution: {integrity: sha512-OV3T7l0r52/IglskdAuoO+BJyzsCs7AcIHpwpBMlIMO0+3RHskM2h5MuHdLuesIhSRhwCURGMKtp/XwnfXrfxg==}
+    peerDependencies:
+      eslint: ^9.0.0 || ^10.0.0
+      oxlint: ^1.72.0
+    peerDependenciesMeta:
+      eslint:
+        optional: true
+      oxlint:
+        optional: true
 
   '@esbuild/aix-ppc64@0.28.2':
     resolution: {integrity: sha512-XExcO+dvLKvVtNTibSTBej1NCAbaGhWn9Ww1ZPx80qsahhPFe/8jgWP0IchNe0F3HwkU7n8ejhH8bjonqht8mQ==}
@@ -4838,6 +4855,10 @@ packages:
   emojilib@2.4.0:
     resolution: {integrity: sha512-5U0rVMU5Y2n2+ykNLQqMoqklN9ICBT/KsvC1Gz6vqHbz2AXXGkG+Pm5rMWk/8Vjrr/mY9985Hi8DYzn1F09Nyw==}
 
+  empathic@2.1.0:
+    resolution: {integrity: sha512-AnfC1ATldl49/cvZdLPDjBfrRNwbDO05aibiOtzQu3qtlbJtomNLhF30HEtn/7iBz50dlMECqATo3fG0LrdEgw==}
+    engines: {node: '>=14'}
+
   entities@4.5.0:
     resolution: {integrity: sha512-V0hjH4dGPh9Ao5p0MoRY6BVqtwCjhz6vI5LT8AJ55H+4g9/4vbHx1I54fS0XuclLhDHArPQCiMjDxjaL8fPxhw==}
     engines: {node: '>=0.12'}
@@ -5647,6 +5668,9 @@ packages:
 
   mitt@3.0.1:
     resolution: {integrity: sha512-vKivATfr97l2/QBCYAkXYDbrIWPM2IIKEl7YPhjCvKlG3kE2gm+uBo6nEXK3M5/Ffh/FLpKExzOQ3JJoJGFKBw==}
+
+  module-replacements@3.4.0:
+    resolution: {integrity: sha512-NKBNFM/uAUvSs+LOYfSly4EwrC9bgMoFuEnqNNjcDb910W+5IgS2KMB2ERLm5YZZm7R187jx1dMA9pOPvqbSbw==}
 
   mri@1.2.0:
     resolution: {integrity: sha512-tzzskb3bG8LvYGFF/mDTpq3jpI6Q9wc3LEmBaghu+DdCssd1FakN7Bc0hVNmEyGq1bq3RgfkCb3cmQLpNPOroA==}
@@ -7235,6 +7259,15 @@ snapshots:
       - '@algolia/client-search'
 
   '@docsearch/sidepanel-js@4.7.1': {}
+
+  '@e18e/eslint-plugin@0.8.1(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))(oxlint@1.94.0(vite-plus@1.8.0(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1(@vitest/browser@5.1.1(@voidzero-dev/vite-plus-core@8.3.8001(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1))(vitest@5.1.1))(vitest@5.1.1))(@vitest/ui@5.1.1(vitest@5.1.1))(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1)))':
+    dependencies:
+      empathic: 2.1.0
+      module-replacements: 3.4.0
+      verkit: 0.4.1
+    optionalDependencies:
+      eslint: 10.15.0(jiti@2.7.0)(supports-color@10.2.2)
+      oxlint: 1.94.0(vite-plus@1.8.0(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1(@vitest/browser@5.1.1(@voidzero-dev/vite-plus-core@8.3.8001(@arethetypeswrong/core@0.18.5)(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1))(vitest@5.1.1))(vitest@5.1.1))(@vitest/ui@5.1.1(vitest@5.1.1))(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.25)(typescript@7.1.0-beta)(yaml@2.9.1))
 
   '@esbuild/aix-ppc64@0.28.2':
     optional: true
@@ -9876,6 +9909,8 @@ snapshots:
 
   emojilib@2.4.0: {}
 
+  empathic@2.1.0: {}
+
   entities@4.5.0: {}
 
   entities@7.0.1: {}
@@ -10851,6 +10886,8 @@ snapshots:
   minisearch@7.2.0: {}
 
   mitt@3.0.1: {}
+
+  module-replacements@3.4.0: {}
 
   mri@1.2.0: {}
 
