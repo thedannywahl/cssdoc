@@ -12,7 +12,10 @@ const config: UserConfig = mergeConfig(
   baseConfig,
   defineConfig({
     staged: {
-      "*": "vp check --fix",
+      "*": [
+        "vp exec eslint --config eslint.config.mjs --max-warnings 0 --no-warn-ignored",
+        "vp check --fix",
+      ],
     },
     // Vitest replaces (not merges) `exclude`, so keep its defaults and add the worktree copies.
     test: { exclude: [...configDefaults.exclude, ...WORKTREE_IGNORE] },
@@ -98,11 +101,15 @@ const config: UserConfig = mergeConfig(
       tasks: {
         setup: { cache: false, command: "vp config" },
         build: { cache: false, command: "vp run -r build" },
-        // `check` also verifies the compiler projects and schema mirrors.
+        "lint:json": {
+          cache: false,
+          command: 'vp exec eslint --config eslint.config.mjs --max-warnings 0 "**/*.{json,jsonc}"',
+        },
+        // `check` also verifies JSON, compiler projects, and schema mirrors.
         check: {
           cache: false,
           command:
-            "vp check && vpx scripts/sync-model-schema.ts --check && vp run type-check && node scripts/sync-schema.ts --check && node scripts/sync-zed-version.mjs --check",
+            "vp check && vp run lint:json && vpx scripts/sync-model-schema.ts --check && vp run type-check && node scripts/sync-schema.ts --check && node scripts/sync-zed-version.mjs --check",
         },
         "type-check": { cache: false, command: "tsc --noEmit && vp run --no-cache -r type-check" },
         "sync:schema": { cache: false, command: "node scripts/sync-schema.ts" },

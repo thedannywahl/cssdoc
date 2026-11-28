@@ -14,12 +14,15 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import e18e from "@e18e/eslint-plugin";
+import jsonPlugin from "@eslint/json";
+import { ESLint } from "eslint";
 import { afterAll, expect, test, vi } from "vite-plus/test";
 
 import docsConfig from "../../../docs/vite.config.ts";
 import grammarConfig from "../../../syntaxes/cssdoc/tmlanguage/vite.config.ts";
 import tsdocConfig from "../../../tsdoc.json" with { type: "json" };
 import { baseConfig } from "../../../vite.config.base.ts";
+import rootConfig from "../../../vite.config.ts";
 import cliConfig from "../../cli/vite.config.ts";
 import regexConfig from "../../regex/vite.config.ts";
 import { CSSDOC_TAG_NAMES, CSSDOC_TAGS } from "../../spec/src/index.ts";
@@ -163,6 +166,142 @@ test("e18e checks add root/package coverage while preserving semantic exceptions
         expect.objectContaining({ code: "oxc(no-accumulating-spread)" }),
       );
     }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("every installed JSON rule has an explicit evaluated disposition", async () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const config: unknown = await new ESLint({ cwd: root }).calculateConfigForFile(
+    join(root, "package.json"),
+  );
+  if (!isObject(config) || !isObject(config.rules)) throw new Error("Missing JSON lint rules");
+  expect(
+    Object.keys(config.rules)
+      .filter((name) => name.startsWith("json/"))
+      .map((name) => name.slice("json/".length))
+      .sort(),
+  ).toEqual(Object.keys(jsonPlugin.rules).sort());
+});
+
+test("JSON lint preserves dialects and detects duplicate keys and unsafe interchange values", async () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const eslint = new ESLint({ cwd: root });
+  const invalid = [
+    [String.raw`{"nested":{"target":1,"tar\u0067et":2}}`, "json/no-duplicate-keys"],
+    ["9007199254740993", "json/no-unsafe-values"],
+    ["-9007199254740993", "json/no-unsafe-values"],
+    ["1e400", "json/no-unsafe-values"],
+    ["1e-400", "json/no-unsafe-values"],
+    ["5e-324", "json/no-unsafe-values"],
+    [String.raw`{"value":"\ud800"}`, "json/no-unsafe-values"],
+    [String.raw`{"\udc00":1}`, "json/no-unsafe-values"],
+  ];
+  await Promise.all(
+    invalid.map(async ([text, ruleId]) => {
+      const [result] = await eslint.lintText(text, { filePath: join(root, "lint-probe.json") });
+      expect(result?.messages.map((message) => [message.ruleId, message.severity])).toEqual([
+        [ruleId, 2],
+      ]);
+    }),
+  );
+  await Promise.all(
+    [
+      String.raw`{"nested":[{"key":1},{"key":2}],"big":"9007199254740993"}`,
+      String.raw`{"":null,"cafe\u0301":1,"z":2,"a":3}`,
+      String.raw`[9007199254740991,-9007199254740991,0.1,-0,0e-400,"\ud83d\udd25"]`,
+      "42",
+    ].map(async (text) => {
+      const [result] = await eslint.lintText(text, { filePath: join(root, "lint-probe.json") });
+      expect(result?.messages).toEqual([]);
+    }),
+  );
+  const jsonc = '{\n// A supported config comment.\n"value": 1,\n}';
+  await Promise.all(
+    [
+      "lint-probe.jsonc",
+      ".vscode/settings.json",
+      "servers/vscode/.vscode/tasks.json",
+      "tsconfig.base.json",
+      "docs/tsconfig.typedoc.json",
+      "packages/config/tests/fixtures/cssdoc.json",
+      "packages/config/tests/fixtures/base.cssdoc.json",
+      "docs/examples/cssdoc.rscss.json",
+    ].map(async (file) => {
+      const [result] = await eslint.lintText(jsonc, { filePath: join(root, file) });
+      expect(result?.messages, `JSONC dialect: ${file}`).toEqual([]);
+      const [duplicate] = await eslint.lintText('{"key":1,"key":2,}', {
+        filePath: join(root, file),
+      });
+      expect(
+        duplicate?.messages.map((message) => message.ruleId),
+        `JSONC duplicate: ${file}`,
+      ).toEqual(["json/no-duplicate-keys"]);
+    }),
+  );
+  await Promise.all(
+    [
+      ["package.json", jsonc],
+      ["lint-probe.json", '{"value":1,}'],
+      ["lint-probe.jsonc", "{value:1}"],
+    ].map(async ([file, text]) => {
+      const [result] = await eslint.lintText(text, { filePath: join(root, file) });
+      expect(result?.fatalErrorCount, `Invalid syntax: ${file}`).toBe(1);
+    }),
+  );
+  await expect(eslint.isPathIgnored(join(root, "scripts/update-zed-registry.mjs"))).resolves.toBe(
+    true,
+  );
+  await expect(
+    eslint.isPathIgnored(join(root, "servers/zed/target/.rustc_info.json")),
+  ).resolves.toBe(true);
+});
+
+test("JSON task and staged gate fail on unsafe data without linting JavaScript", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const directory = mkdtempSync(join(root, ".json-lint-check-"));
+  try {
+    const file = join(directory, "unsafe.json");
+    const javascript = join(directory, "ignored.mjs");
+    writeFileSync(file, '{"key":1,"key":2,"limit":9007199254740993}');
+    writeFileSync(javascript, "not JavaScript!");
+    const failed = spawnSync("vp", ["run", "lint:json"], { cwd: root, encoding: "utf8" });
+    expect(failed.status, `${failed.stdout}\n${failed.stderr}`).toBe(1);
+    expect(failed.stdout).toContain("json/no-duplicate-keys");
+    expect(failed.stdout).toContain("json/no-unsafe-values");
+
+    const stagedConfig: unknown = rootConfig.staged;
+    if (!isObject(stagedConfig)) throw new TypeError("Missing staged configuration");
+    const commands: unknown = stagedConfig["*"];
+    if (
+      !Array.isArray(commands) ||
+      !commands.every((value: unknown) => typeof value === "string")
+    ) {
+      throw new TypeError("Missing staged checks");
+    }
+    const command = commands[0];
+    if (!command?.startsWith("vp exec eslint ")) {
+      throw new Error("Missing JSON lint gate before staged formatting");
+    }
+    const [executable, ...args] = command.split(" ");
+    if (!executable) throw new Error("Missing staged JSON lint executable");
+    const staged = spawnSync(executable, [...args, file, javascript], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    expect(staged.status, `${staged.stdout}\n${staged.stderr}`).toBe(1);
+    expect(staged.stdout).toContain("json/no-duplicate-keys");
+    expect(staged.stdout).toContain("json/no-unsafe-values");
+
+    writeFileSync(file, '{"key":1,"limit":"9007199254740993"}');
+    const passed = spawnSync("vp", ["run", "lint:json"], { cwd: root, encoding: "utf8" });
+    expect(passed.status, `${passed.stdout}\n${passed.stderr}`).toBe(0);
+    const accepted = spawnSync(executable, [...args, file, javascript], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    expect(accepted.status, `${accepted.stdout}\n${accepted.stderr}`).toBe(0);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

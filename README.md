@@ -56,7 +56,8 @@ and the CSS/HTML language services share one core.
 ```sh
 vp install        # install dependencies
 vp run -r build   # build every package
-vp run check      # format + lint + type-check + schema check
+vp run check      # format + lint (including JSON) + type-check + schema check
+vp run lint:json  # JSON/JSONC syntax and data-interchange checks
 vp run type-check # run tsc across every workspace project
 vp run -r test    # run every package's tests
 vp run check:publish # check each package with publint and ATTW
@@ -259,6 +260,46 @@ fixtures; `no-indexof-equality` failed with the expected missing-parser-services
 Only `ban-dependencies` has installed rule options. Its default presets and the adapter allowlist are
 used; custom module bans need a concrete dependency policy. The other rules have no options to
 relax the rejected cases. The inventory regression makes an added upstream rule require a new review.
+
+JSON linting uses [@eslint/json](https://github.com/eslint/json), not an Oxlint JS plugin:
+Oxlint doesn't support custom languages or parsers and skips JSON files entirely. The dedicated
+`vp run lint:json` task runs ESLint only on JSON/JSONC. `vp run check` includes it, so CI and release
+gates inherit it. Staged checks validate raw JSON before the formatter/Oxlint can rewrite it;
+ignored JavaScript files don't produce warnings. Oxfmt still owns formatting.
+
+| Candidate                                                               | Fit                                                                                                                                                                                                                                           |
+| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@eslint/json`                                                          | Selected: native JSON/JSONC ASTs, duplicate-key checks, unsafe interchange values, and six independently evaluated rules.                                                                                                                     |
+| [eslint-plugin-jsonc](https://github.com/ota-meshi/eslint-plugin-jsonc) | Maintained, with more formatting and syntax-conversion rules, Vue custom-block support, and experimental interoperability with `@eslint/json`. Those features aren't needed here; its number-validity rule checks syntax, not precision loss. |
+| [eslint-plugin-json](https://github.com/azeemba/eslint-plugin-json)     | Processor-based syntax and duplicate-key diagnostics without JSON AST rules or equivalent unsafe-value checks.                                                                                                                                |
+
+[eslint.config.mjs](./eslint.config.mjs) keeps ordinary JSON strict. JSONC, TypeScript configs, nested
+VS Code configs, and the workspace's cssdoc configs retain comments and trailing commas. JSON5
+isn't configured because the workspace doesn't use it. Build outputs, including Zed's Rust target,
+and agent worktree copies are ignored. Static fixtures and generated schema mirrors are checked
+without rewriting them; schema validity remains the config loader's and schema checks' responsibility.
+
+All six installed rules were exercised with positive fixtures. The source audit covered 95 files:
+only `sort-keys` reported findings (920), and those authored orders remain unchanged.
+
+| JSON rule              | Decision                                                                                                                               |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `no-duplicate-keys`    | Error: catches silent overrides, including Unicode-escaped equivalents, independently within each object.                              |
+| `no-unsafe-values`     | Error: rejects unsafe integer literals, overflow, underflow to zero, subnormal numbers, and lone Unicode surrogates in values or keys. |
+| `no-empty-keys`        | Off: empty and whitespace-only keys are legal JSON data, not universally invalid settings.                                             |
+| `no-unnormalized-keys` | Off: NFC/NFD/NFKC/NFKD are spelling policies; normalization changes exact key identity and can merge distinct keys.                    |
+| `sort-keys`            | Off: preserve authored catalog, schema, and fixture order.                                                                             |
+| `top-level-interop`    | Off: scalar roots are valid modern JSON; config schemas already constrain their own root types.                                        |
+
+Only normalization and sorting have options. All four normalization forms and sort direction,
+case sensitivity, natural order, minimum key count, and blank-line groups were probed; none makes
+those policies universal correctness checks. An inventory regression requires review of new rules.
+Syntax and unsafe-data failures are errors, not autofix candidates.
+
+`no-unsafe-values` isn't arbitrary decimal-precision validation. It flags integer literals beyond
+`+/- (2**53 - 1)`, but currently accepts rounded decimal/exponent spellings such as
+`9007199254740993.0` and `9.007199254740993e15`, as well as ordinary floating-point rounding.
+Store precision-sensitive values as strings rather than assuming every rounded number is detected.
 
 JSX checks apply HTML and ARIA semantics without requiring React. They reject missing image text,
 invalid roles, invalid ARIA values, and keyboard-inaccessible interactions. Parser fixtures aren't
