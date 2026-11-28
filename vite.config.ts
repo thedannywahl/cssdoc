@@ -14,6 +14,7 @@ const config: UserConfig = mergeConfig(
     staged: {
       "*": [
         "vp exec eslint --config eslint.config.mjs --max-warnings 0 --no-warn-ignored",
+        "vp exec eslint --config docs/eslint.config.mjs --max-warnings 0 --no-warn-ignored",
         "vp check --fix",
       ],
     },
@@ -34,6 +35,13 @@ const config: UserConfig = mergeConfig(
         "plugins/stylelint/src/index.d.ts",
         "scripts/sync-schema.d.ts",
         ...WORKTREE_IGNORE,
+      ],
+      // VS Code's JSONC validation flags trailing commas in this tool configuration.
+      overrides: [
+        {
+          files: ["docs/.markdownlint-cli2.jsonc"],
+          options: { trailingComma: "none" },
+        },
       ],
     },
     lint: {
@@ -105,11 +113,11 @@ const config: UserConfig = mergeConfig(
           cache: false,
           command: 'vp exec eslint --config eslint.config.mjs --max-warnings 0 "**/*.{json,jsonc}"',
         },
-        // `check` also verifies JSON, compiler projects, and schema mirrors.
+        // `check` also verifies JSON, docs Markdown, compiler projects, and schema mirrors.
         check: {
           cache: false,
           command:
-            "vp check && vp run lint:json && vpx scripts/sync-model-schema.ts --check && vp run type-check && node scripts/sync-schema.ts --check && node scripts/sync-zed-version.mjs --check",
+            "vp check && vp run lint:json && vp run docs:lint && vpx scripts/sync-model-schema.ts --check && vp run type-check && node scripts/sync-schema.ts --check && node scripts/sync-zed-version.mjs --check",
         },
         "type-check": { cache: false, command: "tsc --noEmit && vp run --no-cache -r type-check" },
         "sync:schema": { cache: false, command: "node scripts/sync-schema.ts" },
@@ -124,6 +132,7 @@ const config: UserConfig = mergeConfig(
             "vp run build && vp run check && vp run test && vp run check:publish && vp run docs:build",
         },
         "docs:dev": { cache: false, command: "vp run @cssdoc/docs#docs:dev" },
+        "docs:lint": { cache: false, command: "vp run @cssdoc/docs#lint:markdown" },
         "docs:build": { cache: false, command: "vp run @cssdoc/docs#docs:build" },
         "docs:preview": { cache: false, command: "vp run @cssdoc/docs#docs:preview" },
         release: {

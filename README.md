@@ -58,6 +58,7 @@ vp install        # install dependencies
 vp run -r build   # build every package
 vp run check      # format + lint (including JSON) + type-check + schema check
 vp run lint:json  # JSON/JSONC syntax and data-interchange checks
+vp run docs:lint  # authored docs Markdown syntax and link-text checks
 vp run type-check # run tsc across every workspace project
 vp run -r test    # run every package's tests
 vp run check:publish # check each package with publint and ATTW
@@ -300,6 +301,118 @@ Syntax and unsafe-data failures are errors, not autofix candidates.
 `+/- (2**53 - 1)`, but currently accepts rounded decimal/exponent spellings such as
 `9007199254740993.0` and `9.007199254740993e15`, as well as ordinary floating-point rounding.
 Store precision-sensitive values as strings rather than assuming every rounded number is detected.
+
+The docs site uses [@eslint/markdown](https://github.com/eslint/markdown) and
+[markdownlint-cli2](https://github.com/DavidAnson/markdownlint-cli2) as docs-only dev dependencies.
+Markdown is another language Oxlint can't parse; [docs/eslint.config.mjs](./docs/eslint.config.mjs)
+runs its GFM/YAML-frontmatter checks through the existing ESLint runtime. The docs Vite task
+`lint:markdown` runs both tools, and `vp run docs:lint` exposes it from the root. `vp run check`
+includes it, so CI and release gates check authored docs. JS/Vue linting stays on Oxlint; code
+fences aren't separately linted as executable programs.
+Staged checks also validate raw docs Markdown before formatting; the explicit docs base path keeps
+root Markdown and other packages outside that gate.
+
+The audit covered 26 authored pages and all 21 ESLint Markdown plus 53 markdownlint rules.
+Every rule had a positive controlled fixture; every installed option schema was reviewed.
+Only one unlabeled fence needed a content edit. The nine fragment reports were anchors generated
+by a grammar include or Vue data. Only those two pages bypass source-only fragment validation.
+Generated API pages, private notes, build output, and agent worktree copies are excluded.
+Vue components, script blocks, containers, fence metadata, and front matter remain valid.
+The front-matter `title` is browser metadata, not a second rendered H1.
+
+| ESLint Markdown rule           | Decision                                                                                             |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `fenced-code-language`         | Warn; accept every language rather than imposing a whitelist.                                        |
+| `fenced-code-meta`             | Off; VitePress metadata varies by example, so neither always nor never fits.                         |
+| `heading-increment`            | Warn; don't invent an H1 from front-matter title metadata.                                           |
+| `no-bare-urls`                 | Off; GFM autolinks are valid.                                                                        |
+| `no-duplicate-definitions`     | Error; repeated definitions can silently choose a different destination.                             |
+| `no-duplicate-headings`        | Off; repeated subsection names and generated unique slugs are valid, including siblings.             |
+| `no-empty-definitions`         | Error; definitions need destinations.                                                                |
+| `no-empty-images`              | Error; images need sources.                                                                          |
+| `no-empty-links`               | Error; links need destinations.                                                                      |
+| `no-html`                      | Off; Vue components and authored HTML are part of VitePress. A tag allowlist wouldn't validate them. |
+| `no-invalid-label-refs`        | Error; whitespace-only reference labels don't resolve.                                               |
+| `no-missing-atx-heading-space` | Warn; check open and closed headings.                                                                |
+| `no-missing-label-refs`        | Error; unresolved references remain unlinked. No global label exemptions are needed.                 |
+| `no-missing-link-fragments`    | Error on static pages; source ASTs can't resolve included grammar or Vue-generated anchors.          |
+| `no-multiple-h1`               | Warn; front-matter title metadata doesn't count as a rendered H1.                                    |
+| `no-reference-like-urls`       | Off; a relative URL can legitimately match an unrelated definition label.                            |
+| `no-reversed-media-syntax`     | Error; reversed syntax doesn't create the intended link/image.                                       |
+| `no-space-in-emphasis`         | Warn; leave strikethrough checking at its default rather than imposing another spelling policy.      |
+| `no-unused-definitions`        | Warn; unused reference declarations are hygiene advice.                                              |
+| `require-alt-text`             | Warn; decorative Markdown images need an explicit local exception, not invented descriptive text.    |
+| `table-column-count`           | Error for extra cells GFM would discard; omitted trailing cells remain valid empty cells.            |
+
+Definition/footnote allowlists and additional footnote checks aren't needed for the authored pages.
+Heading-sibling, tag, fence-language, fragment-case/pattern, and table-missing-cell options don't
+remove the documented scope limits or make optional spelling policies universal requirements.
+
+[docs/.markdownlint-cli2.jsonc](./docs/.markdownlint-cli2.jsonc) explicitly selects every rule.
+Its descriptive-link check adds coverage missing from ESLint Markdown and remains advisory:
+markdownlint-cli2 reports warnings without failing. ESLint Markdown errors and warnings fail its
+`--max-warnings 0` gate. Neither runner rewrites Markdown; Oxfmt remains the formatter.
+The CLI2 JSONC file has a file-specific no-trailing-comma override to avoid VS Code JSON diagnostics.
+
+| markdownlint rule | Decision                                                                                                        |
+| ----------------- | --------------------------------------------------------------------------------------------------------------- |
+| MD001             | Off; ESLint heading-increment owns coverage.                                                                    |
+| MD003             | Off; Oxfmt owns heading spelling.                                                                               |
+| MD004             | Off; Oxfmt owns bullet spelling.                                                                                |
+| MD005             | Off; Oxfmt owns list indentation.                                                                               |
+| MD007             | Off; Oxfmt owns indentation; start/width options aren't content rules.                                          |
+| MD009             | Off; Oxfmt owns trailing whitespace and hard-break spelling.                                                    |
+| MD010             | Off; tabs can be intentional in examples; Oxfmt owns supported formatting.                                      |
+| MD011             | Off; ESLint reversed-media syntax owns coverage.                                                                |
+| MD012             | Off; Oxfmt owns blank-line layout.                                                                              |
+| MD013             | Off; line budgets, table/code exclusions, and strict/stern modes don't fit authored examples and wide tables.   |
+| MD014             | Off; shell prompts are a display convention, not universally invalid examples.                                  |
+| MD018             | Off; ESLint missing-heading-space owns coverage.                                                                |
+| MD019             | Off; Oxfmt owns heading whitespace.                                                                             |
+| MD020             | Off; ESLint also checks closed headings.                                                                        |
+| MD021             | Off; Oxfmt owns heading whitespace.                                                                             |
+| MD022             | Off; Oxfmt owns heading spacing, including front-matter boundaries.                                             |
+| MD023             | Off; Oxfmt owns heading indentation.                                                                            |
+| MD024             | Off; repeated subsection names are valid, with or without sibling-only checking.                                |
+| MD025             | Off; ESLint H1 checking owns coverage and ignores browser-title metadata.                                       |
+| MD026             | Off; punctuation in titles is authored prose.                                                                   |
+| MD027             | Off; Oxfmt owns blockquote spacing.                                                                             |
+| MD028             | Off; blank lines can separate independent quotations.                                                           |
+| MD029             | Off; Oxfmt owns ordered-list markers.                                                                           |
+| MD030             | Off; Oxfmt owns list-marker spacing.                                                                            |
+| MD031             | Off; Oxfmt owns fence spacing, including nested lists.                                                          |
+| MD032             | Off; Oxfmt owns list spacing.                                                                                   |
+| MD033             | Off; Vue/HTML markup is intentional, not restricted to a fixed tag list.                                        |
+| MD034             | Off; GFM autolinks are valid.                                                                                   |
+| MD035             | Off; Oxfmt owns thematic-break spelling.                                                                        |
+| MD036             | Off; standalone emphasis isn't necessarily a heading.                                                           |
+| MD037             | Off; ESLint emphasis-space checking owns coverage.                                                              |
+| MD038             | Off; code-span padding can be meaningful; the source probe also misread escaped backticks.                      |
+| MD039             | Off; link-text padding isn't universally invalid content.                                                       |
+| MD040             | Off; ESLint fence-language checking owns coverage, including VitePress metadata.                                |
+| MD041             | Off; home layouts and Vue script preambles needn't start with an H1.                                            |
+| MD042             | Off; ESLint empty-link checking owns coverage.                                                                  |
+| MD043             | Off; pages have different structures, not one required heading template.                                        |
+| MD044             | Off; a capitalization list can't distinguish product names from CLI/API spellings.                              |
+| MD045             | Off; ESLint alt-text advice owns coverage.                                                                      |
+| MD046             | Off; Oxfmt owns code-block spelling; indented examples remain valid.                                            |
+| MD047             | Off; Oxfmt owns final newlines.                                                                                 |
+| MD048             | Off; Oxfmt owns fence spelling.                                                                                 |
+| MD049             | Off; Oxfmt owns emphasis spelling.                                                                              |
+| MD050             | Off; Oxfmt owns strong-emphasis spelling.                                                                       |
+| MD051             | Off; ESLint static-fragment checking owns coverage, with dynamic-page exceptions.                               |
+| MD052             | Off; ESLint reference checks own coverage; shortcut syntax and ignored-label options don't add needed coverage. |
+| MD053             | Off; ESLint duplicate/unused-definition checks own coverage.                                                    |
+| MD054             | Off; inline, reference, and automatic links are all valid.                                                      |
+| MD055             | Off; Oxfmt owns table-pipe spelling.                                                                            |
+| MD056             | Off; ESLint detects discarded extra cells without banning valid omitted cells.                                  |
+| MD058             | Off; Oxfmt owns table spacing.                                                                                  |
+| MD059             | Warn; use descriptive link labels instead of generic text such as "here."                                       |
+| MD060             | Off; Oxfmt owns table alignment and delimiter spacing.                                                          |
+
+The rule inventory tests require review of upstream additions. Controlled markdownlint reference
+fixtures ran with a Micromark-backed rule enabled: isolated MD052/MD053 checks don't initialize
+their required token cache on their own in the installed library.
 
 JSX checks apply HTML and ARIA semantics without requiring React. They reject missing image text,
 invalid roles, invalid ARIA values, and keyboard-inaccessible interactions. Parser fixtures aren't

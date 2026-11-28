@@ -16,6 +16,7 @@ import { fileURLToPath } from "node:url";
 import e18e from "@e18e/eslint-plugin";
 import jsonPlugin from "@eslint/json";
 import { ESLint } from "eslint";
+import { type ParseError, parse as parseJsonc } from "jsonc-parser";
 import { afterAll, expect, test, vi } from "vite-plus/test";
 
 import docsConfig from "../../../docs/vite.config.ts";
@@ -72,6 +73,16 @@ function parseLintOutput(json: string): { diagnostics: LintDiagnostic[] } {
     throw new Error("Unexpected lint JSON output");
   }
   return { diagnostics: value.diagnostics };
+}
+
+function getStagedCommands(): string[] {
+  const stagedConfig: unknown = rootConfig.staged;
+  if (!isObject(stagedConfig)) throw new TypeError("Missing staged configuration");
+  const commands: unknown = stagedConfig["*"];
+  if (!Array.isArray(commands) || !commands.every((value: unknown) => typeof value === "string")) {
+    throw new TypeError("Missing staged checks");
+  }
+  return commands;
 }
 
 test("every installed e18e rule has an explicit evaluated disposition", () => {
@@ -271,15 +282,7 @@ test("JSON task and staged gate fail on unsafe data without linting JavaScript",
     expect(failed.stdout).toContain("json/no-duplicate-keys");
     expect(failed.stdout).toContain("json/no-unsafe-values");
 
-    const stagedConfig: unknown = rootConfig.staged;
-    if (!isObject(stagedConfig)) throw new TypeError("Missing staged configuration");
-    const commands: unknown = stagedConfig["*"];
-    if (
-      !Array.isArray(commands) ||
-      !commands.every((value: unknown) => typeof value === "string")
-    ) {
-      throw new TypeError("Missing staged checks");
-    }
+    const commands = getStagedCommands();
     const command = commands[0];
     if (!command?.startsWith("vp exec eslint ")) {
       throw new Error("Missing JSON lint gate before staged formatting");
@@ -302,6 +305,162 @@ test("JSON task and staged gate fail on unsafe data without linting JavaScript",
       encoding: "utf8",
     });
     expect(accepted.status, `${accepted.stdout}\n${accepted.stderr}`).toBe(0);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("every installed docs Markdown rule has an explicit evaluated disposition", async () => {
+  const docs = fileURLToPath(new URL("../../../docs/", import.meta.url));
+  const require = createRequire(join(docs, "package.json"));
+  const plugin: unknown = await import(require.resolve("@eslint/markdown"));
+  if (!isObject(plugin) || !isObject(plugin.default) || !isObject(plugin.default.rules)) {
+    throw new Error("Missing Markdown plugin rule metadata");
+  }
+  const config: unknown = await new ESLint({
+    cwd: docs,
+    overrideConfigFile: "eslint.config.mjs",
+  }).calculateConfigForFile(join(docs, "guide/config.md"));
+  if (!isObject(config) || !isObject(config.rules)) throw new Error("Missing Markdown lint rules");
+  expect(
+    Object.keys(config.rules)
+      .filter((name) => name.startsWith("markdown/"))
+      .map((name) => name.slice("markdown/".length))
+      .sort(),
+  ).toEqual(Object.keys(plugin.default.rules).sort());
+
+  const schema: unknown = JSON.parse(
+    readFileSync(
+      join(dirname(require.resolve("markdownlint-cli2")), "schema/markdownlint-config-schema.json"),
+      "utf8",
+    ),
+  );
+  const errors: ParseError[] = [];
+  const cli: unknown = parseJsonc(
+    readFileSync(join(docs, ".markdownlint-cli2.jsonc"), "utf8"),
+    errors,
+  );
+  if (
+    errors.length > 0 ||
+    !isObject(schema) ||
+    !isObject(schema.properties) ||
+    !isObject(cli) ||
+    !isObject(cli.config)
+  ) {
+    throw new Error("Missing or malformed markdownlint configuration");
+  }
+  expect(
+    Object.keys(cli.config)
+      .filter((name) => name.startsWith("MD"))
+      .sort(),
+  ).toEqual(
+    Object.keys(schema.properties)
+      .filter((name) => name.startsWith("MD"))
+      .sort(),
+  );
+});
+
+test("docs Markdown lint preserves VitePress syntax and validates static content", async () => {
+  const docs = fileURLToPath(new URL("../../../docs/", import.meta.url));
+  const eslint = new ESLint({ cwd: docs, overrideConfigFile: "eslint.config.mjs" });
+  const filePath = join(docs, "guide/config.md");
+  const valid = [
+    "---",
+    "title: Guide",
+    "---",
+    '# Guide <Badge text="beta" />',
+    "",
+    "::: tip",
+    "A custom container.",
+    ":::",
+    "",
+    "<LiveExample />",
+    "",
+    "```ts {1}",
+    "export const value = 1;",
+    "```",
+    "",
+    "## Usage",
+    "",
+    "[Usage](#usage)",
+    "",
+    "| Name | Value |",
+    "| --- | --- |",
+    "| a | b |",
+  ].join("\n");
+  const [result] = await eslint.lintText(valid, { filePath });
+  expect(result?.messages).toEqual([]);
+  const invalid: Array<[string, string, number]> = [
+    ["[missing][undefined]", "markdown/no-missing-label-refs", 2],
+    ["# Guide\n\n[broken](#missing)", "markdown/no-missing-link-fragments", 2],
+    ["![alt]()", "markdown/no-empty-images", 2],
+    ["```\ntext\n```", "markdown/fenced-code-language", 1],
+    ["| a | b |\n| --- | --- |\n| c | d | e |", "markdown/table-column-count", 2],
+  ];
+  await Promise.all(
+    invalid.map(async ([text, ruleId, severity]) => {
+      const [diagnostic] = await eslint.lintText(text, { filePath });
+      expect(diagnostic?.messages.map((message) => [message.ruleId, message.severity])).toEqual([
+        [ruleId, severity],
+      ]);
+    }),
+  );
+  await Promise.all(
+    ["guide/grammar.md", "guide/lint-reference.md"].map(async (file) => {
+      const [dynamic] = await eslint.lintText("[generated](#runtime-anchor)", {
+        filePath: join(docs, file),
+      });
+      expect(dynamic?.messages).toEqual([]);
+    }),
+  );
+  await expect(eslint.isPathIgnored(join(docs, "reference/classes/Generated.md"))).resolves.toBe(
+    true,
+  );
+  await expect(eslint.isPathIgnored(join(docs, "scripts/copy-schema.mjs"))).resolves.toBe(true);
+  const root = dirname(docs);
+  const fromRoot = new ESLint({
+    cwd: root,
+    overrideConfigFile: join(docs, "eslint.config.mjs"),
+  });
+  await expect(fromRoot.isPathIgnored(join(root, "README.md"))).resolves.toBe(true);
+  const [rootResult] = await fromRoot.lintText("[missing][undefined]", { filePath });
+  expect(rootResult?.messages.map((message) => message.ruleId)).toEqual([
+    "markdown/no-missing-label-refs",
+  ]);
+});
+
+test("docs Markdown task reports syntax errors and supplemental link-text warnings", () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const docs = join(root, "docs");
+  const directory = mkdtempSync(join(docs, ".markdown-lint-check-"));
+  try {
+    const file = join(directory, "example.md");
+    writeFileSync(file, "[missing][undefined]\n");
+    const failed = spawnSync("vp", ["run", "docs:lint"], { cwd: root, encoding: "utf8" });
+    expect(failed.status, `${failed.stdout}\n${failed.stderr}`).toBe(1);
+    expect(failed.stdout).toContain("markdown/no-missing-label-refs");
+    const command = getStagedCommands()[1];
+    if (!command?.startsWith("vp exec eslint --config docs/eslint.config.mjs ")) {
+      throw new Error("Missing Markdown lint gate before staged formatting");
+    }
+    const [executable, ...args] = command.split(" ");
+    if (!executable) throw new Error("Missing staged Markdown lint executable");
+    const staged = spawnSync(executable, [...args, file, join(root, "README.md")], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    expect(staged.status, `${staged.stdout}\n${staged.stderr}`).toBe(1);
+    expect(staged.stdout).toContain("markdown/no-missing-label-refs");
+
+    writeFileSync(file, "[here](https://example.com)\n");
+    const advisory = spawnSync("vp", ["run", "docs:lint"], { cwd: root, encoding: "utf8" });
+    expect(advisory.status, `${advisory.stdout}\n${advisory.stderr}`).toBe(0);
+    expect(`${advisory.stdout}\n${advisory.stderr}`).toContain("MD059");
+
+    writeFileSync(file, "[Documentation](https://example.com)\n");
+    const passed = spawnSync("vp", ["run", "docs:lint"], { cwd: root, encoding: "utf8" });
+    expect(passed.status, `${passed.stdout}\n${passed.stderr}`).toBe(0);
+    expect(`${passed.stdout}\n${passed.stderr}`).not.toContain("MD059");
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

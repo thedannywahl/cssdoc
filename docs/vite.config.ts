@@ -9,6 +9,11 @@ const config: UserConfig = mergeConfig(
     lint: docsLint,
     run: {
       tasks: {
+        "lint:markdown": {
+          command:
+            'vp exec eslint --config eslint.config.mjs --max-warnings 0 "**/*.md" && markdownlint-cli2 --config .markdownlint-cli2.jsonc',
+          cache: false,
+        },
         "docs:api": { command: "typedoc", cache: false },
         "type-check":
           "node ../node_modules/typescript/bin/tsc --noEmit -p .vitepress/tsconfig.json && node ../node_modules/typescript/bin/tsc --noEmit -p tsconfig.typedoc.json",

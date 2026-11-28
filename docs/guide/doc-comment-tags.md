@@ -282,7 +282,7 @@ preserved:
 
 Parses as:
 
-```
+```text
 ✅ Use when:
 - Building a full product page
 - The page includes GlobalNav
